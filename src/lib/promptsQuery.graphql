@@ -1,0 +1,18 @@
+#import "./postPreviewFragment.graphql"
+
+query Prompts($limit: Int, $offset: Int) {
+  prompts(limit: $limit, offset: $offset) {
+    id
+    body
+
+    profile {
+      username
+      id
+      photoURL
+    }
+
+    topPosts {
+      ...PostPreviewFragment
+    }
+  }
+}

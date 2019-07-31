@@ -1,0 +1,17 @@
+fragment PostPreviewFragment on Post {
+  id
+  likesCount
+
+  profile {
+    id
+    photoURL
+    username
+  }
+
+  media {
+    url
+    id
+    __typename
+    sourceType
+  }
+}
