@@ -11,6 +11,7 @@ fragment PostPreviewFragment on Post {
   media {
     url
     id
+    mimeType
     __typename
     sourceType
   }

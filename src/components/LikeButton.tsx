@@ -11,7 +11,7 @@ export enum LikeButtonSize {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center"
   },
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   },
   halfSizeIcon: {
     fontSize: 10,
-    marginRight: SPACING.half,
+    marginBottom: SPACING.half,
     color: "white"
   },
   halfSizeText: {
@@ -29,8 +29,8 @@ const styles = StyleSheet.create({
     color: "white"
   },
   defaultSizeIcon: {
-    fontSize: 20,
-    marginRight: SPACING.normal,
+    fontSize: 26,
+    marginBottom: SPACING.normal,
     color: "white"
   },
   defaultSizeText: {

@@ -23,7 +23,11 @@ export enum IconName {
   plus = "plus",
   profile = "profile",
   searchPhoto = "search-photo",
+  trophy = "trophy",
+  skip = "skip",
+  triangle = "triangle",
   search = "search",
+  list = "list",
   send = "send",
   settings = "settings",
   view = "view",
@@ -43,6 +47,7 @@ export const IconChevronLeft = props => (
 export const IconChevronRight = props => (
   <Icon name={IconName.chevronRight} {...props} />
 );
+export const IconList = props => <Icon name={IconName.list} {...props} />;
 export const IconClose = props => <Icon name={IconName.close} {...props} />;
 export const IconComment = props => <Icon name={IconName.comment} {...props} />;
 export const IconCrown = props => <Icon name={IconName.crown} {...props} />;
@@ -70,3 +75,8 @@ export const IconUpload = props => (
 );
 export const IconTrash = props => <Icon name={IconName.trash} {...props} />;
 export const IconText = props => <Icon name={IconName.text} {...props} />;
+export const IconTrophy = props => <Icon name={IconName.trophy} {...props} />;
+export const IconSkip = props => <Icon name={IconName.skip} {...props} />;
+export const IconTriangle = props => (
+  <Icon name={IconName.triangle} {...props} />
+);
