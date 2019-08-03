@@ -4,12 +4,13 @@ import { BoldText } from "../components/Text";
 import PROMPTS_QUERY from "../lib/promptsQuery.graphql";
 import { Query } from "react-apollo";
 import { ViewPrompt } from "../components/Prompt/ViewPrompt";
+import CreatePostPage from "./CreatePostPage";
 
 const styles = StyleSheet.create({});
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
-export class ViewPostPage extends React.Component {
+class RawViewPostPage extends React.Component {
   state = {
     height: SCREEN_DIMENSIONS.height - 86,
     visibleIndex: 0,
@@ -38,8 +39,16 @@ export class ViewPostPage extends React.Component {
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {
     const [{ index: visibleIndex = -1 }] = viewableItems;
+    const prompt = this.props.prompts[visibleIndex];
 
-    this.setState({ visibleIndex });
+    this.setState({ visibleIndex }, () => {
+      if (this.props.navigation.isFocused) {
+        CreatePostPage.lastPrompt = {
+          body: prompt.body,
+          id: prompt.id
+        };
+      }
+    });
   };
 
   onLayout = ({
@@ -53,37 +62,39 @@ export class ViewPostPage extends React.Component {
 
   render() {
     return (
-      <Query query={PROMPTS_QUERY}>
-        {({ loading, error, data: { prompts = [] } = {} }) => {
-          return (
-            <FlatList
-              data={prompts}
-              renderItem={this.renderItem}
-              onScrollBeginDrag={this.startScrolling}
-              alwaysBounceVertical={false}
-              showsVerticalScrollIndicator={false}
-              onScrollEndDrag={this.stopScrolling}
-              getItemLayout={this.getItemLayout}
-              extraData={{
-                height: this.state.height,
-                isScrolling: this.state.isScrolling,
-                visibleIndex: this.state.visibleIndex
-              }}
-              onLayout={this.onLayout}
-              onViewableItemsChanged={this.onViewableItemsChanged}
-              snapToInterval={this.state.height}
-              decelerationRate="fast"
-              contentContainerStyle={{ width: "100%" }}
-              directionalLockEnabled
-              contentInsetAdjustmentBehavior="never"
-              pinchGestureEnabled={false}
-              overScrollMode="never"
-            />
-          );
+      <FlatList
+        data={this.props.prompts}
+        renderItem={this.renderItem}
+        onScrollBeginDrag={this.startScrolling}
+        alwaysBounceVertical={false}
+        showsVerticalScrollIndicator={false}
+        onScrollEndDrag={this.stopScrolling}
+        getItemLayout={this.getItemLayout}
+        extraData={{
+          height: this.state.height,
+          isScrolling: this.state.isScrolling,
+          visibleIndex: this.state.visibleIndex
         }}
-      </Query>
+        onLayout={this.onLayout}
+        onViewableItemsChanged={this.onViewableItemsChanged}
+        snapToInterval={this.state.height}
+        decelerationRate="fast"
+        contentContainerStyle={{ width: "100%" }}
+        directionalLockEnabled
+        contentInsetAdjustmentBehavior="never"
+        pinchGestureEnabled={false}
+        overScrollMode="never"
+      />
     );
   }
 }
+
+export const ViewPostPage = props => (
+  <Query query={PROMPTS_QUERY}>
+    {({ loading, error, data: { prompts = [] } = {} }) => (
+      <RawViewPostPage {...props} prompts={prompts} loading={loading} />
+    )}
+  </Query>
+);
 
 export default ViewPostPage;

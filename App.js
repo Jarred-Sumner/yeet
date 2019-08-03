@@ -26,72 +26,97 @@ import ViewPostPage from "./src/screens/ViewPost";
 import CreatePostPage from "./src/screens/CreatePostPage";
 import SearchPage from "./src/screens/Search";
 import CurrentProfilePage from "./src/screens/CurrentProfile";
+import UploadPostPage from "./src/screens/UploadPostPage";
 import LeaderboardPage from "./src/screens/LeaderboardPage";
+import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import { COLORS } from "./src/lib/styles";
 import { ApolloProvider } from "./src/containers/ApolloProvider";
 import { IconName, Icon } from "./src/components/Icon";
 
 const Routes = createAppContainer(
-  createBottomTabNavigator(
+  createStackNavigator(
     {
-      ViewPostTab: createStackNavigator(
+      MainScreen: createBottomTabNavigator(
         {
-          ViewPost: {
-            screen: ViewPostPage
+          ViewPostTab: createStackNavigator(
+            {
+              ViewPost: {
+                screen: ViewPostPage
+              }
+            },
+            {
+              cardStyle: {
+                backgroundColor: "#111"
+              },
+              defaultNavigationOptions: {
+                header: () => null
+              }
+            }
+          ),
+          Search: {
+            screen: SearchPage
+          },
+
+          CreatePost: {
+            screen: CreatePostPage
+          },
+
+          Leaderboard: {
+            screen: LeaderboardPage
+          },
+          CurrentProfile: {
+            screen: CurrentProfilePage
           }
         },
         {
-          cardStyle: {
-            backgroundColor: "#111"
-          },
-          defaultNavigationOptions: {
-            header: () => null
+          defaultNavigationOptions: ({ navigation }) => ({
+            tabBarIcon: ({ focused, horizontal, tintColor }) => {
+              const { routeName } = navigation.state;
+              let IconComponent = Icon;
+
+              if (routeName === "ViewPostTab") {
+                return (
+                  <Icon name={IconName.home} size={25} color={tintColor} />
+                );
+              } else if (routeName === "Leaderboard") {
+                return (
+                  <Icon name={IconName.trophy} size={25} color={tintColor} />
+                );
+              } else if (routeName === "CreatePost") {
+                return (
+                  <Icon name={IconName.plus} size={25} color={tintColor} />
+                );
+              } else if (routeName === "Search") {
+                return (
+                  <Icon name={IconName.search} size={25} color={tintColor} />
+                );
+              } else if (routeName === "CurrentProfile") {
+                return (
+                  <Icon name={IconName.profile} size={25} color={tintColor} />
+                );
+              } else {
+                return null;
+              }
+            }
+          }),
+          navigationOptions: {},
+          tabBarOptions: {
+            showLabel: false,
+            activeTintColor: "#fff",
+            inactiveTintColor: "#666",
+            style: {
+              backgroundColor: "#101010"
+            }
           }
         }
       ),
-      Search: {
-        screen: SearchPage
-      },
-
-      CreatePost: {
-        screen: CreatePostPage
-      },
-
-      Leaderboard: {
-        screen: LeaderboardPage
-      },
-      CurrentProfile: {
-        screen: CurrentProfilePage
-      }
+      UploadPost: UploadPostPage
     },
     {
-      defaultNavigationOptions: ({ navigation }) => ({
-        tabBarIcon: ({ focused, horizontal, tintColor }) => {
-          const { routeName } = navigation.state;
-          let IconComponent = Icon;
-
-          if (routeName === "ViewPostTab") {
-            return <Icon name={IconName.home} size={25} color={tintColor} />;
-          } else if (routeName === "Leaderboard") {
-            return <Icon name={IconName.trophy} size={25} color={tintColor} />;
-          } else if (routeName === "CreatePost") {
-            return <Icon name={IconName.plus} size={25} color={tintColor} />;
-          } else if (routeName === "Search") {
-            return <Icon name={IconName.search} size={25} color={tintColor} />;
-          } else if (routeName === "CurrentProfile") {
-            return <Icon name={IconName.profile} size={25} color={tintColor} />;
-          } else {
-            return null;
-          }
-        }
-      }),
-      tabBarOptions: {
-        showLabel: false,
-        activeTintColor: "#fff",
-        inactiveTintColor: "#666",
-        style: {
-          backgroundColor: "#101010"
-        }
+      mode: "modal",
+      headerMode: "none",
+      cardStyle: {
+        backgroundColor: "#101010"
       }
     }
   )
@@ -109,7 +134,9 @@ export class App extends React.Component {
       <>
         <StatusBar barStyle="light-content" />
         <ApolloProvider>
-          <Routes />
+          <ImagePickerProvider>
+            <Routes />
+          </ImagePickerProvider>
         </ApolloProvider>
       </>
     );

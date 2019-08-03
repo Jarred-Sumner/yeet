@@ -1,40 +1,31 @@
+import numbro from "numbro";
 import * as React from "react";
 import {
-  FlatList,
-  View,
-  StyleSheet,
+  Animated,
   Dimensions,
-  ScrollView,
-  TouchableOpacity,
   Easing,
-  Animated
+  StyleSheet,
+  TouchableOpacity,
+  View
 } from "react-native";
-import { SafeAreaView } from "react-navigation";
-import numbro from "numbro";
-import {
-  Text,
-  BoldText,
-  SemiBoldText,
-  ThinText,
-  MediumText,
-  fontStyleSheets
-} from "../Text";
-import { COLORS, SPACING } from "../../lib/styles";
-import { Image, AvatarImage } from "../../components/Image";
-import { LikeButtonSize, LikeButton } from "../../components/LikeButton";
-import { IconTrophy, IconChevronRight, IconList } from "../../components/Icon";
-import LinearGradient from "react-native-linear-gradient";
-import Video from "react-native-video";
-import DeviceInfo from "react-native-device-info";
 import { getInset } from "react-native-safe-area-view";
-import { Transition, Transitioning } from "react-native-reanimated";
+import { IconChevronRight, IconList, IconTrophy } from "../../components/Icon";
+import { AvatarImage } from "../../components/Image";
+import { LikeButton, LikeButtonSize } from "../../components/LikeButton";
+import { SPACING } from "../../lib/styles";
+import {
+  BoldText,
+  fontStyleSheets,
+  MediumText,
+  SemiBoldText,
+  Text
+} from "../Text";
+import { Media } from "../../components/Media";
 
 const SAFE_AREA_TOP = getInset("top");
-const IS_SIMULATOR = DeviceInfo.isEmulator();
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
-const MEDIA_Z_INDEX = 0;
-const MEDIA_OVERLAY_Z_INDEX = 1;
+
 const HEADER_Z_INDEX = 2;
 const ACTION_BAR_Z_INDEX = 2;
 const FOOTER_Z_INDEX = 2;
@@ -47,18 +38,6 @@ const styles = StyleSheet.create({
     position: "relative",
     backgroundColor: "#111"
   },
-  mediaStyle: {
-    width: SCREEN_DIMENSIONS.width
-  },
-  mediaContainerStyle: {
-    position: "absolute",
-    width: SCREEN_DIMENSIONS.width,
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: MEDIA_Z_INDEX
-  },
   listIcon: {
     textShadowColor: "rgba(0, 0, 0, 0.25)",
     textShadowRadius: 4,
@@ -67,15 +46,7 @@ const styles = StyleSheet.create({
       height: 4
     }
   },
-  mediaGradientStyle: {
-    width: "100%",
-    height: 240,
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: MEDIA_OVERLAY_Z_INDEX
-  },
+
   headerContainer: {
     padding: SPACING.normal,
     position: "absolute",
@@ -114,7 +85,7 @@ const styles = StyleSheet.create({
     marginRight: SPACING.normal,
     position: "absolute",
     top: 0,
-    left: 0,
+    right: 0,
     zIndex: HEADER_Z_INDEX + 1
   },
   footerTextStyle: {
@@ -153,94 +124,13 @@ const CurrentAvatarBadge = ({ url, size = AVATAR_THUMBNAIL_SIZE }) => (
   </View>
 );
 
-const ImageMedia = ({ media, height }) => (
-  <Image
-    resizeMode="contain"
-    source={{
-      uri: media.url,
-      width: media.width ? media.width : undefined,
-      height: media.height ? media.height : undefined
-    }}
-    style={[styles.mediaStyle, { height }]}
-  />
-);
-
-const VideoMedia = ({ media, paused, height }) => {
-  return (
-    <Video
-      style={[styles.mediaStyle, { height }]}
-      resizeMode="contain"
-      muted={IS_SIMULATOR}
-      controls={false}
-      loop
-      paused={paused}
-      fullscreen={false}
-      source={{
-        uri: media.url,
-        width: media.width ? media.width : undefined,
-        height: media.height ? media.height : undefined
-      }}
-    />
-  );
-};
-
-const Media = ({ media, paused, height }) => {
-  let MediaComponent = media.mimeType.includes("image")
-    ? ImageMedia
-    : VideoMedia;
-
-  const transition = (
-    <Transition.Sequence>
-      <Transition.In
-        propagation="bottom"
-        durationMs={1000}
-        type="fade"
-        interpolation="easeIn"
-      />
-
-      <Transition.Change interpolation="easeInOut" />
-
-      <Transition.Out
-        propagation="bottom"
-        durationMs={1000}
-        type="fade"
-        interpolation="easeOut"
-      />
-    </Transition.Sequence>
-  );
-
-  console.log("test");
-  const ref = React.useRef();
-
-  React.useEffect(() => {
-    console.log("animate next");
-    ref.current.animateNextTransition();
-  }, [media.id, ref]);
-
-  return (
-    <>
-      <Transitioning.View ref={ref} transition={transition}>
-        <View key={media.id} style={[styles.mediaContainerStyle, { height }]}>
-          <MediaComponent media={media} paused={paused} height={height} />
-        </View>
-      </Transitioning.View>
-
-      <LinearGradient
-        style={styles.mediaGradientStyle}
-        colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.24)"]}
-        locations={[0.0276, 0.3509]}
-      />
-    </>
-  );
-};
-
-const Header = ({ prompt, opacityValue, forceShowHeader }) => {
+const Header = ({ prompt, opacityValue, forceShowHeader, onShowList }) => {
   return (
     <>
       <Animated.View
         style={[
           styles.headerContainer,
-          { paddingTop: SAFE_AREA_TOP + SPACING.normal, paddingLeft: 52 },
+          { paddingTop: SAFE_AREA_TOP + SPACING.normal, paddingRight: 52 },
           {
             opacity: forceShowHeader ? 1 : opacityValue
           }
@@ -258,7 +148,7 @@ const Header = ({ prompt, opacityValue, forceShowHeader }) => {
 
         <BoldText style={[styles.headerTextStyle]}>{prompt.body}</BoldText>
       </Animated.View>
-      <TouchableOpacity style={styles.listButton}>
+      <TouchableOpacity onPress={onShowList} style={styles.listButton}>
         <Animated.View
           style={[
             {
@@ -428,7 +318,12 @@ export class ViewPrompt extends React.Component {
     }
     return (
       <View style={[styles.page, { height }]}>
-        <Media media={post.media} paused={!isVisible} height={height} />
+        <Media
+          width={SCREEN_DIMENSIONS.width}
+          media={post.media}
+          paused={!isVisible}
+          height={height}
+        />
         <Header
           prompt={prompt}
           forceShowHeader={this.props.forceShowHeader}

@@ -188,6 +188,9 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-haptic-feedback')
+    implementation project(':rn-fetch-blob')
+    implementation project(':react-native-image-picker')
     implementation project(':react-native-video')
     implementation project(':react-native-linear-gradient')
     implementation project(':react-native-device-info')

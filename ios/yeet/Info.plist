@@ -37,8 +37,12 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Share photos/videos with the community on yeet and participate in challenges</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Share photos/videos with the community on yeet and participate in challenges</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
+	<string></string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>iconfont.ttf</string>
