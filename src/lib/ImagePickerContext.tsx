@@ -5,7 +5,7 @@ import HapticFeedback from "react-native-haptic-feedback";
 
 export const ImagePickerContext = React.createContext({
   isOpen: false,
-  openImagePicker: () => {},
+  openImagePicker: opts => {},
   lastPhoto: null
 });
 
@@ -43,8 +43,8 @@ export class ImagePickerProvider extends React.Component {
     });
   };
 
-  handleOpenPicker = (opts = DEFAULT_IMAGE_LIBRARY_OPTIONS) => {
-    if (this.state.isOpen) {
+  handleOpenPicker = (_opts = {}) => {
+    if (this.state.contextValue.isOpen) {
       HapticFeedback.trigger("impactMedium");
       return;
     }
@@ -53,20 +53,27 @@ export class ImagePickerProvider extends React.Component {
 
     this.setContextValue({ isOpen: true, lastPhoto: null });
     StatusBar.setHidden(true, "slide");
-    ImagePicker.launchImageLibrary(opts, imageResponse => {
-      this.setContextValue({
-        isOpen: false,
-        lastPhoto: {
-          ...imageResponse,
-          type:
-            imageResponse.uri &&
-            imageResponse.uri.toUpperCase().endsWith(".MP4")
-              ? "application/mp4"
-              : imageResponse.type
-        }
-      });
-      StatusBar.setHidden(false, "fade");
-    });
+    ImagePicker.launchImageLibrary(
+      {
+        ...DEFAULT_IMAGE_LIBRARY_OPTIONS,
+        ..._opts
+      },
+      imageResponse => {
+        this.setContextValue({
+          isOpen: false,
+          lastPhoto: {
+            didCancel: imageResponse === null || imageResponse.didCancel,
+            ...imageResponse,
+            type:
+              imageResponse.uri &&
+              imageResponse.uri.toUpperCase().endsWith(".MP4")
+                ? "application/mp4"
+                : imageResponse.type
+          }
+        });
+        StatusBar.setHidden(false, "fade");
+      }
+    );
   };
 
   componentDidMount() {

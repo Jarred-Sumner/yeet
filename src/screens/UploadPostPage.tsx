@@ -16,7 +16,7 @@ import { SPACING, COLORS } from "../lib/styles";
 import { IconSend, IconClose } from "../components/Icon";
 import { getInset } from "react-native-safe-area-view";
 import S3Upload, { startFileUpload } from "../lib/fileUpload";
-import { fromPairs } from "lodash";
+import { fromPairs, get } from "lodash";
 import { ActivityIndicator } from "react-native";
 import HapticFeedback from "react-native-haptic-feedback";
 
@@ -141,7 +141,7 @@ class RawUploadPostPage extends React.Component {
       error: null,
       mediaId: null,
       uploadStatus: UploadStatus.pending,
-      lastPhoto: { didCancel: true }
+      hasDismissedPhotoPicker: false
     };
   }
   state = { height: 0 };
@@ -159,6 +159,18 @@ class RawUploadPostPage extends React.Component {
   }
 
   componentDidUpdate(prevProps, prevState) {
+    if (
+      prevProps.lastPhoto !== this.props.lastPhoto &&
+      !this.state.hasDismissedPhotoPicker
+    ) {
+      this.setState({ hasDismissedPhotoPicker: true });
+
+      if (this.props.lastPhoto && this.props.lastPhoto.didCancel) {
+        this.props.navigation.pop(1);
+        return;
+      }
+    }
+
     if (
       prevProps.lastPhoto !== this.props.lastPhoto &&
       this.props.lastPhoto &&
@@ -274,7 +286,9 @@ class RawUploadPostPage extends React.Component {
     const { lastPhoto, uploadStatus } = this.state;
 
     return (
-      <View style={{ height: "100%", width: "100%" }}>
+      <View
+        style={{ height: "100%", width: "100%", backgroundColor: "#101010" }}
+      >
         <SafeAreaView style={styles.header} forceInsets={{ bottom: "top" }}>
           <TouchableOpacity onPress={() => navigation.pop(1)}>
             <View style={styles.closeButton}>
@@ -303,7 +317,7 @@ class RawUploadPostPage extends React.Component {
         </SafeAreaView>
 
         <View style={styles.mediaContainer}>
-          {!lastPhoto.didCancel && (
+          {lastPhoto && !lastPhoto.didCancel && (
             <TouchableWithoutFeedback onPress={() => openImagePicker()}>
               <View style={styles.media}>
                 <Media

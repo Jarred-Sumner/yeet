@@ -70,7 +70,7 @@ export const IconSettings = props => (
   <Icon name={IconName.settings} {...props} />
 );
 export const IconView = props => <Icon name={IconName.view} {...props} />;
-export const IconUpload = props => (
+export const IconUploadPhoto = props => (
   <Icon name={IconName.uploadPhoto} {...props} />
 );
 export const IconTrash = props => <Icon name={IconName.trash} {...props} />;

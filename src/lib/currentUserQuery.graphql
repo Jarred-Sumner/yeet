@@ -1,0 +1,7 @@
+#import "./userFragment.graphql"
+
+query CurrentUserQuery {
+  currentUser {
+    ...UserFragment
+  }
+}

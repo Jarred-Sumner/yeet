@@ -42,5 +42,8 @@ target 'yeet' do
 
   pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback'
 
+  pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios'
+
+
 end
 

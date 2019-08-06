@@ -1,27 +1,52 @@
-import { Text as RNText, StyleSheet } from "react-native";
+import { Text as RNText, StyleSheet, Platform } from "react-native";
 import React from "react";
+
+export enum AndroidFontFamily {
+  regular = "ProximaNova-Regular",
+  thin = "Proxima Nova Thin",
+  semiBold = "Proxima Nova Semibold",
+  medium = "Proxima Nova Medium",
+  bold = "Proxima Nova Bold"
+}
+
+export enum iOSFontFamily {
+  regular = "Proxima Nova",
+  thin = "Proxima Nova",
+  semiBold = "Proxima Nova",
+  medium = "Proxima Nova",
+  bold = "Proxima Nova"
+}
+
+export const FontFamily = Platform.select({
+  ios: iOSFontFamily,
+  android: AndroidFontFamily
+});
 
 export const fontStyleSheets = StyleSheet.create({
   muted: {
     color: "#ccc"
   },
   regularFont: {
-    fontFamily: "Proxima Nova",
+    fontFamily: FontFamily.regular,
     fontWeight: "normal",
     color: "white"
   },
   thinFont: {
-    fontFamily: "Proxima Nova Thin",
+    fontFamily: FontFamily.thin,
     fontWeight: "300",
     color: "white"
   },
   semiBoldFont: {
-    fontFamily: "Proxima Nova",
+    fontFamily: FontFamily.semiBold,
     fontWeight: "600",
     color: "white"
   },
-  mediumFont: { fontFamily: "Proxima Nova", fontWeight: "500", color: "white" },
-  boldFont: { fontFamily: "Proxima Nova", fontWeight: "bold", color: "white" }
+  mediumFont: {
+    fontFamily: FontFamily.medium,
+    fontWeight: "500",
+    color: "white"
+  },
+  boldFont: { fontFamily: FontFamily.bold, fontWeight: "bold", color: "white" }
 });
 
 export const Text = ({ children, style, ...otherProps }) => (

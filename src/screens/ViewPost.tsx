@@ -5,6 +5,7 @@ import PROMPTS_QUERY from "../lib/promptsQuery.graphql";
 import { Query } from "react-apollo";
 import { ViewPrompt } from "../components/Prompt/ViewPrompt";
 import CreatePostPage from "./CreatePostPage";
+import { Modal } from "../components/Modal";
 
 const styles = StyleSheet.create({});
 

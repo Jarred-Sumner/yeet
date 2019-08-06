@@ -1,0 +1,18 @@
+#import "./userFragment.graphql"
+
+mutation SignUpMutation(
+  $email: String!
+  $mediaId: ID
+  $username: String!
+  $password: String!
+) {
+  signUp(
+    email: $email
+    mediaId: $mediaId
+    username: $username
+    password: $password
+  ) {
+    ...UserFragment
+    jwt
+  }
+}

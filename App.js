@@ -7,6 +7,9 @@
  */
 
 import React, { Fragment } from "react";
+import { PortalProvider, WhitePortal } from "react-native-portal";
+import NavigationService from "./src/lib/NavigationService";
+
 import {
   SafeAreaView,
   StyleSheet,
@@ -26,12 +29,17 @@ import ViewPostPage from "./src/screens/ViewPost";
 import CreatePostPage from "./src/screens/CreatePostPage";
 import SearchPage from "./src/screens/Search";
 import CurrentProfilePage from "./src/screens/CurrentProfile";
+import LoginScreen from "./src/screens/LoginScreen";
+import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
 import LeaderboardPage from "./src/screens/LeaderboardPage";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import { COLORS } from "./src/lib/styles";
 import { ApolloProvider } from "./src/containers/ApolloProvider";
 import { IconName, Icon } from "./src/components/Icon";
+import { Modal } from "./src/components/Modal";
+import { UserContextProvider } from "./src/components/UserContext";
+import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -107,16 +115,38 @@ const Routes = createAppContainer(
             style: {
               backgroundColor: "#101010"
             }
+          },
+          cardStyle: {
+            backgroundColor: "#101010"
           }
         }
       ),
-      UploadPost: UploadPostPage
+      UploadPost: UploadPostPage,
+
+      Auth: createStackNavigator(
+        {
+          Signup: SignUpScreen,
+          Login: LoginScreen
+        },
+        {
+          defaultNavigationOptions: ({ navigation }) => ({
+            headerStyle: {
+              backgroundColor: COLORS.secondary,
+              borderBottomWidth: 0
+            },
+            headerTintColor: "white"
+          }),
+          cardStyle: {
+            backgroundColor: COLORS.primary
+          }
+        }
+      )
     },
     {
       mode: "modal",
       headerMode: "none",
       cardStyle: {
-        backgroundColor: "#101010"
+        backgroundColor: "transparent"
       }
     }
   )
@@ -133,11 +163,24 @@ export class App extends React.Component {
     return (
       <>
         <StatusBar barStyle="light-content" />
-        <ApolloProvider>
-          <ImagePickerProvider>
-            <Routes />
-          </ImagePickerProvider>
-        </ApolloProvider>
+        <PortalProvider>
+          <MaterialThemeProvider>
+            <ApolloProvider>
+              <UserContextProvider>
+                <ImagePickerProvider>
+                  <>
+                    <Routes
+                      ref={navigatorRef => {
+                        NavigationService.setTopLevelNavigator(navigatorRef);
+                      }}
+                    />
+                    <WhitePortal name="modal" />
+                  </>
+                </ImagePickerProvider>
+              </UserContextProvider>
+            </ApolloProvider>
+          </MaterialThemeProvider>
+        </PortalProvider>
       </>
     );
   }

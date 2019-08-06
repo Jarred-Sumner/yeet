@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "pregraphql:schema": "rimraf src/lib/graphql-schema.json",
+    "graphql:schema": "apollo client:download-schema --endpoint=http://localhost:3000/graphql src/lib/graphql-schema.json",
+    "pregraphql:types": "yarn graphql:schema && rimraf src/lib/graphql && mkdir src/lib/graphql",
+    "graphql:types": "apollo client:codegen src/lib/graphql --config=apollo.config.js --localSchemaFile=src/lib/graphql-schema.json  --includes=\"src/lib/*.graphql\" --target typescript --passthroughCustomScalars --outputFlat --namespace GraphQL",
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint ."
@@ -16,6 +20,7 @@
     "apollo-link-error": "^1.1.11",
     "apollo-link-http": "^1.5.15",
     "apollo-utilities": "^1.3.2",
+    "formik": "^1.5.8",
     "graphql": "^14.4.2",
     "graphql-tag": "^2.10.1",
     "lodash": "^4.17.15",
@@ -26,21 +31,31 @@
     "react-native-device-info": "^2.3.2",
     "react-native-dotenv": "^0.2.0",
     "react-native-fast-image": "^7.0.2",
+    "react-native-formik": "^1.7.7",
     "react-native-fs": "^2.14.1",
     "react-native-gesture-handler": "^1.3.0",
     "react-native-haptic-feedback": "^1.8.2",
     "react-native-image-picker": "https://github.com/Jarred-Sumner/react-native-image-picker.git",
+    "react-native-keyboard-aware-scroll-view": "^0.8.0",
     "react-native-linear-gradient": "^2.5.6",
+    "react-native-modal": "^11.3.1",
+    "react-native-paper": "^2.16.0",
+    "react-native-portal": "^1.3.0",
     "react-native-reanimated": "^1.1.0",
     "react-native-safe-area-view": "^0.14.6",
     "react-native-screens": "^1.0.0-alpha.23",
+    "react-native-secure-key-store": "^2.0.4",
     "react-native-vector-icons": "^6.6.0",
     "react-native-video": "^5.0.0",
     "react-navigation": "^3.11.1",
-    "rn-fetch-blob": "^0.10.16"
+    "react-navigation-hooks": "^1.0.1",
+    "rn-fetch-blob": "^0.10.16",
+    "yup": "^0.27.0"
   },
   "rnpm": {
-    "assets": ["./assets/fonts/"]
+    "assets": [
+      "./assets/fonts/"
+    ]
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -51,6 +66,7 @@
     "@types/react": "^16.8.23",
     "@types/react-native": "^0.60.2",
     "@types/react-navigation": "^3.0.7",
+    "@types/yup": "^0.26.22",
     "babel-jest": "^24.8.0",
     "babel-plugin-import-graphql": "^2.7.0",
     "eslint": "^6.1.0",

@@ -188,6 +188,8 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-text-input-mask')
+    implementation project(':react-native-secure-key-store')
     implementation project(':react-native-haptic-feedback')
     implementation project(':rn-fetch-blob')
     implementation project(':react-native-image-picker')

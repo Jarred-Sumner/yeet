@@ -4,7 +4,14 @@ import React from "react";
 export const Image = FastImage;
 export default Image;
 
-export const AvatarImage = ({ url, size, style = {}, ...otherProps }) => {
+export const AvatarImage = ({
+  url,
+  size,
+  srcWidth,
+  srcHeight,
+  style = {},
+  ...otherProps
+}) => {
   return (
     <Image
       {...otherProps}
@@ -16,7 +23,7 @@ export const AvatarImage = ({ url, size, style = {}, ...otherProps }) => {
           borderRadius: size / 2
         }
       ]}
-      source={{ uri: url }}
+      source={{ uri: url, width: srcWidth, height: srcHeight }}
     />
   );
 };

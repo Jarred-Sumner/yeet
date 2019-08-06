@@ -1,0 +1,6 @@
+fragment UserFragment on User {
+  id
+  photoURL
+  username
+  email
+}
