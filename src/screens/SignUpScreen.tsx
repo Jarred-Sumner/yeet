@@ -1,29 +1,27 @@
+import { Formik } from "formik";
 import * as React from "react";
+import { Mutation } from "react-apollo";
 import {
-  View,
+  InteractionManager,
+  Keyboard,
+  ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  findNodeHandle,
-  InteractionManager,
-  ScrollView,
-  Keyboard
+  View
 } from "react-native";
-import { Alert } from "../lib/Alert";
-import { BoldText } from "../components/Text";
-import { IconCheck, IconClose } from "../components/Icon";
-import { COLORS, SPACING } from "../lib/styles";
-import { Formik } from "formik";
-import { Button } from "../components/Button";
-import { FormField } from "../components/FormField";
+import HapticFeedback from "react-native-haptic-feedback";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as Yup from "yup";
 import { EditableAvatar } from "../components/EditableAvatar";
-import { Mutation } from "react-apollo";
+import { FormField } from "../components/FormField";
+import { IconCheck, IconClose } from "../components/Icon";
+import { LoadingModal } from "../components/LoadingModal";
+import { Alert } from "../lib/Alert";
+import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
 import { Storage } from "../lib/Storage";
-import { LoadingModal } from "../components/LoadingModal";
-import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
+import { SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   form: {
@@ -121,6 +119,7 @@ class RawSignUpPage extends React.Component {
     }
 
     this.setState({ isLoading: true });
+    HapticFeedback.trigger("impactLight");
 
     try {
       const response = await this.props.signUp({
@@ -129,6 +128,7 @@ class RawSignUpPage extends React.Component {
       this.setState({ isLoading: false });
 
       const onFinish = this.props.navigation.getParam("onFinish");
+      HapticFeedback.trigger("notificationSuccess");
 
       this.props.navigation.dismiss();
       if (onFinish) {
@@ -140,6 +140,7 @@ class RawSignUpPage extends React.Component {
       const [firstError = null] = exception.graphQLErrors;
 
       this.setState({ isLoading: false }, () => {
+        HapticFeedback.trigger("notificationError");
         this.errorMessageInteraction = InteractionManager.runAfterInteractions(
           () => {
             if (firstError && firstError.message) {

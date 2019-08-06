@@ -53,7 +53,7 @@ const GRAPHQL_URL = `${BASE_HOSTNAME}/graphql`;
 const authMiddleware = new ApolloLink((operation, forward) => {
   // add the authorization to the headers
   operation.setContext(({ headers = {} }) => ({
-    credentials: "include",
+    credentials: "omit",
     headers: {
       ...headers,
       Authorization: `Bearer ${Storage.getCachedJWT()}`,

@@ -20,6 +20,7 @@ import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import LOGIN_MUTATION from "../lib/loginMutation.graphql";
 import { Storage } from "../lib/Storage";
 import { SPACING } from "../lib/styles";
+import HapticFeedback from "react-native-haptic-feedback";
 
 const styles = StyleSheet.create({
   form: {
@@ -88,6 +89,8 @@ class RawLoginPage extends React.Component {
 
     this.setState({ isLoading: true });
 
+    HapticFeedback.trigger("impactLight");
+
     try {
       const {
         data: { login }
@@ -100,12 +103,14 @@ class RawLoginPage extends React.Component {
           const onFinish = this.props.navigation.getParam("onFinish");
 
           this.props.navigation.dismiss();
+          HapticFeedback.trigger("notificationSuccess");
           if (onFinish) {
             InteractionManager.runAfterInteractions(() => {
               onFinish();
             });
           }
         } else {
+          HapticFeedback.trigger("notificationError");
           Alert.alert(
             "Incorrect username or password – please re-enter it and try again."
           );
@@ -115,6 +120,7 @@ class RawLoginPage extends React.Component {
       const [firstError = null] = exception.graphQLErrors;
 
       this.setState({ isLoading: false }, () => {
+        HapticFeedback.trigger("notificationError");
         this.errorMessageInteraction = InteractionManager.runAfterInteractions(
           () => {
             if (firstError && firstError.message) {

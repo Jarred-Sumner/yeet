@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-community/async-storage";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
-const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-3";
+const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
 
 const SUPER_STORE =
   process.env.NODE_ENV === "production"

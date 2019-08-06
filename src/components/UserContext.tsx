@@ -180,12 +180,17 @@ export const UserContextProvider = props => {
   return (
     <Query
       fetchPolicy="cache-and-network"
-      skip={!Storage.isSignedIn()}
+      delay={!Storage.isSignedIn()}
       query={CURRENT_USER_QUERY}
     >
-      {({ currentUser, loading, load, refetch, error }) => (
+      {({
+        data: { currentUser = null } = { currentUser: null },
+        loading,
+        load,
+        refetch,
+        error
+      }) => (
         <RawUserContextProvider
-          {...props}
           reload={load || refetch}
           error={error}
           currentUser={currentUser}
