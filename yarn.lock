@@ -5928,6 +5928,11 @@ react-native-tab-view@^1.2.0, react-native-tab-view@^1.4.1:
   dependencies:
     prop-types "^15.6.1"
 
+react-native-thumbnail@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/react-native-thumbnail/-/react-native-thumbnail-1.1.3.tgz#0fdd4ed2bbdc5d9407a2707580fd3fc4294a7050"
+  integrity sha512-x/9q9QPzq7BiHbpmPL/QrNrkxa4f+RQOAQ0Lw+p907jhpKpgojIo7pTTC/kvlyp+6YcYBeuq9sEELEEwzmk4nA==
+
 react-native-typescript-transformer@^1.2.13:
   version "1.2.13"
   resolved "https://registry.yarnpkg.com/react-native-typescript-transformer/-/react-native-typescript-transformer-1.2.13.tgz#be92a3d110dbb2cf2f4aebe60a935be124cfb7ed"

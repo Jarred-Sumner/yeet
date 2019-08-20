@@ -216,7 +216,7 @@ S3Upload.prototype.abortUpload = function() {
 
 export default S3Upload;
 
-export const startFileUpload = ({ file, ...opts }) => {
+export const startFileUpload = ({ file, type, mediaId, ...opts }) => {
   const path = RNFetchBlob.wrap(
     file.uri.replace("file://", "").replace("content://", "")
   );
@@ -235,6 +235,8 @@ export const startFileUpload = ({ file, ...opts }) => {
           signingUrlQueryParams: {
             width: file.width,
             height: file.height,
+            type: "Media",
+            mediaId,
             ...(opts.params || {})
           }
         })

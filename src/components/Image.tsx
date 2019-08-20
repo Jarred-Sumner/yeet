@@ -8,6 +8,7 @@ export const AvatarImage = ({
   url,
   size,
   srcWidth,
+  isLocal,
   srcHeight,
   style = {},
   ...otherProps

@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { getInset } from "react-native-safe-area-view";
 import { IconChevronRight, IconList, IconTrophy } from "../../components/Icon";
-import { AvatarImage } from "../../components/Image";
+import { Avatar } from "../../components/Avatar";
 import { LikeButton, LikeButtonSize } from "../../components/LikeButton";
 import { SPACING } from "../../lib/styles";
 import {
@@ -116,9 +116,10 @@ const styles = StyleSheet.create({
 
 const CurrentAvatarBadge = ({ url, size = AVATAR_THUMBNAIL_SIZE }) => (
   <View style={styles.avatar}>
-    <AvatarImage
+    <Avatar
       url={url}
       size={size}
+      isLocal={false}
       style={{ borderWidth: 1, borderColor: "white" }}
     />
   </View>

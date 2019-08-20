@@ -1,8 +1,8 @@
 import { PixelRatio } from "react-native";
 
-export const IMAGE_HOST = "https://i.webthing.co/";
+export const IMAGE_HOST = "https://i.webthing.co";
 
-const normalizeFormat = value => {
+export const normalizeFormat = value => {
   if (typeof value === "string") {
     return PixelRatio.getPixelSizeForLayoutSize(
       parseInt(value.split("px")[0], 10)

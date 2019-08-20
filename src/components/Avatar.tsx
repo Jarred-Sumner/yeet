@@ -1,6 +1,6 @@
 import * as React from "react";
 import { AvatarImage } from "./Image";
-import { buildImgSrc } from "../lib/imgUri";
+import { buildImgSrc, normalizeFormat as getSize } from "../lib/imgUri";
 
 export const Avatar = ({
   PlaceholderComponent,
@@ -9,18 +9,23 @@ export const Avatar = ({
   url,
   srcWidth,
   srcHeight,
-  isLocal
+  isLocal = false,
+  style
 }) => {
   const showPlaceholder = !url;
 
   if (showPlaceholder) {
-    return <PlaceholderComponent size={size} label={label} />;
+    return <PlaceholderComponent size={size} label={label} style={style} />;
   } else {
+    const _size = getSize(size);
+    const src = isLocal ? url : buildImgSrc(url, size);
+
     return (
       <AvatarImage
-        url={isLocal ? url : buildImgSrc(url, size)}
-        srcWidth={srcWidth}
-        srcHeight={srcHeight}
+        url={src}
+        srcWidth={_size}
+        style={style}
+        srcHeight={_size}
         size={size}
       />
     );
