@@ -6,118 +6,37 @@
  * @flow
  */
 
-import React, { Fragment } from "react";
+import React from "react";
+import { StatusBar } from "react-native";
 import { PortalProvider, WhitePortal } from "react-native-portal";
-import NavigationService from "./src/lib/NavigationService";
-
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar
-} from "react-native";
-import {
-  createStackNavigator,
-  createAppContainer,
-  createBottomTabNavigator
-} from "react-navigation";
 import { useScreens } from "react-native-screens";
-import FeedPage from "./src/screens/Feed";
-import ViewPostPage from "./src/screens/ViewPost";
-import CreatePostPage from "./src/screens/CreatePostPage";
-import SearchPage from "./src/screens/Search";
-import CurrentProfilePage from "./src/screens/CurrentProfile";
+import { createAppContainer, createStackNavigator } from "react-navigation";
+import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
+import { UserContextProvider } from "./src/components/UserContext";
+import { ApolloProvider } from "./src/containers/ApolloProvider";
+import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
+import NavigationService from "./src/lib/NavigationService";
+import { COLORS } from "./src/lib/styles";
 import LoginScreen from "./src/screens/LoginScreen";
+import NewPostPage from "./src/screens/NewPostPage";
 import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
-import LeaderboardPage from "./src/screens/LeaderboardPage";
-import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
-import { COLORS } from "./src/lib/styles";
-import { ApolloProvider } from "./src/containers/ApolloProvider";
-import { IconName, Icon } from "./src/components/Icon";
-import { Modal } from "./src/components/Modal";
-import { UserContextProvider } from "./src/components/UserContext";
-import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 
 const Routes = createAppContainer(
   createStackNavigator(
     {
-      MainScreen: createBottomTabNavigator(
+      Feed: createStackNavigator(
         {
-          ViewPostTab: createStackNavigator(
-            {
-              ViewPost: {
-                screen: ViewPostPage
-              }
-            },
-            {
-              cardStyle: {
-                backgroundColor: "#111"
-              },
-              defaultNavigationOptions: {
-                header: () => null
-              }
-            }
-          ),
-          Search: {
-            screen: SearchPage
-          },
-
-          CreatePost: {
-            screen: CreatePostPage
-          },
-
-          Leaderboard: {
-            screen: LeaderboardPage
-          },
-          CurrentProfile: {
-            screen: CurrentProfilePage
+          NewPost: {
+            screen: NewPostPage
           }
         },
         {
-          defaultNavigationOptions: ({ navigation }) => ({
-            tabBarIcon: ({ focused, horizontal, tintColor }) => {
-              const { routeName } = navigation.state;
-              let IconComponent = Icon;
-
-              if (routeName === "ViewPostTab") {
-                return (
-                  <Icon name={IconName.home} size={25} color={tintColor} />
-                );
-              } else if (routeName === "Leaderboard") {
-                return (
-                  <Icon name={IconName.trophy} size={25} color={tintColor} />
-                );
-              } else if (routeName === "CreatePost") {
-                return (
-                  <Icon name={IconName.plus} size={25} color={tintColor} />
-                );
-              } else if (routeName === "Search") {
-                return (
-                  <Icon name={IconName.search} size={25} color={tintColor} />
-                );
-              } else if (routeName === "CurrentProfile") {
-                return (
-                  <Icon name={IconName.profile} size={25} color={tintColor} />
-                );
-              } else {
-                return null;
-              }
-            }
-          }),
-          navigationOptions: {},
-          tabBarOptions: {
-            showLabel: false,
-            activeTintColor: "#fff",
-            inactiveTintColor: "#666",
-            style: {
-              backgroundColor: "#101010"
-            }
-          },
           cardStyle: {
-            backgroundColor: "#101010"
+            backgroundColor: "#000"
+          },
+          defaultNavigationOptions: {
+            header: () => null
           }
         }
       ),
