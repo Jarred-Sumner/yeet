@@ -6,6 +6,7 @@ import {
   Dimensions,
   TouchableOpacity
 } from "react-native";
+import CameraRoll from "@react-native-community/cameraroll";
 import {
   NewPostType,
   PLACEHOLDER_POST,
@@ -18,6 +19,11 @@ import { SafeAreaView } from "react-navigation";
 import { SPACING, COLORS } from "../../lib/styles";
 import { IconUploadPhoto, IconText, IconChevronRight } from "../Icon";
 import { ImagePicker } from "./ImagePicker";
+import { ImageCropper } from "./ImageCropper";
+import { getInset } from "react-native-safe-area-view";
+
+const TOP_Y = getInset("top");
+const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -103,8 +109,16 @@ const styles = StyleSheet.create({
   }
 });
 
+enum NewPostStep {
+  choosePhoto = "choosePhoto",
+  resizePhoto = "resizePhoto",
+  editPhoto = "editPhoto"
+}
+
 type State = {
   post: NewPostType;
+  defaultPhoto: CameraRoll.PhotoIdentifier | null;
+  step: NewPostStep;
 };
 
 type BlockListProps = {
@@ -132,9 +146,21 @@ const BlockList = ({ blocks, setBlockAtIndex }: BlockListProps) => {
   });
 };
 
+const DEFAULT_PHOTO_FIXTURE = {
+  node: {
+    image: {
+      uri: "https://i.imgur.com/CopIMxf.jpg",
+      height: 2436,
+      width: 1125
+    }
+  }
+};
+
 export class NewPost extends React.Component<{}, State> {
   state = {
-    post: PLACEHOLDER_POST
+    post: PLACEHOLDER_POST,
+    defaultPhoto: DEFAULT_PHOTO_FIXTURE,
+    step: NewPostStep.resizePhoto
   };
 
   handleChangeBlock = (block: PostBlockType, index: number) => {
@@ -146,6 +172,13 @@ export class NewPost extends React.Component<{}, State> {
         ...this.state.post,
         blocks
       }
+    });
+  };
+
+  handleChoosePhoto = (photo: CameraRoll.PhotoIdentifier) => {
+    this.setState({
+      step: NewPostStep.resizePhoto,
+      defaultPhoto: photo
     });
   };
 
@@ -169,40 +202,61 @@ export class NewPost extends React.Component<{}, State> {
   };
 
   render() {
-    return (
-      <View style={[styles.wrapper]}>
-        <SafeAreaView
-          style={[styles.safeWrapper, styles.scrollContainer]}
-          forceInsets={{
-            top: "always",
-            left: "never",
-            right: "never",
-            bottom: "never"
+    const { step } = this.state;
+
+    if (step === NewPostStep.editPhoto) {
+      return (
+        <View style={[styles.wrapper]}>
+          <SafeAreaView
+            style={[styles.safeWrapper, styles.scrollContainer]}
+            forceInsets={{
+              top: "always",
+              left: "never",
+              right: "never",
+              bottom: "never"
+            }}
+          >
+            <ScrollView style={[styles.container, styles.scrollContainer]}>
+              <BlockList
+                blocks={this.state.post.blocks}
+                setBlockAtIndex={this.handleChangeBlock}
+              />
+            </ScrollView>
+            <View style={styles.footer}>
+              <View style={[styles.footerSide]}>
+                <FooterButton
+                  Icon={IconUploadPhoto}
+                  onPress={this.handleAddPhoto}
+                />
+
+                <FooterButton Icon={IconText} onPress={this.handleInsertText} />
+              </View>
+
+              <View style={[styles.footerSide, styles.footerSideRight]}>
+                <NextButton />
+              </View>
+            </View>
+          </SafeAreaView>
+        </View>
+      );
+    } else if (step === NewPostStep.choosePhoto) {
+      return (
+        <View
+          style={{
+            height: SCREEN_DIMENSIONS.height
           }}
         >
-          {/* <ScrollView style={[styles.container, styles.scrollContainer]}>
-            <BlockList
-              blocks={this.state.post.blocks}
-              setBlockAtIndex={this.handleChangeBlock}
-            />
-          </ScrollView>
-          <View style={styles.footer}>
-            <View style={[styles.footerSide]}>
-              <FooterButton
-                Icon={IconUploadPhoto}
-                onPress={this.handleAddPhoto}
-              />
-
-              <FooterButton Icon={IconText} onPress={this.handleInsertText} />
-            </View>
-
-            <View style={[styles.footerSide, styles.footerSideRight]}>
-              <NextButton />
-            </View>
-          </View> */}
-          <ImagePicker height={652} width={CONTENT_WIDTH} />
-        </SafeAreaView>
-      </View>
-    );
+          <ImagePicker
+            height={SCREEN_DIMENSIONS.height}
+            width={SCREEN_DIMENSIONS.width}
+            onChange={this.handleChoosePhoto}
+          />
+        </View>
+      );
+    } else if (step === NewPostStep.resizePhoto) {
+      return <ImageCropper photo={this.state.defaultPhoto} />;
+    } else {
+      return null;
+    }
   }
 }

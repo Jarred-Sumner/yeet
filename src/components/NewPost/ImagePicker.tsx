@@ -218,7 +218,7 @@ export class ImagePicker extends React.Component<Props, State> {
 
   render() {
     const { loadState, photos } = this.state;
-    const { width, height } = this.props;
+    const { width, height, ListHeaderComponent } = this.props;
 
     if (loadState === ImagePickerLoadState.denied) {
       return <DeniedPhotoPermission />;
@@ -233,6 +233,7 @@ export class ImagePicker extends React.Component<Props, State> {
           renderItem={this.handleRenderItem}
           numColumns={NUM_COLUMNS}
           style={{ width, height }}
+          ListHeaderComponent={ListHeaderComponent}
           removeClippedSubviews
           columnWrapperStyle={styles.row}
           keyExtractor={this.keyExtractor}

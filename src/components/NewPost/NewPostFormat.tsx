@@ -43,31 +43,23 @@ export const DEFAULT_TEXT_COLOR = "#f1f1f1";
 export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
 export const PLACEHOLDER_POST: NewPostType = {
-  height: 400,
+  height: 652,
   width: SCREEN_DIMENSIONS.width,
   blocks: [
     {
-      type: "text",
-      value: "",
-      config: {
-        backgroundColor: DEFAULT_TEXT_BACKGROUND_COLOR,
-        color: DEFAULT_TEXT_COLOR
-      }
+      type: "image",
+      value: {
+        intrinsicWidth: 0,
+        intrinsicHeight: 0,
+        width: 0,
+        height: 0,
+        x: 0,
+        y: 0,
+        src: "",
+        originalSrc: ""
+      },
+      config: {}
     }
-    // {
-    //   type: "image",
-    //   value: {
-    //     intrinsicWidth: 0,
-    //     intrinsicHeight: 0,
-    //     width: 0,
-    //     height: 0,
-    //     x: 0,
-    //     y: 0,
-    //     src: "",
-    //     originalSrc: ""
-    //   },
-    //   config: {}
-    // }
   ]
 };
 
