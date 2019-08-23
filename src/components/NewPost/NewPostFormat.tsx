@@ -43,7 +43,7 @@ export const DEFAULT_TEXT_COLOR = "#f1f1f1";
 export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
 export const PLACEHOLDER_POST: NewPostType = {
-  height: 652,
+  height: 600,
   width: SCREEN_DIMENSIONS.width,
   blocks: [
     {

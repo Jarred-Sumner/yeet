@@ -81,7 +81,7 @@ const NextButton = ({ onPress }) => {
 const styles = StyleSheet.create({
   scrollContainer: {
     width: CONTENT_WIDTH,
-    height: 652
+    height: 600
   },
   footerSide: {
     flexDirection: "row"

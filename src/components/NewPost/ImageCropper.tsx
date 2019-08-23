@@ -9,6 +9,7 @@ import {
   ImageEditor
 } from "react-native";
 import CameraRoll from "@react-native-community/cameraroll";
+import { ResizableImage } from "./ResizableImage";
 import {
   PanGestureHandler,
   PinchGestureHandler,
@@ -34,7 +35,7 @@ const BOTTOM_INSET = getInset("bottom");
 
 const FOOTER_HEIGHT = 32 + BOTTOM_INSET;
 
-const TOP_IMAGE_Y = TOP_INSET + SPACING.double;
+const TOP_IMAGE_Y = TOP_INSET + SPACING.normal;
 
 const USE_NATIVE_DRIVER = true;
 const MAX_WIDTH = SCREEN_DIMENSIONS.width - 2;
@@ -127,6 +128,7 @@ class ResizeBox extends React.Component {
     super(props);
     this._translateX = new Animated.Value(0);
     this._translateY = props.translateY;
+
     this._lastOffset = { x: 0, y: 0 };
     this._onGestureEvent = Animated.event(
       [
@@ -256,118 +258,6 @@ class ResizeBox extends React.Component {
           </View>
         </Animated.View>
       </PanGestureHandler>
-    );
-  }
-}
-
-const croppableImageStyles = StyleSheet.create({
-  container: {
-    marginTop: TOP_IMAGE_Y,
-    alignItems: "center",
-    position: "relative",
-    overflow: "visible",
-    justifyContent: "center",
-    width: "100%"
-  }
-});
-
-class CroppableImage extends React.Component {
-  topTranslateY = new Animated.Value(0);
-  bottomTranslateY = new Animated.Value(0);
-  componentDidUpdate(prevProps) {
-    // if (prevProps.cropTopOffset !== this.props.cropTopOffset) {
-    //   this.topTranslateY.setValue(0);
-    //   this.topTranslateY.setOffset(this.props.cropTopOffset);
-    // }
-    // if (prevProps.cropBottomOffset !== this.props.cropBottomOffset) {
-    //   this.bottomTranslateY.setValue(0);
-    //   this.bottomTranslateY.setOffset(this.props.cropBottomOffset);
-    // }
-  }
-  render() {
-    const {
-      photo,
-      maxHeight,
-      maxWidth,
-      minY,
-      onCropTop,
-      onCropBottom,
-      cropTopOffset,
-      cropBottomOffset,
-      source
-    } = this.props;
-
-    const { width, height } = calculateAspectRatioFit(
-      photo.node.image.width,
-      photo.node.image.height,
-      maxWidth,
-      maxHeight
-    );
-
-    const relativeY = cropTopOffset;
-    const adjustedHeight = height - cropBottomOffset;
-
-    return (
-      <View style={[croppableImageStyles.container, { height: height }]}>
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: 0,
-            bottom: 0,
-            left: (SCREEN_DIMENSIONS.width - width) / 2,
-            zIndex: 2,
-            right: 0,
-            width,
-            height,
-            borderLeftWidth: 2,
-            borderRightWidth: 2,
-            borderColor: COLORS.primary
-          }}
-        />
-        <View
-          style={{
-            position: "absolute",
-            zIndex: 0,
-            alignSelf: "center",
-            height: adjustedHeight,
-            width
-          }}
-        >
-          <Image
-            source={source}
-            resizeMode="stretch"
-            style={{
-              width,
-              height: height,
-              transform: [
-                {
-                  translateY: relativeY * -1
-                }
-              ]
-            }}
-          />
-        </View>
-
-        <ResizeBox
-          side="top"
-          minY={0}
-          height={adjustedHeight}
-          onChange={onCropTop}
-          translateY={this.topTranslateY}
-          width={width}
-          maxY={height}
-        />
-        <ResizeBox
-          side="bottom"
-          minY={0}
-          height={adjustedHeight}
-          onChange={onCropBottom}
-          translateY={this.bottomTranslateY}
-          width={width}
-          maxY={height}
-        />
-      </View>
     );
   }
 }
@@ -504,22 +394,18 @@ export class ImageCropper extends React.Component {
     const maxImageHeight =
       SCREEN_DIMENSIONS.height -
       FOOTER_HEIGHT -
-      TOP_IMAGE_Y -
       SPACING.double -
-      SPACING.double;
+      TOP_IMAGE_Y -
+      80;
 
     return (
       <View style={styles.container}>
-        <CroppableImage
+        <ResizableImage
           photo={photo}
           source={photoSource}
           minY={TOP_IMAGE_Y}
+          maxY={maxImageHeight + TOP_IMAGE_Y}
           maxWidth={maxImageHeight * (9 / 16)}
-          onCropTop={this.onCropTop}
-          key={`${cropTopOffset}-${cropBottomOffset}`}
-          cropTopOffset={cropTopOffset}
-          cropBottomOffset={cropBottomOffset}
-          onCropBottom={this.onCropBottom}
           maxHeight={maxImageHeight}
         />
 
