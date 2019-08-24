@@ -1,32 +1,17 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  Image,
-  Animated,
-  Animation,
-  Dimensions,
-  ImageEditor
-} from "react-native";
-import CameraRoll from "@react-native-community/cameraroll";
-import { ResizableImage } from "./ResizableImage";
+import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
 import {
   PanGestureHandler,
-  PinchGestureHandler,
   RectButton,
-  RotationGestureHandler,
   State as GestureState
 } from "react-native-gesture-handler";
-import { IconUploadPhoto, IconText, IconChevronRight } from "../Icon";
-import { SafeAreaView } from "react-navigation";
-import { SPACING, COLORS } from "../../lib/styles";
+import { Transition, Transitioning } from "react-native-reanimated";
 import { getInset } from "react-native-safe-area-view";
-
-function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
-  var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-
-  return { width: srcWidth * ratio, height: srcHeight * ratio };
-}
+import { SafeAreaView } from "react-navigation";
+import { COLORS, SPACING } from "../../lib/styles";
+import { IconChevronRight } from "../Icon";
+import { ResizableImage } from "./ResizableImage";
+import { resizeImage } from "../../lib/imageResize";
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -326,8 +311,17 @@ export class ImageCropper extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      cropTopOffset: 0,
-      cropBottomOffset: 0,
+      crop: {
+        x: 0,
+        y: 0,
+        width: props.photo.node.image.width,
+        height: props.photo.node.image.height
+      },
+      originalSource: Image.resolveAssetSource({
+        width: props.photo.node.image.width,
+        height: props.photo.node.image.height,
+        uri: props.photo.node.image.uri
+      }),
       photoSource: Image.resolveAssetSource({
         width: props.photo.node.image.width,
         height: props.photo.node.image.height,
@@ -336,60 +330,51 @@ export class ImageCropper extends React.Component {
     };
   }
 
-  onCropBottom = (y: number, height: number, width: number) => {
-    this.onCrop({
-      top: this.state.cropTopOffset,
-      bottom: y * -1 + this.state.cropBottomOffset,
-      height,
-      width
+  handleCrop = async (
+    topOffset: number,
+    bottomOffset: number,
+    { width, x, height, y }
+  ) => {
+    console.log("1");
+    const { image } = this.props.photo.node;
+    const newHeight = height - bottomOffset;
+    console.log("2");
+    const source = await resizeImage({
+      uri: this.state.photoSource,
+      width,
+      x,
+      y: topOffset,
+      height: newHeight,
+      originalWidth: image.width,
+      originalHeight: image.height
     });
+
+    this.setState({
+      photoSource: {
+        width: source.width,
+        height: source.height,
+        uri: source.uri
+      },
+      crop: {
+        ...source,
+        bottom: bottomOffset
+      }
+    });
+
+    this.transitionRef.current.animateNextTransition();
   };
 
-  onCrop = ({ top: cropTopOffset, bottom: cropBottomOffset, width }) => {
-    const multiplier = this.state.photoSource.width / width;
-    console.log({ cropTopOffset, cropBottomOffset });
-    this.setState({ cropTopOffset, cropBottomOffset });
-    // const size = {
-    //   width: width * multiplier,
-    //   height: (height + yValue) * multiplier
-    // };
-    // console.log({ size, multiplier, height, width });
-    // ImageEditor.cropImage(
-    //   this.state.photoSource.uri,
-    //   {
-    //     offset: {
-    //       x: 0,
-    //       y: 0
-    //     },
-    //     size,
-    //     displaySize: undefined,
-    //     resizeMode: "stretch"
-    //   },
-    //   uri => {
-    //     this.setState({
-    //       cropBottomOffset: yValue,
-    //       photoSource: {
-    //         uri,
-    //         ...size
-    //       }
-    //     });
-    //   },
-    //   console.error
-    // );
-  };
-
-  onCropTop = (y: number, height: number, width: number) => {
-    this.onCrop({
-      top: y + this.state.cropTopOffset,
-      bottom: this.state.cropBottomOffset,
-      height,
-      width
-    });
-  };
+  transitionRef = React.createRef();
 
   render() {
     const { photo } = this.props;
-    const { cropTopOffset, cropBottomOffset, photoSource } = this.state;
+    const {
+      cropTopOffset,
+      cropBottomOffset,
+      photoSource,
+      crop,
+      originalSource
+    } = this.state;
 
     const maxImageHeight =
       SCREEN_DIMENSIONS.height -
@@ -398,16 +383,36 @@ export class ImageCropper extends React.Component {
       TOP_IMAGE_Y -
       80;
 
+    const maxImageWidth = (maxImageHeight / 812) * 375;
+
     return (
       <View style={styles.container}>
-        <ResizableImage
-          photo={photo}
-          source={photoSource}
-          minY={TOP_IMAGE_Y}
-          maxY={maxImageHeight + TOP_IMAGE_Y}
-          maxWidth={maxImageHeight * (9 / 16)}
-          maxHeight={maxImageHeight}
-        />
+        <Transitioning.View
+          ref={this.transitionRef}
+          transition={
+            <Transition.Sequence>
+              {/* <Transition.Change interpolation="linear" />
+              <Transition.In type="scale" /> */}
+            </Transition.Sequence>
+          }
+          style={{ height: "100%", width: "100%" }}
+        >
+          <ResizableImage
+            key={photoSource.uri}
+            originalPhoto={{
+              width: photo.node.image.width,
+              height: photo.node.image.height
+            }}
+            photo={crop}
+            source={photoSource}
+            originalSource={originalSource}
+            minY={TOP_IMAGE_Y}
+            maxY={maxImageHeight + TOP_IMAGE_Y}
+            maxWidth={maxImageWidth}
+            maxHeight={maxImageHeight}
+            onCrop={this.handleCrop}
+          />
+        </Transitioning.View>
 
         <FooterBar />
       </View>
