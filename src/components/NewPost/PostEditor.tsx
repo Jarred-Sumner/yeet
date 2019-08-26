@@ -1,68 +1,48 @@
 import * as React from "react";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View } from "react-native";
 import { getInset } from "react-native-safe-area-view";
+import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-navigation";
 import { SPACING, COLORS } from "../../lib/styles";
-import { IconText, IconUploadPhoto, IconChevronRight } from "../Icon";
+import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
 import { PostBlockType } from "./NewPostFormat";
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
-import { BorderlessButton } from "react-native-gesture-handler";
+import { BorderlessButton, ScrollView } from "react-native-gesture-handler";
+import { IconButton } from "../Button";
+import LinearGradient from "react-native-linear-gradient";
+import { Toolbar } from "./Toolbar";
 
 const TOP_Y = getInset("top");
 const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
-const footerButtonStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: SPACING.double,
-    alignItems: "center",
-    height: 60,
-    backgroundColor: "rgba(64, 0, 244, 0.1)"
-  },
-  icon: {
-    color: "white"
-  }
-});
-
-export const POST_WIDTH = SCREEN_DIMENSIONS.width - 8;
+export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 export const MAX_POST_HEIGHT =
-  SCREEN_DIMENSIONS.height - TOP_Y - BOTTOM_Y - SPACING.double;
+  SCREEN_DIMENSIONS.height - TOP_Y - SPACING.double;
 
-const FooterButton = ({ Icon, onPress }) => {
+const FooterButton = ({ Icon, onPress, color, size = 32 }) => {
   return (
-    <BorderlessButton onPress={onPress}>
-      <View style={footerButtonStyles.container}>
-        <Icon style={footerButtonStyles.icon} size={32} />
-      </View>
-    </BorderlessButton>
+    <IconButton
+      size={size}
+      Icon={Icon}
+      color={color}
+      type="shadow"
+      onPress={onPress}
+    />
   );
 };
 
-const nextButtonStyles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.normal,
-    height: 60,
-    width: 60,
-    borderRadius: 30,
-    backgroundColor: COLORS.primary
-  },
-  icon: {
-    color: "white",
-    marginLeft: 0
-  }
-});
-
 const NextButton = ({ onPress }) => {
   return (
-    <BorderlessButton onPress={onPress}>
-      <View style={nextButtonStyles.container}>
-        <IconChevronRight style={nextButtonStyles.icon} size={32} />
-      </View>
-    </BorderlessButton>
+    <IconButton
+      size={24}
+      type="fill"
+      onPress={onPress}
+      Icon={IconSend}
+      backgroundColor={COLORS.secondary}
+    />
   );
 };
 
@@ -72,7 +52,8 @@ const styles = StyleSheet.create({
     height: MAX_POST_HEIGHT
   },
   footerSide: {
-    flexDirection: "row"
+    flexDirection: "row",
+    alignItems: "flex-end"
   },
   safeWrapper: {
     borderRadius: 12,
@@ -81,11 +62,12 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   container: {
-    backgroundColor: "#111"
+    backgroundColor: "#fff"
   },
   wrapper: {
     position: "relative",
     justifyContent: "center",
+    backgroundColor: "#fff",
     alignItems: "center",
     width: "100%",
     height: "100%"
@@ -93,13 +75,27 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     position: "absolute",
-    bottom: SPACING.normal,
+    bottom: 0,
+    paddingHorizontal: SPACING.double,
     left: 0,
     right: 0,
     height: 60,
     justifyContent: "space-between"
+  },
+  layerStyles: {
+    position: "absolute",
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0
   }
 });
+
+enum LayerZIndex {
+  sheet = 1,
+  icons = 2,
+  footer = 2
+}
 
 type BlockListProps = {
   blocks: Array<PostBlockType>;
@@ -134,6 +130,59 @@ const BlockList = ({ blocks, setBlockAtIndex }: BlockListProps) => {
     }
   });
 };
+
+const MiddleSheet = ({ width, height }) => {
+  return (
+    <LinearGradient
+      useAngle
+      width={width}
+      height={height}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 0 }}
+      angle={270.32}
+      angleCenter={{ x: 0.5, y: 0.5 }}
+      locations={[0.2742, 0.75]}
+      colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0)"]}
+    />
+  );
+};
+
+const Layer = ({
+  zIndex,
+  isShown = true,
+  pointerEvents = "box-none",
+  children,
+  isFrozen,
+  width,
+  height
+}) => {
+  if (!isShown) {
+    return null;
+  }
+
+  return (
+    <Animated.View
+      pointerEvents={pointerEvents}
+      needsOffscreenAlphaCompositing={isFrozen}
+      shouldRasterizeIOS={isFrozen}
+      renderToHardwareTextureAndroid={isFrozen}
+      style={[
+        StyleSheet.absoluteFillObject,
+        {
+          width,
+          height,
+          zIndex,
+          alignSelf: "stretch",
+          overflow: "visible",
+          backgroundColor: "transparent"
+        }
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+};
+
 export class PostEditor extends React.Component {
   constructor(props) {
     super(props);
@@ -169,31 +218,64 @@ export class PostEditor extends React.Component {
   render() {
     const { post } = this.props;
     return (
-      <SafeAreaView style={[styles.wrapper]}>
+      <View style={[styles.wrapper]}>
         <View style={[styles.safeWrapper, styles.scrollContainer]}>
-          <ScrollView style={[styles.container, styles.scrollContainer]}>
+          <ScrollView
+            directionalLockEnabled
+            horizontal={false}
+            vertical
+            alwaysBounceVertical={false}
+            style={{ width: POST_WIDTH, height: MAX_POST_HEIGHT }}
+            contentContainerStyle={[
+              {
+                borderTopLeftRadius: 12,
+                borderTopRightRadius: 12,
+                flex: 0,
+                backgroundColor: "#fff"
+              }
+            ]}
+          >
             <BlockList
               blocks={post.blocks}
               setBlockAtIndex={this.handleChangeBlock}
             />
           </ScrollView>
 
-          <View style={styles.footer}>
-            <View style={[styles.footerSide]}>
-              <FooterButton
-                Icon={IconUploadPhoto}
-                onPress={this.handleAddPhoto}
-              />
+          <Layer
+            zIndex={LayerZIndex.sheet}
+            width={POST_WIDTH}
+            isFrozen
+            pointerEvents="none"
+            height={MAX_POST_HEIGHT}
+          >
+            <MiddleSheet width={POST_WIDTH} height={MAX_POST_HEIGHT} />
+          </Layer>
 
-              <FooterButton Icon={IconText} onPress={this.handleInsertText} />
-            </View>
+          <Layer zIndex={LayerZIndex.icons}>
+            <Toolbar />
+          </Layer>
 
-            <View style={[styles.footerSide, styles.footerSideRight]}>
-              <NextButton />
-            </View>
-          </View>
+          <Layer zIndex={LayerZIndex.footer} width={"100%"}>
+            <SafeAreaView
+              forceInset={{
+                top: "never",
+                left: "never",
+                right: "never",
+                bottom: "always"
+              }}
+              style={styles.footer}
+            >
+              <View style={[styles.footerSide]}>
+                <IconButton Icon={IconDownload} color="#000" size={32} />
+              </View>
+
+              <View style={[styles.footerSide, styles.footerSideRight]}>
+                <NextButton />
+              </View>
+            </SafeAreaView>
+          </Layer>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 }

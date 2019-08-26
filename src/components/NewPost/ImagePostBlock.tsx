@@ -30,7 +30,12 @@ export class ImagePostBlock extends React.Component<Props> {
     const { block } = this.props;
 
     return (
-      <View style={[styles.container, { height: block.value.height }]}>
+      <View
+        style={[
+          styles.container,
+          { height: block.value.height, backgroundColor: "transparent" }
+        ]}
+      >
         <Image
           source={block.value.src}
           resizeMode="contain"

@@ -1,6 +1,6 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Dimensions, View, StyleSheet } from "react-native";
+import { Dimensions, View, StyleSheet, StatusBar } from "react-native";
 import { Transition, Transitioning } from "react-native-reanimated";
 import { resizeImage } from "../../lib/imageResize";
 import { ImageCropper } from "./ImageCropper";
@@ -14,6 +14,9 @@ import { IconButton } from "../Button";
 import { IconBack } from "../Icon";
 import { SafeAreaView } from "react-navigation";
 import { getInset } from "react-native-safe-area-view";
+import DeviceInfo from "react-native-device-info";
+
+const IS_SIMULATOR = DeviceInfo.isEmulator();
 
 const TOP_Y = getInset("top");
 
@@ -116,7 +119,12 @@ const NewPostHeader = ({ onBack, showLabel, float }) => {
   return (
     <View style={float ? [styles.header, styles.headerFloat] : styles.header}>
       <View style={styles.backButton}>
-        <IconButton onPress={onBack} type="shadow" size={24} Icon={IconBack} />
+        <IconButton
+          onPress={onBack}
+          type={float ? "shadow" : "plain"}
+          size={24}
+          Icon={IconBack}
+        />
       </View>
       <View pointerEvents="none" style={styles.titleContainer}>
         {showLabel && (
@@ -130,11 +138,13 @@ const NewPostHeader = ({ onBack, showLabel, float }) => {
   );
 };
 
+const DEVELOPMENT_STEP = NewPostStep.editPhoto;
+
 export class NewPost extends React.Component<{}, State> {
   state = {
     post: DEFAULT_POST_FIXTURE,
     defaultPhoto: DEFAULT_PHOTO_FIXTURE,
-    step: NewPostStep.editPhoto
+    step: IS_SIMULATOR ? DEVELOPMENT_STEP : NewPostStep.choosePhoto
   };
 
   handleChangePost = post => this.setState({ post });
@@ -199,6 +209,17 @@ export class NewPost extends React.Component<{}, State> {
     this.stepContainerRef.current.animateNextTransition();
   };
 
+  handleBack = () => {
+    const { step } = this.state;
+
+    if (step === NewPostStep.choosePhoto) {
+    } else if (step === NewPostStep.editPhoto) {
+      this.setState({ step: NewPostStep.resizePhoto });
+    } else if (step === NewPostStep.resizePhoto) {
+      this.setState({ step: NewPostStep.choosePhoto });
+    }
+  };
+
   stepContainerRef = React.createRef();
 
   render() {
@@ -206,9 +227,11 @@ export class NewPost extends React.Component<{}, State> {
     const isHeaderFloating = step === NewPostStep.choosePhoto;
     return (
       <View style={styles.page}>
+        <StatusBar hidden showHideTransition="slide" />
+
         <NewPostHeader
           float={isHeaderFloating}
-          key={step}
+          onBack={this.handleBack}
           showLabel={step !== NewPostStep.choosePhoto}
         />
         <Transitioning.View

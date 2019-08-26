@@ -106,10 +106,17 @@ export const IconButton = ({
   Icon,
   type = "plain",
   backgroundColor,
+  style,
+  iconStyle,
+  color,
   size = 24
 }) => {
-  const containerStyles = [buttonStyles.container];
-  const iconStyles = [buttonStyles.icon];
+  const containerStyles = [style, buttonStyles.container];
+  const iconStyles = [iconStyle, buttonStyles.icon];
+
+  if (color) {
+    iconStyles.push({ color });
+  }
 
   if (type === "fill") {
     const containerSize = size * 2.5;

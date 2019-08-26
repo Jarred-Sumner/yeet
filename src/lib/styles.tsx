@@ -2,8 +2,8 @@ export const COLORS = {
   primary: "#8249DA",
   primaryDark: "#753ECB",
   error: "#FF7575",
-  secondaryOpacity: "rgba(64, 0, 244, 0.9)",
-  secondary: "rgba(64, 0, 244, 1)"
+  secondaryOpacity: "rgba(26, 145, 255, 0.9)",
+  secondary: "#1A91FF"
 };
 
 export const SPACING = {
