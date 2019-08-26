@@ -44,7 +44,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Some description</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Some description</string>
+	<string/>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Some description</string>
 	<key>NSAppleMusicUsageDescription</key>
@@ -55,8 +55,6 @@
 	<string>Share photos/videos with the community on yeet and participate in challenges</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Share photos/videos with the community on yeet and participate in challenges</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>iconfont.ttf</string>

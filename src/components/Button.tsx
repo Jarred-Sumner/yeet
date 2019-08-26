@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
+import { BorderlessButton } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
   primaryColor: {
@@ -71,5 +72,66 @@ export const Button = ({ children, onPress, disabled, style }) => {
         <SemiBoldText style={styles.buttonText}>{children}</SemiBoldText>
       </Animated.View>
     </TouchableWithoutFeedback>
+  );
+};
+
+const buttonStyles = StyleSheet.create({
+  container: {
+    flexDirection: "row",
+    alignItems: "center",
+    overflow: "visible",
+    justifyContent: "center"
+  },
+  fill: {
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  icon: {
+    color: "white"
+  },
+  iconShadow: {
+    textShadowColor: "black",
+    textShadowRadius: 2,
+    padding: 2,
+    overflow: "visible",
+    textShadowOffset: {
+      width: 0,
+      height: 0
+    }
+  }
+});
+
+export const IconButton = ({
+  onPress,
+  Icon,
+  type = "plain",
+  backgroundColor,
+  size = 24
+}) => {
+  const containerStyles = [buttonStyles.container];
+  const iconStyles = [buttonStyles.icon];
+
+  if (type === "fill") {
+    const containerSize = size * 2.5;
+    containerStyles.push(buttonStyles.fill);
+    containerStyles.push({
+      backgroundColor,
+      width: containerSize,
+      height: containerSize,
+      borderRadius: containerSize / 2
+    });
+  } else if (type === "shadow") {
+    iconStyles.push(buttonStyles.iconShadow);
+  }
+
+  return (
+    <BorderlessButton
+      hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
+      onPress={onPress}
+    >
+      <View style={containerStyles}>
+        <Icon style={iconStyles} size={size} />
+      </View>
+    </BorderlessButton>
   );
 };

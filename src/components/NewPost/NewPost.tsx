@@ -1,113 +1,23 @@
-import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  TouchableOpacity
-} from "react-native";
 import CameraRoll from "@react-native-community/cameraroll";
-import {
-  NewPostType,
-  PLACEHOLDER_POST,
-  PostBlockType,
-  DEFAULT_TEXT_BACKGROUND_COLOR,
-  DEFAULT_TEXT_COLOR
-} from "./NewPostFormat";
-import { TextPostBlock } from "./TextPostBlock";
-import { SafeAreaView } from "react-navigation";
-import { SPACING, COLORS } from "../../lib/styles";
-import { IconUploadPhoto, IconText, IconChevronRight } from "../Icon";
-import { ImagePicker } from "./ImagePicker";
+import * as React from "react";
+import { Dimensions, View, StyleSheet } from "react-native";
+import { Transition, Transitioning } from "react-native-reanimated";
+import { resizeImage } from "../../lib/imageResize";
 import { ImageCropper } from "./ImageCropper";
+import { ImagePicker } from "./ImagePicker";
+import { NewPostType, PLACEHOLDER_POST } from "./NewPostFormat";
+import { PostEditor, POST_WIDTH } from "./PostEditor";
+import { PixelRatio } from "react-native";
+import { SPACING, COLORS } from "../../lib/styles";
+import { SemiBoldText } from "../Text";
+import { IconButton } from "../Button";
+import { IconBack } from "../Icon";
+import { SafeAreaView } from "react-navigation";
 import { getInset } from "react-native-safe-area-view";
 
 const TOP_Y = getInset("top");
-const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
-
-const CONTENT_WIDTH = SCREEN_DIMENSIONS.width - SPACING.normal;
-
-const footerButtonStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: SPACING.normal,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 60,
-    backgroundColor: "rgba(64, 0, 244, 0.1)"
-  },
-  icon: {
-    color: "white"
-  }
-});
-
-const FooterButton = ({ Icon, onPress }) => {
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <View style={footerButtonStyles.container}>
-        <Icon style={footerButtonStyles.icon} size={32} />
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-const nextButtonStyles = StyleSheet.create({
-  container: {
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: SPACING.normal,
-    height: 47,
-    width: 47,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary
-  },
-  icon: {
-    color: "white",
-    marginLeft: 0
-  }
-});
-
-const NextButton = ({ onPress }) => {
-  return (
-    <TouchableOpacity onPress={onPress}>
-      <View style={nextButtonStyles.container}>
-        <IconChevronRight style={nextButtonStyles.icon} size={24} />
-      </View>
-    </TouchableOpacity>
-  );
-};
-
-const styles = StyleSheet.create({
-  scrollContainer: {
-    width: CONTENT_WIDTH,
-    height: 600
-  },
-  footerSide: {
-    flexDirection: "row"
-  },
-  safeWrapper: {
-    borderRadius: 16,
-    marginHorizontal: SPACING.half,
-    overflow: "hidden"
-  },
-  container: {
-    backgroundColor: "#111"
-  },
-  wrapper: {
-    position: "relative",
-    marginTop: SPACING.double,
-    flex: 1
-  },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: "row",
-    justifyContent: "space-between"
-  }
-});
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -121,31 +31,6 @@ type State = {
   step: NewPostStep;
 };
 
-type BlockListProps = {
-  blocks: Array<PostBlockType>;
-  setBlockAtIndex: (block: PostBlockType, index: number) => void;
-};
-const BlockList = ({ blocks, setBlockAtIndex }: BlockListProps) => {
-  const handleChangeBlock = React.useCallback(
-    index => block => setBlockAtIndex(block, index),
-    [setBlockAtIndex, blocks]
-  );
-
-  return blocks.map((block, index) => {
-    if (block.type === "text") {
-      return (
-        <TextPostBlock
-          key={index}
-          block={block}
-          onChange={handleChangeBlock(index)}
-        />
-      );
-    } else {
-      return null;
-    }
-  });
-};
-
 const DEFAULT_PHOTO_FIXTURE = {
   node: {
     image: {
@@ -156,105 +41,215 @@ const DEFAULT_PHOTO_FIXTURE = {
   }
 };
 
+const DEFAULT_POST_FIXTURE = {
+  height: 600,
+  width: 414,
+  blocks: [
+    {
+      type: "image",
+      value: {
+        intrinsicWidth: 1242,
+        intrinsicHeight: 1656,
+        width: 406,
+        height: 541.3333333333334,
+        x: 0,
+        y: 0,
+        src: {
+          uri: "ph://22FFA291-2309-423F-B3CA-934E9E6E1DFF/L0/001",
+          width: 1242,
+          height: 1656.0000000000002
+        },
+        originalSrc: "ph://22FFA291-2309-423F-B3CA-934E9E6E1DFF/L0/001"
+      },
+      config: {}
+    }
+  ]
+};
+
+const styles = StyleSheet.create({
+  title: {
+    textAlign: "center",
+    fontSize: 16,
+    lineHeight: 16,
+    height: 30,
+    textAlignVertical: "center",
+    color: "#FFF"
+  },
+
+  page: {
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height
+  },
+  titleContainer: {
+    left: 0,
+    top: 0,
+    bottom: 0,
+    paddingTop: 12,
+    position: "absolute",
+    right: 0
+  },
+  header: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: SPACING.double,
+    overflow: "visible",
+    marginTop: TOP_Y,
+    height: 30,
+    flexShrink: 0,
+    position: "relative",
+    zIndex: 999
+  },
+  headerFloat: {
+    position: "absolute",
+    top: 0,
+    zIndex: 999
+  },
+
+  backButton: {
+    overflow: "visible",
+    paddingHorizontal: SPACING.normal
+  }
+});
+
+const NewPostHeader = ({ onBack, showLabel, float }) => {
+  return (
+    <View style={float ? [styles.header, styles.headerFloat] : styles.header}>
+      <View style={styles.backButton}>
+        <IconButton onPress={onBack} type="shadow" size={24} Icon={IconBack} />
+      </View>
+      <View pointerEvents="none" style={styles.titleContainer}>
+        {showLabel && (
+          <SemiBoldText pointerEvents="none" style={styles.title}>
+            Create
+          </SemiBoldText>
+        )}
+      </View>
+      <View />
+    </View>
+  );
+};
+
 export class NewPost extends React.Component<{}, State> {
   state = {
-    post: PLACEHOLDER_POST,
+    post: DEFAULT_POST_FIXTURE,
     defaultPhoto: DEFAULT_PHOTO_FIXTURE,
-    step: NewPostStep.resizePhoto
+    step: NewPostStep.editPhoto
   };
 
-  handleChangeBlock = (block: PostBlockType, index: number) => {
-    const blocks = [...this.state.post.blocks];
-    blocks.splice(index, 1, block);
-
-    this.setState({
-      post: {
-        ...this.state.post,
-        blocks
-      }
-    });
-  };
+  handleChangePost = post => this.setState({ post });
 
   handleChoosePhoto = (photo: CameraRoll.PhotoIdentifier) => {
     this.setState({
       step: NewPostStep.resizePhoto,
       defaultPhoto: photo
     });
+    this.stepContainerRef.current.animateNextTransition();
   };
 
-  handleInsertText = () => {
-    const blocks = [...this.state.post.blocks];
-    blocks.push({
-      type: "text",
-      value: "",
-      config: {
-        backgroundColor: DEFAULT_TEXT_BACKGROUND_COLOR,
-        color: DEFAULT_TEXT_COLOR
-      }
+  handleEditPhoto = async ({ top, bottom, height, width, x }) => {
+    const image = this.state.defaultPhoto.node.image;
+
+    const displaySize = {
+      width: POST_WIDTH,
+      height: (height - Math.abs(bottom) - top) * (POST_WIDTH / width)
+    };
+
+    const croppedPhoto = await resizeImage({
+      top,
+      bottom,
+      height,
+      uri: image.uri,
+      width,
+      originalWidth: image.width,
+      originalHeight: image.height,
+      displaySize
     });
+
+    const post = {
+      ...this.state.post,
+      blocks: [
+        {
+          type: "image",
+          value: {
+            intrinsicWidth: image.width,
+            intrinsicHeight: image.height,
+            ...displaySize,
+            x: 0,
+            y: 0,
+            src: croppedPhoto.source,
+            originalSrc: image.uri
+          },
+          config: {}
+        }
+      ]
+    };
 
     this.setState({
-      post: {
-        ...this.state.post,
-        blocks
-      }
+      step: NewPostStep.editPhoto,
+      croppedPhoto,
+      post
     });
+    console.log(JSON.stringify(post));
+    this.stepContainerRef.current.animateNextTransition();
   };
 
+  handleBackToChoosePhoto = () => {
+    this.setState({ step: NewPostStep.choosePhoto });
+    this.stepContainerRef.current.animateNextTransition();
+  };
+
+  stepContainerRef = React.createRef();
+
   render() {
+    const { step } = this.state;
+    const isHeaderFloating = step === NewPostStep.choosePhoto;
+    return (
+      <View style={styles.page}>
+        <NewPostHeader
+          float={isHeaderFloating}
+          key={step}
+          showLabel={step !== NewPostStep.choosePhoto}
+        />
+        <Transitioning.View
+          ref={this.stepContainerRef}
+          transition={
+            <Transition.Sequence>
+              <Transition.In type="fade" />
+              <Transition.Out type="fade" />
+            </Transition.Sequence>
+          }
+          style={{ width: "100%", flex: 1 }}
+        >
+          {this.renderStep()}
+        </Transitioning.View>
+      </View>
+    );
+  }
+
+  renderStep() {
     const { step } = this.state;
 
     if (step === NewPostStep.editPhoto) {
       return (
-        <View style={[styles.wrapper]}>
-          <SafeAreaView
-            style={[styles.safeWrapper, styles.scrollContainer]}
-            forceInsets={{
-              top: "always",
-              left: "never",
-              right: "never",
-              bottom: "never"
-            }}
-          >
-            <ScrollView style={[styles.container, styles.scrollContainer]}>
-              <BlockList
-                blocks={this.state.post.blocks}
-                setBlockAtIndex={this.handleChangeBlock}
-              />
-            </ScrollView>
-            <View style={styles.footer}>
-              <View style={[styles.footerSide]}>
-                <FooterButton
-                  Icon={IconUploadPhoto}
-                  onPress={this.handleAddPhoto}
-                />
-
-                <FooterButton Icon={IconText} onPress={this.handleInsertText} />
-              </View>
-
-              <View style={[styles.footerSide, styles.footerSideRight]}>
-                <NextButton />
-              </View>
-            </View>
-          </SafeAreaView>
-        </View>
+        <PostEditor post={this.state.post} onChange={this.handleChangePost} />
       );
     } else if (step === NewPostStep.choosePhoto) {
       return (
-        <View
-          style={{
-            height: SCREEN_DIMENSIONS.height
-          }}
-        >
-          <ImagePicker
-            height={SCREEN_DIMENSIONS.height}
-            width={SCREEN_DIMENSIONS.width}
-            onChange={this.handleChoosePhoto}
-          />
-        </View>
+        <ImagePicker
+          height={SCREEN_DIMENSIONS.height}
+          width={POST_WIDTH}
+          onChange={this.handleChoosePhoto}
+        />
       );
     } else if (step === NewPostStep.resizePhoto) {
-      return <ImageCropper photo={this.state.defaultPhoto} />;
+      return (
+        <ImageCropper
+          photo={this.state.defaultPhoto}
+          onDone={this.handleEditPhoto}
+          onBack={this.handleBackToChoosePhoto}
+        />
+      );
     } else {
       return null;
     }

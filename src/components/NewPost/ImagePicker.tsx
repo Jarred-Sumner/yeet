@@ -232,7 +232,13 @@ export class ImagePicker extends React.Component<Props, State> {
           initialNumToRender={Math.floor(PAGE_LENGTH * 1.5)}
           renderItem={this.handleRenderItem}
           numColumns={NUM_COLUMNS}
-          style={{ width, height }}
+          style={{
+            width,
+            height,
+            flexGrow: 0,
+            flexShrink: 0
+          }}
+          contentInsetAdjustmentBehavior="never"
           ListHeaderComponent={ListHeaderComponent}
           removeClippedSubviews
           columnWrapperStyle={styles.row}

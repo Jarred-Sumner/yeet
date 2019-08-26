@@ -62,131 +62,6 @@ const {
   interpolate
 } = Animated;
 
-const runOpacityTimer = (
-  clock,
-  yOffsetGestureState,
-  heightGestureState,
-  onValue = 0.4,
-  offValue = 1,
-  yOffsetValue,
-  bottomOffsetValue
-) => {
-  const state = {
-    finished: new Value(0),
-    position: new Value(0),
-    time: new Value(0),
-    frameTime: new Value(0)
-  };
-
-  const config = {
-    duration: new Value(300),
-    toValue: new Value(-1),
-    easing: Easing.linear
-  };
-
-  return block([
-    cond(
-      or(
-        and(
-          or(
-            eq(yOffsetGestureState, GestureState.BEGAN),
-            eq(yOffsetGestureState, GestureState.ACTIVE)
-          ),
-          neq(config.toValue, 1)
-        ),
-        and(
-          or(
-            eq(heightGestureState, GestureState.BEGAN),
-            eq(heightGestureState, GestureState.ACTIVE)
-          ),
-          neq(config.toValue, 1)
-        )
-      ),
-      [
-        set(state.finished, 0),
-        set(state.time, 0),
-        set(state.frameTime, 0),
-        set(config.duration, 100),
-        set(config.toValue, 1),
-        startClock(clock)
-      ]
-    ),
-    cond(
-      or(
-        and(eq(yOffsetGestureState, GestureState.END), neq(config.toValue, 0)),
-        and(eq(heightGestureState, GestureState.END), neq(config.toValue, 0))
-      ),
-      [
-        set(state.finished, 0),
-        set(state.time, 0),
-        set(state.frameTime, 0),
-        set(config.duration, 300),
-        set(config.toValue, 0),
-        startClock(clock)
-      ]
-    ),
-    Animated.timing(clock, state, config),
-    cond(state.finished, stopClock(clock)),
-    interpolate(state.position, {
-      inputRange: [0, 1],
-      outputRange: [offValue, onValue],
-      extrapolate: Extrapolate.CLAMP
-    })
-  ]);
-};
-
-const runResizeTimer = (
-  clock,
-  heightValue,
-  pendingHeightValue,
-  yOffsetValue,
-  pendingYOffsetValue
-) => {
-  const state = {
-    finished: new Value(0),
-    position: new Value(0),
-    time: new Value(0),
-    frameTime: new Value(0)
-  };
-
-  const config = {
-    duration: 300,
-    toValue: new Value(-1),
-    easing: Easing.inOut(Easing.ease)
-  };
-
-  return block([
-    cond(neq(config.toValue, 1), [
-      set(state.finished, 0),
-      set(state.time, 0),
-      set(state.frameTime, 0),
-      set(config.toValue, 1),
-      startClock(clock)
-    ]),
-    cond(neq(config.toValue, 0), [
-      set(state.finished, 0),
-      set(state.time, 0),
-      set(state.frameTime, 0),
-      set(config.toValue, 0),
-      startClock(clock)
-    ]),
-    Animated.timing(clock, state, config),
-    cond(state.finished, stopClock(clock)),
-    interpolate(state.position, {
-      inputRange: [0, 1],
-      outputRange: [get(pendingHeightValue)],
-      extrapolate: Extrapolate.CLAMP
-    })
-  ]);
-};
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
-
-const TOP_INSET = getInset("top");
-const BOTTOM_INSET = getInset("bottom");
-
-const TOP_IMAGE_Y = TOP_INSET + SPACING.double;
-
 const ENABLE_DEBUG_MODE = false;
 const USE_NATIVE_DRIVER = true;
 
@@ -200,7 +75,7 @@ const RESIZE_BAR_HEIGHT = 14;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flex: 0,
     width: "100%",
     flexDirection: "row",
     justifyContent: "center",
@@ -318,7 +193,7 @@ const ResizeBar = React.forwardRef(
             backgroundColor: "black",
             width: "100%",
             height: max,
-            opacity: 1,
+            opacity: 0.8,
             zIndex: 3,
             top: side === "top" ? max * -1 : undefined,
             bottom: side === "bottom" ? max * -1 : undefined,
@@ -374,39 +249,25 @@ export class ResizableImage extends React.Component<Props> {
       maxHeight
     );
 
-    const maxCrop = {
-      ...calculateAspectRatioFit(
-        originalPhoto.width,
-        originalPhoto.height,
-        maxWidth,
-        maxHeight
-      ),
-      x: 0,
-      y: 0
-    };
-
     const crop = {
       width,
       height,
       x: 0,
-      y: maxCrop.height - height
+      top: 0,
+      bottom: 0
     };
-    maxCrop.y = crop.y;
 
     // const height = photo.height * (_height - photo.
 
     this.height = height;
     this.heightValue = new Animated.Value(height);
-    this._yOffsetValue.setValue(crop.y / 2);
-    this._bottomOffsetValue.setValue(
-      ((photo.height - originalPhoto.height) / originalPhoto.height) *
-        crop.height
-    );
+    this._yOffsetValue.setValue(0);
+    this._bottomOffsetValue.setValue(0);
 
     this.yOffsetValue = limit(
       preserveOffset(this._yOffsetValue, this.yOffsetGestureState),
       this.yOffsetGestureState,
-      crop.y === 0 ? 0 : crop.y / -2,
+      crop.top === 0 ? 0 : crop.top / -2,
       Animated.max(sub(this.heightValue, this.bottomOffsetValue), 10)
     );
 
@@ -450,111 +311,25 @@ export class ResizableImage extends React.Component<Props> {
     );
 
     this.state = {
-      crop,
-      maxCrop
+      crop
     };
   }
 
-  // handleTranslateGesture = async event => {
-  //   if (event.nativeEvent.oldState === GestureState.ACTIVE) {
-  //     this.yOffset = clamp(
-  //       this.yOffsetMidpoint + this.yOffset + event.nativeEvent.translationY,
-  //       0,
-  //       this.state.maxCrop.height - 10
-  //     );
-  //     this.yOffsetValue.setOffset(this.yOffset);
-  //     this.yOffsetValue.setValue(0);
-  //   }
-
-  //   const gestureState = event.nativeEvent.state;
-
-  //   if (this.state.crop.y !== 0 && gestureState === GestureState.BEGAN) {
-  //     Animated.timing(this.backdropOpacityValue, {
-  //       toValue: 1,
-  //       useNativeDriver: true,
-  //       duration: ANIMATION_TIMING
-  //     }).start();
-  //   } else if (gestureState === GestureState.BEGAN) {
-  //     this.backdropOpacityValue.setValue(1);
-  //   }
-
-  //   if (
-  //     [
-  //       GestureState.CANCELLED,
-  //       GestureState.FAILED,
-  //       GestureState.UNDETERMINED
-  //     ].includes(gestureState)
-  //   ) {
-  //     Animated.timing(this.backdropOpacityValue, {
-  //       toValue: 0,
-  //       useNativeDriver: true,
-  //       duration: ANIMATION_TIMING
-  //     }).start();
-  //   }
-
-  //   if (event.nativeEvent.state === GestureState.END) {
-  //     this.handleVerticalResize({
-  //       side: "top"
-  //     });
-  //   }
-  // };
-
-  get yOffsetMidpoint() {
-    return this.state.crop.y / 2;
-  }
-
-  // handleHeightGesture = async event => {
-  //   if (event.nativeEvent.oldState === GestureState.ACTIVE) {
-  //     this.height = this.height + event.nativeEvent.translationY;
-  //     console.log(this.height);
-  //     this.heightValue.setOffset(this.height);
-  //     this.heightValue.setValue(0);
-  //   }
-
-  //   const gestureState = event.nativeEvent.state;
-
-  //   if (
-  //     this.state.crop.height !== this.state.maxCrop.height &&
-  //     gestureState === GestureState.BEGAN
-  //   ) {
-  //     Animated.timing(this.backdropOpacityValue, {
-  //       toValue: 1,
-  //       useNativeDriver: true,
-  //       duration: ANIMATION_TIMING
-  //     }).start();
-  //   } else if (gestureState === GestureState.BEGAN) {
-  //     this.backdropOpacityValue.setValue(1);
-  //   }
-
-  //   if (
-  //     [
-  //       GestureState.CANCELLED,
-  //       GestureState.FAILED,
-  //       GestureState.UNDETERMINED
-  //     ].includes(gestureState)
-  //   ) {
-  //     Animated.timing(this.backdropOpacityValue, {
-  //       toValue: 0,
-  //       useNativeDriver: true,
-  //       duration: ANIMATION_TIMING
-  //     }).start();
-  //   }
-
-  //   if (event.nativeEvent.state === GestureState.END) {
-  //     this.handleVerticalResize({ side: "bottom" });
-  //   }
-  // };
-
-  backdropOpacityValue = runOpacityTimer(
-    this.backdropOpacityClock,
-    this.yOffsetGestureState,
-    this.heightGestureState
-  );
   imageLoadedValue = new Animated.Value(0);
 
   handleCrop = ([yOffset, bottomOffset]) => {
-    this.props.onCrop(yOffset, bottomOffset, this.state.crop);
-    return 0;
+    this.setState({
+      crop: {
+        ...this.state.crop,
+        top: yOffset,
+        bottom: bottomOffset
+      }
+    });
+  };
+
+  currentCrop = () => {
+    console.log(this.state.crop);
+    return this.state.crop;
   };
 
   handleImageLoad = () => {
@@ -570,7 +345,7 @@ export class ResizableImage extends React.Component<Props> {
       source,
       originalSource
     } = this.props;
-    const { crop, maxCrop } = this.state;
+    const { crop } = this.state;
 
     return (
       <Animated.View
@@ -597,7 +372,7 @@ export class ResizableImage extends React.Component<Props> {
                       this.handleCrop
                     )
                   ]),
-                  400
+                  100
                 )
               )
             ]);
@@ -625,24 +400,12 @@ export class ResizableImage extends React.Component<Props> {
               }
             ]}
           >
-            <ResizeBar
-              side="top"
-              yOffset={this.yOffsetValue}
-              min={crop.y * -1}
-              height={maxCrop.height}
-              max={maxCrop.height - 10}
-              width={maxCrop.width}
-              onGestureEvent={this.onTranslateY}
-              onHandlerStateChange={this.onTranslateY}
-            />
-
             <Animated.View
               style={[
                 styles.content,
                 {
                   width: crop.width,
                   height: crop.height,
-                  marginBottom: this.bottomOffsetValue,
                   overflow: "visible",
 
                   alignItems: "center",
@@ -651,6 +414,17 @@ export class ResizableImage extends React.Component<Props> {
                 }
               ]}
             >
+              <ResizeBar
+                side="top"
+                yOffset={this.yOffsetValue}
+                min={crop.top * -1}
+                height={crop.height}
+                max={crop.height}
+                width={crop.width}
+                onGestureEvent={this.onTranslateY}
+                onHandlerStateChange={this.onTranslateY}
+              />
+
               <Animated.Image
                 source={source}
                 pointerEvents="none"
@@ -660,16 +434,6 @@ export class ResizableImage extends React.Component<Props> {
                   width: crop.width,
                   height: crop.height
                 }}
-              />
-              <ResizeBar
-                side="top"
-                yOffset={this.yOffsetValue}
-                min={0}
-                height={crop.height}
-                max={crop.height}
-                width={crop.width}
-                onGestureEvent={this.onTranslateY}
-                onHandlerStateChange={this.onTranslateY}
               />
 
               <ResizeBar

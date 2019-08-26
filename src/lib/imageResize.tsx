@@ -1,6 +1,6 @@
 import path from "path";
 import RNFetchBlob from "rn-fetch-blob";
-import { Image, ImageEditor } from "react-native";
+import { Image, ImageEditor, PixelRatio } from "react-native";
 
 export const getLocalURI = async (_uri: string | Object) => {
   const uri = typeof _uri === "string" ? _uri : _uri.uri;
@@ -23,10 +23,12 @@ export const resizeImage = async ({
   uri: _uri,
   width,
   height,
-  y,
+  top = 0,
+  bottom = 0,
   x = 0,
   originalWidth,
-  originalHeight
+  originalHeight,
+  displaySize
 }) => {
   const multiplier = originalWidth / width;
 
@@ -35,16 +37,18 @@ export const resizeImage = async ({
   const cropDimensions = {
     size: {
       width: width * multiplier,
-      height: height * multiplier
+      height: (height - Math.abs(bottom)) * multiplier
     },
     offset: {
-      y: y * multiplier,
+      y: top * multiplier,
       x: x * multiplier
     },
-    resizeMode: "stretch"
+    resizeMode: "stretch",
+    displaySize: {
+      width: PixelRatio.getPixelSizeForLayoutSize(displaySize.width),
+      height: PixelRatio.getPixelSizeForLayoutSize(displaySize.height)
+    }
   };
-
-  console.log(cropDimensions);
 
   return new Promise((resolve, reject) => {
     ImageEditor.cropImage(
@@ -52,12 +56,14 @@ export const resizeImage = async ({
       cropDimensions,
       newUri => {
         console.log("HI");
+        const source = Image.resolveAssetSource({
+          uri: newUri,
+          width: cropDimensions.size.width,
+          height: cropDimensions.size.height
+        });
         return resolve({
-          ...Image.resolveAssetSource({
-            uri: newUri,
-            width: cropDimensions.size.width,
-            height: cropDimensions.size.height
-          }),
+          ...source,
+          source,
           ...cropDimensions.offset
         });
       },
