@@ -98,7 +98,8 @@ export const buildImageBlock = ({
       x: 0,
       y: 0,
       src: croppedPhoto.source,
-      originalSrc: image.uri
+      originalSrc: image.uri,
+      uri: croppedPhoto.uri
     },
     config: {}
   };

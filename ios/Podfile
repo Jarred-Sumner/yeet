@@ -48,5 +48,10 @@ target 'yeet' do
 
 
 
+  pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios'
+  pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas'
+
+  pod 'RNFS', :path => '../node_modules/react-native-fs'
+
 end
 

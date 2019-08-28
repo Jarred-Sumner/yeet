@@ -11,6 +11,7 @@ export const Block = React.forwardRef(
       onFocus,
       onBlur,
       onLayout,
+      annotations,
       disabled
     }: {
       block: PostBlock;
@@ -30,7 +31,8 @@ export const Block = React.forwardRef(
           onChange={onChange}
           onBlur={onBlur}
           onFocus={onFocus}
-        />
+          annotations={annotations}
+        ></TextPostBlock>
       );
     } else if (block.type === "image") {
       return (
@@ -41,7 +43,8 @@ export const Block = React.forwardRef(
           block={block}
           onBlur={onBlur}
           onChange={onChange}
-        />
+          annotations={annotations}
+        ></ImagePostBlock>
       );
     } else {
       return null;

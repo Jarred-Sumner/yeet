@@ -11,7 +11,6 @@ import {
 } from "react-native-gesture-handler";
 import { COLORS, SPACING } from "../../../lib/styles";
 import { TextInput } from "../Text/TextInput";
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -104,6 +103,7 @@ export class TextLayer extends React.Component {
         <TapGestureHandler
           waitFor={waitFor}
           onHandlerStateChange={this.toggleActive}
+          enabled={this.props.isTappingEnabled}
         >
           <Animated.View
             ref={nodeListRef}

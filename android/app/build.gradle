@@ -188,6 +188,9 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-fs')
+    implementation project(':@terrylinla_react-native-sketch-canvas')
+    implementation project(':react-native-text-detector')
     implementation project(':react-native-photo-manipulator')
     implementation project(':react-native-text-input-mask')
     implementation project(':react-native-secure-key-store')

@@ -68,6 +68,8 @@ const DEFAULT_POST_FIXTURE = {
           width: 1125,
           height: 1652.1944444444443
         },
+        uri:
+          "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/470770B1-570C-4013-9FAB-5228188A37B3/Library/Caches/C148C0A7-45AE-4B96-AC82-A01AD16D6815.png",
         originalSrc: "https://i.imgur.com/CopIMxf.jpg"
       },
       config: {}
@@ -185,8 +187,8 @@ export class NewPost extends React.Component<{}, State> {
       uri: image.uri,
       width,
       originalWidth: image.width,
-      originalHeight: image.height,
-      displaySize
+      originalHeight: image.height
+      // displaySize
     });
 
     const post = {

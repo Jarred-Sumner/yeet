@@ -6,6 +6,7 @@ import {
 } from "./NewPostFormat";
 import { SPACING } from "../../lib/styles";
 import { fontStyleSheets } from "../Text";
+import RNTextDetector from "react-native-text-detector";
 
 type Props = {
   block: ImagePostBlockType;
@@ -34,17 +35,23 @@ export class ImagePostBlock extends React.Component<Props> {
         onLayout={onLayout}
         style={[
           styles.container,
-          { height: block.value.height, backgroundColor: "transparent" }
+          {
+            height: block.value.height,
+            backgroundColor: "transparent",
+            position: "absolute"
+          }
         ]}
       >
         <Image
           source={block.value.src}
-          resizeMode="contain"
+          resizeMode="stretch"
           style={{
             width: block.value.width,
             height: block.value.height
           }}
         />
+
+        {this.props.children}
       </View>
     );
   }

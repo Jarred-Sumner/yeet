@@ -37,6 +37,7 @@ import CameraRoll from "@react-native-community/cameraroll";
 import { PostPreview, EditableNodeList } from "./PostPreview";
 import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
 import DeviceInfo from "react-native-device-info";
+import { Redactor } from "./Redactor";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 const TOP_Y = getInset("top");
@@ -230,6 +231,9 @@ export class PostEditor extends React.Component<{}, State> {
   nodeListRef = React.createRef();
 
   handleTapNode = (node: EditableNode) => {
+    if (this.state.activeButton !== ToolbarButtonType.text) {
+      return;
+    }
     const { focusedNodeId } = this.state;
 
     if (focusedNodeId === node.block.id) {
@@ -374,8 +378,6 @@ export class PostEditor extends React.Component<{}, State> {
     );
 
     const result = await CameraRoll.saveToCameraRoll(combined, "photo");
-
-    console.log("Saved", result);
   };
 
   blankResizeRef = React.createRef();
@@ -438,14 +440,17 @@ export class PostEditor extends React.Component<{}, State> {
             zIndex={LayerZIndex.icons}
           >
             <TextLayer
-              footer={
-                <EditorFooter
-                  onPressDownload={this.handleDownload}
-                  onPressSend={this.handleSend}
-                />
-              }
+              // footer={
+              //   <EditorFooter
+              //     onPressDownload={this.handleDownload}
+              //     onPressSend={this.handleSend}
+              //   />
+              // }
               waitFor={[this.scrollRef]}
               width={sizeStyle.width}
+              isTappingEnabled={
+                this.state.activeButton === ToolbarButtonType.text
+              }
               height={sizeStyle.height}
               onPressToolbarButton={this.handlePressToolbarButton}
               isFocused={!!this.state.focusedNodeId}
@@ -454,21 +459,25 @@ export class PostEditor extends React.Component<{}, State> {
               activeButton={this.state.activeButton}
               nodeListRef={this.nodeListRef}
             >
-              <EditableNodeList
-                inlineNodes={this.state.inlineNodes}
-                setNodeRef={this.setNodeRef}
-                focusedNodeId={this.state.focusedNodeId}
-                waitFor={[this.scrollRef]}
-                minX={bounds.x}
-                minY={bounds.y}
-                maxX={sizeStyle.width}
-                onFocus={this.handleFocusNode}
-                maxY={sizeStyle.height}
-                onTapNode={this.handleTapNode}
-                onlyShow={this.state.focusedNodeId}
-                onBlur={this.handleBlurNode}
-                onChangeNode={this.handleInlineNodeChange}
-              />
+              {this.state.activeButton === "text" ? (
+                <EditableNodeList
+                  inlineNodes={this.state.inlineNodes}
+                  setNodeRef={this.setNodeRef}
+                  focusedNodeId={this.state.focusedNodeId}
+                  waitFor={[this.scrollRef]}
+                  minX={bounds.x}
+                  minY={bounds.y}
+                  maxX={sizeStyle.width}
+                  onFocus={this.handleFocusNode}
+                  maxY={sizeStyle.height}
+                  onTapNode={this.handleTapNode}
+                  onlyShow={this.state.focusedNodeId}
+                  onBlur={this.handleBlurNode}
+                  onChangeNode={this.handleInlineNodeChange}
+                />
+              ) : (
+                <Redactor blocks={this.props.post.blocks} />
+              )}
             </TextLayer>
           </Layer>
         </View>
