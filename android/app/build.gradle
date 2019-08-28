@@ -188,6 +188,7 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-photo-manipulator')
     implementation project(':react-native-text-input-mask')
     implementation project(':react-native-secure-key-store')
     implementation project(':react-native-haptic-feedback')

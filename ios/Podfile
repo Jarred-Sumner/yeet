@@ -29,6 +29,7 @@ target 'yeet' do
   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
 
 
+
   use_native_modules!
   pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
 
@@ -43,6 +44,8 @@ target 'yeet' do
   pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback'
 
   pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios'
+
+
 
 
 end

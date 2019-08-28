@@ -5,7 +5,11 @@ import { Transition, Transitioning } from "react-native-reanimated";
 import { resizeImage } from "../../lib/imageResize";
 import { ImageCropper } from "./ImageCropper";
 import { ImagePicker } from "./ImagePicker";
-import { NewPostType, PLACEHOLDER_POST } from "./NewPostFormat";
+import {
+  NewPostType,
+  PLACEHOLDER_POST,
+  buildImageBlock
+} from "./NewPostFormat";
 import { PostEditor, POST_WIDTH } from "./PostEditor";
 import { PixelRatio } from "react-native";
 import { SPACING, COLORS } from "../../lib/styles";
@@ -19,6 +23,7 @@ import DeviceInfo from "react-native-device-info";
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
 const TOP_Y = getInset("top");
+const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -50,19 +55,20 @@ const DEFAULT_POST_FIXTURE = {
   blocks: [
     {
       type: "image",
+      id: "123ooo",
       value: {
-        intrinsicWidth: 1242,
-        intrinsicHeight: 1656,
-        width: 406,
-        height: 541.3333333333334,
+        intrinsicWidth: 1125,
+        intrinsicHeight: 2436,
+        width: 414,
+        height: 608.0075555555554,
         x: 0,
         y: 0,
         src: {
-          uri: "ph://22FFA291-2309-423F-B3CA-934E9E6E1DFF/L0/001",
-          width: 1242,
-          height: 1656.0000000000002
+          uri: "ph://4CAA6785-601B-40EA-8C79-03681553090B/L0/001",
+          width: 1125,
+          height: 1652.1944444444443
         },
-        originalSrc: "ph://22FFA291-2309-423F-B3CA-934E9E6E1DFF/L0/001"
+        originalSrc: "https://i.imgur.com/CopIMxf.jpg"
       },
       config: {}
     }
@@ -144,6 +150,13 @@ export class NewPost extends React.Component<{}, State> {
   state = {
     post: DEFAULT_POST_FIXTURE,
     defaultPhoto: DEFAULT_PHOTO_FIXTURE,
+    bounds: {
+      x: 0,
+      y: TOP_Y + SPACING.double + 30,
+      height:
+        SCREEN_DIMENSIONS.height - (TOP_Y + SPACING.double + 30) + BOTTOM_Y,
+      width: SCREEN_DIMENSIONS.width
+    },
     step: IS_SIMULATOR ? DEVELOPMENT_STEP : NewPostStep.choosePhoto
   };
 
@@ -178,21 +191,7 @@ export class NewPost extends React.Component<{}, State> {
 
     const post = {
       ...this.state.post,
-      blocks: [
-        {
-          type: "image",
-          value: {
-            intrinsicWidth: image.width,
-            intrinsicHeight: image.height,
-            ...displaySize,
-            x: 0,
-            y: 0,
-            src: croppedPhoto.source,
-            originalSrc: image.uri
-          },
-          config: {}
-        }
-      ]
+      blocks: [buildImageBlock({ image, croppedPhoto, displaySize })]
     };
 
     this.setState({
@@ -200,7 +199,6 @@ export class NewPost extends React.Component<{}, State> {
       croppedPhoto,
       post
     });
-    console.log(JSON.stringify(post));
     this.stepContainerRef.current.animateNextTransition();
   };
 
@@ -221,6 +219,9 @@ export class NewPost extends React.Component<{}, State> {
   };
 
   stepContainerRef = React.createRef();
+  updateBounds = ({ x, y, width, height }) => {
+    this.setState({ bounds: { x, y, width, height } });
+  };
 
   render() {
     const { step } = this.state;
@@ -243,6 +244,7 @@ export class NewPost extends React.Component<{}, State> {
             </Transition.Sequence>
           }
           style={{ width: "100%", flex: 1 }}
+          // onLayout={this.updateBounds}
         >
           {this.renderStep()}
         </Transitioning.View>
@@ -255,7 +257,11 @@ export class NewPost extends React.Component<{}, State> {
 
     if (step === NewPostStep.editPhoto) {
       return (
-        <PostEditor post={this.state.post} onChange={this.handleChangePost} />
+        <PostEditor
+          bounds={this.state.bounds}
+          post={this.state.post}
+          onChange={this.handleChangePost}
+        />
       );
     } else if (step === NewPostStep.choosePhoto) {
       return (

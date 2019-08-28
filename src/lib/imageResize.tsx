@@ -35,6 +35,8 @@ export const resizeImage = async ({
   const uri = await getLocalURI(_uri);
 
   const cropDimensions = {
+    quality: 1,
+    format: "png",
     size: {
       width: width * multiplier,
       height: (height - Math.abs(bottom)) * multiplier
@@ -43,11 +45,7 @@ export const resizeImage = async ({
       y: top * multiplier,
       x: x * multiplier
     },
-    resizeMode: "stretch",
-    displaySize: {
-      width: PixelRatio.getPixelSizeForLayoutSize(displaySize.width),
-      height: PixelRatio.getPixelSizeForLayoutSize(displaySize.height)
-    }
+    resizeMode: "stretch"
   };
 
   return new Promise((resolve, reject) => {

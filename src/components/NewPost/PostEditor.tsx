@@ -1,18 +1,44 @@
 import * as React from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  StyleSheet,
+  View,
+  InteractionManager,
+  PixelRatio,
+  Image
+} from "react-native";
 import { getInset } from "react-native-safe-area-view";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-navigation";
 import { SPACING, COLORS } from "../../lib/styles";
 import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
-import { PostBlockType } from "./NewPostFormat";
+import { PostBlockType, buildTextBlock } from "./NewPostFormat";
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
 import { BorderlessButton, ScrollView } from "react-native-gesture-handler";
 import { IconButton } from "../Button";
 import LinearGradient from "react-native-linear-gradient";
-import { Toolbar } from "./Toolbar";
+import {
+  Toolbar,
+  ToolbarButtonType,
+  DEFAULT_TOOLBAR_BUTTON_TYPE
+} from "./Toolbar";
+import { TextLayer } from "./layers/TextLayer";
+import { EditorFooter } from "./EditorFooter";
+import { Block } from "./Node/Block";
+import {
+  BaseNode,
+  EditableNode,
+  EditableNodeMap,
+  buildEditableNode
+} from "./Node/BaseNode";
+import { captureRef } from "react-native-view-shot";
+import CameraRoll from "@react-native-community/cameraroll";
+import { PostPreview, EditableNodeList } from "./PostPreview";
+import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
+import DeviceInfo from "react-native-device-info";
 
+const IS_SIMULATOR = DeviceInfo.isEmulator();
 const TOP_Y = getInset("top");
 const BOTTOM_Y = getInset("bottom");
 
@@ -22,44 +48,11 @@ export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 export const MAX_POST_HEIGHT =
   SCREEN_DIMENSIONS.height - TOP_Y - SPACING.double;
 
-const FooterButton = ({ Icon, onPress, color, size = 32 }) => {
-  return (
-    <IconButton
-      size={size}
-      Icon={Icon}
-      color={color}
-      type="shadow"
-      onPress={onPress}
-    />
-  );
-};
-
-const NextButton = ({ onPress }) => {
-  return (
-    <IconButton
-      size={24}
-      type="fill"
-      onPress={onPress}
-      Icon={IconSend}
-      backgroundColor={COLORS.secondary}
-    />
-  );
-};
-
 const styles = StyleSheet.create({
-  scrollContainer: {
-    width: POST_WIDTH,
-    height: MAX_POST_HEIGHT
-  },
-  footerSide: {
-    flexDirection: "row",
-    alignItems: "flex-end"
-  },
   safeWrapper: {
     borderRadius: 12,
     justifyContent: "center",
-    alignItems: "center",
-    overflow: "hidden"
+    alignItems: "center"
   },
   container: {
     backgroundColor: "#fff"
@@ -72,16 +65,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%"
   },
-  footer: {
-    flexDirection: "row",
-    position: "absolute",
-    bottom: 0,
-    paddingHorizontal: SPACING.double,
-    left: 0,
-    right: 0,
-    height: 60,
-    justifyContent: "space-between"
-  },
+
   layerStyles: {
     position: "absolute",
     top: 0,
@@ -94,42 +78,9 @@ const styles = StyleSheet.create({
 enum LayerZIndex {
   sheet = 1,
   icons = 2,
-  footer = 2
+  footer = 2,
+  inlineNodes = 3
 }
-
-type BlockListProps = {
-  blocks: Array<PostBlockType>;
-  setBlockAtIndex: (block: PostBlockType, index: number) => void;
-};
-const BlockList = ({ blocks, setBlockAtIndex }: BlockListProps) => {
-  const handleChangeBlock = React.useCallback(
-    index => block => setBlockAtIndex(block, index),
-    [setBlockAtIndex, blocks]
-  );
-
-  return blocks.map((block, index) => {
-    if (block.type === "text") {
-      return (
-        <TextPostBlock
-          key={index}
-          block={block}
-          onChange={handleChangeBlock(index)}
-        />
-      );
-    } else if (block.type === "image") {
-      return (
-        <ImagePostBlock
-          key={index}
-          block={block}
-          onChange={handleChangeBlock(index)}
-        />
-      );
-    }
-    {
-      return null;
-    }
-  });
-};
 
 const MiddleSheet = ({ width, height }) => {
   return (
@@ -153,6 +104,7 @@ const Layer = ({
   pointerEvents = "box-none",
   children,
   isFrozen,
+  opacity,
   width,
   height
 }) => {
@@ -172,6 +124,7 @@ const Layer = ({
           width,
           height,
           zIndex,
+          opacity,
           alignSelf: "stretch",
           overflow: "visible",
           backgroundColor: "transparent"
@@ -183,10 +136,72 @@ const Layer = ({
   );
 };
 
-export class PostEditor extends React.Component {
+type State = {
+  activeButton: ToolbarButtonType;
+  inlineNodes: EditableNodeMap;
+};
+
+const TEXT_NODE_FIXTURE: EditableNode = {
+  block: {
+    id: "123foo",
+    type: "text",
+    value: "hiii",
+    config: { variant: "standard", overrides: {} }
+  },
+  position: {
+    x: 20,
+    y: 40,
+    animatedX: new Animated.Value(20),
+    animatedY: new Animated.Value(40),
+    scale: 1.0,
+    animatedScale: new Animated.Value(1.0),
+    rotate: 0,
+    animatedRotate: new Animated.Value(0)
+  }
+};
+
+export class PostEditor extends React.Component<{}, State> {
   constructor(props) {
     super(props);
+    this.state = {
+      activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
+      inlineNodes: new Map(),
+      focusedNodeId: null,
+      isSaving: false
+    };
+
+    if (IS_SIMULATOR) {
+      this.state.inlineNodes.set(TEXT_NODE_FIXTURE.block.id, TEXT_NODE_FIXTURE);
+    }
   }
+  controlsVisibilityValue = new Animated.Value(1);
+
+  deleteNode = (id: string) => {
+    if (this.state.inlineNodes.has(id)) {
+      this.state.inlineNodes.delete(id);
+    }
+
+    if (this._inlineNodeRefs.has(id)) {
+      this._inlineNodeRefs.delete(id);
+    }
+
+    if (this.state.focusedNodeId === id) {
+      this.setState({ focusedNodeId: null });
+    }
+  };
+
+  handlePressToolbarButton = activeButton => this.setState({ activeButton });
+  handleInlineNodeChange = (editableNode: EditableNode) => {
+    if (
+      editableNode.block.type === "text" &&
+      editableNode.block.value.trim().length === 0 &&
+      this.state.inlineNodes.has(editableNode.block.id)
+    ) {
+      this.deleteNode(editableNode.block.id);
+    } else {
+      this.state.inlineNodes.set(editableNode.block.id, editableNode);
+    }
+  };
 
   handleChangeBlock = (block: PostBlockType, index: number) => {
     const blocks = [...this.props.post.blocks];
@@ -198,81 +213,263 @@ export class PostEditor extends React.Component {
     });
   };
 
-  handleInsertText = () => {
-    const blocks = [...this.props.post.blocks];
-    blocks.push({
-      type: "text",
-      value: "",
-      config: {
-        backgroundColor: "red",
-        color: "white"
-      }
+  handleInsertText = ({ x, y }) => {
+    const block = buildTextBlock({ value: "" });
+    const editableNode = buildEditableNode({
+      block,
+      x,
+      y
     });
 
-    this.props.onChange({
-      ...this.props.post,
-      blocks
+    this.state.inlineNodes.set(block.id, editableNode);
+
+    this.setState({ focusedNodeId: block.id });
+  };
+
+  scrollRef = React.createRef();
+  nodeListRef = React.createRef();
+
+  handleTapNode = (node: EditableNode) => {
+    const { focusedNodeId } = this.state;
+
+    if (focusedNodeId === node.block.id) {
+      if (node.block.type === "text" && node.block.value.trim().length === 0) {
+        this.deleteNode(node.block.id);
+        return;
+      }
+
+      this.setState({ focusedNodeId: null });
+    } else {
+      this.setState({ focusedNodeId: node.block.id });
+    }
+  };
+
+  handleBlur = () => {
+    const node = this.state.inlineNodes.get(this.state.focusedNodeId);
+
+    this.handleBlurNode(node);
+  };
+
+  handleBlurNode = (node: EditableNode) => {
+    if (node) {
+      if (node.block.type === "text" && node.block.value.trim().length === 0) {
+        this.deleteNode(node.block.id);
+      } else {
+        this.state.inlineNodes.set(node.block.id, node);
+        this.setState({ focusedNodeId: null });
+      }
+    }
+  };
+
+  handleFocusNode = block => {
+    this.setState({ focusedNodeId: block.id });
+  };
+
+  handleDownload = () => {
+    this.createSnapshot();
+  };
+  handleSend = () => {};
+
+  createSnapshot = async () => {
+    this._inlineNodeRefs.entries().map([]);
+    const overlayURI = await captureRef(this.nodeListRef.current, {
+      format: "png",
+      quality: 1.0
     });
+
+    const overlayDimensions = await new Promise((resolve, reject) => {
+      Image.getSize(
+        overlayURI,
+        (width, height) => resolve({ width, height }),
+        reject
+      );
+    });
+
+    const blockURI = await captureRef(this.scrollRef.current, {
+      format: "png",
+      quality: 1.0,
+
+      snapshotContentContainer: true
+    }).then(
+      uri => {
+        console.log("Image saved to", uri);
+        return uri;
+      },
+      error => {
+        console.error("Oops, snapshot failed", error);
+        return error;
+      }
+    );
+
+    const blockDimensions = await new Promise((resolve, reject) => {
+      Image.getSize(
+        blockURI,
+        (width, height) => resolve({ width, height }),
+        reject
+      );
+    });
+
+    const rect = {
+      x: 0,
+      y: 0,
+      width: blockDimensions.width,
+      height: blockDimensions.height
+    };
+
+    const size = {
+      width: Math.max(blockDimensions.width, overlayDimensions.width),
+      height: Math.max(blockDimensions.height, overlayDimensions.height)
+    };
+
+    let backgroundURI = blockURI;
+    if (
+      size.width > blockDimensions.width ||
+      size.height > blockDimensions.height
+    ) {
+      backgroundURI = await new Promise((resolve, reject) => {
+        this.setState(
+          {
+            blankResize: {
+              width: PixelRatio.roundToNearestPixel(
+                size.width / PixelRatio.get()
+              ),
+              height: PixelRatio.roundToNearestPixel(
+                size.height / PixelRatio.get()
+              )
+            }
+          },
+          () => {
+            window.requestAnimationFrame(async () => {
+              const uri = await captureRef(this.blankResizeRef.current, {
+                format: "png",
+                quality: 1.0
+              }).then(
+                uri => {
+                  this.setState({ blankResize: null });
+                  return PhotoEditor.overlayImage(
+                    uri,
+                    blockURI,
+                    { x: 0, y: 0 },
+                    "image/png"
+                  );
+                },
+                error => {
+                  console.error("Oops, snapshot failed", error);
+                  return reject(error);
+                }
+              );
+
+              resolve(uri);
+            });
+          }
+        );
+      });
+    }
+
+    const combined = await PhotoEditor.overlayImage(
+      backgroundURI,
+      overlayURI,
+      { x: 0, y: 0 },
+      "image/png"
+    );
+
+    const result = await CameraRoll.saveToCameraRoll(combined, "photo");
+
+    console.log("Saved", result);
+  };
+
+  blankResizeRef = React.createRef();
+  _inlineNodeRefs = new Map();
+
+  setNodeRef = (id: string, node: View) => {
+    this._inlineNodeRefs.set(id, node);
   };
 
   render() {
-    const { post } = this.props;
+    const { post, bounds } = this.props;
+    const sizeStyle = { width: bounds.width, height: bounds.height };
     return (
       <View style={[styles.wrapper]}>
-        <View style={[styles.safeWrapper, styles.scrollContainer]}>
-          <ScrollView
-            directionalLockEnabled
-            horizontal={false}
-            vertical
-            alwaysBounceVertical={false}
-            style={{ width: POST_WIDTH, height: MAX_POST_HEIGHT }}
-            contentContainerStyle={[
-              {
-                borderTopLeftRadius: 12,
-                borderTopRightRadius: 12,
-                flex: 0,
-                backgroundColor: "#fff"
-              }
-            ]}
-          >
-            <BlockList
-              blocks={post.blocks}
-              setBlockAtIndex={this.handleChangeBlock}
-            />
-          </ScrollView>
+        <View
+          style={[
+            styles.safeWrapper,
+            styles.scrollContainer,
+            {
+              maxHeight: MAX_POST_HEIGHT,
+              height: bounds.height,
+              width: bounds.width
+            }
+          ]}
+        >
+          <PostPreview
+            bounds={bounds}
+            blocks={post.blocks}
+            inlineNodes={this.state.inlineNodes}
+            focusedNodeId={this.state.focusedNodeId}
+            minX={bounds.x}
+            minY={bounds.y}
+            ref={this.postPreviewRef}
+            scrollRef={this.scrollRef}
+            maxX={bounds.width}
+            onFocus={this.handleFocusNode}
+            maxY={bounds.height}
+            onTapNode={this.handleTapNode}
+            onlyShow={this.state.focusedNodeId}
+            onBlurNode={this.handleBlurNode}
+            onChangeNode={this.handleInlineNodeChange}
+            setBlockAtIndex={this.handleChangeBlock}
+            showEditableNodes={this.state.isSaving}
+          />
 
           <Layer
             zIndex={LayerZIndex.sheet}
-            width={POST_WIDTH}
+            width={sizeStyle.width}
             isFrozen
             pointerEvents="none"
-            height={MAX_POST_HEIGHT}
+            opacity={this.controlsVisibilityValue}
+            height={sizeStyle.height}
           >
-            <MiddleSheet width={POST_WIDTH} height={MAX_POST_HEIGHT} />
+            <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
           </Layer>
 
-          <Layer zIndex={LayerZIndex.icons}>
-            <Toolbar />
-          </Layer>
-
-          <Layer zIndex={LayerZIndex.footer} width={"100%"}>
-            <SafeAreaView
-              forceInset={{
-                top: "never",
-                left: "never",
-                right: "never",
-                bottom: "always"
-              }}
-              style={styles.footer}
+          <Layer
+            width={sizeStyle.width}
+            height={sizeStyle.height}
+            zIndex={LayerZIndex.icons}
+          >
+            <TextLayer
+              footer={
+                <EditorFooter
+                  onPressDownload={this.handleDownload}
+                  onPressSend={this.handleSend}
+                />
+              }
+              waitFor={[this.scrollRef]}
+              width={sizeStyle.width}
+              height={sizeStyle.height}
+              onPressToolbarButton={this.handlePressToolbarButton}
+              isFocused={!!this.state.focusedNodeId}
+              insertTextNode={this.handleInsertText}
+              blur={this.handleBlur}
+              activeButton={this.state.activeButton}
+              nodeListRef={this.nodeListRef}
             >
-              <View style={[styles.footerSide]}>
-                <IconButton Icon={IconDownload} color="#000" size={32} />
-              </View>
-
-              <View style={[styles.footerSide, styles.footerSideRight]}>
-                <NextButton />
-              </View>
-            </SafeAreaView>
+              <EditableNodeList
+                inlineNodes={this.state.inlineNodes}
+                setNodeRef={this.setNodeRef}
+                focusedNodeId={this.state.focusedNodeId}
+                waitFor={[this.scrollRef]}
+                minX={bounds.x}
+                minY={bounds.y}
+                maxX={sizeStyle.width}
+                onFocus={this.handleFocusNode}
+                maxY={sizeStyle.height}
+                onTapNode={this.handleTapNode}
+                onlyShow={this.state.focusedNodeId}
+                onBlur={this.handleBlurNode}
+                onChangeNode={this.handleInlineNodeChange}
+              />
+            </TextLayer>
           </Layer>
         </View>
       </View>

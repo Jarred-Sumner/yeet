@@ -1,65 +1,61 @@
 import * as React from "react";
-import { View, StyleSheet, TextInput } from "react-native";
-import {
-  TextPostBlock as TextPostBlockType,
-  ChangeBlockFunction
-} from "./NewPostFormat";
-import { SPACING } from "../../lib/styles";
-import { fontStyleSheets } from "../Text";
+import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
+import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
+import { TextInput } from "./Text/TextInput";
 
 type Props = {
   block: TextPostBlockType;
   onChange: ChangeBlockFunction;
 };
 
-const styles = StyleSheet.create({
-  container: {
-    width: "100%",
-    flex: 0
-  },
-  input: {
-    fontSize: 18,
-    paddingHorizontal: SPACING.half,
-    paddingTop: SPACING.normal,
-    paddingBottom: SPACING.normal,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
-    margin: 0,
-    width: "100%",
-    flex: 0
-  }
-});
-
 export class TextPostBlock extends React.Component<Props> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      text: props.block.value
+    };
+  }
+
   handleChange = text => {
-    this.props.onChange({
-      ...this.props.block,
-      value: text
+    this.setState({ text });
+  };
+
+  focus = () => {
+    this.inputRef.current.setNativeProps({
+      editable: true
     });
+    this.inputRef.current.focus();
+  };
+
+  blur = () => {
+    this.inputRef.current.setNativeProps({
+      editable: false
+    });
+    this.inputRef.current.blur();
+  };
+
+  inputRef = React.createRef<RNTextInput>();
+  handleFocus = () => this.props.onFocus(this.props.block);
+
+  handleBlur = () => {
+    this.props.onBlur({ ...this.props.block, value: this.state.text });
   };
 
   render() {
-    const { block } = this.props;
+    const { block, onLayout, disabled } = this.props;
 
     return (
-      <View style={styles.container}>
-        <TextInput
-          value={block.value}
-          multiline
-          onChangeText={this.handleChange}
-          placeholderTextColor="rgba(255, 255, 255, 0.25)"
-          placeholder="Tap to type"
-          keyboardAppearance="dark"
-          style={[
-            fontStyleSheets.semiBoldFont,
-            styles.input,
-            {
-              backgroundColor: block.config.backgroundColor,
-              color: block.config.color
-            }
-          ]}
-        />
-      </View>
+      <TextInput
+        editable={!disabled}
+        inputRef={this.inputRef}
+        block={block}
+        onLayout={onLayout}
+        text={this.state.text}
+        onBlur={this.handleBlur}
+        onFocus={this.handleFocus}
+        onChangeValue={this.handleChange}
+      />
     );
   }
 }

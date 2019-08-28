@@ -27,10 +27,11 @@ export class ImagePostBlock extends React.Component<Props> {
   };
 
   render() {
-    const { block } = this.props;
+    const { block, onLayout } = this.props;
 
     return (
       <View
+        onLayout={onLayout}
         style={[
           styles.container,
           { height: block.value.height, backgroundColor: "transparent" }
