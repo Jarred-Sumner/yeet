@@ -149,6 +149,8 @@ export class BaseNode extends React.Component<Props> {
       return null;
     }
 
+    const EXTRA_PADDING = 15;
+
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}
@@ -160,6 +162,7 @@ export class BaseNode extends React.Component<Props> {
         yLiteral={position.y}
         rLiteral={position.rotate}
         waitFor={waitFor}
+        isFocused={isFocused}
         scaleLiteral={position.scale}
         scale={position.animatedScale}
         r={position.animatedRotate}
@@ -168,8 +171,16 @@ export class BaseNode extends React.Component<Props> {
         minY={minY}
         maxY={maxY}
         onTap={this.handleTap}
+        extraPadding={EXTRA_PADDING}
       >
-        <View style={{ flex: 0 }}>
+        <View
+          style={{
+            flex: 0,
+            padding: EXTRA_PADDING,
+            margin: -1 * EXTRA_PADDING,
+            maxWidth: maxX - EXTRA_PADDING * 2
+          }}
+        >
           <Block
             ref={this.blockRef}
             block={block}

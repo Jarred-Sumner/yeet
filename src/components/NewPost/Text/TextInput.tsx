@@ -1,18 +1,43 @@
 import * as React from "react";
-import { ReText } from "react-native-redash";
+// import { ReText } from "react-native-redash";
 import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, { Easing } from "react-native-reanimated";
 import { TextPostBlock } from "../NewPostFormat";
 
-const TextInputComponent = RNTextInput;
+const ZERO_WIDTH_SPACE = "​";
+
+const RawAnimatedTextInput = Animated.createAnimatedComponent(RNTextInput);
+
+class AnimatedTextInput extends React.PureComponent {
+  inputRef = React.createRef();
+  focus = () => {
+    this.inputRef.current.getNode().focus();
+  };
+
+  blur = () => {
+    this.inputRef.current.getNode().blur();
+  };
+
+  setNativeProps = blah => {
+    this.inputRef.current.setNativeProps(blah);
+  };
+
+  render() {
+    return <RawAnimatedTextInput ref={this.inputRef} {...this.props} />;
+  }
+}
+
+const TextInputComponent = AnimatedTextInput;
 
 const textInputStyles = {
   standard: {
     fontSizes: {
       "0": 64,
       "8": 48,
-      "16": 36,
-      "24": 20
+      "12": 42,
+      "16": 38,
+      "18": 36,
+      "24": 32
     },
     presets: {
       backgroundColor: "rgba(0, 0, 0, 0.9)",
@@ -86,18 +111,36 @@ export class TextInput extends React.Component<Props> {
     type: "standard"
   };
 
-  get value() {
-    return this.props.text;
+  constructor(props) {
+    super(props);
+
+    // this._value = new Animated.Value(props.text);
+
+    this.fontSizeValue = new Animated.Value(
+      this.getFontSizeValue(props, props.text),
+      props.text
+    );
   }
 
-  getFontSize = () => {
-    const {
-      config: { variant }
-    } = this.props.block;
-    const { fontSizes } = textInputStyles[variant];
-    return fontSizes[
-      getClosestNumber(this.value.length, Object.keys(fontSizes))
-    ];
+  fontSizeClock = new Animated.Clock();
+
+  getFontSizeValue = (props, text) => {
+    const fontSizes = textInputStyles[props.block.config.variant].fontSizes;
+    return fontSizes[getClosestNumber(text.length, Object.keys(fontSizes))];
+  };
+
+  handleChange = text => {
+    if (this.props.text.length !== text.length) {
+      this.fontSizeClock = Animated.timing(this.fontSizeValue, {
+        duration: 100,
+        easing: Easing.elastic(0.25),
+        toValue: this.getFontSizeValue(this.props, text) || 16
+      }).start();
+    }
+
+    this.props.onChangeValue(text);
+
+    return true;
   };
 
   render() {
@@ -117,7 +160,7 @@ export class TextInput extends React.Component<Props> {
       styles.input,
       textInputTypeStylesheets[variant].input,
       {
-        fontSize: this.getFontSize()
+        fontSize: this.fontSizeValue
       }
     ];
 
@@ -131,13 +174,16 @@ export class TextInput extends React.Component<Props> {
           style={inputStyles}
           onFocus={this.props.onFocus}
           multiline
+          adjustsFontSizeToFit
+          minimumFontScale={0.4}
           blurOnSubmit={false}
           onBlur={onBlur}
           scrollEnabled={false}
-          defaultValue={this.value}
+          placeholder=" "
+          defaultValue={this.props.text}
+          onChangeText={this.handleChange}
           keyboardAppearance="dark"
           autoFocus={false}
-          onChangeText={this.props.onChangeValue}
         />
         {editable && <View style={StyleSheet.absoluteFill}></View>}
       </View>

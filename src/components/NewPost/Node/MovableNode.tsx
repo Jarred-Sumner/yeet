@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Keyboard, Dimensions } from "react-native";
 import {
   PanGestureHandler,
   PinchGestureHandler,
@@ -7,7 +7,7 @@ import {
   TapGestureHandler,
   State
 } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { Easing } from "react-native-reanimated";
 import {
   runDelay,
   preserveMultiplicativeOffset,
@@ -15,6 +15,9 @@ import {
   limit
 } from "react-native-redash";
 import { throttle } from "lodash";
+import { SPACING } from "../../../lib/styles";
+
+const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const {
   set,
@@ -26,7 +29,12 @@ const {
   call,
   event,
   concat,
-  multiply
+  multiply,
+  clockRunning,
+  startClock,
+  stopClock,
+  timing,
+  debug
 } = Animated;
 
 export class MovableNode extends Component {
@@ -37,6 +45,8 @@ export class MovableNode extends Component {
     this._Y = new Animated.Value(props.yLiteral);
     this._R = new Animated.Value(props.rLiteral);
     this._Z = new Animated.Value(props.scaleLiteral);
+
+    this.subscribeToKeyboard();
 
     this.handlePan = event(
       [
@@ -91,6 +101,13 @@ export class MovableNode extends Component {
       ],
       { useNativeDriver: true }
     );
+
+    this.heightValue = new Animated.Value(props.maxY);
+
+    this.translateX = new Animated.Value(props.xLiteral);
+    this.translateY = new Animated.Value(props.yLiteral);
+    this.scale = new Animated.Value(props.scaleLiteral);
+    this.rotate = new Animated.Value(props.rLiteral);
   }
 
   _X: Animated.Value<number>;
@@ -110,6 +127,100 @@ export class MovableNode extends Component {
   rotationGestureState: Animated.Value<State> = new Animated.Value(
     State.UNDETERMINED
   );
+
+  keyboardVisibleX = new Animated.Value(0);
+  keyboardVisibleY = new Animated.Value(0);
+  keyboardVisibleR = new Animated.Value(0);
+  keyboardVisibleBottomMargin = new Animated.Value(0);
+  keyboardVisibleScale = new Animated.Value(1.0);
+
+  componentWillUnmount() {
+    this.unsubscribeToKeyboard();
+  }
+
+  subscribeToKeyboard = () => {
+    Keyboard.addListener("keyboardWillShow", this.handleKeyboardWillShow);
+    Keyboard.addListener("keyboardDidHide", this.handleKeyboardDidHide);
+    Keyboard.addListener(
+      "keyboardWillChangeFrame",
+      this.handleKeyboardWillChangeFrame
+    );
+    Keyboard.addListener("keyboardWillHide", this.handleKeyboardWillHide);
+  };
+
+  keyboardVisibleValue = new Animated.Value(0);
+
+  handleKeyboardWillChangeFrame = ({
+    duration,
+    easing,
+    endCoordinates,
+    startCoordinates
+  }) => {};
+
+  handleKeyboardWillHide = event => {
+    console.log(event);
+    this.handleKeyboardAnimation(false, event.duration);
+  };
+
+  handleKeyboardDidHide = event => {
+    this.keyboardVisibleValue.setValue(0);
+  };
+
+  handleKeyboardWillShow = event => {
+    this.keyboardVisibleValue.setValue(1);
+    this.handleKeyboardAnimation(true, event.duration);
+  };
+
+  handleKeyboardAnimation = (isShowing: boolean, duration) => {
+    const {
+      maxY,
+      minY,
+      xLiteral,
+      yLiteral,
+      rLiteral,
+      scaleLiteral
+    } = this.props;
+
+    const multiplier = isShowing ? -1 : 0;
+
+    const xValue = isShowing ? 15 : xLiteral;
+    const yValue = isShowing ? 100 : yLiteral;
+    const rValue = isShowing ? 0 : rLiteral;
+    const scaleValue = isShowing ? 1 : scaleLiteral;
+
+    const easing = Easing.elastic(0.5);
+
+    Animated.timing(this.keyboardVisibleX, {
+      duration,
+      toValue: xValue,
+      easing
+    }).start();
+    Animated.timing(this.keyboardVisibleY, {
+      duration,
+      toValue: yValue,
+      easing
+    }).start();
+    Animated.timing(this.keyboardVisibleR, {
+      duration,
+      toValue: rValue,
+      easing
+    }).start();
+    Animated.timing(this.keyboardVisibleScale, {
+      duration,
+      toValue: scaleValue,
+      easing
+    }).start();
+  };
+
+  unsubscribeToKeyboard = () => {
+    Keyboard.removeListener("keyboardWillShow", this.handleKeyboardWillShow);
+    Keyboard.removeListener("keyboardDidHide", this.handleKeyboardDidHide);
+    Keyboard.removeListener(
+      "keyboardWillChangeFrame",
+      this.handleKeyboardWillChangeFrame
+    );
+    Keyboard.removeListener("keyboardWillHide", this.handleKeyboardWillHide);
+  };
 
   setupHandlers(props) {
     // this.X = props.x;
@@ -171,8 +282,19 @@ export class MovableNode extends Component {
 
   updatePosition = throttle(coords => {
     const [x, y, rotate, scale] = coords;
+    if (this.props.isFocused) {
+      return;
+    }
     this.props.onChangePosition({ x, y, scale, rotate });
   }, 32);
+
+  handleLayout = ({
+    nativeEvent: {
+      layout: { x, y, width, height }
+    }
+  }) => {
+    // this.contentSizeHeight.setValue(height);
+  };
 
   componentDidUpdate(prevProps) {}
 
@@ -182,7 +304,15 @@ export class MovableNode extends Component {
   tapRef = React.createRef();
 
   render() {
-    const { x, y, scale, r, isDragEnabled, waitFor = [] } = this.props;
+    const {
+      x,
+      y,
+      scale,
+      r,
+      isDragEnabled,
+      waitFor = [],
+      extraPadding
+    } = this.props;
 
     return (
       <TapGestureHandler
@@ -190,13 +320,33 @@ export class MovableNode extends Component {
         ref={this.tapRef}
         enabled={isDragEnabled}
         onGestureEvent={this.handleTap}
+        hitSlop={{ horizontal: extraPadding * -1, vertical: extraPadding * -1 }}
         onHandlerStateChange={this.handleTap}
       >
         <Animated.View style={{ flex: 0 }}>
           <Animated.Code>
             {() =>
               block([
-                call([this.X, this.Y, this.R, this.Z], this.updatePosition)
+                call([this.X, this.Y, this.R, this.Z], this.updatePosition),
+                cond(
+                  eq(this.keyboardVisibleValue, 0),
+                  block([
+                    set(this.translateY, this.Y),
+                    set(this.translateX, this.X),
+                    set(this.rotate, this.R),
+                    set(this.scale, this.Z),
+                    set(this.keyboardVisibleX, this.X),
+                    set(this.keyboardVisibleY, this.Y),
+                    set(this.keyboardVisibleR, this.R),
+                    set(this.keyboardVisibleScale, this.Z)
+                  ]),
+                  block([
+                    set(this.rotate, this.keyboardVisibleR),
+                    set(this.scale, this.keyboardVisibleScale),
+                    set(this.translateY, this.keyboardVisibleY),
+                    set(this.translateX, this.keyboardVisibleX)
+                  ])
+                )
               ])
             }
           </Animated.Code>
@@ -230,15 +380,21 @@ export class MovableNode extends Component {
                       ref={this.props.containerRef}
                       style={{
                         position: "absolute",
-                        top: 0,
                         left: 0,
+                        top: 0,
                         transform: [
-                          { translateX: this.X },
-                          { translateY: this.Y },
                           {
-                            rotate: Animated.concat(this.R, "rad")
+                            translateY: this.translateY
                           },
-                          { scale: this.Z }
+                          {
+                            translateX: this.translateX
+                          },
+                          {
+                            rotate: Animated.concat(this.rotate, "rad")
+                          },
+                          {
+                            scale: this.scale
+                          }
                         ]
                       }}
                     >

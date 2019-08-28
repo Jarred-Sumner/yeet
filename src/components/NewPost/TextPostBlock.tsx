@@ -22,16 +22,16 @@ export class TextPostBlock extends React.Component<Props> {
   };
 
   focus = () => {
-    this.inputRef.current.setNativeProps({
-      editable: true
-    });
+    // this.inputRef.current.setNativeProps({
+    //   editable: true
+    // });
     this.inputRef.current.focus();
   };
 
   blur = () => {
-    this.inputRef.current.setNativeProps({
-      editable: false
-    });
+    // this.inputRef.current.setNativeProps({
+    //   editable: false
+    // });
     this.inputRef.current.blur();
   };
 
