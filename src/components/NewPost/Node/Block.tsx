@@ -2,6 +2,7 @@ import * as React from "react";
 import { TextPostBlock } from "../TextPostBlock";
 import { ImagePostBlock } from "../ImagePostBlock";
 import { PostBlock } from "../NewPostFormat";
+import { TextInput } from "react-native-gesture-handler";
 
 export const Block = React.forwardRef(
   (
@@ -11,11 +12,17 @@ export const Block = React.forwardRef(
       onFocus,
       onBlur,
       onLayout,
+      inputRef,
+      focusType,
+      focusTypeValue,
       annotations,
-      disabled
+      focusedBlockValue,
+      gestureRef,
+      disabled = false
     }: {
       block: PostBlock;
       disabled: boolean;
+      inputRef: (TextInput) => void;
       onChange: (block: PostBlock) => void;
       onFocus: (block: PostBlock) => void;
     },
@@ -27,7 +34,10 @@ export const Block = React.forwardRef(
           ref={ref}
           disabled={disabled}
           onLayout={onLayout}
+          focusType={focusType}
           block={block}
+          focusTypeValue={focusTypeValue}
+          focusedBlockValue={focusedBlockValue}
           onChange={onChange}
           onBlur={onBlur}
           onFocus={onFocus}
@@ -40,6 +50,10 @@ export const Block = React.forwardRef(
           onFocus={onFocus}
           ref={ref}
           onLayout={onLayout}
+          focusType={focusType}
+          gestureRef={gestureRef}
+          focusedBlockValue={focusedBlockValue}
+          focusTypeValue={focusTypeValue}
           block={block}
           onBlur={onBlur}
           onChange={onChange}

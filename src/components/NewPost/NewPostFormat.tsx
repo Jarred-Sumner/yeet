@@ -1,12 +1,20 @@
 import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
+import { SPACING, COLORS } from "../../lib/styles";
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
+
+export enum PostFormat {
+  screenshot = "screenshot",
+  caption = "caption"
+}
 
 interface PostBlock {
   type: "text" | "image";
   value: any;
+  format: PostFormat;
   config: {};
+  autoInserted: boolean;
   id: string;
 }
 
@@ -14,7 +22,7 @@ export type TextPostBlock = PostBlock & {
   type: "text";
   value: string;
   config: {
-    variant: "standard";
+    placeholder?: string;
     overrides: Object;
   };
 };
@@ -39,18 +47,24 @@ export type NewPostType = {
   blocks: Array<PostBlockType>;
   height: number;
   width: number;
+  format: PostFormat;
 };
 
 export const DEFAULT_TEXT_COLOR = "#f1f1f1";
 export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
+export const DEFAULT_FORMAT = PostFormat.caption;
+
 export const PLACEHOLDER_POST: NewPostType = {
   height: 600,
   width: SCREEN_DIMENSIONS.width,
+  format: DEFAULT_FORMAT,
   blocks: [
     {
       type: "image",
       id: nanoid(),
+      format: DEFAULT_FORMAT,
+      autoInserted: true,
       value: {
         intrinsicWidth: 0,
         intrinsicHeight: 0,
@@ -70,14 +84,18 @@ export type ChangeBlockFunction = (change: PostBlockType) => void;
 
 export const buildTextBlock = ({
   value,
-  variant = "standard"
+  format,
+  autoInserted,
+  placeholder
 }): TextPostBlock => {
   return {
     type: "text",
     id: nanoid(),
+    format,
     value,
+    autoInserted,
     config: {
-      variant,
+      placeholder,
       overrides: {}
     }
   };
@@ -86,11 +104,15 @@ export const buildTextBlock = ({
 export const buildImageBlock = ({
   image,
   croppedPhoto,
-  displaySize
+  displaySize,
+  autoInserted,
+  format
 }): ImagePostBlock => {
   return {
     type: "image",
     id: nanoid(),
+    format,
+    autoInserted,
     value: {
       intrinsicWidth: image.width,
       intrinsicHeight: image.height,
@@ -103,4 +125,80 @@ export const buildImageBlock = ({
     },
     config: {}
   };
+};
+
+export const presetsByFormat = {
+  [PostFormat.caption]: {
+    borderRadius: 8,
+    paddingHorizontal: SPACING.double,
+    paddingVertical: SPACING.normal,
+    backgroundColor: "transparent"
+  },
+  [PostFormat.screenshot]: {
+    backgroundColor: "#fff",
+    borderRadius: 0,
+    padding: 0
+  }
+};
+
+export enum FocusBlockType {
+  absolute = 0,
+  static = 1
+}
+
+const blocksForFormat = (
+  format: PostFormat,
+  _blocks: Array<PostBlockType>
+): Array<PostBlockType> => {
+  const blocks = [..._blocks];
+
+  if (format === PostFormat.screenshot) {
+    return blocks.filter(
+      ({ type, autoInserted }) => !(type === "text" && autoInserted)
+    );
+  } else if (format === PostFormat.caption) {
+    const firstBlock = blocks[0];
+
+    if (!firstBlock || firstBlock.type === "image") {
+      blocks.unshift(
+        buildTextBlock({
+          value: "",
+          placeholder: "Enter a title",
+          autoInserted: true,
+          format
+        })
+      );
+    }
+
+    return blocks;
+  } else {
+    return blocks;
+  }
+};
+
+export const buildPost = ({
+  format,
+  blocks: _blocks
+}: {
+  format: PostFormat;
+  blocks: Array<PostBlockType>;
+}): NewPostType => {
+  const presets = presetsByFormat[format];
+  const blocks = blocksForFormat(format, _blocks);
+
+  if (format === PostFormat.caption) {
+    return {
+      format,
+      backgroundColor: presets.backgroundColor,
+      blocks
+    };
+  } else if (format === PostFormat.screenshot) {
+    return {
+      format,
+      backgroundColor: presets.backgroundColor,
+      blocks
+    };
+  } else {
+    throw Error(`Unimplemented format ${format}`);
+  }
 };

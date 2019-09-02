@@ -1,36 +1,32 @@
 import * as React from "react";
 // import { ReText } from "react-native-redash";
-import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
+import { View, StyleSheet } from "react-native";
+import {
+  TextInput as RNTextInput,
+  TapGestureHandler,
+  GestureHandlerGestureEvent,
+  State
+} from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
-import { TextPostBlock } from "../NewPostFormat";
+import { TextPostBlock, PostFormat, presetsByFormat } from "../NewPostFormat";
+import { COLORS } from "../../../lib/styles";
 
 const ZERO_WIDTH_SPACE = "​";
 
 const RawAnimatedTextInput = Animated.createAnimatedComponent(RNTextInput);
 
-class AnimatedTextInput extends React.PureComponent {
-  inputRef = React.createRef();
-  focus = () => {
-    this.inputRef.current.getNode().focus();
-  };
+const AnimatedTextInput = React.forwardRef((props, ref) => {
+  const inputRef = React.useRef();
 
-  blur = () => {
-    this.inputRef.current.getNode().blur();
-  };
+  React.useImperativeHandle(ref, () => inputRef.current.getNode());
 
-  setNativeProps = blah => {
-    this.inputRef.current.setNativeProps(blah);
-  };
-
-  render() {
-    return <RawAnimatedTextInput ref={this.inputRef} {...this.props} />;
-  }
-}
+  return <RawAnimatedTextInput ref={inputRef} {...props} />;
+});
 
 const TextInputComponent = AnimatedTextInput;
 
 const textInputStyles = {
-  standard: {
+  [PostFormat.screenshot]: {
     fontSizes: {
       "0": 64,
       "8": 48,
@@ -40,22 +36,39 @@ const textInputStyles = {
       "24": 32
     },
     presets: {
-      backgroundColor: "rgba(0, 0, 0, 0.9)",
+      backgroundColor: COLORS.secondary,
       color: "white",
       textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
       textShadowOffset: {
         width: 1,
         height: 1
       },
       textShadowRadius: 1
     }
+  },
+  [PostFormat.caption]: {
+    fontSizes: {
+      "7": 42,
+      "8": 32,
+      "12": 32,
+      "16": 32,
+      "18": 28,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: "rgba(255, 255, 255, 0.99)",
+      color: "black",
+      placeholderColor: "#666"
+    }
   }
 };
 
 const textInputTypeStylesheets = {
-  standard: StyleSheet.create({
+  [PostFormat.screenshot]: StyleSheet.create({
     container: {
-      backgroundColor: textInputStyles.standard.presets.backgroundColor,
+      backgroundColor:
+        textInputStyles[PostFormat.screenshot].presets.backgroundColor,
       borderRadius: 4
     },
     input: {
@@ -65,12 +78,34 @@ const textInputTypeStylesheets = {
       paddingBottom: 10,
       paddingLeft: 10,
       paddingRight: 10,
-      color: textInputStyles.standard.presets.color,
+      color: textInputStyles[PostFormat.screenshot].presets.color,
       fontWeight: "bold",
-      textShadowColor: textInputStyles.standard.presets.textShadowColor,
-      textShadowOffset: textInputStyles.standard.presets.textShadowOffset,
+      textShadowColor:
+        textInputStyles[PostFormat.screenshot].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[PostFormat.screenshot].presets.textShadowOffset,
 
-      textShadowRadius: textInputStyles.standard.presets.textShadowRadius
+      textShadowRadius:
+        textInputStyles[PostFormat.screenshot].presets.textShadowRadius
+    }
+  }),
+  [PostFormat.caption]: StyleSheet.create({
+    container: {
+      justifyContent: "center",
+      borderBottomColor: "rgba(255,255, 255, 0.25)",
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderRadius: 0
+    },
+    input: {
+      textAlign: "left",
+      fontFamily: "Helvetica",
+      paddingTop: presetsByFormat[PostFormat.caption].paddingVertical,
+      paddingBottom: presetsByFormat[PostFormat.caption].paddingVertical,
+      paddingLeft: presetsByFormat[PostFormat.caption].paddingHorizontal,
+      paddingRight: presetsByFormat[PostFormat.caption].paddingHorizontal,
+      color: "white",
+      flexGrow: 1,
+      fontWeight: "bold"
     }
   })
 };
@@ -89,6 +124,8 @@ const styles = StyleSheet.create({
     marginRight: 0,
     backgroundColor: "transparent",
     marginBottom: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
     paddingTop: 0,
     paddingLeft: 0,
     paddingRight: 0,
@@ -97,9 +134,11 @@ const styles = StyleSheet.create({
 });
 
 const getClosestNumber = (goal, counts) =>
-  counts.reduce(function(prev, curr) {
-    return Math.abs(curr - goal) < Math.abs(prev - goal) ? curr : prev;
-  });
+  counts.find(count => {
+    if (goal - Number(count) <= 0) {
+      return true;
+    }
+  }) || counts[counts.length - 1];
 
 type Props = {
   block: TextPostBlock;
@@ -108,7 +147,7 @@ type Props = {
 
 export class TextInput extends React.Component<Props> {
   static defaultProps = {
-    type: "standard"
+    type: PostFormat.screenshot
   };
 
   constructor(props) {
@@ -125,7 +164,7 @@ export class TextInput extends React.Component<Props> {
   fontSizeClock = new Animated.Clock();
 
   getFontSizeValue = (props, text) => {
-    const fontSizes = textInputStyles[props.block.config.variant].fontSizes;
+    const fontSizes = textInputStyles[props.block.format].fontSizes;
     return fontSizes[getClosestNumber(text.length, Object.keys(fontSizes))];
   };
 
@@ -143,50 +182,73 @@ export class TextInput extends React.Component<Props> {
     return true;
   };
 
+  handleHandlerChange = (handler: GestureHandlerGestureEvent) => {
+    if (handler.nativeEvent.state === State.END) {
+      this.props.focusedBlockValue.setValue(this.props.block.id);
+      this.props.focusTypeValue.setValue(this.props.focusType);
+      this.props.inputRef && this.props.inputRef.current.focus();
+    }
+  };
+
   render() {
     const {
-      config: { variant },
+      config: { placeholder = " " },
       value,
+      format,
+      id,
       ...otherProps
     } = this.props.block;
-    const { editable, inputRef, onBlur, onLayout } = this.props;
+    const { editable, inputRef, onBlur, onLayout, focusType } = this.props;
 
     const containerStyles = [
       styles.container,
-      textInputTypeStylesheets[variant].container
+      textInputTypeStylesheets[format].container
     ];
 
     const inputStyles = [
       styles.input,
-      textInputTypeStylesheets[variant].input,
+      textInputTypeStylesheets[format].input,
       {
-        fontSize: this.fontSizeValue
+        fontSize: this.fontSizeValue,
+        lineHeight:
+          format === PostFormat.caption
+            ? Animated.multiply(this.fontSizeValue, 1.4)
+            : undefined
       }
     ];
 
     return (
-      <View style={containerStyles}>
-        <TextInputComponent
-          {...otherProps}
-          editable={editable}
-          pointerEvents={editable ? "auto" : "none"}
-          ref={inputRef}
-          style={inputStyles}
-          onFocus={this.props.onFocus}
-          multiline
-          adjustsFontSizeToFit
-          minimumFontScale={0.4}
-          blurOnSubmit={false}
-          onBlur={onBlur}
-          scrollEnabled={false}
-          placeholder=" "
-          defaultValue={this.props.text}
-          onChangeText={this.handleChange}
-          keyboardAppearance="dark"
-          autoFocus={false}
-        />
-        {editable && <View style={StyleSheet.absoluteFill}></View>}
-      </View>
+      <TapGestureHandler
+        enabled={editable}
+        ref={this.props.gestureRef}
+        onHandlerStateChange={this.handleHandlerChange}
+      >
+        <View style={containerStyles}>
+          <TextInputComponent
+            {...otherProps}
+            editable={editable}
+            pointerEvents={editable ? "auto" : "none"}
+            ref={inputRef}
+            style={inputStyles}
+            onFocus={this.props.onFocus}
+            multiline
+            adjustsFontSizeToFit
+            minimumFontScale={0.4}
+            blurOnSubmit={false}
+            placeholderTextColor={
+              textInputStyles[format].presets.placeholderColor || undefined
+            }
+            onBlur={onBlur}
+            scrollEnabled={false}
+            placeholder={placeholder}
+            defaultValue={this.props.text}
+            onChangeText={this.handleChange}
+            keyboardAppearance="dark"
+            autoFocus={false}
+          />
+          {editable && <View style={StyleSheet.absoluteFill}></View>}
+        </View>
+      </TapGestureHandler>
     );
   }
 }

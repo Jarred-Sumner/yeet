@@ -4,7 +4,7 @@ import { IconButton } from "../Button";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";
 import { BorderlessButton } from "react-native-gesture-handler";
-import { IconText, IconRedact, IconDraw, IconSticker } from "../Icon";
+import { IconText, IconRedact, IconDraw, IconSticker, IconPlus } from "../Icon";
 
 const styles = StyleSheet.create({
   container: {
@@ -42,10 +42,10 @@ const TextToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
-const RedactToolbarButton = ({ isActive, onPress }) => {
+const PlusToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      Icon={IconRedact}
+      Icon={IconPlus}
       size={40}
       isActive={isActive}
       color="white"
@@ -82,7 +82,8 @@ export enum ToolbarButtonType {
   sticker = "sticker",
   text = "text",
   redact = "redact",
-  draw = "draw"
+  draw = "draw",
+  plus = "plus"
 }
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
@@ -108,23 +109,24 @@ export const Toolbar = ({ activeButton, onChange, children }) => {
     [onChange]
   );
 
+  const onPressPlus = React.useCallback(
+    () => onChange(ToolbarButtonType.plus),
+    [onChange]
+  );
+
   const _children = children || (
     <>
       <TextToolbarButton
         isActive={activeButton === ToolbarButtonType.text}
         onPress={onPressText}
       />
-      <RedactToolbarButton
-        isActive={activeButton === ToolbarButtonType.redact}
-        onPress={onPressRedact}
-      />
       <DrawToolbarButton
         isActive={activeButton === ToolbarButtonType.draw}
         onPress={onPressDraw}
       />
-      <StickerToolbarButton
-        isActive={activeButton === ToolbarButtonType.sticker}
-        onPress={onPressSticker}
+      <PlusToolbarButton
+        isActive={activeButton === ToolbarButtonType.plus}
+        onPress={onPressPlus}
       />
     </>
   );

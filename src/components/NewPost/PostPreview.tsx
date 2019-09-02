@@ -4,6 +4,7 @@ import { PostBlockType } from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import { View, StyleSheet, UIManager, findNodeHandle } from "react-native";
+import memoizee from "memoizee";
 
 type BlockListProps = {
   blocks: Array<PostBlockType>;
@@ -12,6 +13,12 @@ type BlockListProps = {
 export const BlockList = ({
   blocks,
   setBlockAtIndex,
+  setBlockInputRef,
+  focusType,
+  focusedBlockValue,
+  onBlur,
+  onFocus,
+  focusTypeValue,
   onLayout
 }: BlockListProps) => {
   const handleChangeBlock = React.useCallback(
@@ -19,13 +26,25 @@ export const BlockList = ({
     [setBlockAtIndex, blocks]
   );
 
+  const handleSetBlockInputRef = React.useCallback(
+    block => {
+      return setBlockInputRef(block.id);
+    },
+    [setBlockInputRef]
+  );
+
   return blocks.map((block, index) => {
-    console.log(block);
     return (
       <Block
         onLayout={onLayout}
         block={block}
+        onFocus={onFocus}
+        focusedBlockValue={focusedBlockValue}
+        focusType={focusType}
+        onBlur={onBlur}
+        focusTypeValue={focusTypeValue}
         key={block.id}
+        ref={handleSetBlockInputRef(block)}
         onChange={handleChangeBlock(index)}
       />
     );
@@ -45,12 +64,15 @@ export const EditableNodeList = ({
   onChangeNode,
   onTapNode,
   maxX,
+  focusType,
   onFocus,
   waitFor,
   maxY,
+  focusedBlockValue,
+  focusTypeValue,
   onBlur: onBlurNode,
   setNodeRef,
-  focusedNodeId
+  focusedBlockId
 }: EditableNodeListProps) => {
   const containerRef = React.useCallback(
     id => ref => {
@@ -65,14 +87,18 @@ export const EditableNodeList = ({
         maxX={maxX}
         maxY={maxY}
         onBlur={onBlurNode}
-        isDragEnabled={!focusedNodeId}
+        isDragEnabled={!focusedBlockId}
+        focusedBlockValue={focusedBlockValue}
+        disabled={focusedBlockId && focusedBlockId !== id}
         waitFor={waitFor}
         containerRef={containerRef(id)}
         onFocus={onFocus}
+        focusTypeValue={focusTypeValue}
+        focusType={focusType}
         key={id}
-        isFocused={focusedNodeId === id}
+        isFocused={focusedBlockId === id}
         onTap={onTapNode}
-        isHidden={focusedNodeId && focusedNodeId !== id}
+        isHidden={focusedBlockId && focusedBlockId !== id}
         node={node}
         onChange={onChangeNode}
       />
@@ -90,18 +116,24 @@ export class PostPreview extends React.Component {
       bounds,
       maxX,
       maxY,
+      backgroundColor,
       onFocus,
       setBlockAtIndex,
       blocks,
+      setBlockInputRef,
       onChangeBlock,
       onlyShow,
-      focusedNodeId,
+      focusedBlockId,
       inlineNodes,
       onTapNode,
       onChangeNode,
+      focusType,
+      focusedBlockValue,
       onBlurNode,
       scrollRef,
-      maxHeight
+      maxHeight,
+      onBlur,
+      focusTypeValue
     } = this.props;
 
     return (
@@ -111,21 +143,32 @@ export class PostPreview extends React.Component {
         vertical
         alwaysBounceVertical
         contentInsetAdjustmentBehavior="never"
+        keyboardShouldPersistTaps="always"
         ref={scrollRef}
         style={{
           maxHeight,
-          width: bounds.width
+          width: bounds.width,
+          backgroundColor
         }}
         contentContainerStyle={[
           {
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
             position: "relative",
-            backgroundColor: "#fff"
+            backgroundColor
           }
         ]}
       >
-        <BlockList blocks={blocks} setBlockAtIndex={setBlockAtIndex} />
+        <BlockList
+          setBlockInputRef={setBlockInputRef}
+          blocks={blocks}
+          onFocus={onFocus}
+          focusTypeValue={focusTypeValue}
+          focusType={focusType}
+          focusedBlockValue={focusedBlockValue}
+          onBlur={onBlur}
+          setBlockAtIndex={setBlockAtIndex}
+        />
       </ScrollView>
     );
   }

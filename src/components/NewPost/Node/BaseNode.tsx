@@ -126,6 +126,7 @@ export class BaseNode extends React.Component<Props> {
   };
 
   bottomOffsetValue = new Animated.Value(0);
+  gestureRef = React.createRef();
 
   render() {
     const { block, position } = this.props.node;
@@ -140,20 +141,25 @@ export class BaseNode extends React.Component<Props> {
       minX,
       minY,
       containerRef,
+      disabled,
+      focusedBlockValue,
       onFocus,
       waitFor,
       onLayout
     } = this.props;
 
-    if (isHidden) {
-      return null;
-    }
+    // if (isHidden) {
+    //   return null;
+    // }
 
     const EXTRA_PADDING = 15;
 
     return (
       <MovableNode
-        isDragEnabled={isDragEnabled}
+        isDragEnabled={isDragEnabled && !disabled}
+        disabled={disabled}
+        focusedBlockValue={focusedBlockValue}
+        blockId={block.id}
         x={position.animatedX}
         y={position.animatedY}
         xLiteral={position.x}
@@ -161,7 +167,7 @@ export class BaseNode extends React.Component<Props> {
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}
         rLiteral={position.rotate}
-        waitFor={waitFor}
+        waitFor={[...waitFor, this.gestureRef]}
         isFocused={isFocused}
         scaleLiteral={position.scale}
         scale={position.animatedScale}
@@ -185,9 +191,11 @@ export class BaseNode extends React.Component<Props> {
             ref={this.blockRef}
             block={block}
             onChange={this.handleChangeBlock}
+            gestureRef={this.gestureRef}
+            focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}
             onBlur={this.handleBlur}
-            disabled={isDragEnabled}
+            disabled={isDragEnabled || disabled}
           />
         </View>
       </MovableNode>

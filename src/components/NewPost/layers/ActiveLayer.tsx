@@ -2,6 +2,7 @@ import * as React from "react";
 import { View, StyleSheet, Keyboard, KeyboardAvoidingView } from "react-native";
 import { Transition, Transitioning } from "react-native-reanimated";
 import Animated from "react-native-reanimated";
+import { TapGestureHandler } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
   container: {
@@ -18,6 +19,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0
+  },
+  layer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    zIndex: 3
   },
   children: {}
 });
@@ -49,84 +56,102 @@ export class ActiveLayer extends React.Component<Props> {
       footer,
       width,
       height,
-      controlsOpacity
+      controlsOpacity,
+      waitFor,
+      toggleActive,
+      isTappingEnabled
     } = this.props;
 
     return (
-      <View pointerEvents="box-none" style={styles.container}>
-        <Transitioning.View
-          ref={this.childrenContainer}
+      <>
+        <View
           pointerEvents="box-none"
-          transition={
-            <Transition.Sequence>
-              <Transition.Out
-                type="fade"
-                durationMs={400}
-                interpolation="easeIn"
-              />
-              <Transition.Change />
-              <Transition.In type="fade" durationMs={200} delayMs={200} />
-            </Transition.Sequence>
-          }
-          style={[styles.children, { width, height }]}
+          style={[styles.layer, { width, height }]}
         >
-          {children}
-        </Transitioning.View>
+          <View pointerEvents="box-none" style={styles.container}>
+            <Transitioning.View
+              ref={this.childrenContainer}
+              pointerEvents="box-none"
+              transition={
+                <Transition.Sequence>
+                  <Transition.Out
+                    type="fade"
+                    durationMs={400}
+                    interpolation="easeIn"
+                  />
+                  <Transition.Change />
+                  <Transition.In type="fade" durationMs={200} delayMs={200} />
+                </Transition.Sequence>
+              }
+              style={[styles.children, { width, height }]}
+            >
+              {children}
+            </Transitioning.View>
 
-        <Transitioning.View
-          ref={this.toolbarContainer}
-          pointerEvents="box-none"
-          transition={
-            <Transition.Sequence>
-              <Transition.In
-                type="fade"
-                durationMs={400}
-                interpolation="easeIn"
-              />
-              <Transition.Change />
-              <Transition.Together>
-                <Transition.Out
-                  type="slide-bottom"
-                  durationMs={400}
-                  interpolation="easeOut"
-                  propagation="bottom"
-                />
-                <Transition.Out type="fade" durationMs={200} delayMs={200} />
-              </Transition.Together>
-            </Transition.Sequence>
-          }
-          style={[styles.toolbar]}
-        >
-          {toolbar}
-        </Transitioning.View>
+            <Transitioning.View
+              ref={this.toolbarContainer}
+              pointerEvents="box-none"
+              transition={
+                <Transition.Sequence>
+                  <Transition.In
+                    type="fade"
+                    durationMs={400}
+                    interpolation="easeIn"
+                  />
+                  <Transition.Change />
+                  <Transition.Together>
+                    <Transition.Out
+                      type="slide-bottom"
+                      durationMs={400}
+                      interpolation="easeOut"
+                      propagation="bottom"
+                    />
+                    <Transition.Out
+                      type="fade"
+                      durationMs={200}
+                      delayMs={200}
+                    />
+                  </Transition.Together>
+                </Transition.Sequence>
+              }
+              style={[styles.toolbar]}
+            >
+              {toolbar}
+            </Transitioning.View>
 
-        <Transitioning.View
-          pointerEvents="box-none"
-          ref={this.footerContainer}
-          transition={
-            <Transition.Sequence>
-              <Transition.Out
-                type="fade"
-                durationMs={400}
-                interpolation="easeIn"
-              />
-              <Transition.Change />
-              <Transition.Together>
-                <Transition.Out
-                  type="slide-bottom"
-                  durationMs={400}
-                  interpolation="easeOut"
-                  propagation="bottom"
-                />
-                <Transition.Out type="fade" durationMs={200} delayMs={200} />
-              </Transition.Together>
-            </Transition.Sequence>
-          }
-          style={styles.footer}
-        >
-          {footer}
-        </Transitioning.View>
-      </View>
+            <Transitioning.View
+              pointerEvents="box-none"
+              ref={this.footerContainer}
+              transition={
+                <Transition.Sequence>
+                  <Transition.Out
+                    type="fade"
+                    durationMs={400}
+                    interpolation="easeIn"
+                  />
+                  <Transition.Change />
+                  <Transition.Together>
+                    <Transition.Out
+                      type="slide-bottom"
+                      durationMs={400}
+                      interpolation="easeOut"
+                      propagation="bottom"
+                    />
+                    <Transition.Out
+                      type="fade"
+                      durationMs={200}
+                      delayMs={200}
+                    />
+                  </Transition.Together>
+                </Transition.Sequence>
+              }
+              style={styles.footer}
+            >
+              {footer}
+            </Transitioning.View>
+          </View>
+        </View>
+      </>
     );
   }
 }

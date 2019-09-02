@@ -11,6 +11,7 @@ import ReactNative, {
   PanResponder
 } from "react-native";
 import { requestPermissions } from "@terrylinla/react-native-sketch-canvas/src/handlePermissions";
+import { generateFilename } from "../../lib/imageResize";
 var RNSketchCanvas = requireNativeComponent("RNSketchCanvas", SketchCanvas, {
   nativeOnly: {
     nativeID: true,
@@ -129,6 +130,10 @@ class SketchCanvas extends React.Component {
     return lastId;
   }
 
+  undoById(id: string) {
+    this.deletePath(id);
+  }
+
   addPath(data) {
     if (this._initialized) {
       if (this._paths.filter(p => p.path.id === data.path.id).length === 0)
@@ -165,20 +170,19 @@ class SketchCanvas extends React.Component {
   }
 
   save(
-    imageType,
-    transparent,
-    folder,
-    filename,
-    includeImage,
-    includeText,
-    cropToImageSize
+    filename = generateFilename(),
+    imageType = "image/png",
+    transparent = true,
+    includeImage = false,
+    includeText = false,
+    cropToImageSize = false
   ) {
     UIManager.dispatchViewManagerCommand(
       this._handle,
       UIManager.RNSketchCanvas.Commands.save,
       [
         imageType,
-        folder,
+        SketchCanvas.CACHE,
         filename,
         transparent,
         includeImage,

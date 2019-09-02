@@ -8,9 +8,13 @@ import { ImagePicker } from "./ImagePicker";
 import {
   NewPostType,
   PLACEHOLDER_POST,
-  buildImageBlock
+  buildImageBlock,
+  PostFormat,
+  DEFAULT_FORMAT,
+  presetsByFormat,
+  buildPost
 } from "./NewPostFormat";
-import { PostEditor, POST_WIDTH } from "./PostEditor";
+import { PostEditor, POST_WIDTH, MAX_POST_HEIGHT } from "./PostEditor";
 import { PixelRatio } from "react-native";
 import { SPACING, COLORS } from "../../lib/styles";
 import { SemiBoldText } from "../Text";
@@ -19,6 +23,7 @@ import { IconBack } from "../Icon";
 import { SafeAreaView } from "react-navigation";
 import { getInset } from "react-native-safe-area-view";
 import DeviceInfo from "react-native-device-info";
+import { calculateAspectRatioFit } from "../../lib/imageResize";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
@@ -50,32 +55,47 @@ const DEFAULT_PHOTO_FIXTURE = {
 };
 
 const DEFAULT_POST_FIXTURE = {
-  height: 600,
-  width: 414,
+  format: "caption",
+  backgroundColor: "transparent",
   blocks: [
     {
+      type: "text",
+      id: 123123,
+      format: "caption",
+      value: "",
+      autoInserted: true,
+      config: {
+        placeholder: "Enter a title",
+        overrides: {}
+      }
+    },
+    {
       type: "image",
-      id: "123ooo",
+      id: 1231232,
+      format: "caption",
+      autoInserted: true,
       value: {
         intrinsicWidth: 1125,
         intrinsicHeight: 2436,
         width: 414,
-        height: 608.0075555555554,
+        height: 606.624148148148,
         x: 0,
         y: 0,
         src: {
-          uri: "ph://4CAA6785-601B-40EA-8C79-03681553090B/L0/001",
+          uri:
+            "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png",
           width: 1125,
-          height: 1652.1944444444443
+          height: 1648.4351851851852
         },
+        originalSrc: "https://i.imgur.com/CopIMxf.jpg",
         uri:
-          "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/470770B1-570C-4013-9FAB-5228188A37B3/Library/Caches/C148C0A7-45AE-4B96-AC82-A01AD16D6815.png",
-        originalSrc: "https://i.imgur.com/CopIMxf.jpg"
+          "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png"
       },
       config: {}
     }
   ]
 };
+const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 
 const styles = StyleSheet.create({
   title: {
@@ -103,10 +123,10 @@ const styles = StyleSheet.create({
     width: "100%",
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: SPACING.double,
+    paddingBottom: SPACING.normal,
     overflow: "visible",
-    marginTop: TOP_Y,
-    height: 30,
+    paddingTop: TOP_Y,
+    height: HEADER_HEIGHT,
     flexShrink: 0,
     position: "relative",
     zIndex: 999
@@ -115,6 +135,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     zIndex: 999
+  },
+  headerStatic: {
+    backgroundColor: COLORS.primary
   },
 
   backButton: {
@@ -125,7 +148,14 @@ const styles = StyleSheet.create({
 
 const NewPostHeader = ({ onBack, showLabel, float }) => {
   return (
-    <View style={float ? [styles.header, styles.headerFloat] : styles.header}>
+    <View
+      pointerEvents="box-none"
+      style={
+        float
+          ? [styles.header, styles.headerFloat]
+          : [styles.header, styles.headerStatic]
+      }
+    >
       <View style={styles.backButton}>
         <IconButton
           onPress={onBack}
@@ -191,10 +221,18 @@ export class NewPost extends React.Component<{}, State> {
       // displaySize
     });
 
-    const post = {
-      ...this.state.post,
-      blocks: [buildImageBlock({ image, croppedPhoto, displaySize })]
-    };
+    const post = buildPost({
+      format: DEFAULT_FORMAT,
+      blocks: [
+        buildImageBlock({
+          image,
+          croppedPhoto,
+          displaySize,
+          autoInserted: true,
+          format: DEFAULT_FORMAT
+        })
+      ]
+    });
 
     this.setState({
       step: NewPostStep.editPhoto,
@@ -227,7 +265,7 @@ export class NewPost extends React.Component<{}, State> {
 
   render() {
     const { step } = this.state;
-    const isHeaderFloating = step === NewPostStep.choosePhoto;
+    const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
       <View style={styles.page}>
         <StatusBar hidden showHideTransition="slide" />
@@ -275,11 +313,15 @@ export class NewPost extends React.Component<{}, State> {
       );
     } else if (step === NewPostStep.resizePhoto) {
       return (
-        <ImageCropper
-          photo={this.state.defaultPhoto}
-          onDone={this.handleEditPhoto}
-          onBack={this.handleBackToChoosePhoto}
-        />
+        <View
+          style={{ marginTop: HEADER_HEIGHT, flex: 1, position: "relative" }}
+        >
+          <ImageCropper
+            photo={this.state.defaultPhoto}
+            onDone={this.handleEditPhoto}
+            onBack={this.handleBackToChoosePhoto}
+          />
+        </View>
       );
     } else {
       return null;

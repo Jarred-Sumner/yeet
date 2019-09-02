@@ -4,15 +4,18 @@ import { Image, ImageEditor, PixelRatio } from "react-native";
 import RNFS from "react-native-fs";
 import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
 
+export const generateFilename = (extension = "png") =>
+  `${Math.random()
+    .toString(36)
+    .substring(7)}.${extension}`;
+
 export const convertLocalIdentifierToAssetLibrary = (localIdentifier, ext) => {
   const hash = localIdentifier.split("/")[0];
   return `assets-library://asset/asset.${ext}?id=${hash}&ext=${ext}`;
 };
 
 const getAssetFileAbsolutePath = async assetPath => {
-  const dest = `${RNFS.TemporaryDirectoryPath}${Math.random()
-    .toString(36)
-    .substring(7)}.png`;
+  const dest = `${RNFS.TemporaryDirectoryPath}${generateFilename()}`;
 
   const _path = assetPath.startsWith("ph://")
     ? convertLocalIdentifierToAssetLibrary(
@@ -86,3 +89,14 @@ export const resizeImage = async ({
     };
   });
 };
+
+export function calculateAspectRatioFit(
+  srcWidth,
+  srcHeight,
+  maxWidth,
+  maxHeight
+) {
+  var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
+
+  return { width: srcWidth * ratio, height: srcHeight * ratio };
+}

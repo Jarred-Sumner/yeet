@@ -11,6 +11,10 @@ import {
 } from "react-native-gesture-handler";
 import { COLORS, SPACING } from "../../../lib/styles";
 import { TextInput } from "../Text/TextInput";
+import { FocusBlockType } from "../NewPostFormat";
+
+const { block, cond, set, eq, sub } = Animated;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -58,16 +62,7 @@ export class TextLayer extends React.Component {
     isInsertingInput: false,
     value: ""
   };
-
-  handleChangeText = value => this.setState({ value });
-  toggleActive = ({ nativeEvent: { state: gestureState, ...data } }) => {
-    if (gestureState === GestureState.END && !this.props.isFocused) {
-      this.props.insertTextNode({ x: data.x, y: data.y });
-    } else if (this.props.isFocused && gestureState === GestureState.END) {
-      // Works around issue with blur
-      Keyboard.dismiss();
-    }
-  };
+  backdropOpacityValue = new Animated.Value(0);
 
   render() {
     const {
@@ -77,6 +72,11 @@ export class TextLayer extends React.Component {
       isFocused,
       width,
       controlsOpacity,
+      isTappingEnabled,
+      isNodeFocused,
+      focusType,
+      keyboardVisibleValue,
+      focusTypeValue,
       height,
       nodeListRef
     } = this.props;
@@ -88,34 +88,58 @@ export class TextLayer extends React.Component {
         height={height}
         controlsOpacity={controlsOpacity}
         toolbar={
-          <>
-            {isFocused && <TextToolbar />}
+          <Animated.View style={{ opacity: controlsOpacity }}>
+            {isNodeFocused && <TextToolbar />}
 
-            {!isFocused && (
+            {!isNodeFocused && (
               <Toolbar
                 activeButton={ToolbarButtonType.text}
                 onChange={onPressToolbarButton}
               />
             )}
-          </>
+          </Animated.View>
         }
       >
-        <TapGestureHandler
-          waitFor={waitFor}
-          onHandlerStateChange={this.toggleActive}
-          enabled={this.props.isTappingEnabled}
+        <Animated.View
+          ref={nodeListRef}
+          pointerEvents={
+            focusType === FocusBlockType.static ? "none" : "box-none"
+          }
+          style={{
+            width,
+            height,
+            position: "relative",
+            opacity: controlsOpacity
+          }}
         >
+          <Animated.Code
+            exec={block([
+              cond(
+                eq(focusTypeValue, FocusBlockType.static),
+                set(this.backdropOpacityValue, 0.0),
+                cond(
+                  eq(focusTypeValue, FocusBlockType.absolute),
+                  [set(this.backdropOpacityValue, keyboardVisibleValue)],
+                  [set(this.backdropOpacityValue, 0.0)]
+                )
+              )
+            ])}
+          />
+
           <Animated.View
-            ref={nodeListRef}
+            pointerEvents="none"
             style={{
+              backgroundColor: "rgba(0, 0, 0, 0.65)",
               width,
               height,
-              backgroundColor: isFocused ? "rgba(0, 0, 0, 0.65)" : undefined
+              opacity: this.backdropOpacityValue,
+              position: "absolute",
+              zIndex: -1
             }}
-          >
-            {this.props.children}
-          </Animated.View>
-        </TapGestureHandler>
+          />
+
+          {this.props.children}
+        </Animated.View>
       </ActiveLayer>
     );
   }

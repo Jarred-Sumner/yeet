@@ -28,7 +28,8 @@ const FooterButton = ({ Icon, onPress, color, size = 32 }) => {
       size={size}
       Icon={Icon}
       color={color}
-      type="shadow"
+      type="fill"
+      backgroundColor={COLORS.secondaryOpacity}
       onPress={onPress}
     />
   );
@@ -60,8 +61,9 @@ export const EditorFooter = ({ onPressDownload, onPressSend }) => (
       <IconButton
         onPress={onPressDownload}
         Icon={IconDownload}
-        color="#000"
+        color="#fff"
         size={32}
+        type="shadow"
       />
     </View>
 

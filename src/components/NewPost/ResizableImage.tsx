@@ -35,6 +35,7 @@ import {
   limit,
   runDelay
 } from "react-native-redash";
+import { calculateAspectRatioFit } from "../../lib/imageResize";
 
 const {
   Value,
@@ -64,12 +65,6 @@ const {
 
 const ENABLE_DEBUG_MODE = false;
 const USE_NATIVE_DRIVER = true;
-
-function calculateAspectRatioFit(srcWidth, srcHeight, maxWidth, maxHeight) {
-  var ratio = Math.min(maxWidth / srcWidth, maxHeight / srcHeight);
-
-  return { width: srcWidth * ratio, height: srcHeight * ratio };
-}
 
 const RESIZE_BAR_HEIGHT = 14;
 

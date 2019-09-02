@@ -45,6 +45,8 @@ export class MovableNode extends Component {
     this._Y = new Animated.Value(props.yLiteral);
     this._R = new Animated.Value(props.rLiteral);
     this._Z = new Animated.Value(props.scaleLiteral);
+    console.log(props.blockId);
+    this.blockId = new Animated.Value(props.blockId);
 
     this.subscribeToKeyboard();
 
@@ -149,6 +151,7 @@ export class MovableNode extends Component {
   };
 
   keyboardVisibleValue = new Animated.Value(0);
+  keyboardHidingValue = new Animated.Value(0);
 
   handleKeyboardWillChangeFrame = ({
     duration,
@@ -158,16 +161,22 @@ export class MovableNode extends Component {
   }) => {};
 
   handleKeyboardWillHide = event => {
-    console.log(event);
+    if (this.props.isHidden) {
+      return;
+    }
+
+    this.keyboardHidingValue.setValue(1);
     this.handleKeyboardAnimation(false, event.duration);
   };
 
   handleKeyboardDidHide = event => {
     this.keyboardVisibleValue.setValue(0);
+    this.keyboardHidingValue.setValue(0);
   };
 
   handleKeyboardWillShow = event => {
     this.keyboardVisibleValue.setValue(1);
+    this.keyboardHidingValue.setValue(0);
     this.handleKeyboardAnimation(true, event.duration);
   };
 
@@ -178,7 +187,8 @@ export class MovableNode extends Component {
       xLiteral,
       yLiteral,
       rLiteral,
-      scaleLiteral
+      scaleLiteral,
+      disabled
     } = this.props;
 
     const multiplier = isShowing ? -1 : 0;
@@ -310,6 +320,7 @@ export class MovableNode extends Component {
       scale,
       r,
       isDragEnabled,
+      focusedBlockValue,
       waitFor = [],
       extraPadding
     } = this.props;
@@ -329,7 +340,19 @@ export class MovableNode extends Component {
               block([
                 call([this.X, this.Y, this.R, this.Z], this.updatePosition),
                 cond(
-                  eq(this.keyboardVisibleValue, 0),
+                  Animated.and(
+                    Animated.or(
+                      eq(focusedBlockValue, this.blockId),
+                      eq(this.keyboardHidingValue, 1)
+                    ),
+                    eq(this.keyboardVisibleValue, 1)
+                  ),
+                  block([
+                    set(this.rotate, this.keyboardVisibleR),
+                    set(this.scale, this.keyboardVisibleScale),
+                    set(this.translateY, this.keyboardVisibleY),
+                    set(this.translateX, this.keyboardVisibleX)
+                  ]),
                   block([
                     set(this.translateY, this.Y),
                     set(this.translateX, this.X),
@@ -339,12 +362,6 @@ export class MovableNode extends Component {
                     set(this.keyboardVisibleY, this.Y),
                     set(this.keyboardVisibleR, this.R),
                     set(this.keyboardVisibleScale, this.Z)
-                  ]),
-                  block([
-                    set(this.rotate, this.keyboardVisibleR),
-                    set(this.scale, this.keyboardVisibleScale),
-                    set(this.translateY, this.keyboardVisibleY),
-                    set(this.translateX, this.keyboardVisibleX)
                   ])
                 )
               ])

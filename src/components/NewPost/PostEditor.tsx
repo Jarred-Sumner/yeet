@@ -5,17 +5,34 @@ import {
   View,
   InteractionManager,
   PixelRatio,
-  Image
+  Image,
+  Keyboard
 } from "react-native";
 import { getInset } from "react-native-safe-area-view";
 import Animated from "react-native-reanimated";
 import { SafeAreaView } from "react-navigation";
 import { SPACING, COLORS } from "../../lib/styles";
 import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
-import { PostBlockType, buildTextBlock } from "./NewPostFormat";
+import {
+  PostBlockType,
+  buildTextBlock,
+  PostFormat,
+  FocusBlockType
+} from "./NewPostFormat";
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
-import { BorderlessButton, ScrollView } from "react-native-gesture-handler";
+import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import {
+  BorderlessButton,
+  ScrollView,
+  TextInput,
+  TapGestureHandler,
+  GestureHandlerGestureEvent,
+  State as GestureState,
+  GestureHandlerStateChangeEvent,
+  TapGestureHandlerEventExtra,
+  TapGestureHandlerGestureEvent
+} from "react-native-gesture-handler";
 import { IconButton } from "../Button";
 import LinearGradient from "react-native-linear-gradient";
 import {
@@ -38,6 +55,9 @@ import { PostPreview, EditableNodeList } from "./PostPreview";
 import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
 import DeviceInfo from "react-native-device-info";
 import { Redactor } from "./Redactor";
+import memoizee from "memoizee";
+
+const { block, cond, set, eq, sub } = Animated;
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 const TOP_Y = getInset("top");
@@ -55,13 +75,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
-  container: {
-    backgroundColor: "#fff"
-  },
+  container: {},
   wrapper: {
     position: "relative",
     justifyContent: "center",
-    backgroundColor: "#fff",
     alignItems: "center",
     width: "100%",
     height: "100%"
@@ -140,12 +157,16 @@ const Layer = ({
 type State = {
   activeButton: ToolbarButtonType;
   inlineNodes: EditableNodeMap;
+  focusedBlockId: string | null;
+  focusType: FocusBlockType | null;
+  isSaving: boolean;
 };
 
 const TEXT_NODE_FIXTURE: EditableNode = {
   block: {
     id: "123foo",
     type: "text",
+    format: "screenshot",
     value: "hiii",
     config: { variant: "standard", overrides: {} }
   },
@@ -167,12 +188,17 @@ export class PostEditor extends React.Component<{}, State> {
     this.state = {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
       inlineNodes: new Map(),
-      focusedNodeId: null,
+      focusedBlockId: null,
+      focusType: null,
       isSaving: false
     };
 
+    this._blockInputRefs = new Map([
+      ...props.post.blocks.map(({ id }) => [id, React.createRef()])
+    ]);
+
     if (IS_SIMULATOR) {
-      this.state.inlineNodes.set(TEXT_NODE_FIXTURE.block.id, TEXT_NODE_FIXTURE);
+      // this.state.inlineNodes.set(TEXT_NODE_FIXTURE.block.id, TEXT_NODE_FIXTURE);
     }
   }
   controlsVisibilityValue = new Animated.Value(1);
@@ -186,8 +212,10 @@ export class PostEditor extends React.Component<{}, State> {
       this._inlineNodeRefs.delete(id);
     }
 
-    if (this.state.focusedNodeId === id) {
-      this.setState({ focusedNodeId: null });
+    if (this.state.focusedBlockId === id) {
+      this.setState({ focusedBlockId: null, focusType: null });
+      this.focusedBlockValue.setValue("");
+      this.focusTypeValue.setValue(-1);
     }
   };
 
@@ -215,7 +243,13 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   handleInsertText = ({ x, y }) => {
-    const block = buildTextBlock({ value: "" });
+    console.log("INSERT TEXT NODe");
+    const block = buildTextBlock({
+      value: "",
+      format: PostFormat.screenshot,
+      placeholder: " ",
+      autoInserted: false
+    });
     const editableNode = buildEditableNode({
       block,
       x,
@@ -224,32 +258,44 @@ export class PostEditor extends React.Component<{}, State> {
 
     this.state.inlineNodes.set(block.id, editableNode);
 
-    this.setState({ focusedNodeId: block.id });
+    this.setState({
+      focusedBlockId: block.id,
+      focusType: FocusBlockType.absolute
+    });
+    this.focusedBlockValue.setValue(block.id);
+    this.focusTypeValue.setValue(FocusBlockType.absolute);
   };
 
-  scrollRef = React.createRef();
   nodeListRef = React.createRef();
 
   handleTapNode = (node: EditableNode) => {
     if (this.state.activeButton !== ToolbarButtonType.text) {
       return;
     }
-    const { focusedNodeId } = this.state;
 
-    if (focusedNodeId === node.block.id) {
+    const { focusedBlockId } = this.state;
+
+    if (focusedBlockId === node.block.id) {
       if (node.block.type === "text" && node.block.value.trim().length === 0) {
         this.deleteNode(node.block.id);
         return;
       }
 
-      this.setState({ focusedNodeId: null });
+      this.setState({ focusedBlockId: null, focusType: null });
+      this.focusedBlockValue.setValue("");
+      this.focusTypeValue.setValue(-1);
     } else {
-      this.setState({ focusedNodeId: node.block.id });
+      this.setState({
+        focusedBlockId: node.block.id,
+        focusType: FocusBlockType.absolute
+      });
+      this.focusedBlockValue.setValue(node.block.id);
+      this.focusTypeValue.setValue(FocusBlockType.absolute);
     }
   };
 
   handleBlur = () => {
-    const node = this.state.inlineNodes.get(this.state.focusedNodeId);
+    const node = this.state.inlineNodes.get(this.state.focusedBlockId);
 
     this.handleBlurNode(node);
   };
@@ -260,13 +306,33 @@ export class PostEditor extends React.Component<{}, State> {
         this.deleteNode(node.block.id);
       } else {
         this.state.inlineNodes.set(node.block.id, node);
-        this.setState({ focusedNodeId: null });
+        this.setState({ focusedBlockId: null, focusType: null });
+        this.focusedBlockValue.setValue("");
+        this.focusTypeValue.setValue(-1);
       }
     }
   };
 
-  handleFocusNode = block => {
-    this.setState({ focusedNodeId: block.id });
+  handleBlurBlock = (block: PostBlockType) => {
+    const index = this.props.post.blocks.findIndex(({ id }) => id === block.id);
+
+    this.handleChangeBlock(block, index);
+    this.setState({ focusType: null, focusedBlockId: null });
+    this.focusedBlockValue.setValue("");
+    this.focusTypeValue.setValue(-1);
+  };
+
+  handleFocusBlock = block => {
+    const focusType = this.state.inlineNodes.has(block.id)
+      ? FocusBlockType.absolute
+      : FocusBlockType.static;
+    this.setState({
+      focusedBlockId: block.id,
+      focusType
+    });
+
+    this.focusedBlockValue.setValue(block.id);
+    this.focusTypeValue.setValue(focusType);
   };
 
   handleDownload = () => {
@@ -382,106 +448,167 @@ export class PostEditor extends React.Component<{}, State> {
 
   blankResizeRef = React.createRef();
   _inlineNodeRefs = new Map();
+  _blockInputRefs = new Map<string, React.RefObject<TextInput>>();
+
+  setBlockInputRef = (id: string): React.MutableRefObject<TextInput> => {
+    let ref;
+    if (this._blockInputRefs.has(id)) {
+      ref = this._blockInputRefs.get(id);
+    } else {
+      ref = React.createRef<TextInput>();
+      this._blockInputRefs.set(id, ref);
+    }
+
+    return ref;
+  };
 
   setNodeRef = (id: string, node: View) => {
     this._inlineNodeRefs.set(id, node);
+  };
+
+  scrollRef = React.createRef<ScrollView>();
+  keyboardVisibleValue = new Animated.Value(0);
+  focusedBlockValue = new Animated.Value("");
+  focusTypeValue = new Animated.Value(-1);
+  controlsOpacityValue = new Animated.Value(1);
+
+  handleTapBackground = ({
+    nativeEvent: { state: gestureState, ...data }
+  }: TapGestureHandlerGestureEvent) => {
+    if (gestureState === GestureState.END && this.state.focusType === null) {
+      this.handleInsertText({ x: data.x, y: data.y });
+    } else if (
+      this.state.focusType !== null &&
+      gestureState === GestureState.END
+    ) {
+      // Works around issue with blur
+      Keyboard.dismiss();
+    }
   };
 
   render() {
     const { post, bounds } = this.props;
     const sizeStyle = { width: bounds.width, height: bounds.height };
     return (
-      <View style={[styles.wrapper]}>
-        <View
-          style={[
-            styles.safeWrapper,
-            styles.scrollContainer,
-            {
-              maxHeight: MAX_POST_HEIGHT,
-              height: bounds.height,
-              width: bounds.width
-            }
-          ]}
-        >
-          <PostPreview
-            bounds={bounds}
-            blocks={post.blocks}
-            inlineNodes={this.state.inlineNodes}
-            focusedNodeId={this.state.focusedNodeId}
-            minX={bounds.x}
-            minY={bounds.y}
-            ref={this.postPreviewRef}
-            scrollRef={this.scrollRef}
-            maxX={bounds.width}
-            onFocus={this.handleFocusNode}
-            maxY={bounds.height}
-            onTapNode={this.handleTapNode}
-            onlyShow={this.state.focusedNodeId}
-            onBlurNode={this.handleBlurNode}
-            onChangeNode={this.handleInlineNodeChange}
-            setBlockAtIndex={this.handleChangeBlock}
-            showEditableNodes={this.state.isSaving}
+      <TapGestureHandler
+        waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+        onHandlerStateChange={this.handleTapBackground}
+      >
+        <Animated.View style={[styles.wrapper]}>
+          <AnimatedKeyboardTracker
+            keyboardVisibleValue={this.keyboardVisibleValue}
           />
-
-          <Layer
-            zIndex={LayerZIndex.sheet}
-            width={sizeStyle.width}
-            isFrozen
-            pointerEvents="none"
-            opacity={this.controlsVisibilityValue}
-            height={sizeStyle.height}
+          <Animated.Code
+            exec={block([
+              cond(
+                eq(this.focusTypeValue, FocusBlockType.absolute),
+                set(this.controlsOpacityValue, 1.0),
+                cond(
+                  eq(this.focusTypeValue, FocusBlockType.static),
+                  [
+                    set(
+                      this.controlsOpacityValue,
+                      sub(1.0, this.keyboardVisibleValue)
+                    )
+                  ],
+                  [set(this.controlsOpacityValue, 1.0)]
+                )
+              )
+            ])}
+          />
+          <View
+            style={[
+              styles.safeWrapper,
+              styles.scrollContainer,
+              {
+                maxHeight: MAX_POST_HEIGHT,
+                height: bounds.height,
+                width: bounds.width
+              }
+            ]}
           >
-            <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
-          </Layer>
+            <PostPreview
+              bounds={bounds}
+              blocks={post.blocks}
+              inlineNodes={this.state.inlineNodes}
+              focusedBlockId={this.state.focusedBlockId}
+              focusTypeValue={this.focusTypeValue}
+              minX={bounds.x}
+              minY={bounds.y}
+              ref={this.postPreviewRef}
+              backgroundColor={post.backgroundColor}
+              focusedBlockValue={this.focusedBlockValue}
+              scrollRef={this.scrollRef}
+              maxX={bounds.width}
+              onFocus={this.handleFocusBlock}
+              maxY={bounds.height}
+              onlyShow={this.state.focusedBlockId}
+              onBlur={this.handleBlurBlock}
+              focusType={FocusBlockType.static}
+              setBlockInputRef={this.setBlockInputRef}
+              onChangeNode={this.handleInlineNodeChange}
+              setBlockAtIndex={this.handleChangeBlock}
+              showEditableNodes={this.state.isSaving}
+            />
 
-          <Layer
-            width={sizeStyle.width}
-            height={sizeStyle.height}
-            zIndex={LayerZIndex.icons}
-          >
+            <Layer
+              zIndex={LayerZIndex.sheet}
+              width={sizeStyle.width}
+              isFrozen
+              opacity={this.controlsOpacityValue}
+              pointerEvents="none"
+              height={sizeStyle.height}
+            >
+              <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
+            </Layer>
+
             <TextLayer
-              // footer={
-              //   <EditorFooter
-              //     onPressDownload={this.handleDownload}
-              //     onPressSend={this.handleSend}
-              //   />
-              // }
-              waitFor={[this.scrollRef]}
+              footer={
+                <EditorFooter
+                  onPressDownload={this.handleDownload}
+                  onPressSend={this.handleSend}
+                />
+              }
+              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
               width={sizeStyle.width}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text
               }
               height={sizeStyle.height}
               onPressToolbarButton={this.handlePressToolbarButton}
-              isFocused={!!this.state.focusedNodeId}
+              isFocused={!!this.state.focusedBlockId}
               insertTextNode={this.handleInsertText}
+              controlsOpacity={this.controlsOpacityValue}
               blur={this.handleBlur}
+              focusType={this.state.focusType}
+              isNodeFocused={this.state.focusType === FocusBlockType.absolute}
               activeButton={this.state.activeButton}
+              keyboardVisibleValue={this.keyboardVisibleValue}
+              focusTypeValue={this.focusTypeValue}
               nodeListRef={this.nodeListRef}
             >
-              {this.state.activeButton === "text" ? (
-                <EditableNodeList
-                  inlineNodes={this.state.inlineNodes}
-                  setNodeRef={this.setNodeRef}
-                  focusedNodeId={this.state.focusedNodeId}
-                  waitFor={[this.scrollRef]}
-                  minX={bounds.x}
-                  minY={bounds.y}
-                  maxX={sizeStyle.width}
-                  onFocus={this.handleFocusNode}
-                  maxY={sizeStyle.height}
-                  onTapNode={this.handleTapNode}
-                  onlyShow={this.state.focusedNodeId}
-                  onBlur={this.handleBlurNode}
-                  onChangeNode={this.handleInlineNodeChange}
-                />
-              ) : (
-                <Redactor blocks={this.props.post.blocks} />
-              )}
+              <EditableNodeList
+                inlineNodes={this.state.inlineNodes}
+                setNodeRef={this.setNodeRef}
+                focusedBlockId={this.state.focusedBlockId}
+                focusedBlockValue={this.focusedBlockValue}
+                focusTypeValue={this.focusTypeValue}
+                waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+                focusType={FocusBlockType.absolute}
+                minX={bounds.x}
+                minY={bounds.y}
+                maxX={sizeStyle.width}
+                onFocus={this.handleFocusBlock}
+                maxY={sizeStyle.height}
+                onTapNode={this.handleTapNode}
+                onlyShow={this.state.focusedBlockId}
+                onBlur={this.handleBlurNode}
+                onChangeNode={this.handleInlineNodeChange}
+              />
             </TextLayer>
-          </Layer>
-        </View>
-      </View>
+          </View>
+        </Animated.View>
+      </TapGestureHandler>
     );
   }
 }
