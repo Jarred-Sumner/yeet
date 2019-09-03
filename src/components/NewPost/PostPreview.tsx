@@ -1,10 +1,21 @@
 import * as React from "react";
-import { ScrollView } from "react-native-gesture-handler";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { PostBlockType } from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
-import { View, StyleSheet, UIManager, findNodeHandle } from "react-native";
+import {
+  View,
+  StyleSheet,
+  UIManager,
+  findNodeHandle,
+  ScrollView as RNScrollView
+} from "react-native";
 import memoizee from "memoizee";
+import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
+
+export const ScrollView = createNativeWrapper(KeyboardAwareScrollView, {
+  disallowInterruption: true
+});
 
 type BlockListProps = {
   blocks: Array<PostBlockType>;
@@ -106,13 +117,9 @@ export const EditableNodeList = ({
   });
 };
 
-export class PostPreview extends React.Component {
-  maxY = 0;
-  maxX = 0;
-  state = {};
-
-  render() {
-    const {
+export const PostPreview = React.forwardRef(
+  (
+    {
       bounds,
       maxX,
       maxY,
@@ -130,11 +137,17 @@ export class PostPreview extends React.Component {
       focusType,
       focusedBlockValue,
       onBlurNode,
-      scrollRef,
+      children,
       maxHeight,
+      paddingTop,
       onBlur,
       focusTypeValue
-    } = this.props;
+    },
+    ref
+  ) => {
+    const scrollRef = React.useRef();
+
+    React.useImperativeHandle(ref, () => scrollRef.current);
 
     return (
       <ScrollView
@@ -144,7 +157,15 @@ export class PostPreview extends React.Component {
         alwaysBounceVertical
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
+        keyboardOpeningTime={0}
         ref={scrollRef}
+        contentOffset={{
+          y: paddingTop * -1
+        }}
+        contentInset={{
+          top: paddingTop,
+          bottom: 50
+        }}
         style={{
           maxHeight,
           width: bounds.width,
@@ -169,7 +190,9 @@ export class PostPreview extends React.Component {
           onBlur={onBlur}
           setBlockAtIndex={setBlockAtIndex}
         />
+
+        {children}
       </ScrollView>
     );
   }
-}
+);

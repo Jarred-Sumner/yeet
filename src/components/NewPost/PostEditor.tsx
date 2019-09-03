@@ -24,20 +24,22 @@ import {
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import tinycolor from "tinycolor2";
 import {
-  BorderlessButton,
+  BaseButton,
   ScrollView,
   TextInput,
-  TapGestureHandler,
+  LongPressGestureHandler,
   GestureHandlerGestureEvent,
   State as GestureState,
   GestureHandlerStateChangeEvent,
-  TapGestureHandlerEventExtra,
+  LongPressGestureHandlerEventExtra,
   FlingGestureHandler,
-  TapGestureHandlerGestureEvent,
+  LongPressGestureHandlerGestureEvent,
   Directions,
   FlingGestureHandlerGestureEvent,
-  FlingGestureHandlerStateChangeEvent
+  FlingGestureHandlerStateChangeEvent,
+  TapGestureHandler
 } from "react-native-gesture-handler";
 import { IconButton } from "../Button";
 import LinearGradient from "react-native-linear-gradient";
@@ -74,7 +76,7 @@ const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
-export const POST_WIDTH = SCREEN_DIMENSIONS.width - 4;
+export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 export const MAX_POST_HEIGHT =
   SCREEN_DIMENSIONS.height - TOP_Y - CAROUSEL_HEIGHT;
 
@@ -85,13 +87,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "transparent",
     overflow: "hidden",
+    width: POST_WIDTH,
     flex: 1,
     position: "relative"
   },
-  container: {},
+  container: {
+    width: POST_WIDTH
+  },
   wrapper: {
     marginTop: TOP_Y,
     borderRadius: 12,
@@ -122,15 +125,25 @@ enum LayerZIndex {
 const MiddleSheet = ({ width, height }) => {
   return (
     <LinearGradient
-      useAngle
+      // useAngle
       width={width}
       height={height}
       start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 0 }}
-      angle={270.32}
-      angleCenter={{ x: 0.5, y: 0.5 }}
-      locations={[0.2742, 0.75]}
-      colors={["rgba(0,0,0,0.1)", "rgba(0,0,0,0)"]}
+      end={{ x: 0, y: 1 }}
+      // angle={180}
+      // angleCenter={{ x: 0.0, y: 0.0 }}
+      locations={[
+        0.0,
+        (60 + SPACING.half) / MAX_POST_HEIGHT,
+        1.0 - 60 / MAX_POST_HEIGHT,
+        1.0
+      ]}
+      colors={[
+        "rgba(0,0,0,0.1)",
+        "rgba(100,100,100,0.0)",
+        "rgba(100,100,100,0.0)",
+        "rgba(0,0,0,0.1)"
+      ]}
     />
   );
 };
@@ -491,15 +504,25 @@ export class PostEditor extends React.Component<{}, State> {
   focusTypeValue = new Animated.Value(-1);
   controlsOpacityValue = new Animated.Value(1);
 
-  handleTapBackground = ({
-    nativeEvent: { state: gestureState, ...data }
-  }: TapGestureHandlerGestureEvent) => {
-    if (gestureState === GestureState.END && this.state.focusType === null) {
-      this.handleInsertText({ x: data.x, y: data.y });
-    } else if (
-      this.state.focusType !== null &&
-      gestureState === GestureState.END
-    ) {
+  handleTapBackground = event => {
+    const {
+      nativeEvent: { state: gestureState, ...data }
+    } = event;
+    if (gestureState === GestureState.END) {
+      this.handlePressBackground(data);
+    }
+  };
+
+  handlePressDownBackground = ({
+    nativeEvent: { locationX: x, locationY: y }
+  }) => {
+    this.handlePressBackground({ x, y });
+  };
+
+  handlePressBackground = ({ x, y }) => {
+    if (this.state.focusType === null) {
+      this.handleInsertText({ x, y });
+    } else {
       // Works around issue with blur
       Keyboard.dismiss();
     }
@@ -510,173 +533,194 @@ export class PostEditor extends React.Component<{}, State> {
       layout: { x, y, width, height }
     }
   }) => {
-    this.setState({ bounds: { x, y, width, height } });
+    this.setState({ bounds: { x, y: y, width, height } });
   };
 
   formatScrollViewRef = React.createRef();
+
+  buttonRef = React.createRef();
 
   render() {
     const { post } = this.props;
     const presets = presetsByFormat[post.format];
 
-    const { bounds = {} } = this.state;
+    const {
+      bounds = { width: POST_WIDTH, height: MAX_POST_HEIGHT, x: 0, y: 0 }
+    } = this.state;
     const sizeStyle = {
       width: bounds.width || POST_WIDTH,
       height: bounds.height || MAX_POST_HEIGHT
     };
+
     return (
-      <TapGestureHandler
-        waitFor={[
-          this.scrollRef,
-          this.formatScrollViewRef,
-          ...this._blockInputRefs.values()
+      <Animated.View
+        style={[
+          styles.wrapper,
+          {
+            backgroundColor: post.backgroundColor,
+            shadowColor: tinycolor(post.backgroundColor)
+              .lighten(10)
+              .toString(),
+            borderWidth: 0,
+            borderColor: tinycolor(post.backgroundColor)
+              .lighten(5)
+              .toString(),
+            shadowOpacity: 0.25,
+            height: MAX_POST_HEIGHT,
+            width: POST_WIDTH,
+            shadowOffset: {
+              width: 0,
+              height: 0
+            },
+            shadowRadius: 2
+          }
         ]}
-        onHandlerStateChange={this.handleTapBackground}
       >
-        <Animated.View
-          style={[
-            styles.wrapper,
-            {
-              paddingTop: presets.paddingTop || 0,
-              backgroundColor: post.backgroundColor,
-              shadowColor: post.backgroundColor,
-              shadowOpacity: 0.25,
-              height: MAX_POST_HEIGHT,
-              shadowOffset: {
-                width: 0,
-                height: 0
-              },
-              shadowRadius: 10
-            }
-          ]}
-        >
-          <AnimatedKeyboardTracker
-            keyboardVisibleValue={this.keyboardVisibleValue}
-          />
-          <Animated.Code
-            exec={block([
+        <AnimatedKeyboardTracker
+          keyboardVisibleValue={this.keyboardVisibleValue}
+        />
+        <Animated.Code
+          exec={block([
+            cond(
+              eq(this.focusTypeValue, FocusBlockType.absolute),
+              set(this.controlsOpacityValue, 1.0),
               cond(
-                eq(this.focusTypeValue, FocusBlockType.absolute),
-                set(this.controlsOpacityValue, 1.0),
-                cond(
-                  eq(this.focusTypeValue, FocusBlockType.static),
-                  [
-                    set(
-                      this.controlsOpacityValue,
-                      sub(1.0, this.keyboardVisibleValue)
-                    )
-                  ],
-                  [set(this.controlsOpacityValue, 1.0)]
-                )
+                eq(this.focusTypeValue, FocusBlockType.static),
+                [
+                  set(
+                    this.controlsOpacityValue,
+                    sub(1.0, this.keyboardVisibleValue)
+                  )
+                ],
+                [set(this.controlsOpacityValue, 1.0)]
               )
-            ])}
-          />
-          <View
-            onLayout={this.updateBounds}
-            style={[
-              styles.safeWrapper,
-              styles.scrollContainer,
-              {
-                maxHeight: MAX_POST_HEIGHT,
-                width: bounds.width
-              }
-            ]}
-          >
-            <PostPreview
-              bounds={bounds}
-              blocks={post.blocks}
-              inlineNodes={this.state.inlineNodes}
-              focusedBlockId={this.state.focusedBlockId}
-              focusTypeValue={this.focusTypeValue}
-              minX={bounds.x}
-              minY={bounds.y}
-              ref={this.postPreviewRef}
-              backgroundColor={post.backgroundColor}
-              focusedBlockValue={this.focusedBlockValue}
-              scrollRef={this.scrollRef}
-              maxX={bounds.width}
-              onFocus={this.handleFocusBlock}
-              maxY={bounds.height}
-              onlyShow={this.state.focusedBlockId}
-              onBlur={this.handleBlurBlock}
-              focusType={FocusBlockType.static}
-              setBlockInputRef={this.setBlockInputRef}
-              onChangeNode={this.handleInlineNodeChange}
-              setBlockAtIndex={this.handleChangeBlock}
-              showEditableNodes={this.state.isSaving}
-            />
+            )
+          ])}
+        />
 
-            <Layer
-              zIndex={LayerZIndex.sheet}
-              width={sizeStyle.width}
-              isFrozen
-              opacity={this.controlsOpacityValue}
-              pointerEvents="none"
-              height={sizeStyle.height}
+        <TapGestureHandler
+          waitFor={this.buttonRef}
+          onHandlerStateChange={this.handleTapBackground}
+        >
+          <Animated.View>
+            <BaseButton
+              ref={this.buttonRef}
+              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
             >
-              <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
-            </Layer>
+              <Animated.View
+                onLayout={this.updateBounds}
+                style={[
+                  styles.safeWrapper,
+                  styles.scrollContainer,
+                  {
+                    maxHeight: MAX_POST_HEIGHT,
+                    width: bounds.width
+                  }
+                ]}
+              >
+                <PostPreview
+                  bounds={bounds}
+                  blocks={post.blocks}
+                  paddingTop={presets.paddingTop || 0}
+                  inlineNodes={this.state.inlineNodes}
+                  focusedBlockId={this.state.focusedBlockId}
+                  focusTypeValue={this.focusTypeValue}
+                  minX={bounds.x}
+                  minY={bounds.y}
+                  backgroundColor={post.backgroundColor}
+                  focusedBlockValue={this.focusedBlockValue}
+                  ref={this.scrollRef}
+                  maxX={bounds.width}
+                  onFocus={this.handleFocusBlock}
+                  maxY={bounds.height}
+                  onlyShow={this.state.focusedBlockId}
+                  onBlur={this.handleBlurBlock}
+                  focusType={FocusBlockType.static}
+                  setBlockInputRef={this.setBlockInputRef}
+                  onChangeNode={this.handleInlineNodeChange}
+                  setBlockAtIndex={this.handleChangeBlock}
+                  showEditableNodes={this.state.isSaving}
+                />
 
-            <TextLayer
-              footer={
-                <EditorFooter
-                  onPressDownload={this.handleDownload}
-                  onPressSend={this.handleSend}
+                <Layer
+                  zIndex={LayerZIndex.sheet}
+                  width={sizeStyle.width}
+                  isFrozen
+                  opacity={this.controlsOpacityValue}
+                  pointerEvents="none"
+                  height={sizeStyle.height}
+                >
+                  <MiddleSheet
+                    width={sizeStyle.width}
+                    height={sizeStyle.height}
+                  />
+                </Layer>
+
+                <TextLayer
+                  onBack={this.props.onBack}
+                  footer={
+                    <EditorFooter
+                      onPressDownload={this.handleDownload}
+                      onPressSend={this.handleSend}
+                      waitFor={[
+                        this.scrollRef,
+                        this.formatScrollViewRef,
+                        ...this._blockInputRefs.values()
+                      ]}
+                    />
+                  }
                   waitFor={[
                     this.scrollRef,
                     this.formatScrollViewRef,
                     ...this._blockInputRefs.values()
                   ]}
-                />
-              }
-              waitFor={[
-                this.scrollRef,
-                this.formatScrollViewRef,
-                ...this._blockInputRefs.values()
-              ]}
-              width={sizeStyle.width}
-              isTappingEnabled={
-                this.state.activeButton === ToolbarButtonType.text
-              }
-              height={sizeStyle.height}
-              onPressToolbarButton={this.handlePressToolbarButton}
-              isFocused={!!this.state.focusedBlockId}
-              insertTextNode={this.handleInsertText}
-              controlsOpacity={this.controlsOpacityValue}
-              blur={this.handleBlur}
-              focusType={this.state.focusType}
-              isNodeFocused={this.state.focusType === FocusBlockType.absolute}
-              activeButton={this.state.activeButton}
-              keyboardVisibleValue={this.keyboardVisibleValue}
-              focusTypeValue={this.focusTypeValue}
-              nodeListRef={this.nodeListRef}
-            >
-              <EditableNodeList
-                inlineNodes={this.state.inlineNodes}
-                setNodeRef={this.setNodeRef}
-                focusedBlockId={this.state.focusedBlockId}
-                focusedBlockValue={this.focusedBlockValue}
-                focusTypeValue={this.focusTypeValue}
-                waitFor={[
-                  this.scrollRef,
-                  this.formatScrollViewRef,
-                  ...this._blockInputRefs.values()
-                ]}
-                focusType={FocusBlockType.absolute}
-                minX={bounds.x}
-                minY={bounds.y}
-                maxX={sizeStyle.width}
-                onFocus={this.handleFocusBlock}
-                maxY={sizeStyle.height}
-                onTapNode={this.handleTapNode}
-                onlyShow={this.state.focusedBlockId}
-                onBlur={this.handleBlurNode}
-                onChangeNode={this.handleInlineNodeChange}
-              />
-            </TextLayer>
-          </View>
-        </Animated.View>
-      </TapGestureHandler>
+                  width={sizeStyle.width}
+                  isTappingEnabled={
+                    this.state.activeButton === ToolbarButtonType.text
+                  }
+                  height={sizeStyle.height}
+                  onPressToolbarButton={this.handlePressToolbarButton}
+                  isFocused={!!this.state.focusedBlockId}
+                  insertTextNode={this.handleInsertText}
+                  controlsOpacity={this.controlsOpacityValue}
+                  blur={this.handleBlur}
+                  focusType={this.state.focusType}
+                  isNodeFocused={
+                    this.state.focusType === FocusBlockType.absolute
+                  }
+                  activeButton={this.state.activeButton}
+                  keyboardVisibleValue={this.keyboardVisibleValue}
+                  focusTypeValue={this.focusTypeValue}
+                  nodeListRef={this.nodeListRef}
+                >
+                  <EditableNodeList
+                    inlineNodes={this.state.inlineNodes}
+                    setNodeRef={this.setNodeRef}
+                    focusedBlockId={this.state.focusedBlockId}
+                    focusedBlockValue={this.focusedBlockValue}
+                    focusTypeValue={this.focusTypeValue}
+                    waitFor={[
+                      this.scrollRef,
+                      this.formatScrollViewRef,
+                      ...this._blockInputRefs.values()
+                    ]}
+                    focusType={FocusBlockType.absolute}
+                    minX={bounds.x}
+                    minY={bounds.y}
+                    maxX={sizeStyle.width}
+                    onFocus={this.handleFocusBlock}
+                    maxY={sizeStyle.height}
+                    onTapNode={this.handleTapNode}
+                    onlyShow={this.state.focusedBlockId}
+                    onBlur={this.handleBlurNode}
+                    onChangeNode={this.handleInlineNodeChange}
+                  />
+                </TextLayer>
+              </Animated.View>
+            </BaseButton>
+          </Animated.View>
+        </TapGestureHandler>
+      </Animated.View>
     );
   }
 }

@@ -10,6 +10,7 @@ import {
 import Animated, { Easing } from "react-native-reanimated";
 import { TextPostBlock, PostFormat, presetsByFormat } from "../NewPostFormat";
 import { COLORS } from "../../../lib/styles";
+import tinycolor from "tinycolor2";
 
 const ZERO_WIDTH_SPACE = "​";
 
@@ -92,7 +93,18 @@ const textInputTypeStylesheets = {
   [PostFormat.caption]: StyleSheet.create({
     container: {
       justifyContent: "center",
-      borderBottomColor: "rgba(255,255, 255, 0.25)",
+      borderTopColor: tinycolor(
+        presetsByFormat[PostFormat.caption].backgroundColor
+      )
+        .setAlpha(0.1)
+        .toString(),
+      marginTop: 4,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: tinycolor(
+        presetsByFormat[PostFormat.caption].backgroundColor
+      )
+        .setAlpha(0.1)
+        .toString(),
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderRadius: 0
     },
@@ -103,8 +115,8 @@ const textInputTypeStylesheets = {
       paddingBottom: presetsByFormat[PostFormat.caption].paddingVertical,
       paddingLeft: presetsByFormat[PostFormat.caption].paddingHorizontal,
       paddingRight: presetsByFormat[PostFormat.caption].paddingHorizontal,
-      color: "white",
-      flexGrow: 1,
+      color: presetsByFormat[PostFormat.caption].color,
+      flexGrow: 0,
       fontWeight: "bold"
     }
   })
@@ -172,7 +184,7 @@ export class TextInput extends React.Component<Props> {
     if (this.props.text.length !== text.length) {
       this.fontSizeClock = Animated.timing(this.fontSizeValue, {
         duration: 100,
-        easing: Easing.elastic(0.25),
+        easing: Easing.linear,
         toValue: this.getFontSizeValue(this.props, text) || 16
       }).start();
     }

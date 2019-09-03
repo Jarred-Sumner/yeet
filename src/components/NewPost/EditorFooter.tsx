@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     position: "absolute",
-    bottom: 0,
+    bottom: SPACING.normal,
     paddingHorizontal: SPACING.double,
     left: 0,
     right: 0,
@@ -49,15 +49,7 @@ const NextButton = ({ onPress, waitFor }) => {
 };
 
 export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
-  <SafeAreaView
-    forceInset={{
-      top: "never",
-      left: "never",
-      right: "never",
-      bottom: "always"
-    }}
-    style={styles.footer}
-  >
+  <View style={styles.footer}>
     <View style={[styles.footerSide]}>
       <IconButton
         onPress={onPressDownload}
@@ -72,5 +64,5 @@ export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
     <View style={[styles.footerSide, styles.footerSideRight]}>
       <NextButton onPress={onPressSend} waitFor={waitFor} />
     </View>
-  </SafeAreaView>
+  </View>
 );

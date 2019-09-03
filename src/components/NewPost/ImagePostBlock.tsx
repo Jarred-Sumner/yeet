@@ -26,13 +26,13 @@ const stylesByFormat = {
     image: {
       overflow: "hidden",
       flex: 0,
-      borderRadius: presetsByFormat[PostFormat.caption].borderRadius
+      borderRadius: presetsByFormat[PostFormat.caption].borderRadius,
+      backgroundColor: "transparent"
     },
     container: {
       paddingVertical: presetsByFormat[PostFormat.caption].paddingVertical,
-      paddingHorizontal: presetsByFormat[PostFormat.caption].paddingHorizontal,
       width: "100%",
-      backgroundColor: presetsByFormat[PostFormat.caption].backgroundColor
+      backgroundColor: "transparent"
     }
   }),
   [PostFormat.screenshot]: StyleSheet.create({
@@ -47,7 +47,11 @@ const stylesByFormat = {
 const ScreenshotImage = ({ block }: { block: ImagePostBlockType }) => {
   return (
     <Image
-      source={block.value.src}
+      source={{
+        uri: block.value.src.uri,
+        width: block.value.width,
+        height: block.value.height
+      }}
       resizeMode="stretch"
       style={[
         stylesByFormat[block.format].image,
@@ -61,18 +65,17 @@ const ScreenshotImage = ({ block }: { block: ImagePostBlockType }) => {
 };
 
 const CaptionImage = ({ block }: { block: ImagePostBlockType }) => {
-  const maxWidth =
-    POST_WIDTH - presetsByFormat[PostFormat.caption].paddingHorizontal * 2;
-  const { width, height } = calculateAspectRatioFit(
-    block.value.src.width,
-    block.value.src.height,
-    maxWidth,
-    Math.min(block.value.height, MAX_POST_HEIGHT)
-  );
+  const width = Math.min(POST_WIDTH, block.value.src.width);
+  const ratio = width / block.value.src.width;
+  const height = block.value.src.height * ratio;
 
   return (
     <Image
-      source={block.value.src}
+      source={{
+        uri: block.value.src.uri,
+        width,
+        height
+      }}
       resizeMode="stretch"
       style={[
         stylesByFormat[block.format].image,

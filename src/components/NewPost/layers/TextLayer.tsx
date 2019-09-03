@@ -78,7 +78,8 @@ export class TextLayer extends React.Component {
       keyboardVisibleValue,
       focusTypeValue,
       height,
-      nodeListRef
+      nodeListRef,
+      onBack
     } = this.props;
 
     return (
@@ -95,6 +96,7 @@ export class TextLayer extends React.Component {
               <Toolbar
                 activeButton={ToolbarButtonType.text}
                 onChange={onPressToolbarButton}
+                onBack={onBack}
               />
             )}
           </Animated.View>

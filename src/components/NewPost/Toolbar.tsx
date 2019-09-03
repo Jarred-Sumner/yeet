@@ -4,21 +4,33 @@ import { IconButton } from "../Button";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";
 import { BorderlessButton } from "react-native-gesture-handler";
-import { IconText, IconRedact, IconDraw, IconSticker, IconPlus } from "../Icon";
+import {
+  IconText,
+  IconRedact,
+  IconDraw,
+  IconSticker,
+  IconPlus,
+  IconBack
+} from "../Icon";
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: "flex-end",
-    paddingTop: 15,
-    alignItems: "center"
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 15 / 2,
+    alignItems: "center",
+    flex: 1
+  },
+  side: {
+    flexDirection: "row"
   },
   buttonContainer: {},
   buttonIcon: {
     textShadowColor: "rgba(0, 0, 0, 0.5)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
-    paddingHorizontal: SPACING.normal,
-    paddingVertical: 15
+    paddingVertical: SPACING.normal,
+    paddingHorizontal: 15
   }
 });
 
@@ -34,7 +46,7 @@ const TextToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconText}
-      size={26}
+      size={24}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -46,7 +58,7 @@ const PlusToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconPlus}
-      size={40}
+      size={24}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -58,7 +70,7 @@ const DrawToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconDraw}
-      size={37}
+      size={24}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -78,6 +90,16 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
+const BackToolbarButton = ({ isActive, onPress }) => (
+  <ToolbarButton
+    onPress={onPress}
+    type={"shadow"}
+    color="white"
+    size={24}
+    Icon={IconBack}
+  />
+);
+
 export enum ToolbarButtonType {
   sticker = "sticker",
   text = "text",
@@ -88,7 +110,7 @@ export enum ToolbarButtonType {
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
-export const Toolbar = ({ activeButton, onChange, children }) => {
+export const Toolbar = ({ activeButton, onChange, children, onBack }) => {
   const onPressText = React.useCallback(
     () => onChange(ToolbarButtonType.text),
     [onChange]
@@ -131,7 +153,17 @@ export const Toolbar = ({ activeButton, onChange, children }) => {
     </>
   );
 
-  return <Animated.View style={styles.container}>{_children}</Animated.View>;
+  return (
+    <Animated.View style={styles.container}>
+      <Animated.View style={[styles.side, styles.leftSide]}>
+        <BackToolbarButton onPress={onBack} />
+      </Animated.View>
+
+      <Animated.View style={[styles.side, styles.rightSide]}>
+        {_children}
+      </Animated.View>
+    </Animated.View>
+  );
 };
 
 export default Toolbar;

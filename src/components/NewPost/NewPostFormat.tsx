@@ -41,8 +41,8 @@ export type ImagePostBlock = PostBlock & {
     height: number;
     x: number;
     y: number;
-    src: string;
-    originalSrc: string;
+    src: string | null;
+    originalSrc: string | null;
   };
 };
 
@@ -135,10 +135,11 @@ export const buildImageBlock = ({
 export const presetsByFormat = {
   [PostFormat.caption]: {
     borderRadius: 8,
-    paddingTop: CAROUSEL_HEIGHT,
-    paddingHorizontal: SPACING.double,
+    paddingTop: 48,
+    paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
-    backgroundColor: "#000"
+    backgroundColor: "#000",
+    color: "white"
   },
   [PostFormat.screenshot]: {
     backgroundColor: "#fff",
@@ -187,10 +188,14 @@ const blocksForFormat = (
 
 export const buildPost = ({
   format,
-  blocks: _blocks
+  blocks: _blocks,
+  width,
+  height
 }: {
   format: PostFormat;
   blocks: Array<PostBlockType>;
+  width: number;
+  height: number;
 }): NewPostType => {
   const presets = presetsByFormat[format];
   const blocks = blocksForFormat(format, _blocks);
@@ -198,6 +203,8 @@ export const buildPost = ({
   if (format === PostFormat.caption) {
     return {
       format,
+      width,
+      height,
       backgroundColor: presets.backgroundColor,
       blocks
     };

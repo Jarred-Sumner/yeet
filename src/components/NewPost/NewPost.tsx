@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   page: {
     width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height,
-    backgroundColor: "#090909"
+    backgroundColor: "#000"
   },
   titleContainer: {
     left: 0,
@@ -151,36 +151,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal
   }
 });
-
-const NewPostHeader = ({ onBack, showLabel, float }) => {
-  return (
-    <View
-      pointerEvents="box-none"
-      style={
-        float
-          ? [styles.header, styles.headerFloat]
-          : [styles.header, styles.headerStatic]
-      }
-    >
-      <View style={styles.backButton}>
-        <IconButton
-          onPress={onBack}
-          type={float ? "shadow" : "plain"}
-          size={24}
-          Icon={IconBack}
-        />
-      </View>
-      <View pointerEvents="none" style={styles.titleContainer}>
-        {showLabel && (
-          <SemiBoldText pointerEvents="none" style={styles.title}>
-            Create
-          </SemiBoldText>
-        )}
-      </View>
-      <View />
-    </View>
-  );
-};
 
 const DEVELOPMENT_STEP = NewPostStep.editPhoto;
 
@@ -229,6 +199,8 @@ export class NewPost extends React.Component<{}, State> {
 
     const post = buildPost({
       format: DEFAULT_FORMAT,
+      width: displaySize.width,
+      height: displaySize.height,
       blocks: [
         buildImageBlock({
           image,
@@ -289,16 +261,11 @@ export class NewPost extends React.Component<{}, State> {
               <Transition.Out type="fade" />
             </Transition.Together>
           }
-          style={{ width: "100%", height: MAX_POST_HEIGHT }}
+          style={{ width: POST_WIDTH, height: MAX_POST_HEIGHT }}
         >
           {this.renderStep()}
         </Transitioning.View>
 
-        <NewPostHeader
-          float
-          onBack={this.handleBack}
-          showLabel={step !== NewPostStep.choosePhoto}
-        />
         <FormatPicker
           defaultFormat={this.state.post.format}
           onChangeFormat={this.handleChangeFormat}
@@ -316,6 +283,7 @@ export class NewPost extends React.Component<{}, State> {
           bounds={this.state.bounds}
           post={this.state.post}
           key={this.state.post.format}
+          onBack={this.handleBack}
           onChange={this.handleChangePost}
           onChangeFormat={this.handleChangeFormat}
         />

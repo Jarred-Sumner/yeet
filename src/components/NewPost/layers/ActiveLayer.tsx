@@ -12,6 +12,7 @@ const styles = StyleSheet.create({
   toolbar: {
     position: "absolute",
     right: 0,
+    left: 0,
     top: 0
   },
   footer: {
@@ -91,7 +92,6 @@ export class ActiveLayer extends React.Component<Props> {
 
             <Transitioning.View
               ref={this.toolbarContainer}
-              pointerEvents="box-none"
               transition={
                 <Transition.Sequence>
                   <Transition.In
