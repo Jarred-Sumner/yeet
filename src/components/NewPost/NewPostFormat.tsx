@@ -2,14 +2,16 @@ import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
 import { SPACING, COLORS } from "../../lib/styles";
 
+export const CAROUSEL_HEIGHT = 60;
+
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 export enum PostFormat {
   screenshot = "screenshot",
-  caption = "caption"
-  // vent = "vent",
-  // comic = "comic",
-  // blargh = "blargh"
+  caption = "caption",
+  vent = "vent",
+  comic = "comic",
+  blargh = "blargh"
 }
 
 interface PostBlock {
@@ -133,6 +135,7 @@ export const buildImageBlock = ({
 export const presetsByFormat = {
   [PostFormat.caption]: {
     borderRadius: 8,
+    paddingTop: CAROUSEL_HEIGHT,
     paddingHorizontal: SPACING.double,
     paddingVertical: SPACING.normal,
     backgroundColor: "#000"

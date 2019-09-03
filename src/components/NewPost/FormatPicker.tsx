@@ -5,11 +5,9 @@ import SafeAreaView from "react-native-safe-area-view";
 import Carousel from "react-native-snap-carousel";
 import { SPACING } from "../../lib/styles";
 import { MediumText } from "../Text";
-import { PostFormat } from "./NewPostFormat";
+import { PostFormat, CAROUSEL_HEIGHT } from "./NewPostFormat";
 
 const SCREEN_WIDTH = Dimensions.get("screen").width;
-
-export const CAROUSEL_HEIGHT = 60;
 
 const styles = StyleSheet.create({
   container: {

@@ -16,6 +16,7 @@ import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
 import {
   PostBlockType,
   buildTextBlock,
+  CAROUSEL_HEIGHT,
   PostFormat,
   FocusBlockType,
   presetsByFormat
@@ -63,7 +64,7 @@ import DeviceInfo from "react-native-device-info";
 import { Redactor } from "./Redactor";
 import memoizee from "memoizee";
 import { BoldText } from "../Text";
-import FormatPicker, { CAROUSEL_HEIGHT } from "./FormatPicker";
+import FormatPicker from "./FormatPicker";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
   },
   container: {},
   wrapper: {
-    marginTop: HEADER_HEIGHT,
+    marginTop: TOP_Y,
     borderRadius: 12,
     position: "relative",
     justifyContent: "center",
@@ -516,6 +517,7 @@ export class PostEditor extends React.Component<{}, State> {
 
   render() {
     const { post } = this.props;
+    const presets = presetsByFormat[post.format];
 
     const { bounds = {} } = this.state;
     const sizeStyle = {
@@ -532,7 +534,21 @@ export class PostEditor extends React.Component<{}, State> {
         onHandlerStateChange={this.handleTapBackground}
       >
         <Animated.View
-          style={[styles.wrapper, { backgroundColor: post.backgroundColor }]}
+          style={[
+            styles.wrapper,
+            {
+              paddingTop: presets.paddingTop || 0,
+              backgroundColor: post.backgroundColor,
+              shadowColor: post.backgroundColor,
+              shadowOpacity: 0.25,
+              height: MAX_POST_HEIGHT,
+              shadowOffset: {
+                width: 0,
+                height: 0
+              },
+              shadowRadius: 10
+            }
+          ]}
         >
           <AnimatedKeyboardTracker
             keyboardVisibleValue={this.keyboardVisibleValue}

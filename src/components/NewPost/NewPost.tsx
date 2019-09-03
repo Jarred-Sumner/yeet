@@ -62,7 +62,7 @@ const DEFAULT_PHOTO_FIXTURE = {
 
 const DEFAULT_POST_FIXTURE = {
   format: "caption",
-  backgroundColor: "transparent",
+  backgroundColor: presetsByFormat["caption"].backgroundColor,
   blocks: [
     {
       type: "text",
