@@ -8,6 +8,7 @@ import {
   IconText,
   IconRedact,
   IconDraw,
+  IconPhoto,
   IconSticker,
   IconPlus,
   IconBack
@@ -78,6 +79,18 @@ const DrawToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
+const PhotoToolbarButton = ({ isActive, onPress }) => {
+  return (
+    <ToolbarButton
+      Icon={IconPhoto}
+      size={24}
+      isActive={isActive}
+      color="white"
+      onPress={onPress}
+    />
+  );
+};
+
 const StickerToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
@@ -105,7 +118,8 @@ export enum ToolbarButtonType {
   text = "text",
   redact = "redact",
   draw = "draw",
-  plus = "plus"
+  plus = "plus",
+  photo = "photo"
 }
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
@@ -136,11 +150,20 @@ export const Toolbar = ({ activeButton, onChange, children, onBack }) => {
     [onChange]
   );
 
+  const onPressPhoto = React.useCallback(
+    () => onChange(ToolbarButtonType.photo),
+    [onChange]
+  );
+
   const _children = children || (
     <>
       <TextToolbarButton
         isActive={activeButton === ToolbarButtonType.text}
         onPress={onPressText}
+      />
+      <PhotoToolbarButton
+        isActive={activeButton === ToolbarButtonType.photo}
+        onPress={onPressPhoto}
       />
       <DrawToolbarButton
         isActive={activeButton === ToolbarButtonType.draw}

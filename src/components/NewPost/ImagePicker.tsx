@@ -9,7 +9,7 @@ import Permissions from "react-native-permissions";
 // import { Image } from "../Image";
 import { DeniedPhotoPermission } from "./DeniedPhotoPermission";
 import { RequestPhotoPermission } from "./RequestPhotoPermission";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import Animated from "react-native-reanimated";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import SafeAreaView from "react-native-safe-area-view";
@@ -18,6 +18,7 @@ import { getInset } from "react-native-safe-area-view";
 import { IconClose } from "../Icon";
 import { IconButton } from "react-native-paper";
 import { ScrollView as NavigationScrollView } from "react-navigation";
+import tinycolor from "tinycolor2";
 
 const TOP_Y = getInset("top");
 
@@ -30,6 +31,8 @@ const ScrollView = createNativeWrapper(
 
 const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
 
+export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
+
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const styles = StyleSheet.create({
@@ -40,14 +43,37 @@ const styles = StyleSheet.create({
     height: LIST_HEADER_HEIGHT
   },
   headerText: {
-    fontSize: 24
+    fontSize: 24,
+    textAlign: "center"
   },
   row: {
     marginBottom: 2
   }
 });
 
-export const LIST_HEADER_HEIGHT = 40 + TOP_Y;
+const ListHeaderRow = ({ isActive = true, children, count = 2 }) => {
+  return (
+    <View
+      style={{
+        height: LIST_HEADER_HEIGHT,
+        paddingTop: TOP_Y,
+        marginTop: TOP_Y * -1,
+        width: SCREEN_DIMENSIONS.width / count,
+        backgroundColor: isActive
+          ? tinycolor(COLORS.primary)
+              .setAlpha(0.1)
+              .toString()
+          : undefined,
+        flexDirection: "row",
+        justifyContent: "center",
+        alignItems: "center",
+        opacity: isActive ? 1 : 0.85
+      }}
+    >
+      <SemiBoldText style={styles.headerText}>{children}</SemiBoldText>
+    </View>
+  );
+};
 
 const DefaultListHeaderComponent = ({ hidden }) => {
   return (
@@ -63,10 +89,25 @@ const DefaultListHeaderComponent = ({ hidden }) => {
         height: LIST_HEADER_HEIGHT - TOP_Y,
         alignItems: "center",
         flexDirection: "row",
-        paddingHorizontal: SPACING.normal
+        justifyContent: "center",
+        position: "relative"
       }}
     >
-      <SemiBoldText style={styles.headerText}>CAMERA ROLL</SemiBoldText>
+      <ListHeaderRow isActive>CAMERA ROLL</ListHeaderRow>
+      <ListHeaderRow isActive={false}>THE INTERNET</ListHeaderRow>
+
+      <Animated.View
+        style={{
+          width: SCREEN_DIMENSIONS.width / 2,
+          height: 4,
+          borderRadius: 4,
+          opacity: hidden ? 0 : 1,
+          backgroundColor: COLORS.primary,
+          position: "absolute",
+          bottom: 0,
+          left: 0
+        }}
+      />
     </SafeAreaView>
   );
 };

@@ -6186,6 +6186,11 @@ react-native-tab-view@^1.2.0, react-native-tab-view@^1.4.1:
   dependencies:
     prop-types "^15.6.1"
 
+react-native-tab-view@^2.10.0:
+  version "2.10.0"
+  resolved "https://registry.yarnpkg.com/react-native-tab-view/-/react-native-tab-view-2.10.0.tgz#5e249e5650502010013449ffd4e5edc18a95364b"
+  integrity sha512-qgexVz5eO4yaFjdkmn/sURXgVvaBo6pZD/q1eoca96SbPVbaH3WzVhF3bRUfeTHwZkXwznFTpS3JURqIFU8vQA==
+
 "react-native-text-detector@https://github.com/zsajjad/react-native-text-detector.git#firebase":
   version "0.0.6"
   resolved "https://github.com/zsajjad/react-native-text-detector.git#a116012da31033c790ad6c7a918be3958a125f2c"

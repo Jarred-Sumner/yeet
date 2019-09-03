@@ -146,6 +146,11 @@ export class ImagePostBlock extends React.Component<Props> {
         </View>
       );
     } else {
+      const translateY =
+        PostFormat.screenshot === block.format
+          ? 0
+          : -1 * (LIST_HEADER_HEIGHT + 15);
+
       return (
         <TapGestureHandler
           enabled={!!this.props.onTap}
@@ -167,7 +172,7 @@ export class ImagePostBlock extends React.Component<Props> {
           >
             <Animated.View
               style={{
-                transform: [{ translateY: -1 * (LIST_HEADER_HEIGHT + 15) }],
+                transform: [{ translateY }],
                 backgroundColor: "#000"
               }}
             >
