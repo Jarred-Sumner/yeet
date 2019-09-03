@@ -10,7 +10,7 @@ export class NewPostPage extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <NewPost />
+        <NewPost navigation={this.props.navigation} />
       </View>
     );
   }

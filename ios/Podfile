@@ -53,5 +53,7 @@ target 'yeet' do
 
   pod 'RNFS', :path => '../node_modules/react-native-fs'
 
+  pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element'
+
 end
 

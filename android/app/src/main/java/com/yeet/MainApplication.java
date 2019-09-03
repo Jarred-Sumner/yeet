@@ -7,6 +7,7 @@ import com.facebook.react.PackageList;
 import com.facebook.hermes.reactexecutor.HermesExecutorFactory;
 import com.facebook.react.bridge.JavaScriptExecutorFactory;
 import com.facebook.react.ReactApplication;
+import com.ijzerenhein.sharedelement.RNSharedElementPackage;
 import com.rnfs.RNFSPackage;
 import com.terrylinla.rnsketchcanvas.SketchCanvasPackage;
 import com.fetchsky.RNTextDetector.RNTextDetectorPackage;

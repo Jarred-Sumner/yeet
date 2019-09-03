@@ -21,15 +21,32 @@ import LoginScreen from "./src/screens/LoginScreen";
 import NewPostPage from "./src/screens/NewPostPage";
 import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
+import ImagePickerPage from "./src/screens/ImagePickerPage";
+import { createSharedElementStackNavigator } from "react-navigation-sharedelement";
 
 const Routes = createAppContainer(
   createStackNavigator(
     {
       Feed: createStackNavigator(
         {
-          NewPost: {
-            screen: NewPostPage
-          }
+          NewPostStack: createSharedElementStackNavigator(
+            createStackNavigator,
+            {
+              NewPost: NewPostPage,
+              EditBlockPhoto: ImagePickerPage
+            },
+            {
+              cardStyle: {
+                backgroundColor: "#000"
+              },
+              defaultNavigationOptions: {
+                header: () => null,
+                mode: "modal",
+                headerMode: "float",
+                headerTransparent: true
+              }
+            }
+          )
         },
         {
           cardStyle: {

@@ -11,15 +11,12 @@ import {
   buildImageBlock,
   PostFormat,
   DEFAULT_FORMAT,
-  presetsByFormat,
-  buildPost
-} from "./NewPostFormat";
-import {
-  PostEditor,
   POST_WIDTH,
-  MAX_POST_HEIGHT,
-  HEADER_HEIGHT
-} from "./PostEditor";
+  presetsByFormat,
+  buildPost,
+  MAX_POST_HEIGHT
+} from "./NewPostFormat";
+import { PostEditor, HEADER_HEIGHT } from "./PostEditor";
 import { PixelRatio } from "react-native";
 import { SPACING, COLORS } from "../../lib/styles";
 import { SemiBoldText } from "../Text";
@@ -87,15 +84,16 @@ const DEFAULT_POST_FIXTURE = {
         height: 606.624148148148,
         x: 0,
         y: 0,
-        src: {
-          uri:
-            "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png",
-          width: 1125,
-          height: 1648.4351851851852
-        },
-        originalSrc: "https://i.imgur.com/CopIMxf.jpg",
-        uri:
-          "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png"
+        src: null
+        // src: {
+        //   uri:
+        //     "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png",
+        //   width: 1125,
+        //   height: 1648.4351851851852
+        // },
+        // originalSrc: "https://i.imgur.com/CopIMxf.jpg",
+        // uri:
+        //   "file:///Users/jarred/Library/Developer/CoreSimulator/Devices/E572E605-6C76-497B-8546-126E66F6B24F/data/Containers/Data/Application/E617A55D-994E-4CD3-8E72-D6675CEA8FA1/Library/Caches/581182FA-478B-4DEA-A96A-03DD87DAEA35.png"
       },
       config: {}
     }
@@ -165,7 +163,7 @@ export class NewPost extends React.Component<{}, State> {
         SCREEN_DIMENSIONS.height - (TOP_Y + SPACING.double + 30) + BOTTOM_Y,
       width: SCREEN_DIMENSIONS.width
     },
-    step: IS_SIMULATOR ? DEVELOPMENT_STEP : NewPostStep.choosePhoto
+    step: NewPostStep.editPhoto
   };
 
   handleChangePost = post => this.setState({ post });
@@ -284,6 +282,7 @@ export class NewPost extends React.Component<{}, State> {
           post={this.state.post}
           key={this.state.post.format}
           onBack={this.handleBack}
+          navigation={this.props.navigation}
           onChange={this.handleChangePost}
           onChangeFormat={this.handleChangeFormat}
         />

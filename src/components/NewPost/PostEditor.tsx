@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { getInset } from "react-native-safe-area-view";
 import Animated from "react-native-reanimated";
-import { SafeAreaView } from "react-navigation";
+import { SafeAreaView, withNavigationFocus } from "react-navigation";
 import { SPACING, COLORS } from "../../lib/styles";
 import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
 import {
@@ -19,7 +19,10 @@ import {
   CAROUSEL_HEIGHT,
   PostFormat,
   FocusBlockType,
-  presetsByFormat
+  presetsByFormat,
+  POST_WIDTH,
+  isPlaceholderImageBlock,
+  MAX_POST_HEIGHT
 } from "./NewPostFormat";
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
@@ -67,6 +70,7 @@ import { Redactor } from "./Redactor";
 import memoizee from "memoizee";
 import { BoldText } from "../Text";
 import FormatPicker from "./FormatPicker";
+import { NavigationEvents } from "react-navigation";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -75,10 +79,6 @@ const TOP_Y = getInset("top");
 const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
-
-export const POST_WIDTH = SCREEN_DIMENSIONS.width;
-export const MAX_POST_HEIGHT =
-  SCREEN_DIMENSIONS.height - TOP_Y - CAROUSEL_HEIGHT;
 
 export const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 
@@ -235,6 +235,15 @@ export class PostEditor extends React.Component<{}, State> {
   }
   controlsVisibilityValue = new Animated.Value(1);
 
+  handleWillFocus = () => {
+    this.scrollRef.current &&
+      this.scrollRef.current.scrollTo({
+        x: 0,
+        y: (presetsByFormat[this.props.post.format].paddingTop || 0) * -1,
+        animated: false
+      });
+  };
+
   deleteNode = (id: string) => {
     if (this.state.inlineNodes.has(id)) {
       this.state.inlineNodes.delete(id);
@@ -275,7 +284,6 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   handleInsertText = ({ x, y }) => {
-    console.log("INSERT TEXT NODe");
     const block = buildTextBlock({
       value: "",
       format: PostFormat.screenshot,
@@ -536,9 +544,95 @@ export class PostEditor extends React.Component<{}, State> {
     this.setState({ bounds: { x, y: y, width, height } });
   };
 
+  handleOpenImagePicker = block => {
+    this.props.navigation.push("EditBlockPhoto", {
+      blockId: block.id,
+      post: this.props.post,
+      onChange: this.handleChangeImageBlockPhoto
+    });
+  };
+
+  handleChangeImageBlockPhoto = (
+    blockId: string,
+    photo: CameraRoll.PhotoIdentifier
+  ) => {
+    const blockIndex = this.props.post.blocks.findIndex(
+      block => block.id === blockId
+    );
+
+    const block = { ...this.props.post.blocks[blockIndex] };
+
+    const {
+      width: intrinsicWidth,
+      height: intrinsicHeight,
+      uri
+    } = photo.node.image;
+
+    const displaySize = {
+      width: POST_WIDTH,
+      height: intrinsicHeight * (POST_WIDTH / intrinsicWidth)
+    };
+
+    const source = Image.resolveAssetSource({
+      uri,
+      width: displaySize.width,
+      height: displaySize.height
+    });
+
+    block.value.intrinsicWidth = intrinsicWidth;
+    block.value.intrinsicHeight = intrinsicHeight;
+    block.value.src = source;
+    block.value.originalSrc = uri;
+    block.value.uri = source.uri;
+    block.value.width = displaySize.width;
+    block.value.height = displaySize.height;
+
+    const blocks = [...this.props.post.blocks];
+    blocks.splice(blockIndex, 1, block);
+
+    this.props.onChange({
+      ...this.props.post,
+      blocks
+    });
+
+    return {
+      width: block.value.width,
+      height: block.value.height,
+      source: source
+    };
+  };
+
   formatScrollViewRef = React.createRef();
 
   buttonRef = React.createRef();
+  lastTappedBlockId = null;
+  handleScrollBeginDrag = (
+    {
+      // nativeEvent: {
+      //   contentOffset: { y }
+      // }
+    }
+  ) => {
+    if (!this.lastTappedBlockId) {
+      return;
+    }
+
+    const block = this.props.post.blocks.find(
+      block => block.id === this.lastTappedBlockId
+    );
+
+    if (!block) {
+      return;
+    }
+
+    if (isPlaceholderImageBlock(block)) {
+      this.handleOpenImagePicker(block);
+    }
+  };
+
+  handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
+  hasPlaceholderImageBlocks = () =>
+    !!this.props.post.blocks.find(isPlaceholderImageBlock);
 
   render() {
     const { post } = this.props;
@@ -576,6 +670,7 @@ export class PostEditor extends React.Component<{}, State> {
           }
         ]}
       >
+        <NavigationEvents onWillFocus={this.handleWillFocus} />
         <AnimatedKeyboardTracker
           keyboardVisibleValue={this.keyboardVisibleValue}
         />
@@ -626,12 +721,16 @@ export class PostEditor extends React.Component<{}, State> {
                   focusedBlockId={this.state.focusedBlockId}
                   focusTypeValue={this.focusTypeValue}
                   minX={bounds.x}
+                  onTapBlock={this.handleTapBlock}
                   minY={bounds.y}
                   backgroundColor={post.backgroundColor}
                   focusedBlockValue={this.focusedBlockValue}
                   ref={this.scrollRef}
                   maxX={bounds.width}
+                  bounces={!this.hasPlaceholderImageBlocks()}
                   onFocus={this.handleFocusBlock}
+                  onScrollBeginDrag={this.handleScrollBeginDrag}
+                  onOpenImagePicker={this.handleOpenImagePicker}
                   maxY={bounds.height}
                   onlyShow={this.state.focusedBlockId}
                   onBlur={this.handleBlurBlock}

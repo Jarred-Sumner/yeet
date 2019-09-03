@@ -1,10 +1,16 @@
 import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
 import { SPACING, COLORS } from "../../lib/styles";
+import { getInset } from "react-native-safe-area-view";
 
+const TOP_Y = getInset("top");
 export const CAROUSEL_HEIGHT = 60;
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
+export const POST_WIDTH = SCREEN_DIMENSIONS.width;
+
+export const MAX_POST_HEIGHT =
+  SCREEN_DIMENSIONS.height - TOP_Y - CAROUSEL_HEIGHT;
 
 export enum PostFormat {
   screenshot = "screenshot",
@@ -111,11 +117,36 @@ export const buildImageBlock = ({
   croppedPhoto,
   displaySize,
   autoInserted,
+  placeholder = false,
+  id: _id,
   format
 }): ImagePostBlock => {
+  const id = _id || nanoid();
+
+  if (placeholder) {
+    return {
+      type: "image",
+      id,
+      format,
+      autoInserted,
+      value: {
+        intrinsicWidth: 0,
+        intrinsicHeight: 0,
+        width: POST_WIDTH,
+        height: POST_WIDTH,
+        x: 0,
+        y: 0,
+        src: null,
+        originalSrc: null,
+        uri: null
+      },
+      config: {}
+    };
+  }
+
   return {
     type: "image",
-    id: nanoid(),
+    id,
     format,
     autoInserted,
     value: {
@@ -130,6 +161,10 @@ export const buildImageBlock = ({
     },
     config: {}
   };
+};
+
+export const isPlaceholderImageBlock = (block: ImagePostBlock) => {
+  return block.type === "image" && block.value.src === null;
 };
 
 export const presetsByFormat = {
@@ -157,10 +192,23 @@ const blocksForFormat = (
   format: PostFormat,
   _blocks: Array<PostBlockType>
 ): Array<PostBlockType> => {
-  const blocks = _blocks.map(block => ({
-    ...block,
-    format
-  }));
+  const blocks = _blocks.map(block => {
+    const newBlock = {
+      ...block,
+      format
+    };
+
+    if (
+      block.type === "image" &&
+      block.format !== format &&
+      format === PostFormat.screenshot
+    ) {
+      newBlock.value.width = POST_WIDTH;
+      newBlock.value.height = MAX_POST_HEIGHT;
+    }
+
+    return newBlock;
+  });
 
   if (format === PostFormat.screenshot) {
     return blocks.filter(

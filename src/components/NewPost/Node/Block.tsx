@@ -12,12 +12,15 @@ export const Block = React.forwardRef(
       onFocus,
       onBlur,
       onLayout,
+      onOpenImagePicker,
       inputRef,
       focusType,
       focusTypeValue,
       annotations,
       focusedBlockValue,
+      scrollRef,
       gestureRef,
+      onTap,
       disabled = false
     }: {
       block: PostBlock;
@@ -36,8 +39,11 @@ export const Block = React.forwardRef(
           onLayout={onLayout}
           focusType={focusType}
           block={block}
+          onTap={onTap}
+          onOpenImagePicker={onOpenImagePicker}
           focusTypeValue={focusTypeValue}
           focusedBlockValue={focusedBlockValue}
+          scrollRef={scrollRef}
           onChange={onChange}
           onBlur={onBlur}
           onFocus={onFocus}
@@ -48,11 +54,14 @@ export const Block = React.forwardRef(
       return (
         <ImagePostBlock
           onFocus={onFocus}
-          ref={ref}
+          inputRef={ref}
+          onOpenImagePicker={onOpenImagePicker}
           onLayout={onLayout}
+          onTap={onTap}
           focusType={focusType}
           gestureRef={gestureRef}
           focusedBlockValue={focusedBlockValue}
+          scrollRef={scrollRef}
           focusTypeValue={focusTypeValue}
           block={block}
           onBlur={onBlur}

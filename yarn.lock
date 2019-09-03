@@ -6161,6 +6161,11 @@ react-native-secure-key-store@^2.0.4:
   resolved "https://registry.yarnpkg.com/react-native-secure-key-store/-/react-native-secure-key-store-2.0.4.tgz#117d616442a3471e49c723094708f5dd0d4d7404"
   integrity sha512-qbcnNXoixIn96GlIyu0S1b/JVboOPmyTSH3EbfVX4RZYRem2HTMxhkkd3vRWCk3IuJ8POf+3KZBeQM6UvYOZZA==
 
+react-native-shared-element@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/react-native-shared-element/-/react-native-shared-element-0.4.3.tgz#8c750598872ee604e6d1f62b9858eb5faa73a4df"
+  integrity sha512-NV5Xcddeg7h46NPEVuyJMdjZtZP3AQg+RBUZMSSdi7YSOwxQWHKSnyWwOYNHaDBM5JaOscRZcqnoMpRPnBGgOw==
+
 react-native-snap-carousel@^3.8.0:
   version "3.8.0"
   resolved "https://registry.yarnpkg.com/react-native-snap-carousel/-/react-native-snap-carousel-3.8.0.tgz#9372222d61d37d0a8a3bec423d135d0caa1b7595"
@@ -6271,6 +6276,13 @@ react-navigation-hooks@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/react-navigation-hooks/-/react-navigation-hooks-1.0.1.tgz#f8bc2061c31026b14162943650946df715a9ae57"
   integrity sha512-CUnnzrDlLB+OLYQwlY90T4/Bnlq5EbVnSdenrC+29JUgR5cys50ZL+ixQjArVSv5aiuyyQ68Fo4tF0ru3sFt8Q==
+
+react-navigation-sharedelement@^0.4.3:
+  version "0.4.3"
+  resolved "https://registry.yarnpkg.com/react-navigation-sharedelement/-/react-navigation-sharedelement-0.4.3.tgz#98386e1ba164e8428f19da9673d23773d166e8b6"
+  integrity sha512-d+5QRTAUZZw7+YLV+SyYGjDWBXBkBkJHzK7IfNEds4S6FMp4LRvl3Rg5Hf2VmiLhRTUHLQDzLTkmW8AC632i0w==
+  dependencies:
+    hoist-non-react-statics "^3.3.0"
 
 react-navigation-stack@~1.4.0:
   version "1.4.0"

@@ -13,7 +13,7 @@ import {
 import memoizee from "memoizee";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 
-export const ScrollView = createNativeWrapper(KeyboardAwareScrollView, {
+export const ScrollView = createNativeWrapper(RNScrollView, {
   disallowInterruption: true
 });
 
@@ -28,8 +28,11 @@ export const BlockList = ({
   focusType,
   focusedBlockValue,
   onBlur,
+  onOpenImagePicker,
+  onTap,
   onFocus,
   focusTypeValue,
+  scrollRef,
   onLayout
 }: BlockListProps) => {
   const handleChangeBlock = React.useCallback(
@@ -51,7 +54,10 @@ export const BlockList = ({
         block={block}
         onFocus={onFocus}
         focusedBlockValue={focusedBlockValue}
+        scrollRef={scrollRef}
+        onOpenImagePicker={onOpenImagePicker}
         focusType={focusType}
+        onTap={onTap}
         onBlur={onBlur}
         focusTypeValue={focusTypeValue}
         key={block.id}
@@ -140,8 +146,13 @@ export const PostPreview = React.forwardRef(
       children,
       maxHeight,
       paddingTop,
+      onTapBlock,
       onBlur,
-      focusTypeValue
+      onOpenImagePicker,
+      focusTypeValue,
+      onScroll,
+      onScrollBeginDrag,
+      bounces
     },
     ref
   ) => {
@@ -154,7 +165,11 @@ export const PostPreview = React.forwardRef(
         directionalLockEnabled
         horizontal={false}
         vertical
-        alwaysBounceVertical
+        bounces={bounces}
+        alwaysBounceVertical={bounces}
+        overScrollMode="always"
+        onScroll={onScroll}
+        onScrollBeginDrag={onScrollBeginDrag}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
         keyboardOpeningTime={0}
@@ -167,7 +182,7 @@ export const PostPreview = React.forwardRef(
           bottom: 50
         }}
         style={{
-          maxHeight,
+          // maxHeight,
           width: bounds.width,
           backgroundColor
         }}
@@ -185,7 +200,10 @@ export const PostPreview = React.forwardRef(
           blocks={blocks}
           onFocus={onFocus}
           focusTypeValue={focusTypeValue}
+          onOpenImagePicker={onOpenImagePicker}
           focusType={focusType}
+          onTap={onTapBlock}
+          scrollRef={scrollRef}
           focusedBlockValue={focusedBlockValue}
           onBlur={onBlur}
           setBlockAtIndex={setBlockAtIndex}

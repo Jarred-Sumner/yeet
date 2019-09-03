@@ -1,25 +1,77 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
 import { StyleSheet, View, Image, Dimensions } from "react-native";
-import { FlatList, BaseButton } from "react-native-gesture-handler";
+import {
+  FlatList as GestureHandlerFlatList,
+  BaseButton
+} from "react-native-gesture-handler";
 import Permissions from "react-native-permissions";
 // import { Image } from "../Image";
 import { DeniedPhotoPermission } from "./DeniedPhotoPermission";
 import { RequestPhotoPermission } from "./RequestPhotoPermission";
 import { SPACING } from "../../lib/styles";
+import Animated from "react-native-reanimated";
+import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
+import SafeAreaView from "react-native-safe-area-view";
+import { SemiBoldText } from "../Text";
+import { getInset } from "react-native-safe-area-view";
+import { IconClose } from "../Icon";
+import { IconButton } from "react-native-paper";
+import { ScrollView as NavigationScrollView } from "react-navigation";
+
+const TOP_Y = getInset("top");
+
+const ScrollView = createNativeWrapper(
+  Animated.createAnimatedComponent(NavigationScrollView),
+  {
+    disallowInterruption: true
+  }
+);
+
+const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    backgroundColor: "#000"
+  },
+  headerText: {
+    fontSize: 24
+  },
   row: {
     marginBottom: 2
   }
 });
 
+export const LIST_HEADER_HEIGHT = 40 + TOP_Y;
+
+const DefaultListHeaderComponent = ({ hidden }) => {
+  return (
+    <SafeAreaView
+      forceInset={{
+        top: "always",
+        left: "never",
+        right: "never",
+        bottom: "never"
+      }}
+      style={{
+        backgroundColor: "rgba(0, 0, 0, 0.75)",
+        height: LIST_HEADER_HEIGHT - TOP_Y,
+        alignItems: "center",
+        flexDirection: "row",
+        paddingHorizontal: SPACING.normal
+      }}
+    >
+      <SemiBoldText style={styles.headerText}>CAMERA ROLL</SemiBoldText>
+    </SafeAreaView>
+  );
+};
+
 type Props = {
   height: number;
   width: number;
+  animatedYOffset: Animated.Value<number>;
 };
 
 const NUM_COLUMNS = 3;
@@ -85,20 +137,34 @@ const PhotoCell = ({
   return (
     <BaseButton exclusive={false} onPress={_onPress}>
       <View style={[photoCellStyles.container, { width, height }]}>
-        <Image
-          source={source}
-          resizeMode="center"
-          style={{
-            maxHeight: height,
-            maxWidth: width
-          }}
-        />
+        <Image source={source} resizeMode="contain" />
       </View>
     </BaseButton>
   );
 };
 
 export class ImagePicker extends React.Component<Props, State> {
+  static defaultProps = {
+    animatedYOffset: new Animated.Value(0),
+    initialScrollOffset: 0,
+    ListHeaderComponent: DefaultListHeaderComponent
+  };
+
+  handleScroll = Animated.event(
+    [
+      {
+        nativeEvent: {
+          contentOffset: {
+            y: this.props.animatedYOffset
+          }
+        }
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
+  flatListRef = React.createRef<FlatList>();
+
   constructor(props: Props) {
     super(props);
 
@@ -123,6 +189,10 @@ export class ImagePicker extends React.Component<Props, State> {
 
   componentDidMount() {
     this.checkPermissions();
+
+    if (this.props.scrollEnabled) {
+      this.flatListRef.current.getNode().flashScrollIndicators();
+    }
   }
 
   checkPermissions = async () => {
@@ -216,9 +286,27 @@ export class ImagePicker extends React.Component<Props, State> {
     );
   };
 
+  renderHeader = props => (
+    <DefaultListHeaderComponent
+      {...props}
+      onPressBack={this.props.onPressBack}
+      hidden={!this.props.scrollEnabled}
+    />
+  );
+
   render() {
     const { loadState, photos } = this.state;
-    const { width, height, ListHeaderComponent } = this.props;
+    const {
+      width,
+      height,
+      ListHeaderComponent,
+      paddingTop = 0,
+      onPressBack,
+      paddingBottom = 0,
+      onScrollBeginDrag,
+      scrollEnabled,
+      pointerEvents
+    } = this.props;
 
     if (loadState === ImagePickerLoadState.denied) {
       return <DeniedPhotoPermission />;
@@ -228,19 +316,32 @@ export class ImagePicker extends React.Component<Props, State> {
       return (
         <FlatList
           data={photos}
+          pointerEvents={pointerEvents}
           getItemLayout={this.getItemLayout}
           initialNumToRender={Math.floor(PAGE_LENGTH * 1.5)}
           renderItem={this.handleRenderItem}
           numColumns={NUM_COLUMNS}
+          onScroll={this.handleScroll}
+          ref={this.flatListRef}
           style={{
             width,
             height,
+            // paddingTop,
             flexGrow: 0,
             flexShrink: 0
           }}
           contentInsetAdjustmentBehavior="never"
-          ListHeaderComponent={ListHeaderComponent}
-          removeClippedSubviews
+          ListHeaderComponent={this.renderHeader()}
+          removeClippedSubviews={scrollEnabled}
+          stickyHeaderIndices={[0]}
+          onScrollBeginDrag={onScrollBeginDrag}
+          scrollEventThrottle={1}
+          overScrollMode="always"
+          ListHeaderComponentStyle={{
+            height: LIST_HEADER_HEIGHT
+          }}
+          scrollEnabled={scrollEnabled}
+          renderScrollComponent={props => <ScrollView {...props} />}
           columnWrapperStyle={styles.row}
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}
