@@ -60,6 +60,7 @@
     "react-native-safe-area-view": "^0.14.6",
     "react-native-screens": "^1.0.0-alpha.23",
     "react-native-secure-key-store": "^2.0.4",
+    "react-native-snap-carousel": "^3.8.0",
     "react-native-svg": "^9.7.1",
     "react-native-text-detector": "https://github.com/zsajjad/react-native-text-detector.git#firebase",
     "react-native-thumbnail": "^1.1.3",

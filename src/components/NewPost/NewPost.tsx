@@ -14,7 +14,12 @@ import {
   presetsByFormat,
   buildPost
 } from "./NewPostFormat";
-import { PostEditor, POST_WIDTH, MAX_POST_HEIGHT } from "./PostEditor";
+import {
+  PostEditor,
+  POST_WIDTH,
+  MAX_POST_HEIGHT,
+  HEADER_HEIGHT
+} from "./PostEditor";
 import { PixelRatio } from "react-native";
 import { SPACING, COLORS } from "../../lib/styles";
 import { SemiBoldText } from "../Text";
@@ -24,6 +29,7 @@ import { SafeAreaView } from "react-navigation";
 import { getInset } from "react-native-safe-area-view";
 import DeviceInfo from "react-native-device-info";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
+import FormatPicker from "./FormatPicker";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
@@ -95,7 +101,6 @@ const DEFAULT_POST_FIXTURE = {
     }
   ]
 };
-const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 
 const styles = StyleSheet.create({
   title: {
@@ -109,7 +114,8 @@ const styles = StyleSheet.create({
 
   page: {
     width: SCREEN_DIMENSIONS.width,
-    height: SCREEN_DIMENSIONS.height
+    height: SCREEN_DIMENSIONS.height,
+    backgroundColor: "#090909"
   },
   titleContainer: {
     left: 0,
@@ -242,6 +248,14 @@ export class NewPost extends React.Component<{}, State> {
     this.stepContainerRef.current.animateNextTransition();
   };
 
+  handleChangeFormat = (format: PostFormat) => {
+    this.setState({
+      post: buildPost({ format, blocks: this.state.post.blocks })
+    });
+
+    this.stepContainerRef.current.animateNextTransition();
+  };
+
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
     this.stepContainerRef.current.animateNextTransition();
@@ -259,9 +273,6 @@ export class NewPost extends React.Component<{}, State> {
   };
 
   stepContainerRef = React.createRef();
-  updateBounds = ({ x, y, width, height }) => {
-    this.setState({ bounds: { x, y, width, height } });
-  };
 
   render() {
     const { step } = this.state;
@@ -270,24 +281,28 @@ export class NewPost extends React.Component<{}, State> {
       <View style={styles.page}>
         <StatusBar hidden showHideTransition="slide" />
 
-        <NewPostHeader
-          float={isHeaderFloating}
-          onBack={this.handleBack}
-          showLabel={step !== NewPostStep.choosePhoto}
-        />
         <Transitioning.View
           ref={this.stepContainerRef}
           transition={
-            <Transition.Sequence>
+            <Transition.Together>
               <Transition.In type="fade" />
               <Transition.Out type="fade" />
-            </Transition.Sequence>
+            </Transition.Together>
           }
-          style={{ width: "100%", flex: 1 }}
-          // onLayout={this.updateBounds}
+          style={{ width: "100%", height: MAX_POST_HEIGHT }}
         >
           {this.renderStep()}
         </Transitioning.View>
+
+        <NewPostHeader
+          float
+          onBack={this.handleBack}
+          showLabel={step !== NewPostStep.choosePhoto}
+        />
+        <FormatPicker
+          defaultFormat={this.state.post.format}
+          onChangeFormat={this.handleChangeFormat}
+        />
       </View>
     );
   }
@@ -300,7 +315,9 @@ export class NewPost extends React.Component<{}, State> {
         <PostEditor
           bounds={this.state.bounds}
           post={this.state.post}
+          key={this.state.post.format}
           onChange={this.handleChangePost}
+          onChangeFormat={this.handleChangeFormat}
         />
       );
     } else if (step === NewPostStep.choosePhoto) {

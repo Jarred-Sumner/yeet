@@ -7,6 +7,9 @@ const SCREEN_DIMENSIONS = Dimensions.get("window");
 export enum PostFormat {
   screenshot = "screenshot",
   caption = "caption"
+  // vent = "vent",
+  // comic = "comic",
+  // blargh = "blargh"
 }
 
 interface PostBlock {
@@ -132,7 +135,7 @@ export const presetsByFormat = {
     borderRadius: 8,
     paddingHorizontal: SPACING.double,
     paddingVertical: SPACING.normal,
-    backgroundColor: "transparent"
+    backgroundColor: "#000"
   },
   [PostFormat.screenshot]: {
     backgroundColor: "#fff",
@@ -150,7 +153,10 @@ const blocksForFormat = (
   format: PostFormat,
   _blocks: Array<PostBlockType>
 ): Array<PostBlockType> => {
-  const blocks = [..._blocks];
+  const blocks = _blocks.map(block => ({
+    ...block,
+    format
+  }));
 
   if (format === PostFormat.screenshot) {
     return blocks.filter(

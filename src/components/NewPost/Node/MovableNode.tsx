@@ -298,15 +298,15 @@ export class MovableNode extends Component {
     this.props.onChangePosition({ x, y, scale, rotate });
   }, 32);
 
-  handleLayout = ({
-    nativeEvent: {
-      layout: { x, y, width, height }
-    }
-  }) => {
-    // this.contentSizeHeight.setValue(height);
+  handleLayout = ({ nativeEvent: { bounds } }) => {
+    this.bounds = bounds;
   };
 
-  componentDidUpdate(prevProps) {}
+  componentDidUpdate(prevProps) {
+    if (prevProps.isFocused !== this.props.isFocused) {
+      this.startBounds = this.bounds;
+    }
+  }
 
   rotationRef = React.createRef();
   panRef = React.createRef();
@@ -395,6 +395,7 @@ export class MovableNode extends Component {
                   >
                     <Animated.View
                       ref={this.props.containerRef}
+                      onLayout={this.handleLayout}
                       style={{
                         position: "absolute",
                         left: 0,

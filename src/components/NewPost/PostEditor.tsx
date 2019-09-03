@@ -17,7 +17,8 @@ import {
   PostBlockType,
   buildTextBlock,
   PostFormat,
-  FocusBlockType
+  FocusBlockType,
+  presetsByFormat
 } from "./NewPostFormat";
 import { TextPostBlock } from "./TextPostBlock";
 import { ImagePostBlock } from "./ImagePostBlock";
@@ -31,7 +32,11 @@ import {
   State as GestureState,
   GestureHandlerStateChangeEvent,
   TapGestureHandlerEventExtra,
-  TapGestureHandlerGestureEvent
+  FlingGestureHandler,
+  TapGestureHandlerGestureEvent,
+  Directions,
+  FlingGestureHandlerGestureEvent,
+  FlingGestureHandlerStateChangeEvent
 } from "react-native-gesture-handler";
 import { IconButton } from "../Button";
 import LinearGradient from "react-native-linear-gradient";
@@ -43,6 +48,7 @@ import {
 import { TextLayer } from "./layers/TextLayer";
 import { EditorFooter } from "./EditorFooter";
 import { Block } from "./Node/Block";
+import { HorizontalScrollView } from "../HorizontalScrollView";
 import {
   BaseNode,
   EditableNode,
@@ -56,6 +62,8 @@ import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
 import DeviceInfo from "react-native-device-info";
 import { Redactor } from "./Redactor";
 import memoizee from "memoizee";
+import { BoldText } from "../Text";
+import FormatPicker, { CAROUSEL_HEIGHT } from "./FormatPicker";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -65,23 +73,33 @@ const BOTTOM_Y = getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
-export const POST_WIDTH = SCREEN_DIMENSIONS.width;
+export const POST_WIDTH = SCREEN_DIMENSIONS.width - 4;
 export const MAX_POST_HEIGHT =
-  SCREEN_DIMENSIONS.height - TOP_Y - SPACING.double;
+  SCREEN_DIMENSIONS.height - TOP_Y - CAROUSEL_HEIGHT;
+
+export const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 
 const styles = StyleSheet.create({
   safeWrapper: {
     borderRadius: 12,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "transparent",
+    overflow: "hidden",
+    flex: 1,
+    position: "relative"
   },
   container: {},
   wrapper: {
+    marginTop: HEADER_HEIGHT,
+    borderRadius: 12,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-    width: "100%",
-    height: "100%"
+    flex: 1,
+    width: POST_WIDTH,
+    alignSelf: "center"
   },
 
   layerStyles: {
@@ -486,15 +504,36 @@ export class PostEditor extends React.Component<{}, State> {
     }
   };
 
+  updateBounds = ({
+    nativeEvent: {
+      layout: { x, y, width, height }
+    }
+  }) => {
+    this.setState({ bounds: { x, y, width, height } });
+  };
+
+  formatScrollViewRef = React.createRef();
+
   render() {
-    const { post, bounds } = this.props;
-    const sizeStyle = { width: bounds.width, height: bounds.height };
+    const { post } = this.props;
+
+    const { bounds = {} } = this.state;
+    const sizeStyle = {
+      width: bounds.width || POST_WIDTH,
+      height: bounds.height || MAX_POST_HEIGHT
+    };
     return (
       <TapGestureHandler
-        waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+        waitFor={[
+          this.scrollRef,
+          this.formatScrollViewRef,
+          ...this._blockInputRefs.values()
+        ]}
         onHandlerStateChange={this.handleTapBackground}
       >
-        <Animated.View style={[styles.wrapper]}>
+        <Animated.View
+          style={[styles.wrapper, { backgroundColor: post.backgroundColor }]}
+        >
           <AnimatedKeyboardTracker
             keyboardVisibleValue={this.keyboardVisibleValue}
           />
@@ -517,12 +556,12 @@ export class PostEditor extends React.Component<{}, State> {
             ])}
           />
           <View
+            onLayout={this.updateBounds}
             style={[
               styles.safeWrapper,
               styles.scrollContainer,
               {
                 maxHeight: MAX_POST_HEIGHT,
-                height: bounds.height,
                 width: bounds.width
               }
             ]}
@@ -567,9 +606,18 @@ export class PostEditor extends React.Component<{}, State> {
                 <EditorFooter
                   onPressDownload={this.handleDownload}
                   onPressSend={this.handleSend}
+                  waitFor={[
+                    this.scrollRef,
+                    this.formatScrollViewRef,
+                    ...this._blockInputRefs.values()
+                  ]}
                 />
               }
-              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+              waitFor={[
+                this.scrollRef,
+                this.formatScrollViewRef,
+                ...this._blockInputRefs.values()
+              ]}
               width={sizeStyle.width}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text
@@ -593,7 +641,11 @@ export class PostEditor extends React.Component<{}, State> {
                 focusedBlockId={this.state.focusedBlockId}
                 focusedBlockValue={this.focusedBlockValue}
                 focusTypeValue={this.focusTypeValue}
-                waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+                waitFor={[
+                  this.scrollRef,
+                  this.formatScrollViewRef,
+                  ...this._blockInputRefs.values()
+                ]}
                 focusType={FocusBlockType.absolute}
                 minX={bounds.x}
                 minY={bounds.y}

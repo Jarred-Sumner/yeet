@@ -18,7 +18,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     left: 0,
-    right: 0
+    right: 0,
+    zIndex: 10
   },
   layer: {
     position: "absolute",
@@ -120,7 +121,6 @@ export class ActiveLayer extends React.Component<Props> {
             </Transitioning.View>
 
             <Transitioning.View
-              pointerEvents="box-none"
               ref={this.footerContainer}
               transition={
                 <Transition.Sequence>

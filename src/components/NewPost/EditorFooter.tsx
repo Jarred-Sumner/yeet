@@ -18,6 +18,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 60,
+    width: "100%",
     justifyContent: "space-between"
   }
 });
@@ -35,7 +36,7 @@ const FooterButton = ({ Icon, onPress, color, size = 32 }) => {
   );
 };
 
-const NextButton = ({ onPress }) => {
+const NextButton = ({ onPress, waitFor }) => {
   return (
     <IconButton
       size={24}
@@ -47,7 +48,7 @@ const NextButton = ({ onPress }) => {
   );
 };
 
-export const EditorFooter = ({ onPressDownload, onPressSend }) => (
+export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
   <SafeAreaView
     forceInset={{
       top: "never",
@@ -62,13 +63,14 @@ export const EditorFooter = ({ onPressDownload, onPressSend }) => (
         onPress={onPressDownload}
         Icon={IconDownload}
         color="#fff"
+        waitFor={waitFor}
         size={32}
         type="shadow"
       />
     </View>
 
     <View style={[styles.footerSide, styles.footerSideRight]}>
-      <NextButton onPress={onPressSend} />
+      <NextButton onPress={onPressSend} waitFor={waitFor} />
     </View>
   </SafeAreaView>
 );

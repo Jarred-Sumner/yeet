@@ -109,6 +109,7 @@ export const IconButton = ({
   style,
   iconStyle,
   color,
+  waitFor,
   size = 24
 }) => {
   const containerStyles = [style, buttonStyles.container];
@@ -133,6 +134,7 @@ export const IconButton = ({
 
   return (
     <BorderlessButton
+      waitFor={waitFor}
       hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
       onPress={onPress}
     >

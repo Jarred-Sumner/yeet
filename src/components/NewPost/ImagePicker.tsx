@@ -71,8 +71,8 @@ const PhotoCell = ({
   }, [onPress, photo]);
 
   const source = Image.resolveAssetSource({
-    width: photo.node.image.width,
-    height: photo.node.image.height,
+    width,
+    height,
     uri: photo.node.image.uri
   });
 
