@@ -36,6 +36,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: "#000"
   },
+  listHeaderHeight: {
+    height: LIST_HEADER_HEIGHT
+  },
   headerText: {
     fontSize: 24
   },
@@ -256,7 +259,7 @@ export class ImagePicker extends React.Component<Props, State> {
     const params = {
       assetType: "photos",
       groupTypes: "All",
-      first: PAGE_LENGTH * 2
+      first: initial ? PAGE_LENGTH * 2 : PAGE_LENGTH
     };
 
     if (!initial) {
@@ -293,6 +296,8 @@ export class ImagePicker extends React.Component<Props, State> {
       hidden={!this.props.scrollEnabled}
     />
   );
+
+  renderScrollView = props => <ScrollView {...props} />;
 
   render() {
     const { loadState, photos } = this.state;
@@ -331,17 +336,15 @@ export class ImagePicker extends React.Component<Props, State> {
             flexShrink: 0
           }}
           contentInsetAdjustmentBehavior="never"
-          ListHeaderComponent={this.renderHeader()}
+          ListHeaderComponent={this.renderHeader}
           removeClippedSubviews={scrollEnabled}
           stickyHeaderIndices={[0]}
           onScrollBeginDrag={onScrollBeginDrag}
           scrollEventThrottle={1}
           overScrollMode="always"
-          ListHeaderComponentStyle={{
-            height: LIST_HEADER_HEIGHT
-          }}
+          ListHeaderComponentStyle={styles.listHeaderHeight}
           scrollEnabled={scrollEnabled}
-          renderScrollComponent={props => <ScrollView {...props} />}
+          renderScrollComponent={this.renderScrollView}
           columnWrapperStyle={styles.row}
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}
