@@ -545,7 +545,7 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   handleOpenImagePicker = block => {
-    this.props.navigation.push("EditBlockPhoto", {
+    this.props.navigation.navigate("EditBlockPhoto", {
       blockId: block.id,
       post: this.props.post,
       onChange: this.handleChangeImageBlockPhoto

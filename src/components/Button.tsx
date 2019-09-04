@@ -1,10 +1,6 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  Animated
-} from "react-native";
+import { View, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import Animated from "react-native-reanimated";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
 import { BorderlessButton } from "react-native-gesture-handler";
@@ -110,6 +106,7 @@ export const IconButton = ({
   iconStyle,
   color,
   waitFor,
+  containerSize: _containerSize,
   size = 24
 }) => {
   const containerStyles = [style, buttonStyles.container];
@@ -120,7 +117,7 @@ export const IconButton = ({
   }
 
   if (type === "fill") {
-    const containerSize = size * 2.5;
+    const containerSize = _containerSize || size * 2.5;
     containerStyles.push(buttonStyles.fill);
     containerStyles.push({
       backgroundColor,
@@ -138,9 +135,9 @@ export const IconButton = ({
       hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
       onPress={onPress}
     >
-      <View style={containerStyles}>
+      <Animated.View style={containerStyles}>
         <Icon style={iconStyles} size={size} />
-      </View>
+      </Animated.View>
     </BorderlessButton>
   );
 };

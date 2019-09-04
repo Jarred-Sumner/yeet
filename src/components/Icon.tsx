@@ -75,6 +75,26 @@ export const IconClose = props => <Icon {...props} name={IconName.close} />;
 export const IconChevronRight = props => (
   <Icon {...props} name={IconName.chevronRight} />
 );
+
+export const IconChevronUp = ({ style = null, ...props }) => (
+  <Icon
+    {...props}
+    name={IconName.chevronRight}
+    style={[
+      style,
+      {
+        transform: [
+          {
+            translateY: -1
+          },
+          {
+            rotate: "-90deg"
+          }
+        ]
+      }
+    ].filter(Boolean)}
+  />
+);
 export const IconSettings = props => (
   <Icon {...props} name={IconName.settings} />
 );

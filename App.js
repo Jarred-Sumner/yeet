@@ -42,7 +42,7 @@ const Routes = createAppContainer(
               defaultNavigationOptions: {
                 header: () => null,
                 mode: "modal",
-                headerMode: "float",
+                headerMode: "none",
                 headerTransparent: true
               }
             }
