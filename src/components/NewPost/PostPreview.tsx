@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import memoizee from "memoizee";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
+import { useFocusState } from "react-navigation-hooks";
 
 export const ScrollView = createNativeWrapper(RNScrollView, {
   disallowInterruption: true
@@ -159,6 +160,7 @@ export const PostPreview = React.forwardRef(
     const scrollRef = React.useRef();
 
     React.useImperativeHandle(ref, () => scrollRef.current);
+    const { isBlurred, isBlurring } = useFocusState();
 
     return (
       <ScrollView
@@ -173,6 +175,7 @@ export const PostPreview = React.forwardRef(
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
         keyboardOpeningTime={0}
+        removeClippedSubviews={isBlurred || isBlurring}
         ref={scrollRef}
         contentOffset={{
           y: paddingTop * -1

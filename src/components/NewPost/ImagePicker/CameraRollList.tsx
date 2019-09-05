@@ -13,6 +13,7 @@ import { ScrollView as NavigationScrollView } from "react-navigation";
 // import { Image } from "../Image";
 import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
+import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
 
 const TOP_Y = getInset("top");
 
@@ -211,7 +212,7 @@ export class CameraRollList extends React.Component<Props, State> {
   };
 
   handlePickPhoto = (photo: CameraRoll.PhotoIdentifier) => {
-    this.props.onChange(photo);
+    this.props.onChange(imageContainerFromCameraRoll(photo));
   };
 
   loadPhotos = async (initial: boolean = false) => {

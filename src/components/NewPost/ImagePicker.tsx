@@ -47,6 +47,7 @@ export class ImagePicker extends React.Component {
             position={position}
             width={width}
             height={height - LIST_HEADER_HEIGHT}
+            tabBarHeight={LIST_HEADER_HEIGHT}
             {...otherProps}
           />
         );
@@ -57,6 +58,7 @@ export class ImagePicker extends React.Component {
             position={position}
             width={width}
             height={height - LIST_HEADER_HEIGHT}
+            tabBarHeight={LIST_HEADER_HEIGHT}
             {...otherProps}
           />
         );

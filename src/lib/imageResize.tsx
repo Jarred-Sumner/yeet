@@ -1,8 +1,13 @@
 import path from "path";
-import RNFetchBlob from "rn-fetch-blob";
-import { Image, ImageEditor, PixelRatio } from "react-native";
+import { Image } from "react-native";
 import RNFS from "react-native-fs";
-import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
+import PhotoEditor from "react-native-photo-manipulator";
+import RNFetchBlob from "rn-fetch-blob";
+import {
+  YeetImage,
+  YeetImageContainer,
+  normalizeResizedImage
+} from "./imageSearch";
 
 export const generateFilename = (extension = "png") =>
   `${Math.random()
@@ -49,19 +54,25 @@ export const getLocalURI = async (_uri: string | Object) => {
 };
 
 export const resizeImage = async ({
-  uri: _uri,
+  image,
   width,
   height,
   top = 0,
   bottom = 0,
   x = 0,
-  originalWidth,
-  originalHeight,
   displaySize
-}) => {
-  const multiplier = originalWidth / width;
+}: {
+  image: YeetImageContainer;
+  width: number;
+  height: number;
+  top: number;
+  bottom: number;
+  x: number;
+  displaySize?: { width: number; height: number };
+}): Promise<YeetImageContainer> => {
+  const multiplier = image.image.width / width;
 
-  const uri = await getLocalURI(_uri);
+  const uri = await getLocalURI(image.image.uri);
 
   const size = {
     width: width * multiplier,
@@ -70,24 +81,19 @@ export const resizeImage = async ({
     x: x * multiplier
   };
 
-  return PhotoEditor.crop(
-    uri,
-    size,
-    displaySize || { width: size.width, height: size.height },
-    "image/png"
-  ).then(newUri => {
-    const source = Image.resolveAssetSource({
-      uri: newUri,
-      width: size.width,
-      height: size.height
-    });
-    return {
-      ...size,
-      ...source,
-      source,
-      uri: newUri
-    };
-  });
+  const croppedSize = displaySize || { width: size.width, height: size.height };
+
+  return PhotoEditor.batch(uri, [], size, croppedSize, 100, "image/webp").then(
+    newUri => {
+      return normalizeResizedImage(
+        image,
+        newUri,
+        croppedSize.width,
+        croppedSize.height,
+        image.image.duration
+      );
+    }
+  );
 };
 
 export function calculateAspectRatioFit(

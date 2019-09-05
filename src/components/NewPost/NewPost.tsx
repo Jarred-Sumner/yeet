@@ -7,7 +7,6 @@ import { ImageCropper } from "./ImageCropper";
 import { ImagePicker } from "./ImagePicker";
 import {
   NewPostType,
-  PLACEHOLDER_POST,
   buildImageBlock,
   PostFormat,
   DEFAULT_FORMAT,
@@ -27,6 +26,10 @@ import { getInset } from "react-native-safe-area-view";
 import DeviceInfo from "react-native-device-info";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
 import FormatPicker from "./FormatPicker";
+import {
+  YeetImageContainer,
+  imageContainerFromCameraRoll
+} from "../../lib/imageSearch";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
@@ -43,19 +46,20 @@ enum NewPostStep {
 
 type State = {
   post: NewPostType;
-  defaultPhoto: CameraRoll.PhotoIdentifier | null;
+  defaultPhoto: YeetImageContainer | null;
   step: NewPostStep;
 };
 
-const DEFAULT_PHOTO_FIXTURE = {
+const DEFAULT_PHOTO_FIXTURE = imageContainerFromCameraRoll({
   node: {
     image: {
       uri: "https://i.imgur.com/CopIMxf.jpg",
+      filename: "CopIMxf.jpg",
       height: 2436,
       width: 1125
     }
   }
-};
+});
 
 const DEFAULT_POST_FIXTURE = {
   format: "caption",
@@ -150,7 +154,7 @@ const styles = StyleSheet.create({
   }
 });
 
-const DEVELOPMENT_STEP = NewPostStep.editPhoto;
+const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 
 export class NewPost extends React.Component<{}, State> {
   state = {
@@ -163,12 +167,12 @@ export class NewPost extends React.Component<{}, State> {
         SCREEN_DIMENSIONS.height - (TOP_Y + SPACING.double + 30) + BOTTOM_Y,
       width: SCREEN_DIMENSIONS.width
     },
-    step: NewPostStep.editPhoto
+    step: NewPostStep.choosePhoto
   };
 
   handleChangePost = post => this.setState({ post });
 
-  handleChoosePhoto = (photo: CameraRoll.PhotoIdentifier) => {
+  handleChoosePhoto = (photo: YeetImageContainer) => {
     this.setState({
       step: NewPostStep.resizePhoto,
       defaultPhoto: photo
@@ -177,23 +181,24 @@ export class NewPost extends React.Component<{}, State> {
   };
 
   handleEditPhoto = async ({ top, bottom, height, width, x }) => {
-    const image = this.state.defaultPhoto.node.image;
-
-    const displaySize = {
-      width: POST_WIDTH,
-      height: (height - Math.abs(bottom) - top) * (POST_WIDTH / width)
-    };
+    const image = this.state.defaultPhoto;
 
     const croppedPhoto = await resizeImage({
+      image,
       top,
       bottom,
       height,
-      uri: image.uri,
-      width,
-      originalWidth: image.width,
-      originalHeight: image.height
-      // displaySize
+      x,
+      width
     });
+
+    const displayWidth = Math.min(POST_WIDTH, image.image.width);
+
+    const displaySize = {
+      width: displayWidth,
+      height:
+        croppedPhoto.image.height * (displayWidth / croppedPhoto.image.width)
+    };
 
     const post = buildPost({
       format: DEFAULT_FORMAT,
@@ -201,11 +206,12 @@ export class NewPost extends React.Component<{}, State> {
       height: displaySize.height,
       blocks: [
         buildImageBlock({
-          image,
-          croppedPhoto,
-          displaySize,
+          image: croppedPhoto,
           autoInserted: true,
-          format: DEFAULT_FORMAT
+          format: DEFAULT_FORMAT,
+          width: displaySize.width,
+          height: displaySize.height,
+          required: true
         })
       ]
     });

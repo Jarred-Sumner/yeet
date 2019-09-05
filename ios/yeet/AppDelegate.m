@@ -10,12 +10,24 @@
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
 #import <React/RCTRootView.h>
+#import <SDWebImageWebPCoder.h>
+#import <SDWebImage/SDImageLoadersManager.h>
+#import <SDWebImagePhotosPlugin.h>
+
+
 @import Firebase;
 
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  SDImageLoadersManager.sharedManager.loaders = @[SDWebImageDownloader.sharedDownloader, SDWebImagePhotosLoader.sharedLoader];
+  // Replace default manager's loader implementation
+  SDWebImageManager.defaultImageLoader = SDImageLoadersManager.sharedManager;
+
+  SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
+  [[SDImageCodersManager sharedManager] addCoder:webPCoder];
+
   RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
   RCTRootView *rootView = [[RCTRootView alloc] initWithBridge:bridge
                                                    moduleName:@"yeet"

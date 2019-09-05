@@ -2,6 +2,7 @@ import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
 import { SPACING, COLORS } from "../../lib/styles";
 import { getInset } from "react-native-safe-area-view";
+import { YeetImageContainer } from "../../lib/imageSearch";
 
 const TOP_Y = getInset("top");
 export const CAROUSEL_HEIGHT = 60;
@@ -22,7 +23,7 @@ export enum PostFormat {
 
 interface PostBlock {
   type: "text" | "image";
-  value: any;
+  required: boolean;
   format: PostFormat;
   config: {};
   autoInserted: boolean;
@@ -40,15 +41,12 @@ export type TextPostBlock = PostBlock & {
 
 export type ImagePostBlock = PostBlock & {
   type: "image";
-  value: {
-    intrinsicWidth: number;
-    intrinsicHeight: number;
-    width: number;
-    height: number;
-    x: number;
-    y: number;
-    src: string | null;
-    originalSrc: string | null;
+  value: YeetImageContainer;
+  config: {
+    dimensions: {
+      width: number;
+      height: number;
+    } | null;
   };
 };
 
@@ -66,38 +64,14 @@ export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
 export const DEFAULT_FORMAT = PostFormat.caption;
 
-export const PLACEHOLDER_POST: NewPostType = {
-  height: 600,
-  width: SCREEN_DIMENSIONS.width,
-  format: DEFAULT_FORMAT,
-  blocks: [
-    {
-      type: "image",
-      id: nanoid(),
-      format: DEFAULT_FORMAT,
-      autoInserted: true,
-      value: {
-        intrinsicWidth: 0,
-        intrinsicHeight: 0,
-        width: 0,
-        height: 0,
-        x: 0,
-        y: 0,
-        src: "",
-        originalSrc: ""
-      },
-      config: {}
-    }
-  ]
-};
-
 export type ChangeBlockFunction = (change: PostBlockType) => void;
 
 export const buildTextBlock = ({
   value,
   format,
   autoInserted,
-  placeholder
+  placeholder,
+  required = true
 }): TextPostBlock => {
   return {
     type: "text",
@@ -105,8 +79,10 @@ export const buildTextBlock = ({
     format,
     value,
     autoInserted,
+    required,
     config: {
       placeholder,
+
       overrides: {}
     }
   };
@@ -114,9 +90,10 @@ export const buildTextBlock = ({
 
 export const buildImageBlock = ({
   image,
-  croppedPhoto,
-  displaySize,
+  width,
+  height,
   autoInserted,
+  required = true,
   placeholder = false,
   id: _id,
   format
@@ -129,18 +106,11 @@ export const buildImageBlock = ({
       id,
       format,
       autoInserted,
-      value: {
-        intrinsicWidth: 0,
-        intrinsicHeight: 0,
-        width: POST_WIDTH,
-        height: POST_WIDTH,
-        x: 0,
-        y: 0,
-        src: null,
-        originalSrc: null,
-        uri: null
-      },
-      config: {}
+      required,
+      value: null,
+      config: {
+        dimensions: null
+      }
     };
   }
 
@@ -149,22 +119,16 @@ export const buildImageBlock = ({
     id,
     format,
     autoInserted,
-    value: {
-      intrinsicWidth: image.width,
-      intrinsicHeight: image.height,
-      ...displaySize,
-      x: 0,
-      y: 0,
-      src: croppedPhoto.source,
-      originalSrc: image.uri,
-      uri: croppedPhoto.uri
-    },
-    config: {}
+    required,
+    value: image,
+    config: {
+      dimensions: { width, height }
+    }
   };
 };
 
 export const isPlaceholderImageBlock = (block: ImagePostBlock) => {
-  return block.type === "image" && block.value.src === null;
+  return block.type === "image" && block.value === null;
 };
 
 export const presetsByFormat = {
@@ -192,23 +156,7 @@ const blocksForFormat = (
   format: PostFormat,
   _blocks: Array<PostBlockType>
 ): Array<PostBlockType> => {
-  const blocks = _blocks.map(block => {
-    const newBlock = {
-      ...block,
-      format
-    };
-
-    if (
-      block.type === "image" &&
-      block.format !== format &&
-      format === PostFormat.screenshot
-    ) {
-      newBlock.value.width = POST_WIDTH;
-      newBlock.value.height = MAX_POST_HEIGHT;
-    }
-
-    return newBlock;
-  });
+  const blocks = [..._blocks];
 
   if (format === PostFormat.screenshot) {
     return blocks.filter(

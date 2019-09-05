@@ -1,41 +1,17 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  Dimensions,
-  Image,
-  ImageEditor,
-  LayoutAnimation
-} from "react-native";
-import CameraRoll from "@react-native-community/cameraroll";
-import Animated, {
-  Easing,
-  Transitioning,
-  Transition
-} from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
 import {
   PanGestureHandler,
-  PinchGestureHandler,
-  RectButton,
-  RotationGestureHandler,
   State as GestureState
 } from "react-native-gesture-handler";
-import { IconUploadPhoto, IconText, IconChevronRight } from "../Icon";
-import { SafeAreaView } from "react-navigation";
-import { SPACING, COLORS } from "../../lib/styles";
-import { getInset } from "react-native-safe-area-view";
-import RNFetchBlob from "rn-fetch-blob";
-import path from "path";
-import {
-  clamp,
-  transformOrigin,
-  preserveOffset,
-  onGestureEvent,
-  runTiming,
-  limit,
-  runDelay
-} from "react-native-redash";
+import Animated from "react-native-reanimated";
+import { limit, preserveOffset, runDelay } from "react-native-redash";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
+import { YeetImageRect } from "../../lib/imageSearch";
+import { COLORS } from "../../lib/styles";
+import Image from "../Image";
+
+const AnimatedImage = Animated.createAnimatedComponent(Image);
 
 const {
   Value,
@@ -209,7 +185,7 @@ const ResizeBar = React.forwardRef(
 type Props = {
   maxHeight: number;
   maxWidth: number;
-  photo: CameraRoll.PhotoIdentifier;
+  photo: YeetImageRect;
 };
 
 type State = {
@@ -420,7 +396,7 @@ export class ResizableImage extends React.Component<Props> {
                 onHandlerStateChange={this.onTranslateY}
               />
 
-              <Animated.Image
+              <AnimatedImage
                 source={source}
                 pointerEvents="none"
                 onLoad={this.handleImageLoad}

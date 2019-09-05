@@ -6,8 +6,8 @@ import { HelperText } from "react-native-paper";
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: SPACING.normal,
-    paddingBottom: SPACING.normal,
+    paddingTop: 0,
+    paddingBottom: 0,
     position: "relative"
   },
   helperText: {

@@ -1,6 +1,6 @@
 import assert from "assert";
 import * as React from "react";
-import { Image, StyleSheet, View, Dimensions } from "react-native";
+import { Image as RNImage, StyleSheet, View, Dimensions } from "react-native";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
 import {
   ChangeBlockFunction,
@@ -22,6 +22,7 @@ import {
   TapGestureHandler
 } from "react-native-gesture-handler";
 import { SemiBoldText } from "../Text";
+import Image from "../Image";
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 type Props = {
@@ -62,42 +63,24 @@ const ScreenshotImage = ({ block }: { block: ImagePostBlockType }) => {
   return (
     <Image
       source={{
-        uri: block.value.src.uri,
-        width: block.value.width,
-        height: block.value.height
+        uri: block.value.image.uri,
+        ...block.config.dimensions
       }}
       resizeMode="stretch"
-      style={[
-        stylesByFormat[block.format].image,
-        {
-          width: block.value.width,
-          height: block.value.height
-        }
-      ]}
+      style={[stylesByFormat[block.format].image, block.config.dimensions]}
     />
   );
 };
 
 const CaptionImage = ({ block }: { block: ImagePostBlockType }) => {
-  const width = Math.min(POST_WIDTH, block.value.src.width);
-  const ratio = width / block.value.src.width;
-  const height = block.value.src.height * ratio;
-
   return (
     <Image
       source={{
-        uri: block.value.src.uri,
-        width,
-        height
+        uri: block.value.image.uri,
+        ...block.config.dimensions
       }}
       resizeMode="stretch"
-      style={[
-        stylesByFormat[block.format].image,
-        {
-          height,
-          width
-        }
-      ]}
+      style={[stylesByFormat[block.format].image, block.config.dimensions]}
     />
   );
 };
@@ -132,7 +115,7 @@ export class ImagePostBlock extends React.Component<Props> {
       assert(ImageComponent, `must exist for format: ${block.format}`);
     }
 
-    if (block.value.src) {
+    if (block.value) {
       return (
         <View
           onLayout={onLayout}
@@ -164,8 +147,7 @@ export class ImagePostBlock extends React.Component<Props> {
               styles.container,
               stylesByFormat[block.format].container,
               {
-                width: block.value.width,
-                height: block.value.height,
+                flex: 1,
                 overflow: "hidden"
               }
             ]}

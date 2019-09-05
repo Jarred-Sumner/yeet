@@ -1,20 +1,14 @@
 import * as React from "react";
-import { ImagePicker } from "../components/NewPost/ImagePicker";
-import { Dimensions, View, StyleSheet, InteractionManager } from "react-native";
-import { SharedElement } from "react-navigation-sharedelement";
-import { SafeAreaView, StackGestureContext } from "react-navigation";
-import {
-  IconClose,
-  IconChevronLeft,
-  IconChevronUp,
-  IconBack
-} from "../components/Icon";
-import { SPACING, COLORS } from "../lib/styles";
-import LinearGradient from "react-native-linear-gradient";
-import { SemiBoldText } from "../components/Text";
-import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
+import { Dimensions, InteractionManager, StyleSheet, View } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
+import { SafeAreaView, withNavigationFocus } from "react-navigation";
+import { SharedElement } from "react-navigation-sharedelement";
 import { IconButton } from "../components/Button";
+import { IconClose } from "../components/Icon";
+import { ImagePicker } from "../components/NewPost/ImagePicker";
+import { COLORS, SPACING } from "../lib/styles";
+import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 
 const SCREEN_DIMENSIONS = Dimensions.get("screen");
 
@@ -63,6 +57,47 @@ export class ImagePickerPage extends React.Component {
     });
   }
 
+  keyboardVisibleValue = new Animated.Value(0);
+  pullToDismissValue = new Animated.Value(1);
+  pullToDismissInterval = -1;
+  keyboardHeightValue = new Animated.Value(0);
+  contentStartOffsetY = new Animated.Value(0);
+
+  handleScrollBeginDrag = Animated.event([
+    {
+      nativeEvent: {
+        contentOffset: {
+          y: this.contentStartOffsetY
+        }
+      }
+    }
+  ]);
+
+  enablePullToDismiss = () => {
+    if (this.pullToDismissInterval > -1) {
+      window.clearTimeout(this.pullToDismissInterval);
+      this.pullToDismissInterval = -1;
+    }
+    this.pullToDismissInterval = window.setTimeout(() => {
+      this.pullToDismissValue.setValue(1);
+      this.pullToDismissInterval = -1;
+    }, 200);
+  };
+  disablePullToDismiss = () => {
+    if (this.pullToDismissInterval > -1) {
+      window.clearTimeout(this.pullToDismissInterval);
+      this.pullToDismissInterval = -1;
+    }
+
+    this.pullToDismissValue.setValue(0);
+  };
+  componentWillUnmount() {
+    if (this.pullToDismissInterval > -1) {
+      window.clearTimeout(this.pullToDismissInterval);
+      this.pullToDismissInterval = -1;
+    }
+  }
+
   handlePickPhoto = photo => {
     const onChange = this.props.navigation.getParam("onChange");
 
@@ -95,34 +130,49 @@ export class ImagePickerPage extends React.Component {
       <View
         style={{
           width: SCREEN_DIMENSIONS.width,
-          height: SCREEN_DIMENSIONS.height
+          flex: 1
         }}
       >
-        <Animated.Code
-          exec={Animated.block([
-            Animated.cond(Animated.lessThan(this.animatedYOffset, -16), [
-              Animated.call([], this.pressBack)
-            ])
-          ])}
+        <AnimatedKeyboardTracker
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
+          onKeyboardHide={this.enablePullToDismiss}
+          onKeyboardShow={this.disablePullToDismiss}
+          enabled={this.props.isFocused}
         />
+
+        {/* <Animated.Code
+          exec={Animated.block([
+            Animated.cond(
+              Animated.and(
+                Animated.lessThan(this.animatedYOffset, -16),
+                Animated.eq(this.contentStartOffsetY, 0),
+                Animated.eq(this.pullToDismissValue, 1)
+              ),
+              [Animated.call([], this.pressBack)]
+            )
+          ])}
+        /> */}
         <SharedElement
           id={sharedElementId}
           style={{
             width: SCREEN_DIMENSIONS.width,
-            height: SCREEN_DIMENSIONS.height
+            flex: 1
           }}
         >
           <ImagePicker
             width={SCREEN_DIMENSIONS.width}
             scrollEnabled
             animatedYOffset={this.animatedYOffset}
+            keyboardVisibleValue={this.keyboardVisibleValue}
+            keyboardHeightValue={this.keyboardHeightValue}
             height={SCREEN_DIMENSIONS.height}
+            onScrollBeginDrag={this.handleScrollBeginDrag}
             onChange={this.handlePickPhoto}
             onPressBack={this.pressBack}
             controlsOpacityValue={this.controlsOpacityValue}
           />
         </SharedElement>
-
         <SafeAreaView
           forceInset={{
             bottom: "always",
@@ -148,4 +198,4 @@ export class ImagePickerPage extends React.Component {
   }
 }
 
-export default ImagePickerPage;
+export default withNavigationFocus(ImagePickerPage);

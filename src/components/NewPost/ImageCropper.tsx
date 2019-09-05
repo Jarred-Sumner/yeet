@@ -1,5 +1,12 @@
 import * as React from "react";
-import { Animated, Dimensions, Image, StyleSheet, View } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  Image,
+  StyleSheet,
+  View,
+  ImageResolvedAssetSource
+} from "react-native";
 import {
   PanGestureHandler,
   RectButton,
@@ -14,6 +21,7 @@ import { IconChevronRight, IconChevronLeft } from "../Icon";
 import { ResizableImage } from "./ResizableImage";
 import { resizeImage } from "../../lib/imageResize";
 import { BoldText } from "../Text";
+import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -93,26 +101,30 @@ const FooterBar = ({ onReset, onNext }) => {
   );
 };
 
-export class ImageCropper extends React.Component {
-  constructor(props) {
+type Props = {
+  photo: YeetImageContainer;
+};
+
+type State = {
+  crop: YeetImageRect;
+  photoSource: ImageResolvedAssetSource;
+  originalSource: ImageResolvedAssetSource;
+};
+
+export class ImageCropper extends React.Component<Props, State> {
+  constructor(props: Props) {
     super(props);
+    const { image } = props.photo;
+
     this.state = {
       crop: {
         x: 0,
         y: 0,
-        width: props.photo.node.image.width,
-        height: props.photo.node.image.height
+        width: image.width,
+        height: image.height
       },
-      originalSource: Image.resolveAssetSource({
-        width: props.photo.node.image.width,
-        height: props.photo.node.image.height,
-        uri: props.photo.node.image.uri
-      }),
-      photoSource: Image.resolveAssetSource({
-        width: props.photo.node.image.width,
-        height: props.photo.node.image.height,
-        uri: props.photo.node.image.uri
-      })
+      originalSource: image.asset,
+      photoSource: image.asset
     };
   }
 
@@ -156,8 +168,8 @@ export class ImageCropper extends React.Component {
             key={photoSource.uri}
             ref={this.resizableImageRef}
             originalPhoto={{
-              width: photo.node.image.width,
-              height: photo.node.image.height
+              width: photo.image.width,
+              height: photo.image.height
             }}
             photo={crop}
             source={photoSource}

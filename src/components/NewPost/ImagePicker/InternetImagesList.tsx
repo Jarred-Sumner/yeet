@@ -1,23 +1,37 @@
-import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Dimensions, Image, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  StyleSheet,
+  View,
+  KeyboardAvoidingView
+} from "react-native";
+import Image from "../../Image";
 import {
   BaseButton,
   FlatList as GestureHandlerFlatList
 } from "react-native-gesture-handler";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import Permissions from "react-native-permissions";
-import Animated from "react-native-reanimated";
+import Animated, { Extrapolate } from "react-native-reanimated";
 import { getInset } from "react-native-safe-area-view";
 import { ScrollView as NavigationScrollView } from "react-navigation";
+import {
+  searchPhrase,
+  getTrending,
+  YeetImage,
+  YeetImageContainer,
+  ImageSearchResponse
+} from "../../../lib/imageSearch";
+import { throttle } from "lodash";
+import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 // import { Image } from "../Image";
-import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
-import { RequestPhotoPermission } from "../RequestPhotoPermission";
 
 const TOP_Y = getInset("top");
 
 const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(NavigationScrollView),
+  Animated.createAnimatedComponent(KeyboardAwareScrollView),
   {
     disallowInterruption: true
   }
@@ -30,6 +44,9 @@ export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const styles = StyleSheet.create({
+  wrapper: {
+    backgroundColor: "#111"
+  },
   container: {
     backgroundColor: "#000"
   },
@@ -51,7 +68,7 @@ type Props = {
   animatedYOffset: Animated.Value<number>;
 };
 
-const NUM_COLUMNS = 3;
+const NUM_COLUMNS = 2;
 
 enum InternetImagesListLoadState {
   pending = "pending",
@@ -61,12 +78,20 @@ enum InternetImagesListLoadState {
   complete = "complete"
 }
 
+enum ResultType {
+  trending = "trending",
+  search = "search"
+}
+
 type State = {
   columnWidth: number;
   cellHeight: number;
-  photos: Array<CameraRoll.PhotoIdentifier>;
+  images: Array<YeetImageContainer>;
+  offset: number;
+  resultType: ResultType;
+  hasMore: boolean;
+  query: string;
   loadState: InternetImagesListLoadState;
-  page: Pick<CameraRoll.PhotoIdentifiersPage, "page_info">;
 };
 
 const PAGE_LENGTH = NUM_COLUMNS * NUM_COLUMNS;
@@ -84,26 +109,27 @@ const photoCellStyles = StyleSheet.create({
   }
 });
 
-const PhotoCell = ({
+const ImageCell = ({
   onPress,
-  photo,
+  image,
   height,
   width
 }: {
   onPress: Function;
-  photo: CameraRoll.PhotoIdentifier;
+  image: YeetImageContainer;
   height: number;
   width: number;
 }) => {
   const _onPress = React.useCallback(() => {
-    onPress(photo);
-  }, [onPress, photo]);
+    onPress(image);
+  }, [onPress, image]);
 
-  const source = Image.resolveAssetSource({
-    width,
-    height,
-    uri: photo.node.image.uri
-  });
+  const source = {
+    width: image.preview.width,
+    height: image.preview.height,
+    uri: image.preview.uri,
+    cache: Image.cacheControl.web
+  };
 
   // const source = {
   //   width: photo.node.image.width,
@@ -114,16 +140,18 @@ const PhotoCell = ({
   return (
     <BaseButton exclusive={false} onPress={_onPress}>
       <View style={[photoCellStyles.container, { width, height }]}>
-        <Image source={source} resizeMode="contain" />
+        <Image source={source} resizeMode="contain" style={{ height, width }} />
       </View>
     </BaseButton>
   );
 };
 
-export class InternetImagesList extends React.Component<Props, State> {
+export class InternetImagesList extends React.PureComponent<Props, State> {
   static defaultProps = {
     animatedYOffset: new Animated.Value(0),
-    initialScrollOffset: 0
+    initialScrollOffset: 0,
+    tabBarHeight: 0,
+    keyboardHeightValue: new Animated.Value(0)
   };
 
   handleScroll = Animated.event(
@@ -144,57 +172,27 @@ export class InternetImagesList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    const desiredAspectRatio =
-      SCREEN_DIMENSIONS.height / SCREEN_DIMENSIONS.width;
-
     const columnWidth = Math.floor(props.width / NUM_COLUMNS) - 2;
 
     this.state = {
       columnWidth,
-      cellHeight: desiredAspectRatio * columnWidth,
-
-      photos: [],
+      cellHeight: 150,
+      query: "",
+      resultType: ResultType.trending,
+      images: [],
       loadState: InternetImagesListLoadState.pending,
-      page: {
-        has_next_page: false,
-        start_cursor: "",
-        end_cursor: ""
-      }
+      offset: 0,
+      hasMore: false
     };
   }
 
   componentDidMount() {
-    this.checkPermissions();
+    this.loadImages(false);
 
     if (this.props.scrollEnabled) {
       this.flatListRef.current.getNode().flashScrollIndicators();
     }
   }
-
-  checkPermissions = async () => {
-    status = await Permissions.check("photo");
-    this.handlePermissionChange(status);
-  };
-
-  handlePermissionChange = (status: string) => {
-    if (status === "authorized") {
-      this.loadPhotos(true);
-    } else {
-      this.setState({
-        loadState:
-          {
-            denied: InternetImagesListLoadState.denied,
-            undetermined: InternetImagesListLoadState.requestPermission,
-            restricted: InternetImagesListLoadState.loading
-          }[status] || InternetImagesListLoadState.requestPermission
-      });
-    }
-  };
-
-  requestPhotoPermission = async () => {
-    status = await Permissions.request("photo");
-    this.handlePermissionChange(status);
-  };
 
   getItemLayout = (_data, index) => ({
     length: this.state.cellHeight,
@@ -207,65 +205,83 @@ export class InternetImagesList extends React.Component<Props, State> {
       return;
     }
 
-    this.loadPhotos(false);
+    this.loadImages(false);
   };
 
-  handlePickPhoto = (photo: CameraRoll.PhotoIdentifier) => {
+  handlePickImage = (photo: YeetImageContainer) => {
     this.props.onChange(photo);
   };
 
-  loadPhotos = async (initial: boolean = false) => {
-    if (
-      this.state.loadState === InternetImagesListLoadState.loading ||
-      this.state.loadState === InternetImagesListLoadState.denied ||
-      (!initial && this.state.loadState === InternetImagesListLoadState.pending)
-    ) {
-      return;
-    }
-
-    if (!initial && !this.state.page.has_next_page) {
+  loadImages = async (isResultChanging = true) => {
+    const { loadState, query, offset, hasMore } = this.state;
+    if (loadState === InternetImagesListLoadState.loading) {
       return;
     }
 
     this.setState({ loadState: InternetImagesListLoadState.loading });
 
-    const params = {
-      assetType: "photos",
-      groupTypes: "All",
-      first: initial ? PAGE_LENGTH * 2 : PAGE_LENGTH
-    };
+    const isSearching = query.trim().length > 0;
+    const resultType = isSearching ? ResultType.search : ResultType.trending;
 
-    if (!initial) {
-      params.after = this.state.page.end_cursor;
+    let results: ImageSearchResponse | null = null;
+    const limit = Math.floor(
+      (this.props.height / this.state.cellHeight) * NUM_COLUMNS * 1.5
+    );
+
+    if (isSearching) {
+      results = await searchPhrase(query, limit, this.state.offset);
+    } else if (!isSearching) {
+      results = await getTrending(limit, this.state.offset);
     }
 
-    const response = await CameraRoll.getPhotos(params);
-
     this.setState({
-      photos: [...this.state.photos, ...response.edges],
-      page: response.page_info,
+      images: isResultChanging
+        ? results.images
+        : this.state.images.concat(results.images),
+      hasMore: results.hasMore,
+      offset: results.offset,
+      resultType,
       loadState: InternetImagesListLoadState.complete
     });
   };
 
-  keyExtractor = (item: CameraRoll.PhotoIdentifier, _index: number) =>
-    item.node.image.uri;
+  keyExtractor = (item: YeetImageContainer, _index: number) => item.id;
 
   handleRenderItem = ({ item, index }) => {
     return (
-      <PhotoCell
+      <ImageCell
         height={this.state.cellHeight}
         width={this.state.columnWidth}
-        onPress={this.handlePickPhoto}
-        photo={item}
+        onPress={this.handlePickImage}
+        image={item}
       />
     );
   };
 
+  _handleSearch = () => {
+    this.loadImages(true);
+  };
+
+  handleSearch = throttle(this._handleSearch, 200);
+
+  handleChangeQuery = (query: string) => {
+    this.setState({ query });
+
+    this.handleSearch();
+  };
+
   renderScrollView = props => <ScrollView {...props} />;
 
+  stickyHeaderIndices = [0];
+
+  translateYValue = Animated.interpolate(this.props.keyboardVisibleValue, {
+    inputRange: [0, 1],
+    outputRange: [0, this.props.tabBarHeight * -1 + TOP_Y],
+    extrapolate: Animated.Extrapolate.CLAMP
+  });
+
   render() {
-    const { loadState, photos } = this.state;
+    const { loadState, images, resultType } = this.state;
     const {
       width,
       height,
@@ -274,30 +290,50 @@ export class InternetImagesList extends React.Component<Props, State> {
       paddingBottom = 0,
       onScrollBeginDrag,
       scrollEnabled,
-      pointerEvents
+      pointerEvents,
+      keyboardVisibleValue,
+      keyboardHeightValue,
+      tabBarHeight = 0
     } = this.props;
 
-    if (loadState === InternetImagesListLoadState.denied) {
-      return <DeniedPhotoPermission />;
-    } else if (loadState === InternetImagesListLoadState.requestPermission) {
-      return <RequestPhotoPermission onPress={this.requestPhotoPermission} />;
-    } else {
-      return (
+    return (
+      <Animated.View
+        style={[
+          styles.wrapper,
+          {
+            width,
+            height,
+            transform: [
+              {
+                translateY: this.translateYValue
+              }
+            ]
+          }
+        ]}
+      >
+        <ImageSearch
+          query={this.state.query}
+          onChange={this.handleChangeQuery}
+          keyboardVisibleValue={keyboardVisibleValue}
+        />
+
         <FlatList
-          data={photos}
+          data={images}
           pointerEvents={pointerEvents}
           getItemLayout={this.getItemLayout}
-          initialNumToRender={Math.floor(PAGE_LENGTH * 1.5)}
+          initialNumToRender={Math.floor(
+            (this.props.height / this.state.cellHeight) * NUM_COLUMNS * 1
+          )}
           renderItem={this.handleRenderItem}
           numColumns={NUM_COLUMNS}
           onScroll={this.handleScroll}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="always"
           ref={this.flatListRef}
           style={{
             width,
-            height,
-            // paddingTop,
-            flexGrow: 0,
-            flexShrink: 0
+            height: height - IMAGE_SEARCH_HEIGHT,
+            flex: 0
           }}
           contentInsetAdjustmentBehavior="never"
           removeClippedSubviews={scrollEnabled}
@@ -310,7 +346,7 @@ export class InternetImagesList extends React.Component<Props, State> {
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}
         />
-      );
-    }
+      </Animated.View>
+    );
   }
 }
