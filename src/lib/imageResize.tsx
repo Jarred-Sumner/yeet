@@ -6,7 +6,8 @@ import RNFetchBlob from "rn-fetch-blob";
 import {
   YeetImage,
   YeetImageContainer,
-  normalizeResizedImage
+  normalizeResizedImage,
+  YeetImageRect
 } from "./imageSearch";
 
 export const generateFilename = (extension = "png") =>
@@ -42,15 +43,16 @@ export const getLocalURI = async (_uri: string | Object) => {
     return uri;
   }
 
-  return RNFetchBlob.config({
-    fileCache: true,
-    // by adding this option, the temp files will have a file extension
-    appendExt: path.extname(uri)
-  })
-    .fetch("GET", uri)
-    .then(res => {
-      return res.path();
-    });
+  return uri;
+  // return RNFetchBlob.config({
+  //   fileCache: true,
+  //   // by adding this option, the temp files will have a file extension
+  //   appendExt: path.extname(uri)
+  // })
+  //   .fetch("GET", uri)
+  //   .then(res => {
+  //     return res.path();
+  //   });
 };
 
 export const resizeImage = async ({
@@ -69,9 +71,9 @@ export const resizeImage = async ({
   bottom: number;
   x: number;
   displaySize?: { width: number; height: number };
-}): Promise<YeetImageContainer> => {
+}): Promise<[YeetImageContainer, YeetImageRect]> => {
   const multiplier = image.image.width / width;
-
+  const isAnimated = image.image.duration > 0;
   const uri = await getLocalURI(image.image.uri);
 
   const size = {
@@ -81,17 +83,46 @@ export const resizeImage = async ({
     x: x * multiplier
   };
 
+  if (isAnimated) {
+    const _displaySize = displaySize || { width, height };
+    const ratio = _displaySize.width / image.image.width;
+
+    const croppedSize = {
+      width: _displaySize.width,
+      height: height * multiplier * ratio,
+      x: size.x * ratio,
+      y: size.y * ratio,
+      maxX: _displaySize.width,
+      maxY: (height - Math.abs(bottom)) * multiplier * ratio
+    };
+
+    return [
+      normalizeResizedImage(
+        image,
+        uri,
+        size.width,
+        size.height,
+        image.image.duration,
+        []
+      ),
+      croppedSize
+    ];
+  }
+
   const croppedSize = displaySize || { width: size.width, height: size.height };
 
   return PhotoEditor.batch(uri, [], size, croppedSize, 100, "image/webp").then(
     newUri => {
-      return normalizeResizedImage(
-        image,
-        newUri,
-        croppedSize.width,
-        croppedSize.height,
-        image.image.duration
-      );
+      return [
+        normalizeResizedImage(
+          image,
+          newUri,
+          croppedSize.width,
+          croppedSize.height,
+          image.image.duration
+        ),
+        croppedSize
+      ];
     }
   );
 };

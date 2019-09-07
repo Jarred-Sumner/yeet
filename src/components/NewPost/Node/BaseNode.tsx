@@ -7,13 +7,16 @@ import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
 import { KeyboardAvoidingView } from "../../KeyboardAvoidingView";
 
-export type EditableNodePosition = {
-  x: number;
-  animatedX?: Animated.Value<number>;
-  animatedY?: Animated.Value<number>;
+export type EditableNodeStaticPosition = {
   y: number;
   scale: number;
   rotate: number;
+  x: number;
+};
+
+export type EditableNodePosition = EditableNodeStaticPosition & {
+  animatedX?: Animated.Value<number>;
+  animatedY?: Animated.Value<number>;
   animatedRotate: Animated.Value<number>;
   animatedScale: Animated.Value<number>;
 };
@@ -79,19 +82,18 @@ export class BaseNode extends React.Component<Props> {
 
   handleTap = () => this.props.onTap(this.props.node);
 
-  blockRef = React.createRef();
-
   componentDidUpdate(prevProps) {
     if (prevProps.isFocused !== this.props.isFocused) {
       if (this.props.isFocused) {
-        this.blockRef.current.focus();
+        this.props.inputRef.current.focus &&
+          this.props.inputRef.current.focus();
       }
     }
   }
 
   componentDidMount() {
     if (this.props.isFocused) {
-      this.blockRef.current.focus();
+      this.props.inputRef.current.focus && this.props.inputRef.current.focus();
     }
   }
 
@@ -144,6 +146,7 @@ export class BaseNode extends React.Component<Props> {
       disabled,
       focusedBlockValue,
       onFocus,
+      inputRef,
       waitFor,
       onLayout
     } = this.props;
@@ -188,7 +191,7 @@ export class BaseNode extends React.Component<Props> {
           }}
         >
           <Block
-            ref={this.blockRef}
+            ref={inputRef}
             block={block}
             onChange={this.handleChangeBlock}
             gestureRef={this.gestureRef}

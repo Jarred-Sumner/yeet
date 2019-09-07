@@ -58,6 +58,7 @@ const Routes = createAppContainer(
         }
       ),
       UploadPost: UploadPostPage,
+      InsertSticker: ImagePickerPage,
 
       Auth: createStackNavigator(
         {
@@ -82,7 +83,7 @@ const Routes = createAppContainer(
       mode: "modal",
       headerMode: "none",
       cardStyle: {
-        backgroundColor: "transparent"
+        backgroundColor: "#000"
       }
     }
   )

@@ -90,6 +90,7 @@ export const EditableNodeList = ({
   focusTypeValue,
   onBlur: onBlurNode,
   setNodeRef,
+  setBlockInputRef,
   focusedBlockId
 }: EditableNodeListProps) => {
   const containerRef = React.useCallback(
@@ -99,17 +100,25 @@ export const EditableNodeList = ({
     [setNodeRef]
   );
 
+  const handleSetBlockInputRef = React.useCallback(
+    blockId => {
+      return setBlockInputRef(blockId);
+    },
+    [setBlockInputRef]
+  );
+
   return [...inlineNodes.entries()].map(([id, node]) => {
     return (
       <BaseNode
         maxX={maxX}
         maxY={maxY}
+        containerRef={containerRef(id)}
         onBlur={onBlurNode}
-        isDragEnabled={!focusedBlockId}
+        isDragEnabled={!focusedBlockId || focusedBlockId !== id}
         focusedBlockValue={focusedBlockValue}
         disabled={focusedBlockId && focusedBlockId !== id}
         waitFor={waitFor}
-        containerRef={containerRef(id)}
+        inputRef={handleSetBlockInputRef(id)}
         onFocus={onFocus}
         focusTypeValue={focusTypeValue}
         focusType={focusType}

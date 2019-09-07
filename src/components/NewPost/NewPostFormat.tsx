@@ -2,7 +2,7 @@ import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
 import { SPACING, COLORS } from "../../lib/styles";
 import { getInset } from "react-native-safe-area-view";
-import { YeetImageContainer } from "../../lib/imageSearch";
+import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 
 const TOP_Y = getInset("top");
 export const CAROUSEL_HEIGHT = 60;
@@ -16,10 +16,19 @@ export const MAX_POST_HEIGHT =
 export enum PostFormat {
   screenshot = "screenshot",
   caption = "caption",
+  sticker = "sticker",
   vent = "vent",
   comic = "comic",
   blargh = "blargh"
 }
+
+export const minImageWidthByFormat = (format: PostFormat) => {
+  if (format === PostFormat.sticker) {
+    return 100;
+  } else {
+    return POST_WIDTH;
+  }
+};
 
 interface PostBlock {
   type: "text" | "image";
@@ -43,10 +52,7 @@ export type ImagePostBlock = PostBlock & {
   type: "image";
   value: YeetImageContainer;
   config: {
-    dimensions: {
-      width: number;
-      height: number;
-    } | null;
+    dimensions: YeetImageRect;
   };
 };
 
@@ -96,7 +102,10 @@ export const buildImageBlock = ({
   required = true,
   placeholder = false,
   id: _id,
-  format
+  format,
+  dimensions = {}
+}: {
+  image: YeetImageContainer;
 }): ImagePostBlock => {
   const id = _id || nanoid();
 
@@ -122,7 +131,18 @@ export const buildImageBlock = ({
     required,
     value: image,
     config: {
-      dimensions: { width, height }
+      dimensions: Object.assign(
+        {},
+        {
+          width,
+          height,
+          x: 0,
+          y: 0,
+          maxX: width,
+          maxY: height
+        },
+        dimensions
+      )
     }
   };
 };

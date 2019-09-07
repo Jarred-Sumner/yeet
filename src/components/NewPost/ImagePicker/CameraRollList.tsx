@@ -1,6 +1,6 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Dimensions, Image, StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View, Image as RNImage } from "react-native";
 import {
   BaseButton,
   FlatList as GestureHandlerFlatList
@@ -14,6 +14,7 @@ import { ScrollView as NavigationScrollView } from "react-navigation";
 import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
+import Image from "../../Image";
 
 const TOP_Y = getInset("top");
 
@@ -100,22 +101,16 @@ const PhotoCell = ({
     onPress(photo);
   }, [onPress, photo]);
 
-  const source = Image.resolveAssetSource({
-    width,
-    height,
+  const source = {
+    width: photo.node.image.width,
+    height: photo.node.image.height,
     uri: photo.node.image.uri
-  });
-
-  // const source = {
-  //   width: photo.node.image.width,
-  //   height: photo.node.image.height,
-  //   uri: photo.node.image.uri
-  // };
+  };
 
   return (
     <BaseButton exclusive={false} onPress={_onPress}>
       <View style={[photoCellStyles.container, { width, height }]}>
-        <Image source={source} resizeMode="contain" />
+        <Image source={source} resizeMode="contain" style={{ width, height }} />
       </View>
     </BaseButton>
   );

@@ -22,7 +22,7 @@ import {
   YeetImageContainer,
   ImageSearchResponse
 } from "../../../lib/imageSearch";
-import { throttle } from "lodash";
+import { debounce } from "lodash";
 import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
@@ -262,7 +262,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
     this.loadImages(true);
   };
 
-  handleSearch = throttle(this._handleSearch, 200);
+  handleSearch = debounce(this._handleSearch, 200);
 
   handleChangeQuery = (query: string) => {
     this.setState({ query });

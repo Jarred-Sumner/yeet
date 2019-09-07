@@ -1,7 +1,22 @@
 import giphyClient from "giphy-api";
 import memoizee from "memoizee";
 import CameraRoll from "@react-native-community/cameraroll";
-import { ImageResolvedAssetSource, Image } from "react-native";
+import {
+  ImageResolvedAssetSource,
+  Image,
+  PerpectiveTransform,
+  RotateTransform,
+  RotateXTransform,
+  RotateYTransform,
+  RotateZTransform,
+  ScaleTransform,
+  ScaleXTransform,
+  ScaleYTransform,
+  TranslateXTransform,
+  TranslateYTransform,
+  SkewXTransform,
+  SkewYTransform
+} from "react-native";
 import { extname } from "path";
 
 const mimeTypeFromFilename = (filename: string) =>
@@ -18,13 +33,29 @@ const mimeTypeFromFilename = (filename: string) =>
 
 enum ImageSourceType {
   cameraRoll = "cameraRoll",
-  giphy = "giphy"
+  giphy = "giphy",
+  yeet = "yeet"
 }
 
 const giphy = giphyClient({
   https: true,
   apiKey: "2n6uBhuasG4FXnY2zoNd5ay7AQRx1hMw"
 });
+
+export type YeetTransform = Array<
+  | PerpectiveTransform
+  | RotateTransform
+  | RotateXTransform
+  | RotateYTransform
+  | RotateZTransform
+  | ScaleTransform
+  | ScaleXTransform
+  | ScaleYTransform
+  | TranslateXTransform
+  | TranslateYTransform
+  | SkewXTransform
+  | SkewYTransform
+>;
 
 export type YeetImage = {
   width: number;
@@ -34,23 +65,48 @@ export type YeetImage = {
   mimeType: "image/jpeg" | "image/png" | "image/webp";
   source: ImageSourceType;
   asset: ImageResolvedAssetSource;
+  transform: YeetTransform;
 };
 
 export type YeetImageRect = {
   x: number;
   y: number;
+  maxX: number;
+  maxY: number;
   width: number;
   height: number;
 };
 
-export type YeetImageContainer = {
-  source: giphyClient.GIFObject | CameraRoll.PhotoIdentifier | YeetImage;
+type YeetImageContainerBase = {
   preview?: YeetImage;
   image: YeetImage;
   id: string;
 };
 
-const normalizeBaseImage = (image): YeetImage => {
+type YeetImageContainerGiphy = YeetImageContainerBase & {
+  source: giphyClient.GIFObject;
+  sourceType: ImageSourceType.giphy;
+};
+
+type YeetImageContainerYeet = YeetImageContainerBase & {
+  source: YeetImageContainer;
+  sourceType: ImageSourceType.yeet;
+};
+
+type YeetImageContainerCameraRoll = YeetImageContainerBase & {
+  source: CameraRoll.PhotoIdentifier;
+  sourceType: ImageSourceType.cameraRoll;
+};
+
+export type YeetImageContainer =
+  | YeetImageContainerGiphy
+  | YeetImageContainerYeet
+  | YeetImageContainerCameraRoll;
+
+const normalizeBaseImage = (
+  image,
+  transform: YeetTransform = []
+): YeetImage => {
   const assetData = {
     uri: image.webp,
     width: Number(image.width),
@@ -61,7 +117,8 @@ const normalizeBaseImage = (image): YeetImage => {
     duration: Number(image.length || 0),
     mimeType: "image/webp",
     source: ImageSourceType.giphy,
-    asset: Image.resolveAssetSource(assetData)
+    asset: Image.resolveAssetSource(assetData),
+    transform
   };
 };
 
@@ -70,7 +127,8 @@ export const normalizeResizedImage = (
   uri: string,
   width: number,
   height: number,
-  duration: number = 0
+  duration: number = 0,
+  transform: YeetTransform = []
 ): YeetImageContainer => {
   const assetData = {
     uri,
@@ -83,18 +141,21 @@ export const normalizeResizedImage = (
     duration: duration,
     mimeType: original.image.mimeType,
     source: ImageSourceType.cameraRoll,
-    asset: Image.resolveAssetSource(assetData)
+    asset: Image.resolveAssetSource(assetData),
+    transform
   };
 
   return {
     image,
     source: original.source,
-    id: image.uri
+    id: image.uri,
+    sourceType: original.sourceType
   };
 };
 
 export const imageContainerFromCameraRoll = (
-  photo: CameraRoll.PhotoIdentifier
+  photo: CameraRoll.PhotoIdentifier,
+  transform: YeetTransform = []
 ): YeetImageContainer => {
   const {
     uri,
@@ -115,17 +176,19 @@ export const imageContainerFromCameraRoll = (
     duration: duration,
     mimeType: mimeTypeFromFilename(filename),
     source: ImageSourceType.cameraRoll,
-    asset: Image.resolveAssetSource(assetData)
+    asset: Image.resolveAssetSource(assetData),
+    transform
   };
 
   return {
     image,
     source: photo,
-    id: image.uri
+    id: image.uri,
+    sourceType: ImageSourceType.cameraRoll
   };
 };
 
-const normalizeOriginalImage = (image): YeetImage => {
+const normalizeOriginalImage = (image, transform = []): YeetImage => {
   const assetData = {
     uri: image.webp,
     width: Number(image.width),
@@ -137,7 +200,8 @@ const normalizeOriginalImage = (image): YeetImage => {
     duration: Number(image.length || 1),
     mimeType: "image/webp",
     source: ImageSourceType.giphy,
-    asset: Image.resolveAssetSource(assetData)
+    asset: Image.resolveAssetSource(assetData),
+    transform
   };
 };
 
@@ -145,7 +209,8 @@ const normalizeImage = (gif: giphyClient.GIFObject): YeetImageContainer => ({
   id: gif.id,
   source: gif,
   preview: normalizeBaseImage(gif.images.fixed_height_small),
-  image: normalizeOriginalImage(gif.images.original)
+  image: normalizeOriginalImage(gif.images.original),
+  sourceType: ImageSourceType.giphy
 });
 
 export type ImageSearchResponse = {
@@ -198,3 +263,23 @@ export const getTrending = memoizee(_getTrending, {
   async: true,
   max: 1
 });
+
+export const getSourceDimensions = (
+  image: YeetImageContainer
+): YeetImageRect => {
+  if (image.sourceType === ImageSourceType.cameraRoll) {
+    const { width, height } = image.source.node.image;
+    return { width, height, x: 0, y: 0, maxX: width, maxY: height };
+  } else if (image.sourceType === ImageSourceType.giphy) {
+    const { width: _width, height: _height } = image.source.images.original;
+    const width = Number(_width);
+    const height = Number(_height);
+
+    return { width, height, x: 0, y: 0, maxX: width, maxY: height };
+  } else if (image.sourceType === ImageSourceType.yeet) {
+    const { width, height } = image.source.image;
+    return { width, height, x: 0, y: 0, maxX: width, maxY: height };
+  } else {
+    return { width: 0, height: 0, x: 0, y: 0, maxX: 0, maxY: 0 };
+  }
+};

@@ -1,6 +1,6 @@
 import assert from "assert";
 import * as React from "react";
-import { Image as RNImage, StyleSheet, View, Dimensions } from "react-native";
+import { StyleSheet, View, Dimensions } from "react-native";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
 import {
   ChangeBlockFunction,
@@ -23,6 +23,8 @@ import {
 } from "react-native-gesture-handler";
 import { SemiBoldText } from "../Text";
 import Image from "../Image";
+import FastImage from "react-native-fast-image";
+// import Image from "../Image";
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 type Props = {
@@ -56,34 +58,92 @@ const stylesByFormat = {
       width: "100%",
       backgroundColor: presetsByFormat[PostFormat.screenshot].backgroundColor
     }
+  }),
+  [PostFormat.sticker]: StyleSheet.create({
+    image: {
+      backgroundColor: "transparent"
+    },
+    container: {
+      backgroundColor: "transparent"
+    }
   })
 };
 
-const ScreenshotImage = ({ block }: { block: ImagePostBlockType }) => {
-  return (
-    <Image
-      source={{
-        uri: block.value.image.uri,
-        ...block.config.dimensions
-      }}
-      resizeMode="stretch"
-      style={[stylesByFormat[block.format].image, block.config.dimensions]}
-    />
-  );
-};
+const ScreenshotImage = React.forwardRef(
+  ({ block }: { block: ImagePostBlockType }, ref) => {
+    return (
+      <Image
+        ref={ref}
+        source={{
+          uri: block.value.image.uri,
+          width: block.value.image.width,
+          height: block.value.image.height,
+          cache: FastImage.cacheControl.web
+        }}
+        resizeMode="stretch"
+        style={[
+          stylesByFormat[block.format].image,
+          {
+            transform: block.value.image.transform,
+            width: block.config.dimensions.maxX - block.config.dimensions.x,
+            height: block.config.dimensions.maxY - block.config.dimensions.y
+          }
+        ]}
+      />
+    );
+  }
+);
 
-const CaptionImage = ({ block }: { block: ImagePostBlockType }) => {
-  return (
-    <Image
-      source={{
-        uri: block.value.image.uri,
-        ...block.config.dimensions
-      }}
-      resizeMode="stretch"
-      style={[stylesByFormat[block.format].image, block.config.dimensions]}
-    />
-  );
-};
+const CaptionImage = React.forwardRef(
+  ({ block }: { block: ImagePostBlockType }, ref) => {
+    return (
+      <Image
+        ref={ref}
+        source={{
+          uri: block.value.image.uri,
+          width: block.value.image.width,
+          height: block.value.image.height,
+          cache: FastImage.cacheControl.web
+        }}
+        resizeMode="stretch"
+        style={[
+          stylesByFormat[block.format].image,
+          {
+            transform: block.value.image.transform,
+            width: block.config.dimensions.maxX - block.config.dimensions.x,
+            height: block.config.dimensions.maxY - block.config.dimensions.y
+          }
+        ]}
+      />
+    );
+  }
+);
+
+const StickerImage = React.forwardRef(
+  ({ block }: { block: ImagePostBlockType }, ref) => {
+    return (
+      <Image
+        ref={ref}
+        source={{
+          uri: block.value.image.uri,
+          width: block.value.image.width,
+          height: block.value.image.height,
+          cache: FastImage.cacheControl.web
+        }}
+        resizeMode="stretch"
+        style={[
+          stylesByFormat[block.format].image,
+          {
+            transform: block.value.image.transform,
+            borderRadius: 2,
+            width: block.config.dimensions.maxX - block.config.dimensions.x,
+            height: block.config.dimensions.maxY - block.config.dimensions.y
+          }
+        ]}
+      />
+    );
+  }
+);
 
 export class ImagePostBlock extends React.Component<Props> {
   handleChange = text => {
@@ -108,7 +168,8 @@ export class ImagePostBlock extends React.Component<Props> {
 
     const ImageComponent = {
       [PostFormat.caption]: CaptionImage,
-      [PostFormat.screenshot]: ScreenshotImage
+      [PostFormat.screenshot]: ScreenshotImage,
+      [PostFormat.sticker]: StickerImage
     }[block.format];
 
     if (!ImageComponent) {
@@ -119,10 +180,24 @@ export class ImagePostBlock extends React.Component<Props> {
       return (
         <View
           onLayout={onLayout}
-          style={[styles.container, stylesByFormat[block.format].container]}
+          style={[
+            styles.container,
+            stylesByFormat[block.format].container,
+            {
+              width: block.config.dimensions.maxX - block.config.dimensions.x,
+              height: block.config.dimensions.maxY - block.config.dimensions.y,
+              overflow: "hidden"
+            }
+          ]}
         >
-          <SharedElement id={`block.imagePicker.${block.id}`}>
-            <ImageComponent block={block} />
+          <SharedElement
+            style={{
+              width: block.config.dimensions.maxX - block.config.dimensions.x,
+              height: block.config.dimensions.maxY - block.config.dimensions.y
+            }}
+            id={`block.imagePicker.${block.id}`}
+          >
+            <ImageComponent ref={inputRef} block={block} />
           </SharedElement>
 
           {this.props.children}

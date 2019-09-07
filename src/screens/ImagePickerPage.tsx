@@ -2,11 +2,18 @@ import * as React from "react";
 import { Dimensions, InteractionManager, StyleSheet, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
-import { SafeAreaView, withNavigationFocus } from "react-navigation";
+import {
+  SafeAreaView,
+  withNavigationFocus,
+  NavigationProp
+} from "react-navigation";
 import { SharedElement } from "react-navigation-sharedelement";
 import { IconButton } from "../components/Button";
 import { IconClose } from "../components/Icon";
-import { ImagePicker } from "../components/NewPost/ImagePicker";
+import {
+  ImagePicker,
+  ImagePickerRoute
+} from "../components/NewPost/ImagePicker";
 import { COLORS, SPACING } from "../lib/styles";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 
@@ -27,6 +34,12 @@ export class ImagePickerPage extends React.Component {
     // Transition element `item.${item.id}.photo` when either
     // showing or hiding this screen (coming from any route)
     const blockId = navigation.getParam("blockId");
+    const shouldAnimate = navigation.getParam("shouldAnimate") || false;
+
+    if (!shouldAnimate) {
+      return [];
+    }
+
     const id = `block.imagePicker.${blockId}`;
 
     return [
@@ -166,6 +179,10 @@ export class ImagePickerPage extends React.Component {
             animatedYOffset={this.animatedYOffset}
             keyboardVisibleValue={this.keyboardVisibleValue}
             keyboardHeightValue={this.keyboardHeightValue}
+            initialRoute={
+              this.props.navigation.getParam("initialRoute") ||
+              ImagePickerRoute.camera
+            }
             height={SCREEN_DIMENSIONS.height}
             onScrollBeginDrag={this.handleScrollBeginDrag}
             onChange={this.handlePickPhoto}

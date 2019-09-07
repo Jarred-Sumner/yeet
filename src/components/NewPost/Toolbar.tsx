@@ -3,7 +3,7 @@ import { View, StyleSheet } from "react-native";
 import { IconButton } from "../Button";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";
-import { BorderlessButton } from "react-native-gesture-handler";
+import { TouchableOpacity } from "react-native-gesture-handler";
 import {
   IconText,
   IconRedact,
@@ -36,11 +36,11 @@ const styles = StyleSheet.create({
 });
 
 export const ToolbarButton = ({ Icon, size, onPress, color, isActive }) => (
-  <BorderlessButton onPress={onPress}>
+  <TouchableOpacity onPressIn={onPress}>
     <View style={styles.buttonContainer}>
       <Icon size={size} style={[styles.buttonIcon, { color }]} />
     </View>
-  </BorderlessButton>
+  </TouchableOpacity>
 );
 
 const TextToolbarButton = ({ isActive, onPress }) => {

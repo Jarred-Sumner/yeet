@@ -1,76 +1,58 @@
+import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
 import {
   Dimensions,
-  StyleSheet,
-  View,
-  InteractionManager,
-  PixelRatio,
   Image,
-  Keyboard
+  Keyboard,
+  PixelRatio,
+  StyleSheet,
+  View
 } from "react-native";
-import { getInset } from "react-native-safe-area-view";
-import Animated from "react-native-reanimated";
-import { SafeAreaView, withNavigationFocus } from "react-navigation";
-import { SPACING, COLORS } from "../../lib/styles";
-import { IconText, IconUploadPhoto, IconSend, IconDownload } from "../Icon";
-import {
-  PostBlockType,
-  buildTextBlock,
-  CAROUSEL_HEIGHT,
-  PostFormat,
-  FocusBlockType,
-  presetsByFormat,
-  POST_WIDTH,
-  isPlaceholderImageBlock,
-  MAX_POST_HEIGHT
-} from "./NewPostFormat";
-import { TextPostBlock } from "./TextPostBlock";
-import { ImagePostBlock } from "./ImagePostBlock";
-import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
-import tinycolor from "tinycolor2";
+import DeviceInfo from "react-native-device-info";
 import {
   BaseButton,
   ScrollView,
-  TextInput,
-  LongPressGestureHandler,
-  GestureHandlerGestureEvent,
   State as GestureState,
-  GestureHandlerStateChangeEvent,
-  LongPressGestureHandlerEventExtra,
-  FlingGestureHandler,
-  LongPressGestureHandlerGestureEvent,
-  Directions,
-  FlingGestureHandlerGestureEvent,
-  FlingGestureHandlerStateChangeEvent,
-  TapGestureHandler
+  TapGestureHandler,
+  TextInput
 } from "react-native-gesture-handler";
-import { IconButton } from "../Button";
 import LinearGradient from "react-native-linear-gradient";
-import {
-  Toolbar,
-  ToolbarButtonType,
-  DEFAULT_TOOLBAR_BUTTON_TYPE
-} from "./Toolbar";
-import { TextLayer } from "./layers/TextLayer";
-import { EditorFooter } from "./EditorFooter";
-import { Block } from "./Node/Block";
-import { HorizontalScrollView } from "../HorizontalScrollView";
-import {
-  BaseNode,
-  EditableNode,
-  EditableNodeMap,
-  buildEditableNode
-} from "./Node/BaseNode";
+import PhotoEditor from "react-native-photo-manipulator";
+import Animated from "react-native-reanimated";
+import { getInset } from "react-native-safe-area-view";
 import { captureRef } from "react-native-view-shot";
-import CameraRoll from "@react-native-community/cameraroll";
-import { PostPreview, EditableNodeList } from "./PostPreview";
-import PhotoEditor, { MimeType } from "react-native-photo-manipulator";
-import DeviceInfo from "react-native-device-info";
-import { Redactor } from "./Redactor";
-import memoizee from "memoizee";
-import { BoldText } from "../Text";
-import FormatPicker from "./FormatPicker";
 import { NavigationEvents } from "react-navigation";
+import tinycolor from "tinycolor2";
+import { SPACING } from "../../lib/styles";
+import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import { EditorFooter } from "./EditorFooter";
+import { ImagePickerRoute } from "./ImagePicker";
+import { TextLayer } from "./layers/TextLayer";
+import { getCommand } from "../../lib/transformsToFFMPEG";
+import { startExport } from "../../lib/Exporter";
+import {
+  buildTextBlock,
+  FocusBlockType,
+  isPlaceholderImageBlock,
+  MAX_POST_HEIGHT,
+  PostBlockType,
+  PostFormat,
+  POST_WIDTH,
+  presetsByFormat,
+  buildImageBlock,
+  minImageWidthByFormat
+} from "./NewPostFormat";
+import {
+  buildEditableNode,
+  EditableNode,
+  EditableNodeMap
+} from "./Node/BaseNode";
+import { EditableNodeList, PostPreview } from "./PostPreview";
+import Toolbar, {
+  DEFAULT_TOOLBAR_BUTTON_TYPE,
+  ToolbarButtonType
+} from "./Toolbar";
+import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -194,22 +176,23 @@ type State = {
   isSaving: boolean;
 };
 
+// https://media.giphy.com/media/jQS9YkJXofyeI/giphy.gif
 const TEXT_NODE_FIXTURE: EditableNode = {
   block: {
     id: "123foo",
-    type: "text",
+    type: "image",
     format: "screenshot",
     value: "hiii",
     config: { variant: "standard", overrides: {} }
   },
   position: {
-    x: 20,
+    x: 100,
     y: 40,
     animatedX: new Animated.Value(20),
     animatedY: new Animated.Value(40),
     scale: 1.0,
-    animatedScale: new Animated.Value(1.0),
-    rotate: 0,
+    animatedScale: new Animated.Value(1.4),
+    rotate: 10,
     animatedRotate: new Animated.Value(0)
   }
 };
@@ -253,6 +236,10 @@ export class PostEditor extends React.Component<{}, State> {
       this._inlineNodeRefs.delete(id);
     }
 
+    if (this._blockInputRefs.has(id)) {
+      this._blockInputRefs.delete(id);
+    }
+
     if (this.state.focusedBlockId === id) {
       this.setState({ focusedBlockId: null, focusType: null });
       this.focusedBlockValue.setValue("");
@@ -260,7 +247,15 @@ export class PostEditor extends React.Component<{}, State> {
     }
   };
 
-  handlePressToolbarButton = activeButton => this.setState({ activeButton });
+  handlePressToolbarButton = activeButton => {
+    console.warn({ activeButton });
+    if (activeButton === ToolbarButtonType.photo) {
+      this.handleInsertPhoto();
+    } else {
+      this.setState({ activeButton });
+    }
+  };
+
   handleInlineNodeChange = (editableNode: EditableNode) => {
     if (
       editableNode.block.type === "text" &&
@@ -297,6 +292,7 @@ export class PostEditor extends React.Component<{}, State> {
     });
 
     this.state.inlineNodes.set(block.id, editableNode);
+    this._blockInputRefs.set(block.id, React.createRef());
 
     this.setState({
       focusedBlockId: block.id,
@@ -325,12 +321,14 @@ export class PostEditor extends React.Component<{}, State> {
       this.focusedBlockValue.setValue("");
       this.focusTypeValue.setValue(-1);
     } else {
-      this.setState({
-        focusedBlockId: node.block.id,
-        focusType: FocusBlockType.absolute
-      });
-      this.focusedBlockValue.setValue(node.block.id);
-      this.focusTypeValue.setValue(FocusBlockType.absolute);
+      if (node.block.type === "text") {
+        this.setState({
+          focusedBlockId: node.block.id,
+          focusType: FocusBlockType.absolute
+        });
+        this.focusedBlockValue.setValue(node.block.id);
+        this.focusTypeValue.setValue(FocusBlockType.absolute);
+      }
     }
   };
 
@@ -381,109 +379,16 @@ export class PostEditor extends React.Component<{}, State> {
   handleSend = () => {};
 
   createSnapshot = async () => {
-    this._inlineNodeRefs.entries().map([]);
-    const overlayURI = await captureRef(this.nodeListRef.current, {
-      format: "png",
-      quality: 1.0
-    });
-
-    const overlayDimensions = await new Promise((resolve, reject) => {
-      Image.getSize(
-        overlayURI,
-        (width, height) => resolve({ width, height }),
-        reject
-      );
-    });
-
-    const blockURI = await captureRef(this.scrollRef.current, {
-      format: "png",
-      quality: 1.0,
-
-      snapshotContentContainer: true
-    }).then(
-      uri => {
-        console.log("Image saved to", uri);
-        return uri;
-      },
-      error => {
-        console.error("Oops, snapshot failed", error);
-        return error;
-      }
+    // this._inlineNodeRefs.entries().map([]);
+    // const overlayURI = await captureRef(this.nodeListRef.current, {
+    //   format: "png",
+    //   quality: 1.0
+    // });
+    return startExport(
+      this.props.post.blocks,
+      this.state.inlineNodes,
+      this._blockInputRefs
     );
-
-    const blockDimensions = await new Promise((resolve, reject) => {
-      Image.getSize(
-        blockURI,
-        (width, height) => resolve({ width, height }),
-        reject
-      );
-    });
-
-    const rect = {
-      x: 0,
-      y: 0,
-      width: blockDimensions.width,
-      height: blockDimensions.height
-    };
-
-    const size = {
-      width: Math.max(blockDimensions.width, overlayDimensions.width),
-      height: Math.max(blockDimensions.height, overlayDimensions.height)
-    };
-
-    let backgroundURI = blockURI;
-    if (
-      size.width > blockDimensions.width ||
-      size.height > blockDimensions.height
-    ) {
-      backgroundURI = await new Promise((resolve, reject) => {
-        this.setState(
-          {
-            blankResize: {
-              width: PixelRatio.roundToNearestPixel(
-                size.width / PixelRatio.get()
-              ),
-              height: PixelRatio.roundToNearestPixel(
-                size.height / PixelRatio.get()
-              )
-            }
-          },
-          () => {
-            window.requestAnimationFrame(async () => {
-              const uri = await captureRef(this.blankResizeRef.current, {
-                format: "png",
-                quality: 1.0
-              }).then(
-                uri => {
-                  this.setState({ blankResize: null });
-                  return PhotoEditor.overlayImage(
-                    uri,
-                    blockURI,
-                    { x: 0, y: 0 },
-                    "image/png"
-                  );
-                },
-                error => {
-                  console.error("Oops, snapshot failed", error);
-                  return reject(error);
-                }
-              );
-
-              resolve(uri);
-            });
-          }
-        );
-      });
-    }
-
-    const combined = await PhotoEditor.overlayImage(
-      backgroundURI,
-      overlayURI,
-      { x: 0, y: 0 },
-      "image/png"
-    );
-
-    const result = await CameraRoll.saveToCameraRoll(combined, "photo");
   };
 
   blankResizeRef = React.createRef();
@@ -516,7 +421,7 @@ export class PostEditor extends React.Component<{}, State> {
     const {
       nativeEvent: { state: gestureState, ...data }
     } = event;
-    if (gestureState === GestureState.END) {
+    if (gestureState === GestureState.END && this.allowBackgroundTap) {
       this.handlePressBackground(data);
     }
   };
@@ -544,48 +449,82 @@ export class PostEditor extends React.Component<{}, State> {
     this.setState({ bounds: { x, y: y, width, height } });
   };
 
-  handleOpenImagePicker = block => {
+  handleOpenImagePicker = (block, shouldAnimate = true) => {
     this.props.navigation.navigate("EditBlockPhoto", {
       blockId: block.id,
       post: this.props.post,
+      initialRoute: ImagePickerRoute.camera,
+      shouldAnimate,
       onChange: this.handleChangeImageBlockPhoto
     });
   };
 
+  handleInsertPhoto = (block, shouldAnimate = false) => {
+    this.props.navigation.push("InsertSticker", {
+      blockId: block && block.id,
+      post: this.props.post,
+      initialRoute: ImagePickerRoute.internet,
+      shouldAnimate,
+      onChange: this.handleInsertSticker
+    });
+  };
+
+  handleInsertSticker = (
+    blockId: string = null,
+    image: YeetImageContainer,
+    dimensions?: YeetImageRect
+  ) => {
+    const minWidth = minImageWidthByFormat(PostFormat.sticker);
+
+    const block = buildImageBlock({
+      image,
+      id: blockId,
+      width: minWidth,
+      height: image.image.height * (minWidth / image.image.width),
+      dimensions,
+      autoInserted: false,
+      format: PostFormat.sticker
+    });
+
+    const editableNode = buildEditableNode({
+      block,
+      x: POST_WIDTH / 2 - block.config.dimensions.maxX / 2,
+      y: MAX_POST_HEIGHT / 2 - block.config.dimensions.maxY / 2
+    });
+
+    this._blockInputRefs.set(block.id, React.createRef());
+    this.state.inlineNodes.set(block.id, editableNode);
+
+    this.setState({
+      focusedBlockId: null,
+      focusType: null,
+      activeButton: ToolbarButtonType.text
+    });
+    this.focusedBlockValue.setValue("");
+    this.focusTypeValue.setValue(-1);
+  };
+
   handleChangeImageBlockPhoto = (
     blockId: string,
-    photo: CameraRoll.PhotoIdentifier
+    image: YeetImageContainer,
+    dimensions?: YeetImageRect
   ) => {
     const blockIndex = this.props.post.blocks.findIndex(
       block => block.id === blockId
     );
 
-    const block = { ...this.props.post.blocks[blockIndex] };
+    const _block = this.props.post.blocks[blockIndex];
 
-    const {
-      width: intrinsicWidth,
-      height: intrinsicHeight,
-      uri
-    } = photo.node.image;
+    const minWidth = minImageWidthByFormat(_block.format);
 
-    const displaySize = {
-      width: POST_WIDTH,
-      height: intrinsicHeight * (POST_WIDTH / intrinsicWidth)
-    };
-
-    const source = Image.resolveAssetSource({
-      uri,
-      width: displaySize.width,
-      height: displaySize.height
+    const block = buildImageBlock({
+      image,
+      id: blockId,
+      width: minWidth,
+      height: image.image.height * (minWidth / image.image.width),
+      dimensions,
+      format: _block.format
     });
-
-    block.value.intrinsicWidth = intrinsicWidth;
-    block.value.intrinsicHeight = intrinsicHeight;
-    block.value.src = source;
-    block.value.originalSrc = uri;
-    block.value.uri = source.uri;
-    block.value.width = displaySize.width;
-    block.value.height = displaySize.height;
 
     const blocks = [...this.props.post.blocks];
     blocks.splice(blockIndex, 1, block);
@@ -594,12 +533,6 @@ export class PostEditor extends React.Component<{}, State> {
       ...this.props.post,
       blocks
     });
-
-    return {
-      width: block.value.width,
-      height: block.value.height,
-      source: source
-    };
   };
 
   formatScrollViewRef = React.createRef();
@@ -630,6 +563,12 @@ export class PostEditor extends React.Component<{}, State> {
     }
   };
 
+  tapRef = React.createRef();
+  allowBackgroundTap = false;
+  setBackgroundTapIgnored = allowBackgroundTap => {
+    this.allowBackgroundTap = allowBackgroundTap;
+  };
+
   handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
   hasPlaceholderImageBlocks = () =>
     !!this.props.post.blocks.find(isPlaceholderImageBlock);
@@ -637,6 +576,7 @@ export class PostEditor extends React.Component<{}, State> {
   render() {
     const { post } = this.props;
     const presets = presetsByFormat[post.format];
+    console.log(JSON.stringify(this.state.inlineNodes.values()));
 
     const {
       bounds = { width: POST_WIDTH, height: MAX_POST_HEIGHT, x: 0, y: 0 }
@@ -693,132 +633,116 @@ export class PostEditor extends React.Component<{}, State> {
           ])}
         />
 
-        <TapGestureHandler
-          waitFor={this.buttonRef}
-          onHandlerStateChange={this.handleTapBackground}
+        <Animated.View
+          onLayout={this.updateBounds}
+          style={[
+            styles.safeWrapper,
+            styles.scrollContainer,
+            {
+              maxHeight: MAX_POST_HEIGHT,
+              width: bounds.width
+            }
+          ]}
         >
-          <Animated.View>
-            <BaseButton
-              ref={this.buttonRef}
-              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
-            >
-              <Animated.View
-                onLayout={this.updateBounds}
-                style={[
-                  styles.safeWrapper,
-                  styles.scrollContainer,
-                  {
-                    maxHeight: MAX_POST_HEIGHT,
-                    width: bounds.width
-                  }
+          <PostPreview
+            bounds={bounds}
+            blocks={post.blocks}
+            paddingTop={presets.paddingTop || 0}
+            inlineNodes={this.state.inlineNodes}
+            focusedBlockId={this.state.focusedBlockId}
+            focusTypeValue={this.focusTypeValue}
+            minX={bounds.x}
+            onTapBlock={this.handleTapBlock}
+            minY={bounds.y}
+            backgroundColor={post.backgroundColor}
+            focusedBlockValue={this.focusedBlockValue}
+            ref={this.scrollRef}
+            maxX={bounds.width}
+            bounces={!this.hasPlaceholderImageBlocks()}
+            onFocus={this.handleFocusBlock}
+            onScrollBeginDrag={this.handleScrollBeginDrag}
+            onOpenImagePicker={this.handleOpenImagePicker}
+            maxY={bounds.height}
+            onlyShow={this.state.focusedBlockId}
+            onBlur={this.handleBlurBlock}
+            focusType={FocusBlockType.static}
+            setBlockInputRef={this.setBlockInputRef}
+            onChangeNode={this.handleInlineNodeChange}
+            setBlockAtIndex={this.handleChangeBlock}
+            showEditableNodes={this.state.isSaving}
+          />
+
+          <Layer
+            zIndex={LayerZIndex.sheet}
+            width={sizeStyle.width}
+            isFrozen
+            opacity={this.controlsOpacityValue}
+            pointerEvents="none"
+            height={sizeStyle.height}
+          >
+            <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
+          </Layer>
+
+          <TextLayer
+            onBack={this.props.onBack}
+            footer={
+              <EditorFooter
+                onPressDownload={this.handleDownload}
+                onPressSend={this.handleSend}
+                waitFor={[
+                  this.scrollRef,
+                  this.formatScrollViewRef,
+                  ...this._blockInputRefs.values()
                 ]}
-              >
-                <PostPreview
-                  bounds={bounds}
-                  blocks={post.blocks}
-                  paddingTop={presets.paddingTop || 0}
-                  inlineNodes={this.state.inlineNodes}
-                  focusedBlockId={this.state.focusedBlockId}
-                  focusTypeValue={this.focusTypeValue}
-                  minX={bounds.x}
-                  onTapBlock={this.handleTapBlock}
-                  minY={bounds.y}
-                  backgroundColor={post.backgroundColor}
-                  focusedBlockValue={this.focusedBlockValue}
-                  ref={this.scrollRef}
-                  maxX={bounds.width}
-                  bounces={!this.hasPlaceholderImageBlocks()}
-                  onFocus={this.handleFocusBlock}
-                  onScrollBeginDrag={this.handleScrollBeginDrag}
-                  onOpenImagePicker={this.handleOpenImagePicker}
-                  maxY={bounds.height}
-                  onlyShow={this.state.focusedBlockId}
-                  onBlur={this.handleBlurBlock}
-                  focusType={FocusBlockType.static}
-                  setBlockInputRef={this.setBlockInputRef}
-                  onChangeNode={this.handleInlineNodeChange}
-                  setBlockAtIndex={this.handleChangeBlock}
-                  showEditableNodes={this.state.isSaving}
-                />
-
-                <Layer
-                  zIndex={LayerZIndex.sheet}
-                  width={sizeStyle.width}
-                  isFrozen
-                  opacity={this.controlsOpacityValue}
-                  pointerEvents="none"
-                  height={sizeStyle.height}
-                >
-                  <MiddleSheet
-                    width={sizeStyle.width}
-                    height={sizeStyle.height}
-                  />
-                </Layer>
-
-                <TextLayer
-                  onBack={this.props.onBack}
-                  footer={
-                    <EditorFooter
-                      onPressDownload={this.handleDownload}
-                      onPressSend={this.handleSend}
-                      waitFor={[
-                        this.scrollRef,
-                        this.formatScrollViewRef,
-                        ...this._blockInputRefs.values()
-                      ]}
-                    />
-                  }
-                  waitFor={[
-                    this.scrollRef,
-                    this.formatScrollViewRef,
-                    ...this._blockInputRefs.values()
-                  ]}
-                  width={sizeStyle.width}
-                  isTappingEnabled={
-                    this.state.activeButton === ToolbarButtonType.text
-                  }
-                  height={sizeStyle.height}
-                  onPressToolbarButton={this.handlePressToolbarButton}
-                  isFocused={!!this.state.focusedBlockId}
-                  insertTextNode={this.handleInsertText}
-                  controlsOpacity={this.controlsOpacityValue}
-                  blur={this.handleBlur}
-                  focusType={this.state.focusType}
-                  isNodeFocused={
-                    this.state.focusType === FocusBlockType.absolute
-                  }
-                  activeButton={this.state.activeButton}
-                  keyboardVisibleValue={this.keyboardVisibleValue}
-                  focusTypeValue={this.focusTypeValue}
-                  nodeListRef={this.nodeListRef}
-                >
-                  <EditableNodeList
-                    inlineNodes={this.state.inlineNodes}
-                    setNodeRef={this.setNodeRef}
-                    focusedBlockId={this.state.focusedBlockId}
-                    focusedBlockValue={this.focusedBlockValue}
-                    focusTypeValue={this.focusTypeValue}
-                    waitFor={[
-                      this.scrollRef,
-                      this.formatScrollViewRef,
-                      ...this._blockInputRefs.values()
-                    ]}
-                    focusType={FocusBlockType.absolute}
-                    minX={bounds.x}
-                    minY={bounds.y}
-                    maxX={sizeStyle.width}
-                    onFocus={this.handleFocusBlock}
-                    maxY={sizeStyle.height}
-                    onTapNode={this.handleTapNode}
-                    onlyShow={this.state.focusedBlockId}
-                    onBlur={this.handleBlurNode}
-                    onChangeNode={this.handleInlineNodeChange}
-                  />
-                </TextLayer>
-              </Animated.View>
-            </BaseButton>
-          </Animated.View>
-        </TapGestureHandler>
+              />
+            }
+            waitFor={[
+              this.scrollRef,
+              this.formatScrollViewRef,
+              ...this._blockInputRefs.values()
+            ]}
+            width={sizeStyle.width}
+            isTappingEnabled={
+              this.state.activeButton === ToolbarButtonType.text
+            }
+            height={sizeStyle.height}
+            onPressToolbarButton={this.handlePressToolbarButton}
+            isFocused={!!this.state.focusedBlockId}
+            insertTextNode={this.handleInsertText}
+            controlsOpacity={this.controlsOpacityValue}
+            blur={this.handleBlur}
+            focusType={this.state.focusType}
+            isNodeFocused={this.state.focusType === FocusBlockType.absolute}
+            activeButton={this.state.activeButton}
+            keyboardVisibleValue={this.keyboardVisibleValue}
+            focusTypeValue={this.focusTypeValue}
+            nodeListRef={this.nodeListRef}
+          >
+            <EditableNodeList
+              inlineNodes={this.state.inlineNodes}
+              setNodeRef={this.setNodeRef}
+              focusedBlockId={this.state.focusedBlockId}
+              focusedBlockValue={this.focusedBlockValue}
+              setBlockInputRef={this.setBlockInputRef}
+              focusTypeValue={this.focusTypeValue}
+              waitFor={[
+                this.scrollRef,
+                this.formatScrollViewRef,
+                ...this._blockInputRefs.values()
+              ]}
+              focusType={FocusBlockType.absolute}
+              minX={bounds.x}
+              minY={bounds.y}
+              maxX={sizeStyle.width}
+              onFocus={this.handleFocusBlock}
+              maxY={sizeStyle.height}
+              onTapNode={this.handleTapNode}
+              onlyShow={this.state.focusedBlockId}
+              onBlur={this.handleBlurNode}
+              onChangeNode={this.handleInlineNodeChange}
+            />
+          </TextLayer>
+        </Animated.View>
       </Animated.View>
     );
   }
