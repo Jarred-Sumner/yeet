@@ -7,7 +7,7 @@ import {
   withNavigationFocus,
   NavigationProp
 } from "react-navigation";
-import { SharedElement } from "react-navigation-sharedelement";
+import { SharedElement } from "react-navigation-shared-element";
 import { IconButton } from "../components/Button";
 import { IconClose } from "../components/Icon";
 import {

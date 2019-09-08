@@ -22,7 +22,7 @@ import NewPostPage from "./src/screens/NewPostPage";
 import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
 import ImagePickerPage from "./src/screens/ImagePickerPage";
-import { createSharedElementStackNavigator } from "react-navigation-sharedelement";
+import { createSharedElementStackNavigator } from "react-navigation-shared-element";
 
 const Routes = createAppContainer(
   createStackNavigator(

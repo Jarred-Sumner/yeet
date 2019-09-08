@@ -239,11 +239,11 @@ PODS:
     - React
   - RNSecureKeyStore (1.0.0):
     - React
-  - RNSharedElement (0.4.3):
+  - RNSharedElement (0.5.1):
     - React
   - RNSketchCanvas (0.8.0):
     - React
-  - RNSVG (9.8.4):
+  - RNSVG (9.8.5):
     - React
   - RNTextDetector (0.0.6):
     - Firebase/Core
@@ -254,9 +254,9 @@ PODS:
     - React
   - RNVectorIcons (6.6.0):
     - React
-  - SDWebImage (5.0.6):
-    - SDWebImage/Core (= 5.0.6)
-  - SDWebImage/Core (5.0.6)
+  - SDWebImage (5.1.1):
+    - SDWebImage/Core (= 5.1.1)
+  - SDWebImage/Core (5.1.1)
   - SDWebImagePhotosPlugin (0.2.1):
     - SDWebImage/Core (~> 5.0)
   - SDWebImageWebPCoder (0.2.3):
@@ -313,7 +313,7 @@ DEPENDENCIES:
   - RNTextDetector (from `../node_modules/react-native-text-detector/ios`)
   - RNThumbnail (from `../node_modules/react-native-thumbnail/ios`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
-  - SDWebImage
+  - SDWebImage (= 5.1.1)
   - SDWebImagePhotosPlugin
   - SDWebImageWebPCoder
   - SwiftyJSON (~> 4.0)
@@ -496,13 +496,13 @@ SPEC CHECKSUMS:
   RNReanimated: 1b52415c4302f198cb581282a0166690bad62c43
   RNScreens: f28b48b8345f2f5f39ed6195518291515032a788
   RNSecureKeyStore: f1ad870e53806453039f650720d2845c678d89c8
-  RNSharedElement: ad75c14651d20a6d4e4248167ea8a7244df3c417
+  RNSharedElement: a3ce1a9ac47351997b2ddc1e34682457c4da128d
   RNSketchCanvas: 9c28adb5381543ed55cc98ce6de46479cb3cb12c
-  RNSVG: a78b4c581e33a1bb72968997d167afabf72b05dc
+  RNSVG: 78e0a8cc8e84c0406b0d6903312884e99f363fa2
   RNTextDetector: d2eb0f2ecad6e4ddc13ab9217e269ec549d770d8
   RNThumbnail: f5d3c6e18dd15213ce46e1f631be65d4c6fcb133
   RNVectorIcons: 0bb4def82230be1333ddaeee9fcba45f0b288ed4
-  SDWebImage: 920f1a2ff1ca8296ad34f6e0510a1ef1d70ac965
+  SDWebImage: 96d7f03415ccb28d299d765f93557ff8a617abd8
   SDWebImagePhotosPlugin: 3a126667559b206b91d6ca6edacdc58dcaa9b2cd
   SDWebImageWebPCoder: 7568737603c50f6237850afedd7e9e28e5917e6b
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
@@ -510,6 +510,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 68945a9d5245b2a8ab0a797c6333b0d4bc7c0547
   yoga: c2c050f6ae6e222534760cc82f559b89214b67e2
 
-PODFILE CHECKSUM: 948fc3475b28075ecca3f362d2ea1535e2460361
+PODFILE CHECKSUM: c338b045d29bb2d7fd95a21bb3d66ffc097a2c2d
 
 COCOAPODS: 1.7.5

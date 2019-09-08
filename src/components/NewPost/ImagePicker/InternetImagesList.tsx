@@ -20,11 +20,13 @@ import {
   getTrending,
   YeetImage,
   YeetImageContainer,
-  ImageSearchResponse
+  ImageSearchResponse,
+  ImageSourceType
 } from "../../../lib/imageSearch";
-import { debounce } from "lodash";
+import { debounce, uniqBy, throttle } from "lodash";
 import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import FastImage from "react-native-fast-image";
 
 // import { Image } from "../Image";
 
@@ -109,42 +111,55 @@ const photoCellStyles = StyleSheet.create({
   }
 });
 
-const ImageCell = ({
-  onPress,
-  image,
-  height,
-  width
-}: {
-  onPress: Function;
-  image: YeetImageContainer;
-  height: number;
-  width: number;
-}) => {
-  const _onPress = React.useCallback(() => {
-    onPress(image);
-  }, [onPress, image]);
+const ImageCell = React.memo(
+  ({
+    onPress,
+    image,
+    height,
+    width
+  }: {
+    onPress: Function;
+    image: YeetImageContainer;
+    height: number;
+    width: number;
+  }) => {
+    const [source, setSource] = React.useState({
+      width: image.preview.width,
+      height: image.preview.height,
+      uri: image.preview.uri,
+      cache: Image.cacheControl.web
+    });
 
-  const source = {
-    width: image.preview.width,
-    height: image.preview.height,
-    uri: image.preview.uri,
-    cache: Image.cacheControl.web
-  };
+    const _onPress = React.useCallback(() => {
+      onPress(image);
+    }, [onPress, image]);
 
-  // const source = {
-  //   width: photo.node.image.width,
-  //   height: photo.node.image.height,
-  //   uri: photo.node.image.uri
-  // };
+    const onError = React.useCallback(() => {
+      if (image.sourceType === ImageSourceType.giphy) {
+        setSource({
+          width: Number(image.source.images.fixed_height_small_still.width),
+          height: Number(image.source.images.fixed_height_small_still.height),
+          uri: image.source.images.fixed_height_small_still.url,
+          cache: Image.cacheControl.web
+        });
+      }
+    }, [setSource, image]);
 
-  return (
-    <BaseButton exclusive={false} onPress={_onPress}>
-      <View style={[photoCellStyles.container, { width, height }]}>
-        <Image source={source} resizeMode="contain" style={{ height, width }} />
-      </View>
-    </BaseButton>
-  );
-};
+    return (
+      <BaseButton exclusive={false} onPress={_onPress}>
+        <View style={[photoCellStyles.container, { width, height }]}>
+          <Image
+            incrementalLoad
+            source={source}
+            resizeMode="contain"
+            onError={onError}
+            style={{ height, width }}
+          />
+        </View>
+      </BaseButton>
+    );
+  }
+);
 
 export class InternetImagesList extends React.PureComponent<Props, State> {
   static defaultProps = {
@@ -200,13 +215,13 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
     index
   });
 
-  handleEndReached = () => {
+  handleEndReached = throttle(() => {
     if (this.state.loadState === InternetImagesListLoadState.pending) {
       return;
     }
 
     this.loadImages(false);
-  };
+  }, 50);
 
   handlePickImage = (photo: YeetImageContainer) => {
     this.props.onChange(photo);
@@ -237,7 +252,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
     this.setState({
       images: isResultChanging
         ? results.images
-        : this.state.images.concat(results.images),
+        : uniqBy(this.state.images.concat(results.images), "id"),
       hasMore: results.hasMore,
       offset: results.offset,
       resultType,
@@ -247,7 +262,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
 
   keyExtractor = (item: YeetImageContainer, _index: number) => item.id;
 
-  handleRenderItem = ({ item, index }) => {
+  handleRenderItem = ({ item, index, ...other }) => {
     return (
       <ImageCell
         height={this.state.cellHeight}
@@ -321,9 +336,6 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
           data={images}
           pointerEvents={pointerEvents}
           getItemLayout={this.getItemLayout}
-          initialNumToRender={Math.floor(
-            (this.props.height / this.state.cellHeight) * NUM_COLUMNS * 1
-          )}
           renderItem={this.handleRenderItem}
           numColumns={NUM_COLUMNS}
           onScroll={this.handleScroll}
@@ -345,6 +357,8 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
           columnWrapperStyle={styles.row}
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}
+          onViewableItemsChanged={this.handleViewableItemsChanged}
+          onEndReachedThreshold={0.7}
         />
       </Animated.View>
     );

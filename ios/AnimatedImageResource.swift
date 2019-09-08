@@ -56,8 +56,7 @@ class ImageBlockResource : ImageResource {
       }
 
     if let frame = block.value.image.animatedImageFrame(at: frameRange!.frameOffset) {
-        var ciImage = UIImage.from(color: UIColor.clear, size: resolution)
-        self.lastCIImage = CIImage.init(image: ciImage)!.composited(over: CIImage(image: frame)!.cropped(to: block.dimensions.rect()).transformed(by: block.position.transform(flipY: true)))
+        self.lastCIImage = CIImage.init(image: frame)
         self.lastOffset = frameRange!.frameOffset
         return self.lastCIImage
       } else {

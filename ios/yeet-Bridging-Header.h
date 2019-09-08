@@ -8,7 +8,7 @@
 #import <React/RCTUIManager.h>
 #import <FFFastImageView.h>
 #import <React/RCTUIManagerUtils.h>
-
+#import <SDWebImageWebPCoder.h>
 
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)
 

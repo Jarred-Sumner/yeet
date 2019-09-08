@@ -27,17 +27,26 @@ class YeetExporter: NSObject, RCTBridgeModule  {
       if let exportData = try? JSON(data: dataObject) {
 
         self.getImages(data: exportData) { images in
-          self.producer = VideoProducer(data: exportData, images: images)
+          DispatchQueue.global(qos: .userInitiated).async {
+            self.producer = VideoProducer(data: exportData, images: images)
 
-          self.producer?.start()
+            let boundsDict = exportData["bounds"].dictionaryValue
+
+            let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
+
+            self.producer?.start(estimatedBounds: bounds)
+          }
+
         }
       }
     }
 
   }
 
-  func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, SDAnimatedImage>) -> Void) -> Void {
-    var dict = Dictionary<String, SDAnimatedImage>();
+
+
+  func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, ExportableImage>) -> Void) -> Void {
+    var dict = Dictionary<String, ExportableImage>();
 
 
     RCTExecuteOnUIManagerQueue {
@@ -56,7 +65,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
           if let view = registry?[block["viewTag"].numberValue] {
 
             if let imageView = self.findImageView(view: view) {
-              dict[block["id"].stringValue] = ((imageView.image!) as! SDAnimatedImage)
+              dict[block["id"].stringValue] = ExportableImage(image: imageView.image!)
             }
 
           }

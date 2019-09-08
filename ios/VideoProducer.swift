@@ -20,6 +20,7 @@ struct YeetImageRect {
   let maxY: NSNumber
   let width: NSNumber
   let height: NSNumber
+  let cornerRadius: NSNumber = NSNumber(value: 4)
 
   func rect() -> CGRect {
     return CGRect(x: CGFloat(x.doubleValue),
@@ -42,7 +43,7 @@ struct NodePosition {
   // CoreImage is bottom left oriented
   func transform(flipY: Bool) -> CGAffineTransform {
 
-    return CGAffineTransform(translationX: CGFloat(x.doubleValue), y: CGFloat(y.doubleValue * (flipY ? -1.0 : 1.0))).rotated(by: CGFloat(rotate.doubleValue * -1)).scaledBy(x: CGFloat(scale.doubleValue), y: CGFloat(scale.doubleValue))
+    return CGAffineTransform(translationX: CGFloat(x.doubleValue), y: CGFloat(y.doubleValue * (flipY ? -1.0 : 1.0))).rotated(by: CGFloat(rotate.doubleValue)).scaledBy(x: CGFloat(scale.doubleValue), y: CGFloat(scale.doubleValue))
   }
 }
 
@@ -69,9 +70,9 @@ class YeetImage {
   let mimeType: MimeType;
   let uri: String;
   let duration: NSNumber;
-  let image: SDAnimatedImage;
+  let image: ExportableImage;
 
-  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: SDAnimatedImage) {
+  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: ExportableImage) {
     self.width = width
     self.height = height
     self.source = source
@@ -119,7 +120,7 @@ class ImageBlock {
 
 
 
-  init(value: JSON, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: SDAnimatedImage, position: JSON?) {
+  init(value: JSON, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?) {
     self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
     self.value = YeetImage(width: value["width"].numberValue, height: value["height"].numberValue, source: value["source"].stringValue, mimeType: value["mimeType"].stringValue, uri: value["uri"].stringValue, duration: value["duration"].numberValue, image: image)
 
@@ -132,8 +133,14 @@ class ImageBlock {
       self.position = NodePosition(y: _position["y"].numberValue, scale: _position["scale"].numberValue, rotate: _position["rotate"].numberValue, x: _position["x"].numberValue)
     }
 
-    self.calculateRanges()
+
+    if self.value.image.isAnimated {
+      self.calculateRanges()
+    }
+
   }
+
+
 
   func calculateRanges() {
     for i in 0...value.image.animatedImageFrameCount - 1 {
@@ -172,14 +179,31 @@ class ImageBlock {
   }
 }
 
+enum ExportType : String {
+  case png = "image/png"
+  case mp4 = "video/mp4"
+  case jpg = "image/jpeg"
+}
 
 class VideoProducer {
   let data: JSON
-  let images: Dictionary<String, SDAnimatedImage>
+  let images: Dictionary<String, ExportableImage>
   let textBlocks: Array<TextBlock>
   let imageBlocks: Array<ImageBlock>
 
-  static func getImageBlocks(data: JSON, images: Dictionary<String, SDAnimatedImage>) -> Array<ImageBlock> {
+  var hasAnyAnimations: Bool {
+    return imageBlocks.first(where: { imageBlock in
+      return imageBlock.value.image.isAnimated
+    }) != nil
+  }
+
+  var isDigitalOnly: Bool {
+    return imageBlocks.filter { block in
+      return block.value.mimeType == MimeType.png || block.value.mimeType == MimeType.webp
+    }.count == self.imageBlocks.count
+  }
+
+  static func getImageBlocks(data: JSON, images: Dictionary<String, ExportableImage>) -> Array<ImageBlock> {
     var imageBlocks: Array<ImageBlock> = []
     var currentIndex = 0
 
@@ -230,49 +254,68 @@ class VideoProducer {
     }.max()!
   }
 
-  func start() {
-    let backgroundImage = CIImage.init(image: UIImage.from(color: UIColor.clear, size: self.resolution()))!
-    let backgroundTrack = TrackItem(resource: ImageResource(image: backgroundImage, duration: CMTime(seconds: self.maxDuration())))
 
-    let trackItems = self.imageBlocks.map { imageBlock in
-      return imageBlock.trackItem(resolution: resolution())
+
+  func start(estimatedBounds: CGRect) {
+    let blocks = self.imageBlocks.map { block in
+      return ImageBlockResource(block: block, duration: CMTime(seconds: block.totalDuration), resolution: self.resolution())
     }
 
-    let timeline = Timeline()
+    var exportURL: URL
+    var exportType: ExportType
 
-
-    timeline.overlays = trackItems
-    timeline.videoChannel = [backgroundTrack]
-
-    if #available(iOS 10.0, *) {
-      timeline.backgroundColor = CIColor.black
+    if (self.hasAnyAnimations) {
+      exportType = .mp4
+      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
+    } else if (self.isDigitalOnly) {
+      exportType = .png
+      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".png"))
+    } else {
+      exportType = .jpg
+      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".jpg"))
     }
 
 
-    timeline.renderSize = self.resolution()
-    
-
-    let compositionGenerator = CompositionGenerator(timeline: timeline)
 
 
-    var presetName = AVAssetExportPresetHighestQuality
-    if #available(iOS 11.0, *) {
-      presetName = AVAssetExportPresetHEVCHighestQuality
+    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: blocks) { export in
+      print(export?.url)
     }
-
-    guard let exportSession = compositionGenerator.buildExportSession(presetName: presetName) else { return; }
-
-    exportSession.outputFileType = AVFileType.mp4
-    exportSession.shouldOptimizeForNetworkUse = false
-
-
-    let exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
-    exportSession.outputURL = exportURL
-    print("[VideoProducer] Exporting \(timeline.renderSize) of \(self.maxDuration()) seconds with \(self.imageBlocks.count) images")
-
-    exportSession.exportAsynchronously(completionHandler: {
-
-    })
+//    let timeline = Timeline()
+//
+//
+//    timeline.overlays = trackItems
+//    timeline.videoChannel = [backgroundTrack]
+//
+//    if #available(iOS 10.0, *) {
+//      timeline.backgroundColor = CIColor.black
+//    }
+////
+////
+////    timeline.renderSize = self.resolution()
+////    
+////
+////    let compositionGenerator = CompositionGenerator(timeline: timeline)
+////
+////
+////    var presetName = AVAssetExportPresetHighestQuality
+////    if #available(iOS 11.0, *) {
+////      presetName = AVAssetExportPresetHEVCHighestQuality
+////    }
+////
+////    guard let exportSession = compositionGenerator.buildExportSession(presetName: presetName) else { return; }
+////
+////    exportSession.outputFileType = AVFileType.mp4
+////    exportSession.shouldOptimizeForNetworkUse = false
+////
+////
+//    let exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
+////    exportSession.outputURL = exportURL
+////    print("[VideoProducer] Exporting \(timeline.renderSize) of \(self.maxDuration()) seconds with \(self.imageBlocks.count) images")
+////
+////    exportSession.exportAsynchronously(completionHandler: {
+////
+////    })
 
   }
 
@@ -299,7 +342,7 @@ class VideoProducer {
     return textBlocks
   }
 
-  init(data: JSON, images: Dictionary<String, SDAnimatedImage>) {
+  init(data: JSON, images: Dictionary<String, ExportableImage>) {
     self.data = data
     self.imageBlocks = VideoProducer.getImageBlocks(data: data, images: images).sorted(by: { a, b in
       return a.zIndex.intValue < b.zIndex.intValue

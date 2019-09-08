@@ -1,4 +1,10 @@
-import { NativeModules, findNodeHandle, View } from "react-native";
+import {
+  NativeModules,
+  findNodeHandle,
+  View,
+  ScrollView,
+  UIManager
+} from "react-native";
 import { YeetImageRect } from "./imageSearch";
 import { PostBlockType, PostFormat } from "../components/NewPost/NewPostFormat";
 import {
@@ -45,6 +51,7 @@ export type ExportableNode = {
 export type ExportData = {
   blocks: Array<ExportableBlock>;
   nodes: Array<ExportableNode>;
+  bounds: { x: number; y: number; width: number; height: number };
 };
 
 const createExportableBlock = (
@@ -73,7 +80,7 @@ const createExportableBlock = (
       type: "text",
       format: block.format,
       viewTag: viewTag,
-      id: block.id,
+
       value: block.value
     };
   } else {
@@ -96,10 +103,21 @@ const createExportableNode = (
   };
 };
 
-export const startExport = (
+const getEstimatedBounds = (ref: React.RefObject<ScrollView>) =>
+  new Promise((resolve, _reject) =>
+    UIManager.measure(
+      findNodeHandle(ref.current.getInnerViewNode()),
+      (x, y, width, height) => {
+        resolve({ x, y, width, height });
+      }
+    )
+  );
+
+export const startExport = async (
   _blocks: Array<PostBlockType>,
   _nodes: EditableNodeMap,
-  refs: Map<string, React.RefObject<View>>
+  refs: Map<string, React.RefObject<View>>,
+  ref: React.RefObject<ScrollView>
 ) => {
   const blocks = _blocks.map(block =>
     createExportableBlock(block, findNodeHandle(refs.get(block.id).current))
@@ -111,7 +129,8 @@ export const startExport = (
 
   const data: ExportData = {
     blocks,
-    nodes
+    nodes,
+    bounds: await getEstimatedBounds(ref)
   };
 
   return new Promise((resolve, reject) => {

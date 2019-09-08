@@ -11,7 +11,7 @@ import {
   presetsByFormat
 } from "./NewPostFormat";
 import { ImagePicker, LIST_HEADER_HEIGHT } from "./ImagePicker";
-import { SharedElement } from "react-navigation-sharedelement";
+import { SharedElement } from "react-navigation-shared-element";
 import Animated from "react-native-reanimated";
 import { debounce } from "lodash";
 import {

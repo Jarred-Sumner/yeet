@@ -33,10 +33,18 @@
   SDImageLoadersManager.sharedManager.loaders = @[SDWebImageDownloader.sharedDownloader, SDWebImagePhotosLoader.sharedLoader];
   // Replace default manager's loader implementation
   SDWebImageManager.defaultImageLoader = SDImageLoadersManager.sharedManager;
-
+  SDWebImagePhotosLoader.sharedLoader.imageRequestOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
+  
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];
+
+
+
+  SDImageCache.sharedImageCache.config.diskCacheReadingOptions = NSDataReadingMappedIfSafe;
+
+  // Limit progress block callback frequency
+  SDWebImageDownloader.sharedDownloader.config.minimumProgressInterval = 0.1;
 
 //
 //  FlipperClient *client = [FlipperClient sharedClient];

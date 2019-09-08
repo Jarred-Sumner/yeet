@@ -21,6 +21,9 @@
 		4E57A0832BB14190B501AD70 /* SimpleLineIcons.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2B5EF1418C52406596EC0DA0 /* SimpleLineIcons.ttf */; };
 		6762C2C7CE5E45E190EFF82D /* ProximaNova-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */; };
 		70A9FDCAB05D480D821BBFCA /* Feather.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1E7778EA36E0408B8C947D4A /* Feather.ttf */; };
+		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
+		832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832E37EB232379FD0033E3A3 /* ContentExport.swift */; };
+		832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */; };
 		83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 83304885232098C200E816E8 /* YeetWebImageDecoder.m */; };
 		8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */ = {isa = PBXBuildFile; fileRef = 8330488923209F3E00E816E8 /* YeetAnimatedImage.m */; };
 		833048942322000D00E816E8 /* YeetExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 833048932322000D00E816E8 /* YeetExporter.swift */; };
@@ -71,6 +74,8 @@
 		5BA9E24A7965405FBCFAF1E7 /* libRNTextInputMask.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRNTextInputMask.a; sourceTree = "<group>"; };
 		61BF90C6FFD44674B828B97A /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		63AE1CAA636BE65F0051DE79 /* Pods-yeet-tvOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.release.xcconfig"; sourceTree = "<group>"; };
+		830303C62324AD8C00BD2260 /* ExportableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableImage.swift; sourceTree = "<group>"; };
+		832E37EB232379FD0033E3A3 /* ContentExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExport.swift; sourceTree = "<group>"; };
 		83304885232098C200E816E8 /* YeetWebImageDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YeetWebImageDecoder.m; sourceTree = "<group>"; };
 		83304887232098D600E816E8 /* YeetWebImageDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetWebImageDecoder.h; sourceTree = "<group>"; };
 		8330488823209F3E00E816E8 /* YeetAnimatedImage.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetAnimatedImage.h; sourceTree = "<group>"; };
@@ -82,7 +87,7 @@
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
 		834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedImageResource.swift; sourceTree = "<group>"; };
 		834B3D11232307AD00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = ../../../../Downloads/blank_1080p.mp4; sourceTree = "<group>"; };
-		834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = blank_1080p.mp4; sourceTree = "<group>"; };
+		834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = /Users/jarred/Code/yeet/yeet/ios/blank_1080p.mp4; sourceTree = "<absolute>"; };
 		83573D332316440B00E0C179 /* tessdata */ = {isa = PBXFileReference; lastKnownFileType = folder; name = tessdata; path = yeet/tessdata; sourceTree = "<group>"; };
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		8C160B6697D042629D1797A5 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Fontisto.ttf"; sourceTree = "<group>"; };
@@ -173,11 +178,13 @@
 			isa = PBXGroup;
 			children = (
 				833048932322000D00E816E8 /* YeetExporter.swift */,
+				832E37EB232379FD0033E3A3 /* ContentExport.swift */,
 				8330489923222C3F00E816E8 /* YeetExportData.swift */,
 				834B3D11232307AD00377BE6 /* blank_1080p.mp4 */,
 				833048922322000D00E816E8 /* yeet-Bridging-Header.h */,
 				8330489B23222D4800E816E8 /* EditorExport.swift */,
 				8330489D23223B0D00E816E8 /* VideoProducer.swift */,
+				830303C62324AD8C00BD2260 /* ExportableImage.swift */,
 				834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */,
 			);
 			name = Exporting;
@@ -312,6 +319,7 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
+				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				C7180071329E456BB6DEB0C5 /* Proxima Nova Bold.otf in Resources */,
 				F10E9F60D54F4B658F5AF748 /* Proxima Nova Medium.ttf in Resources */,
 				CCF98551C2404D9D91E0D31B /* Proxima Nova Semibold.otf in Resources */,
@@ -487,11 +495,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
+				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
 				833048942322000D00E816E8 /* YeetExporter.swift in Sources */,
@@ -540,6 +550,7 @@
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -588,6 +599,7 @@
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

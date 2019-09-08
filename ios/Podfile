@@ -20,10 +20,11 @@ target 'yeet' do
   pod 'React-RCTVibration', :path => '../node_modules/react-native/Libraries/Vibration'
   pod 'React-RCTWebSocket', :path => '../node_modules/react-native/Libraries/WebSocket'
   pod 'SDWebImageWebPCoder'
-  pod 'SDWebImage', :modular_headers => true
+  pod 'SDWebImage', '5.1.1', :modular_headers => true
   pod 'SDWebImagePhotosPlugin'
   pod 'mobile-ffmpeg-full'
   pod 'SwiftyJSON', '~> 4.0'
+
 
   # pod 'FlipperKit', "~> #{flipperkit_version}"
   # pod 'FlipperKit/SKIOSNetworkPlugin', "~> #{flipperkit_version}"
@@ -66,6 +67,8 @@ target 'yeet' do
   pod 'RNFS', :path => '../node_modules/react-native-fs'
 
   pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element'
+
+  # pod 'react-native-photos-framework', :path => '../node_modules//react-native-photos-framework'
 
   post_install do |installer|
     installer.pods_project.targets.each do |target|
