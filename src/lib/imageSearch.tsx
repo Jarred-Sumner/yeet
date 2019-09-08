@@ -19,12 +19,21 @@ import {
 } from "react-native";
 import { extname } from "path";
 
+export enum ImageMimeType {
+  png = "image/png",
+  gif = "image/gif",
+  jpg = "image/jpeg",
+  jpeg = "image/jpeg",
+  webp = "image/webp"
+}
+
 const mimeTypeFromFilename = (filename: string) =>
   ({
-    png: "image/png",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    webp: "image/webp"
+    png: ImageMimeType.png,
+    gif: ImageMimeType.gif,
+    jpg: ImageMimeType.jpg,
+    jpeg: ImageMimeType.jpeg,
+    webp: ImageMimeType.webp
   }[
     extname(filename || ".")
       .substring(1)
@@ -62,7 +71,7 @@ export type YeetImage = {
   height: number;
   duration: number;
   uri: string;
-  mimeType: "image/jpeg" | "image/png" | "image/webp";
+  mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
   source: ImageSourceType;
   asset: ImageResolvedAssetSource;
   transform: YeetTransform;
@@ -108,14 +117,14 @@ const normalizeBaseImage = (
   transform: YeetTransform = []
 ): YeetImage => {
   const assetData = {
-    uri: image.webp,
+    uri: image.webp || image.url,
     width: Number(image.width),
     height: Number(image.height)
   };
   return {
     ...assetData,
     duration: Number(image.length || 0),
-    mimeType: "image/webp",
+    mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     asset: Image.resolveAssetSource(assetData),
     transform
@@ -190,7 +199,7 @@ export const imageContainerFromCameraRoll = (
 
 const normalizeOriginalImage = (image, transform = []): YeetImage => {
   const assetData = {
-    uri: image.webp,
+    uri: image.webp || image.url,
     width: Number(image.width),
     height: Number(image.height)
   };
@@ -198,17 +207,41 @@ const normalizeOriginalImage = (image, transform = []): YeetImage => {
   return {
     ...assetData,
     duration: Number(image.length || 1),
-    mimeType: "image/webp",
+    mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     asset: Image.resolveAssetSource(assetData),
     transform
   };
 };
 
+const findGiphyImage = (
+  image: giphyClient.GIFObject,
+  order = [
+    "fixed_height_small",
+    "fixed_height",
+    "fixed_height_downsampled",
+    "downsized_medium"
+  ]
+) => {
+  const webpItem = order.find(item => {
+    return image.images[item] && String(image.images[item].webp).length > 0;
+  });
+
+  if (webpItem) {
+    return image.images[webpItem];
+  } else {
+    return image.images[
+      order.find(item => {
+        return image.images[item] && image.images[item].url;
+      })
+    ];
+  }
+};
+
 const normalizeImage = (gif: giphyClient.GIFObject): YeetImageContainer => ({
   id: gif.id,
   source: gif,
-  preview: normalizeBaseImage(gif.images.fixed_height_small),
+  preview: normalizeBaseImage(findGiphyImage(gif)),
   image: normalizeOriginalImage(gif.images.original),
   sourceType: ImageSourceType.giphy
 });
