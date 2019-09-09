@@ -13,6 +13,26 @@ import VFCabbage
 import AVFoundation
 import CoreImage
 
+extension CGRect {
+  static func from(json: JSON) -> CGRect {
+    return CGRect(
+      x: CGFloat(json["x"].doubleValue),
+      y: CGFloat(json["y"].doubleValue),
+      width: CGFloat(json["width"].doubleValue),
+      height: CGFloat(json["height"].doubleValue)
+    )
+  }
+
+  static func from(x: NSNumber, y: NSNumber, width: NSNumber, height: NSNumber) -> CGRect {
+    return CGRect(
+      x: CGFloat(x.doubleValue),
+      y: CGFloat(y.doubleValue),
+      width: CGFloat(width.doubleValue),
+      height: CGFloat(height.doubleValue)
+    )
+  }
+}
+
 struct YeetImageRect {
   let x: NSNumber
   let y: NSNumber
@@ -46,7 +66,6 @@ struct NodePosition {
     return CGAffineTransform(translationX: CGFloat(x.doubleValue), y: CGFloat(y.doubleValue * (flipY ? -1.0 : 1.0))).rotated(by: CGFloat(rotate.doubleValue)).scaledBy(x: CGFloat(scale.doubleValue), y: CGFloat(scale.doubleValue))
   }
 }
-
 
 enum PostFormat: String {
   case screenshot = "screenshot"
@@ -90,13 +109,17 @@ class TextBlock {
   let format: PostFormat
   let id: String
   let zIndex: NSNumber
+  let frame: CGRect
+  let nodeFrame: CGRect?
 
-  init(value: String, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber) {
+  init(value: String, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, frame: CGRect, nodeFrame: CGRect?) {
     self.value = value
     self.viewTag = viewTag
     self.format = PostFormat.init(rawValue: format) ?? PostFormat.caption
     self.id = id
     self.zIndex = zIndex
+    self.frame = frame
+    self.nodeFrame = nodeFrame
   }
 }
 
@@ -111,16 +134,19 @@ class ImageBlock {
   let format: PostFormat
   let value: YeetImage
   let viewTag: NSNumber
+  let frame: CGRect
+  let nodeFrame: CGRect?
   let id: String
   let zIndex: NSNumber
   var position: NodePosition = NodePosition(y: 0.0, scale: 1.0, rotate: 0, x: 0.0)
   var totalDuration: TimeInterval = 0
 
+
   var ranges: Array<ImageFrameRange> = []
 
 
 
-  init(value: JSON, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?) {
+  init(value: JSON, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?, frame: CGRect, nodeFrame: CGRect?) {
     self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
     self.value = YeetImage(width: value["width"].numberValue, height: value["height"].numberValue, source: value["source"].stringValue, mimeType: value["mimeType"].stringValue, uri: value["uri"].stringValue, duration: value["duration"].numberValue, image: image)
 
@@ -133,6 +159,9 @@ class ImageBlock {
       self.position = NodePosition(y: _position["y"].numberValue, scale: _position["scale"].numberValue, rotate: _position["rotate"].numberValue, x: _position["x"].numberValue)
     }
 
+
+    self.frame = frame
+    self.nodeFrame = nodeFrame
 
     if self.value.image.isAnimated {
       self.calculateRanges()
@@ -220,7 +249,10 @@ class VideoProducer {
           return _node["block"].dictionaryValue["id"]?.stringValue == block["id"].stringValue
         })
 
-        imageBlocks.append(ImageBlock(value: block["value"], dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), image: images[block["id"].stringValue]!, position: node?["position"]))
+        let nodeFrame: CGRect? = node != nil ? CGRect.from(json: node!["frame"]) : nil
+        let frame = CGRect.from(json: block["frame"])
+
+        imageBlocks.append(ImageBlock(value: block["value"], dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), image: images[block["id"].stringValue]!, position: node?["position"], frame: frame, nodeFrame: nodeFrame))
       }
 
       currentIndex = currentIndex + 1
@@ -333,7 +365,7 @@ class VideoProducer {
     allBlocks.forEach { block in
       if (block["type"].stringValue == "text") {
 
-        textBlocks.append(TextBlock(value: block["value"].stringValue, viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex)))
+        textBlocks.append(TextBlock(value: block["value"].stringValue, viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), frame: CGRect.from(json: block["frame"]), nodeFrame: nil))
       }
 
       currentIndex = currentIndex + 1

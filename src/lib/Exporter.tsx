@@ -12,6 +12,14 @@ import {
   EditableNode,
   EditableNodeMap
 } from "../components/NewPost/Node/BaseNode";
+import Bluebird from "bluebird";
+
+type BoundsRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
 
 const { YeetExporter } = NativeModules;
 
@@ -31,6 +39,7 @@ type ExportableImageBlock = {
   value: ExportableYeetImage;
   viewTag: number;
   id: string;
+  bounds: BoundsRect;
 };
 
 type ExportableTextBlock = {
@@ -39,24 +48,27 @@ type ExportableTextBlock = {
   viewTag: number;
   format: PostFormat;
   id: string;
+  frame: BoundsRect;
 };
 
 type ExportableBlock = ExportableImageBlock | ExportableTextBlock;
 
 export type ExportableNode = {
   block: ExportableBlock;
+  frame: BoundsRect;
   position: EditableNodeStaticPosition;
 };
 
 export type ExportData = {
   blocks: Array<ExportableBlock>;
   nodes: Array<ExportableNode>;
-  bounds: { x: number; y: number; width: number; height: number };
+  bounds: BoundsRect;
 };
 
 const createExportableBlock = (
   block: PostBlockType,
-  viewTag: number
+  viewTag: number,
+  frame: BoundsRect
 ): ExportableBlock => {
   if (block.type === "image") {
     const {
@@ -73,6 +85,7 @@ const createExportableBlock = (
       dimensions: block.config.dimensions,
       id: block.id,
       viewTag: viewTag,
+      frame,
       value: { width, height, source, mimeType, uri, duration }
     };
   } else if (block.type === "text") {
@@ -80,7 +93,8 @@ const createExportableBlock = (
       type: "text",
       format: block.format,
       viewTag: viewTag,
-
+      id: block.id,
+      frame,
       value: block.value
     };
   } else {
@@ -90,10 +104,13 @@ const createExportableBlock = (
 
 const createExportableNode = (
   node: EditableNode,
-  viewTag: number
+  viewTag: number,
+  blockBounds: BoundsRect,
+  nodeBounds: BoundsRect
 ): ExportableNode => {
   return {
-    block: createExportableBlock(node.block, viewTag),
+    block: createExportableBlock(node.block, viewTag, blockBounds),
+    frame: nodeBounds,
     position: {
       x: node.position.x,
       rotate: node.position.rotate,
@@ -103,35 +120,73 @@ const createExportableNode = (
   };
 };
 
-const getEstimatedBounds = (ref: React.RefObject<ScrollView>) =>
+const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
   new Promise((resolve, _reject) =>
-    UIManager.measure(
-      findNodeHandle(ref.current.getInnerViewNode()),
-      (x, y, width, height) => {
-        resolve({ x, y, width, height });
-      }
-    )
+    UIManager.measure(findNodeHandle(ref), (x, y, width, height) => {
+      resolve({ x, y, width, height });
+    })
   );
 
 export const startExport = async (
   _blocks: Array<PostBlockType>,
   _nodes: EditableNodeMap,
   refs: Map<string, React.RefObject<View>>,
-  ref: React.RefObject<ScrollView>
+  ref: React.RefObject<ScrollView>,
+  nodeRefs: Map<string, React.RefObject<View>>
 ) => {
+  const blockBoundsMap = new Map<string, BoundsRect>();
+  const inlinesBoundsMap = new Map<string, BoundsRect>();
+
+  await Bluebird.map(
+    [...refs.entries()],
+    ([id, ref]) =>
+      getEstimatedBounds(ref.current).then(bounds => {
+        blockBoundsMap.set(id, bounds);
+        return true;
+      }),
+    {
+      concurrency: 3
+    }
+  );
+
+  await Bluebird.map(
+    [...nodeRefs.entries()],
+    ([id, ref]) =>
+      getEstimatedBounds(ref).then(bounds => {
+        inlinesBoundsMap.set(id, bounds);
+        return true;
+      }),
+    {
+      concurrency: 3
+    }
+  );
+
   const blocks = _blocks.map(block =>
-    createExportableBlock(block, findNodeHandle(refs.get(block.id).current))
+    createExportableBlock(
+      block,
+      findNodeHandle(refs.get(block.id).current),
+      blockBoundsMap.get(block.id)
+    )
   );
 
   const nodes = [..._nodes.values()].map(node =>
-    createExportableNode(node, findNodeHandle(refs.get(node.block.id).current))
+    createExportableNode(
+      node,
+      findNodeHandle(refs.get(node.block.id).current),
+      blockBoundsMap.get(node.block.id),
+      inlinesBoundsMap.get(node.block.id)
+    )
   );
 
   const data: ExportData = {
     blocks,
     nodes,
-    bounds: await getEstimatedBounds(ref)
+    bounds: await getEstimatedBounds(ref.current.getInnerViewNode())
   };
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log(JSON.stringify(data));
+  }
 
   return new Promise((resolve, reject) => {
     YeetExporter.startExport(JSON.stringify(data), (err, result) => {

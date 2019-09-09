@@ -437,7 +437,7 @@ const IMAGE_NODE_FIXTUER = {
       },
       image: {
         uri:
-          "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
+          "https://media3.giphy.com/media/l1J9IzyMGr7lAniLK/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
         width: 320,
         height: 398,
         duration: 1,
@@ -445,7 +445,7 @@ const IMAGE_NODE_FIXTUER = {
         source: "giphy",
         asset: {
           uri:
-            "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
+            "https://media3.giphy.com/media/l1J9IzyMGr7lAniLK/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
           width: 320,
           height: 398
         },
@@ -487,20 +487,20 @@ export class PostEditor extends React.Component<{}, State> {
       ...props.post.blocks.map(({ id }) => [id, React.createRef()])
     ]);
 
-    // if (IS_SIMULATOR) {
-    //   this.state.inlineNodes.set(IMAGE_NODE_FIXTUER.block.id, {
-    //     ...IMAGE_NODE_FIXTUER,
-    //     position: {
-    //       ...IMAGE_NODE_FIXTUER.position,
-    //       animatedX: new Animated.Value(IMAGE_NODE_FIXTUER.position.x),
-    //       animatedY: new Animated.Value(IMAGE_NODE_FIXTUER.position.y),
-    //       animatedRotate: new Animated.Value(
-    //         IMAGE_NODE_FIXTUER.position.rotate
-    //       ),
-    //       animatedScale: new Animated.Value(IMAGE_NODE_FIXTUER.position.scale)
-    //     }
-    //   });
-    // }
+    if (IS_SIMULATOR) {
+      this.state.inlineNodes.set(IMAGE_NODE_FIXTUER.block.id, {
+        ...IMAGE_NODE_FIXTUER,
+        position: {
+          ...IMAGE_NODE_FIXTUER.position,
+          animatedX: new Animated.Value(IMAGE_NODE_FIXTUER.position.x),
+          animatedY: new Animated.Value(IMAGE_NODE_FIXTUER.position.y),
+          animatedRotate: new Animated.Value(
+            IMAGE_NODE_FIXTUER.position.rotate
+          ),
+          animatedScale: new Animated.Value(IMAGE_NODE_FIXTUER.position.scale)
+        }
+      });
+    }
   }
   controlsVisibilityValue = new Animated.Value(1);
 
@@ -674,7 +674,8 @@ export class PostEditor extends React.Component<{}, State> {
       this.props.post.blocks,
       this.state.inlineNodes,
       this._blockInputRefs,
-      this.scrollRef
+      this.scrollRef,
+      this._inlineNodeRefs
     );
   };
 
