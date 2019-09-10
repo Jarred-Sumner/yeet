@@ -168,8 +168,8 @@ export const presetsByFormat = {
 };
 
 export enum FocusBlockType {
-  absolute = 0,
-  static = 1
+  absolute = 1,
+  static = 0
 }
 
 const blocksForFormat = (

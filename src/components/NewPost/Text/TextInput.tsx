@@ -196,7 +196,7 @@ export class TextInput extends React.Component<Props> {
 
   handleHandlerChange = (handler: GestureHandlerGestureEvent) => {
     if (handler.nativeEvent.state === State.END) {
-      this.props.focusedBlockValue.setValue(this.props.block.id);
+      this.props.focusedBlockValue.setValue(this.props.block.id.hashCode());
       this.props.focusTypeValue.setValue(this.props.focusType);
       this.props.inputRef && this.props.inputRef.current.focus();
     }

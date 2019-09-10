@@ -13,13 +13,7 @@ import {
   EditableNodeMap
 } from "../components/NewPost/Node/BaseNode";
 import Bluebird from "bluebird";
-
-type BoundsRect = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
+import { BoundsRect } from "./Rect";
 
 const { YeetExporter } = NativeModules;
 

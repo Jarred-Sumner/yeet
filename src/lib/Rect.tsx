@@ -1,0 +1,18 @@
+export type BoundsRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+export const totalX = (rect: BoundsRect) => {
+  return rect.x + rect.width;
+};
+
+export const totalY = (rect: BoundsRect) => {
+  return rect.y + rect.height;
+};
+
+export const isSameSize = (a: BoundsRect, b: BoundsRect) => {
+  return totalX(a) === totalX(b) && totalY(a) === totalY(b);
+};

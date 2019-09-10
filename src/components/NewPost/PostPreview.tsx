@@ -13,6 +13,8 @@ import {
 import memoizee from "memoizee";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import { useFocusState } from "react-navigation-hooks";
+import { TapGestureHandler } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 
 export const ScrollView = createNativeWrapper(RNScrollView, {
   disallowInterruption: true
@@ -83,6 +85,7 @@ export const EditableNodeList = ({
   onTapNode,
   maxX,
   focusType,
+  keyboardVisibleValue,
   onFocus,
   waitFor,
   maxY,
@@ -121,6 +124,7 @@ export const EditableNodeList = ({
         inputRef={handleSetBlockInputRef(id)}
         onFocus={onFocus}
         focusTypeValue={focusTypeValue}
+        keyboardVisibleValue={keyboardVisibleValue}
         focusType={focusType}
         key={id}
         isFocused={focusedBlockId === id}
@@ -150,6 +154,7 @@ export const PostPreview = React.forwardRef(
       inlineNodes,
       onTapNode,
       onChangeNode,
+      onTapBackground,
       focusType,
       focusedBlockValue,
       onBlurNode,
@@ -207,21 +212,25 @@ export const PostPreview = React.forwardRef(
           }
         ]}
       >
-        <BlockList
-          setBlockInputRef={setBlockInputRef}
-          blocks={blocks}
-          onFocus={onFocus}
-          focusTypeValue={focusTypeValue}
-          onOpenImagePicker={onOpenImagePicker}
-          focusType={focusType}
-          onTap={onTapBlock}
-          scrollRef={scrollRef}
-          focusedBlockValue={focusedBlockValue}
-          onBlur={onBlur}
-          setBlockAtIndex={setBlockAtIndex}
-        />
+        <TapGestureHandler onHandlerStateChange={onTapBackground}>
+          <Animated.View>
+            <BlockList
+              setBlockInputRef={setBlockInputRef}
+              blocks={blocks}
+              onFocus={onFocus}
+              focusTypeValue={focusTypeValue}
+              onOpenImagePicker={onOpenImagePicker}
+              focusType={focusType}
+              onTap={onTapBlock}
+              scrollRef={scrollRef}
+              focusedBlockValue={focusedBlockValue}
+              onBlur={onBlur}
+              setBlockAtIndex={setBlockAtIndex}
+            />
 
-        {children}
+            {children}
+          </Animated.View>
+        </TapGestureHandler>
       </ScrollView>
     );
   }

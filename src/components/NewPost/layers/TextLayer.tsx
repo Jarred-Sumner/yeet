@@ -101,48 +101,7 @@ export class TextLayer extends React.Component {
             )}
           </Animated.View>
         }
-      >
-        <Animated.View
-          ref={nodeListRef}
-          pointerEvents={
-            focusType === FocusBlockType.static ? "none" : "box-none"
-          }
-          style={{
-            width,
-            height,
-            position: "relative",
-            opacity: controlsOpacity
-          }}
-        >
-          <Animated.Code
-            exec={block([
-              cond(
-                eq(focusTypeValue, FocusBlockType.static),
-                set(this.backdropOpacityValue, 0.0),
-                cond(
-                  eq(focusTypeValue, FocusBlockType.absolute),
-                  [set(this.backdropOpacityValue, keyboardVisibleValue)],
-                  [set(this.backdropOpacityValue, 0.0)]
-                )
-              )
-            ])}
-          />
-
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              backgroundColor: "rgba(0, 0, 0, 0.65)",
-              width,
-              height,
-              opacity: this.backdropOpacityValue,
-              position: "absolute",
-              zIndex: -1
-            }}
-          />
-
-          {this.props.children}
-        </Animated.View>
-      </ActiveLayer>
+      ></ActiveLayer>
     );
   }
 }

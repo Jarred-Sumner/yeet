@@ -1,5 +1,11 @@
 import React, { Component } from "react";
-import { StyleSheet, View, Keyboard, Dimensions } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Keyboard,
+  Dimensions,
+  InteractionManager
+} from "react-native";
 import {
   PanGestureHandler,
   PinchGestureHandler,
@@ -16,6 +22,7 @@ import {
 } from "react-native-redash";
 import { throttle } from "lodash";
 import { SPACING } from "../../../lib/styles";
+import { BoundsRect, isSameSize, totalY, totalX } from "../../../lib/Rect";
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -37,7 +44,22 @@ const {
   debug
 } = Animated;
 
-export class MovableNode extends Component {
+type Props = {
+  xLiteral: number;
+  yLiteral: number;
+  rLiteral: number;
+  scaleLiteral: number;
+  blockId: string;
+  x: Animated.Value<number>;
+  y: Animated.Value<number>;
+  r: Animated.Value<number>;
+  scale: Animated.Value<number>;
+  keyboardVisibleValue: Animated.Value<number>;
+};
+
+export class MovableNode extends Component<Props> {
+  adjustedX = new Animated.Value(0);
+  adjustedY = new Animated.Value(0);
   constructor(props) {
     super(props);
 
@@ -45,10 +67,8 @@ export class MovableNode extends Component {
     this._Y = new Animated.Value(props.yLiteral);
     this._R = new Animated.Value(props.rLiteral);
     this._Z = new Animated.Value(props.scaleLiteral);
-    console.log(props.blockId);
-    this.blockId = new Animated.Value(props.blockId);
 
-    this.subscribeToKeyboard();
+    this.blockId = new Animated.Value(props.blockId.hashCode());
 
     this.handlePan = event(
       [
@@ -87,9 +107,15 @@ export class MovableNode extends Component {
       { useNativeDriver: true }
     );
 
-    this.X = preserveOffset(this._X, this.panGestureState, props.x);
+    this.X = Animated.add(
+      preserveOffset(this._X, this.panGestureState, props.x),
+      this.adjustedX
+    );
 
-    this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
+    this.Y = Animated.add(
+      preserveOffset(this._Y, this.panGestureState, props.y),
+      this.adjustedY
+    );
 
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
     this.Z = preserveMultiplicativeOffset(this._Z, this.scaleGestureState);
@@ -105,11 +131,49 @@ export class MovableNode extends Component {
     );
 
     this.heightValue = new Animated.Value(props.maxY);
+    this.wasFocused = new Animated.Value(0);
+    this.isFocusedValue = Animated.or(
+      eq(this.wasFocused, 1),
+      eq(props.focusedBlockValue, this.blockId)
+    );
 
-    this.translateX = new Animated.Value(props.xLiteral);
-    this.translateY = new Animated.Value(props.yLiteral);
-    this.scale = new Animated.Value(props.scaleLiteral);
-    this.rotate = new Animated.Value(props.rLiteral);
+    this._translateX = this.props.keyboardVisibleValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [this.X, 15]
+    });
+
+    this._translateY = this.props.keyboardVisibleValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [this.Y, 115]
+    });
+    this._scale = this.props.keyboardVisibleValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [this.Z, 1]
+    });
+
+    this._rotate = this.props.keyboardVisibleValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [Animated.concat(this.R, "rad"), Animated.concat(0, "rad")]
+    });
+
+    this.translateX = Animated.cond(
+      this.isFocusedValue,
+      this._translateX,
+      this.X
+    );
+
+    this.translateY = Animated.cond(
+      this.isFocusedValue,
+      this._translateY,
+      this.Y
+    );
+
+    this.scale = Animated.cond(this.isFocusedValue, this._scale, this.Z);
+    this.rotate = Animated.cond(
+      this.isFocusedValue,
+      this._rotate,
+      Animated.concat(this.R, "rad")
+    );
   }
 
   _X: Animated.Value<number>;
@@ -135,50 +199,6 @@ export class MovableNode extends Component {
   keyboardVisibleR = new Animated.Value(0);
   keyboardVisibleBottomMargin = new Animated.Value(0);
   keyboardVisibleScale = new Animated.Value(1.0);
-
-  componentWillUnmount() {
-    this.unsubscribeToKeyboard();
-  }
-
-  subscribeToKeyboard = () => {
-    Keyboard.addListener("keyboardWillShow", this.handleKeyboardWillShow);
-    Keyboard.addListener("keyboardDidHide", this.handleKeyboardDidHide);
-    Keyboard.addListener(
-      "keyboardWillChangeFrame",
-      this.handleKeyboardWillChangeFrame
-    );
-    Keyboard.addListener("keyboardWillHide", this.handleKeyboardWillHide);
-  };
-
-  keyboardVisibleValue = new Animated.Value(0);
-  keyboardHidingValue = new Animated.Value(0);
-
-  handleKeyboardWillChangeFrame = ({
-    duration,
-    easing,
-    endCoordinates,
-    startCoordinates
-  }) => {};
-
-  handleKeyboardWillHide = event => {
-    if (this.props.isHidden) {
-      return;
-    }
-
-    this.keyboardHidingValue.setValue(1);
-    this.handleKeyboardAnimation(false, event.duration);
-  };
-
-  handleKeyboardDidHide = event => {
-    this.keyboardVisibleValue.setValue(0);
-    this.keyboardHidingValue.setValue(0);
-  };
-
-  handleKeyboardWillShow = event => {
-    this.keyboardVisibleValue.setValue(1);
-    this.keyboardHidingValue.setValue(0);
-    this.handleKeyboardAnimation(true, event.duration);
-  };
 
   handleKeyboardAnimation = (isShowing: boolean, duration) => {
     const {
@@ -220,16 +240,6 @@ export class MovableNode extends Component {
       toValue: scaleValue,
       easing
     }).start();
-  };
-
-  unsubscribeToKeyboard = () => {
-    Keyboard.removeListener("keyboardWillShow", this.handleKeyboardWillShow);
-    Keyboard.removeListener("keyboardDidHide", this.handleKeyboardDidHide);
-    Keyboard.removeListener(
-      "keyboardWillChangeFrame",
-      this.handleKeyboardWillChangeFrame
-    );
-    Keyboard.removeListener("keyboardWillHide", this.handleKeyboardWillHide);
   };
 
   setupHandlers(props) {
@@ -298,13 +308,46 @@ export class MovableNode extends Component {
     this.props.onChangePosition({ x, y, scale, rotate });
   }, 32);
 
-  handleLayout = ({ nativeEvent: { bounds } }) => {
+  handleLayout = ({ nativeEvent: { layout: bounds } }) => {
     this.bounds = bounds;
+    if (!this.startBounds) {
+      this.startBounds = bounds;
+    }
+  };
+
+  bounds: BoundsRect | null = null;
+  startBounds: BoundsRect | null = null;
+  _adjustedX = 0;
+
+  adjustPositionAfterResize = (start: BoundsRect, end: BoundsRect) => {
+    const { xLiteral: x, yLiteral: y } = this.props;
+
+    const oldMaxX = totalX(start) + (x - this._adjustedX);
+    const newMaxX = totalX(end) + (x - this._adjustedX);
+
+    let adjustedX = 0;
+    if (newMaxX > oldMaxX) {
+      adjustedX = (newMaxX - oldMaxX) / -2;
+    } else {
+      adjustedX = (oldMaxX - newMaxX) / -2;
+    }
+
+    this._adjustedX = adjustedX;
+    this.adjustedX.setValue(adjustedX);
   };
 
   componentDidUpdate(prevProps) {
     if (prevProps.isFocused !== this.props.isFocused) {
+      if (!this.props.isFocused && !isSameSize(this.startBounds, this.bounds)) {
+        this.adjustPositionAfterResize(this.startBounds, this.bounds);
+      }
+
       this.startBounds = this.bounds;
+    }
+
+    if (prevProps.isHidden !== this.props.isHidden) {
+      // window.setTimeout(() => {
+      //   this.visibilityValue.setValue(this.props.isHidden ? 0 : 1);
     }
   }
 
@@ -312,6 +355,7 @@ export class MovableNode extends Component {
   panRef = React.createRef();
   pinchRef = React.createRef();
   tapRef = React.createRef();
+  keyboardDirection = new Animated.Value(1);
 
   render() {
     const {
@@ -322,109 +366,107 @@ export class MovableNode extends Component {
       isDragEnabled,
       focusedBlockValue,
       waitFor = [],
-      extraPadding
+      extraPadding,
+      isHidden
     } = this.props;
 
     return (
-      <TapGestureHandler
-        waitFor={[...waitFor, this.panRef, this.rotationRef, this.pinchRef]}
-        ref={this.tapRef}
-        enabled={isDragEnabled}
-        onGestureEvent={this.handleTap}
-        hitSlop={{ horizontal: extraPadding * -1, vertical: extraPadding * -1 }}
-        onHandlerStateChange={this.handleTap}
-      >
-        <Animated.View style={{ flex: 0 }}>
-          <Animated.Code>
-            {() =>
-              block([
-                call([this.X, this.Y, this.R, this.Z], this.updatePosition),
-                cond(
+      <>
+        <TapGestureHandler
+          waitFor={[...waitFor, this.panRef, this.rotationRef, this.pinchRef]}
+          ref={this.tapRef}
+          enabled={isDragEnabled}
+          onGestureEvent={this.handleTap}
+          hitSlop={{
+            horizontal: extraPadding * -1,
+            vertical: extraPadding * -1
+          }}
+          onHandlerStateChange={this.handleTap}
+        >
+          <Animated.View style={{ flex: 0 }}>
+            <Animated.Code
+              exec={Animated.block([
+                Animated.call(
+                  [this.X, this.Y, this.R, this.Z],
+                  this.updatePosition
+                ),
+                Animated.cond(
                   Animated.and(
-                    Animated.or(
-                      eq(focusedBlockValue, this.blockId),
-                      eq(this.keyboardHidingValue, 1)
-                    ),
-                    eq(this.keyboardVisibleValue, 1)
+                    Animated.greaterThan(this.props.keyboardVisibleValue, 0),
+                    Animated.eq(focusedBlockValue, this.blockId)
                   ),
-                  block([
-                    set(this.rotate, this.keyboardVisibleR),
-                    set(this.scale, this.keyboardVisibleScale),
-                    set(this.translateY, this.keyboardVisibleY),
-                    set(this.translateX, this.keyboardVisibleX)
-                  ]),
-                  block([
-                    set(this.translateY, this.Y),
-                    set(this.translateX, this.X),
-                    set(this.rotate, this.R),
-                    set(this.scale, this.Z),
-                    set(this.keyboardVisibleX, this.X),
-                    set(this.keyboardVisibleY, this.Y),
-                    set(this.keyboardVisibleR, this.R),
-                    set(this.keyboardVisibleScale, this.Z)
-                  ])
+                  [set(this.wasFocused, 1)]
+                ),
+                Animated.cond(
+                  Animated.and(
+                    Animated.eq(this.props.keyboardVisibleValue, 0),
+                    Animated.eq(focusedBlockValue, -1)
+                  ),
+                  [set(this.wasFocused, 0)]
                 )
-              ])
-            }
-          </Animated.Code>
-          <PanGestureHandler
-            ref={this.panRef}
-            enabled={isDragEnabled}
-            waitFor={waitFor}
-            simultaneousHandlers={[this.rotationRef, this.pinchRef]}
-            onGestureEvent={this.handlePan}
-            onHandlerStateChange={this.handlePan}
-          >
-            <Animated.View style={{ flex: 0 }}>
-              <PinchGestureHandler
-                ref={this.pinchRef}
-                enabled={isDragEnabled}
-                waitFor={waitFor}
-                simultaneousHandlers={[this.rotationRef, this.panRef]}
-                onGestureEvent={this.handleZoom}
-                onHandlerStateChange={this.handleZoom}
-              >
-                <Animated.View style={{ flex: 0 }}>
-                  <RotationGestureHandler
-                    ref={this.rotationRef}
-                    enabled={isDragEnabled}
-                    waitFor={waitFor}
-                    simultaneousHandlers={[this.pinchRef, this.panRef]}
-                    onGestureEvent={this.handleRotate}
-                    onHandlerStateChange={this.handleRotate}
-                  >
-                    <Animated.View
-                      ref={this.props.containerRef}
-                      onLayout={this.handleLayout}
-                      style={{
-                        position: "absolute",
-                        left: 0,
-                        top: 0,
-                        transform: [
-                          {
-                            translateY: this.translateY
-                          },
-                          {
-                            translateX: this.translateX
-                          },
-                          {
-                            rotate: Animated.concat(this.rotate, "rad")
-                          },
-                          {
-                            scale: this.scale
-                          }
-                        ]
-                      }}
+              ])}
+            />
+
+            <PanGestureHandler
+              ref={this.panRef}
+              enabled={isDragEnabled}
+              waitFor={waitFor}
+              simultaneousHandlers={[this.rotationRef, this.pinchRef]}
+              onGestureEvent={this.handlePan}
+              onHandlerStateChange={this.handlePan}
+            >
+              <Animated.View style={{ flex: 0 }}>
+                <PinchGestureHandler
+                  ref={this.pinchRef}
+                  enabled={isDragEnabled}
+                  waitFor={waitFor}
+                  simultaneousHandlers={[this.rotationRef, this.panRef]}
+                  onGestureEvent={this.handleZoom}
+                  onHandlerStateChange={this.handleZoom}
+                >
+                  <Animated.View style={{ flex: 0 }}>
+                    <RotationGestureHandler
+                      ref={this.rotationRef}
+                      enabled={isDragEnabled}
+                      waitFor={waitFor}
+                      simultaneousHandlers={[this.pinchRef, this.panRef]}
+                      onGestureEvent={this.handleRotate}
+                      onHandlerStateChange={this.handleRotate}
                     >
-                      {this.props.children}
-                    </Animated.View>
-                  </RotationGestureHandler>
-                </Animated.View>
-              </PinchGestureHandler>
-            </Animated.View>
-          </PanGestureHandler>
-        </Animated.View>
-      </TapGestureHandler>
+                      <Animated.View
+                        ref={this.props.containerRef}
+                        onLayout={this.handleLayout}
+                        style={{
+                          position: "absolute",
+                          left: 0,
+                          top: 0,
+                          opacity: isHidden ? 0 : 1,
+                          transform: [
+                            {
+                              translateY: this.translateY
+                            },
+                            {
+                              translateX: this.translateX
+                            },
+                            {
+                              rotate: this.rotate
+                            },
+                            {
+                              scale: this.scale
+                            }
+                          ]
+                        }}
+                      >
+                        {this.props.children}
+                      </Animated.View>
+                    </RotationGestureHandler>
+                  </Animated.View>
+                </PinchGestureHandler>
+              </Animated.View>
+            </PanGestureHandler>
+          </Animated.View>
+        </TapGestureHandler>
+      </>
     );
   }
 }

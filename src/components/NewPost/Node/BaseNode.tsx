@@ -1,11 +1,9 @@
 import * as React from "react";
-import { View, StyleSheet, LayoutAnimation } from "react-native";
-import { Interactable } from "./Interactable";
-import { PostBlock } from "../NewPostFormat";
+import { View } from "react-native";
 import Animated from "react-native-reanimated";
+import { PostBlock, FocusBlockType } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
-import { KeyboardAvoidingView } from "../../KeyboardAvoidingView";
 
 export type EditableNodeStaticPosition = {
   y: number;
@@ -145,9 +143,11 @@ export class BaseNode extends React.Component<Props> {
       containerRef,
       disabled,
       focusedBlockValue,
+      keyboardVisibleValue,
       onFocus,
       inputRef,
       waitFor,
+      focusTypeValue,
       onLayout
     } = this.props;
 
@@ -166,10 +166,12 @@ export class BaseNode extends React.Component<Props> {
         x={position.animatedX}
         y={position.animatedY}
         xLiteral={position.x}
+        isHidden={!!isHidden}
         containerRef={containerRef}
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}
         rLiteral={position.rotate}
+        keyboardVisibleValue={keyboardVisibleValue}
         waitFor={[...waitFor, this.gestureRef]}
         isFocused={isFocused}
         scaleLiteral={position.scale}
@@ -194,6 +196,8 @@ export class BaseNode extends React.Component<Props> {
             ref={inputRef}
             block={block}
             onChange={this.handleChangeBlock}
+            focusTypeValue={focusTypeValue}
+            focusType={FocusBlockType.absolute}
             gestureRef={this.gestureRef}
             focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}

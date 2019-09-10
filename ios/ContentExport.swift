@@ -204,7 +204,7 @@ class ContentExport {
 
 
         // Use AVAssetExportSession to export video
-        let assetExport = AVAssetExportSession(asset: composition, presetName:AVAssetExportPresetHEVCHighestQuality)
+        let assetExport =  AVAssetExportSession(asset: composition, presetName:AVAssetExportPresetHEVCHighestQuality)
         assetExport?.outputFileType = AVFileType.mp4
         assetExport?.outputURL = url
         assetExport?.shouldOptimizeForNetworkUse = false
@@ -224,11 +224,6 @@ class ContentExport {
             complete(nil)
           default:
             print("Movie complete")
-
-            PHPhotoLibrary.shared().performChanges({
-              PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: url)
-            })
-
             complete(ContentExport(url: url, resolution: parentlayer.frame.size, type: type, duration: duration))
           }
         })
@@ -242,9 +237,6 @@ class ContentExport {
         }
 
         imageData.write(to: url, atomically: true)
-        PHPhotoLibrary.shared().performChanges({
-          PHAssetChangeRequest.creationRequestForAssetFromImage(atFileURL: url)
-        })
         complete(ContentExport(url: url, resolution: cropRect.size, type: type, duration: duration))
       }
 
