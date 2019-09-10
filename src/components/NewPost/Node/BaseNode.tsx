@@ -108,7 +108,9 @@ export class BaseNode extends React.Component<Props> {
       block
     });
 
-  handleChangePosition = ({ x, y, scale, rotate }) => {
+  handleChangePosition = ({ x, y, scale, rotate, isPanning }) => {
+    this.props.onPan(isPanning);
+
     if (this.props.isFocused) {
       return;
     }

@@ -16,16 +16,15 @@ import UIKit
 
 
 @available(iOS 10.0, *)
-class ImageBlockResource : ImageResource {
-  var block: ImageBlock? = nil
+class ExportableBlock : ImageResource {
+  var block: ContentBlock? = nil
   let fps = 60
   var lastCIImage: CIImage? = nil
   var lastOffset: UInt = 0
-  let resolution: CGSize
 
-  required init(block: ImageBlock, duration: CMTime, resolution: CGSize) {
+
+  required init(block: ContentBlock, duration: CMTime) {
     self.block = block
-    self.resolution = resolution
     super.init()
     self.status = .avaliable
     self.duration = duration
@@ -36,16 +35,24 @@ class ImageBlockResource : ImageResource {
   }
 
   required init() {
-    self.resolution = CGSize.zero
+    
     super.init()
 
   }
-
   
 
 
   open override func image(at time: CMTime, renderSize: CGSize) -> CIImage? {
     if let block = self.block {
+      if block.type == BlockType.text {
+
+        if (self.lastCIImage == nil) {
+          self.lastCIImage = CIImage.init(image: block.value.image.staticImage!)
+        }
+
+        return self.lastCIImage
+      }
+
       let duration = block.totalDuration
       var frameRange = block.ranges.first(where: { imageFrameRange in
         return imageFrameRange.timespan.contains(time.seconds)
@@ -70,7 +77,7 @@ class ImageBlockResource : ImageResource {
 
   // MARK: - NSCopying
   open override func copy(with zone: NSZone? = nil) -> Any {
-    let resource = super.copy(with: zone) as! ImageBlockResource
+    let resource = super.copy(with: zone) as! ExportableBlock
     resource.block = block
     return resource
   }

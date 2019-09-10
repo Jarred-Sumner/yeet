@@ -22,25 +22,44 @@ class YeetExporter: NSObject, RCTBridgeModule  {
   var producer: VideoProducer? = nil
 
   @objc(startExport:callback:)
-  func startExport(data: String,  callback: RCTResponseSenderBlock) -> Void {
+  func startExport(data: String, callback: @escaping RCTResponseSenderBlock) -> Void {
     if let dataObject = data.data(using: .utf8) {
       if let exportData = try? JSON(data: dataObject) {
 
         self.getImages(data: exportData) { images in
-          DispatchQueue.global(qos: .userInitiated).async {
-            self.producer = VideoProducer(data: exportData, images: images)
+          DispatchQueue.global(qos: .utility).async {
+            autoreleasepool {
+              self.producer = VideoProducer(data: exportData, images: images)
 
-            let boundsDict = exportData["bounds"].dictionaryValue
+              let boundsDict = exportData["bounds"].dictionaryValue
 
-            let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-            self.producer?.start(estimatedBounds: bounds)
-
+              let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
+              self.producer?.start(estimatedBounds: bounds, callback: callback)
+            }
           }
 
         }
       }
     }
 
+  }
+
+  func captureTextScreenshot(viewTag: NSNumber, registry: [NSNumber: UIView]) -> UIImage? {
+    guard let view = registry[viewTag] else {
+      return nil
+    }
+
+    let size = view.bounds.size
+
+    UIGraphicsBeginImageContextWithOptions(size, false, 0);
+    guard view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true) else {
+      UIGraphicsEndImageContext()
+      return nil
+    }
+    let screenshot = UIGraphicsGetImageFromCurrentImageContext()
+    UIGraphicsEndImageContext()
+
+    return screenshot
   }
 
 
@@ -50,26 +69,50 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
 
     RCTExecuteOnUIManagerQueue {
-      self.bridge.uiManager.addUIBlock({ (manager, registry) in
+      self.bridge.uiManager.addUIBlock({ (manager, _registry) in
         let nodeBlocks = data["nodes"].arrayValue.map { node in
           return node["block"]
 
         }
 
+        guard let registry = _registry else {
+          return
+        }
+
          var allBlocks = data["blocks"].arrayValue
         allBlocks.append(contentsOf: nodeBlocks)
+        allBlocks.forEach { block in
+          if block["type"].stringValue == "text" {
+            let node = nodeBlocks.first(where: { node in
+              return node["block"].dictionaryValue["id"]?.stringValue == block["id"].stringValue
+            })
 
-       allBlocks.filter({ (block) -> Bool in
-          return block["type"].stringValue == "image"
-        }).forEach({ (block) in
-          if let view = registry?[block["viewTag"].numberValue] {
+            var viewTag: NSNumber
+
+            if let _node = node {
+              viewTag = _node["viewTag"].numberValue
+            } else {
+              viewTag = block["viewTag"].numberValue
+            }
+
+            guard let screenshot = self.captureTextScreenshot(viewTag: viewTag, registry: registry) else {
+              return
+            }
+
+            dict[block["id"].stringValue] = ExportableImage(image: screenshot)
+          } else if block["type"].stringValue == "image" {
+            guard let view = registry[block["viewTag"].numberValue] else {
+              return;
+            }
 
             if let imageView = self.findImageView(view: view) {
               dict[block["id"].stringValue] = ExportableImage(image: imageView.image!)
             }
 
           }
-        })
+        }
+
+  
 
         block(dict)
       })
@@ -81,9 +124,18 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     if type(of: view) == FFFastImageView.self {
       return view as! FFFastImageView;
     } else if (view.subviews.count > 0) {
-      return view.subviews.first { (view) -> Bool in
-        return findImageView(view: view) != nil
-        } as! FFFastImageView?
+      for subview in view.subviews {
+        if (type(of: subview) == FFFastImageView.self) {
+          return subview as! FFFastImageView
+        } else if (subview.subviews.count > 0) {
+          if let imageView = findImageView(view: subview) {
+            return imageView
+          }
+        }
+
+      }
+      return nil
+
     } else {
       return nil;
     }

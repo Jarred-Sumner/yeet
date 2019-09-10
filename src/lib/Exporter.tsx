@@ -100,11 +100,13 @@ const createExportableNode = (
   node: EditableNode,
   viewTag: number,
   blockBounds: BoundsRect,
-  nodeBounds: BoundsRect
+  nodeBounds: BoundsRect,
+  nodeViewTag: number
 ): ExportableNode => {
   return {
     block: createExportableBlock(node.block, viewTag, blockBounds),
     frame: nodeBounds,
+    viewTag: nodeViewTag,
     position: {
       x: node.position.x,
       rotate: node.position.rotate,
@@ -168,7 +170,8 @@ export const startExport = async (
       node,
       findNodeHandle(refs.get(node.block.id).current),
       blockBoundsMap.get(node.block.id),
-      inlinesBoundsMap.get(node.block.id)
+      inlinesBoundsMap.get(node.block.id),
+      findNodeHandle(nodeRefs.get(node.block.id))
     )
   );
 

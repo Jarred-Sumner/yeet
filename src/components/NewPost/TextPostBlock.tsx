@@ -8,7 +8,7 @@ type Props = {
   onChange: ChangeBlockFunction;
 };
 
-class RawTextPostBlock extends React.Component<Props> {
+export class TextPostBlock extends React.Component<Props> {
   constructor(props: Props) {
     super(props);
 
@@ -27,6 +27,18 @@ class RawTextPostBlock extends React.Component<Props> {
     this.props.onBlur({ ...this.props.block, value: this.state.text });
   };
 
+  focus = () => {
+    this.textInput.current.focus();
+  };
+
+  blur = () => {
+    this.textInput.current.blur();
+  };
+
+  setNativeProps = (...args) => this.textInput.current.setNativeProps.call(this.textInput.current, args)
+
+  textInput = React.createRef<TextInput>();
+
   render() {
     const {
       block,
@@ -42,8 +54,8 @@ class RawTextPostBlock extends React.Component<Props> {
     return (
       <TextInput
         editable={!disabled}
-        inputRef={inputRef}
         block={block}
+        inputRef={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}
         focusType={focusType}
@@ -57,9 +69,5 @@ class RawTextPostBlock extends React.Component<Props> {
     );
   }
 }
-
-export const TextPostBlock = React.forwardRef((props, ref) => {
-  return <RawTextPostBlock {...props} inputRef={ref} />;
-});
 
 export default TextPostBlock;

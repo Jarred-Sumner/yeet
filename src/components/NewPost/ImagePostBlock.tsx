@@ -180,6 +180,7 @@ export class ImagePostBlock extends React.Component<Props> {
       return (
         <View
           onLayout={onLayout}
+          ref={inputRef}
           style={[
             styles.container,
             stylesByFormat[block.format].container,
@@ -197,7 +198,7 @@ export class ImagePostBlock extends React.Component<Props> {
             }}
             id={`block.imagePicker.${block.id}`}
           >
-            <ImageComponent ref={inputRef} block={block} />
+            <ImageComponent block={block} />
           </SharedElement>
 
           {this.props.children}

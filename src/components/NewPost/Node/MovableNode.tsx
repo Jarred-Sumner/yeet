@@ -301,11 +301,17 @@ export class MovableNode extends Component<Props> {
   }
 
   updatePosition = throttle(coords => {
-    const [x, y, rotate, scale] = coords;
+    const [x, y, rotate, scale, panGestureState] = coords;
     if (this.props.isFocused) {
       return;
     }
-    this.props.onChangePosition({ x, y, scale, rotate });
+    this.props.onChangePosition({
+      x,
+      y,
+      scale,
+      rotate,
+      isPanning: panGestureState === State.ACTIVE
+    });
   }, 32);
 
   handleLayout = ({ nativeEvent: { layout: bounds } }) => {
@@ -387,7 +393,7 @@ export class MovableNode extends Component<Props> {
             <Animated.Code
               exec={Animated.block([
                 Animated.call(
-                  [this.X, this.Y, this.R, this.Z],
+                  [this.X, this.Y, this.R, this.Z, this.panGestureState],
                   this.updatePosition
                 ),
                 Animated.cond(

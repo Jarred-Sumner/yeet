@@ -161,6 +161,9 @@ export class TextInput extends React.Component<Props> {
   static defaultProps = {
     type: PostFormat.screenshot
   };
+  state = {
+    isFocused: false
+  };
 
   constructor(props) {
     super(props);
@@ -202,6 +205,16 @@ export class TextInput extends React.Component<Props> {
     }
   };
 
+  handleBlur = event => {
+    this.props.onBlur && this.props.onBlur(event);
+    this.setState({ isFocused: false });
+  };
+
+  handleFocus = event => {
+    this.props.onFocus && this.props.onFocus(event);
+    this.setState({ isFocused: true });
+  };
+
   render() {
     const {
       config: { placeholder = " " },
@@ -210,7 +223,14 @@ export class TextInput extends React.Component<Props> {
       id,
       ...otherProps
     } = this.props.block;
-    const { editable, inputRef, onBlur, onLayout, focusType } = this.props;
+    const {
+      editable,
+      inputRef,
+      onBlur,
+      onLayout,
+      focusType,
+      onFocus
+    } = this.props;
 
     const containerStyles = [
       styles.container,
@@ -231,7 +251,7 @@ export class TextInput extends React.Component<Props> {
 
     return (
       <TapGestureHandler
-        enabled={editable}
+        enabled={editable && !this.state.isFocused}
         ref={this.props.gestureRef}
         onHandlerStateChange={this.handleHandlerChange}
       >
@@ -242,7 +262,6 @@ export class TextInput extends React.Component<Props> {
             pointerEvents={editable ? "auto" : "none"}
             ref={inputRef}
             style={inputStyles}
-            onFocus={this.props.onFocus}
             multiline
             adjustsFontSizeToFit
             minimumFontScale={0.4}
@@ -250,7 +269,8 @@ export class TextInput extends React.Component<Props> {
             placeholderTextColor={
               textInputStyles[format].presets.placeholderColor || undefined
             }
-            onBlur={onBlur}
+            onBlur={this.handleBlur}
+            onFocus={this.handleFocus}
             scrollEnabled={false}
             placeholder={placeholder}
             defaultValue={this.props.text}

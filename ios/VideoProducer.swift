@@ -102,37 +102,21 @@ class YeetImage {
   }
 }
 
-class TextBlock {
-  let type = "text"
-  let value: String
-  let viewTag: NSNumber
-  let format: PostFormat
-  let id: String
-  let zIndex: NSNumber
-  let frame: CGRect
-  let nodeFrame: CGRect?
-
-  init(value: String, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, frame: CGRect, nodeFrame: CGRect?) {
-    self.value = value
-    self.viewTag = viewTag
-    self.format = PostFormat.init(rawValue: format) ?? PostFormat.caption
-    self.id = id
-    self.zIndex = zIndex
-    self.frame = frame
-    self.nodeFrame = nodeFrame
-  }
-}
-
 struct ImageFrameRange {
   let timespan: ClosedRange<TimeInterval>
   let frameOffset: UInt
 }
 
-class ImageBlock {
+enum BlockType : String {
+  case image = "image"
+  case text = "text"
+}
+
+class ContentBlock {
   let dimensions: YeetImageRect
-  let type = "image"
+  let type: BlockType
   let format: PostFormat
-  let value: YeetImage
+  var value: YeetImage
   let viewTag: NSNumber
   let frame: CGRect
   let nodeFrame: CGRect?
@@ -140,38 +124,63 @@ class ImageBlock {
   let zIndex: NSNumber
   var position: NodePosition = NodePosition(y: 0.0, scale: 1.0, rotate: 0, x: 0.0)
   var totalDuration: TimeInterval = 0
+  var text: String?
 
 
   var ranges: Array<ImageFrameRange> = []
 
 
 
-  init(value: JSON, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?, frame: CGRect, nodeFrame: CGRect?) {
-    self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
-    self.value = YeetImage(width: value["width"].numberValue, height: value["height"].numberValue, source: value["source"].stringValue, mimeType: value["mimeType"].stringValue, uri: value["uri"].stringValue, duration: value["duration"].numberValue, image: image)
+  init(value: JSON?, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?, frame: CGRect, nodeFrame: CGRect?, text: String?, type: BlockType) {
+
+
+    self.frame = frame
+    self.nodeFrame = nodeFrame
+
+    if let _value = value {
+      if (type == BlockType.text) {
+        self.dimensions = YeetImageRect(x: NSNumber(nonretainedObject: frame.origin.x), y: NSNumber(nonretainedObject: frame.origin.y), maxX: NSNumber(nonretainedObject: frame.size.width + frame.origin.x), maxY: NSNumber(nonretainedObject: frame.size.height + frame.origin.y), width: NSNumber(nonretainedObject: frame.size.width), height: NSNumber(nonretainedObject: frame.size.height))
+
+        self.value = YeetImage(width: self.dimensions.width, height: self.dimensions.height, source: "UIView", mimeType: MimeType.png.rawValue, uri: "memory://", duration: 0, image: image)
+      } else if (type == BlockType.image) {
+        self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
+        self.value = YeetImage(width: _value["width"].numberValue, height: _value["height"].numberValue, source: _value["source"].stringValue, mimeType: _value["mimeType"].stringValue, uri: _value["uri"].stringValue, duration: _value["duration"].numberValue, image: image)
+      } else {
+        self.dimensions = YeetImageRect(x: 0, y: 0, maxX: 0, maxY: 0, width: 0, height: 0)
+        self.value = YeetImage(width: 0, height: 0, source: "blank", mimeType: MimeType.jpg.rawValue, uri: "blank://", duration: 0, image: image)
+      }
+    } else {
+      self.dimensions = YeetImageRect(x: 0, y: 0, maxX: 0, maxY: 0, width: 0, height: 0)
+      self.value = YeetImage(width: 0, height: 0, source: "blank", mimeType: MimeType.jpg.rawValue, uri: "blank://", duration: 0, image: image)
+    }
+
 
     self.viewTag = viewTag
     self.format = PostFormat.init(rawValue: format) ?? PostFormat.screenshot
     self.id = id
     self.zIndex = zIndex
+    self.type = type
+    self.text = text
 
     if let _position = position {
       self.position = NodePosition(y: _position["y"].numberValue, scale: _position["scale"].numberValue, rotate: _position["rotate"].numberValue, x: _position["x"].numberValue)
     }
 
 
-    self.frame = frame
-    self.nodeFrame = nodeFrame
 
-    if self.value.image.isAnimated {
-      self.calculateRanges()
-    }
+    self.totalDuration = 0
+    self.calculateRanges()
 
   }
 
 
 
   func calculateRanges() {
+    if (!value.image.isAnimated || type != BlockType.image) {
+      return
+    }
+
+
     for i in 0...value.image.animatedImageFrameCount - 1 {
       let newDuration = value.image.animatedImageDuration(at: i)
 
@@ -192,20 +201,6 @@ class ImageBlock {
 
   }
 
-  func trackItem(resolution: CGSize) -> TrackItem {
-
-    if #available(iOS 10.0, *) {
-      let duration = CMTime(seconds: self.totalDuration )
-      let trackItem = TrackItem(resource: ImageBlockResource(block: self, duration: duration, resolution: resolution))
-
-      trackItem.videoConfiguration.frame = CGRect(origin: .zero, size: resolution)
-
-
-      return trackItem
-    } else {
-      return TrackItem(resource: Resource())
-    }
-  }
 }
 
 enum ExportType : String {
@@ -217,23 +212,22 @@ enum ExportType : String {
 class VideoProducer {
   let data: JSON
   let images: Dictionary<String, ExportableImage>
-  let textBlocks: Array<TextBlock>
-  let imageBlocks: Array<ImageBlock>
+  let blocks: Array<ContentBlock>
 
   var hasAnyAnimations: Bool {
-    return imageBlocks.first(where: { imageBlock in
+    return blocks.first(where: { imageBlock in
       return imageBlock.value.image.isAnimated
     }) != nil
   }
 
   var isDigitalOnly: Bool {
-    return imageBlocks.filter { block in
+    return blocks.filter { block in
       return block.value.mimeType == MimeType.png || block.value.mimeType == MimeType.webp
-    }.count == self.imageBlocks.count
+    }.count == self.blocks.count
   }
 
-  static func getImageBlocks(data: JSON, images: Dictionary<String, ExportableImage>) -> Array<ImageBlock> {
-    var imageBlocks: Array<ImageBlock> = []
+  static func getBlocks(data: JSON, images: Dictionary<String, ExportableImage>) -> Array<ContentBlock> {
+    var blocks: Array<ContentBlock> = []
     var currentIndex = 0
 
     let nodeBlocks = data["nodes"].arrayValue.map { node in
@@ -244,27 +238,34 @@ class VideoProducer {
     allBlocks.append(contentsOf: nodeBlocks)
 
     allBlocks.forEach { block in
-      if (block["type"].stringValue == "image") {
-        let node = data["nodes"].arrayValue.first(where: {_node in
-          return _node["block"].dictionaryValue["id"]?.stringValue == block["id"].stringValue
-        })
 
-        let nodeFrame: CGRect? = node != nil ? CGRect.from(json: node!["frame"]) : nil
-        let frame = CGRect.from(json: block["frame"])
+      let node = data["nodes"].arrayValue.first(where: {_node in
+        return _node["block"].dictionaryValue["id"]?.stringValue == block["id"].stringValue
+      })
 
-        imageBlocks.append(ImageBlock(value: block["value"], dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), image: images[block["id"].stringValue]!, position: node?["position"], frame: frame, nodeFrame: nodeFrame))
-      }
+      let nodeFrame: CGRect? = node != nil ? CGRect.from(json: node!["frame"]) : nil
+      let frame = CGRect.from(json: block["frame"])
+
+      let type = block["type"].stringValue == "image" ? BlockType.image : BlockType.text
+      let value = block["value"]
+      let text = type == BlockType.text ? block["value"].stringValue : nil
+
+
+      blocks.append(ContentBlock(value: value, dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), image: images[block["id"].stringValue]!, position: node?["position"], frame: frame, nodeFrame: nodeFrame, text: text, type: type))
+
 
       currentIndex = currentIndex + 1
     }
 
-    return imageBlocks
+    return blocks
   }
+
+  
 
   func resolution() -> CGSize {
     var width = CGFloat(0.0);
     var height = CGFloat(0.0);
-    self.imageBlocks.forEach { imageBlock in
+    self.blocks.forEach { imageBlock in
       let size = imageBlock.maxSize()
 
       if (size.width > width) {
@@ -281,16 +282,16 @@ class VideoProducer {
 
 
   func maxDuration() -> Double {
-    return self.imageBlocks.map { _block in
+    return self.blocks.map { _block in
       return _block.totalDuration
     }.max()!
   }
 
 
 
-  func start(estimatedBounds: CGRect) {
-    let blocks = self.imageBlocks.map { block in
-      return ImageBlockResource(block: block, duration: CMTime(seconds: block.totalDuration), resolution: self.resolution())
+  func start(estimatedBounds: CGRect, callback: @escaping RCTResponseSenderBlock) {
+    let resources = self.blocks.map { block in
+      return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
     }
 
     var exportURL: URL
@@ -308,10 +309,14 @@ class VideoProducer {
     }
 
 
+    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources) { export in
+      if let _export = export {
+        print("Export \(_export.url)")
+        callback([nil, _export.dictionaryValue()])
+      } else {
+        callback([])
+      }
 
-
-    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: blocks) { export in
-      print(export?.url)
     }
 //    let timeline = Timeline()
 //
@@ -351,49 +356,15 @@ class VideoProducer {
 
   }
 
-  static func getTextBlocks(data: JSON) -> Array<TextBlock> {
-    var textBlocks: Array<TextBlock> = []
-    var currentIndex = 0
-
-    let nodeBlocks = data["nodes"].arrayValue.map { node in
-      return node["block"]
-    }
-
-    var allBlocks = data["blocks"].arrayValue
-    allBlocks.append(contentsOf: nodeBlocks)
-
-    allBlocks.forEach { block in
-      if (block["type"].stringValue == "text") {
-
-        textBlocks.append(TextBlock(value: block["value"].stringValue, viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), frame: CGRect.from(json: block["frame"]), nodeFrame: nil))
-      }
-
-      currentIndex = currentIndex + 1
-    }
-
-    return textBlocks
-  }
 
   init(data: JSON, images: Dictionary<String, ExportableImage>) {
     self.data = data
-    self.imageBlocks = VideoProducer.getImageBlocks(data: data, images: images).sorted(by: { a, b in
+    self.blocks = VideoProducer.getBlocks(data: data, images: images).sorted(by: { a, b in
       return a.zIndex.intValue < b.zIndex.intValue
     })
-    self.textBlocks = VideoProducer.getTextBlocks(data: data)
+
+
     self.images = images
-  }
-
-
-  func allBlocks() -> Array<JSON> {
-    let nodeBlocks = data["nodes"].arrayValue.map { node in
-      return node["block"]
-
-    }
-
-    var allBlocks = data["blocks"].arrayValue
-    allBlocks.append(contentsOf: nodeBlocks)
-
-    return allBlocks;
   }
 }
 

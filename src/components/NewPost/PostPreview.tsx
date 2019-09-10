@@ -94,6 +94,7 @@ export const EditableNodeList = ({
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
+  onPan,
   focusedBlockId
 }: EditableNodeListProps) => {
   const containerRef = React.useCallback(
@@ -101,6 +102,13 @@ export const EditableNodeList = ({
       setNodeRef(id, ref);
     },
     [setNodeRef]
+  );
+
+  const handlePan = React.useCallback(
+    id => isPanning => {
+      onPan(id, isPanning);
+    },
+    [onPan]
   );
 
   const handleSetBlockInputRef = React.useCallback(
@@ -129,6 +137,7 @@ export const EditableNodeList = ({
         key={id}
         isFocused={focusedBlockId === id}
         onTap={onTapNode}
+        onPan={handlePan(id)}
         isHidden={focusedBlockId && focusedBlockId !== id}
         node={node}
         onChange={onChangeNode}

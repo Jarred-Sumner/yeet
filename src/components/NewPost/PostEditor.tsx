@@ -1,47 +1,36 @@
 import CameraRoll from "@react-native-community/cameraroll";
+import { debounce } from "lodash";
 import * as React from "react";
-import {
-  Dimensions,
-  Image,
-  Keyboard,
-  PixelRatio,
-  StyleSheet,
-  View
-} from "react-native";
+import { Dimensions, Keyboard, StyleSheet, View } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import {
-  BaseButton,
   ScrollView,
   State as GestureState,
-  TapGestureHandler,
   TextInput
 } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
-import PhotoEditor from "react-native-photo-manipulator";
 import Animated from "react-native-reanimated";
 import { getInset } from "react-native-safe-area-view";
-import { captureRef } from "react-native-view-shot";
 import { NavigationEvents } from "react-navigation";
 import tinycolor from "tinycolor2";
+import { startExport } from "../../lib/Exporter";
+import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 import { SPACING } from "../../lib/styles";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 import { EditorFooter } from "./EditorFooter";
 import { ImagePickerRoute } from "./ImagePicker";
 import { TextLayer } from "./layers/TextLayer";
-import { getCommand } from "../../lib/transformsToFFMPEG";
-import { startExport } from "../../lib/Exporter";
-import { throttle } from "lodash";
 import {
+  buildImageBlock,
   buildTextBlock,
   FocusBlockType,
   isPlaceholderImageBlock,
   MAX_POST_HEIGHT,
+  minImageWidthByFormat,
   PostBlockType,
   PostFormat,
   POST_WIDTH,
-  presetsByFormat,
-  buildImageBlock,
-  minImageWidthByFormat
+  presetsByFormat
 } from "./NewPostFormat";
 import {
   buildEditableNode,
@@ -49,11 +38,7 @@ import {
   EditableNodeMap
 } from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
-import Toolbar, {
-  DEFAULT_TOOLBAR_BUTTON_TYPE,
-  ToolbarButtonType
-} from "./Toolbar";
-import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
+import { DEFAULT_TOOLBAR_BUTTON_TYPE, ToolbarButtonType } from "./Toolbar";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -503,18 +488,18 @@ export class PostEditor extends React.Component<{}, State> {
     ]);
 
     if (IS_SIMULATOR) {
-      this.state.inlineNodes.set(IMAGE_NODE_FIXTUER.block.id, {
-        ...IMAGE_NODE_FIXTUER,
-        position: {
-          ...IMAGE_NODE_FIXTUER.position,
-          animatedX: new Animated.Value(IMAGE_NODE_FIXTUER.position.x),
-          animatedY: new Animated.Value(IMAGE_NODE_FIXTUER.position.y),
-          animatedRotate: new Animated.Value(
-            IMAGE_NODE_FIXTUER.position.rotate
-          ),
-          animatedScale: new Animated.Value(IMAGE_NODE_FIXTUER.position.scale)
-        }
-      });
+      // this.state.inlineNodes.set(IMAGE_NODE_FIXTUER.block.id, {
+      //   ...IMAGE_NODE_FIXTUER,
+      //   position: {
+      //     ...IMAGE_NODE_FIXTUER.position,
+      //     animatedX: new Animated.Value(IMAGE_NODE_FIXTUER.position.x),
+      //     animatedY: new Animated.Value(IMAGE_NODE_FIXTUER.position.y),
+      //     animatedRotate: new Animated.Value(
+      //       IMAGE_NODE_FIXTUER.position.rotate
+      //     ),
+      //     animatedScale: new Animated.Value(IMAGE_NODE_FIXTUER.position.scale)
+      //   }
+      // });
     }
   }
 
@@ -672,8 +657,14 @@ export class PostEditor extends React.Component<{}, State> {
     this.focusTypeValue.setValue(focusType);
   };
 
-  handleDownload = () => {
-    this.createSnapshot();
+  handleDownload = async () => {
+    const snapshot = await this.createSnapshot();
+    if (snapshot) {
+      return CameraRoll.saveToCameraRoll(
+        snapshot.uri,
+        String(snapshot.type).includes("image") ? "photo" : "video"
+      );
+    }
   };
   handleSend = () => {};
 
@@ -713,9 +704,9 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   scrollRef = React.createRef<ScrollView>();
-  keyboardVisibleValue = new Animated.Value(0);
-  focusedBlockValue = new Animated.Value(-1);
-  focusTypeValue = new Animated.Value(-1);
+  keyboardVisibleValue = new Animated.Value<number>(0);
+  focusedBlockValue = new Animated.Value<number>(-1);
+  focusTypeValue = new Animated.Value<FocusBlockType | -1>(-1);
   controlsOpacityValue = new Animated.Value(1);
 
   handleTapBackground = event => {
@@ -872,6 +863,13 @@ export class PostEditor extends React.Component<{}, State> {
     this.allowBackgroundTap = allowBackgroundTap;
   };
 
+  _handlePan = ({
+    blockId,
+    isPanning
+  }): { blockId: string; isPanning: boolean } => {};
+
+  handlePan = debounce(this._handlePan, 16);
+
   handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
   hasPlaceholderImageBlocks = () =>
     !!this.props.post.blocks.find(isPlaceholderImageBlock);
@@ -1012,6 +1010,7 @@ export class PostEditor extends React.Component<{}, State> {
                 onlyShow={this.state.focusedBlockId}
                 onBlur={this.handleBlurNode}
                 onChangeNode={this.handleInlineNodeChange}
+                onPan={this.handlePan}
               />
             </Layer>
           </PostPreview>

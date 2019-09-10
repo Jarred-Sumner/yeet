@@ -34,9 +34,18 @@ class ContentExport {
     self.duration = duration
   }
 
+  func dictionaryValue() -> [String: Any] {
+    return [
+      "uri": url.absoluteString,
+      "width": Double(resolution.width),
+      "height": Double(resolution.height),
+      "type": type.rawValue,
+      "duration": Double(duration)
+    ]
+  }
 
 
-  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ImageBlockResource>, complete: @escaping(ContentExport?)->()) {
+  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, complete: @escaping(ContentExport?)->()) {
     do {
       let composition = AVMutableComposition()
       let vidAsset = AVURLAsset(url: Bundle.main.url(forResource: "blank_1080p", withExtension: ".mp4")!)
@@ -119,10 +128,6 @@ class ContentExport {
         layer.isGeometryFlipped = true
 
         layer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15) // all sides
-
-
-        let scaleX = CGFloat(block.dimensions.maxX.doubleValue - block.dimensions.x.doubleValue) / layer.frame.width
-        let scaleY = CGFloat(block.dimensions.maxY.doubleValue - block.dimensions.y.doubleValue) / layer.frame.height
 
 
         layer.setAffineTransform(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)))
