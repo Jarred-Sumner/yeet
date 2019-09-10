@@ -11,11 +11,6 @@
     "test": "jest",
     "lint": "eslint ."
   },
-  "workspaces": {
-    "nohoist": [
-      "@jarred"
-    ]
-  },
   "dependencies": {
     "@react-native-community/async-storage": "^1.6.1",
     "@react-native-community/cameraroll": "^1.2.1",
@@ -37,13 +32,14 @@
     "hoist-non-react-statics": "^3.3.0",
     "lodash": "^4.17.15",
     "memoizee": "^0.4.14",
+    "metro": "0.56.0",
     "nanoid": "^2.0.4",
     "numbro": "^2.1.2",
     "path": "^0.12.7",
     "point-in-polygon": "^1.0.1",
-    "react": "16.8.6",
+    "react": "16.9.0",
     "react-apollo": "^2.5.8",
-    "react-native": "0.60.5",
+    "react-native": "0.61.0-rc.3",
     "react-native-device-info": "^2.3.2",
     "react-native-dotenv": "^0.2.0",
     "react-native-fast-image": "https://github.com/Jarred-Sumner/react-native-fast-image.git",
@@ -83,13 +79,7 @@
     "yup": "^0.27.0"
   },
   "rnpm": {
-    "assets": [
-      "./assets/fonts/"
-    ]
-  },
-  "resolutions": {
-    "@react-native-community/cli": "^2.9.0",
-    "@react-native-community/cli-platform-ios": "^2.9.0"
+    "assets": ["./assets/fonts/"]
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
@@ -109,7 +99,7 @@
     "babel-plugin-import-graphql": "^2.7.0",
     "eslint": "^6.1.0",
     "jest": "^24.8.0",
-    "metro-react-native-babel-preset": "^0.55.0",
+    "metro-react-native-babel-preset": "^0.56.0",
     "react-native-typescript-transformer": "^1.2.13",
     "react-test-renderer": "16.8.6",
     "typescript": "^3.5.0"
