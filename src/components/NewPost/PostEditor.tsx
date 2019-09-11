@@ -17,13 +17,13 @@ import { startExport } from "../../lib/Exporter";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 import { SPACING } from "../../lib/styles";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
-import { EditorFooter } from "./EditorFooter";
+import { EditorFooter, isDeletePressed } from "./EditorFooter";
 import { ImagePickerRoute } from "./ImagePicker";
-import { TextLayer } from "./layers/TextLayer";
+import { ActiveLayer } from "./layers/ActiveLayer";
 import {
   buildImageBlock,
   buildTextBlock,
-  FocusBlockType,
+  FocusType,
   isPlaceholderImageBlock,
   MAX_POST_HEIGHT,
   minImageWidthByFormat,
@@ -38,7 +38,12 @@ import {
   EditableNodeMap
 } from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
-import { DEFAULT_TOOLBAR_BUTTON_TYPE, ToolbarButtonType } from "./Toolbar";
+import {
+  DEFAULT_TOOLBAR_BUTTON_TYPE,
+  ToolbarButtonType,
+  ToolbarType
+} from "./Toolbar";
+import { sendLightFeedback } from "../../lib/Vibration";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -156,11 +161,16 @@ const Layer = ({
   );
 };
 
+type Props = {
+  post: any;
+  inlineNodes: EditableNodeMap;
+};
+
 type State = {
   activeButton: ToolbarButtonType;
   inlineNodes: EditableNodeMap;
   focusedBlockId: string | null;
-  focusType: FocusBlockType | null;
+  focusType: FocusType | null;
   isSaving: boolean;
 };
 
@@ -472,12 +482,11 @@ const DarkSheet = ({ opacity }) => (
   />
 );
 
-export class PostEditor extends React.Component<{}, State> {
+export class PostEditor extends React.Component<Props, State> {
   constructor(props) {
     super(props);
     this.state = {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
-      inlineNodes: new Map(),
       focusedBlockId: null,
       focusType: null,
       isSaving: false
@@ -513,9 +522,10 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   deleteNode = (id: string) => {
-    if (this.state.inlineNodes.has(id)) {
-      this.state.inlineNodes.delete(id);
-    }
+    this.props.onChangeNodes({
+      ...this.props.inlineNodes,
+      [id]: undefined
+    });
 
     if (this._inlineNodeRefs.has(id)) {
       this._inlineNodeRefs.delete(id);
@@ -545,11 +555,14 @@ export class PostEditor extends React.Component<{}, State> {
     if (
       editableNode.block.type === "text" &&
       editableNode.block.value.trim().length === 0 &&
-      this.state.inlineNodes.has(editableNode.block.id)
+      this.props.inlineNodes[editableNode.block.id]
     ) {
       this.deleteNode(editableNode.block.id);
     } else {
-      this.state.inlineNodes.set(editableNode.block.id, editableNode);
+      this.props.onChangeNodes({
+        ...this.props.inlineNodes,
+        [editableNode.block.id]: editableNode
+      });
     }
   };
 
@@ -576,13 +589,16 @@ export class PostEditor extends React.Component<{}, State> {
       y
     });
 
-    this.state.inlineNodes.set(block.id, editableNode);
+    this.props.onChangeNodes({
+      ...this.props.inlineNodes,
+      [block.id]: editableNode
+    });
     this._blockInputRefs.set(block.id, React.createRef());
-    this.focusTypeValue.setValue(FocusBlockType.absolute);
+    this.focusTypeValue.setValue(FocusType.absolute);
     this.focusedBlockValue.setValue(block.id.hashCode());
     this.setState({
       focusedBlockId: block.id,
-      focusType: FocusBlockType.absolute
+      focusType: FocusType.absolute
     });
   };
 
@@ -608,16 +624,16 @@ export class PostEditor extends React.Component<{}, State> {
       if (node.block.type === "text") {
         this.setState({
           focusedBlockId: node.block.id,
-          focusType: FocusBlockType.absolute
+          focusType: FocusType.absolute
         });
         this.focusedBlockValue.setValue(node.block.id.hashCode());
-        this.focusTypeValue.setValue(FocusBlockType.absolute);
+        this.focusTypeValue.setValue(FocusType.absolute);
       }
     }
   };
 
   handleBlur = () => {
-    const node = this.state.inlineNodes.get(this.state.focusedBlockId);
+    const node = this.props.inlineNodes[this.state.focusedBlockId];
 
     this.handleBlurNode(node);
   };
@@ -627,7 +643,10 @@ export class PostEditor extends React.Component<{}, State> {
       if (node.block.type === "text" && node.block.value.trim().length === 0) {
         this.deleteNode(node.block.id);
       } else {
-        this.state.inlineNodes.set(node.block.id, node);
+        this.props.onChangeNodes({
+          ...this.props.inlineNodes,
+          [node.block.id]: node
+        });
         this.focusedBlockValue.setValue(-1);
         this.focusTypeValue.setValue(-1);
         this.setState({ focusedBlockId: null, focusType: null });
@@ -645,16 +664,17 @@ export class PostEditor extends React.Component<{}, State> {
   };
 
   handleFocusBlock = block => {
-    const focusType = this.state.inlineNodes.has(block.id)
-      ? FocusBlockType.absolute
-      : FocusBlockType.static;
+    const focusType = this.props.inlineNodes[block.id]
+      ? FocusType.absolute
+      : FocusType.static;
+
+    this.focusedBlockValue.setValue(block.id.hashCode());
+    this.focusTypeValue.setValue(focusType);
+
     this.setState({
       focusedBlockId: block.id,
       focusType
     });
-
-    this.focusedBlockValue.setValue(block.id.hashCode());
-    this.focusTypeValue.setValue(focusType);
   };
 
   handleDownload = async () => {
@@ -676,7 +696,7 @@ export class PostEditor extends React.Component<{}, State> {
     // });
     return startExport(
       this.props.post.blocks,
-      this.state.inlineNodes,
+      this.props.inlineNodes,
       this._blockInputRefs,
       this.scrollRef,
       this._inlineNodeRefs
@@ -706,16 +726,30 @@ export class PostEditor extends React.Component<{}, State> {
   scrollRef = React.createRef<ScrollView>();
   keyboardVisibleValue = new Animated.Value<number>(0);
   focusedBlockValue = new Animated.Value<number>(-1);
-  focusTypeValue = new Animated.Value<FocusBlockType | -1>(-1);
+  focusTypeValue = new Animated.Value<FocusType | -1>(-1);
   controlsOpacityValue = new Animated.Value(1);
+  tapX = new Animated.Value(-1);
+  tapY = new Animated.Value(-1);
 
-  handleTapBackground = event => {
-    const {
-      nativeEvent: { state: gestureState, ...data }
-    } = event;
-    if (gestureState === GestureState.END) {
-      this.handlePressBackground(data);
-    }
+  tapGestureState = new Animated.Value(GestureState.UNDETERMINED);
+  onTapBackground = Animated.event(
+    [
+      {
+        nativeEvent: { state: this.tapGestureState, x: this.tapX, y: this.tapY }
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
+  // findNode = (x: number, y: number) => {
+  //   Object.values(this.props.inlineNodes).find(node => {
+  //     node.position.x
+  //   })
+  // };
+
+  handleTapBackground = ([tapGestureState, x, y]) => {
+    const { focusedBlockId } = this.state;
+    this.handlePressBackground({ x, y });
   };
 
   handlePressDownBackground = ({
@@ -787,7 +821,10 @@ export class PostEditor extends React.Component<{}, State> {
     });
 
     this._blockInputRefs.set(block.id, React.createRef());
-    this.state.inlineNodes.set(block.id, editableNode);
+    this.props.onChangeNodes({
+      ...this.props.inlineNodes,
+      [block.id]: editableNode
+    });
 
     this.setState({
       focusedBlockId: null,
@@ -859,20 +896,89 @@ export class PostEditor extends React.Component<{}, State> {
 
   tapRef = React.createRef();
   allowBackgroundTap = false;
-  setBackgroundTapIgnored = allowBackgroundTap => {
-    this.allowBackgroundTap = allowBackgroundTap;
+
+  get toolbarType() {
+    const { focusType, focusedBlockId } = this.state;
+    if (focusType === null || !focusedBlockId) {
+      return ToolbarType.default;
+    }
+
+    if (focusType === FocusType.panning) {
+      return ToolbarType.panning;
+    }
+
+    const node = this.props.inlineNodes[focusedBlockId];
+    const block = node
+      ? node.block
+      : this.props.post.blocks.find(block => block.id === focusedBlockId);
+
+    if (block && block.type === "text") {
+      return ToolbarType.text;
+    }
+
+    return ToolbarType.default;
+  }
+
+  handlePan = ({
+    blockId,
+    isPanning,
+    x,
+    y
+  }): { blockId: string; isPanning: boolean; x: number; y: number } => {
+    if (isPanning) {
+      const focusType = FocusType.panning;
+      if (blockId !== this.state.focusedBlockId) {
+        this.focusedBlockValue.setValue(blockId.hashCode());
+      }
+
+      if (this.state.focusType !== focusType) {
+        this.focusTypeValue.setValue(focusType);
+      }
+
+      this.setState({
+        focusedBlockId: blockId,
+        focusType
+      });
+    } else {
+      const { focusedBlockId, focusType } = this.state;
+
+      if (
+        focusedBlockId === blockId &&
+        focusType === FocusType.panning &&
+        isDeletePressed(x, y)
+      ) {
+        this.deleteNode(blockId);
+        sendLightFeedback();
+      } else {
+        this.setState({
+          focusedBlockId: null,
+          focusType: null
+        });
+
+        this.focusedBlockValue.setValue(-1);
+        this.focusTypeValue.setValue(-1);
+      }
+    }
   };
 
-  _handlePan = ({
-    blockId,
-    isPanning
-  }): { blockId: string; isPanning: boolean } => {};
-
-  handlePan = debounce(this._handlePan, 16);
+  panToolbarClock = new Animated.Clock();
 
   handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
   hasPlaceholderImageBlocks = () =>
     !!this.props.post.blocks.find(isPlaceholderImageBlock);
+
+  get panningNode() {
+    const { focusedBlockId, focusType } = this.state;
+
+    if (focusType === FocusType.panning) {
+      return this.props.inlineNodes[focusedBlockId];
+    } else {
+      return null;
+    }
+  }
+
+  panX = new Animated.Value(0);
+  panY = new Animated.Value(0);
 
   render() {
     const { post } = this.props;
@@ -915,20 +1021,49 @@ export class PostEditor extends React.Component<{}, State> {
           keyboardVisibleValue={this.keyboardVisibleValue}
         />
         <Animated.Code
-          exec={block([
-            cond(
-              eq(this.focusTypeValue, FocusBlockType.absolute),
-              set(this.controlsOpacityValue, 1.0),
-              cond(
-                eq(this.focusTypeValue, FocusBlockType.static),
-                [
+          exec={Animated.block([
+            Animated.onChange(
+              this.focusTypeValue,
+              block([
+                cond(
+                  eq(this.focusTypeValue, FocusType.panning),
+
+                  Animated.block([set(this.controlsOpacityValue, 1.0)])
+                ),
+                cond(
+                  eq(this.focusTypeValue, FocusType.absolute),
+                  set(this.controlsOpacityValue, 1.0)
+                ),
+
+                cond(eq(this.focusTypeValue, FocusType.static), [
                   set(
                     this.controlsOpacityValue,
                     sub(1.0, this.keyboardVisibleValue)
                   )
-                ],
-                [set(this.controlsOpacityValue, 1.0)]
-              )
+                ]),
+                cond(eq(this.focusTypeValue, -1), [
+                  set(this.controlsOpacityValue, 1.0)
+                ])
+              ])
+            ),
+            // Ignore background taps when keyboard is showing/hiding
+            Animated.onChange(
+              this.tapGestureState,
+              block([
+                cond(
+                  Animated.and(
+                    eq(this.tapGestureState, GestureState.END),
+                    Animated.or(
+                      eq(this.keyboardVisibleValue, 0),
+                      eq(this.keyboardVisibleValue, 1)
+                    )
+                  ),
+                  Animated.call(
+                    [this.tapGestureState, this.tapX, this.tapY],
+                    this.handleTapBackground
+                  )
+                )
+              ])
             )
           ])}
         />
@@ -948,7 +1083,7 @@ export class PostEditor extends React.Component<{}, State> {
             bounds={bounds}
             blocks={post.blocks}
             paddingTop={presets.paddingTop || 0}
-            inlineNodes={this.state.inlineNodes}
+            inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
             focusTypeValue={this.focusTypeValue}
             minX={bounds.x}
@@ -956,7 +1091,7 @@ export class PostEditor extends React.Component<{}, State> {
             minY={bounds.y}
             backgroundColor={post.backgroundColor}
             focusedBlockValue={this.focusedBlockValue}
-            onTapBackground={this.handleTapBackground}
+            onTapBackground={this.onTapBackground}
             ref={this.scrollRef}
             maxX={bounds.width}
             bounces={!this.hasPlaceholderImageBlocks()}
@@ -966,7 +1101,7 @@ export class PostEditor extends React.Component<{}, State> {
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
             onBlur={this.handleBlurBlock}
-            focusType={FocusBlockType.static}
+            focusType={FocusType.static}
             setBlockInputRef={this.setBlockInputRef}
             onChangeNode={this.handleInlineNodeChange}
             setBlockAtIndex={this.handleChangeBlock}
@@ -982,17 +1117,19 @@ export class PostEditor extends React.Component<{}, State> {
             >
               <DarkSheet
                 opacity={Animated.cond(
-                  Animated.eq(this.focusTypeValue, FocusBlockType.absolute),
+                  Animated.eq(this.focusTypeValue, FocusType.absolute),
                   this.keyboardVisibleValue,
                   0
                 )}
               />
               <EditableNodeList
-                inlineNodes={this.state.inlineNodes}
+                inlineNodes={this.props.inlineNodes}
                 setNodeRef={this.setNodeRef}
                 focusedBlockId={this.state.focusedBlockId}
                 focusedBlockValue={this.focusedBlockValue}
                 setBlockInputRef={this.setBlockInputRef}
+                panX={this.panX}
+                panY={this.panY}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 waitFor={[
@@ -1000,7 +1137,7 @@ export class PostEditor extends React.Component<{}, State> {
                   this.formatScrollViewRef,
                   ...this._blockInputRefs.values()
                 ]}
-                focusType={FocusBlockType.absolute}
+                focusType={this.state.focusType}
                 minX={bounds.x}
                 minY={bounds.y}
                 maxX={sizeStyle.width}
@@ -1032,19 +1169,12 @@ export class PostEditor extends React.Component<{}, State> {
             height={sizeStyle.height}
             zIndex={LayerZIndex.icons}
           >
-            <TextLayer
+            <ActiveLayer
               onBack={this.props.onBack}
-              footer={
-                <EditorFooter
-                  onPressDownload={this.handleDownload}
-                  onPressSend={this.handleSend}
-                  waitFor={[
-                    this.scrollRef,
-                    this.formatScrollViewRef,
-                    ...this._blockInputRefs.values()
-                  ]}
-                />
-              }
+              onPressSend={this.handleSend}
+              onPressDownload={this.handleDownload}
+              panX={this.panX}
+              panY={this.panY}
               waitFor={[
                 this.scrollRef,
                 this.formatScrollViewRef,
@@ -1061,12 +1191,13 @@ export class PostEditor extends React.Component<{}, State> {
               controlsOpacity={this.controlsOpacityValue}
               blur={this.handleBlur}
               focusType={this.state.focusType}
-              isNodeFocused={this.state.focusType === FocusBlockType.absolute}
+              toolbarType={this.toolbarType}
+              isNodeFocused={this.state.focusType === FocusType.absolute}
               activeButton={this.state.activeButton}
               keyboardVisibleValue={this.keyboardVisibleValue}
               focusTypeValue={this.focusTypeValue}
               nodeListRef={this.nodeListRef}
-            ></TextLayer>
+            ></ActiveLayer>
           </Layer>
         </Animated.View>
       </Animated.View>

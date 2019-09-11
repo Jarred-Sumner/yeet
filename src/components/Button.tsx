@@ -102,29 +102,49 @@ export const IconButton = ({
   Icon,
   type = "plain",
   backgroundColor,
+  borderColor,
   style,
   iconStyle,
   color,
   waitFor,
   containerSize: _containerSize,
+  opacity = 1,
+  transform,
   size = 24
 }) => {
   const containerStyles = [style, buttonStyles.container];
   const iconStyles = [iconStyle, buttonStyles.icon];
 
+  const iconWrapperStyles = [
+    {
+      justifyContent: "center",
+      alignSelf: "center",
+      alignItems: "center",
+      flex: 1
+    }
+  ];
+
   if (color) {
     iconStyles.push({ color });
   }
 
+  if (transform) {
+    containerStyles.push({ transform });
+  }
+
+  const containerSize = _containerSize || size * 2.5;
+
   if (type === "fill") {
-    const containerSize = _containerSize || size * 2.5;
     containerStyles.push(buttonStyles.fill);
     containerStyles.push({
-      backgroundColor,
+      position: "relative",
+      overflow: "visible",
       width: containerSize,
       height: containerSize,
       borderRadius: containerSize / 2
     });
+
+    iconWrapperStyles.push(StyleSheet.absoluteFill);
   } else if (type === "shadow") {
     iconStyles.push(buttonStyles.iconShadow);
   }
@@ -136,7 +156,26 @@ export const IconButton = ({
       onPress={onPress}
     >
       <Animated.View style={containerStyles}>
-        <Icon style={iconStyles} size={size} />
+        {type === "fill" && (
+          <Animated.View
+            style={{
+              backgroundColor,
+              width: containerSize,
+              height: containerSize,
+              borderRadius: containerSize / 2,
+              borderColor,
+              borderWidth: borderColor ? 1 : undefined,
+              opacity
+            }}
+          />
+        )}
+        {type === "fill" ? (
+          <Animated.View style={iconWrapperStyles}>
+            <Icon style={iconStyles} size={size} />
+          </Animated.View>
+        ) : (
+          <Icon style={iconStyles} size={size} />
+        )}
       </Animated.View>
     </BorderlessButton>
   );

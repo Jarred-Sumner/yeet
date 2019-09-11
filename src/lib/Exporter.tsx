@@ -165,7 +165,7 @@ export const startExport = async (
     )
   );
 
-  const nodes = [..._nodes.values()].map(node =>
+  const nodes = [...Object.values(_nodes)].map(node =>
     createExportableNode(
       node,
       findNodeHandle(refs.get(node.block.id).current),

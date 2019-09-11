@@ -60,6 +60,9 @@ type Props = {
 export class MovableNode extends Component<Props> {
   adjustedX = new Animated.Value(0);
   adjustedY = new Animated.Value(0);
+  absoluteX = new Animated.Value(0);
+  absoluteY = new Animated.Value(0);
+
   constructor(props) {
     super(props);
 
@@ -76,6 +79,8 @@ export class MovableNode extends Component<Props> {
           nativeEvent: {
             translationX: this._X,
             translationY: this._Y,
+            absoluteX: this.absoluteX,
+            absoluteY: this.absoluteY,
             state: this.panGestureState
           }
         }
@@ -300,19 +305,20 @@ export class MovableNode extends Component<Props> {
     // );
   }
 
-  updatePosition = throttle(coords => {
-    const [x, y, rotate, scale, panGestureState] = coords;
-    if (this.props.isFocused) {
-      return;
-    }
+  updatePosition = coords => {
+    const [x, y, rotate, scale, panGestureState, absoluteX, absoluteY] = coords;
+    // console.log({ x, y });
     this.props.onChangePosition({
       x,
       y,
       scale,
       rotate,
-      isPanning: panGestureState === State.ACTIVE
+      absoluteX,
+      absoluteY,
+      isPanning:
+        panGestureState === State.ACTIVE || panGestureState === State.BEGAN
     });
-  }, 32);
+  };
 
   handleLayout = ({ nativeEvent: { layout: bounds } }) => {
     this.bounds = bounds;
@@ -392,9 +398,58 @@ export class MovableNode extends Component<Props> {
           <Animated.View style={{ flex: 0 }}>
             <Animated.Code
               exec={Animated.block([
-                Animated.call(
-                  [this.X, this.Y, this.R, this.Z, this.panGestureState],
-                  this.updatePosition
+                Animated.onChange(
+                  this.panGestureState,
+                  Animated.call(
+                    [
+                      this.X,
+                      this.Y,
+                      this.R,
+                      this.Z,
+                      this.panGestureState,
+                      this.absoluteX,
+                      this.absoluteY
+                    ],
+                    this.updatePosition
+                  )
+                ),
+                Animated.onChange(
+                  this.X,
+                  Animated.call(
+                    [
+                      this.X,
+                      this.Y,
+                      this.R,
+                      this.Z,
+                      this.panGestureState,
+                      this.absoluteX,
+                      this.absoluteY
+                    ],
+                    this.updatePosition
+                  )
+                ),
+                Animated.onChange(
+                  this.Y,
+                  Animated.call(
+                    [
+                      this.X,
+                      this.Y,
+                      this.R,
+                      this.Z,
+                      this.panGestureState,
+                      this.absoluteX,
+                      this.absoluteY
+                    ],
+                    this.updatePosition
+                  )
+                ),
+                Animated.onChange(
+                  this.absoluteX,
+                  Animated.set(this.props.absoluteX, this.absoluteX)
+                ),
+                Animated.onChange(
+                  this.absoluteY,
+                  Animated.set(this.props.absoluteY, this.absoluteY)
                 ),
                 Animated.cond(
                   Animated.and(

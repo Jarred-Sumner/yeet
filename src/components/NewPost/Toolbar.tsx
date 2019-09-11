@@ -14,6 +14,12 @@ import {
   IconBack
 } from "../Icon";
 
+export enum ToolbarType {
+  default = "default",
+  text = "text",
+  panning = "panning"
+}
+
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
@@ -43,7 +49,7 @@ export const ToolbarButton = ({ Icon, size, onPress, color, isActive }) => (
   </TouchableOpacity>
 );
 
-const TextToolbarButton = ({ isActive, onPress }) => {
+export const TextToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconText}
@@ -124,7 +130,12 @@ export enum ToolbarButtonType {
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
-export const Toolbar = ({ activeButton, onChange, children, onBack }) => {
+export const DefaultToolbar = ({
+  activeButton,
+  onChange,
+  children,
+  onBack
+}) => {
   const onPressText = React.useCallback(
     () => onChange(ToolbarButtonType.text),
     [onChange]
@@ -189,4 +200,4 @@ export const Toolbar = ({ activeButton, onChange, children, onBack }) => {
   );
 };
 
-export default Toolbar;
+export default DefaultToolbar;

@@ -1,7 +1,7 @@
 import * as React from "react";
 import { View } from "react-native";
 import Animated from "react-native-reanimated";
-import { PostBlock, FocusBlockType } from "../NewPostFormat";
+import { PostBlock, FocusType } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
 
@@ -39,7 +39,7 @@ type Props = {
   onTap: (editableNode: EditableNode) => void;
 };
 
-export type EditableNodeMap = Map<string, EditableNode>;
+export type EditableNodeMap = { [key: string]: EditableNode };
 
 export const buildEditableNode = ({ block, x, y }) => {
   return {
@@ -82,16 +82,19 @@ export class BaseNode extends React.Component<Props> {
 
   componentDidUpdate(prevProps) {
     if (prevProps.isFocused !== this.props.isFocused) {
-      if (this.props.isFocused) {
-        this.props.inputRef.current.focus &&
-          this.props.inputRef.current.focus();
-      }
+      this.autoFocus();
     }
   }
 
+  autoFocus = () => {
+    this.props.focusType === FocusType.absolute &&
+      this.props.inputRef.current.focus &&
+      this.props.inputRef.current.focus();
+  };
+
   componentDidMount() {
     if (this.props.isFocused) {
-      this.props.inputRef.current.focus && this.props.inputRef.current.focus();
+      this.autoFocus();
     }
   }
 
@@ -102,14 +105,24 @@ export class BaseNode extends React.Component<Props> {
     });
   };
 
-  handleChangeBlock = block =>
+  handleChangeBlock = block => {
     this.props.onChange({
       ...this.props.node,
       block
     });
+  };
 
-  handleChangePosition = ({ x, y, scale, rotate, isPanning }) => {
-    this.props.onPan(isPanning);
+  handleChangePosition = ({
+    x,
+    y,
+    scale,
+    rotate,
+    isPanning,
+    absoluteX,
+    absoluteY
+  }) => {
+    this.props.onPan({ isPanning, x: absoluteX, y: absoluteY });
+    console.log({ isPanning });
 
     if (this.props.isFocused) {
       return;
@@ -133,7 +146,6 @@ export class BaseNode extends React.Component<Props> {
   render() {
     const { block, position } = this.props.node;
     const {
-      isDragEnabled = true,
       isHidden = false,
       isFocused,
       onTap,
@@ -149,9 +161,17 @@ export class BaseNode extends React.Component<Props> {
       onFocus,
       inputRef,
       waitFor,
+      absoluteX,
+      absoluteY,
+      focusType,
+      focusedBlockId,
       focusTypeValue,
       onLayout
     } = this.props;
+
+    const isDragEnabled =
+      !disabled &&
+      ((isFocused && focusType === FocusType.panning) || !focusedBlockId);
 
     // if (isHidden) {
     //   return null;
@@ -161,7 +181,7 @@ export class BaseNode extends React.Component<Props> {
 
     return (
       <MovableNode
-        isDragEnabled={isDragEnabled && !disabled}
+        isDragEnabled={isDragEnabled}
         disabled={disabled}
         focusedBlockValue={focusedBlockValue}
         blockId={block.id}
@@ -169,6 +189,8 @@ export class BaseNode extends React.Component<Props> {
         y={position.animatedY}
         xLiteral={position.x}
         isHidden={!!isHidden}
+        absoluteX={absoluteX}
+        absoluteY={absoluteY}
         containerRef={containerRef}
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}
@@ -199,7 +221,7 @@ export class BaseNode extends React.Component<Props> {
             block={block}
             onChange={this.handleChangeBlock}
             focusTypeValue={focusTypeValue}
-            focusType={FocusBlockType.absolute}
+            focusType={FocusType.absolute}
             gestureRef={this.gestureRef}
             focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}

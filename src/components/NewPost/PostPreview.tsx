@@ -1,6 +1,6 @@
 import * as React from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { PostBlockType } from "./NewPostFormat";
+import { PostBlockType, MAX_POST_HEIGHT, POST_WIDTH } from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import {
@@ -15,7 +15,7 @@ import createNativeWrapper from "react-native-gesture-handler/createNativeWrappe
 import { useFocusState } from "react-navigation-hooks";
 import { TapGestureHandler } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-
+import { useLayout } from "react-native-hooks";
 export const ScrollView = createNativeWrapper(RNScrollView, {
   disallowInterruption: true
 });
@@ -75,6 +75,9 @@ type EditableNodeListProps = {
   inlineNodes: EditableNodeMap;
   inlineNodeRefs: Map<string, React.Ref<View>>;
   maxY: number;
+  panX: Animated.Value<number>;
+
+  panY: Animated.Value<number>;
   maxX: number;
   onTapNode: (node: EditableNode) => void;
   onChangeNode: (node: EditableNode) => void;
@@ -94,6 +97,8 @@ export const EditableNodeList = ({
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
+  panX,
+  panY,
   onPan,
   focusedBlockId
 }: EditableNodeListProps) => {
@@ -105,8 +110,8 @@ export const EditableNodeList = ({
   );
 
   const handlePan = React.useCallback(
-    id => isPanning => {
-      onPan(id, isPanning);
+    id => ({ isPanning, x, y }) => {
+      onPan({ blockId: id, isPanning, x, y });
     },
     [onPan]
   );
@@ -118,24 +123,27 @@ export const EditableNodeList = ({
     [setBlockInputRef]
   );
 
-  return [...inlineNodes.entries()].map(([id, node]) => {
+  return Object.values(inlineNodes).map(node => {
+    const { id } = node.block;
     return (
       <BaseNode
         maxX={maxX}
         maxY={maxY}
         containerRef={containerRef(id)}
         onBlur={onBlurNode}
-        isDragEnabled={!focusedBlockId || focusedBlockId !== id}
         focusedBlockValue={focusedBlockValue}
         disabled={focusedBlockId && focusedBlockId !== id}
         waitFor={waitFor}
         inputRef={handleSetBlockInputRef(id)}
         onFocus={onFocus}
+        absoluteX={panX}
+        absoluteY={panY}
         focusTypeValue={focusTypeValue}
         keyboardVisibleValue={keyboardVisibleValue}
         focusType={focusType}
         key={id}
         isFocused={focusedBlockId === id}
+        focusedBlockId={focusedBlockId}
         onTap={onTapNode}
         onPan={handlePan(id)}
         isHidden={focusedBlockId && focusedBlockId !== id}
@@ -176,7 +184,8 @@ export const PostPreview = React.forwardRef(
       focusTypeValue,
       onScroll,
       onScrollBeginDrag,
-      bounces
+      bounces,
+      waitFor
     },
     ref
   ) => {
@@ -184,6 +193,7 @@ export const PostPreview = React.forwardRef(
 
     React.useImperativeHandle(ref, () => scrollRef.current);
     const { isBlurred, isBlurring } = useFocusState();
+    const { onLayout, ...layout } = useLayout();
 
     return (
       <ScrollView
@@ -194,6 +204,7 @@ export const PostPreview = React.forwardRef(
         alwaysBounceVertical={bounces}
         overScrollMode="always"
         onScroll={onScroll}
+        onLayout={onLayout}
         onScrollBeginDrag={onScrollBeginDrag}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
@@ -205,11 +216,12 @@ export const PostPreview = React.forwardRef(
         }}
         contentInset={{
           top: paddingTop,
-          bottom: 50
+          bottom: 0
         }}
         style={{
           // maxHeight,
           width: bounds.width,
+          flex: 1,
           backgroundColor
         }}
         contentContainerStyle={[
@@ -221,8 +233,11 @@ export const PostPreview = React.forwardRef(
           }
         ]}
       >
-        <TapGestureHandler onHandlerStateChange={onTapBackground}>
-          <Animated.View>
+        <TapGestureHandler
+          onHandlerStateChange={onTapBackground}
+          onGestureEvent={onTapBackground}
+        >
+          <Animated.View style={{ minHeight: layout.height - paddingTop }}>
             <BlockList
               setBlockInputRef={setBlockInputRef}
               blocks={blocks}

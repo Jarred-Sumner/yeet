@@ -5,7 +5,8 @@ import {
   TextInput as RNTextInput,
   TapGestureHandler,
   GestureHandlerGestureEvent,
-  State
+  State,
+  BaseButton
 } from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
 import { TextPostBlock, PostFormat, presetsByFormat } from "../NewPostFormat";
@@ -199,9 +200,7 @@ export class TextInput extends React.Component<Props> {
 
   handleHandlerChange = (handler: GestureHandlerGestureEvent) => {
     if (handler.nativeEvent.state === State.END) {
-      this.props.focusedBlockValue.setValue(this.props.block.id.hashCode());
-      this.props.focusTypeValue.setValue(this.props.focusType);
-      this.props.inputRef && this.props.inputRef.current.focus();
+      this.handlePressInside();
     }
   };
 
@@ -214,6 +213,14 @@ export class TextInput extends React.Component<Props> {
     this.props.onFocus && this.props.onFocus(event);
     this.setState({ isFocused: true });
   };
+
+  handlePressInside = () => {
+    this.props.focusedBlockValue.setValue(this.props.block.id.hashCode());
+    this.props.focusTypeValue.setValue(this.props.focusType);
+    this.props.inputRef && this.props.inputRef.current.focus();
+  };
+
+  handlePress = (isInside: boolean) => isInside && this.handlePressInside();
 
   render() {
     const {

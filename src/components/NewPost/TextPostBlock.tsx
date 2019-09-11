@@ -2,6 +2,7 @@ import * as React from "react";
 import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
 import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
 import { TextInput } from "./Text/TextInput";
+import { throttle } from "lodash";
 
 type Props = {
   block: TextPostBlockType;
@@ -28,14 +29,19 @@ export class TextPostBlock extends React.Component<Props> {
   };
 
   focus = () => {
-    this.textInput.current.focus();
+    if (!this.textInput.current.isFocused()) {
+      this.textInput.current.focus();
+    }
   };
 
   blur = () => {
-    this.textInput.current.blur();
+    if (this.textInput.current.isFocused()) {
+      this.textInput.current.blur();
+    }
   };
 
-  setNativeProps = (...args) => this.textInput.current.setNativeProps.call(this.textInput.current, args)
+  setNativeProps = (...args) =>
+    this.textInput.current.setNativeProps.call(this.textInput.current, args);
 
   textInput = React.createRef<TextInput>();
 

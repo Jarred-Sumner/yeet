@@ -167,7 +167,8 @@ export const presetsByFormat = {
   }
 };
 
-export enum FocusBlockType {
+export enum FocusType {
+  panning = 2,
   absolute = 1,
   static = 0
 }

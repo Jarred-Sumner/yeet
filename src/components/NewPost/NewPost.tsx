@@ -15,6 +15,7 @@ import {
   buildPost,
   MAX_POST_HEIGHT
 } from "./NewPostFormat";
+import { omitBy, isEmpty } from "lodash";
 import { PostEditor, HEADER_HEIGHT } from "./PostEditor";
 import { PixelRatio } from "react-native";
 import { SPACING, COLORS } from "../../lib/styles";
@@ -32,6 +33,7 @@ import {
   getSourceDimensions,
   YeetImageRect
 } from "../../lib/imageSearch";
+import { EditableNodeMap } from "./Node/BaseNode";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
@@ -50,6 +52,7 @@ type State = {
   post: NewPostType;
   defaultPhoto: YeetImageContainer | null;
   step: NewPostStep;
+  inlineNodes: EditableNodeMap;
 };
 
 const DEFAULT_POST_FIXTURE = {
@@ -424,12 +427,13 @@ const styles = StyleSheet.create({
 const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 
-const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
-// const post = DEFAULT_POST_FIXTURE;
+// const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
+const post = DEFAULT_POST_FIXTURE;
 export class NewPost extends React.Component<{}, State> {
   state = {
     post: post,
     defaultPhoto: null,
+    inlineNodes: {},
     bounds: {
       x: 0,
       y: TOP_Y + SPACING.double + 30,
@@ -555,9 +559,12 @@ export class NewPost extends React.Component<{}, State> {
     );
   }
 
+  handleChangeNodes = (inlineNodes: EditableNodeMap) => {
+    this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
+  };
+
   renderStep() {
-    const { step } = this.state;
-    console.log(JSON.stringify(this.state.post));
+    const { inlineNodes, step } = this.state;
 
     if (step === NewPostStep.editPhoto) {
       return (
@@ -569,6 +576,8 @@ export class NewPost extends React.Component<{}, State> {
           navigation={this.props.navigation}
           onChange={this.handleChangePost}
           onChangeFormat={this.handleChangeFormat}
+          inlineNodes={inlineNodes}
+          onChangeNodes={this.handleChangeNodes}
         />
       );
     } else if (step === NewPostStep.choosePhoto) {

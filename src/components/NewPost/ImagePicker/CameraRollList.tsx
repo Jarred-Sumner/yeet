@@ -258,6 +258,16 @@ export class CameraRollList extends React.Component<Props, State> {
     );
   };
 
+  renderStandaloneItem = item => (
+    <PhotoCell
+      height={this.state.cellHeight}
+      width={this.state.columnWidth}
+      onPress={this.handlePickPhoto}
+      photo={item}
+      key={this.keyExtractor(item)}
+    />
+  );
+
   renderScrollView = props => <ScrollView {...props} />;
 
   render() {
@@ -277,7 +287,7 @@ export class CameraRollList extends React.Component<Props, State> {
       return <DeniedPhotoPermission />;
     } else if (loadState === CameraRollListLoadState.requestPermission) {
       return <RequestPhotoPermission onPress={this.requestPhotoPermission} />;
-    } else {
+    } else if (scrollEnabled) {
       return (
         <FlatList
           data={photos}
@@ -305,6 +315,14 @@ export class CameraRollList extends React.Component<Props, State> {
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}
         />
+      );
+    } else {
+      return (
+        <View style={{ width, height, flexDirection: "row", flexWrap: "wrap" }}>
+          {photos
+            .slice(0, Math.floor(PAGE_LENGTH * 1.5))
+            .map(this.renderStandaloneItem)}
+        </View>
       );
     }
   }
