@@ -13,6 +13,7 @@ import {
   IconPlus,
   IconBack
 } from "../Icon";
+import { getInset } from "react-native-safe-area-view";
 
 export enum ToolbarType {
   default = "default",
@@ -23,6 +24,7 @@ export enum ToolbarType {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
+    marginTop: getInset("top"),
     justifyContent: "space-between",
     paddingHorizontal: 15 / 2,
     alignItems: "center",
@@ -130,40 +132,32 @@ export enum ToolbarButtonType {
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
-export const DefaultToolbar = ({
-  activeButton,
-  onChange,
-  children,
-  onBack
-}) => {
-  const onPressText = React.useCallback(
-    () => onChange(ToolbarButtonType.text),
-    [onChange]
-  );
+export const DefaultToolbar = ({ activeButton, onPress, children, onBack }) => {
+  const onPressText = React.useCallback(() => onPress(ToolbarButtonType.text), [
+    onPress
+  ]);
 
   const onPressSticker = React.useCallback(
-    () => onChange(ToolbarButtonType.sticker),
-    [onChange]
+    () => onPress(ToolbarButtonType.sticker),
+    [onPress]
   );
 
   const onPressRedact = React.useCallback(
-    () => onChange(ToolbarButtonType.redact),
-    [onChange]
+    () => onPress(ToolbarButtonType.redact),
+    [onPress]
   );
 
-  const onPressDraw = React.useCallback(
-    () => onChange(ToolbarButtonType.draw),
-    [onChange]
-  );
+  const onPressDraw = React.useCallback(() => onPress(ToolbarButtonType.draw), [
+    onPress
+  ]);
 
-  const onPressPlus = React.useCallback(
-    () => onChange(ToolbarButtonType.plus),
-    [onChange]
-  );
+  const onPressPlus = React.useCallback(() => onPress(ToolbarButtonType.plus), [
+    onPress
+  ]);
 
   const onPressPhoto = React.useCallback(
-    () => onChange(ToolbarButtonType.photo),
-    [onChange]
+    () => onPress(ToolbarButtonType.photo),
+    [onPress]
   );
 
   const _children = children || (
@@ -188,12 +182,18 @@ export const DefaultToolbar = ({
   );
 
   return (
-    <Animated.View style={styles.container}>
-      <Animated.View style={[styles.side, styles.leftSide]}>
+    <Animated.View pointerEvents="box-none" style={styles.container}>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[styles.side, styles.leftSide]}
+      >
         <BackToolbarButton onPress={onBack} />
       </Animated.View>
 
-      <Animated.View style={[styles.side, styles.rightSide]}>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[styles.side, styles.rightSide]}
+      >
         {_children}
       </Animated.View>
     </Animated.View>

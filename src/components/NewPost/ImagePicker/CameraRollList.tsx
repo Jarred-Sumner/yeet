@@ -108,7 +108,12 @@ const PhotoCell = ({
   };
 
   return (
-    <BaseButton exclusive={false} onPress={_onPress}>
+    <BaseButton
+      exclusive
+      shouldActivateOnStart
+      disallowInterruption={false}
+      onPress={_onPress}
+    >
       <View style={[photoCellStyles.container, { width, height }]}>
         <Image source={source} resizeMode="contain" style={{ width, height }} />
       </View>
@@ -207,6 +212,7 @@ export class CameraRollList extends React.Component<Props, State> {
   };
 
   handlePickPhoto = (photo: CameraRoll.PhotoIdentifier) => {
+    console.log("PHOTO");
     this.props.onChange(imageContainerFromCameraRoll(photo));
   };
 

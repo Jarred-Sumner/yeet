@@ -10,6 +10,7 @@ import { interpolateColor } from "react-native-redash";
 import { MAX_POST_HEIGHT } from "./NewPostFormat";
 import { getInset } from "react-native-safe-area-view";
 import euclideanDistance from "euclidean-distance";
+import tinycolor from "tinycolor2";
 
 const SCREEN_DIMENSIONS = Dimensions.get("screen");
 
@@ -64,8 +65,8 @@ const NextButton = ({ onPress, waitFor }) => {
 };
 
 export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
-  <View style={styles.footer}>
-    <View style={[styles.footerSide]}>
+  <View pointerEvents="box-none" style={styles.footer}>
+    <View pointerEvents="box-none" style={[styles.footerSide]}>
       <IconButton
         onPress={onPressDownload}
         Icon={IconDownload}
@@ -76,7 +77,10 @@ export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
       />
     </View>
 
-    <View style={[styles.footerSide, styles.footerSideRight]}>
+    <View
+      pointerEvents="box-none"
+      style={[styles.footerSide, styles.footerSideRight]}
+    >
       <NextButton onPress={onPressSend} waitFor={waitFor} />
     </View>
   </View>
@@ -124,7 +128,7 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
 
       {
         inputRange: DELETE_RANGE,
-        outputRange: [1, 1, 0.85, 0]
+        outputRange: [1, 1, 0.95, 0.5]
       }
     )
   );
@@ -135,8 +139,40 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
 
       {
         inputRange: DELETE_RANGE,
-        outputRange: [1.0, 1.0, 0.97, 0.95]
+        outputRange: [1.01, 1.0, 0.97, 0.95]
       }
+    )
+  );
+
+  const backgroundColor = React.useRef(
+    interpolateColor(
+      distance.current,
+      {
+        inputRange: DELETE_RANGE,
+        outputRange: [
+          {
+            r: 120,
+            g: 120,
+            b: 120
+          },
+          {
+            r: 75,
+            g: 75,
+            b: 75
+          },
+          {
+            r: 50,
+            g: 50,
+            b: 50
+          },
+          {
+            r: 0,
+            g: 0,
+            b: 0
+          }
+        ]
+      },
+      "rgb"
     )
   );
 
@@ -162,6 +198,7 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
         ])}
       />
       <View
+        pointerEvents="none"
         style={[
           styles.footerSide,
           { alignItems: "center", justifyContent: "center" }
@@ -172,7 +209,7 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
           Icon={IconTrash}
           color="#fff"
           size={DELETE_SIZE}
-          backgroundColor={COLORS.primary}
+          backgroundColor={backgroundColor.current}
           opacity={opacity.current}
           transform={[{ scale: scaleTransform.current }]}
           borderColor="#fff"

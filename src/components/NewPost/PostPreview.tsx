@@ -1,6 +1,11 @@
 import * as React from "react";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { PostBlockType, MAX_POST_HEIGHT, POST_WIDTH } from "./NewPostFormat";
+import {
+  PostBlockType,
+  MAX_POST_HEIGHT,
+  POST_WIDTH,
+  FocusType
+} from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import {
@@ -13,7 +18,11 @@ import {
 import memoizee from "memoizee";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import { useFocusState } from "react-navigation-hooks";
-import { TapGestureHandler } from "react-native-gesture-handler";
+import {
+  LongPressGestureHandler,
+  FlingGestureHandler,
+  TapGestureHandler
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { useLayout } from "react-native-hooks";
 export const ScrollView = createNativeWrapper(RNScrollView, {
@@ -31,6 +40,7 @@ export const BlockList = ({
   focusType,
   focusedBlockValue,
   onBlur,
+  onChangePhoto,
   onOpenImagePicker,
   onTap,
   onFocus,
@@ -60,6 +70,7 @@ export const BlockList = ({
         scrollRef={scrollRef}
         onOpenImagePicker={onOpenImagePicker}
         focusType={focusType}
+        onChangePhoto={onChangePhoto}
         onTap={onTap}
         onBlur={onBlur}
         focusTypeValue={focusTypeValue}
@@ -146,7 +157,11 @@ export const EditableNodeList = ({
         focusedBlockId={focusedBlockId}
         onTap={onTapNode}
         onPan={handlePan(id)}
-        isHidden={focusedBlockId && focusedBlockId !== id}
+        isHidden={
+          focusedBlockId &&
+          focusedBlockId !== id &&
+          focusType !== FocusType.panning
+        }
         node={node}
         onChange={onChangeNode}
       />
@@ -178,12 +193,14 @@ export const PostPreview = React.forwardRef(
       children,
       maxHeight,
       paddingTop,
+      onChangePhoto,
       onTapBlock,
       onBlur,
       onOpenImagePicker,
       focusTypeValue,
+      swipeOnly,
       onScroll,
-      onScrollBeginDrag,
+      onSwipe,
       bounces,
       waitFor
     },
@@ -195,6 +212,10 @@ export const PostPreview = React.forwardRef(
     const { isBlurred, isBlurring } = useFocusState();
     const { onLayout, ...layout } = useLayout();
 
+    const BackgroundGestureHandler = swipeOnly
+      ? LongPressGestureHandler
+      : TapGestureHandler;
+
     return (
       <ScrollView
         directionalLockEnabled
@@ -203,17 +224,13 @@ export const PostPreview = React.forwardRef(
         bounces={bounces}
         alwaysBounceVertical={bounces}
         overScrollMode="always"
+        scrollEnabled={!swipeOnly}
         onScroll={onScroll}
         onLayout={onLayout}
-        onScrollBeginDrag={onScrollBeginDrag}
         contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
         keyboardOpeningTime={0}
-        removeClippedSubviews={isBlurred || isBlurring}
         ref={scrollRef}
-        contentOffset={{
-          y: paddingTop * -1
-        }}
         contentInset={{
           top: paddingTop,
           bottom: 0
@@ -228,14 +245,16 @@ export const PostPreview = React.forwardRef(
           {
             borderTopLeftRadius: 12,
             borderTopRightRadius: 12,
-            position: "relative",
-            backgroundColor
+            position: "relative"
           }
         ]}
       >
-        <TapGestureHandler
+        <BackgroundGestureHandler
           onHandlerStateChange={onTapBackground}
           onGestureEvent={onTapBackground}
+          waitFor={waitFor}
+          minDurationMs={swipeOnly ? 150 : undefined}
+          maxDist={9999}
         >
           <Animated.View style={{ minHeight: layout.height - paddingTop }}>
             <BlockList
@@ -244,6 +263,7 @@ export const PostPreview = React.forwardRef(
               onFocus={onFocus}
               focusTypeValue={focusTypeValue}
               onOpenImagePicker={onOpenImagePicker}
+              onChangePhoto={onChangePhoto}
               focusType={focusType}
               onTap={onTapBlock}
               scrollRef={scrollRef}
@@ -254,7 +274,7 @@ export const PostPreview = React.forwardRef(
 
             {children}
           </Animated.View>
-        </TapGestureHandler>
+        </BackgroundGestureHandler>
       </ScrollView>
     );
   }

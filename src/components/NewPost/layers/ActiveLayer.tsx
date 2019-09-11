@@ -82,6 +82,7 @@ class ActiveLayerComponent extends React.Component<Props> {
           <View pointerEvents="box-none" style={styles.container}>
             <Transitioning.View
               ref={this.toolbarContainer}
+              pointerEvents="box-none"
               transition={
                 <Transition.Sequence>
                   <Transition.Out type="fade" delayMs={0} durationMs={200} />
@@ -101,6 +102,7 @@ class ActiveLayerComponent extends React.Component<Props> {
 
             <Transitioning.View
               ref={this.footerContainer}
+              pointerEvents="box-none"
               transition={
                 <Transition.Sequence>
                   <Transition.Out type="fade" delayMs={0} durationMs={100} />
@@ -133,7 +135,7 @@ const Toolbar = ({ type, onPress, onBack, opacity }) => {
       </DefaultToolbar>
     );
   } else if (type === ToolbarType.panning) {
-    return <Animated.View />;
+    return <Animated.View pointerEvents="none" />;
   }
 };
 

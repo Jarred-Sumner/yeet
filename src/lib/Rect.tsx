@@ -1,4 +1,4 @@
-import { boxBox as boxIntersects } from "intersects";
+import { pointBox as isPointInside } from "intersects";
 export type BoundsRect = {
   x: number;
   y: number;
@@ -21,4 +21,6 @@ export const isSameSize = (a: BoundsRect, b: BoundsRect) => {
 export const isTapInside = (
   rect: BoundsRect,
   { x, y }: { x: number; y: number }
-) => {};
+) => {
+  return isPointInside(x, y, rect.x, rect.y, rect.width, rect.height);
+};

@@ -19,11 +19,13 @@ import {
   Directions,
   State as GestureState,
   ScrollView,
-  TapGestureHandler
+  TapGestureHandler,
+  LongPressGestureHandler
 } from "react-native-gesture-handler";
 import { SemiBoldText } from "../Text";
 import Image from "../Image";
 import FastImage from "react-native-fast-image";
+import { YeetImageContainer } from "../../lib/imageSearch";
 // import Image from "../Image";
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -146,11 +148,9 @@ const StickerImage = React.forwardRef(
 );
 
 export class ImagePostBlock extends React.Component<Props> {
-  handleChange = text => {
-    this.props.onChange({
-      ...this.props.block,
-      value: text
-    });
+  handleChangeImage = (photo: YeetImageContainer) => {
+    console.log("CHANGE", photo);
+    this.props.onChangePhoto(this.props.block.id, photo);
   };
 
   handleOpenPicker = () => {
@@ -162,6 +162,19 @@ export class ImagePostBlock extends React.Component<Props> {
       this.props.onTap(this.props.block.id);
     }
   };
+
+  handleLongPress = Animated.event(
+    [
+      {
+        nativeEvent: ({ state: gestureState }) =>
+          Animated.cond(
+            Animated.eq(gestureState, GestureState.END),
+            Animated.call([], this.handleOpenPicker)
+          )
+      }
+    ],
+    { useNativeDriver: true }
+  );
 
   render() {
     const { block, onLayout, scrollRef, inputRef, onTap } = this.props;
@@ -178,31 +191,37 @@ export class ImagePostBlock extends React.Component<Props> {
 
     if (block.value) {
       return (
-        <View
-          onLayout={onLayout}
-          ref={inputRef}
-          style={[
-            styles.container,
-            stylesByFormat[block.format].container,
-            {
-              width: block.config.dimensions.maxX - block.config.dimensions.x,
-              height: block.config.dimensions.maxY - block.config.dimensions.y,
-              overflow: "hidden"
-            }
-          ]}
+        <LongPressGestureHandler
+          onGestureEvent={this.handleLongPress}
+          onHandlerStateChange={this.handleLongPress}
         >
-          <SharedElement
-            style={{
-              width: block.config.dimensions.maxX - block.config.dimensions.x,
-              height: block.config.dimensions.maxY - block.config.dimensions.y
-            }}
-            id={`block.imagePicker.${block.id}`}
+          <Animated.View
+            onLayout={onLayout}
+            ref={inputRef}
+            style={[
+              styles.container,
+              stylesByFormat[block.format].container,
+              {
+                width: block.config.dimensions.maxX - block.config.dimensions.x,
+                height:
+                  block.config.dimensions.maxY - block.config.dimensions.y,
+                overflow: "hidden"
+              }
+            ]}
           >
-            <ImageComponent block={block} />
-          </SharedElement>
+            <SharedElement
+              style={{
+                width: block.config.dimensions.maxX - block.config.dimensions.x,
+                height: block.config.dimensions.maxY - block.config.dimensions.y
+              }}
+              id={`block.imagePicker.${block.id}`}
+            >
+              <ImageComponent block={block} />
+            </SharedElement>
 
-          {this.props.children}
-        </View>
+            {this.props.children}
+          </Animated.View>
+        </LongPressGestureHandler>
       );
     } else {
       const translateY =
@@ -211,47 +230,42 @@ export class ImagePostBlock extends React.Component<Props> {
           : -1 * (LIST_HEADER_HEIGHT + 15);
 
       return (
-        <TapGestureHandler
-          enabled={!!this.props.onTap}
-          onHandlerStateChange={this.handleTapEvent}
-          onGestureEvent={this.handleTapEvent}
-          waitFor={[scrollRef]}
+        <Animated.View
+          onLayout={onLayout}
+          style={[
+            styles.container,
+            stylesByFormat[block.format].container,
+            {
+              flex: 1,
+              overflow: "hidden"
+            }
+          ]}
         >
           <Animated.View
-            onLayout={onLayout}
-            style={[
-              styles.container,
-              stylesByFormat[block.format].container,
-              {
-                flex: 1,
-                overflow: "hidden"
-              }
-            ]}
+            style={{
+              transform: [{ translateY }],
+              flex: 1,
+              backgroundColor: "#000"
+            }}
           >
-            <Animated.View
+            <SharedElement
               style={{
-                transform: [{ translateY }],
-                backgroundColor: "#000"
+                width: SCREEN_DIMENSIONS.width,
+                height: SCREEN_DIMENSIONS.height
               }}
+              id={`block.imagePicker.${block.id}`}
             >
-              <SharedElement
-                style={{
-                  width: SCREEN_DIMENSIONS.width,
-                  height: SCREEN_DIMENSIONS.height
-                }}
-                id={`block.imagePicker.${block.id}`}
-              >
-                <ImagePicker
-                  width={SCREEN_DIMENSIONS.width}
-                  scrollEnabled={false}
-                  height={SCREEN_DIMENSIONS.height}
-                />
-              </SharedElement>
-            </Animated.View>
-
-            {this.props.children}
+              <ImagePicker
+                width={SCREEN_DIMENSIONS.width}
+                scrollEnabled={false}
+                onChange={this.handleChangeImage}
+                height={SCREEN_DIMENSIONS.height}
+              />
+            </SharedElement>
           </Animated.View>
-        </TapGestureHandler>
+
+          {this.props.children}
+        </Animated.View>
       );
     }
   }

@@ -57,6 +57,7 @@ export const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 
 const styles = StyleSheet.create({
   safeWrapper: {
+    paddingTop: TOP_Y,
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
@@ -69,7 +70,6 @@ const styles = StyleSheet.create({
     width: POST_WIDTH
   },
   wrapper: {
-    marginTop: TOP_Y,
     borderRadius: 12,
     position: "relative",
     justifyContent: "center",
@@ -749,6 +749,10 @@ export class PostEditor extends React.Component<Props, State> {
 
   handleTapBackground = ([tapGestureState, x, y]) => {
     const { focusedBlockId } = this.state;
+    if (this.hasPlaceholderImageBlocks()) {
+      this.openImagePickerForPlaceholder();
+      return;
+    }
     this.handlePressBackground({ x, y });
   };
 
@@ -870,28 +874,14 @@ export class PostEditor extends React.Component<Props, State> {
 
   buttonRef = React.createRef();
   lastTappedBlockId = null;
-  handleScrollBeginDrag = (
-    {
-      // nativeEvent: {
-      //   contentOffset: { y }
-      // }
-    }
-  ) => {
-    if (!this.lastTappedBlockId) {
-      return;
-    }
-
-    const block = this.props.post.blocks.find(
-      block => block.id === this.lastTappedBlockId
-    );
+  openImagePickerForPlaceholder = () => {
+    const block = this.props.post.blocks.find(isPlaceholderImageBlock);
 
     if (!block) {
       return;
     }
 
-    if (isPlaceholderImageBlock(block)) {
-      this.handleOpenImagePicker(block);
-    }
+    this.handleOpenImagePicker(block);
   };
 
   tapRef = React.createRef();
@@ -1074,7 +1064,7 @@ export class PostEditor extends React.Component<Props, State> {
             styles.safeWrapper,
             styles.scrollContainer,
             {
-              maxHeight: MAX_POST_HEIGHT,
+              // maxHeight: MAX_POST_HEIGHT,
               width: bounds.width
             }
           ]}
@@ -1094,10 +1084,15 @@ export class PostEditor extends React.Component<Props, State> {
             onTapBackground={this.onTapBackground}
             ref={this.scrollRef}
             maxX={bounds.width}
-            bounces={!this.hasPlaceholderImageBlocks()}
+            swipeOnly={this.hasPlaceholderImageBlocks()}
             onFocus={this.handleFocusBlock}
-            onScrollBeginDrag={this.handleScrollBeginDrag}
             onOpenImagePicker={this.handleOpenImagePicker}
+            onChangePhoto={this.handleChangeImageBlockPhoto}
+            waitFor={[
+              this.scrollRef,
+              this.formatScrollViewRef,
+              ...this._blockInputRefs.values()
+            ]}
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
             onBlur={this.handleBlurBlock}
@@ -1111,8 +1106,6 @@ export class PostEditor extends React.Component<Props, State> {
               flipY
               pointerEvents="box-none"
               zIndex={LayerZIndex.inlineNodes}
-              width="100%"
-              height="100%"
               opacity={this.controlsOpacityValue}
             >
               <DarkSheet
@@ -1168,6 +1161,7 @@ export class PostEditor extends React.Component<Props, State> {
             width={sizeStyle.width}
             height={sizeStyle.height}
             zIndex={LayerZIndex.icons}
+            pointerEvents="box-none"
           >
             <ActiveLayer
               onBack={this.props.onBack}

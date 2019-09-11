@@ -16,6 +16,7 @@ export const Block = React.forwardRef(
       inputRef,
       focusType,
       focusTypeValue,
+      onChangePhoto,
       annotations,
       focusedBlockValue,
       scrollRef,
@@ -58,6 +59,7 @@ export const Block = React.forwardRef(
           onOpenImagePicker={onOpenImagePicker}
           onLayout={onLayout}
           onTap={onTap}
+          onChangePhoto={onChangePhoto}
           focusType={focusType}
           gestureRef={gestureRef}
           focusedBlockValue={focusedBlockValue}

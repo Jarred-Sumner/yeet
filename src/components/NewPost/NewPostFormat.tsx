@@ -163,6 +163,7 @@ export const presetsByFormat = {
   [PostFormat.screenshot]: {
     backgroundColor: "#fff",
     borderRadius: 0,
+    paddingTop: 0,
     padding: 0
   }
 };
