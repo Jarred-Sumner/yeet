@@ -23,6 +23,7 @@ import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
 import ImagePickerPage from "./src/screens/ImagePickerPage";
 import { createSharedElementStackNavigator } from "react-navigation-shared-element";
+import { Toast } from "./src/components/Toast";
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -106,6 +107,7 @@ export class App extends React.Component {
               <UserContextProvider>
                 <ImagePickerProvider>
                   <>
+                    <Toast />
                     <Routes
                       ref={navigatorRef => {
                         NavigationService.setTopLevelNavigator(navigatorRef);

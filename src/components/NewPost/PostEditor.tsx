@@ -44,6 +44,7 @@ import {
   ToolbarType
 } from "./Toolbar";
 import { sendLightFeedback } from "../../lib/Vibration";
+import { sendToast, ToastType } from "../Toast";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -678,12 +679,22 @@ export class PostEditor extends React.Component<Props, State> {
   };
 
   handleDownload = async () => {
-    const snapshot = await this.createSnapshot();
-    if (snapshot) {
+    try {
+      const snapshot = await this.createSnapshot();
       return CameraRoll.saveToCameraRoll(
         snapshot.uri,
         String(snapshot.type).includes("image") ? "photo" : "video"
+      ).then(
+        () => {
+          sendToast("Saved.", ToastType.success);
+        },
+        () => {
+          sendToast("Couldn't save.", ToastType.error);
+        }
       );
+    } catch (exception) {
+      sendToast("Uh-oh. Please try again.", ToastType.error);
+      console.error(exception);
     }
   };
   handleSend = () => {};

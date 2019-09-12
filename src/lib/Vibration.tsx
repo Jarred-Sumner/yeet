@@ -8,3 +8,7 @@ const options = {
 export const sendLightFeedback = () => {
   ReactNativeHapticFeedback.trigger("impactLight", options);
 };
+
+export const sendSuccessNotification = () => {
+  ReactNativeHapticFeedback.trigger("notificationSuccess", options);
+};

@@ -1,16 +1,13 @@
+import euclideanDistance from "euclidean-distance";
 import * as React from "react";
 import { Dimensions, StyleSheet, View } from "react-native";
-import { useLayout } from "react-native-hooks";
+import Animated from "react-native-reanimated";
+import { interpolateColor } from "react-native-redash";
+import { getInset } from "react-native-safe-area-view";
 import { COLORS, SPACING } from "../../lib/styles";
 import { IconButton } from "../Button";
 import { IconDownload, IconSend, IconTrash } from "../Icon";
-import { TapGestureHandler } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
-import { interpolateColor } from "react-native-redash";
 import { MAX_POST_HEIGHT } from "./NewPostFormat";
-import { getInset } from "react-native-safe-area-view";
-import euclideanDistance from "euclidean-distance";
-import tinycolor from "tinycolor2";
 
 const SCREEN_DIMENSIONS = Dimensions.get("screen");
 
@@ -71,6 +68,7 @@ export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
         onPress={onPressDownload}
         Icon={IconDownload}
         color="#fff"
+        impact="light"
         waitFor={waitFor}
         size={32}
         type="shadow"

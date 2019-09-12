@@ -1,9 +1,15 @@
 import * as React from "react";
-import { View, StyleSheet, TouchableWithoutFeedback } from "react-native";
-import Animated from "react-native-reanimated";
+import {
+  View,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  ActivityIndicator
+} from "react-native";
+import Animated, { Transitioning, Transition } from "react-native-reanimated";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
 import { BorderlessButton } from "react-native-gesture-handler";
+import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 
 const styles = StyleSheet.create({
   primaryColor: {
@@ -105,13 +111,37 @@ export const IconButton = ({
   borderColor,
   style,
   iconStyle,
-  color,
+  color = "white",
   waitFor,
+  enabled = true,
+  isLoading = false,
   containerSize: _containerSize,
   opacity = 1,
   transform,
-  size = 24
+  size = 24,
+  impact = null
 }) => {
+  const handlePress = React.useCallback(
+    evt => {
+      const pressed = onPress && onPress(evt);
+      const impactFunction = {
+        light: sendLightFeedback,
+        success: sendSuccessNotification
+      }[impact];
+
+      if (impactFunction) {
+        if (typeof pressed === "object" && typeof pressed.then === "function") {
+          pressed.then(result => {
+            impactFunction();
+            return result;
+          });
+        } else {
+          impactFunction();
+        }
+      }
+    },
+    [onPress, sendLightFeedback, sendSuccessNotification, impact]
+  );
   const containerStyles = [style, buttonStyles.container];
   const iconStyles = [iconStyle, buttonStyles.icon];
 
@@ -145,18 +175,16 @@ export const IconButton = ({
     });
 
     iconWrapperStyles.push(StyleSheet.absoluteFill);
-  } else if (type === "shadow") {
-    iconStyles.push(buttonStyles.iconShadow);
-  }
 
-  return (
-    <BorderlessButton
-      waitFor={waitFor}
-      hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
-      onPress={onPress}
-    >
-      <Animated.View style={containerStyles}>
-        {type === "fill" && (
+    return (
+      <BorderlessButton
+        waitFor={waitFor}
+        enabled={enabled && !isLoading}
+        disallowInterruption
+        hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
+        onPress={handlePress}
+      >
+        <Animated.View style={containerStyles}>
           <Animated.View
             style={{
               backgroundColor,
@@ -168,15 +196,29 @@ export const IconButton = ({
               opacity
             }}
           />
-        )}
-        {type === "fill" ? (
           <Animated.View style={iconWrapperStyles}>
             <Icon style={iconStyles} size={size} />
           </Animated.View>
-        ) : (
+        </Animated.View>
+      </BorderlessButton>
+    );
+  } else if (type === "shadow") {
+    iconStyles.push(buttonStyles.iconShadow);
+
+    return (
+      <BorderlessButton
+        waitFor={waitFor}
+        enabled={enabled && !isLoading}
+        disallowInterruption
+        hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
+        onPress={handlePress}
+      >
+        <Animated.View key={`isLoading-${isLoading}`} style={containerStyles}>
           <Icon style={iconStyles} size={size} />
-        )}
-      </Animated.View>
-    </BorderlessButton>
-  );
+        </Animated.View>
+      </BorderlessButton>
+    );
+  } else {
+    return null;
+  }
 };

@@ -27,14 +27,14 @@ class YeetExporter: NSObject, RCTBridgeModule  {
       if let exportData = try? JSON(data: dataObject) {
 
         self.getImages(data: exportData) { images in
-          DispatchQueue.global(qos: .utility).async {
-            autoreleasepool {
-              self.producer = VideoProducer(data: exportData, images: images)
+          DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            autoreleasepool { [weak self] in
+              self?.producer = VideoProducer(data: exportData, images: images)
 
               let boundsDict = exportData["bounds"].dictionaryValue
 
               let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-              self.producer?.start(estimatedBounds: bounds, callback: callback)
+              self?.producer?.start(estimatedBounds: bounds, callback: callback)
             }
           }
 
