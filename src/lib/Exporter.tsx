@@ -133,6 +133,8 @@ export const startExport = async (
   const blockBoundsMap = new Map<string, BoundsRect>();
   const inlinesBoundsMap = new Map<string, BoundsRect>();
 
+  console.time("Start Measure");
+
   await Bluebird.map(
     [...refs.entries()],
     ([id, ref]) =>
@@ -184,6 +186,8 @@ export const startExport = async (
   if (process.env.NODE_ENV !== "production") {
     console.log(JSON.stringify(data));
   }
+
+  console.timeEnd("Start Measure");
 
   return new Promise((resolve, reject) => {
     YeetExporter.startExport(JSON.stringify(data), (err, result) => {

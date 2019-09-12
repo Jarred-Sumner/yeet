@@ -681,11 +681,13 @@ export class PostEditor extends React.Component<Props, State> {
   handleDownload = async () => {
     try {
       const snapshot = await this.createSnapshot();
+      console.time("Camera Roll");
       return CameraRoll.saveToCameraRoll(
         snapshot.uri,
         String(snapshot.type).includes("image") ? "photo" : "video"
       ).then(
         () => {
+          console.timeEnd("Camera Roll");
           sendToast("Saved.", ToastType.success);
         },
         () => {
