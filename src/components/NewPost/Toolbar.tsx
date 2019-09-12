@@ -24,7 +24,7 @@ export enum ToolbarType {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginTop: getInset("top"),
+    marginTop: getInset("top") + SPACING.half,
     justifyContent: "space-between",
     paddingHorizontal: 15 / 2,
     alignItems: "center",

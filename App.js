@@ -24,6 +24,7 @@ import UploadPostPage from "./src/screens/UploadPostPage";
 import ImagePickerPage from "./src/screens/ImagePickerPage";
 import { createSharedElementStackNavigator } from "react-navigation-shared-element";
 import { Toast } from "./src/components/Toast";
+import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -97,6 +98,10 @@ export class App extends React.Component {
     useScreens();
   }
 
+  setNavRef = navigatorRef => {
+    NavigationService.setTopLevelNavigator(navigatorRef);
+  };
+
   render() {
     return (
       <>
@@ -106,15 +111,13 @@ export class App extends React.Component {
             <ApolloProvider>
               <UserContextProvider>
                 <ImagePickerProvider>
-                  <>
-                    <Toast />
-                    <Routes
-                      ref={navigatorRef => {
-                        NavigationService.setTopLevelNavigator(navigatorRef);
-                      }}
-                    />
-                    <WhitePortal name="modal" />
-                  </>
+                  <ActionSheetProvider>
+                    <>
+                      <Toast />
+                      <Routes ref={this.setNavRef} />
+                      <WhitePortal name="modal" />
+                    </>
+                  </ActionSheetProvider>
                 </ImagePickerProvider>
               </UserContextProvider>
             </ApolloProvider>

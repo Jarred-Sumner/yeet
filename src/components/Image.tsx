@@ -3,7 +3,7 @@ import React from "react";
 import hoistNonReactStatics from "hoist-non-react-statics";
 
 const CustomFastImage = React.forwardRef(
-  ({ source, incrementalLoad = true, ...props }, ref) => {
+  ({ source, incrementalLoad = false, ...props }, ref) => {
     if (
       typeof source === "object" &&
       typeof source.uri === "string" &&

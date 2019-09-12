@@ -212,6 +212,10 @@ export const PostPreview = React.forwardRef(
     const { isBlurred, isBlurring } = useFocusState();
     const { onLayout, ...layout } = useLayout();
 
+    React.useLayoutEffect(() => {
+      scrollRef.current.scrollTo({ x: 0, y: paddingTop * -1, animated: false });
+    }, [scrollRef.current, paddingTop]);
+
     const BackgroundGestureHandler = swipeOnly
       ? LongPressGestureHandler
       : TapGestureHandler;
@@ -236,15 +240,16 @@ export const PostPreview = React.forwardRef(
           bottom: 0
         }}
         style={{
-          // maxHeight,
+          maxHeight,
           width: bounds.width,
           flex: 1,
+          borderRadius: 12,
+          overflow: "visible",
           backgroundColor
         }}
         contentContainerStyle={[
           {
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
+            borderRadius: 12,
             position: "relative"
           }
         ]}

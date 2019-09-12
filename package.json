@@ -12,6 +12,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@expo/react-native-action-sheet": "^3.0.3",
     "@react-native-community/async-storage": "^1.6.1",
     "@react-native-community/cameraroll": "^1.2.1",
     "@terrylinla/react-native-sketch-canvas": "^0.8.0",

@@ -122,7 +122,6 @@ export class BaseNode extends React.Component<Props> {
     absoluteY
   }) => {
     this.props.onPan({ isPanning, x: absoluteX, y: absoluteY });
-    console.log({ isPanning });
 
     if (this.props.isFocused) {
       return;

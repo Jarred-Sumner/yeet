@@ -7,6 +7,7 @@ import SDWebImage
 
 
 class ContentExport {
+  static let CONVERT_PNG_TO_WEBP = false
 
   private static func getFramesAnimation(frames: [UIImage], duration: CFTimeInterval) -> CAAnimation {
     let animation = CAKeyframeAnimation(keyPath:#keyPath(CALayer.contents))
@@ -150,9 +151,16 @@ class ContentExport {
 
           layer.add(getFramesAnimation(frames: images, duration: block.totalDuration), forKey: nil)
         } else if (block.value.mimeType == MimeType.png) {
-          let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: 1, SDImageCoderOption.encodeFirstFrameOnly: 0]), options: nil)!
-          layer.contents = newImage.cgImage!
+          layer.shouldRasterize = true
+          if (ContentExport.CONVERT_PNG_TO_WEBP) {
+            let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: 1, SDImageCoderOption.encodeFirstFrameOnly: 0]), options: nil)!
+            layer.contents = newImage.cgImage!
+          } else {
+            layer.contents = UIImage.init(data: image.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
+          }
+
         } else {
+          layer.shouldRasterize = true
           layer.contents = image.cgImage!
         }
 

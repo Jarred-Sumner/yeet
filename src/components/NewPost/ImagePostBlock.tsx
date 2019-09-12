@@ -26,6 +26,7 @@ import { SemiBoldText } from "../Text";
 import Image from "../Image";
 import FastImage from "react-native-fast-image";
 import { YeetImageContainer } from "../../lib/imageSearch";
+import { connectActionSheet } from "@expo/react-native-action-sheet";
 // import Image from "../Image";
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 
@@ -147,7 +148,7 @@ const StickerImage = React.forwardRef(
   }
 );
 
-export class ImagePostBlock extends React.Component<Props> {
+class RawImagePostBlock extends React.Component<Props> {
   handleChangeImage = (photo: YeetImageContainer) => {
     console.log("CHANGE", photo);
     this.props.onChangePhoto(this.props.block.id, photo);
@@ -155,6 +156,23 @@ export class ImagePostBlock extends React.Component<Props> {
 
   handleOpenPicker = () => {
     this.props.onOpenImagePicker(this.props.block);
+  };
+
+  handleOpenSheet = () => {
+    const options = ["Change image", "Cancel"];
+    const cancelButtonIndex = 1;
+
+    this.props.showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex
+      },
+      buttonIndex => {
+        if (buttonIndex === 0) {
+          this.handleOpenPicker();
+        }
+      }
+    );
   };
 
   handleTapEvent = ({ nativeEvent: { state: gestureState } }) => {
@@ -169,7 +187,7 @@ export class ImagePostBlock extends React.Component<Props> {
         nativeEvent: ({ state: gestureState }) =>
           Animated.cond(
             Animated.eq(gestureState, GestureState.END),
-            Animated.call([], this.handleOpenPicker)
+            Animated.call([], this.handleOpenSheet)
           )
       }
     ],
@@ -270,3 +288,6 @@ export class ImagePostBlock extends React.Component<Props> {
     }
   }
 }
+
+export const ImagePostBlock = connectActionSheet(RawImagePostBlock);
+export default ImagePostBlock;

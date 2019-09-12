@@ -680,6 +680,11 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
+"@expo/react-native-action-sheet@^3.0.3":
+  version "3.0.3"
+  resolved "https://registry.yarnpkg.com/@expo/react-native-action-sheet/-/react-native-action-sheet-3.0.3.tgz#1d69a2668784961c6d458babe52e9a02893936a2"
+  integrity sha512-MsVDCDQwJthoolqUqbg1nF8hmzA2gYfvnUV6j/h4gXPSKsrLqdaQz+Vi5onCB18oxmUZbYQ1+QNU+n1PwTp0Zw==
+
 "@hapi/address@2.x.x":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@hapi/address/-/address-2.1.1.tgz#61395b5ed94c4cb19c2dc4c85969cff3d40d583f"
