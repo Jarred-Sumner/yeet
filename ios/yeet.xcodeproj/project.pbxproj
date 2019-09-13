@@ -23,6 +23,9 @@
 		8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489923222C3F00E816E8 /* YeetExportData.swift */; };
 		8330489C23222D4800E816E8 /* EditorExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489B23222D4800E816E8 /* EditorExport.swift */; };
 		8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489D23223B0D00E816E8 /* VideoProducer.swift */; };
+		83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */; };
+		8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051D232B0912004B2FF7 /* YeetTextInputView.swift */; };
+		83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */; };
 		834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */; };
 		838A18B92328528E00FC8C22 /* WebPMux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 838A18B52328528E00FC8C22 /* WebPMux.framework */; };
 		838A18BA2328528E00FC8C22 /* WebPDecoder.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 838A18B62328528E00FC8C22 /* WebPDecoder.framework */; };
@@ -72,6 +75,9 @@
 		8330489923222C3F00E816E8 /* YeetExportData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetExportData.swift; sourceTree = "<group>"; };
 		8330489B23222D4800E816E8 /* EditorExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExport.swift; sourceTree = "<group>"; };
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
+		83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGPath+HighlightedCorners.swift"; sourceTree = "<group>"; };
+		8347051D232B0912004B2FF7 /* YeetTextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextInputView.swift; sourceTree = "<group>"; };
+		8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextInputViewManager.swift; sourceTree = "<group>"; };
 		834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedImageResource.swift; sourceTree = "<group>"; };
 		834B3D11232307AD00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = ../../../../Downloads/blank_1080p.mp4; sourceTree = "<group>"; };
 		834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = /Users/jarred/Code/yeet/yeet/ios/blank_1080p.mp4; sourceTree = "<absolute>"; };
@@ -119,6 +125,7 @@
 		13B07FAE1A68108700A75B9A /* yeet */ = {
 			isa = PBXGroup;
 			children = (
+				83470517232AF9BA004B2FF7 /* TextInput */,
 				8330488E2321BE7900E816E8 /* Exporting */,
 				83573D332316440B00E0C179 /* tessdata */,
 				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
@@ -183,6 +190,16 @@
 				834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */,
 			);
 			name = Exporting;
+			sourceTree = "<group>";
+		};
+		83470517232AF9BA004B2FF7 /* TextInput */ = {
+			isa = PBXGroup;
+			children = (
+				83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */,
+				8347051D232B0912004B2FF7 /* YeetTextInputView.swift */,
+				8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */,
+			);
+			name = TextInput;
 			sourceTree = "<group>";
 		};
 		83CBB9F61A601CBA00E9B192 = {
@@ -449,12 +466,15 @@
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
+				8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
 				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
+				83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */,
 				833048942322000D00E816E8 /* YeetExporter.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,
+				83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

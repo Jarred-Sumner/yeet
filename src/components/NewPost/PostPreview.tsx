@@ -1,33 +1,18 @@
 import * as React from "react";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import {
-  PostBlockType,
-  MAX_POST_HEIGHT,
-  POST_WIDTH,
-  FocusType
-} from "./NewPostFormat";
-import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
-import { Block } from "./Node/Block";
-import {
-  View,
-  StyleSheet,
-  UIManager,
-  findNodeHandle,
-  ScrollView as RNScrollView
-} from "react-native";
-import memoizee from "memoizee";
-import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
-import { useFocusState } from "react-navigation-hooks";
+import { View } from "react-native";
 import {
   LongPressGestureHandler,
-  FlingGestureHandler,
   TapGestureHandler
 } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
 import { useLayout } from "react-native-hooks";
-export const ScrollView = createNativeWrapper(RNScrollView, {
-  disallowInterruption: true
-});
+import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
+import Animated from "react-native-reanimated";
+import { useFocusState } from "react-navigation-hooks";
+import { FocusType, PostBlockType, CAROUSEL_HEIGHT } from "./NewPostFormat";
+import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
+import { Block } from "./Node/Block";
+import { getInset } from "react-native-safe-area-view";
+export const ScrollView = KeyboardAwareScrollView;
 
 type BlockListProps = {
   blocks: Array<PostBlockType>;
@@ -42,6 +27,7 @@ export const BlockList = ({
   onBlur,
   onChangePhoto,
   onOpenImagePicker,
+  focusedBlockId,
   onTap,
   onFocus,
   focusTypeValue,
@@ -68,6 +54,7 @@ export const BlockList = ({
         onFocus={onFocus}
         focusedBlockValue={focusedBlockValue}
         scrollRef={scrollRef}
+        isFocused={focusedBlockId === block.id}
         onOpenImagePicker={onOpenImagePicker}
         focusType={focusType}
         onChangePhoto={onChangePhoto}
@@ -110,6 +97,7 @@ export const EditableNodeList = ({
   setBlockInputRef,
   panX,
   panY,
+  format,
   onPan,
   focusedBlockId
 }: EditableNodeListProps) => {
@@ -148,6 +136,7 @@ export const EditableNodeList = ({
         inputRef={handleSetBlockInputRef(id)}
         onFocus={onFocus}
         absoluteX={panX}
+        enableAutomaticScroll
         absoluteY={panY}
         focusTypeValue={focusTypeValue}
         keyboardVisibleValue={keyboardVisibleValue}
@@ -157,6 +146,7 @@ export const EditableNodeList = ({
         focusedBlockId={focusedBlockId}
         onTap={onTapNode}
         onPan={handlePan(id)}
+        format={format}
         isHidden={
           focusedBlockId &&
           focusedBlockId !== id &&
@@ -198,6 +188,7 @@ export const PostPreview = React.forwardRef(
       onBlur,
       onOpenImagePicker,
       focusTypeValue,
+      contentViewRef,
       swipeOnly,
       onScroll,
       onSwipe,
@@ -212,9 +203,13 @@ export const PostPreview = React.forwardRef(
     const { isBlurred, isBlurring } = useFocusState();
     const { onLayout, ...layout } = useLayout();
 
-    React.useLayoutEffect(() => {
-      scrollRef.current.scrollTo({ x: 0, y: paddingTop * -1, animated: false });
-    }, [scrollRef.current, paddingTop]);
+    // React.useLayoutEffect(() => {
+    //   scrollRef.current.getScrollResponder().scrollTo({
+    //     x: 0,
+    //     y: paddingTop * -1,
+    //     animated: false
+    //   });
+    // }, [scrollRef.current, paddingTop]);
 
     const BackgroundGestureHandler = swipeOnly
       ? LongPressGestureHandler
@@ -228,23 +223,34 @@ export const PostPreview = React.forwardRef(
         bounces={bounces}
         alwaysBounceVertical={bounces}
         overScrollMode="always"
+        defaultPosition={{
+          x: 0,
+          y: paddingTop * -1
+        }}
         scrollEnabled={!swipeOnly}
         onScroll={onScroll}
         onLayout={onLayout}
-        contentInsetAdjustmentBehavior="never"
         keyboardShouldPersistTaps="always"
+        contentInsetAdjustmentBehavior="never"
         keyboardOpeningTime={0}
+        extraScrollHeight={-1 * CAROUSEL_HEIGHT - getInset("bottom")}
         ref={scrollRef}
-        contentInset={{
-          top: paddingTop,
-          bottom: 0
-        }}
+        paddingTop={paddingTop}
+        // enableResetScrollToCoords={false}
+        // resetScrollToCoords={{
+        //   x: 0,
+        //   y: paddingTop * -1
+        // }}
+        // contentInset={{
+        //   top: paddingTop,
+        //   bottom: 0
+        // }}
         style={{
           maxHeight,
           width: bounds.width,
           flex: 1,
           borderRadius: 12,
-          overflow: "visible",
+          // overflow: "visible",
           backgroundColor
         }}
         contentContainerStyle={[
@@ -261,7 +267,10 @@ export const PostPreview = React.forwardRef(
           minDurationMs={swipeOnly ? 150 : undefined}
           maxDist={9999}
         >
-          <Animated.View style={{ minHeight: layout.height - paddingTop }}>
+          <Animated.View
+            ref={contentViewRef}
+            style={{ minHeight: layout.height - paddingTop }}
+          >
             <BlockList
               setBlockInputRef={setBlockInputRef}
               blocks={blocks}
@@ -272,6 +281,7 @@ export const PostPreview = React.forwardRef(
               focusType={focusType}
               onTap={onTapBlock}
               scrollRef={scrollRef}
+              focusedBlockId={focusedBlockId}
               focusedBlockValue={focusedBlockValue}
               onBlur={onBlur}
               setBlockAtIndex={setBlockAtIndex}

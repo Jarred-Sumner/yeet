@@ -180,7 +180,9 @@ export const startExport = async (
   const data: ExportData = {
     blocks,
     nodes,
-    bounds: await getEstimatedBounds(ref.current.getInnerViewNode())
+    bounds: await getEstimatedBounds(
+      ref.current.getScrollResponder().getInnerViewNode()
+    )
   };
 
   if (process.env.NODE_ENV !== "production") {

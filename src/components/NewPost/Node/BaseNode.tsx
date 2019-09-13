@@ -1,7 +1,7 @@
 import * as React from "react";
 import { View } from "react-native";
 import Animated from "react-native-reanimated";
-import { PostBlock, FocusType } from "../NewPostFormat";
+import { PostBlock, FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
 
@@ -165,7 +165,8 @@ export class BaseNode extends React.Component<Props> {
       focusType,
       focusedBlockId,
       focusTypeValue,
-      onLayout
+      onLayout,
+      format
     } = this.props;
 
     const isDragEnabled =
@@ -202,6 +203,7 @@ export class BaseNode extends React.Component<Props> {
         r={position.animatedRotate}
         minX={minX}
         maxX={maxX}
+        paddingTop={Number(presetsByFormat[format].textTop || 0)}
         minY={minY}
         maxY={maxY}
         onTap={this.handleTap}
@@ -212,7 +214,7 @@ export class BaseNode extends React.Component<Props> {
             flex: 0,
             padding: EXTRA_PADDING,
             margin: -1 * EXTRA_PADDING,
-            maxWidth: maxX - EXTRA_PADDING * 2
+            maxWidth: maxX
           }}
         >
           <Block

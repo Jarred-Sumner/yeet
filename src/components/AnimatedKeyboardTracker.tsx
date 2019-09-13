@@ -9,8 +9,6 @@ export class AnimatedKeyboardTracker extends React.Component {
     if (props.enabled) {
       this.subscribeToKeyboard();
     }
-
-    this.subscribeToKeyboard();
   }
   static defaultProps = {
     keyboardVisibleValue: new Animated.Value(0),
@@ -48,12 +46,10 @@ export class AnimatedKeyboardTracker extends React.Component {
 
   keyboardVisibleValue = new Animated.Value(0);
 
-  handleKeyboardWillChangeFrame = ({
-    duration,
-    easing,
-    endCoordinates,
-    startCoordinates
-  }) => {};
+  handleKeyboardWillChangeFrame = evt => {
+    this.props.onKeyboardWillChangeFrame &&
+      this.props.onKeyboardWillChangeFrame(evt);
+  };
 
   handleKeyboardWillHide = event => {
     this.handleKeyboardAnimation(
@@ -61,11 +57,13 @@ export class AnimatedKeyboardTracker extends React.Component {
       event.duration,
       event.endCoordinates.height
     );
+
+    this.props.onKeyboardHide && this.props.onKeyboardHide(event, false);
   };
 
   handleKeyboardDidHide = event => {
     if (this.props.onKeyboardHide) {
-      this.props.onKeyboardHide(event);
+      this.props.onKeyboardHide(event, true);
     }
   };
 
@@ -78,24 +76,38 @@ export class AnimatedKeyboardTracker extends React.Component {
     this.props.onKeyboardShow && this.props.onKeyboardShow(event);
   };
 
+  componentWillMount() {
+    if (this.animationFrame > -1) {
+      window.cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = -1;
+    }
+  }
+
+  animationFrame = -1;
   handleKeyboardAnimation = (isShowing: boolean, duration, height = 0) => {
     const { keyboardVisibleValue, keyboardHeightValue } = this.props;
 
     const easing = Easing.elastic(0.5);
 
-    Animated.timing(keyboardVisibleValue, {
-      duration,
-      toValue: isShowing ? 1.0 : 0.0,
-      easing
-    }).start();
-
-    if (keyboardHeightValue) {
-      Animated.timing(keyboardHeightValue, {
+    if (this.animationFrame > -1) {
+      window.cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = -1;
+    }
+    this.animationFrame = window.requestAnimationFrame(() => {
+      Animated.timing(keyboardVisibleValue, {
         duration,
-        toValue: isShowing ? height : 0.0,
+        toValue: isShowing ? 1.0 : 0.0,
         easing
       }).start();
-    }
+
+      if (keyboardHeightValue) {
+        Animated.timing(keyboardHeightValue, {
+          duration,
+          toValue: isShowing ? height : 0.0,
+          easing
+        }).start();
+      }
+    });
   };
 
   unsubscribeToKeyboard = () => {

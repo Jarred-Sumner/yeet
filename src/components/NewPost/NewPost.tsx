@@ -56,17 +56,17 @@ type State = {
 };
 
 const DEFAULT_POST_FIXTURE = {
-  format: "caption",
+  format: PostFormat.screenshot,
   backgroundColor: "#000",
   blocks: [
-    {
-      type: "text",
-      id: "123123",
-      format: "caption",
-      value: "",
-      autoInserted: true,
-      config: { placeholder: "Enter a title", overrides: {} }
-    },
+    // {
+    //   type: "text",
+    //   id: "123123",
+    //   format: "caption",
+    //   value: "",
+    //   autoInserted: true,
+    //   config: { placeholder: "Enter a title", overrides: {} }
+    // },
     {
       type: "image",
       id: "1231232",
@@ -81,7 +81,7 @@ const DEFAULT_POST_FIXTURE = {
 };
 
 const DEVELOPMENT_POST_FIXTURE = {
-  format: "caption",
+  format: PostFormat.screenshot,
   backgroundColor: "#000",
   blocks: [
     {
@@ -551,10 +551,10 @@ export class NewPost extends React.Component<{}, State> {
           {this.renderStep()}
         </Transitioning.View>
 
-        <FormatPicker
+        {/* <FormatPicker
           defaultFormat={this.state.post.format}
           onChangeFormat={this.handleChangeFormat}
-        />
+        /> */}
       </View>
     );
   }

@@ -149,7 +149,7 @@ export class MovableNode extends Component<Props> {
 
     this._translateY = this.props.keyboardVisibleValue.interpolate({
       inputRange: [0, 1],
-      outputRange: [this.Y, 115]
+      outputRange: [this.Y, props.paddingTop]
     });
     this._scale = this.props.keyboardVisibleValue.interpolate({
       inputRange: [0, 1],
@@ -198,54 +198,6 @@ export class MovableNode extends Component<Props> {
   rotationGestureState: Animated.Value<State> = new Animated.Value(
     State.UNDETERMINED
   );
-
-  keyboardVisibleX = new Animated.Value(0);
-  keyboardVisibleY = new Animated.Value(0);
-  keyboardVisibleR = new Animated.Value(0);
-  keyboardVisibleBottomMargin = new Animated.Value(0);
-  keyboardVisibleScale = new Animated.Value(1.0);
-
-  handleKeyboardAnimation = (isShowing: boolean, duration) => {
-    const {
-      maxY,
-      minY,
-      xLiteral,
-      yLiteral,
-      rLiteral,
-      scaleLiteral,
-      disabled
-    } = this.props;
-
-    const multiplier = isShowing ? -1 : 0;
-
-    const xValue = isShowing ? 15 : xLiteral;
-    const yValue = isShowing ? 100 : yLiteral;
-    const rValue = isShowing ? 0 : rLiteral;
-    const scaleValue = isShowing ? 1 : scaleLiteral;
-
-    const easing = Easing.elastic(0.5);
-
-    Animated.timing(this.keyboardVisibleX, {
-      duration,
-      toValue: xValue,
-      easing
-    }).start();
-    Animated.timing(this.keyboardVisibleY, {
-      duration,
-      toValue: yValue,
-      easing
-    }).start();
-    Animated.timing(this.keyboardVisibleR, {
-      duration,
-      toValue: rValue,
-      easing
-    }).start();
-    Animated.timing(this.keyboardVisibleScale, {
-      duration,
-      toValue: scaleValue,
-      easing
-    }).start();
-  };
 
   setupHandlers(props) {
     // this.X = props.x;
@@ -400,36 +352,6 @@ export class MovableNode extends Component<Props> {
               exec={Animated.block([
                 Animated.onChange(
                   this.panGestureState,
-                  Animated.call(
-                    [
-                      this.X,
-                      this.Y,
-                      this.R,
-                      this.Z,
-                      this.panGestureState,
-                      this.absoluteX,
-                      this.absoluteY
-                    ],
-                    this.updatePosition
-                  )
-                ),
-                Animated.onChange(
-                  this.X,
-                  Animated.call(
-                    [
-                      this.X,
-                      this.Y,
-                      this.R,
-                      this.Z,
-                      this.panGestureState,
-                      this.absoluteX,
-                      this.absoluteY
-                    ],
-                    this.updatePosition
-                  )
-                ),
-                Animated.onChange(
-                  this.Y,
                   Animated.call(
                     [
                       this.X,

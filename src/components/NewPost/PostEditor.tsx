@@ -45,6 +45,7 @@ import {
 } from "./Toolbar";
 import { sendLightFeedback } from "../../lib/Vibration";
 import { sendToast, ToastType } from "../Toast";
+import { connectActionSheet } from "@expo/react-native-action-sheet";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -60,6 +61,7 @@ const styles = StyleSheet.create({
   safeWrapper: {
     paddingTop: TOP_Y,
     borderRadius: 12,
+    backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -483,7 +485,7 @@ const DarkSheet = ({ opacity }) => (
   />
 );
 
-export class PostEditor extends React.Component<Props, State> {
+class RawwPostEditor extends React.Component<Props, State> {
   constructor(props) {
     super(props);
     this.state = {
@@ -514,12 +516,12 @@ export class PostEditor extends React.Component<Props, State> {
   }
 
   handleWillFocus = () => {
-    this.scrollRef.current &&
-      this.scrollRef.current.scrollTo({
-        x: 0,
-        y: (presetsByFormat[this.props.post.format].paddingTop || 0) * -1,
-        animated: false
-      });
+    // this.scrollRef.current &&
+    //   this.scrollRef.current.getScrollResponder().scrollTo({
+    //     x: 0,
+    //     y: (presetsByFormat[this.props.post.format].paddingTop || 0) * -1,
+    //     animated: false
+    //   });
   };
 
   deleteNode = (id: string) => {
@@ -544,12 +546,71 @@ export class PostEditor extends React.Component<Props, State> {
   };
 
   handlePressToolbarButton = activeButton => {
-    console.warn({ activeButton });
     if (activeButton === ToolbarButtonType.photo) {
       this.handleInsertPhoto();
-    } else {
-      this.setState({ activeButton });
+    } else if (activeButton === ToolbarButtonType.text) {
+      this.handleInsertText({
+        x: POST_WIDTH / 2,
+        y: MAX_POST_HEIGHT / 2
+      });
+    } else if (activeButton === ToolbarButtonType.plus) {
+      const options = ["Text", "Image", "Cancel"];
+      const cancelButtonIndex = options.length - 1;
+
+      this.props.showActionSheetWithOptions(
+        {
+          title: "Append to bottom",
+          options,
+          cancelButtonIndex
+        },
+        buttonIndex => {
+          if (buttonIndex === 0) {
+            const block = buildTextBlock({
+              value: "",
+              format: this.props.post.format,
+              placeholder: "Write something",
+              autoInserted: false,
+              required: false
+            });
+
+            this.handleAppendBlock(block);
+
+            this._blockInputRefs.set(block.id, React.createRef());
+            this.focusTypeValue.setValue(FocusType.static);
+            this.focusedBlockValue.setValue(block.id.hashCode());
+            this.setState(
+              {
+                focusedBlockId: block.id,
+                focusType: FocusType.static
+              },
+              () => {
+                this._blockInputRefs.get(block.id).current.focus();
+              }
+            );
+          } else if (buttonIndex === 1) {
+            const format = this.props.post.format;
+            const minWidth = minImageWidthByFormat(format);
+
+            const block = buildImageBlock({
+              image: null,
+              width: minWidth,
+              height: minWidth,
+              autoInserted: false,
+              format,
+              required: false
+            });
+
+            this._blockInputRefs.set(block.id, React.createRef());
+            this.handleAppendBlock(block);
+            this.handleOpenImagePicker(block, false);
+          }
+        }
+      );
     }
+  };
+
+  handleAppendBlock = (block: PostBlockType) => {
+    this.handleChangeBlock(block, this.props.post.blocks.length);
   };
 
   handleInlineNodeChange = (editableNode: EditableNode) => {
@@ -883,8 +944,6 @@ export class PostEditor extends React.Component<Props, State> {
     });
   };
 
-  formatScrollViewRef = React.createRef();
-
   buttonRef = React.createRef();
   lastTappedBlockId = null;
   openImagePickerForPlaceholder = () => {
@@ -982,6 +1041,28 @@ export class PostEditor extends React.Component<Props, State> {
 
   panX = new Animated.Value(0);
   panY = new Animated.Value(0);
+  contentViewRef = React.createRef();
+
+  scrollToTop = () =>
+    this.scrollRef.current.getScrollResponder().scrollTo({
+      y: presetsByFormat[this.props.post.format].paddingTop * -1,
+      x: 0
+    });
+
+  handleShowKeyboard = (event, hasHappened) => {
+    hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
+
+    if (this.state.focusType === FocusType.absolute) {
+      this.scrollToTop();
+    }
+  };
+  handleHideKeyboard = (event, hasHappened) => {
+    // this.scrollRef.current.handleKeyboardEvent(event);
+    hasHappened && this.scrollRef.current.resetKeyboardSpace();
+  };
+  handleChangeFrame = event => {
+    this.scrollRef.current.handleKeyboardEvent(event);
+  };
 
   render() {
     const { post } = this.props;
@@ -1022,6 +1103,9 @@ export class PostEditor extends React.Component<Props, State> {
         <NavigationEvents onWillFocus={this.handleWillFocus} />
         <AnimatedKeyboardTracker
           keyboardVisibleValue={this.keyboardVisibleValue}
+          onKeyboardShow={this.handleShowKeyboard}
+          onKeyboardHide={this.handleHideKeyboard}
+          onKeyboardWillChangeFrame={this.handleChangeFrame}
         />
         <Animated.Code
           exec={Animated.block([
@@ -1092,6 +1176,7 @@ export class PostEditor extends React.Component<Props, State> {
             minX={bounds.x}
             onTapBlock={this.handleTapBlock}
             minY={bounds.y}
+            contentViewRef={this.contentViewRef}
             backgroundColor={post.backgroundColor}
             focusedBlockValue={this.focusedBlockValue}
             onTapBackground={this.onTapBackground}
@@ -1101,11 +1186,7 @@ export class PostEditor extends React.Component<Props, State> {
             onFocus={this.handleFocusBlock}
             onOpenImagePicker={this.handleOpenImagePicker}
             onChangePhoto={this.handleChangeImageBlockPhoto}
-            waitFor={[
-              this.scrollRef,
-              this.formatScrollViewRef,
-              ...this._blockInputRefs.values()
-            ]}
+            waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
             onBlur={this.handleBlurBlock}
@@ -1130,6 +1211,7 @@ export class PostEditor extends React.Component<Props, State> {
               />
               <EditableNodeList
                 inlineNodes={this.props.inlineNodes}
+                format={post.format}
                 setNodeRef={this.setNodeRef}
                 focusedBlockId={this.state.focusedBlockId}
                 focusedBlockValue={this.focusedBlockValue}
@@ -1138,11 +1220,7 @@ export class PostEditor extends React.Component<Props, State> {
                 panY={this.panY}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
-                waitFor={[
-                  this.scrollRef,
-                  this.formatScrollViewRef,
-                  ...this._blockInputRefs.values()
-                ]}
+                waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
                 focusType={this.state.focusType}
                 minX={bounds.x}
                 minY={bounds.y}
@@ -1182,11 +1260,7 @@ export class PostEditor extends React.Component<Props, State> {
               onPressDownload={this.handleDownload}
               panX={this.panX}
               panY={this.panY}
-              waitFor={[
-                this.scrollRef,
-                this.formatScrollViewRef,
-                ...this._blockInputRefs.values()
-              ]}
+              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
               width={sizeStyle.width}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text
@@ -1211,3 +1285,6 @@ export class PostEditor extends React.Component<Props, State> {
     );
   }
 }
+
+export const PostEditor = connectActionSheet(RawwPostEditor);
+export default PostEditor;

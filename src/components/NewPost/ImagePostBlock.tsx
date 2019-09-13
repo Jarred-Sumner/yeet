@@ -159,13 +159,17 @@ class RawImagePostBlock extends React.Component<Props> {
   };
 
   handleOpenSheet = () => {
-    const options = ["Change image", "Cancel"];
-    const cancelButtonIndex = 1;
+    const options = this.props.block.required
+      ? ["Change image", "Cancel"]
+      : ["Change image", "Delete", "Cancel"];
+    const cancelButtonIndex = options.length - 1;
+    const descructiveButtonIndex = this.props.block.required ? 1 : undefined;
 
     this.props.showActionSheetWithOptions(
       {
         options,
-        cancelButtonIndex
+        cancelButtonIndex,
+        descructiveButtonIndex
       },
       buttonIndex => {
         if (buttonIndex === 0) {

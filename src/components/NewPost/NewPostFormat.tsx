@@ -5,7 +5,8 @@ import { getInset } from "react-native-safe-area-view";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 
 const TOP_Y = getInset("top");
-export const CAROUSEL_HEIGHT = 60;
+// export const CAROUSEL_HEIGHT = 60;
+export const CAROUSEL_HEIGHT = 0;
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 export const POST_WIDTH = SCREEN_DIMENSIONS.width;
@@ -155,6 +156,7 @@ export const presetsByFormat = {
   [PostFormat.caption]: {
     borderRadius: 8,
     paddingTop: 48,
+    textTop: 12,
     paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
     backgroundColor: "#000",
@@ -163,8 +165,10 @@ export const presetsByFormat = {
   [PostFormat.screenshot]: {
     backgroundColor: "#fff",
     borderRadius: 0,
+    textTop: 60,
     paddingTop: 0,
-    padding: 0
+    padding: 0,
+    paddingVertical: 0
   }
 };
 

@@ -1,21 +1,37 @@
 import * as React from "react";
 // import { ReText } from "react-native-redash";
-import { View, StyleSheet } from "react-native";
 import {
-  TextInput as RNTextInput,
+  View,
+  StyleSheet,
+  NativeModules,
+  InteractionManager
+} from "react-native";
+import {
+  // TextInput as RNTextInput,
   TapGestureHandler,
   GestureHandlerGestureEvent,
   State,
-  BaseButton
+  BaseButton,
+  createNativeWrapper
 } from "react-native-gesture-handler";
+
 import Animated, { Easing } from "react-native-reanimated";
-import { TextPostBlock, PostFormat, presetsByFormat } from "../NewPostFormat";
+import {
+  TextPostBlock,
+  PostFormat,
+  presetsByFormat,
+  FocusType
+} from "../NewPostFormat";
 import { COLORS } from "../../../lib/styles";
 import tinycolor from "tinycolor2";
 
+import { TextInput as RNTextInput } from "./CustomTextInputComponent";
+
 const ZERO_WIDTH_SPACE = "​";
 
-const RawAnimatedTextInput = Animated.createAnimatedComponent(RNTextInput);
+const RawAnimatedTextInput = Animated.createAnimatedComponent(
+  createNativeWrapper(RNTextInput)
+);
 
 const AnimatedTextInput = React.forwardRef((props, ref) => {
   const inputRef = React.useRef();
@@ -30,12 +46,9 @@ const TextInputComponent = AnimatedTextInput;
 const textInputStyles = {
   [PostFormat.screenshot]: {
     fontSizes: {
-      "0": 64,
+      "0": 48,
       "8": 48,
-      "12": 42,
-      "16": 38,
-      "18": 36,
-      "24": 32
+      "12": 36
     },
     presets: {
       backgroundColor: COLORS.secondary,
@@ -69,17 +82,18 @@ const textInputStyles = {
 const textInputTypeStylesheets = {
   [PostFormat.screenshot]: StyleSheet.create({
     container: {
-      backgroundColor:
-        textInputStyles[PostFormat.screenshot].presets.backgroundColor,
-      borderRadius: 4
+      backgroundColor: "transparent"
     },
     input: {
       textAlign: "left",
+      backgroundColor: "transparent",
       fontFamily: "Helvetica",
-      paddingTop: 10,
-      paddingBottom: 10,
-      paddingLeft: 10,
-      paddingRight: 10,
+      marginTop: 0,
+      paddingTop: 8,
+      paddingBottom: 8,
+      paddingLeft: 8,
+      textAlignVertical: "center",
+      paddingRight: 8,
       color: textInputStyles[PostFormat.screenshot].presets.color,
       fontWeight: "bold",
       textShadowColor:
@@ -140,6 +154,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     paddingHorizontal: 0,
     paddingTop: 0,
+    flexWrap: "nowrap",
     paddingLeft: 0,
     paddingRight: 0,
     paddingBottom: 0
@@ -154,7 +169,7 @@ const getClosestNumber = (goal, counts) =>
   }) || counts[counts.length - 1];
 
 type Props = {
-  block: TextPostBlock;
+  block: TextPostBlocfk;
   onChangeValue: (value: string) => void;
 };
 
@@ -166,6 +181,7 @@ export class TextInput extends React.Component<Props> {
     isFocused: false
   };
 
+  fontSizeValue = new Animated.Value(48);
   constructor(props) {
     super(props);
 
@@ -184,16 +200,27 @@ export class TextInput extends React.Component<Props> {
     return fontSizes[getClosestNumber(text.length, Object.keys(fontSizes))];
   };
 
+  lastAnimationFrame = -1;
+
+  componentWillUnmount() {
+    if (this.lastAnimationFrame) {
+      window.cancelAnimationFrame(this.lastAnimationFrame);
+    }
+  }
   handleChange = text => {
-    if (this.props.text.length !== text.length) {
-      this.fontSizeClock = Animated.timing(this.fontSizeValue, {
-        duration: 100,
-        easing: Easing.linear,
-        toValue: this.getFontSizeValue(this.props, text) || 16
-      }).start();
+    if (this.lastAnimationFrame > -1) {
+      cancelAnimationFrame(this.lastAnimationFrame);
     }
 
-    this.props.onChangeValue(text);
+    this.lastAnimationFrame = window.requestAnimationFrame(() => {
+      this.fontSizeClock = Animated.timing(this.fontSizeValue, {
+        toValue: this.getFontSizeValue(this.props, text),
+        duration: 50,
+        easing: Easing.linear
+      }).start();
+
+      this.props.onChangeValue(text);
+    });
 
     return true;
   };
@@ -238,16 +265,28 @@ export class TextInput extends React.Component<Props> {
       focusType,
       onFocus
     } = this.props;
+    const { isFocused } = this.state;
 
     const containerStyles = [
       styles.container,
-      textInputTypeStylesheets[format].container
+      textInputTypeStylesheets[format].container,
+      {
+        height:
+          focusType === FocusType.absolute && isFocused ? "100%" : undefined,
+        width:
+          focusType === FocusType.absolute && isFocused ? "100%" : undefined
+      }
     ];
 
     const inputStyles = [
       styles.input,
       textInputTypeStylesheets[format].input,
       {
+        flex: focusType === FocusType.absolute && isFocused ? 1 : 0,
+        height:
+          focusType === FocusType.absolute && isFocused ? "100%" : undefined,
+        width:
+          focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         fontSize: this.fontSizeValue,
         lineHeight:
           format === PostFormat.caption
@@ -270,9 +309,15 @@ export class TextInput extends React.Component<Props> {
             ref={inputRef}
             style={inputStyles}
             multiline
+            autoCorrect
+            spellCheck={false}
             adjustsFontSizeToFit
             minimumFontScale={0.4}
+            selectionColor="white"
+            lengthPerLine={50}
             blurOnSubmit={false}
+            fontSizeRange={textInputStyles[format].fontSizes}
+            showHighlight={format === PostFormat.screenshot}
             placeholderTextColor={
               textInputStyles[format].presets.placeholderColor || undefined
             }
@@ -281,8 +326,12 @@ export class TextInput extends React.Component<Props> {
             scrollEnabled={false}
             placeholder={placeholder}
             defaultValue={this.props.text}
+            highlightColor={
+              textInputStyles[PostFormat.screenshot].presets.backgroundColor
+            }
             onChangeText={this.handleChange}
             keyboardAppearance="dark"
+            textContentType="none"
             autoFocus={false}
           />
           {editable && <View style={StyleSheet.absoluteFill}></View>}
