@@ -1,11 +1,9 @@
 import * as React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
-import SafeAreaView from "react-native-safe-area-view";
 import Carousel from "react-native-snap-carousel";
-import { SPACING } from "../../lib/styles";
 import { MediumText } from "../Text";
-import { PostFormat, CAROUSEL_HEIGHT } from "./NewPostFormat";
+import { CAROUSEL_HEIGHT, PostFormat } from "./NewPostFormat";
 
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
@@ -35,14 +33,19 @@ type PostFormatData = {
 
 const FORMATS: Array<PostFormatData> = [
   {
-    value: PostFormat.caption,
+    value: PostFormat.canvas,
     width: 100,
-    label: "Caption"
+    label: "Canvas"
   },
   {
     value: PostFormat.screenshot,
     width: 100,
     label: "Screenshot"
+  },
+  {
+    value: PostFormat.caption,
+    width: 100,
+    label: "Caption"
   }
   // {
   //   value: PostFormat.vent,
@@ -88,36 +91,26 @@ export class FormatPicker extends React.PureComponent {
     this.props.onChangeFormat(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
+  getFirstItem = () =>
+    FORMATS.findIndex(({ value }) => this.props.defaultFormat === value);
 
   render() {
     return (
-      <SafeAreaView
-        forceInset={{
-          bottom: "always",
-          left: "never",
-          right: "never",
-          top: "never"
-        }}
-        style={{ width: "100%" }}
-      >
-        <Carousel
-          data={FORMATS}
-          renderItem={this.renderItem}
-          sliderWidth={SCREEN_WIDTH}
-          itemWidth={100}
-          itemHeight={CAROUSEL_HEIGHT}
-          horizontal
-          sliderHeight={CAROUSEL_HEIGHT}
-          enableSnap
-          firstItem={FORMATS.findIndex(
-            ({ value }) => this.props.defaultFormat === value
-          )}
-          useScrollView
-          layout="default"
-          style={styles.container}
-          onSnapToItem={this.handleSnap}
-        />
-      </SafeAreaView>
+      <Carousel
+        data={FORMATS}
+        renderItem={this.renderItem}
+        sliderWidth={SCREEN_WIDTH}
+        itemWidth={100}
+        itemHeight={CAROUSEL_HEIGHT}
+        horizontal
+        sliderHeight={CAROUSEL_HEIGHT}
+        enableSnap
+        firstItem={this.getFirstItem}
+        useScrollView
+        layout="default"
+        style={styles.container}
+        onSnapToItem={this.handleSnap}
+      />
     );
   }
 }

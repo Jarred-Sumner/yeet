@@ -697,7 +697,15 @@ class RawwPostEditor extends React.Component<Props, State> {
   handleBlur = () => {
     const node = this.props.inlineNodes[this.state.focusedBlockId];
 
-    this.handleBlurNode(node);
+    if (node) {
+      this.handleBlurNode(node);
+    } else {
+      const block = this.props.post.blocks.find(
+        ({ id }) => this.state.focusedBlockId === id
+      );
+      Keyboard.dismiss();
+      this.handleBlurBlock(block);
+    }
   };
 
   handleBlurNode = (node: EditableNode) => {
@@ -1064,6 +1072,14 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.scrollRef.current.handleKeyboardEvent(event);
   };
 
+  handleBack = () => {
+    if (this.state.focusType !== null) {
+      this.handleBlur();
+    } else {
+      this.props.onBack();
+    }
+  };
+
   render() {
     const { post } = this.props;
     const presets = presetsByFormat[post.format];
@@ -1255,7 +1271,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             pointerEvents="box-none"
           >
             <ActiveLayer
-              onBack={this.props.onBack}
+              onBack={this.handleBack}
               onPressSend={this.handleSend}
               onPressDownload={this.handleDownload}
               panX={this.panX}

@@ -11,7 +11,8 @@ import {
   IconPhoto,
   IconSticker,
   IconPlus,
-  IconBack
+  IconBack,
+  IconClose
 } from "../Icon";
 import { getInset } from "react-native-safe-area-view";
 
@@ -111,13 +112,13 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
-const BackToolbarButton = ({ isActive, onPress }) => (
+const BackToolbarButton = ({ isActive, onPress, type }) => (
   <ToolbarButton
     onPress={onPress}
     type={"shadow"}
     color="white"
     size={24}
-    Icon={IconBack}
+    Icon={type === ToolbarType.default ? IconBack : IconClose}
   />
 );
 
@@ -132,7 +133,13 @@ export enum ToolbarButtonType {
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
-export const DefaultToolbar = ({ activeButton, onPress, children, onBack }) => {
+export const DefaultToolbar = ({
+  activeButton,
+  onPress,
+  children,
+  onBack,
+  type = ToolbarType.default
+}) => {
   const onPressText = React.useCallback(() => onPress(ToolbarButtonType.text), [
     onPress
   ]);
@@ -187,7 +194,7 @@ export const DefaultToolbar = ({ activeButton, onPress, children, onBack }) => {
         pointerEvents="box-none"
         style={[styles.side, styles.leftSide]}
       >
-        <BackToolbarButton onPress={onBack} />
+        <BackToolbarButton onPress={onBack} type={type} />
       </Animated.View>
 
       <Animated.View

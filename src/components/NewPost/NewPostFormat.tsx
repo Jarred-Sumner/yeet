@@ -5,8 +5,7 @@ import { getInset } from "react-native-safe-area-view";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 
 const TOP_Y = getInset("top");
-// export const CAROUSEL_HEIGHT = 60;
-export const CAROUSEL_HEIGHT = 0;
+export const CAROUSEL_HEIGHT = 20 + getInset("bottom");
 
 const SCREEN_DIMENSIONS = Dimensions.get("window");
 export const POST_WIDTH = SCREEN_DIMENSIONS.width;
@@ -17,6 +16,7 @@ export const MAX_POST_HEIGHT =
 export enum PostFormat {
   screenshot = "screenshot",
   caption = "caption",
+  canvas = "canvas",
   sticker = "sticker",
   vent = "vent",
   comic = "comic",
@@ -168,7 +168,17 @@ export const presetsByFormat = {
     textTop: 60,
     paddingTop: 0,
     padding: 0,
-    paddingVertical: 0
+    paddingVertical: 0,
+    color: "black"
+  },
+  [PostFormat.canvas]: {
+    backgroundColor: "#000",
+    borderRadius: 0,
+    textTop: 12,
+    paddingTop: 0,
+    padding: 0,
+    paddingVertical: 0,
+    color: "white"
   }
 };
 
@@ -203,6 +213,8 @@ const blocksForFormat = (
     }
 
     return blocks;
+  } else if (format === PostFormat.canvas) {
+    return blocks.filter(({ autoInserted }) => !autoInserted);
   } else {
     return blocks;
   }
@@ -231,6 +243,12 @@ export const buildPost = ({
       blocks
     };
   } else if (format === PostFormat.screenshot) {
+    return {
+      format,
+      backgroundColor: presets.backgroundColor,
+      blocks
+    };
+  } else if (format === PostFormat.canvas) {
     return {
       format,
       backgroundColor: presets.backgroundColor,

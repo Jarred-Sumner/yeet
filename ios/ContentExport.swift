@@ -7,7 +7,7 @@ import SDWebImage
 
 
 class ContentExport {
-  static let CONVERT_PNG_TO_WEBP = false
+  static let CONVERT_PNG_TO_WEBP = true
 
   private static func getFramesAnimation(frames: [UIImage], duration: CFTimeInterval) -> CAAnimation {
     let animation = CAKeyframeAnimation(keyPath:#keyPath(CALayer.contents))
@@ -15,7 +15,7 @@ class ContentExport {
     animation.duration = duration
     animation.values =  frames.map {$0.cgImage! }
     animation.speed = 1.0
-    animation.repeatCount = 99999
+    animation.repeatCount = Float(ceil(Double(frames.count) / duration))
     animation.isRemovedOnCompletion = false
     animation.fillMode = CAMediaTimingFillMode.forwards
     animation.beginTime = AVCoreAnimationBeginTimeAtZero
@@ -136,7 +136,7 @@ class ContentExport {
         let image = block.value.image.firstFrame;
 
 
-        layer.contentsFormat = .RGBA16Float
+
 
 
         if block.value.image.isAnimated {
@@ -158,10 +158,12 @@ class ContentExport {
           } else {
             layer.contents = UIImage.init(data: image.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
           }
+          layer.contentsFormat = .RGBA16Float
 
         } else {
           layer.shouldRasterize = true
           layer.contents = image.cgImage!
+          layer.contentsFormat = .RGBA16Float
         }
 
         parentlayer.addSublayer(layer)

@@ -48,7 +48,8 @@ const textInputStyles = {
     fontSizes: {
       "0": 48,
       "8": 48,
-      "12": 36
+      "12": 36,
+      "24": 24
     },
     presets: {
       backgroundColor: COLORS.secondary,
@@ -91,9 +92,9 @@ const textInputTypeStylesheets = {
       marginTop: 0,
       paddingTop: 8,
       paddingBottom: 8,
-      paddingLeft: 8,
+      paddingLeft: 6,
       textAlignVertical: "center",
-      paddingRight: 8,
+      paddingRight: 6,
       color: textInputStyles[PostFormat.screenshot].presets.color,
       fontWeight: "bold",
       textShadowColor:
@@ -314,6 +315,8 @@ export class TextInput extends React.Component<Props> {
             adjustsFontSizeToFit
             minimumFontScale={0.4}
             selectionColor="white"
+            highlightInset={-4}
+            highlightCornerRadius={8}
             lengthPerLine={50}
             blurOnSubmit={false}
             fontSizeRange={textInputStyles[format].fontSizes}
