@@ -26,7 +26,7 @@ export type ContentExport = {
   duration: number;
 };
 
-type ExportableYeetImage = {
+export type ExportableYeetImage = {
   width: number;
   height: number;
   source: string;
@@ -152,6 +152,7 @@ export const startExport = async (
   await Bluebird.map(
     [...refs.entries()],
     ([id, ref]) =>
+      ref.current &&
       getEstimatedBounds(ref.current).then(bounds => {
         blockBoundsMap.set(id, bounds);
         return true;
@@ -164,6 +165,7 @@ export const startExport = async (
   await Bluebird.map(
     [...nodeRefs.entries()],
     ([id, ref]) =>
+      ref &&
       getEstimatedBounds(ref).then(bounds => {
         inlinesBoundsMap.set(id, bounds);
         return true;
@@ -173,27 +175,40 @@ export const startExport = async (
     }
   );
 
-  const blocks = _blocks.map(block =>
-    createExportableBlock(
-      block,
-      findNodeHandle(refs.get(block.id).current),
-      blockBoundsMap.get(block.id)
-    )
-  );
+  const blocks = _blocks.map(block => {
+    const blockRef = refs.get(block.id).current;
 
-  const nodes = [...Object.values(_nodes)].map(node =>
-    createExportableNode(
+    if (!blockRef) {
+      return null;
+    }
+
+    return createExportableBlock(
+      block,
+      findNodeHandle(blockRef),
+      blockBoundsMap.get(block.id)
+    );
+  });
+
+  const nodes = [...Object.values(_nodes)].map(node => {
+    const blockRef = refs.get(node.block.id).current;
+    const nodeRef = nodeRefs.get(node.block.id);
+
+    if (!blockRef || !nodeRef) {
+      return null;
+    }
+
+    return createExportableNode(
       node,
-      findNodeHandle(refs.get(node.block.id).current),
+      findNodeHandle(blockRef),
       blockBoundsMap.get(node.block.id),
       inlinesBoundsMap.get(node.block.id),
-      findNodeHandle(nodeRefs.get(node.block.id))
-    )
-  );
+      findNodeHandle(nodeRef)
+    );
+  });
 
   const data: ExportData = {
-    blocks,
-    nodes,
+    blocks: blocks.filter(Boolean),
+    nodes: nodes.filter(Boolean),
     bounds: await getEstimatedBounds(ref.current)
   };
 
