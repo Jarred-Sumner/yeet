@@ -91,8 +91,9 @@ export class FormatPicker extends React.PureComponent {
     this.props.onChangeFormat(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
-  getFirstItem = () =>
-    FORMATS.findIndex(({ value }) => this.props.defaultFormat === value);
+  getFirstItem = FORMATS.findIndex(
+    ({ value }) => this.props.defaultFormat === value
+  );
 
   render() {
     return (

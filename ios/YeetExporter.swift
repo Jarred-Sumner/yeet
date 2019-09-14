@@ -21,8 +21,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
   var producer: VideoProducer? = nil
 
-  @objc(startExport:callback:)
-  func startExport(data: String, callback: @escaping RCTResponseSenderBlock) -> Void {
+  @objc(startExport:isServerOnly:callback:)
+  func startExport(data: String, isServerOnly: Bool, callback: @escaping RCTResponseSenderBlock) -> Void {
     if let dataObject = data.data(using: .utf8) {
       if let exportData = try? JSON(data: dataObject) {
 
@@ -34,7 +34,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
               let boundsDict = exportData["bounds"].dictionaryValue
 
               let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-              self?.producer?.start(estimatedBounds: bounds, callback: callback)
+              self?.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, callback: callback)
             }
           }
 

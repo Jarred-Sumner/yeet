@@ -206,6 +206,7 @@ class ContentBlock {
 enum ExportType : String {
   case png = "image/png"
   case mp4 = "video/mp4"
+  case webp = "image/webp"
   case jpg = "image/jpeg"
 }
 
@@ -289,18 +290,24 @@ class VideoProducer {
 
 
 
-  func start(estimatedBounds: CGRect, callback: @escaping RCTResponseSenderBlock) {
+  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, callback: @escaping RCTResponseSenderBlock) {
     let resources = self.blocks.map { block in
       return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
     }
 
+    let isDigital = self.isDigitalOnly
+
     var exportURL: URL
     var exportType: ExportType
+
 
     if (self.hasAnyAnimations) {
       exportType = .mp4
       exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
-    } else if (self.isDigitalOnly) {
+    } else if (isServerOnly) {
+      exportType = .webp
+      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".webp"))
+    } else if (isDigital) {
       exportType = .png
       exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".png"))
     } else {
@@ -309,7 +316,7 @@ class VideoProducer {
     }
 
 
-    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources) { export in
+    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital) { export in
       if let _export = export {
         print("Export \(_export.url)")
         callback([nil, _export.dictionaryValue()])

@@ -21,7 +21,7 @@
 
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)
 
-RCT_EXTERN_METHOD(startExport:(NSString*)data callback: (RCTResponseSenderBlock)callback);
+RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly callback: (RCTResponseSenderBlock)callback);
 
 @end
 

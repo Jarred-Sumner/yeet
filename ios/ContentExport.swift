@@ -46,7 +46,7 @@ class ContentExport {
   }
 
 
-  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, complete: @escaping(ContentExport?)->()) {
+  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, complete: @escaping(ContentExport?)->()) {
     do {
       let composition = AVMutableComposition()
       let vidAsset = AVURLAsset(url: Bundle.main.url(forResource: "blank_1080p", withExtension: ".mp4")!)
@@ -134,9 +134,6 @@ class ContentExport {
         layer.setAffineTransform(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)))
 
         let image = block.value.image.firstFrame;
-
-
-
 
 
         if block.value.image.isAnimated {
@@ -247,8 +244,10 @@ class ContentExport {
         let imageData: NSData
         if (type == ExportType.png) {
           imageData = fullImage.pngData()! as NSData
+        } else if (type == ExportType.webp) {
+          imageData =  SDImageWebPCoder.shared.encodedData(with: fullImage, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: isDigitalOnly ? 1 : CGFloat(0.95), SDImageCoderOption.encodeFirstFrameOnly: 0]) as! NSData
         } else {
-          imageData = fullImage.jpegData(compressionQuality: CGFloat(0.9))! as NSData
+          imageData = fullImage.jpegData(compressionQuality: CGFloat(0.95))! as NSData
         }
 
         imageData.write(to: url, atomically: true)

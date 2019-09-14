@@ -128,7 +128,8 @@ export const startExport = async (
   _nodes: EditableNodeMap,
   refs: Map<string, React.RefObject<View>>,
   ref: React.RefObject<ScrollView>,
-  nodeRefs: Map<string, React.RefObject<View>>
+  nodeRefs: Map<string, React.RefObject<View>>,
+  isServerOnly: boolean
 ) => {
   const blockBoundsMap = new Map<string, BoundsRect>();
   const inlinesBoundsMap = new Map<string, BoundsRect>();
@@ -180,9 +181,7 @@ export const startExport = async (
   const data: ExportData = {
     blocks,
     nodes,
-    bounds: await getEstimatedBounds(
-      ref.current.getScrollResponder().getInnerViewNode()
-    )
+    bounds: await getEstimatedBounds(ref.current)
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -192,13 +191,17 @@ export const startExport = async (
   console.timeEnd("Start Measure");
 
   return new Promise((resolve, reject) => {
-    YeetExporter.startExport(JSON.stringify(data), (err, result) => {
-      if (err) {
-        reject(err);
-        return;
-      }
+    YeetExporter.startExport(
+      JSON.stringify(data),
+      isServerOnly,
+      (err, result) => {
+        if (err) {
+          reject(err);
+          return;
+        }
 
-      resolve(result);
-    });
+        resolve([result, data]);
+      }
+    );
   });
 };

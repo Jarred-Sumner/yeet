@@ -749,7 +749,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleDownload = async () => {
     try {
-      const snapshot = await this.createSnapshot();
+      const [snapshot, _] = await this.createSnapshot(false);
       console.time("Camera Roll");
       return CameraRoll.saveToCameraRoll(
         snapshot.uri,
@@ -770,7 +770,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
   handleSend = () => {};
 
-  createSnapshot = async () => {
+  createSnapshot = async (isServerOnly: boolean) => {
     // this._inlineNodeRefs.entries().map([]);
     // const overlayURI = await captureRef(this.nodeListRef.current, {
     //   format: "png",
@@ -780,8 +780,9 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.props.post.blocks,
       this.props.inlineNodes,
       this._blockInputRefs,
-      this.scrollRef,
-      this._inlineNodeRefs
+      this.contentViewRef,
+      this._inlineNodeRefs,
+      isServerOnly
     );
   };
 
