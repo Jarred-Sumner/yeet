@@ -1,6 +1,8 @@
 import RNFetchBlob from "rn-fetch-blob";
 import qs from "qs";
 import { BASE_HOSTNAME } from "react-native-dotenv";
+import Promise from "bluebird";
+import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 
 var Blob = RNFetchBlob.polyfill.Blob;
 const fs = RNFetchBlob.fs;
@@ -216,31 +218,40 @@ S3Upload.prototype.abortUpload = function() {
 
 export default S3Upload;
 
-export const startFileUpload = ({ file, type, mediaId, ...opts }) => {
+export const startFileUpload = ({ file, type, ...opts }) => {
+  console.log("Uploading file", file);
   const path = RNFetchBlob.wrap(
-    file.uri.replace("file://", "").replace("content://", "")
+    file.uri.startsWith("ph://")
+      ? convertCameraRollIDToRNFetchBlobId(file.uri, file.type.split("/")[1])
+      : file.uri.replace("file://", "").replace("content://", "")
   );
 
   return RNFetchBlob.polyfill.Blob.build(path, {
     type: `${file.type};`
-  }).then(blob => {
-    const fileBlob = blob;
-    fileBlob.name = file.fileName;
+  }).then(
+    blob => {
+      const fileBlob = blob;
+      fileBlob.name = file.fileName;
+      console.log("✅ Created blob", blob);
 
-    return new Promise((resolve, reject) => {
-      resolve(
-        new S3Upload({
-          ...opts,
-          files: [blob],
-          signingUrlQueryParams: {
-            width: file.width,
-            height: file.height,
-            type: "Media",
-            mediaId,
-            ...(opts.params || {})
-          }
-        })
-      );
-    });
-  });
+      return new Promise((resolve, reject) => {
+        resolve(
+          new S3Upload({
+            ...opts,
+            files: [blob],
+            signingUrlQueryParams: {
+              width: file.width,
+              height: file.height,
+              type: "Media",
+              ...(opts.params || {})
+            }
+          })
+        );
+      });
+    },
+    err => {
+      console.error(err);
+      return Promise.reject(err);
+    }
+  );
 };

@@ -1,0 +1,22 @@
+fragment PostFragment on Post {
+  id
+  likesCount
+
+  blocks
+  nodes
+
+  media {
+    id
+    width
+    height
+    mimeType
+    duration
+    url
+  }
+
+  profile {
+    id
+    username
+    photoURL
+  }
+}

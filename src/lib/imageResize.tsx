@@ -20,6 +20,12 @@ export const convertLocalIdentifierToAssetLibrary = (localIdentifier, ext) => {
   return `assets-library://asset/asset.${ext}?id=${hash}&ext=${ext}`;
 };
 
+export const convertCameraRollIDToRNFetchBlobId = (assetPath, extension) =>
+  convertLocalIdentifierToAssetLibrary(
+    assetPath.split("://")[1].split("/")[0],
+    extension
+  );
+
 const getAssetFileAbsolutePath = async assetPath => {
   const dest = `${RNFS.TemporaryDirectoryPath}${generateFilename()}`;
 

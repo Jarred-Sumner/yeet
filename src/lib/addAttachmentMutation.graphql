@@ -1,0 +1,3 @@
+mutation AddAttachmentMutation($id: ID!, $postId: ID!, $mediaId: ID!) {
+  addAttachment(id: $id, postId: $postId, mediaId: $mediaId)
+}

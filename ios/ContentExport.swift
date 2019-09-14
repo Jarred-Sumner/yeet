@@ -183,6 +183,8 @@ class ContentExport {
 ////      parentlayer.setNeedsLayout()
 
 
+      let resolution = CGSize(width: cropRect.size.width * contentsScale, height: cropRect.size.height * contentsScale)
+
       if (type == ExportType.mp4) {
 
 //        videolayer.frame = CGRect(origin: .zero, size: bounds.size)
@@ -236,7 +238,7 @@ class ContentExport {
             complete(nil)
           default:
             print("Movie complete")
-            complete(ContentExport(url: url, resolution: parentlayer.frame.size, type: type, duration: duration))
+            complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration))
           }
         })
       } else {
@@ -252,7 +254,9 @@ class ContentExport {
         }
 
         imageData.write(to: url, atomically: true)
-        complete(ContentExport(url: url, resolution: cropRect.size, type: type, duration: duration))
+
+
+        complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration))
       }
 
 

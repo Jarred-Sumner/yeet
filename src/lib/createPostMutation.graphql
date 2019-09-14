@@ -1,0 +1,19 @@
+#import "./PostFragment.graphql"
+
+mutation CreatePost(
+  $mediaId: ID!
+  $blocks: JSON
+  $nodes: JSON
+  $format: String!
+  $bounds: Rectangle!
+) {
+  createPost(
+    mediaId: $mediaId
+    blocks: $blocks
+    nodes: $nodes
+    format: $format
+    bounds: $bounds
+  ) {
+    ...PostFragment
+  }
+}

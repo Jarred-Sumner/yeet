@@ -27,6 +27,7 @@ import { getInset } from "react-native-safe-area-view";
 import DeviceInfo from "react-native-device-info";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
 import FormatPicker from "./FormatPicker";
+import { sendToast, ToastType } from "../Toast";
 import {
   YeetImageContainer,
   imageContainerFromCameraRoll,
@@ -34,6 +35,8 @@ import {
   YeetImageRect
 } from "../../lib/imageSearch";
 import { EditableNodeMap } from "./Node/BaseNode";
+import { ContentExport, ExportData } from "../../lib/Exporter";
+import { PostUploader, RawPostUploader } from "../PostUploader";
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
@@ -460,6 +463,8 @@ export class NewPost extends React.Component<{}, State> {
     post: post,
     defaultPhoto: null,
     inlineNodes: {},
+    showUploader: false,
+    uploadData: null,
     bounds: {
       x: 0,
       y: TOP_Y + SPACING.double + 30,
@@ -565,9 +570,10 @@ export class NewPost extends React.Component<{}, State> {
   };
 
   stepContainerRef = React.createRef();
+  postUploaderRef = React.createRef<RawPostUploader>();
 
   render() {
-    const { step } = this.state;
+    const { step, showUploader, uploadData } = this.state;
     const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
       <View style={styles.page}>
@@ -590,12 +596,50 @@ export class NewPost extends React.Component<{}, State> {
           defaultFormat={this.state.post.format}
           onChangeFormat={this.handleChangeFormat}
         />
+
+        {showUploader && (
+          <PostUploader
+            {...uploadData}
+            ref={this.postUploaderRef}
+            width={SCREEN_DIMENSIONS.width}
+            height={SCREEN_DIMENSIONS.height}
+            onUpload={this.handleUploadComplete}
+          />
+        )}
       </View>
     );
   }
 
   handleChangeNodes = (inlineNodes: EditableNodeMap) => {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
+  };
+
+  handleCreatePost = (file: ContentExport, data: ExportData) => {
+    this.setState(
+      {
+        showUploader: true,
+        uploadData: {
+          file,
+          data
+        }
+      },
+      () => {
+        this.postUploaderRef.current.startUploading(true);
+      }
+    );
+  };
+
+  handleUploadComplete = async (mediaId: string) => {
+    const post = await this.postUploaderRef.current.createPost(
+      mediaId,
+      this.state.uploadData.data.blocks,
+      this.state.uploadData.data.nodes,
+      this.state.post.format,
+      this.state.uploadData.data.bounds
+    );
+
+    sendToast("Posted successfully", ToastType.success);
+    this.setState({ showUploader: false, uploadData: null });
   };
 
   renderStep() {
@@ -613,6 +657,7 @@ export class NewPost extends React.Component<{}, State> {
           onChangeFormat={this.handleChangeFormat}
           inlineNodes={inlineNodes}
           onChangeNodes={this.handleChangeNodes}
+          onSubmit={this.handleCreatePost}
         />
       );
     } else if (step === NewPostStep.choosePhoto) {

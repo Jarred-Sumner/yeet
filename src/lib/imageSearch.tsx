@@ -40,7 +40,7 @@ const mimeTypeFromFilename = (filename: string) =>
       .toLowerCase()
   ]);
 
-enum ImageSourceType {
+export enum ImageSourceType {
   cameraRoll = "cameraRoll",
   giphy = "giphy",
   yeet = "yeet"

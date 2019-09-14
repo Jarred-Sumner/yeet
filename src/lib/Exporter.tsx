@@ -5,7 +5,7 @@ import {
   ScrollView,
   UIManager
 } from "react-native";
-import { YeetImageRect } from "./imageSearch";
+import { YeetImageRect, ImageSourceType } from "./imageSearch";
 import { PostBlockType, PostFormat } from "../components/NewPost/NewPostFormat";
 import {
   EditableNodeStaticPosition,
@@ -14,8 +14,17 @@ import {
 } from "../components/NewPost/Node/BaseNode";
 import Bluebird from "bluebird";
 import { BoundsRect } from "./Rect";
+import { fromPairs } from "lodash";
 
 const { YeetExporter } = NativeModules;
+
+export type ContentExport = {
+  uri: string;
+  width: number;
+  height: number;
+  type: string;
+  duration: number;
+};
 
 type ExportableYeetImage = {
   width: number;
@@ -30,6 +39,7 @@ type ExportableImageBlock = {
   dimensions: YeetImageRect;
   type: "image";
   format: PostFormat;
+  contentId: string;
   value: ExportableYeetImage;
   viewTag: number;
   id: string;
@@ -39,6 +49,7 @@ type ExportableImageBlock = {
 type ExportableTextBlock = {
   type: "text";
   value: string;
+  contentId: string;
   viewTag: number;
   format: PostFormat;
   id: string;
@@ -78,6 +89,7 @@ const createExportableBlock = (
       format: block.format,
       dimensions: block.config.dimensions,
       id: block.id,
+      contentId: block.value.id,
       viewTag: viewTag,
       frame,
       value: { width, height, source, mimeType, uri, duration }
@@ -87,6 +99,7 @@ const createExportableBlock = (
       type: "text",
       format: block.format,
       viewTag: viewTag,
+      contentId: block.id,
       id: block.id,
       frame,
       value: block.value
@@ -130,7 +143,7 @@ export const startExport = async (
   ref: React.RefObject<ScrollView>,
   nodeRefs: Map<string, React.RefObject<View>>,
   isServerOnly: boolean
-) => {
+): Promise<[ContentExport, ExportData]> => {
   const blockBoundsMap = new Map<string, BoundsRect>();
   const inlinesBoundsMap = new Map<string, BoundsRect>();
 
@@ -204,4 +217,22 @@ export const startExport = async (
       }
     );
   });
+};
+
+export const getMediaToUpload = (
+  data: ExportData
+): { [key: string]: ExportableYeetImage } => {
+  const nodeBlocks = Object.values(data.nodes).map(node => node.block);
+  return fromPairs(
+    [...data.blocks, ...nodeBlocks]
+      .filter(
+        ({ type, value }) =>
+          type === "image" &&
+          typeof value === "object" &&
+          value.source === ImageSourceType.cameraRoll
+      )
+      .map((imageBlock: ExportableImageBlock) => {
+        return [imageBlock.contentId, imageBlock.value];
+      })
+  );
 };

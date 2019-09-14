@@ -768,7 +768,12 @@ class RawwPostEditor extends React.Component<Props, State> {
       console.error(exception);
     }
   };
-  handleSend = () => {};
+  handleSend = async () => {
+    console.log("Start sending");
+    const [snapshot, data] = await this.createSnapshot(true);
+
+    return this.props.onSubmit(snapshot, data);
+  };
 
   createSnapshot = async (isServerOnly: boolean) => {
     // this._inlineNodeRefs.entries().map([]);
@@ -1273,7 +1278,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           >
             <ActiveLayer
               onBack={this.handleBack}
-              onPressSend={this.handleSend}
+              onSend={this.handleSend}
               onPressDownload={this.handleDownload}
               panX={this.panX}
               panY={this.panY}
