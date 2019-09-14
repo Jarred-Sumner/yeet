@@ -150,7 +150,7 @@ class ContentExport {
         } else if (block.value.mimeType == MimeType.png) {
           layer.shouldRasterize = true
           if (ContentExport.CONVERT_PNG_TO_WEBP) {
-            let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: 1, SDImageCoderOption.encodeFirstFrameOnly: 0]), options: nil)!
+            let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
             layer.contents = newImage.cgImage!
           } else {
             layer.contents = UIImage.init(data: image.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
@@ -242,12 +242,13 @@ class ContentExport {
       } else {
         let fullImage = UIImage.image(from: parentlayer)!.sd_croppedImage(with: cropRect)!
         let imageData: NSData
+        let compressionQuality = isDigitalOnly ? CGFloat(1) : CGFloat(0.99)
         if (type == ExportType.png) {
           imageData = fullImage.pngData()! as NSData
         } else if (type == ExportType.webp) {
-          imageData =  SDImageWebPCoder.shared.encodedData(with: fullImage, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: isDigitalOnly ? 1 : CGFloat(0.95), SDImageCoderOption.encodeFirstFrameOnly: 0]) as! NSData
+          imageData = SDImageWebPCoder.shared.encodedData(with: fullImage, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality:compressionQuality, SDImageCoderOption.encodeFirstFrameOnly: 0])! as NSData
         } else {
-          imageData = fullImage.jpegData(compressionQuality: CGFloat(0.95))! as NSData
+          imageData = fullImage.jpegData(compressionQuality: compressionQuality)! as NSData
         }
 
         imageData.write(to: url, atomically: true)
