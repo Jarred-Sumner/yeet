@@ -6,6 +6,7 @@ mutation CreatePost(
   $nodes: JSON
   $format: String!
   $bounds: Rectangle!
+  $threadId: ID
 ) {
   createPost(
     mediaId: $mediaId
@@ -13,6 +14,7 @@ mutation CreatePost(
     nodes: $nodes
     format: $format
     bounds: $bounds
+    threadId: $threadId
   ) {
     ...PostFragment
   }

@@ -1,0 +1,11 @@
+#import "./PostFragment.graphql"
+
+query ViewThreads($after: ID, $limit: Int) {
+  postThreads(after: $after, limit: $limit) {
+    id
+
+    firstPost {
+      ...PostFragment
+    }
+  }
+}

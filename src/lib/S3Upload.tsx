@@ -3,7 +3,7 @@
  * https://github.com/flyingsparx/NodeDirectUploader
  */
 import RNFetchBlob from "rn-fetch-blob";
-import { BASE_HOSTNAME } from "react-native-dotenv";
+import { BASE_HOSTNAME } from "../../config";
 
 var Blob = RNFetchBlob.polyfill.Blob;
 const fs = RNFetchBlob.fs;

@@ -1,6 +1,6 @@
 import RNFetchBlob from "rn-fetch-blob";
 import qs from "qs";
-import { BASE_HOSTNAME } from "react-native-dotenv";
+import { BASE_HOSTNAME } from "../../config";
 import Promise from "bluebird";
 import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 

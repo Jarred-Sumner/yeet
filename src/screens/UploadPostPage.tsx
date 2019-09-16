@@ -11,7 +11,7 @@ import {
 import { BoldText, MediumText } from "../components/Text";
 import ImagePicker from "react-native-image-picker";
 import { ImagePickerContext } from "../lib/ImagePickerContext";
-import { Media } from "../components/Media";
+// import { Media } from "../components/Media";
 import { SPACING, COLORS } from "../lib/styles";
 import { IconSend, IconClose } from "../components/Icon";
 import { getInset } from "react-native-safe-area-view";
@@ -320,7 +320,7 @@ class RawUploadPostPage extends React.Component {
           {lastPhoto && !lastPhoto.didCancel && (
             <TouchableWithoutFeedback onPress={() => openImagePicker()}>
               <View style={styles.media}>
-                <Media
+                {/* <Media
                   media={{
                     width: lastPhoto.width,
                     height: lastPhoto.height,
@@ -329,7 +329,7 @@ class RawUploadPostPage extends React.Component {
                   }}
                   height={MEDIA_HEIGHT}
                   width={SCREEN_DIMENSIONS.width}
-                />
+                /> */}
               </View>
             </TouchableWithoutFeedback>
           )}

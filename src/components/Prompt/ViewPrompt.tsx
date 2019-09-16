@@ -20,7 +20,7 @@ import {
   SemiBoldText,
   Text
 } from "../Text";
-import { Media } from "../../components/Media";
+// import { Media } from "../../components/Media";
 
 const SAFE_AREA_TOP = getInset("top");
 
@@ -319,12 +319,12 @@ export class ViewPrompt extends React.Component {
     }
     return (
       <View style={[styles.page, { height }]}>
-        <Media
+        {/* <Media
           width={SCREEN_DIMENSIONS.width}
           media={post.media}
           paused={!isVisible}
           height={height}
-        />
+        /> */}
         <Header
           prompt={prompt}
           forceShowHeader={this.props.forceShowHeader}

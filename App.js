@@ -25,12 +25,17 @@ import ImagePickerPage from "./src/screens/ImagePickerPage";
 import { createSharedElementStackNavigator } from "react-navigation-shared-element";
 import { Toast } from "./src/components/Toast";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
+import { createMaterialTopTabNavigator } from "react-navigation-tabs";
+import PostListPage from "./src/screens/PostList";
 
 const Routes = createAppContainer(
   createStackNavigator(
     {
-      Feed: createStackNavigator(
+      Home: createMaterialTopTabNavigator(
         {
+          FeedTab: {
+            screen: PostListPage
+          },
           NewPostStack: createSharedElementStackNavigator(
             createStackNavigator,
             {
@@ -55,7 +60,18 @@ const Routes = createAppContainer(
             backgroundColor: "#000"
           },
           defaultNavigationOptions: {
-            header: () => null
+            header: () => null,
+            mode: "modal"
+          },
+          tabBarComponent: () => null,
+          tabBarOptions: {
+            swipeEnabled: true,
+            tabBarPosition: "bottom",
+            lazy: true,
+            activeTintColor: "#ccc",
+            style: {
+              backgroundColor: "#000"
+            }
           }
         }
       ),

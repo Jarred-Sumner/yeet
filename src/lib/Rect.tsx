@@ -1,9 +1,14 @@
 import { pointBox as isPointInside } from "intersects";
-export type BoundsRect = {
-  x: number;
-  y: number;
+import { PixelRatio } from "react-native";
+
+export type DimensionsRect = {
   width: number;
   height: number;
+};
+
+export type BoundsRect = DimensionsRect & {
+  x: number;
+  y: number;
 };
 
 export const totalX = (rect: BoundsRect) => {
@@ -23,4 +28,16 @@ export const isTapInside = (
   { x, y }: { x: number; y: number }
 ) => {
   return isPointInside(x, y, rect.x, rect.y, rect.width, rect.height);
+};
+
+export const scaleToWidth = (
+  width: number,
+  dimensions: DimensionsRect
+): DimensionsRect => {
+  return {
+    width,
+    height: PixelRatio.roundToNearestPixel(
+      (width / dimensions.width) * dimensions.height
+    )
+  };
 };

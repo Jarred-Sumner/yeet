@@ -1,0 +1,7 @@
+#import "./PostFragment.graphql"
+
+query ViewPosts($threadId: ID!, $limit: Int, $offset: Int) {
+  posts(threadId: $threadId, limit: $limit, offset: $offset) {
+    ...PostFragment
+  }
+}

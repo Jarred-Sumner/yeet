@@ -92,10 +92,13 @@ export class RawPostUploader extends React.Component<Props> {
                 postId
               }
             })
-            .then(() => {
-              resolve(mediaId);
-              return Promise.resolve();
-            });
+            .then(
+              () => {
+                resolve(mediaId);
+                return Promise.resolve();
+              },
+              err => console.error(err)
+            );
         },
         {
           contentId: id,
@@ -124,8 +127,14 @@ export class RawPostUploader extends React.Component<Props> {
       .then(
         async (resp: { data: CreatePost }) => {
           const {
-            data: { createPost: post }
+            data: { createPost: post },
+            error
           } = resp;
+
+          if (error) {
+            console.error(error);
+            return;
+          }
 
           if (!post) {
             return null;
@@ -134,17 +143,22 @@ export class RawPostUploader extends React.Component<Props> {
           const mediaMap = getMediaToUpload(this.props.data);
 
           if (Object.keys(mediaMap).length > 0) {
-            await Bluebird.map(
-              Object.entries(mediaMap),
-              ([id, image]) => this.uploadImage(id, image, post.id),
-              { concurrency: 2 }
-            );
+            try {
+              await Bluebird.map(
+                Object.entries(mediaMap),
+                ([id, image]) => this.uploadImage(id, image, post.id),
+                { concurrency: 2 }
+              );
+            } catch (exception) {
+              console.error(exception);
+            }
           }
 
           this.setState({ uploadStatus: UploadStatus.complete });
           return post;
         },
-        () => {
+        err => {
+          console.error(err);
           this.triggerUploadComplete = true;
         }
       );

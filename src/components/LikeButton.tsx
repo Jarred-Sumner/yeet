@@ -55,7 +55,7 @@ export class LikeButton extends React.Component {
     return (
       <View style={styles.container}>
         <IconHeart style={[iconStyle, styles.textShadow]} />
-        <Text style={textStyle}>{count}</Text>
+        <Text style={textStyle}>{count || 1}</Text>
       </View>
     );
   }

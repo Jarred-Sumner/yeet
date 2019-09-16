@@ -14,7 +14,7 @@ import { toIdValue } from "apollo-utilities";
 import { Platform, StatusBar } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import { Storage } from "./Storage";
-import { BASE_HOSTNAME } from "react-native-dotenv";
+import { BASE_HOSTNAME } from "../../config";
 import AsyncStorage from "@react-native-community/async-storage";
 // import introspectionQueryResultData from "../../static/fragmentTypes.json";
 // import Alert from "../lib/Alert";
@@ -50,6 +50,7 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 });
 
 const GRAPHQL_URL = `${BASE_HOSTNAME}/graphql`;
+
 const authMiddleware = new ApolloLink((operation, forward) => {
   // add the authorization to the headers
   operation.setContext(({ headers = {} }) => ({
