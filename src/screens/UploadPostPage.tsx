@@ -334,20 +334,6 @@ class RawUploadPostPage extends React.Component {
             </TouchableWithoutFeedback>
           )}
         </View>
-
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.progressBar,
-            {
-              transform: [
-                {
-                  translateX: this.uploadProgressValue
-                }
-              ]
-            }
-          ]}
-        />
       </View>
     );
   }

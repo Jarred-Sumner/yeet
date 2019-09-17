@@ -93,7 +93,7 @@ export class RawPostUploader extends React.Component<Props> {
               }
             })
             .then(
-              () => {
+              error => {
                 resolve(mediaId);
                 return Promise.resolve();
               },
@@ -116,13 +116,15 @@ export class RawPostUploader extends React.Component<Props> {
     blocks,
     nodes,
     format,
-    bounds
+    bounds,
+    colors,
+    threadId
   ): Promise<CreatePost_createPost> => {
     this.setState({ uploadStatus: UploadStatus.submittingPost });
 
     return this.props
       .submitPost({
-        variables: { mediaId, blocks, nodes, format, bounds }
+        variables: { mediaId, blocks, nodes, format, bounds, colors, threadId }
       })
       .then(
         async (resp: { data: CreatePost }) => {
@@ -137,6 +139,7 @@ export class RawPostUploader extends React.Component<Props> {
           }
 
           if (!post) {
+            debugger;
             return null;
           }
 

@@ -22,7 +22,7 @@ import { SPACING, COLORS } from "../../lib/styles";
 import { SemiBoldText } from "../Text";
 import { IconButton } from "../Button";
 import { IconBack } from "../Icon";
-import { SafeAreaView } from "react-navigation";
+import { SafeAreaView, withNavigation } from "react-navigation";
 import { getInset } from "react-native-safe-area-view";
 import DeviceInfo from "react-native-device-info";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
@@ -457,23 +457,46 @@ const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 
 // const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
-const post = DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
-export class NewPost extends React.Component<{}, State> {
-  state = {
-    post: post,
-    defaultPhoto: null,
-    inlineNodes: {},
-    showUploader: false,
-    uploadData: null,
-    bounds: {
-      x: 0,
-      y: TOP_Y + SPACING.double + 30,
-      height:
-        SCREEN_DIMENSIONS.height - (TOP_Y + SPACING.double + 30) + BOTTOM_Y,
-      width: SCREEN_DIMENSIONS.width
-    },
-    step: NewPostStep.editPhoto
+const DEFAULT_POST = DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
+
+const DEFAULT_BOUNDS = {
+  x: 0,
+  y: TOP_Y + SPACING.double + 30,
+  height: SCREEN_DIMENSIONS.height - (TOP_Y + SPACING.double + 30) + BOTTOM_Y,
+  width: SCREEN_DIMENSIONS.width
+};
+
+class RawNewPost extends React.Component<{}, State> {
+  static defaultProps = {
+    defaultFormat: DEFAULT_POST.format,
+    defaultBlocks: DEFAULT_POST.blocks,
+    defaultInlineNodes: {},
+    defaultBounds: DEFAULT_BOUNDS,
+    threadId: null,
+    thread: null
   };
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      post: buildPost({
+        width: props.defaultWidth,
+        height: props.defaultHeight,
+        blocks: props.defaultBlocks,
+        format: props.defaultFormat
+      }),
+      defaultPhoto: null,
+      inlineNodes: props.defaultInlineNodes,
+      showUploader: false,
+      uploadData: null,
+      bounds: {
+        ...props.defaultBounds,
+        x: DEFAULT_BOUNDS.x,
+        y: DEFAULT_BOUNDS.y
+      },
+      step: NewPostStep.editPhoto
+    };
+  }
 
   handleChangePost = post => this.setState({ post });
 
@@ -614,13 +637,15 @@ export class NewPost extends React.Component<{}, State> {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
 
-  handleCreatePost = (file: ContentExport, data: ExportData) => {
+  handleCreatePost = (_file: ContentExport, data: ExportData) => {
+    const { colors, ...file } = _file;
     this.setState(
       {
         showUploader: true,
         uploadData: {
           file,
-          data
+          data,
+          colors
         }
       },
       () => {
@@ -635,7 +660,9 @@ export class NewPost extends React.Component<{}, State> {
       this.state.uploadData.data.blocks,
       this.state.uploadData.data.nodes,
       this.state.post.format,
-      this.state.uploadData.data.bounds
+      this.state.uploadData.data.bounds,
+      this.state.uploadData.colors,
+      this.props.threadId
     );
 
     sendToast("Posted successfully", ToastType.success);
@@ -654,6 +681,7 @@ export class NewPost extends React.Component<{}, State> {
           onBack={this.handleBack}
           navigation={this.props.navigation}
           onChange={this.handleChangePost}
+          isReply={!this.props.threadId}
           onChangeFormat={this.handleChangeFormat}
           inlineNodes={inlineNodes}
           onChangeNodes={this.handleChangeNodes}
@@ -685,3 +713,6 @@ export class NewPost extends React.Component<{}, State> {
     }
   }
 }
+
+export const NewPost = withNavigation(RawNewPost);
+export default NewPost;

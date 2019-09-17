@@ -112,13 +112,13 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
-const BackToolbarButton = ({ isActive, onPress, type }) => (
+const BackToolbarButton = ({ isActive, onPress, Icon }) => (
   <ToolbarButton
     onPress={onPress}
     type={"shadow"}
     color="white"
     size={24}
-    Icon={type === ToolbarType.default ? IconBack : IconClose}
+    Icon={Icon}
   />
 );
 
@@ -138,6 +138,7 @@ export const DefaultToolbar = ({
   onPress,
   children,
   onBack,
+  isModal,
   type = ToolbarType.default
 }) => {
   const onPressText = React.useCallback(() => onPress(ToolbarButtonType.text), [
@@ -194,7 +195,10 @@ export const DefaultToolbar = ({
         pointerEvents="box-none"
         style={[styles.side, styles.leftSide]}
       >
-        <BackToolbarButton onPress={onBack} type={type} />
+        <BackToolbarButton
+          onPress={onBack}
+          Icon={type === ToolbarType.default && !isModal ? IconBack : IconClose}
+        />
       </Animated.View>
 
       <Animated.View

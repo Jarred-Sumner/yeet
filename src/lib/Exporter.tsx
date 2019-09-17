@@ -3,14 +3,26 @@ import {
   findNodeHandle,
   View,
   ScrollView,
-  UIManager
+  UIManager,
+  Image
 } from "react-native";
-import { YeetImageRect, ImageSourceType } from "./imageSearch";
-import { PostBlockType, PostFormat } from "../components/NewPost/NewPostFormat";
+import {
+  YeetImageRect,
+  ImageSourceType,
+  YeetImageContainer,
+  ImageMimeType
+} from "./imageSearch";
+import {
+  PostBlockType,
+  PostFormat,
+  buildImageBlock,
+  buildTextBlock
+} from "../components/NewPost/NewPostFormat";
 import {
   EditableNodeStaticPosition,
   EditableNode,
-  EditableNodeMap
+  EditableNodeMap,
+  buildEditableNode
 } from "../components/NewPost/Node/BaseNode";
 import Bluebird from "bluebird";
 import { BoundsRect } from "./Rect";
@@ -24,6 +36,12 @@ export type ContentExport = {
   height: number;
   type: string;
   duration: number;
+  colors: {
+    background: string | null;
+    primary: string | null;
+    detail: string | null;
+    secondary: string | null;
+  };
 };
 
 export type ExportableYeetImage = {
@@ -249,5 +267,92 @@ export const getMediaToUpload = (
       .map((imageBlock: ExportableImageBlock) => {
         return [imageBlock.contentId, imageBlock.value];
       })
+  );
+};
+
+export type AssetMap = {
+  [url: string]: string;
+};
+
+export const convertImage = (
+  image: ExportableYeetImage,
+  assetMap: AssetMap
+): YeetImageContainer => {
+  const uri =
+    typeof assetMap[image.uri] === "string" ? assetMap[image.uri] : image.uri;
+
+  return {
+    id: uri,
+    image: {
+      width: image.width,
+      height: image.height,
+      uri: uri,
+      source: ImageSourceType[image.source],
+      duration: image.duration,
+      mimeType: ImageMimeType[image.mimeType],
+      asset: Image.resolveAssetSource({
+        width: image.width,
+        height: image.height,
+        uri
+      })
+    }
+  };
+};
+
+const convertExportableBlock = (block: ExportableBlock, assets: AssetMap) => {
+  if (block.type === "image") {
+    return buildImageBlock({
+      id: block.id,
+      image: convertImage(block.value, assets),
+      dimensions: block.dimensions,
+      width: block.dimensions.width,
+      height: block.dimensions.height,
+      autoInserted: false,
+      format: PostFormat[block.format]
+    });
+  } else if (block.type === "text") {
+    return buildTextBlock({
+      id: block.id,
+      value: block.value,
+      placeholder: "",
+      autoInserted: false,
+      format: PostFormat[block.format]
+    });
+  } else {
+    console.warn("Missing type", block.type);
+    return null;
+  }
+};
+
+export const convertExportedBlocks = (
+  blocks: Array<ExportableBlock>,
+  assets: AssetMap
+): Array<PostBlockType> => {
+  return blocks
+    .map(block => convertExportableBlock(block, assets))
+    .filter(Boolean);
+};
+
+export const convertExportedNodes = (
+  nodes: Array<ExportableNode>,
+  assets: AssetMap
+): EditableNodeMap => {
+  return fromPairs(
+    nodes
+      .map(node => {
+        const block = convertExportableBlock(node.block, assets);
+        if (!block) {
+          return null;
+        }
+
+        return [
+          block.id,
+          buildEditableNode({
+            block,
+            ...node.position
+          })
+        ];
+      })
+      .filter(Boolean)
   );
 };

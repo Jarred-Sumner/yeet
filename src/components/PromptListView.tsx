@@ -11,7 +11,10 @@ import {
 } from "./Text";
 import { COLORS, SPACING } from "../lib/styles";
 import { Image, AvatarImage } from "../components/Image";
-import { LikeButtonSize, LikeButton } from "../components/LikeButton";
+import {
+  VerticalIconButtonSize,
+  VerticalIconButton
+} from "../components/VerticalIconButton";
 import { IconCrown } from "../components/Icon";
 import LinearGradient from "react-native-linear-gradient";
 
@@ -213,7 +216,10 @@ class PostPreview extends React.Component {
           </View>
 
           <View style={styles.thumbnailFooter}>
-            <LikeButton size={LikeButtonSize.half} count={post.likesCount} />
+            <VerticalIconButton
+              size={VerticalIconButtonSize.half}
+              count={post.likesCount}
+            />
           </View>
         </View>
       </View>
@@ -261,7 +267,10 @@ class WinnerPostPreview extends React.Component {
           </View>
 
           <View style={styles.thumbnailFooter}>
-            <LikeButton size={LikeButtonSize.default} count={post.likesCount} />
+            <VerticalIconButton
+              size={VerticalIconButtonSize.default}
+              count={post.likesCount}
+            />
           </View>
         </View>
       </View>

@@ -27,6 +27,7 @@ import { Toast } from "./src/components/Toast";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
 import PostListPage from "./src/screens/PostList";
+import ReplyPage from "./src/screens/ReplyPage";
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -60,8 +61,7 @@ const Routes = createAppContainer(
             backgroundColor: "#000"
           },
           defaultNavigationOptions: {
-            header: () => null,
-            mode: "modal"
+            header: () => null
           },
           tabBarComponent: () => null,
           tabBarOptions: {
@@ -77,6 +77,24 @@ const Routes = createAppContainer(
       ),
       UploadPost: UploadPostPage,
       InsertSticker: ImagePickerPage,
+      ReplyStack: createSharedElementStackNavigator(
+        createStackNavigator,
+        {
+          ReplyToPost: ReplyPage,
+          EditBlockPhotoInReply: ImagePickerPage
+        },
+        {
+          cardStyle: {
+            backgroundColor: "#000"
+          },
+          defaultNavigationOptions: {
+            header: () => null,
+            mode: "modal",
+            headerMode: "none",
+            headerTransparent: true
+          }
+        }
+      ),
 
       Auth: createStackNavigator(
         {

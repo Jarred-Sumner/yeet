@@ -5,7 +5,8 @@ mutation CreatePost(
   $blocks: JSON
   $nodes: JSON
   $format: String!
-  $bounds: Rectangle!
+  $bounds: RectangleInputObject!
+  $colors: ColorsInputObject!
   $threadId: ID
 ) {
   createPost(
@@ -15,6 +16,7 @@ mutation CreatePost(
     format: $format
     bounds: $bounds
     threadId: $threadId
+    colors: $colors
   ) {
     ...PostFragment
   }

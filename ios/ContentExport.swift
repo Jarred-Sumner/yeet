@@ -4,7 +4,7 @@ import AVFoundation
 import SpriteKit
 import Photos
 import SDWebImage
-
+import UIImageColors
 
 class ContentExport {
   static let CONVERT_PNG_TO_WEBP = true
@@ -27,21 +27,29 @@ class ContentExport {
   let resolution: CGSize
   let type: ExportType
   let duration: TimeInterval
+  let colors: UIImageColors?
 
-  init(url: URL, resolution: CGSize, type: ExportType, duration: TimeInterval) {
+  init(url: URL, resolution: CGSize, type: ExportType, duration: TimeInterval, colors: UIImageColors?) {
     self.url = url
     self.resolution = resolution
     self.type = type
     self.duration = duration
+    self.colors = colors
   }
 
   func dictionaryValue() -> [String: Any] {
     return [
-      "uri": url.absoluteString,
-      "width": Double(resolution.width),
-      "height": Double(resolution.height),
-      "type": type.rawValue,
-      "duration": Double(duration)
+      "uri": url.absoluteString as NSString,
+      "width": NSNumber(value: Double(resolution.width)),
+      "height": NSNumber(value: Double(resolution.height)),
+      "type": NSString(string: type.rawValue),
+      "duration": NSNumber(value: Double(duration)),
+      "colors": [
+        "background": colors?.background.rgbaString,
+        "primary": colors?.primary.rgbaString,
+        "secondary": colors?.secondary.rgbaString,
+        "detail": colors?.detail.rgbaString,
+        ] as [String: String?]
     ]
   }
 
@@ -185,8 +193,10 @@ class ContentExport {
 
       let resolution = CGSize(width: cropRect.size.width * contentsScale, height: cropRect.size.height * contentsScale)
 
-      if (type == ExportType.mp4) {
 
+
+      if (type == ExportType.mp4) {
+        let colors = UIImage.image(from: parentlayer)!.getColors()
 //        videolayer.frame = CGRect(origin: .zero, size: bounds.size)
 //        parentlayer.setAffineTransform(CGAffineTransform.init(translationX: cropRect.size.width / contentsScale, y: (cropRect.size.height / contentsScale) + (cropRect.size.height - parentlayer.frame.size.height)).scaledBy(x: contentsScale, y: contentsScale))
 
@@ -238,7 +248,8 @@ class ContentExport {
             complete(nil)
           default:
             print("Movie complete")
-            complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration))
+
+            complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
           }
         })
       } else {
@@ -256,11 +267,8 @@ class ContentExport {
         imageData.write(to: url, atomically: true)
 
 
-        complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration))
+        complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
       }
-
-
-
     } catch {
       print("VideoWatermarker->getWatermarkLayer everything is baaaad =(")
     }
@@ -282,5 +290,35 @@ private extension UIImage {
 
     layer.render(in: context)
     return UIGraphicsGetImageFromCurrentImageContext()
+  }
+}
+
+extension UIColor {
+  var rgbComponents:(red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+    var r:CGFloat = 0
+    var g:CGFloat = 0
+    var b:CGFloat = 0
+    var a:CGFloat = 0
+    if getRed(&r, green: &g, blue: &b, alpha: &a) {
+      return (r,g,b,a)
+    }
+    return (0,0,0,0)
+  }
+  // hue, saturation, brightness and alpha components from UIColor**
+  var hsbComponents:(hue: CGFloat, saturation: CGFloat, brightness: CGFloat, alpha: CGFloat) {
+    var hue:CGFloat = 0
+    var saturation:CGFloat = 0
+    var brightness:CGFloat = 0
+    var alpha:CGFloat = 0
+    if getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha){
+      return (hue,saturation,brightness,alpha)
+    }
+    return (0,0,0,0)
+  }
+  var rgbString:String {
+    return String(format: "rgb(%d,%d,%d)", Int(rgbComponents.red * 255), Int(rgbComponents.green * 255),Int(rgbComponents.blue * 255))
+  }
+  var rgbaString:String {
+    return String(format: "rgba(%d,%d,%d,%f)", Int(rgbComponents.red * 255), Int(rgbComponents.green * 255),Int(rgbComponents.blue * 255),rgbComponents.alpha )
   }
 }

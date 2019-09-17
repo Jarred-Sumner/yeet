@@ -2,9 +2,19 @@
 /* eslint-disable */
 // This file was automatically generated and should not be edited.
 
+import { RectangleInputObject, ColorsInputObject } from "./globalTypes";
+
 // ====================================================
 // GraphQL mutation operation: CreatePost
 // ====================================================
+
+export interface CreatePost_createPost_bounds {
+  __typename: "Rectangle";
+  x: number | null;
+  y: number | null;
+  width: number | null;
+  height: number | null;
+}
 
 export interface CreatePost_createPost_media {
   __typename: "Media";
@@ -23,14 +33,26 @@ export interface CreatePost_createPost_profile {
   photoURL: string | null;
 }
 
+export interface CreatePost_createPost_colors {
+  __typename: "ColorGroup";
+  background: string | null;
+  primary: string | null;
+  detail: string | null;
+  secondary: string | null;
+}
+
 export interface CreatePost_createPost {
   __typename: "Post";
   id: string;
   likesCount: number;
+  format: string;
   blocks: JSON;
   nodes: JSON;
+  bounds: CreatePost_createPost_bounds;
   media: CreatePost_createPost_media;
   profile: CreatePost_createPost_profile;
+  colors: CreatePost_createPost_colors;
+  attachments: JSON;
 }
 
 export interface CreatePost {
@@ -42,5 +64,7 @@ export interface CreatePostVariables {
   blocks?: JSON | null;
   nodes?: JSON | null;
   format: string;
-  bounds: Rectangle;
+  bounds: RectangleInputObject;
+  colors: ColorsInputObject;
+  threadId?: string | null;
 }

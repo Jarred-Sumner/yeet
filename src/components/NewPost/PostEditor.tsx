@@ -1282,6 +1282,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               onPressDownload={this.handleDownload}
               panX={this.panX}
               panY={this.panY}
+              isPageModal={this.props.isReply}
               waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
               width={sizeStyle.width}
               isTappingEnabled={

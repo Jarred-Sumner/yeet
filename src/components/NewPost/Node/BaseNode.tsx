@@ -41,7 +41,13 @@ type Props = {
 
 export type EditableNodeMap = { [key: string]: EditableNode };
 
-export const buildEditableNode = ({ block, x, y }) => {
+export const buildEditableNode = ({
+  block,
+  x = 0,
+  y = 0,
+  scale = 1.0,
+  rotate = 0
+}): EditableNode => {
   return {
     block,
     position: {
@@ -49,10 +55,10 @@ export const buildEditableNode = ({ block, x, y }) => {
       y,
       animatedX: new Animated.Value(x),
       animatedY: new Animated.Value(y),
-      scale: 1.0,
-      rotate: 0,
-      animatedScale: new Animated.Value(1.0),
-      animatedRotate: new Animated.Value(0)
+      scale,
+      rotate,
+      animatedScale: new Animated.Value(scale),
+      animatedRotate: new Animated.Value(rotate)
     }
   };
 };

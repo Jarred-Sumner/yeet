@@ -11,7 +11,10 @@ import {
 import { getInset } from "react-native-safe-area-view";
 import { IconChevronRight, IconList, IconTrophy } from "../../components/Icon";
 import { Avatar } from "../../components/Avatar";
-import { LikeButton, LikeButtonSize } from "../../components/LikeButton";
+import {
+  VerticalIconButton,
+  VerticalIconButtonSize
+} from "../../components/VerticalIconButton";
 import { SPACING } from "../../lib/styles";
 import {
   BoldText,
@@ -216,7 +219,10 @@ const ActionBar = ({ onLike, likesCount, onSkip }) => {
     <View style={actionBarStyles.container}>
       <TouchableOpacity onPress={onLike}>
         <View style={actionBarStyles.button}>
-          <LikeButton size={LikeButtonSize.default} count={likesCount} />
+          <VerticalIconButton
+            size={VerticalIconButtonSize.default}
+            count={likesCount}
+          />
         </View>
       </TouchableOpacity>
 

@@ -14,13 +14,19 @@ import { IconButton } from "../components/Button";
 import { SPACING } from "../lib/styles";
 import { withNavigation } from "react-navigation";
 
+const LAYOUT_DIRECTION = "column-reverse";
+const LAYOUT_DIRECTION_OFFSET = {
+  column: getInset("bottom") + 80 + getInset("top"),
+  "column-reverse": getInset("top") + 60.5
+}[LAYOUT_DIRECTION];
+
 const Footer = ({ onPressPlus }) => (
   <SafeAreaView
     forceInset={{
-      bottom: "always",
+      bottom: LAYOUT_DIRECTION === "column-reverse" ? "never" : "always",
       left: "never",
       right: "never",
-      top: "never"
+      top: LAYOUT_DIRECTION === "column" ? "never" : "always"
     }}
   >
     <View
@@ -130,8 +136,14 @@ class PostList extends React.PureComponent<Props, {}> {
       { useNativeDriver: true }
     );
     this.init();
-    this.state = { height: height - getInset("bottom") - 80 - getInset("top") };
+    this.state = {
+      height: height - LAYOUT_DIRECTION_OFFSET,
+      threadOffset: 0,
+      hasLoaded: false
+    };
   }
+
+  handleLoad = () => this.setState({ hasLoaded: true });
 
   static navigationOptions = ({ navigation }) => ({
     tabBarIcon: ({ highlighted }) => (
@@ -197,18 +209,30 @@ class PostList extends React.PureComponent<Props, {}> {
   };
 
   swipped = ([translationX]) => {
-    // console.log({ likes: translationX > 0 });
-    // const {
-    //   profiles: [lastProfile, ...profiles]
-    // } = this.state;
-    // this.setState({ profiles }, this.init);
+    this.setState({
+      threadOffset: this.state.threadOffset + 1,
+      hasLoaded: false
+    });
+    this.init();
   };
 
   openPlus = () => this.props.navigation.navigate("NewPostStack");
 
+  handlePressSend = post => {
+    const thread = this.props.postThreads[this.state.threadOffset];
+
+    this.props.navigation.push("ReplyStack", {
+      threadId: thread.id,
+      thread: thread,
+      post
+    });
+  };
+  handlePressDownload = () => {};
+
   render() {
     const { onGestureEvent, translateX, translateY } = this;
     const { postThreads = [] } = this.props;
+    const { threadOffset } = this.state;
 
     const rotateZ = concat(
       interpolate(translateX, {
@@ -219,15 +243,26 @@ class PostList extends React.PureComponent<Props, {}> {
       "deg"
     );
 
+    const scaleBelow = interpolate(translateX, {
+      inputRange: [-width / 2, 0, width / 2],
+      outputRange: [1.0, 0.95, 1.0],
+      extrapolate: Extrapolate.CLAMP
+    });
+    const opacityBelow = interpolate(translateX, {
+      inputRange: [-width / 2, 0, width / 2],
+      outputRange: [0, 0.1, 0],
+      extrapolate: Extrapolate.CLAMP
+    });
+
     const style = {
       ...StyleSheet.absoluteFillObject,
       zIndex: 900,
       transform: [{ translateX }, { translateY }, { rotateZ }]
     };
 
-    const currentThread = postThreads[0];
+    const currentThread = postThreads[threadOffset];
     return (
-      <>
+      <Animated.View style={styles.page}>
         <Animated.View style={styles.wrapper}>
           <SafeAreaView
             onLayout={this.onLayout}
@@ -242,13 +277,36 @@ class PostList extends React.PureComponent<Props, {}> {
                 { width: POST_WIDTH, height: this.state.height }
               ]}
             >
-              {postThreads.slice(1, 2).map(postThread => (
-                <Animated.View style={{}}>
+              {postThreads.slice(threadOffset + 1, 2).map(postThread => (
+                <Animated.View
+                  key={postThread.id}
+                  shouldRasterizeIOS
+                  style={{
+                    position: "relative",
+                    transform: [
+                      {
+                        scale: scaleBelow
+                      }
+                    ]
+                  }}
+                >
                   <Post
-                    key={postThread.id}
-                    post={postThread.firstPost}
+                    thread={postThread}
+                    delay={!this.state.hasLoaded}
                     width={POST_WIDTH}
+                    layoutDirection={LAYOUT_DIRECTION}
                     height={this.state.height}
+                  />
+
+                  <Animated.View
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        backgroundColor: "white",
+                        borderRadius: 16,
+                        opacity: opacityBelow
+                      }
+                    ]}
                   />
                 </Animated.View>
               ))}
@@ -266,8 +324,16 @@ class PostList extends React.PureComponent<Props, {}> {
                   {currentThread && (
                     <Post
                       post={currentThread.firstPost}
+                      thread={currentThread}
+                      delay={false}
                       width={POST_WIDTH}
+                      key={currentThread.id}
                       height={this.state.height}
+                      hideContent={false}
+                      layoutDirection={LAYOUT_DIRECTION}
+                      onLoad={this.handleLoad}
+                      onPressSend={this.handlePressSend}
+                      onPressDownload={this.handlePressDownload}
                     />
                   )}
                 </Animated.View>
@@ -276,7 +342,7 @@ class PostList extends React.PureComponent<Props, {}> {
           </SafeAreaView>
         </Animated.View>
         <Footer onPressPlus={this.openPlus} />
-      </>
+      </Animated.View>
     );
   }
 }
@@ -295,8 +361,12 @@ const styles = StyleSheet.create({
     }
   },
   wrapper: {
+    backgroundColor: "#000",
+    flex: 1
+  },
+  page: {
     flex: 1,
-    backgroundColor: "#000"
+    flexDirection: LAYOUT_DIRECTION
   }
 });
 

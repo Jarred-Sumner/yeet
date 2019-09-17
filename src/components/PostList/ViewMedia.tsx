@@ -17,22 +17,42 @@ const styles = StyleSheet.create({
 
 const IS_SIMULATOR = DeviceInfo.isEmulator();
 
-const ImageMedia = ({ media, height, width }) => {
-  const srcWidth = PixelRatio.getPixelSizeForLayoutSize(width);
-  const srcHeight = PixelRatio.getPixelSizeForLayoutSize(height);
+export const resolveImageMediaSource = ({
+  media,
+  width,
+  height,
+  priority = Image.priority.high
+}) => {
+  let srcWidth = PixelRatio.getPixelSizeForLayoutSize(width);
+  let srcHeight = PixelRatio.getPixelSizeForLayoutSize(height);
 
-  const source = {
+  if (srcWidth > media.width || srcHeight > media.height) {
+    srcWidth = media.width;
+    srcHeight = media.height;
+  }
+
+  return {
     uri: buildImgSrc(media.url, srcWidth, srcHeight),
     width: srcWidth,
+    cache: Image.cacheControl.immutable,
+    priority,
     height: srcHeight
   };
+};
 
+const ImageMedia = ({ media, height, width, priority, onLoad }) => {
   return (
-    <Image resizeMode="stretch" source={source} style={[{ height, width }]} />
+    <Image
+      incrementalLoad
+      resizeMode="stretch"
+      onLoad={onLoad}
+      source={resolveImageMediaSource({ media, height, width, priority })}
+      style={[{ height, width }]}
+    />
   );
 };
 
-const VideoMedia = ({ media, paused = false, height, width }) => {
+const VideoMedia = ({ media, paused = false, height, width, onLoad }) => {
   const videoRef = React.createRef<Video>();
 
   return (
@@ -43,6 +63,7 @@ const VideoMedia = ({ media, paused = false, height, width }) => {
       controls={false}
       autoPlay
       ref={videoRef}
+      onLoad={onLoad}
       repeat
       paused={paused}
       fullscreen={false}
@@ -60,7 +81,10 @@ export const Media = ({
   paused,
   height: _height,
   width,
-  showGradient = true
+  showGradient = true,
+  onLoad,
+  priority,
+  hideContent = false
 }) => {
   let MediaComponent = media.mimeType.includes("image")
     ? ImageMedia
@@ -70,16 +94,17 @@ export const Media = ({
 
   return (
     <>
-      <View
-        key={media.id}
-        style={[styles.mediaContainerStyle, { height, width: width }]}
-      >
-        <MediaComponent
-          width={width}
-          media={media}
-          paused={paused}
-          height={height}
-        />
+      <View style={[styles.mediaContainerStyle, { height, width: width }]}>
+        {!hideContent && (
+          <MediaComponent
+            width={width}
+            media={media}
+            onLoad={onLoad}
+            priority={priority}
+            paused={paused}
+            height={height}
+          />
+        )}
       </View>
     </>
   );

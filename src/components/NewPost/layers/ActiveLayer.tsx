@@ -179,6 +179,7 @@ export const ActiveLayer = ({
   controlsOpacity,
   onPressDownload,
   onSend,
+  isPageModal,
   onDelete,
   activeButton,
   focusType,
@@ -198,6 +199,7 @@ export const ActiveLayer = ({
           type={toolbarType}
           opacity={controlsOpacity}
           key={`toolbar-${toolbarType}`}
+          isModal={isPageModal}
           panX={panX}
           panY={panY}
           onPress={onPressToolbarButton}

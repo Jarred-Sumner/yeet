@@ -306,6 +306,8 @@ PODS:
   - React-jsinspector (0.61.0-rc.3)
   - react-native-cameraroll (1.2.1):
     - React
+  - react-native-config (0.11.7):
+    - React
   - react-native-image-picker (1.0.2):
     - React
   - react-native-photo-manipulator (1.0.2):
@@ -402,6 +404,7 @@ PODS:
     - libwebp (~> 1.0)
     - SDWebImage/Core (~> 5.0)
   - SwiftyJSON (4.3.0)
+  - UIImageColors (2.1.0)
   - VFCabbage (0.5)
   - WCPhotoManipulator (0.0.10)
   - Yoga (1.14.0)
@@ -425,6 +428,7 @@ DEPENDENCIES:
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - "react-native-cameraroll (from `../node_modules/@react-native-community/cameraroll`)"
+  - react-native-config (from `../node_modules/react-native-config`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-photo-manipulator (from `../node_modules/react-native-photo-manipulator`)
   - react-native-video (from `../node_modules/react-native-video`)
@@ -461,6 +465,7 @@ DEPENDENCIES:
   - SDWebImagePhotosPlugin
   - SDWebImageWebPCoder
   - SwiftyJSON (~> 4.0)
+  - UIImageColors
   - VFCabbage
   - Yoga (from `../node_modules/react-native/ReactCommon/Yoga`)
 
@@ -490,6 +495,7 @@ SPEC REPOS:
     - SDWebImagePhotosPlugin
     - SDWebImageWebPCoder
     - SwiftyJSON
+    - UIImageColors
     - VFCabbage
     - WCPhotoManipulator
 
@@ -526,6 +532,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/jsinspector"
   react-native-cameraroll:
     :path: "../node_modules/@react-native-community/cameraroll"
+  react-native-config:
+    :path: "../node_modules/react-native-config"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
   react-native-photo-manipulator:
@@ -628,6 +636,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 4dc9a4e01e41475443d7d4a485012adb5d98feb9
   React-jsinspector: 692c0b768cd50a0a43b427730ff01501379fd856
   react-native-cameraroll: 3e5e34d36d93548ae7770ee8ab7b2ae9e778f571
+  react-native-config: 55548054279d92e0e4566ea15a8b9b81028ec342
   react-native-image-picker: 5c15ac0251475ae0b9f21e17d08d7c28db847abc
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3
   react-native-video: 6555881252c8ca039760e1cd6df28ac28ffb2baf
@@ -663,10 +672,11 @@ SPEC CHECKSUMS:
   SDWebImagePhotosPlugin: 99daf9f3706d65e887e3b802ad8121ebaba0f782
   SDWebImageWebPCoder: 7568737603c50f6237850afedd7e9e28e5917e6b
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
+  UIImageColors: d2ef3b0877d203cbb06489eeb78ea8b7788caabe
   VFCabbage: 90bdffa9b37b1c03d9f6f4b930a71be596f8c338
   WCPhotoManipulator: 68945a9d5245b2a8ab0a797c6333b0d4bc7c0547
   Yoga: 3873b42216fd5b09b8a0ffe8fb89721eebd1adbf
 
-PODFILE CHECKSUM: 5598f3320375f70e92c98fe974fb854a99d7be6e
+PODFILE CHECKSUM: 94c35a66647f467f1a2fc27e222e81a150c17286
 
 COCOAPODS: 1.7.5

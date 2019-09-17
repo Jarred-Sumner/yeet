@@ -4,20 +4,35 @@ import {
   PostFragment,
   PostFragment_profile
 } from "../../lib/graphql/PostFragment";
-import { Media } from "./ViewMedia";
+import { Media, resolveImageMediaSource } from "./ViewMedia";
 import Animated from "react-native-reanimated";
 import LinearGradient from "react-native-linear-gradient";
 import { SPACING } from "../../lib/styles";
 import { Avatar } from "../Avatar";
 import { SemiBoldText } from "../Text";
-import { LikeButton, LikeButtonSize } from "../LikeButton";
+import { range } from "lodash";
+import {
+  VerticalIconButton,
+  VerticalIconButtonSize
+} from "../VerticalIconButton";
+import { getInset } from "react-native-safe-area-view";
+import { IconSend, IconRemix } from "../Icon";
+import {
+  ViewThreads_postThreads,
+  ViewThreads_postThreads_firstPost
+} from "../../lib/graphql/ViewThreads";
+import { ViewPosts, ViewPosts_posts } from "../../lib/graphql/ViewPosts";
+import { Query } from "react-apollo";
+import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
+import { PostProgressBar } from "./PostProgressBar";
+import Image from "../Image";
 
+import { uniqBy } from "lodash";
 const styles = StyleSheet.create({
   container: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 12,
-    position: "relative"
+    position: "relative",
+    overflow: "hidden"
   }
 });
 
@@ -42,27 +57,39 @@ const Layer = ({ zIndex, pointerEvents, children, width, height }) => {
   );
 };
 
-const Gradient = ({ width, height }) => {
+const Gradient = ({ width, height, layoutDirection }) => {
   return (
     <LinearGradient
       width={width}
       height={height}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      locations={[0.8179, 0.9586]}
-      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.12)"]}
+      locations={[0, 0.7879, 1.0].map(result => {
+        if (layoutDirection === "column-reverse") {
+          return result;
+        } else {
+          return 1.0 - result;
+        }
+      })}
+      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.0)", "rgba(0,0,0,0.35)"]}
     />
   );
 };
 
 const profileStyles = StyleSheet.create({
   container: {
-    justifyContent: "flex-end",
     alignItems: "flex-start",
 
     paddingVertical: SPACING.normal,
     paddingHorizontal: SPACING.normal,
     flex: 1
+  },
+  containerBottom: {
+    justifyContent: "flex-start"
+  },
+  containerTop: {
+    justifyContent: "flex-end",
+    marginBottom: getInset("bottom")
   },
   content: {
     flexDirection: "row",
@@ -73,11 +100,23 @@ const profileStyles = StyleSheet.create({
     marginLeft: SPACING.half
   }
 });
-const Profile = ({ profile }: { profile: PostFragment_profile }) => {
+const Profile = ({
+  profile,
+  layoutDirection = "column"
+}: {
+  profile: PostFragment_profile;
+}) => {
+  const containerStyles = [
+    profileStyles.container,
+    layoutDirection === "column-reverse"
+      ? profileStyles.containerTop
+      : profileStyles.containerBottom
+  ];
+
   return (
-    <Animated.View style={profileStyles.container}>
+    <Animated.View style={containerStyles}>
       <View style={profileStyles.content}>
-        <Avatar label={profile.username} size={32} url={profile.photoURL} />
+        <Avatar label={profile.username} size={48} url={profile.photoURL} />
         <SemiBoldText style={profileStyles.username}>
           @{profile.username}
         </SemiBoldText>
@@ -92,8 +131,17 @@ const sidebarStyles = StyleSheet.create({
     alignItems: "flex-end",
 
     paddingVertical: SPACING.normal,
-    paddingHorizontal: SPACING.normal,
+    paddingHorizontal: SPACING.double,
     flex: 1
+  },
+  containerTop: {
+    marginBottom: getInset("bottom")
+  },
+  containerBottom: {
+    marginTop: getInset("top")
+  },
+  spacer: {
+    height: SPACING.double
   },
   content: {
     alignItems: "center",
@@ -105,52 +153,301 @@ const sidebarStyles = StyleSheet.create({
     marginLeft: SPACING.half
   }
 });
-const Sidebar = ({ post }: { post: PostFragment }) => {
+const Sidebar = ({
+  post,
+  layoutDirection,
+  onPressSend,
+  onPressLike
+}: {
+  post: PostFragment;
+}) => {
+  const containerStyles = [
+    sidebarStyles.container,
+    layoutDirection === "column-reverse"
+      ? sidebarStyles.containerTop
+      : sidebarStyles.containerBottom
+  ];
+
   return (
-    <Animated.View style={sidebarStyles.container}>
+    <Animated.View style={containerStyles}>
       <View style={sidebarStyles.content}>
-        <LikeButton size={LikeButtonSize.default} count={post.likesCount} />
+        <VerticalIconButton
+          size={VerticalIconButtonSize.default}
+          count={post.likesCount}
+          onPress={onPressSend}
+          Icon={IconRemix}
+          iconSize={38}
+        />
+
+        <Animated.View style={sidebarStyles.spacer} />
+
+        <VerticalIconButton
+          size={VerticalIconButtonSize.default}
+          count={post.likesCount}
+          onPress={onPressLike}
+        />
       </View>
     </Animated.View>
   );
 };
 
-export class Post extends React.Component<Props> {
-  render() {
-    const { media, profile } = this.props.post;
-    const { width, height } = this.props;
-    return (
-      <Animated.View
-        style={[styles.container, { width, height, backgroundColor: "white" }]}
+const PostComponent = ({
+  width,
+  height,
+  layoutDirection,
+  onPressLike,
+  onPressSend,
+  onLoad,
+  post,
+  children,
+  delay
+}: Props) => {
+  const { media, profile, colors } = post;
+  console.log("INNER", post.id);
+  return (
+    <Animated.View
+      style={[
+        styles.container,
+        { width, height, backgroundColor: colors.secondary || "white" }
+      ]}
+    >
+      <Layer zIndex={LayerLevel.media} width={width} height={height}>
+        <Media
+          width={width}
+          height={height}
+          key={media.id}
+          media={media}
+          onLoad={onLoad}
+          hideContent={delay}
+          priority={delay ? Image.priority.low : Image.priority.high}
+        />
+      </Layer>
+      <Layer
+        pointerEvents="none"
+        zIndex={LayerLevel.gradient}
+        width={width}
+        height={height}
       >
-        <Layer zIndex={LayerLevel.media} width={width} height={height}>
-          <Media width={width} height={height} media={media} />
-        </Layer>
-        <Layer
-          pointerEvents="none"
-          zIndex={LayerLevel.gradient}
+        <Gradient
           width={width}
           height={height}
-        >
-          <Gradient width={width} height={height} />
-        </Layer>
-        <Layer
-          pointerEvents="box-none"
-          zIndex={LayerLevel.overlay}
-          width={width}
-          height={height}
-        >
-          <Profile profile={profile} />
-        </Layer>
-        <Layer
-          pointerEvents="box-none"
-          zIndex={LayerLevel.overlay}
-          width={width}
-          height={height}
-        >
-          <Sidebar post={this.props.post} />
-        </Layer>
-      </Animated.View>
+          layoutDirection={layoutDirection}
+        />
+      </Layer>
+      <Layer
+        pointerEvents="box-none"
+        zIndex={LayerLevel.overlay}
+        width={width}
+        height={height}
+      >
+        <Profile profile={profile} layoutDirection={layoutDirection} />
+      </Layer>
+      <Layer
+        pointerEvents="box-none"
+        zIndex={LayerLevel.overlay}
+        width={width}
+        height={height}
+      >
+        <Sidebar
+          post={post}
+          layoutDirection={layoutDirection}
+          onPressLike={onPressLike}
+          onPressSend={onPressSend}
+        />
+      </Layer>
+
+      <Layer
+        pointerEvents="box-none"
+        zIndex={LayerLevel.overlay}
+        width={width}
+        height={height}
+      >
+        {children}
+      </Layer>
+    </Animated.View>
+  );
+};
+
+type PostContainerProps = {
+  fetchMore: Function;
+  posts: Array<ViewPosts_posts>;
+  thread: ViewThreads_postThreads;
+};
+
+const BAR_SPACING = 3;
+const ProgressBarList = ({
+  postsCount,
+  width,
+  currentPostIndex,
+  stopped,
+  onFinish
+}) => {
+  const barWidth = width / postsCount - BAR_SPACING * 2 * postsCount;
+
+  return (
+    <Animated.View
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        justifyContent: "center",
+        flex: 0,
+        width,
+        paddingVertical: SPACING.half,
+        flexDirection: "row"
+      }}
+    >
+      {range(0, postsCount).map(postIndex => {
+        return (
+          <Animated.View
+            key={`${postIndex}-${barWidth}`}
+            style={{
+              width: barWidth + BAR_SPACING * 2,
+              paddingHorizontal: BAR_SPACING,
+              overflow: "hidden"
+            }}
+          >
+            <PostProgressBar
+              width={barWidth}
+              duration={5000}
+              play={postIndex === currentPostIndex && !stopped}
+              onFinish={onFinish}
+              finished={currentPostIndex > postIndex}
+              loop={postsCount - 1 === currentPostIndex}
+            />
+          </Animated.View>
+        );
+      })}
+    </Animated.View>
+  );
+};
+
+class RawPostContainer extends React.Component<PostContainerProps> {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      postIndex: 0,
+      posts: [props.thread.firstPost, ...props.posts],
+      hasLoaded: false
+    };
+  }
+
+  componentDidMount() {
+    this.prefetchBatch();
+  }
+
+  prefetchBatch = () => {
+    const sources = this.state.posts
+      .slice(this.state.currentPostIndex, 2)
+      .map(post => {
+        if (post.media.mimeType.includes("image")) {
+          return resolveImageMediaSource({
+            media: post.media,
+            width: this.props.width,
+            height: this.props.height
+          });
+        } else {
+          return null;
+        }
+      })
+      .filter(Boolean);
+    Image.preload(sources);
+  };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.posts !== this.state.posts) {
+      this.prefetchBatch();
+    }
+  }
+
+  static getDerivedStateFromProps(props) {
+    const posts = uniqBy([props.thread.firstPost, ...props.posts], "id");
+
+    return { posts };
+  }
+
+  goNext = () => {
+    const postIndex = this.state.postIndex + 1;
+    const hasNextPost = !!this.state.posts[postIndex];
+
+    if (hasNextPost) {
+      this.setState({
+        postIndex,
+        hasLoaded: false
+      });
+    }
+  };
+
+  handleLoad = () => {
+    this.setState({ hasLoaded: true });
+    this.props.onLoad && this.props.onLoad();
+  };
+
+  handleSend = () => {
+    this.props.onPressSend(this.state.posts[this.state.postIndex]);
+  };
+
+  render() {
+    const {
+      width,
+      height,
+      layoutDirection,
+      onPressLike,
+      onPressSend,
+      delay
+    } = this.props;
+    const { posts, postIndex } = this.state;
+    const postsCount = posts.length;
+
+    const showProgressBar = postsCount > 1;
+    const post = posts[postIndex];
+
+    return (
+      <PostComponent
+        width={width}
+        height={height}
+        layoutDirection={layoutDirection}
+        onPressSend={this.handleSend}
+        onLoad={this.handleLoad}
+        key={post.id}
+        onPressLike={onPressLike}
+        delay={delay}
+        postIndex={this.state.postIndex}
+        post={post}
+      >
+        {showProgressBar && (
+          <ProgressBarList
+            postsCount={postsCount}
+            width={width}
+            onFinish={this.goNext}
+            stopped={this.props.delay || !this.state.hasLoaded}
+            currentPostIndex={this.state.postIndex}
+          />
+        )}
+      </PostComponent>
     );
   }
 }
+
+export const Post = props => (
+  <Query
+    query={VIEW_POSTS_QUERY}
+    skip={props.delay}
+    notifyOnNetworkStatusChange
+    variables={{
+      threadId: props.thread.id,
+      limit: 10,
+      offset: 0
+    }}
+  >
+    {({ data: { posts = [] } = {}, fetchMore, ...apollo }: ViewPosts) => (
+      <RawPostContainer
+        {...props}
+        posts={posts}
+        fetchMore={fetchMore}
+        apollo={apollo}
+      />
+    )}
+  </Query>
+);

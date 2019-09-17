@@ -62,9 +62,11 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     return screenshot
   }
 
-  
 
-
+  @objc(requiresMainQueueSetup)
+  private func requiresMainQueueSetup() -> Bool {
+    return true
+  }
 
   func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, ExportableImage>) -> Void) -> Void {
     var dict = Dictionary<String, ExportableImage>();

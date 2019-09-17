@@ -35,6 +35,7 @@ export enum IconName {
   chevronLeft = "chevron-left",
   check = "check",
   search = "search",
+  remix = "remix",
   searchPhoto = "search-photo",
   camera = "camera",
   background = "background",
@@ -114,3 +115,4 @@ export const IconBackground = props => (
 export const IconRedact = props => <Icon {...props} name={IconName.redact} />;
 export const IconProfile = props => <Icon {...props} name={IconName.profile} />;
 export const IconBack = props => <Icon {...props} name={IconName.back} />;
+export const IconRemix = props => <Icon {...props} name={IconName.remix} />;
