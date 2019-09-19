@@ -216,9 +216,6 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
 
   loadImages = async (isResultChanging = true) => {
     const { loadState, query, offset, hasMore } = this.state;
-    if (loadState === InternetImagesListLoadState.loading) {
-      return;
-    }
 
     this.setState({ loadState: InternetImagesListLoadState.loading });
 
@@ -262,9 +259,16 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
 
   _handleSearch = () => {
     this.loadImages(true);
+
+    this.flatListRef.current.getNode().scrollToIndex({
+      index: 0,
+      viewOffset: 0,
+      viewPosition: 0,
+      animated: true
+    });
   };
 
-  handleSearch = debounce(this._handleSearch, 200);
+  handleSearch = debounce(this._handleSearch, 200, { trailing: true });
 
   handleChangeQuery = (query: string) => {
     this.setState({ query });
