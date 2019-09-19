@@ -153,9 +153,9 @@ class ThreadList extends React.PureComponent<Props, {}> {
     return [
       {
         id,
-        animation: "resize",
-        resize: "clip",
-        align: "left-bottom"
+        animation: "move",
+        resize: "none",
+        align: "center"
       }
     ];
   };

@@ -187,7 +187,10 @@ const ThreadCell = ({
           ]}
         >
           <View style={[threadStyles.layer, threadStyles.mediaLayer]}>
-            <SharedElement id={`post.${thread.firstPost.id}.media`}>
+            <SharedElement
+              style={{ width, height }}
+              id={`post.${thread.firstPost.id}.media`}
+            >
               <Media
                 containerWidth={_width}
                 containerHeight={height}
