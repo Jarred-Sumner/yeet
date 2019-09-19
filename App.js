@@ -26,17 +26,33 @@ import { createSharedElementStackNavigator } from "react-navigation-shared-eleme
 import { Toast } from "./src/components/Toast";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
-import PostListPage from "./src/screens/PostList";
+import ThreadListPage from "./src/screens/ThreadList";
 import ReplyPage from "./src/screens/ReplyPage";
+import ViewThreadPage from "./src/screens/ViewThread";
 
 const Routes = createAppContainer(
   createStackNavigator(
     {
       Home: createMaterialTopTabNavigator(
         {
-          FeedTab: {
-            screen: PostListPage
-          },
+          FeedTab: createSharedElementStackNavigator(
+            createStackNavigator,
+            {
+              ThreadList: ThreadListPage,
+              ViewThread: ViewThreadPage
+            },
+            {
+              cardStyle: {
+                backgroundColor: "#000"
+              },
+              defaultNavigationOptions: {
+                header: () => null,
+                mode: "modal",
+                headerMode: "none",
+                headerTransparent: true
+              }
+            }
+          ),
           NewPostStack: createSharedElementStackNavigator(
             createStackNavigator,
             {

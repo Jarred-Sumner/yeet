@@ -3,7 +3,7 @@ import S3Upload, { startFileUpload } from "../lib/fileUpload";
 import { fromPairs, get } from "lodash";
 import Animated from "react-native-reanimated";
 import HapticFeedback from "react-native-haptic-feedback";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, View, PixelRatio } from "react-native";
 import { SemiBoldText } from "./Text";
 import {
   ContentExport,
@@ -228,7 +228,8 @@ export class RawPostUploader extends React.Component<Props> {
       {
         type: "Media",
         contentType: this.props.file.type,
-        duration: this.props.file.duration
+        duration: this.props.file.duration,
+        pixelRatio: PixelRatio.get()
       }
     );
   };

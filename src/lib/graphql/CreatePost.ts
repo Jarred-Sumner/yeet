@@ -23,6 +23,7 @@ export interface CreatePost_createPost_media {
   height: number | null;
   mimeType: string | null;
   duration: number;
+  pixelRatio: number | null;
   url: string;
 }
 
@@ -52,6 +53,7 @@ export interface CreatePost_createPost {
   media: CreatePost_createPost_media;
   profile: CreatePost_createPost_profile;
   colors: CreatePost_createPost_colors;
+  autoplaySeconds: number;
   attachments: JSON;
 }
 

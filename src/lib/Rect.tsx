@@ -41,3 +41,13 @@ export const scaleToWidth = (
     )
   };
 };
+
+export const pxBoundsToPoint = (rect: Partial<BoundsRect>, ratio: number) => {
+  const { width = 0, height = 0, x = 0, y = 0 } = rect;
+  return {
+    width: width / ratio,
+    height: height / ratio,
+    x: x / ratio,
+    y: y / ratio
+  };
+};

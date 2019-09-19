@@ -59,12 +59,15 @@ const VideoMedia = ({
   width,
   onLoad,
   containerHeight,
-  containerWidth
+  containerWidth,
+  size = "full"
 }) => {
   const videoRef = React.createRef<Video>();
   const scale = width / media.width;
-  const translateX = (containerWidth - width) / 2;
-  const translateY = 0;
+  const translateX =
+    containerWidth !== width ? (containerWidth - width) / 2 : 0;
+  const translateY =
+    containerHeight !== height ? (containerHeight - height) / 2 : 0;
 
   return (
     <Animated.View
@@ -75,33 +78,52 @@ const VideoMedia = ({
     >
       <Video
         style={[
+          // size === "full"
+          // ? {
           {
-            height: media.height,
-            width: media.width,
+            height,
+            width,
+            // height: media.height,
+            // width: media.width,
             transform: [
               { translateX },
-              { translateY },
-              {
-                scale
-              },
-              {
-                translateX: media.width * -0.5
-              },
-              {
-                translateY: media.height * -0.5
-              }
+              { translateY }
+              // {
+              //   scale
+              // }
+              // {
+              //   translateX: media.width / (media.pixelRatio * -1)
+              // },
+              // {
+              //   translateY: media.height / (media.pixelRatio * -1)
+              // }
             ]
           }
+          // : { height, width }
         ]}
-        resizeMode="none"
+        resizeMode={size === "full" ? "center" : undefined}
         muted={IS_SIMULATOR}
         controls={false}
         autoPlay
         ref={videoRef}
         onLoad={onLoad}
         repeat
+        bufferConfig={{
+          minBufferMs: 1,
+          maxBufferMs: 2000,
+          bufferForPlaybackMs: 1,
+          bufferForPlaybackAfterRebufferMs: 1000
+        }}
         paused={paused}
         fullscreen={false}
+        selectedVideoTrack={
+          size === "thumbnail"
+            ? {
+                type: "resolution",
+                value: 240
+              }
+            : undefined
+        }
         source={{
           uri: media.url,
           width: media.width ? media.width : undefined,
@@ -122,7 +144,8 @@ export const Media = ({
   priority,
   hideContent = false,
   containerHeight,
-  containerWidth
+  containerWidth,
+  size
 }) => {
   let MediaComponent = media.mimeType.includes("image")
     ? ImageMedia
@@ -132,7 +155,9 @@ export const Media = ({
 
   return (
     <>
-      <View style={[styles.mediaContainerStyle, { height, width: width }]}>
+      <View
+        style={[styles.mediaContainerStyle, { height: _height, width: width }]}
+      >
         {!hideContent && (
           <MediaComponent
             width={width}
@@ -142,6 +167,7 @@ export const Media = ({
             onLoad={onLoad}
             priority={priority}
             paused={paused}
+            size={size}
             height={height}
           />
         )}

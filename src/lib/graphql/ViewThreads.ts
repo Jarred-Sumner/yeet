@@ -21,6 +21,7 @@ export interface ViewThreads_postThreads_firstPost_media {
   height: number | null;
   mimeType: string | null;
   duration: number;
+  pixelRatio: number | null;
   url: string;
 }
 
@@ -50,12 +51,14 @@ export interface ViewThreads_postThreads_firstPost {
   media: ViewThreads_postThreads_firstPost_media;
   profile: ViewThreads_postThreads_firstPost_profile;
   colors: ViewThreads_postThreads_firstPost_colors;
+  autoplaySeconds: number;
   attachments: JSON;
 }
 
 export interface ViewThreads_postThreads {
   __typename: "PostThread";
   id: string;
+  postsCount: number;
   firstPost: ViewThreads_postThreads_firstPost;
 }
 

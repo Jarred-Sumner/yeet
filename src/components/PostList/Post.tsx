@@ -29,6 +29,7 @@ import Image from "../Image";
 
 import { uniqBy } from "lodash";
 import { TOP_Y } from "../../../config";
+import { SharedElement } from "react-navigation-shared-element";
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
@@ -58,7 +59,7 @@ const Layer = ({ zIndex, pointerEvents, children, width, height }) => {
   );
 };
 
-const Gradient = ({ width, height, layoutDirection }) => {
+export const OverlayGradient = ({ width, height, layoutDirection }) => {
   return (
     <LinearGradient
       width={width}
@@ -214,18 +215,20 @@ const PostComponent = ({
       ]}
     >
       <Layer zIndex={LayerLevel.media} width={width} height={height}>
-        <Media
-          width={post.bounds.width}
-          height={post.bounds.height}
-          containerWidth={width}
-          containerHeight={height}
-          key={media.id}
-          paused={stopped}
-          media={media}
-          onLoad={onLoad}
-          hideContent={delay}
-          priority={delay ? Image.priority.low : Image.priority.high}
-        />
+        <SharedElement id={`post.${post.id}.media`}>
+          <Media
+            width={post.bounds.width}
+            height={post.bounds.height}
+            containerWidth={width}
+            containerHeight={height}
+            key={media.id}
+            paused={stopped}
+            media={media}
+            onLoad={onLoad}
+            hideContent={delay}
+            priority={delay ? Image.priority.low : Image.priority.high}
+          />
+        </SharedElement>
       </Layer>
       <Layer
         pointerEvents="none"
@@ -233,7 +236,7 @@ const PostComponent = ({
         width={width}
         height={height}
       >
-        <Gradient
+        <OverlayGradient
           width={width}
           height={height}
           layoutDirection={layoutDirection}
@@ -280,15 +283,16 @@ type PostContainerProps = {
 };
 
 const BAR_SPACING = 3;
-const ProgressBarList = ({
+export const ProgressBarList = ({
   postsCount,
   width,
   currentPostIndex,
   stopped,
-  onFinish
+  onFinish,
+  loopIndex
 }) => {
   const barWidth = width / postsCount - BAR_SPACING * 2 * postsCount;
-
+  const _loopIndex = loopIndex || postsCount - 1;
   return (
     <Animated.View
       style={{
@@ -318,7 +322,7 @@ const ProgressBarList = ({
               play={postIndex === currentPostIndex && !stopped}
               onFinish={onFinish}
               finished={currentPostIndex > postIndex}
-              loop={postsCount - 1 === currentPostIndex}
+              loop={_loopIndex === postIndex}
             />
           </Animated.View>
         );

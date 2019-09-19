@@ -82,7 +82,11 @@ const httpLink = new HttpLink({
 const cache = new InMemoryCache({
   // fragmentMatcher,
   dataIdFromObject: o => {
-    return `${o.__typename}-${o.id}`;
+    if (!o.id) {
+      return Object.values(o).join(",");
+    } else {
+      return `${o.__typename}-${o.id}`;
+    }
   }
   // cacheRedirects: {}
 });

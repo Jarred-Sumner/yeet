@@ -113,7 +113,7 @@ const {
 
 type Props = ViewThreads & {};
 
-class PostList extends React.PureComponent<Props, {}> {
+class ThreadList extends React.PureComponent<Props, {}> {
   constructor(props: Props) {
     super(props);
 
@@ -144,13 +144,23 @@ class PostList extends React.PureComponent<Props, {}> {
     };
   }
 
-  handleLoad = () => this.setState({ hasLoaded: true });
+  static sharedElements = (navigation, otherNavigation, showing) => {
+    const thread = navigation.getParam("thread");
 
-  static navigationOptions = ({ navigation }) => ({
-    tabBarIcon: ({ highlighted }) => (
-      <IconHome size={18} color={highlighted ? "#ccc" : "#aaa"} />
-    )
-  });
+    const id = `post.${thread.firstPost.id}.media`;
+
+    console.log(id);
+    return [
+      {
+        id,
+        animation: "resize",
+        resize: "clip",
+        align: "left-bottom"
+      }
+    ];
+  };
+
+  handleLoad = () => this.setState({ hasLoaded: true });
 
   init = () => {
     const clockX = new Clock();
@@ -231,37 +241,8 @@ class PostList extends React.PureComponent<Props, {}> {
   handlePressDownload = () => {};
 
   render() {
-    const { onGestureEvent, translateX, translateY } = this;
-    const { postThreads = [] } = this.props;
-    const { threadOffset } = this.state;
+    const currentThread = this.props.navigation.getParam("thread");
 
-    const rotateZ = concat(
-      interpolate(translateX, {
-        inputRange: [-width / 2, width / 2],
-        outputRange: [15, -15],
-        extrapolate: Extrapolate.CLAMP
-      }),
-      "deg"
-    );
-
-    const scaleBelow = interpolate(translateX, {
-      inputRange: [-width / 2, 0, width / 2],
-      outputRange: [1.0, 0.95, 1.0],
-      extrapolate: Extrapolate.CLAMP
-    });
-    const opacityBelow = interpolate(translateX, {
-      inputRange: [-width / 2, 0, width / 2],
-      outputRange: [0, 0.1, 0],
-      extrapolate: Extrapolate.CLAMP
-    });
-
-    const style = {
-      ...StyleSheet.absoluteFillObject,
-      zIndex: 900,
-      transform: [{ translateX }, { translateY }, { rotateZ }]
-    };
-
-    const currentThread = postThreads[threadOffset];
     return (
       <Animated.View style={styles.page}>
         <Animated.View style={styles.wrapper}>
@@ -272,79 +253,29 @@ class PostList extends React.PureComponent<Props, {}> {
               { width: POST_WIDTH, height: this.state.height }
             ]}
           >
-            <View
+            <Animated.View
               style={[
-                styles.postList,
+                styles.postListItem,
                 { width: POST_WIDTH, height: this.state.height }
               ]}
             >
-              {postThreads.slice(threadOffset + 1, 2).map(postThread => (
-                <Animated.View
-                  key={postThread.id}
-                  shouldRasterizeIOS
-                  style={{
-                    position: "relative",
-                    transform: [
-                      {
-                        scale: scaleBelow
-                      }
-                    ]
-                  }}
-                >
-                  <Post
-                    thread={postThread}
-                    delay={!this.state.hasLoaded}
-                    width={POST_WIDTH}
-                    layoutDirection={LAYOUT_DIRECTION}
-                    isFocused={false}
-                    height={this.state.height}
-                  />
-
-                  <Animated.View
-                    style={[
-                      StyleSheet.absoluteFill,
-                      {
-                        backgroundColor: "white",
-                        borderRadius: 16,
-                        opacity: opacityBelow
-                      }
-                    ]}
-                  />
-                </Animated.View>
-              ))}
-              <PanGestureHandler
-                onHandlerStateChange={onGestureEvent}
-                {...{ onGestureEvent }}
-              >
-                <Animated.View
-                  style={[
-                    styles.postListItem,
-                    { width: POST_WIDTH, height: this.state.height },
-                    style
-                  ]}
-                >
-                  {currentThread && (
-                    <Post
-                      post={currentThread.firstPost}
-                      thread={currentThread}
-                      delay={false}
-                      width={POST_WIDTH}
-                      key={currentThread.id}
-                      height={this.state.height}
-                      isFocused
-                      hideContent={false}
-                      layoutDirection={LAYOUT_DIRECTION}
-                      onLoad={this.handleLoad}
-                      onPressSend={this.handlePressSend}
-                      onPressDownload={this.handlePressDownload}
-                    />
-                  )}
-                </Animated.View>
-              </PanGestureHandler>
-            </View>
+              <Post
+                post={currentThread.firstPost}
+                thread={currentThread}
+                delay={false}
+                width={POST_WIDTH}
+                key={currentThread.id}
+                height={this.state.height}
+                isFocused
+                hideContent={false}
+                layoutDirection={LAYOUT_DIRECTION}
+                onLoad={this.handleLoad}
+                onPressSend={this.handlePressSend}
+                onPressDownload={this.handlePressDownload}
+              />
+            </Animated.View>
           </SafeAreaView>
         </Animated.View>
-        <Footer onPressPlus={this.openPlus} />
       </Animated.View>
     );
   }
@@ -373,15 +304,20 @@ const styles = StyleSheet.create({
   }
 });
 
-const PostListScreen = withNavigation(PostList);
-
-export default hoistNonReactStatics(
-  props => (
-    <Query query={VIEW_THREADS_QUERY}>
-      {({ data: { postThreads = [] } = {}, ...otherProps }) => {
-        return <PostListScreen postThreads={postThreads} {...otherProps} />;
-      }}
-    </Query>
-  ),
-  PostList
+const ThreadListScreen = hoistNonReactStatics(
+  withNavigation(ThreadList),
+  ThreadList
 );
+
+// export default hoistNonReactStatics(
+//   props => (
+//     <Query query={VIEW_THREADS_QUERY}>
+//       {({ data: { postThreads = [] } = {}, ...otherProps }) => {
+//         return <ThreadListScreen postThreads={postThreads} {...otherProps} />;
+//       }}
+//     </Query>
+//   ),
+//   ThreadList
+// );
+
+export default ThreadListScreen;

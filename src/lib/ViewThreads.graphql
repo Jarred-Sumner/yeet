@@ -4,6 +4,8 @@ query ViewThreads($after: ID, $limit: Int) {
   postThreads(after: $after, limit: $limit) {
     id
 
+    postsCount
+
     firstPost {
       ...PostFragment
     }

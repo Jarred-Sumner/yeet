@@ -21,6 +21,7 @@ export interface ViewPosts_posts_media {
   height: number | null;
   mimeType: string | null;
   duration: number;
+  pixelRatio: number | null;
   url: string;
 }
 
@@ -50,6 +51,7 @@ export interface ViewPosts_posts {
   media: ViewPosts_posts_media;
   profile: ViewPosts_posts_profile;
   colors: ViewPosts_posts_colors;
+  autoplaySeconds: number;
   attachments: JSON;
 }
 

@@ -207,6 +207,7 @@ class ContentExport {
         parentlayer.setAffineTransform(CGAffineTransform(scaleX: contentsScale, y: contentsScale))
 
 
+
         let layercomposition = AVMutableVideoComposition()
         layercomposition.frameDuration = CMTime(value: 1, timescale: 30)
 //        layercomposition.renderSize = CGSize(width: cropRect.size.width, height: max(cropRect.size.height, estimatedBounds.size.height) +  (cropRect.size.height - parentlayer.frame.size.height)).applying(.init(scaleX: contentsScale, y: contentsScale))
@@ -223,8 +224,10 @@ class ContentExport {
 //        layerinstruction.setTransform(videoTrack.preferredTransform, at: .zero)
         instruction.layerInstructions = [layerinstruction] as [AVVideoCompositionLayerInstruction]
         layercomposition.instructions = [instruction] as [AVVideoCompositionInstructionProtocol]
-
-//        layerinstruction.setCropRectangle(cropRect.applying(CGAffineTransform.identity.scaledBy(x: contentsScale, y: contentsScale)), at: .zero)
+//
+//        let cropXOffset = cropRect.origin.x * contentsScale
+//        let cropYOffset = min((cropRect.origin.y) * contentsScale * CGFloat(-1), CGFloat.zero)
+//        layerinstruction.setCropRectangle(CGRect(origin: CGPoint(x: cropXOffset, y: cropYOffset), size: CGSize(width: layercomposition.renderSize.width - cropXOffset, height: layercomposition.renderSize.height - cropYOffset)), at: .zero)
 
 
         // Use AVAssetExportSession to export video

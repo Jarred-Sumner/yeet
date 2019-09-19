@@ -21,6 +21,7 @@ export interface PostFragment_media {
   height: number | null;
   mimeType: string | null;
   duration: number;
+  pixelRatio: number | null;
   url: string;
 }
 
@@ -50,5 +51,6 @@ export interface PostFragment {
   media: PostFragment_media;
   profile: PostFragment_profile;
   colors: PostFragment_colors;
+  autoplaySeconds: number;
   attachments: JSON;
 }
