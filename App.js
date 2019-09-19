@@ -40,6 +40,7 @@ const Routes = createAppContainer(
           NewPostStack: createSharedElementStackNavigator(
             createStackNavigator,
             {
+              ChooseDefaultPhoto: ImagePickerPage,
               NewPost: NewPostPage,
               EditBlockPhoto: ImagePickerPage
             },

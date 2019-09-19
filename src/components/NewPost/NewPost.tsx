@@ -1,49 +1,35 @@
-import CameraRoll from "@react-native-community/cameraroll";
+import hoistNonReactStatics from "hoist-non-react-statics";
+import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
-import { Dimensions, View, StyleSheet, StatusBar } from "react-native";
+import { StatusBar, StyleSheet, View } from "react-native";
 import { Transition, Transitioning } from "react-native-reanimated";
+import { withNavigation } from "react-navigation";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import { ContentExport, ExportData } from "../../lib/Exporter";
 import { resizeImage } from "../../lib/imageResize";
+import {
+  getSourceDimensions,
+  YeetImageContainer,
+  YeetImageRect
+} from "../../lib/imageSearch";
+import { COLORS, SPACING } from "../../lib/styles";
+import { PostUploader, RawPostUploader } from "../PostUploader";
+import { sendToast, ToastType } from "../Toast";
+import FormatPicker from "./FormatPicker";
 import { ImageCropper } from "./ImageCropper";
 import { ImagePicker } from "./ImagePicker";
 import {
-  NewPostType,
   buildImageBlock,
-  PostFormat,
-  DEFAULT_FORMAT,
-  POST_WIDTH,
-  presetsByFormat,
   buildPost,
-  MAX_POST_HEIGHT
+  DEFAULT_FORMAT,
+  MAX_POST_HEIGHT,
+  NewPostType,
+  PostFormat,
+  POST_WIDTH,
+  DEFAULT_POST_FORMAT
 } from "./NewPostFormat";
-import { omitBy, isEmpty } from "lodash";
-import { PostEditor, HEADER_HEIGHT } from "./PostEditor";
-import { PixelRatio } from "react-native";
-import { SPACING, COLORS } from "../../lib/styles";
-import { SemiBoldText } from "../Text";
-import { IconButton } from "../Button";
-import { IconBack } from "../Icon";
-import { SafeAreaView, withNavigation } from "react-navigation";
-import { getInset } from "react-native-safe-area-view";
-import DeviceInfo from "react-native-device-info";
-import { calculateAspectRatioFit } from "../../lib/imageResize";
-import FormatPicker from "./FormatPicker";
-import { sendToast, ToastType } from "../Toast";
-import {
-  YeetImageContainer,
-  imageContainerFromCameraRoll,
-  getSourceDimensions,
-  YeetImageRect
-} from "../../lib/imageSearch";
 import { EditableNodeMap } from "./Node/BaseNode";
-import { ContentExport, ExportData } from "../../lib/Exporter";
-import { PostUploader, RawPostUploader } from "../PostUploader";
-
-const IS_SIMULATOR = DeviceInfo.isEmulator();
-
-const TOP_Y = getInset("top");
-const BOTTOM_Y = getInset("bottom");
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
+import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -452,12 +438,10 @@ const styles = StyleSheet.create({
   }
 });
 
-const DEFAULT_POST_FORMAT = PostFormat.screenshot;
 const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
-const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 
 // const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
-const DEFAULT_POST = DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
+export const DEFAULT_POST = DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
 
 const DEFAULT_BOUNDS = {
   x: 0,
@@ -582,14 +566,7 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleBack = () => {
-    const { step } = this.state;
-
-    if (step === NewPostStep.choosePhoto) {
-    } else if (step === NewPostStep.editPhoto) {
-      this.setState({ step: NewPostStep.resizePhoto });
-    } else if (step === NewPostStep.resizePhoto) {
-      this.setState({ step: NewPostStep.choosePhoto });
-    }
+    this.props.navigation.navigate("FeedTab");
   };
 
   stepContainerRef = React.createRef();
@@ -714,5 +691,8 @@ class RawNewPost extends React.Component<{}, State> {
   }
 }
 
-export const NewPost = withNavigation(RawNewPost);
+export const NewPost = hoistNonReactStatics(
+  withNavigation(RawNewPost),
+  RawNewPost
+);
 export default NewPost;

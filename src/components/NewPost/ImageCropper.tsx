@@ -22,15 +22,11 @@ import { ResizableImage } from "./ResizableImage";
 import { resizeImage } from "../../lib/imageResize";
 import { BoldText } from "../Text";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
+import { BOTTOM_Y, TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 
-const SCREEN_DIMENSIONS = Dimensions.get("window");
+const FOOTER_HEIGHT = 32 + BOTTOM_Y;
 
-const TOP_INSET = getInset("top");
-const BOTTOM_INSET = getInset("bottom");
-
-const FOOTER_HEIGHT = 32 + BOTTOM_INSET;
-
-const TOP_IMAGE_Y = TOP_INSET + SPACING.normal;
+const TOP_IMAGE_Y = TOP_Y + SPACING.normal;
 
 const styles = StyleSheet.create({
   container: {

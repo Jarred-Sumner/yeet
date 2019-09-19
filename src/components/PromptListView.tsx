@@ -1,24 +1,22 @@
-import PROMPTS_QUERY from "../lib/promptsQuery.graphql";
-import { Query } from "react-apollo";
 import * as React from "react";
-import { FlatList, View, StyleSheet, Dimensions } from "react-native";
-import {
-  Text,
-  BoldText,
-  SemiBoldText,
-  MediumText,
-  fontStyleSheets
-} from "./Text";
-import { COLORS, SPACING } from "../lib/styles";
-import { Image, AvatarImage } from "../components/Image";
-import {
-  VerticalIconButtonSize,
-  VerticalIconButton
-} from "../components/VerticalIconButton";
-import { IconCrown } from "../components/Icon";
+import { FlatList, StyleSheet, View } from "react-native";
 import LinearGradient from "react-native-linear-gradient";
+import { SCREEN_DIMENSIONS } from "../../config";
+import { IconCrown } from "../components/Icon";
+import { AvatarImage, Image } from "../components/Image";
+import {
+  VerticalIconButton,
+  VerticalIconButtonSize
+} from "../components/VerticalIconButton";
+import { COLORS, SPACING } from "../lib/styles";
+import {
+  BoldText,
+  fontStyleSheets,
+  MediumText,
+  SemiBoldText,
+  Text
+} from "./Text";
 
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 const THUMBNAIL_SIZE = Math.floor(SCREEN_DIMENSIONS.width / 3);
 const AVATAR_THUMBNAIL_SIZE = 32;
 const WINNER_AVATAR_SIZE = 48;

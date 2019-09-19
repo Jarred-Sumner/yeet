@@ -14,7 +14,7 @@ import {
   IconBack,
   IconClose
 } from "../Icon";
-import { getInset } from "react-native-safe-area-view";
+import { TOP_Y } from "../../../config";
 
 export enum ToolbarType {
   default = "default",
@@ -25,7 +25,7 @@ export enum ToolbarType {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginTop: getInset("top") + SPACING.half,
+    marginTop: TOP_Y + SPACING.half,
     justifyContent: "space-between",
     paddingHorizontal: 15 / 2,
     alignItems: "center",

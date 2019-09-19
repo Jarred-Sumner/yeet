@@ -73,8 +73,6 @@ enum RedactionStep {
   loaded = "loaded"
 }
 
-const SCREEN_DIMENSIONS = Dimensions.get("window");
-
 const styles = StyleSheet.create({});
 
 export class Redactor extends React.Component {

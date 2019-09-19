@@ -84,7 +84,13 @@ class RawUserContextProvider extends React.Component<Props, State> {
     if (this.props.currentUser === null && jwt) {
       return this.props.reload();
     } else if (!jwt && this.state.authState === AuthState.checking) {
-      this.setState({ authState: AuthState.guest });
+      this.setState({
+        authState: AuthState.guest,
+        contextValue: {
+          ...this.state.contextValue,
+          authState: AuthState.guest
+        }
+      });
     }
   };
 
@@ -194,6 +200,7 @@ export const UserContextProvider = props => {
           reload={load || refetch}
           error={error}
           currentUser={currentUser}
+          isSignedIn={Storage.isSignedIn()}
         >
           {props.children}
         </RawUserContextProvider>

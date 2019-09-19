@@ -1,36 +1,25 @@
+import { debounce, throttle, uniqBy } from "lodash";
 import * as React from "react";
-import {
-  Dimensions,
-  StyleSheet,
-  View,
-  KeyboardAvoidingView
-} from "react-native";
-import Image from "../../Image";
+import { StyleSheet, View } from "react-native";
 import {
   BaseButton,
   FlatList as GestureHandlerFlatList
 } from "react-native-gesture-handler";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
-import Permissions from "react-native-permissions";
-import Animated, { Extrapolate } from "react-native-reanimated";
-import { getInset } from "react-native-safe-area-view";
-import { ScrollView as NavigationScrollView } from "react-navigation";
-import {
-  searchPhrase,
-  getTrending,
-  YeetImage,
-  YeetImageContainer,
-  ImageSearchResponse,
-  ImageSourceType
-} from "../../../lib/imageSearch";
-import { debounce, uniqBy, throttle } from "lodash";
-import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import FastImage from "react-native-fast-image";
+import Animated from "react-native-reanimated";
+import { TOP_Y } from "../../../../config";
+import {
+  getTrending,
+  ImageSearchResponse,
+  ImageSourceType,
+  searchPhrase,
+  YeetImageContainer
+} from "../../../lib/imageSearch";
+import Image from "../../Image";
+import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 
 // import { Image } from "../Image";
-
-const TOP_Y = getInset("top");
 
 const ScrollView = createNativeWrapper(
   Animated.createAnimatedComponent(KeyboardAwareScrollView),
@@ -42,8 +31,6 @@ const ScrollView = createNativeWrapper(
 const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   wrapper: {

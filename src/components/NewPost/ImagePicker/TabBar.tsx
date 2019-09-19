@@ -6,10 +6,7 @@ import tinycolor from "tinycolor2";
 import { COLORS } from "../../../lib/styles";
 import { SemiBoldText } from "../../Text";
 import { RectButton } from "react-native-gesture-handler";
-
-const TOP_Y = getInset("top");
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
+import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
 

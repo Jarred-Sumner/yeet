@@ -27,8 +27,8 @@ import Image from "../Image";
 import FastImage from "react-native-fast-image";
 import { YeetImageContainer } from "../../lib/imageSearch";
 import { connectActionSheet } from "@expo/react-native-action-sheet";
+import { SCREEN_DIMENSIONS } from "../../../config";
 // import Image from "../Image";
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 type Props = {
   block: ImagePostBlockType;

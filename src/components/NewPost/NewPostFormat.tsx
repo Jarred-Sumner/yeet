@@ -1,13 +1,11 @@
-import { Dimensions } from "react-native";
 import nanoid from "nanoid/non-secure";
 import { SPACING, COLORS } from "../../lib/styles";
 import { getInset } from "react-native-safe-area-view";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
+import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 
-const TOP_Y = getInset("top");
 export const CAROUSEL_HEIGHT = 20 + getInset("bottom");
 
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 
 export const MAX_POST_HEIGHT =
@@ -82,7 +80,7 @@ export const buildTextBlock = ({
 }): TextPostBlock => {
   return {
     type: "text",
-    id: nanoid(),
+    id: generateBlockId(),
     format,
     value,
     autoInserted,
@@ -108,7 +106,7 @@ export const buildImageBlock = ({
 }: {
   image: YeetImageContainer;
 }): ImagePostBlock => {
-  const id = _id || nanoid();
+  const id = _id || generateBlockId();
 
   if (placeholder) {
     return {
@@ -258,3 +256,7 @@ export const buildPost = ({
     throw Error(`Unimplemented format ${format}`);
   }
 };
+
+export const generateBlockId = nanoid;
+
+export const DEFAULT_POST_FORMAT = PostFormat.screenshot;

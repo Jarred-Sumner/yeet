@@ -13,11 +13,12 @@ import { getInset } from "react-native-safe-area-view";
 import { IconButton } from "../components/Button";
 import { SPACING } from "../lib/styles";
 import { withNavigation } from "react-navigation";
+import { TOP_Y, BOTTOM_Y } from "../../config";
 
 const LAYOUT_DIRECTION = "column-reverse";
 const LAYOUT_DIRECTION_OFFSET = {
-  column: getInset("bottom") + 80 + getInset("top"),
-  "column-reverse": getInset("top") + 60.5
+  column: BOTTOM_Y + 80 + TOP_Y,
+  "column-reverse": TOP_Y + 60.5
 }[LAYOUT_DIRECTION];
 
 const Footer = ({ onPressPlus }) => (
@@ -295,6 +296,7 @@ class PostList extends React.PureComponent<Props, {}> {
                     delay={!this.state.hasLoaded}
                     width={POST_WIDTH}
                     layoutDirection={LAYOUT_DIRECTION}
+                    isFocused={false}
                     height={this.state.height}
                   />
 
@@ -329,6 +331,7 @@ class PostList extends React.PureComponent<Props, {}> {
                       width={POST_WIDTH}
                       key={currentThread.id}
                       height={this.state.height}
+                      isFocused
                       hideContent={false}
                       layoutDirection={LAYOUT_DIRECTION}
                       onLoad={this.handleLoad}

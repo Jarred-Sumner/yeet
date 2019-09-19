@@ -1,23 +1,20 @@
+import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
-import { Dimensions, InteractionManager, StyleSheet, View } from "react-native";
+import { InteractionManager, StyleSheet, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
-import {
-  SafeAreaView,
-  withNavigationFocus,
-  NavigationProp
-} from "react-navigation";
+import { SafeAreaView, withNavigationFocus } from "react-navigation";
 import { SharedElement } from "react-navigation-shared-element";
+import { SCREEN_DIMENSIONS } from "../../config";
+import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import { IconButton } from "../components/Button";
 import { IconClose } from "../components/Icon";
 import {
   ImagePicker,
   ImagePickerRoute
 } from "../components/NewPost/ImagePicker";
+import { generateBlockId } from "../components/NewPost/NewPostFormat";
 import { COLORS, SPACING } from "../lib/styles";
-import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
-
-const SCREEN_DIMENSIONS = Dimensions.get("screen");
 
 const styles = StyleSheet.create({
   footer: {
@@ -34,7 +31,7 @@ export class ImagePickerPage extends React.Component {
     // Transition element `item.${item.id}.photo` when either
     // showing or hiding this screen (coming from any route)
     const blockId = navigation.getParam("blockId");
-    const shouldAnimate = navigation.getParam("shouldAnimate") || false;
+    const shouldAnimate = navigation.getParam("shouldAnimate") || true;
 
     if (!shouldAnimate) {
       return [];
@@ -59,6 +56,14 @@ export class ImagePickerPage extends React.Component {
   });
   state = { photo: null };
   controlsOpacityValue = new Animated.Value(0);
+
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      blockId: props.navigation.getParam("blockId") || generateBlockId()
+    };
+  }
 
   componentDidMount() {
     InteractionManager.runAfterInteractions(() => {
@@ -114,8 +119,15 @@ export class ImagePickerPage extends React.Component {
   handlePickPhoto = photo => {
     const onChange = this.props.navigation.getParam("onChange");
 
-    onChange(this.props.navigation.getParam("blockId"), photo);
-    this.goBack(true);
+    if (onChange) {
+      onChange(this.props.navigation.getParam("blockId"), photo);
+      this.goBack(true);
+    } else {
+      this.props.navigation.replace("NewPost", {
+        image: photo,
+        blockId: this.state.blockId
+      });
+    }
   };
 
   pressBack = () => this.goBack(false);
@@ -136,7 +148,7 @@ export class ImagePickerPage extends React.Component {
   };
 
   render() {
-    const blockId = this.props.navigation.getParam("blockId");
+    const blockId = this.state.blockId;
     const sharedElementId = `block.imagePicker.${blockId}`;
 
     return (
@@ -215,4 +227,7 @@ export class ImagePickerPage extends React.Component {
   }
 }
 
-export default withNavigationFocus(ImagePickerPage);
+export default hoistNonReactStatics(
+  withNavigationFocus(ImagePickerPage),
+  ImagePickerPage
+);

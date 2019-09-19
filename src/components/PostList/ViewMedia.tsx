@@ -2,7 +2,7 @@ import * as React from "react";
 import { StyleSheet, View, PixelRatio } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
-import { Transition, Transitioning } from "react-native-reanimated";
+import Animated, { Transition, Transitioning } from "react-native-reanimated";
 import Video from "react-native-video";
 import { Image } from "../Image";
 import { buildImgSrc } from "../../lib/imgUri";
@@ -52,27 +52,63 @@ const ImageMedia = ({ media, height, width, priority, onLoad }) => {
   );
 };
 
-const VideoMedia = ({ media, paused = false, height, width, onLoad }) => {
+const VideoMedia = ({
+  media,
+  paused = false,
+  height,
+  width,
+  onLoad,
+  containerHeight,
+  containerWidth
+}) => {
   const videoRef = React.createRef<Video>();
+  const scale = width / media.width;
+  const translateX = (containerWidth - width) / 2;
+  const translateY = 0;
 
   return (
-    <Video
-      style={[{ height, width }]}
-      resizeMode="stretch"
-      muted={IS_SIMULATOR}
-      controls={false}
-      autoPlay
-      ref={videoRef}
-      onLoad={onLoad}
-      repeat
-      paused={paused}
-      fullscreen={false}
-      source={{
-        uri: media.url,
-        width: media.width ? media.width : undefined,
-        height: media.height ? media.height : undefined
+    <Animated.View
+      style={{
+        width,
+        height
       }}
-    />
+    >
+      <Video
+        style={[
+          {
+            height: media.height,
+            width: media.width,
+            transform: [
+              { translateX },
+              { translateY },
+              {
+                scale
+              },
+              {
+                translateX: media.width * -0.5
+              },
+              {
+                translateY: media.height * -0.5
+              }
+            ]
+          }
+        ]}
+        resizeMode="none"
+        muted={IS_SIMULATOR}
+        controls={false}
+        autoPlay
+        ref={videoRef}
+        onLoad={onLoad}
+        repeat
+        paused={paused}
+        fullscreen={false}
+        source={{
+          uri: media.url,
+          width: media.width ? media.width : undefined,
+          height: media.height ? media.height : undefined
+        }}
+      />
+    </Animated.View>
   );
 };
 
@@ -84,7 +120,9 @@ export const Media = ({
   showGradient = true,
   onLoad,
   priority,
-  hideContent = false
+  hideContent = false,
+  containerHeight,
+  containerWidth
 }) => {
   let MediaComponent = media.mimeType.includes("image")
     ? ImageMedia
@@ -98,6 +136,8 @@ export const Media = ({
         {!hideContent && (
           <MediaComponent
             width={width}
+            containerHeight={containerHeight}
+            containerWidth={containerWidth}
             media={media}
             onLoad={onLoad}
             priority={priority}

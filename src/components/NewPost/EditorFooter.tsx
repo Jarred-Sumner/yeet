@@ -8,8 +8,7 @@ import { COLORS, SPACING } from "../../lib/styles";
 import { IconButton } from "../Button";
 import { IconDownload, IconSend, IconTrash } from "../Icon";
 import { MAX_POST_HEIGHT } from "./NewPostFormat";
-
-const SCREEN_DIMENSIONS = Dimensions.get("screen");
+import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 
 const styles = StyleSheet.create({
   footerSide: {
@@ -86,7 +85,7 @@ export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
 
 const DELETE_SIZE = 26;
 const MID_Y_DELETE_BUTTON =
-  MAX_POST_HEIGHT - getInset("bottom") - (DELETE_SIZE * 1.25) / 2;
+  MAX_POST_HEIGHT - BOTTOM_Y - (DELETE_SIZE * 1.25) / 2;
 const MID_X_DELETE_BUTTON = SCREEN_DIMENSIONS.width / 2;
 
 const DELETE_RANGE = [

@@ -1,30 +1,17 @@
 import React, { Component } from "react";
 import {
-  StyleSheet,
-  View,
-  Keyboard,
-  Dimensions,
-  InteractionManager
-} from "react-native";
-import {
   PanGestureHandler,
   PinchGestureHandler,
   RotationGestureHandler,
-  TapGestureHandler,
-  State
+  State,
+  TapGestureHandler
 } from "react-native-gesture-handler";
-import Animated, { Easing } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import {
-  runDelay,
   preserveMultiplicativeOffset,
-  preserveOffset,
-  limit
+  preserveOffset
 } from "react-native-redash";
-import { throttle } from "lodash";
-import { SPACING } from "../../../lib/styles";
-import { BoundsRect, isSameSize, totalY, totalX } from "../../../lib/Rect";
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
+import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
 
 const {
   set,

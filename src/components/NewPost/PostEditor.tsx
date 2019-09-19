@@ -46,14 +46,14 @@ import {
 import { sendLightFeedback } from "../../lib/Vibration";
 import { sendToast, ToastType } from "../Toast";
 import { connectActionSheet } from "@expo/react-native-action-sheet";
+import {
+  IS_SIMULATOR,
+  TOP_Y,
+  BOTTOM_Y,
+  SCREEN_DIMENSIONS
+} from "../../../config";
 
 const { block, cond, set, eq, sub } = Animated;
-
-const IS_SIMULATOR = DeviceInfo.isEmulator();
-const TOP_Y = getInset("top");
-const BOTTOM_Y = getInset("bottom");
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 export const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
 

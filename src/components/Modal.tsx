@@ -42,8 +42,8 @@ export class Modal extends React.Component {
         isVisible={visible}
         swipeDirection={swipeToDismiss ? "down" : null}
         onSwipeComplete={swipeToDismiss ? onDismiss : undefined}
-        onBackButtonPress={onDismiss}
-        onBackdropPress={onDismiss}
+        // onBackButtonPress={onDismiss}
+        // onBackdropPress={onDismiss}
         transparent
         style={[styles.content, styles[align]]}
         animationType="none"

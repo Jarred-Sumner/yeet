@@ -8,15 +8,13 @@ import {
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import Permissions from "react-native-permissions";
 import Animated from "react-native-reanimated";
-import { getInset } from "react-native-safe-area-view";
 import { ScrollView as NavigationScrollView } from "react-navigation";
 // import { Image } from "../Image";
 import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
 import Image from "../../Image";
-
-const TOP_Y = getInset("top");
+import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
 const ScrollView = createNativeWrapper(
   Animated.createAnimatedComponent(NavigationScrollView),
@@ -28,8 +26,6 @@ const ScrollView = createNativeWrapper(
 const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const styles = StyleSheet.create({
   container: {

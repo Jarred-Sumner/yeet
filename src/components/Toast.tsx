@@ -10,6 +10,7 @@ import { IconClose, IconCheck } from "./Icon";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
 import { BaseButton } from "react-native-gesture-handler";
+import { TOP_Y } from "../../config";
 
 const styles = StyleSheet.create({
   container: {
@@ -38,7 +39,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
     alignItems: "flex-start",
-    paddingTop: getInset("top") + SPACING.normal
+    paddingTop: TOP_Y + SPACING.normal
   },
   text: {
     fontSize: 16,

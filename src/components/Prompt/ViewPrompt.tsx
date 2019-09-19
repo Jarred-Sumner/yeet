@@ -2,15 +2,14 @@ import numbro from "numbro";
 import * as React from "react";
 import {
   Animated,
-  Dimensions,
   Easing,
   StyleSheet,
   TouchableOpacity,
   View
 } from "react-native";
-import { getInset } from "react-native-safe-area-view";
-import { IconChevronRight, IconList, IconTrophy } from "../../components/Icon";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { Avatar } from "../../components/Avatar";
+import { IconChevronRight, IconList, IconTrophy } from "../../components/Icon";
 import {
   VerticalIconButton,
   VerticalIconButtonSize
@@ -24,10 +23,6 @@ import {
   Text
 } from "../Text";
 // import { Media } from "../../components/Media";
-
-const SAFE_AREA_TOP = getInset("top");
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 const HEADER_Z_INDEX = 2;
 const ACTION_BAR_Z_INDEX = 2;
@@ -134,7 +129,7 @@ const Header = ({ prompt, opacityValue, forceShowHeader, onShowList }) => {
       <Animated.View
         style={[
           styles.headerContainer,
-          { paddingTop: SAFE_AREA_TOP + SPACING.normal, paddingRight: 52 },
+          { paddingTop: TOP_Y + SPACING.normal, paddingRight: 52 },
           {
             opacity: forceShowHeader ? 1 : opacityValue
           }
@@ -158,7 +153,7 @@ const Header = ({ prompt, opacityValue, forceShowHeader, onShowList }) => {
             {
               padding: SPACING.normal,
               marginTop: 9,
-              paddingTop: SAFE_AREA_TOP + SPACING.normal
+              paddingTop: TOP_Y + SPACING.normal
             }
           ]}
         >

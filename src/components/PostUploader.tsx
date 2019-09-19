@@ -168,7 +168,14 @@ export class RawPostUploader extends React.Component<Props> {
   };
 
   triggerUploadComplete = true;
-  handleUploadComplete = ({ mediaId }) => {
+  handleUploadComplete = ({ mediaId, ...otherProps }) => {
+    if (!mediaId) {
+      console.log("Upload failed but reported as complete", otherProps);
+      debugger;
+      this.handleUploadError(otherProps.error);
+      return Promise.reject();
+    }
+
     this.setState(
       {
         uploadStatus: UploadStatus.uploadComplete,
@@ -176,6 +183,7 @@ export class RawPostUploader extends React.Component<Props> {
         error: null
       },
       () => {
+        console.log("Upload complete", mediaId);
         this.props.onUpload(mediaId);
       }
     );
@@ -191,6 +199,7 @@ export class RawPostUploader extends React.Component<Props> {
 
   handleUploadError = (error, more, other) => {
     if (this.canceled) {
+      console.log("Cancelled");
       return Promise.resolve();
     }
 
@@ -253,6 +262,7 @@ export class RawPostUploader extends React.Component<Props> {
     });
 
     this.canceled = false;
+    console.log("Start upload", file);
   };
   canceled = false;
 

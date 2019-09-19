@@ -28,6 +28,7 @@ import { PostProgressBar } from "./PostProgressBar";
 import Image from "../Image";
 
 import { uniqBy } from "lodash";
+import { TOP_Y } from "../../../config";
 const styles = StyleSheet.create({
   container: {
     borderRadius: 12,
@@ -138,7 +139,7 @@ const sidebarStyles = StyleSheet.create({
     marginBottom: getInset("bottom")
   },
   containerBottom: {
-    marginTop: getInset("top")
+    marginTop: TOP_Y
   },
   spacer: {
     height: SPACING.double
@@ -198,6 +199,7 @@ const PostComponent = ({
   onPressLike,
   onPressSend,
   onLoad,
+  stopped = false,
   post,
   children,
   delay
@@ -213,9 +215,12 @@ const PostComponent = ({
     >
       <Layer zIndex={LayerLevel.media} width={width} height={height}>
         <Media
-          width={width}
-          height={height}
+          width={post.bounds.width}
+          height={post.bounds.height}
+          containerWidth={width}
+          containerHeight={height}
           key={media.id}
+          paused={stopped}
           media={media}
           onLoad={onLoad}
           hideContent={delay}
@@ -395,7 +400,8 @@ class RawPostContainer extends React.Component<PostContainerProps> {
       layoutDirection,
       onPressLike,
       onPressSend,
-      delay
+      delay,
+      isFocused
     } = this.props;
     const { posts, postIndex } = this.state;
     const postsCount = posts.length;
@@ -411,6 +417,7 @@ class RawPostContainer extends React.Component<PostContainerProps> {
         onPressSend={this.handleSend}
         onLoad={this.handleLoad}
         key={post.id}
+        stopped={!isFocused}
         onPressLike={onPressLike}
         delay={delay}
         postIndex={this.state.postIndex}
@@ -421,7 +428,7 @@ class RawPostContainer extends React.Component<PostContainerProps> {
             postsCount={postsCount}
             width={width}
             onFinish={this.goNext}
-            stopped={this.props.delay || !this.state.hasLoaded}
+            stopped={this.props.delay || !this.state.hasLoaded || !isFocused}
             currentPostIndex={this.state.postIndex}
           />
         )}

@@ -1,15 +1,12 @@
 import * as React from "react";
-import { View, StyleSheet, Text, FlatList, Dimensions } from "react-native";
-import { BoldText } from "../components/Text";
-import PROMPTS_QUERY from "../lib/promptsQuery.graphql";
 import { Query } from "react-apollo";
+import { FlatList, StyleSheet } from "react-native";
+import { SCREEN_DIMENSIONS } from "../../config";
 import { ViewPrompt } from "../components/Prompt/ViewPrompt";
+import PROMPTS_QUERY from "../lib/promptsQuery.graphql";
 import CreatePostPage from "./CreatePostPage";
-import { Modal } from "../components/Modal";
 
 const styles = StyleSheet.create({});
-
-const SCREEN_DIMENSIONS = Dimensions.get("window");
 
 class RawViewPostPage extends React.Component {
   state = {

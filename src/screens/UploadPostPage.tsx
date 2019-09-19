@@ -1,29 +1,24 @@
 import * as React from "react";
 import {
-  View,
-  StyleSheet,
-  Dimensions,
-  SafeAreaView,
-  TouchableOpacity,
+  ActivityIndicator,
   Animated,
-  TouchableWithoutFeedback
+  SafeAreaView,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from "react-native";
+import HapticFeedback from "react-native-haptic-feedback";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
+import { IconClose, IconSend } from "../components/Icon";
 import { BoldText, MediumText } from "../components/Text";
-import ImagePicker from "react-native-image-picker";
+import { startFileUpload } from "../lib/fileUpload";
 import { ImagePickerContext } from "../lib/ImagePickerContext";
 // import { Media } from "../components/Media";
-import { SPACING, COLORS } from "../lib/styles";
-import { IconSend, IconClose } from "../components/Icon";
-import { getInset } from "react-native-safe-area-view";
-import S3Upload, { startFileUpload } from "../lib/fileUpload";
-import { fromPairs, get } from "lodash";
-import { ActivityIndicator } from "react-native";
-import HapticFeedback from "react-native-haptic-feedback";
+import { COLORS, SPACING } from "../lib/styles";
 
-const SAFE_AREA_BOTTOM = getInset("top");
-const SCREEN_DIMENSIONS = Dimensions.get("window");
-const MEDIA_HEIGHT = SCREEN_DIMENSIONS.height - SAFE_AREA_BOTTOM;
-const BOTTOM_BAR_HEIGHT = SAFE_AREA_BOTTOM + 64;
+const MEDIA_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y;
+const BOTTOM_BAR_HEIGHT = TOP_Y + 64;
 
 const styles = StyleSheet.create({
   mediaContainer: {
