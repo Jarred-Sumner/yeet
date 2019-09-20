@@ -64,6 +64,7 @@
     "react-native-redash": "^7.5.1",
     "react-native-safe-area-view": "^0.14.6",
     "react-native-screens": "^1.0.0-alpha.23",
+    "react-native-section-list-get-item-layout": "^2.2.3",
     "react-native-secure-key-store": "^2.0.4",
     "react-native-shared-element": "^0.5.1",
     "react-native-snap-carousel": "^3.8.0",

@@ -284,14 +284,15 @@ type PostContainerProps = {
 
 const BAR_SPACING = 3;
 export const ProgressBarList = ({
-  postsCount,
+  postsCount = 1,
   width,
-  currentPostIndex,
-  stopped,
+  currentPostIndex = 0,
+  stopped = false,
   onFinish,
-  loopIndex
+  loopIndex = null,
+  barSpacing = BAR_SPACING
 }) => {
-  const barWidth = width / postsCount - BAR_SPACING * 2 * postsCount;
+  const barWidth = width / postsCount - barSpacing * 2 * postsCount;
   const _loopIndex = loopIndex || postsCount - 1;
   return (
     <Animated.View
@@ -311,8 +312,8 @@ export const ProgressBarList = ({
           <Animated.View
             key={`${postIndex}-${barWidth}`}
             style={{
-              width: barWidth + BAR_SPACING * 2,
-              paddingHorizontal: BAR_SPACING,
+              width: barWidth + barSpacing * 2,
+              paddingHorizontal: barSpacing,
               overflow: "hidden"
             }}
           >

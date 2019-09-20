@@ -95,6 +95,9 @@ const PAUSED_VALUE = 0;
 export class PostProgressBar extends React.Component {
   static defaultProps = {
     loop: false,
+    duration: 5000,
+    width: 20,
+    play: false,
     finished: false,
     size: "full",
     onFinish: () => {}
@@ -110,26 +113,16 @@ export class PostProgressBar extends React.Component {
       this.playValue.setValue(props.play ? PLAYING_VAUE : PAUSED_VALUE);
     }
 
-    this.translateX = runTiming(
-      this.progressClock,
-      0,
-      this.props.width,
-      this.props.duration,
-      this.playValue,
-      this.handleFinish
-    );
+    this.setupAnimation();
   }
   progressValue = new Animated.Value<number>(1);
   progressClock = new Animated.Clock();
   playValue = new Animated.Value<number>(PLAYING_VAUE);
 
-  componentDidMount() {
-    this.setupAnimation();
-  }
-
   translateX: Animated.Node<number>;
 
   setupAnimation = () => {
+    console.count("Setup animation");
     this.translateX = runTiming(
       this.progressClock,
       0,
@@ -141,6 +134,7 @@ export class PostProgressBar extends React.Component {
   };
 
   handleFinish = () => {
+    console.log("FINISH");
     if (this.props.loop) {
       this.progressValue.setValue(0);
       this.setupAnimation();
@@ -178,7 +172,10 @@ export class PostProgressBar extends React.Component {
     const sizeStyle = size === "full" ? styles.fullSize : styles.thumbnailSize;
 
     return (
-      <Animated.View style={[styles.container, sizeStyle, { width }]}>
+      <Animated.View
+        key={`${this.props.finished}-${width}-${size}`}
+        style={[styles.container, sizeStyle, { width }]}
+      >
         <Animated.View
           style={[
             styles.bar,

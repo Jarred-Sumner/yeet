@@ -42,13 +42,32 @@ export const resolveImageMediaSource = ({
 
 const ImageMedia = ({ media, height, width, priority, onLoad }) => {
   return (
-    <Image
-      incrementalLoad
-      resizeMode="stretch"
-      onLoad={onLoad}
-      source={resolveImageMediaSource({ media, height, width, priority })}
-      style={[{ height, width }]}
-    />
+    <Animated.View
+      style={{
+        width,
+        height
+      }}
+    >
+      <Animated.View
+        style={{
+          width,
+          height
+        }}
+      >
+        <Image
+          incrementalLoad
+          resizeMode="stretch"
+          onLoad={onLoad}
+          source={resolveImageMediaSource({ media, height, width, priority })}
+          style={[
+            {
+              height,
+              width
+            }
+          ]}
+        />
+      </Animated.View>
+    </Animated.View>
   );
 };
 
@@ -66,8 +85,6 @@ const VideoMedia = ({
   const scale = width / media.width;
   const translateX =
     containerWidth !== width ? (containerWidth - width) / 2 : 0;
-  const translateY =
-    containerHeight !== height ? (containerHeight - height) / 2 : 0;
 
   return (
     <Animated.View
@@ -76,60 +93,62 @@ const VideoMedia = ({
         height
       }}
     >
-      <Video
-        style={[
-          // size === "full"
-          // ? {
-          {
-            height,
-            width,
-            // height: media.height,
-            // width: media.width,
-            transform: [
-              { translateX },
-              { translateY }
-              // {
-              //   scale
-              // }
-              // {
-              //   translateX: media.width / (media.pixelRatio * -1)
-              // },
-              // {
-              //   translateY: media.height / (media.pixelRatio * -1)
-              // }
-            ]
+      <Animated.View style={{ width, height }}>
+        <Video
+          style={[
+            // size === "full"
+            // ? {
+            {
+              height,
+              width,
+              // height: media.height,
+              // width: media.width,
+              transform: [
+                { translateX }
+
+                // {
+                //   scale
+                // }
+                // {
+                //   translateX: media.width / (media.pixelRatio * -1)
+                // },
+                // {
+                //   translateY: media.height / (media.pixelRatio * -1)
+                // }
+              ]
+            }
+            // : { height, width }
+          ]}
+          resizeMode={size === "full" ? "center" : undefined}
+          muted={IS_SIMULATOR}
+          controls={false}
+          autoPlay
+          ref={videoRef}
+          onLoad={onLoad}
+          repeat
+          bufferConfig={{
+            minBufferMs: 1,
+            maxBufferMs: 2000,
+            bufferForPlaybackMs: 1,
+            bufferForPlaybackAfterRebufferMs: 1000
+          }}
+          paused={paused}
+          fullscreen={false}
+          selectedVideoTrack={
+            size === "thumbnail"
+              ? {
+                  type: "resolution",
+                  value: 240
+                }
+              : undefined
           }
-          // : { height, width }
-        ]}
-        resizeMode={size === "full" ? "center" : undefined}
-        muted={IS_SIMULATOR}
-        controls={false}
-        autoPlay
-        ref={videoRef}
-        onLoad={onLoad}
-        repeat
-        bufferConfig={{
-          minBufferMs: 1,
-          maxBufferMs: 2000,
-          bufferForPlaybackMs: 1,
-          bufferForPlaybackAfterRebufferMs: 1000
-        }}
-        paused={paused}
-        fullscreen={false}
-        selectedVideoTrack={
-          size === "thumbnail"
-            ? {
-                type: "resolution",
-                value: 240
-              }
-            : undefined
-        }
-        source={{
-          uri: media.url,
-          width: media.width ? media.width : undefined,
-          height: media.height ? media.height : undefined
-        }}
-      />
+          source={{
+            uri: media.url,
+            width: media.width ? media.width : undefined,
+            height: media.height ? media.height : undefined
+          }}
+        />
+      </Animated.View>
     </Animated.View>
   );
 };
@@ -145,6 +164,7 @@ export const Media = ({
   hideContent = false,
   containerHeight,
   containerWidth,
+  translateY,
   size
 }) => {
   let MediaComponent = media.mimeType.includes("image")
@@ -168,6 +188,7 @@ export const Media = ({
             priority={priority}
             paused={paused}
             size={size}
+            translateY={translateY}
             height={height}
           />
         )}

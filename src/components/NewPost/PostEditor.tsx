@@ -1000,7 +1000,12 @@ class RawwPostEditor extends React.Component<Props, State> {
     isPanning,
     x,
     y
-  }): { blockId: string; isPanning: boolean; x: number; y: number } => {
+  }: {
+    blockId: string;
+    isPanning: boolean;
+    x: number;
+    y: number;
+  }) => {
     if (isPanning) {
       const focusType = FocusType.panning;
       if (blockId !== this.state.focusedBlockId) {
