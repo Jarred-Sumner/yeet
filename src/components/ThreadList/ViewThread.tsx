@@ -1,31 +1,27 @@
 // @flow
-import { uniqBy } from "lodash";
+import { memoize, uniqBy } from "lodash";
 import * as React from "react";
 import { Query } from "react-apollo";
 import { StyleSheet, View } from "react-native";
-import Animated, {
-  Easing,
-  Transitioning,
-  Transition
-} from "react-native-reanimated";
+import { FlatList } from "react-native-gesture-handler";
+import LinearGradient from "react-native-linear-gradient";
+import Animated, { Easing } from "react-native-reanimated";
 import { SharedElement } from "react-navigation-shared-element";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { PostFragment } from "../../lib/graphql/PostFragment";
 import { ViewPosts } from "../../lib/graphql/ViewPosts";
 import { pxBoundsToPoint, scaleToWidth } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
 import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
-import { Avatar, ProgressAvatar } from "../Avatar";
-import { IconComment, IconHeart } from "../Icon";
-import { OverlayGradient } from "../PostList/Post";
+import { Avatar } from "../Avatar";
+import { BitmapIconNewPost } from "../BitmapIcon";
+import { IconChevronRight, IconHeart } from "../Icon";
 import Media from "../PostList/ViewMedia";
 import { SemiBoldText } from "../Text";
 import {
   VerticalIconButton,
   VerticalIconButtonSize
 } from "../VerticalIconButton";
-import { PostFragment } from "../../lib/graphql/PostFragment";
-import { FlatList } from "react-native-gesture-handler";
-import { memoize } from "lodash";
 const {
   Clock,
   Value,
@@ -119,14 +115,33 @@ function runTiming({
   ]);
 }
 
+export const OverlayGradient = ({
+  width,
+  height,
+  layoutDirection,
+  topEndLocation = 0.1,
+  bottomStartLocation = 0.7879
+}) => {
+  return (
+    <LinearGradient
+      width={width}
+      height={height}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      locations={[bottomStartLocation, 1.0]}
+      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.15)"]}
+    />
+  );
+};
+
 const threadStyles = StyleSheet.create({
   container: {
-    position: "relative"
+    position: "relative",
+    overflow: "visible"
   },
   counts: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    marginRight: SPACING.normal
+    alignItems: "center",
+    overflow: "visible"
   },
   layer: {
     ...StyleSheet.absoluteFillObject
@@ -145,6 +160,12 @@ const threadStyles = StyleSheet.create({
     padding: SPACING.normal,
     justifyContent: "space-between",
     marginBottom: BOTTOM_Y
+  },
+  sidebar: {
+    position: "absolute",
+    bottom: BOTTOM_Y,
+    overflow: "visible",
+    right: 0
   },
   header: {
     opacity: 1.0
@@ -204,6 +225,8 @@ const ViewPost = ({
   isNextVisible,
   isPreviousVisible,
   postsCount,
+  onPressReply,
+  onPressLike,
 
   onLoad,
   offset,
@@ -258,32 +281,60 @@ const ViewPost = ({
       </View>
 
       <View style={[threadStyles.layer, threadStyles.overlayLayer]}>
+        <View style={threadStyles.progressBar}></View>
+
         <View style={threadStyles.footer}>
           <View style={threadStyles.profile}>
-            <ProgressAvatar
-              label={profile.username}
-              size={32}
-              progress={progressValue}
-              url={profile.photoURL}
-            />
+            <Avatar label={profile.username} size={36} url={profile.photoURL} />
             <SemiBoldText style={threadStyles.username}>
               {profile.username}
             </SemiBoldText>
           </View>
+        </View>
 
+        <View style={threadStyles.sidebar}>
           <View style={threadStyles.counts}>
+            <VerticalIconButton
+              iconNode={
+                <View
+                  style={{
+                    width: 39,
+                    height: 29,
+                    overflow: "visible"
+                  }}
+                >
+                  <BitmapIconNewPost
+                    style={{
+                      height: 39,
+                      width: 39,
+                      position: "absolute",
+                      right: -4,
+                      top: 0,
+                      overflow: "visible"
+                    }}
+                  />
+                </View>
+              }
+              size={VerticalIconButtonSize.default}
+              count={postsCount}
+              onPress={onPressReply}
+            />
+
+            <View style={{ height: 35, width: 1 }} />
+
             <VerticalIconButton
               Icon={IconHeart}
               size={VerticalIconButtonSize.default}
+              onPress={onPressLike}
               count={post.likesCount}
             />
 
-            <View style={{ width: SPACING.double, height: 1 }} />
+            <View style={{ height: 35, width: 1 }} />
 
             <VerticalIconButton
-              Icon={IconComment}
+              Icon={IconChevronRight}
+              count={null}
               size={VerticalIconButtonSize.default}
-              count={postsCount}
             />
           </View>
         </View>
@@ -443,9 +494,19 @@ class ThreadContainer extends React.Component {
           paused={!isPlaying || this.state.postIndex !== index}
           width={width}
           height={height}
+          onPressLike={this.handlePressLike}
+          onPressReply={this.handlePressReply}
         />
       </View>
     );
+  };
+
+  handlePressReply = () => {
+    this.props.onPressReply({
+      threadId: this.props.thread.id,
+      thread: this.props.thread.id,
+      post: this.post
+    });
   };
 
   getItemLayout = (data: Array<PostFragment>, index: number) => {

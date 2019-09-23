@@ -28,7 +28,6 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
 import ThreadListPage from "./src/screens/ThreadList";
 import ReplyPage from "./src/screens/ReplyPage";
-import ViewThreadPage from "./src/screens/ViewThread";
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -39,7 +38,17 @@ const Routes = createAppContainer(
             createStackNavigator,
             {
               ThreadList: ThreadListPage,
-              ViewThread: ViewThreadPage
+              ReplyToPost: ReplyPage,
+              EditBlockPhotoInReply: ImagePickerPage
+            },
+            {
+              cardStyle: {
+                backgroundColor: "#000"
+              },
+              defaultNavigationOptions: {
+                header: () => null,
+                headerTransparent: true
+              }
             },
             {
               cardStyle: {
@@ -94,25 +103,6 @@ const Routes = createAppContainer(
       ),
       UploadPost: UploadPostPage,
       InsertSticker: ImagePickerPage,
-      ReplyStack: createSharedElementStackNavigator(
-        createStackNavigator,
-        {
-          ReplyToPost: ReplyPage,
-          EditBlockPhotoInReply: ImagePickerPage
-        },
-        {
-          cardStyle: {
-            backgroundColor: "#000"
-          },
-          defaultNavigationOptions: {
-            header: () => null,
-            mode: "modal",
-            headerMode: "none",
-            headerTransparent: true
-          }
-        }
-      ),
-
       Auth: createStackNavigator(
         {
           Signup: SignUpScreen,

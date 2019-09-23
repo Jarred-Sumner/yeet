@@ -15,7 +15,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "visible"
+    overflow: "visible",
+    paddingHorizontal: SPACING.normal
   },
   textShadow: {
     textShadowRadius: 1,
@@ -28,21 +29,21 @@ const styles = StyleSheet.create({
   },
   halfSizeIcon: {
     fontSize: 10,
-    marginBottom: SPACING.half,
     color: "white"
   },
   halfSizeText: {
     fontSize: 12,
+    marginTop: SPACING.half,
     color: "white"
   },
   defaultSizeIcon: {
     fontSize: 26,
-    marginBottom: SPACING.half,
     color: "white"
   },
   defaultSizeText: {
     fontSize: 18,
-    color: "white"
+    color: "white",
+    marginTop: SPACING.normal
   }
 });
 
@@ -52,7 +53,7 @@ export class VerticalIconButton extends React.Component {
   };
 
   render() {
-    const { size, count, Icon, onPress, iconSize } = this.props;
+    const { size, count, Icon, iconNode, onPress, iconSize } = this.props;
 
     const iconStyle =
       size === VerticalIconButtonSize.default
@@ -66,14 +67,20 @@ export class VerticalIconButton extends React.Component {
     return (
       <BaseButton disallowInterruption onPress={onPress}>
         <View style={styles.container}>
-          <Icon
-            style={[
-              iconStyle,
-              styles.textShadow,
-              iconSize && { fontSize: iconSize }
-            ].filter(Boolean)}
-          />
-          <MediumText style={textStyle}>{count || 1}</MediumText>
+          {iconNode ? (
+            iconNode
+          ) : (
+            <Icon
+              style={[
+                iconStyle,
+                styles.textShadow,
+                iconSize && { fontSize: iconSize }
+              ].filter(Boolean)}
+            />
+          )}
+          {typeof count === "number" ? (
+            <MediumText style={textStyle}>{count || 1}</MediumText>
+          ) : null}
         </View>
       </BaseButton>
     );

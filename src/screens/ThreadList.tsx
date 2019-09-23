@@ -127,7 +127,7 @@ const ThreadSectionCell = ({
   index,
   visibleIndex,
   scrollYOffset,
-  onPress
+  onPressReply
 }) => {
   const renderCell = React.useCallback(
     thread => {
@@ -137,7 +137,7 @@ const ThreadSectionCell = ({
           height={section.height}
           width={section.width}
           isLeftSide={index % 2 === 0}
-          onPress={onPress}
+          onPressReply={onPressReply}
           thread={thread}
           scrollYOffset={scrollYOffset}
           index={index}
@@ -150,7 +150,7 @@ const ThreadSectionCell = ({
         />
       );
     },
-    [section, visibleIndex, index, onPress]
+    [section, visibleIndex, index, onPressReply]
   );
 
   return (
@@ -320,26 +320,14 @@ class ThreadList extends React.PureComponent<Props, State> {
 
   openPlus = () => this.props.navigation.navigate("NewPostStack");
 
-  handlePressSend = post => {
-    const thread = this.state.postThreads[this.state.threadOffset];
-
-    this.props.navigation.push("ReplyStack", {
-      threadId: thread.id,
-      thread: thread,
-      post
-    });
+  handlePressReply = props => {
+    this.props.navigation.push("ReplyToPost", props);
   };
+
   handlePressDownload = () => {};
 
   keyExtractor = (item: ThreadSection, _index: number) =>
     item.data.map(thread => thread.id).join("-");
-
-  handleOpenThread = (thread: ViewThreads_postThreads) => {
-    this.props.navigation.navigate("ViewThread", {
-      thread,
-      threadId: thread.id
-    });
-  };
 
   handleRenderItem = ({
     item: section,
@@ -350,10 +338,10 @@ class ThreadList extends React.PureComponent<Props, State> {
   }) => {
     return (
       <ThreadSectionCell
-        onPress={this.handleOpenThread}
         visibleIndex={this.state.visibleIndex}
         scrollYOffset={this.scrollYOffset}
         section={section}
+        onPressReply={this.handlePressReply}
         index={index}
       />
     );
