@@ -314,10 +314,10 @@ PODS:
     - React
     - SDWebImageWebPCoder
     - WCPhotoManipulator
-  - react-native-video (5.0.0):
+  - react-native-video (5.0.1):
     - React
-    - react-native-video/Video (= 5.0.0)
-  - react-native-video/Video (5.0.0):
+    - react-native-video/Video (= 5.0.1)
+  - react-native-video/Video (5.0.1):
     - React
   - react-native-view-shot (3.0.2):
     - React
@@ -639,7 +639,7 @@ SPEC CHECKSUMS:
   react-native-config: 55548054279d92e0e4566ea15a8b9b81028ec342
   react-native-image-picker: 5c15ac0251475ae0b9f21e17d08d7c28db847abc
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3
-  react-native-video: 6555881252c8ca039760e1cd6df28ac28ffb2baf
+  react-native-video: 331eaf96cb034fedcc27f4f6ada3ac3cf6c0a78a
   react-native-view-shot: 5f80b8f4f9003c3da8c0c0013488e5b2db17b1e2
   React-RCTActionSheet: 3b94ec0c925fe690133c45f81398a01db093c4f5
   React-RCTAnimation: bda4ff18243cd62f4eee76631becb6cb78cb70fe

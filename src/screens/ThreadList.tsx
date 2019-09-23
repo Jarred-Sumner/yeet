@@ -2,48 +2,49 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { Query } from "react-apollo";
+import { StyleSheet, View } from "react-native";
 import {
-  Dimensions,
-  StyleSheet,
-  View,
-  SectionList as RNSectionList
-} from "react-native";
-import { SafeAreaView } from "react-navigation";
-import Animated, { Extrapolate } from "react-native-reanimated";
-import { withNavigation } from "react-navigation";
-import { BOTTOM_Y, TOP_Y, SCREEN_DIMENSIONS } from "../../config";
+  BaseButton,
+  FlatList as GestureFlatList
+} from "react-native-gesture-handler";
+import Animated, { Easing } from "react-native-reanimated";
+import { onScroll, runTiming } from "react-native-redash";
+import { SafeAreaView, withNavigation } from "react-navigation";
+import { SharedElement } from "react-navigation-shared-element";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../config";
+import { ProgressAvatar } from "../components/Avatar";
 import { IconButton } from "../components/Button";
 import {
+  IconHeart,
   IconPlus,
   IconProfile,
-  IconHeart,
-  IconRemix
+  IconRemix,
+  IconComment
 } from "../components/Icon";
+import { OverlayGradient } from "../components/PostList/Post";
+import Media from "../components/PostList/ViewMedia";
+import { SemiBoldText } from "../components/Text";
+import {
+  VerticalIconButton,
+  VerticalIconButtonSize
+} from "../components/VerticalIconButton";
 import {
   ViewThreads,
   ViewThreads_postThreads
 } from "../lib/graphql/ViewThreads";
-import { SPACING, COLORS } from "../lib/styles";
+import { BoundsRect, pxBoundsToPoint, scaleToWidth } from "../lib/Rect";
+import { SPACING } from "../lib/styles";
 import VIEW_THREADS_QUERY from "../lib/ViewThreads.graphql";
-import {
-  createNativeWrapper,
-  BaseButton,
-  FlatList as GestureFlatList
-} from "react-native-gesture-handler";
-import Media from "../components/PostList/ViewMedia";
-import { range, max, min } from "lodash";
-import { pxBoundsToPoint, scaleToWidth, BoundsRect } from "../lib/Rect";
-import { SemiBoldText } from "../components/Text";
-import { Avatar } from "../components/Avatar";
-import { ProgressBarList, OverlayGradient } from "../components/PostList/Post";
-import { SharedElement } from "react-navigation-shared-element";
-import sectionListGetItemLayout from "react-native-section-list-get-item-layout";
-import { clamp, onScroll, decay, runSpring } from "react-native-redash";
+import LinearGradient from "react-native-linear-gradient";
+import { ViewThread } from "../components/ThreadList/ViewThread";
+
 const LAYOUT_DIRECTION = "column-reverse";
 const LAYOUT_DIRECTION_OFFSET = {
   column: BOTTOM_Y + 80 + TOP_Y,
   "column-reverse": TOP_Y + 60.5
 }[LAYOUT_DIRECTION];
+
+const HEADER_HEIGHT = 50;
 
 const FlatList = Animated.createAnimatedComponent(GestureFlatList);
 
@@ -121,265 +122,6 @@ const SquareSectionOrientation: ThreadSectionOrientation = {
   type: SectionOrientationType.square
 };
 
-const threadStyles = StyleSheet.create({
-  container: {
-    position: "relative"
-  },
-  counts: {
-    flexDirection: "row",
-    alignItems: "center"
-  },
-  layer: {
-    ...StyleSheet.absoluteFillObject
-  },
-  overlayLayer: {
-    justifyContent: "space-between",
-    zIndex: 2
-  },
-  profile: {
-    flexDirection: "row",
-    alignItems: "center"
-  },
-  footer: {
-    flexDirection: "row",
-    padding: SPACING.normal,
-    justifyContent: "space-between"
-  },
-  header: {
-    opacity: 1.0
-  },
-  progressBars: {
-    height: 3
-  },
-  username: {
-    fontSize: 20,
-    marginLeft: SPACING.normal
-  },
-  likesCount: {
-    color: "white",
-    flexDirection: "row",
-    alignItems: "center"
-  },
-  mediaLayer: {
-    zIndex: 0,
-    alignItems: "center",
-    justifyContent: "center"
-  },
-  gradientLayer: {
-    zIndex: 1
-  },
-  remixCount: {
-    color: "white",
-    flexDirection: "row",
-    justifyContent: "center",
-
-    alignItems: "center",
-    marginLeft: SPACING.normal
-  },
-  remixCountText: {
-    marginLeft: SPACING.normal,
-
-    fontSize: 20
-  },
-  likesCountText: {
-    marginLeft: SPACING.normal,
-    fontSize: 20
-  }
-});
-
-const SeparatorComponent = () => (
-  <View style={{ width: "100%", height: SPACING.normal }} collapsable={false} />
-);
-
-function runDecay(clock, value, velocity) {
-  const state = {
-    finished: new Animated.Value(0),
-    velocity: new Animated.Value(0),
-    position: new Animated.Value(0),
-    time: new Animated.Value(0)
-  };
-
-  const config = { deceleration: 0.99 };
-
-  return [
-    Animated.cond(Animated.clockRunning(clock), 0, [
-      Animated.set(state.finished, 0),
-      Animated.set(state.velocity, velocity),
-      Animated.set(state.position, value),
-      Animated.set(state.time, 0),
-      Animated.startClock(clock)
-    ]),
-    Animated.set(state.position, value),
-    Animated.decay(clock, state, config),
-    Animated.cond(state.finished, Animated.stopClock(clock)),
-    state.position
-  ];
-}
-
-const ThreadCell = ({
-  thread,
-  onPress,
-  width: _width,
-  spacing,
-  isLonelyCell = false,
-  height,
-  paused,
-  isLeftSide,
-  scrollVelocity,
-  backgroundColor,
-  scrollYOffset,
-  offset,
-  isVisible,
-  isNextVisible,
-  isPreviousVisible
-}: {
-  thread: ViewThreads_postThreads;
-  onPress: Function;
-  scrollYOffset: Animated.Value<number>;
-  offset: number;
-  width: number;
-  height: number;
-}) => {
-  const [hasLoaded, setLoaded] = React.useState(false);
-  const width = _width;
-  console.time(
-    `Loaded ${thread.firstPost.media.id} ${thread.firstPost.media.mimeType}`
-  );
-  const handleLoad = React.useCallback(() => {
-    setLoaded(true);
-    console.timeEnd(
-      `Loaded ${thread.firstPost.media.id} ${thread.firstPost.media.mimeType}`
-    );
-  }, [setLoaded]);
-
-  const handlePress = React.useCallback(() => {
-    onPress(thread);
-  }, [thread, onPress]);
-
-  const profile = thread.firstPost.profile;
-
-  const handleFinish = React.useCallback(() => {}, []);
-
-  const minScrollOffset = offset;
-  const maxScrollOffset = offset + height;
-
-  const mightBeVisible = isVisible || isNextVisible || isPreviousVisible;
-
-  const { height: trueHeight } = scaleToWidth(
-    width,
-    pxBoundsToPoint(thread.firstPost.media, thread.firstPost.media.pixelRatio)
-  );
-
-  return (
-    <BaseButton exclusive={false} onPress={handlePress}>
-      <Animated.View
-        style={[
-          threadStyles.container,
-          {
-            width: _width,
-            height,
-            backgroundColor
-          }
-        ]}
-      >
-        <Animated.View style={[threadStyles.layer, threadStyles.mediaLayer]}>
-          <SharedElement
-            style={{ width, height: trueHeight }}
-            id={`post.${thread.firstPost.id}.media`}
-          >
-            <Media
-              containerWidth={_width}
-              containerHeight={trueHeight}
-              // translateY={translateYValue.current}
-              width={width}
-              height={trueHeight}
-              onLoad={handleLoad}
-              size="full"
-              hideContent={!mightBeVisible}
-              paused={paused || !isVisible}
-              media={thread.firstPost.media}
-            />
-          </SharedElement>
-        </Animated.View>
-
-        <View style={[threadStyles.layer, threadStyles.gradientLayer]}>
-          <OverlayGradient
-            width={width}
-            height={height}
-            layoutDirection="column-reverse"
-          />
-        </View>
-
-        <View style={[threadStyles.layer, threadStyles.overlayLayer]}>
-          <SafeAreaView
-            forceInset={{
-              top: "always",
-              bottom: "never",
-              left: "never",
-              right: "never"
-            }}
-          >
-            <View style={[threadStyles.header, { width }]}>
-              <View style={threadStyles.progressBars}>
-                {(isNextVisible || isPreviousVisible || isVisible) &&
-                  thread.postsCount > 1 && (
-                    <ProgressBarList
-                      postsCount={thread.postsCount}
-                      currentPostIndex={0}
-                      loopIndex={0}
-                      stopped={!isVisible}
-                      size="large"
-                      onFinish={handleFinish}
-                      width={width - SPACING.normal * 2}
-                    />
-                  )}
-              </View>
-            </View>
-          </SafeAreaView>
-
-          <SafeAreaView
-            forceInset={{
-              bottom: "always",
-              top: "never",
-              left: "never",
-              right: "never"
-            }}
-            style={threadStyles.footer}
-          >
-            <View style={threadStyles.profile}>
-              <Avatar
-                label={profile.username}
-                size={32}
-                url={profile.photoURL}
-              />
-              <SemiBoldText style={threadStyles.username}>
-                {profile.username}
-              </SemiBoldText>
-            </View>
-
-            <View style={threadStyles.counts}>
-              <View style={threadStyles.likesCount}>
-                <IconHeart size={20} color="#fff" />
-
-                <SemiBoldText style={threadStyles.likesCountText}>
-                  {thread.firstPost.likesCount}
-                </SemiBoldText>
-              </View>
-              <View style={threadStyles.remixCount}>
-                <IconRemix size={28} color="#fff" />
-
-                <SemiBoldText style={threadStyles.remixCountText}>
-                  {thread.postsCount - 1}
-                </SemiBoldText>
-              </View>
-            </View>
-          </SafeAreaView>
-        </View>
-      </Animated.View>
-    </BaseButton>
-  );
-};
-
 const ThreadSectionCell = ({
   section,
   index,
@@ -390,7 +132,7 @@ const ThreadSectionCell = ({
   const renderCell = React.useCallback(
     thread => {
       return (
-        <ThreadCell
+        <ViewThread
           maxHeight={section.height}
           height={section.height}
           width={section.width}
@@ -670,12 +412,16 @@ class ThreadList extends React.PureComponent<Props, State> {
           snapToAlignment="bottom"
           pagingEnabled
           decelerationRate="fast"
+          initialNumToRender={1}
+          windowSize={2}
           snapToOffsets={this.state.snapToOffsets}
           onScroll={this.onScroll}
           onViewableItemsChanged={this.onViewableItemsChanged}
           extraData={this.state.visibleIndex}
-          scrollEventThrottle={0}
+          scrollEventThrottle={1}
           style={{ flex: 1 }}
+          showsVerticalScrollIndicator={false}
+          directionalLockEnabled
           renderScrollView={this.renderScrollView}
           // ItemSeparatorComponent={SeparatorComponent}
           // contentInset={{
@@ -689,6 +435,55 @@ class ThreadList extends React.PureComponent<Props, State> {
           removeClippedSubviews
           getItemLayout={this.getItemLayout}
         />
+
+        <Animated.View
+          style={{
+            position: "absolute",
+            zIndex: 10,
+            top: 0,
+            left: 0,
+            right: 0
+          }}
+        >
+          <View style={{ position: "relative", width: "100%" }}>
+            <View
+              style={{
+                position: "absolute",
+                zIndex: 1
+              }}
+            >
+              <LinearGradient
+                width={SCREEN_DIMENSIONS.width}
+                height={HEADER_HEIGHT + TOP_Y + SPACING.double}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                colors={[
+                  "rgba(0,0,0,0.15)",
+                  "rgba(0,0,0,0.05)",
+                  "rgba(0,0,0,0.0)"
+                ]}
+                locations={[0, 0.75, 1.0]}
+              />
+            </View>
+
+            <View
+              style={{
+                marginTop: TOP_Y,
+                paddingHorizontal: SPACING.normal,
+                flexDirection: "row",
+                alignItems: "center",
+                height: HEADER_HEIGHT,
+                justifyContent: "space-between",
+                position: "absolute",
+                width: "100%",
+                zIndex: 2
+              }}
+            >
+              <IconProfile color="white" size={24} type="shadow" />
+              <IconPlus color="white" size={24} type="shadow" />
+            </View>
+          </View>
+        </Animated.View>
       </Animated.View>
     );
   }
@@ -713,7 +508,7 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#000",
     flexDirection: LAYOUT_DIRECTION
   }
 });

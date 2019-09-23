@@ -59,21 +59,21 @@ const Layer = ({ zIndex, pointerEvents, children, width, height }) => {
   );
 };
 
-export const OverlayGradient = ({ width, height, layoutDirection }) => {
+export const OverlayGradient = ({
+  width,
+  height,
+  layoutDirection,
+  topEndLocation = 0.1,
+  bottomStartLocation = 0.7879
+}) => {
   return (
     <LinearGradient
       width={width}
       height={height}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      locations={[0, 0.7879, 1.0].map(result => {
-        if (layoutDirection === "column-reverse") {
-          return result;
-        } else {
-          return 1.0 - result;
-        }
-      })}
-      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.0)", "rgba(0,0,0,0.35)"]}
+      locations={[bottomStartLocation, 1.0]}
+      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.15)"]}
     />
   );
 };
@@ -287,6 +287,7 @@ export const ProgressBarList = ({
   postsCount = 1,
   width,
   currentPostIndex = 0,
+  height,
   stopped = false,
   onFinish,
   loopIndex = null,
@@ -303,7 +304,7 @@ export const ProgressBarList = ({
         justifyContent: "center",
         flex: 0,
         width,
-        paddingVertical: SPACING.half,
+        height,
         flexDirection: "row"
       }}
     >
@@ -320,6 +321,7 @@ export const ProgressBarList = ({
             <PostProgressBar
               width={barWidth}
               duration={5000}
+              height={height}
               play={postIndex === currentPostIndex && !stopped}
               onFinish={onFinish}
               finished={currentPostIndex > postIndex}

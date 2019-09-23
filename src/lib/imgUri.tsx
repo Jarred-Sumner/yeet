@@ -1,6 +1,7 @@
 import { PixelRatio } from "react-native";
 
 export const IMAGE_HOST = "https://i.webthing.co";
+// export const IMAGE_HOST = "https://d2kjmdvibq1qcy.cloudfront.net"
 
 export const normalizeFormat = value => {
   if (typeof value === "string") {

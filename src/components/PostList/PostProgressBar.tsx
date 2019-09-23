@@ -81,9 +81,7 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 6,
     borderBottomRightRadius: 6,
     backgroundColor: "rgba(255, 255, 255, 0.85)"
-  },
-  thumbnailSize: { height: 3 },
-  fullSize: { height: 6 }
+  }
 });
 
 const PROGRESS_FINISHED_VALUE = 1;
@@ -99,6 +97,7 @@ export class PostProgressBar extends React.Component {
     width: 20,
     play: false,
     finished: false,
+    height: 6,
     size: "full",
     onFinish: () => {}
   };
@@ -167,20 +166,17 @@ export class PostProgressBar extends React.Component {
   }
 
   render() {
-    const { width, size } = this.props;
-
-    const sizeStyle = size === "full" ? styles.fullSize : styles.thumbnailSize;
+    const { width, height, size } = this.props;
 
     return (
       <Animated.View
         key={`${this.props.finished}-${width}-${size}`}
-        style={[styles.container, sizeStyle, { width }]}
+        style={[styles.container, { width, height }]}
       >
         <Animated.View
           style={[
             styles.bar,
-            sizeStyle,
-            { width },
+            { width, height },
             {
               transform: this.props.finished
                 ? []

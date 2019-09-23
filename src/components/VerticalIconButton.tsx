@@ -19,7 +19,12 @@ const styles = StyleSheet.create({
   },
   textShadow: {
     textShadowRadius: 1,
-    textShadowColor: "#333"
+    textShadowColor: "rgba(0, 0, 0, 0.75)",
+    padding: 3,
+    margin: -3,
+    shadowOpacity: 0,
+    overflow: "visible",
+    textShadowOffset: { width: 0, height: 0 }
   },
   halfSizeIcon: {
     fontSize: 10,
@@ -36,7 +41,7 @@ const styles = StyleSheet.create({
     color: "white"
   },
   defaultSizeText: {
-    fontSize: 24,
+    fontSize: 18,
     color: "white"
   }
 });

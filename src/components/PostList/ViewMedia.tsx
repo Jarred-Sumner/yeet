@@ -55,7 +55,7 @@ const ImageMedia = ({ media, height, width, priority, onLoad }) => {
         }}
       >
         <Image
-          incrementalLoad
+          incrementalLoad={false}
           resizeMode="stretch"
           onLoad={onLoad}
           source={resolveImageMediaSource({ media, height, width, priority })}
@@ -126,6 +126,7 @@ const VideoMedia = ({
           ref={videoRef}
           onLoad={onLoad}
           repeat
+          automaticallyWaitsToMinimizeStalling={false}
           bufferConfig={{
             minBufferMs: 1,
             maxBufferMs: 2000,

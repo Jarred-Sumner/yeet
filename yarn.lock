@@ -6502,10 +6502,9 @@ react-native-vector-icons@^6.6.0:
     prop-types "^15.6.2"
     yargs "^13.2.2"
 
-react-native-video@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/react-native-video/-/react-native-video-5.0.0.tgz#30b58e31f0776bfa8dc71109c25114d4e50d9209"
-  integrity sha512-nSG7Zkc0SE2Pa/sKWvMEPUc9Zlo0iVOFTac0GcXd/U5vTsm4L28leQzJ8K/s+Yc5xfCYaeb9bIWROqw2oiB9Ig==
+"react-native-video@https://github.com/blitzcrank/react-native-video.git#master":
+  version "5.0.1"
+  resolved "https://github.com/blitzcrank/react-native-video.git#0cfc73252c7fb2254d407bc628f1f1afb7f11e4f"
   dependencies:
     keymirror "^0.1.1"
     prop-types "^15.5.10"
