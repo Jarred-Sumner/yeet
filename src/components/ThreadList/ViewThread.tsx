@@ -22,6 +22,7 @@ import {
   VerticalIconButton,
   VerticalIconButtonSize
 } from "../VerticalIconButton";
+import { Seekbar } from "./Seekbar";
 const {
   Clock,
   Value,
@@ -163,7 +164,7 @@ const threadStyles = StyleSheet.create({
   },
   sidebar: {
     position: "absolute",
-    bottom: BOTTOM_Y,
+    bottom: BOTTOM_Y + 24,
     overflow: "visible",
     right: 0
   },
@@ -593,30 +594,18 @@ class ThreadContainer extends React.Component {
         <View
           style={{
             position: "absolute",
-            bottom: 0,
+            bottom: BOTTOM_Y,
             flexDirection: "row",
             alignItems: "center",
-            left: 0
+            left: SPACING.normal,
+            display: isVisible ? "flex" : "none"
           }}
         >
-          {posts.slice(this.state.postIndex + 1, 5).map(post => {
-            return (
-              <Animated.View
-                key={post.id}
-                style={{
-                  paddingLeft: SPACING.normal,
-                  marginBottom: SPACING.normal,
-                  opacity: 0.75
-                }}
-              >
-                <Avatar
-                  size={24}
-                  url={post.profile.photoURL}
-                  label={post.profile.username}
-                />
-              </Animated.View>
-            );
-          })}
+          <Seekbar
+            posts={posts}
+            postId={this.post.id}
+            percentage={this.progressValue}
+          />
         </View>
       </Animated.View>
     );
