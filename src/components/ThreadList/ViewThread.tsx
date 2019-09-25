@@ -2,7 +2,7 @@
 import { memoize, uniqBy } from "lodash";
 import * as React from "react";
 import { Query } from "react-apollo";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, InteractionManager } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
@@ -23,6 +23,7 @@ import {
   VerticalIconButtonSize
 } from "../VerticalIconButton";
 import { Seekbar } from "./Seekbar";
+import { transformOrigin } from "react-native-redash";
 const {
   Clock,
   Value,
@@ -100,10 +101,14 @@ function runTiming({
       key,
       cond(clockRunning(clock), [
         stopClock(clock),
-        set(value, 0),
-        set(state.position, value)
+        set(state.finished, 0),
+        set(state.time, 0),
+        set(state.position, value),
+        set(state.frameTime, 0),
+        set(config.toValue, dest)
       ])
     ),
+    // animationBlock
     Animated.cond(
       Animated.eq(key, -1),
       [value],
@@ -215,6 +220,17 @@ const threadStyles = StyleSheet.create({
   }
 });
 
+const FooterProfile = ({ profile }) => (
+  <View style={threadStyles.footer}>
+    <View style={threadStyles.profile}>
+      <Avatar label={profile.username} size={36} url={profile.photoURL} />
+      <SemiBoldText style={threadStyles.username}>
+        {profile.username}
+      </SemiBoldText>
+    </View>
+  </View>
+);
+
 const ViewPost = ({
   post,
   threadId,
@@ -268,78 +284,6 @@ const ViewPost = ({
           />
         </SharedElement>
       </Animated.View>
-
-      <View style={[threadStyles.layer, threadStyles.gradientLayer]}>
-        <OverlayGradient
-          width={width}
-          bottomStartLocation={
-            (SCREEN_DIMENSIONS.height - BOTTOM_Y - 60 - SPACING.double) /
-            SCREEN_DIMENSIONS.height
-          }
-          height={height}
-          layoutDirection="column-reverse"
-        />
-      </View>
-
-      <View style={[threadStyles.layer, threadStyles.overlayLayer]}>
-        <View style={threadStyles.progressBar}></View>
-
-        <View style={threadStyles.footer}>
-          <View style={threadStyles.profile}>
-            <Avatar label={profile.username} size={36} url={profile.photoURL} />
-            <SemiBoldText style={threadStyles.username}>
-              {profile.username}
-            </SemiBoldText>
-          </View>
-        </View>
-
-        <View style={threadStyles.sidebar}>
-          <View style={threadStyles.counts}>
-            <VerticalIconButton
-              iconNode={
-                <View
-                  style={{
-                    width: 39,
-                    height: 29,
-                    overflow: "visible"
-                  }}
-                >
-                  <BitmapIconNewPost
-                    style={{
-                      height: 39,
-                      width: 39,
-                      position: "absolute",
-                      right: -4,
-                      top: 0,
-                      overflow: "visible"
-                    }}
-                  />
-                </View>
-              }
-              size={VerticalIconButtonSize.default}
-              count={postsCount}
-              onPress={onPressReply}
-            />
-
-            <View style={{ height: 35, width: 1 }} />
-
-            <VerticalIconButton
-              Icon={IconHeart}
-              size={VerticalIconButtonSize.default}
-              onPress={onPressLike}
-              count={post.likesCount}
-            />
-
-            <View style={{ height: 35, width: 1 }} />
-
-            <VerticalIconButton
-              Icon={IconChevronRight}
-              count={null}
-              size={VerticalIconButtonSize.default}
-            />
-          </View>
-        </View>
-      </View>
     </>
   );
 };
@@ -351,6 +295,7 @@ class ThreadContainer extends React.Component {
   playId: Animated.Value<number>;
   playValue: Animated.Value<number>;
   loadedPostIds = {};
+  changingPostValue = new Animated.Value(1);
 
   constructor(props) {
     super(props);
@@ -364,7 +309,7 @@ class ThreadContainer extends React.Component {
     this.durationValue = new Animated.Value<number>(this.autoplayDuration);
     this.playId = new Animated.Value(-1);
 
-    this.progressValue = runTiming({
+    this._progressValue = runTiming({
       clock: this.progressClock,
       value: 0,
       dest: 1,
@@ -373,13 +318,39 @@ class ThreadContainer extends React.Component {
       isPlaying: this.playValue,
       key: this.playId
     });
+    this.progressValue = this.changingPostValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        Animated.multiply(this._progressValue, this.changingPostValue),
+        this._progressValue
+      ],
+      extrapolate: Animated.Extrapolate.CLAMP
+    });
+
+    this.segmentRefs = {};
+    props.posts.forEach(
+      post => (this.segmentRefs[post.id] = React.createRef())
+    );
   }
+
+  segmentRefs: { [key: string]: React.Ref<View> } = {};
 
   componentDidUpdate(prevProps) {
     const visibilityChange =
       this.props.isVisible !== prevProps.isVisible ||
       this.props.isNextVisible !== prevProps.isNextVisible ||
       this.props.isPreviousVisible !== prevProps.isPreviousVisible;
+
+    if (
+      this.props.posts !== prevProps.posts ||
+      this.props.posts.length !== prevProps.posts.length
+    ) {
+      this.props.posts.forEach(post => {
+        if (!this.segmentRefs[post.id]) {
+          this.segmentRefs[post.id] = React.createRef();
+        }
+      });
+    }
 
     if (visibilityChange && this.props.isVisible) {
       this.play();
@@ -388,7 +359,15 @@ class ThreadContainer extends React.Component {
     }
   }
 
-  handlePostEnded = () => {
+  handlePostEnded = async () => {
+    this.goNext();
+  };
+
+  skip = () => {
+    this.goNext();
+  };
+
+  goNext = async () => {
     const postIndex = this.state.postIndex + 1;
     const hasNextPost = postIndex < this.props.posts.length;
 
@@ -402,19 +381,47 @@ class ThreadContainer extends React.Component {
     if (hasNextPost && this.state.autoAdvance) {
       const nextPost = this.props.posts[postIndex];
 
-      this.setState({
-        postIndex
-      });
+      await this.loadNextPost(postIndex);
 
       if (this.loadedPostIds[nextPost.id]) {
         this.startProgressAnimation();
       }
-
-      this.flatListRef.current.scrollToIndex({
-        index: postIndex,
-        animated: false
-      });
     }
+  };
+
+  postIndexValue = new Animated.Value(0);
+
+  loadNextPost = (postIndex: number) => {
+    return new Promise((resolve, reject) => {
+      this.playValue.setValue(0);
+      this.changingPostValue.setValue(1);
+      let _hasResolved = false;
+      Animated.timing(this.changingPostValue, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.cubic
+      }).start(({ finished }) => {
+        if (finished && this.state.postIndex !== postIndex) {
+          this.setState({ postIndex }, () => {
+            !_hasResolved && resolve();
+            _hasResolved = true;
+          });
+        }
+      });
+
+      Animated.timing(this.postIndexValue, {
+        toValue: postIndex,
+        duration: 300,
+        easing: Easing.cubic
+      }).start(({ finished }) => {
+        if (finished && this.state.postIndex !== postIndex) {
+          this.setState({ postIndex }, () => {
+            !_hasResolved && resolve();
+            _hasResolved = true;
+          });
+        }
+      });
+    });
   };
 
   get post() {
@@ -445,8 +452,10 @@ class ThreadContainer extends React.Component {
   }
 
   startProgressAnimation = () => {
-    this.playValue.setValue(1);
     this.playId.setValue(this.post.id.hashCode());
+    this.playValue.setValue(1);
+
+    console.log("START PROGRESS", this.state.postIndex, this.post.id);
   };
 
   onMediaPlay = () => {};
@@ -469,7 +478,7 @@ class ThreadContainer extends React.Component {
     this.playValue.setValue(0);
   };
 
-  renderPost = ({ item: post, index }) => {
+  renderPost = (post, index) => {
     const {
       offset,
       isVisible,
@@ -480,25 +489,93 @@ class ThreadContainer extends React.Component {
     } = this.props;
     const { isPlaying } = this.state;
 
+    const SCALE_BEFORE = 0.75;
+    const SCALE_AFTER = 0.75;
+
     return (
-      <View style={{ width, height, position: "relative" }}>
-        <ViewPost
-          post={post}
-          offset={offset}
-          isVisible={isVisible}
-          isNextVisible={isNextVisible}
-          onLoad={this.onLoad}
-          isPreviousVisible={isPreviousVisible}
-          postsCount={this.props.thread.postsCount}
-          progressValue={this.progressValue}
-          hideContent={!(isVisible || isNextVisible || isPreviousVisible)}
-          paused={!isPlaying || this.state.postIndex !== index}
-          width={width}
-          height={height}
-          onPressLike={this.handlePressLike}
-          onPressReply={this.handlePressReply}
-        />
-      </View>
+      <Animated.View
+        key={post.id}
+        style={{
+          width,
+          height,
+          overflow: "hidden",
+          position: "absolute",
+
+          transform: transformOrigin(
+            new Animated.Value(0),
+            new Animated.Value(0),
+            {
+              scale: this.postIndexValue.interpolate({
+                inputRange: [index - 1, index, index + 1],
+                outputRange: [SCALE_BEFORE, 1, SCALE_AFTER],
+                extrapolate: Animated.Extrapolate.CLAMP
+              })
+            },
+            {
+              translateX: this.postIndexValue.interpolate({
+                inputRange: [index - 1, index, index + 1],
+                outputRange: [
+                  (1.0 + 1.0 - SCALE_BEFORE) * width * index,
+                  1 * width * index,
+                  (1.0 + 1.0 - SCALE_AFTER) * width * index
+                ],
+                extrapolate: Animated.Extrapolate.CLAMP
+              })
+            },
+            {
+              translateY: this.postIndexValue.interpolate({
+                inputRange: [index - 1, index, index + 1],
+                outputRange: [height * -0.05, 0, height * -0.05],
+                extrapolate: Animated.Extrapolate.CLAMP
+              })
+            }
+          )
+        }}
+      >
+        <View style={{ width, height, position: "relative" }}>
+          <ViewPost
+            post={post}
+            offset={offset}
+            isVisible={isVisible}
+            isNextVisible={isNextVisible}
+            onLoad={this.onLoad}
+            isPreviousVisible={isPreviousVisible}
+            postsCount={this.props.thread.postsCount}
+            progressValue={this.progressValue}
+            hideContent={
+              (!isVisible && this.state.postIndex !== index) ||
+              isNextVisible ||
+              isPreviousVisible
+            }
+            paused={!isPlaying || this.state.postIndex !== index}
+            width={width}
+            height={height}
+            onPressLike={this.handlePressLike}
+            onPressReply={this.handlePressReply}
+          />
+
+          <Animated.View
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                backgroundColor: "black",
+                zIndex: 10,
+                opacity: this.postIndexValue.interpolate({
+                  inputRange: [
+                    index - 1,
+                    index,
+                    index + 0.05,
+                    index + 0.2,
+                    index + 1
+                  ],
+                  outputRange: [0, 0, 0.15, 0.65, 1],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]}
+          />
+        </View>
+      </Animated.View>
     );
   };
 
@@ -565,48 +642,125 @@ class ThreadContainer extends React.Component {
             width: width,
             height,
             overflow: "hidden",
-            backgroundColor: post.colors.background
+            backgroundColor: "black"
           }
         ]}
       >
-        <FlatList
-          horizontal
-          data={this.props.posts}
-          renderItem={this.renderPost}
-          windowSize={2}
-          ref={this.flatListRef}
-          keyExtractor={this.keyExtractor}
-          contentInsetAdjustmentBehavior="never"
-          directionalLockEnabled
-          extraData={this.getExtraData()}
-          contentOffset={{
-            x: 0,
-            y: 0
-          }}
-          getItemLayout={this.getItemLayout}
-          scrollEnabled={false}
+        <Animated.View
           style={{
             width,
+
             height
           }}
-        />
-
-        <View
-          style={{
-            position: "absolute",
-            bottom: BOTTOM_Y,
-            flexDirection: "row",
-            alignItems: "center",
-            left: SPACING.normal,
-            display: isVisible ? "flex" : "none"
-          }}
         >
-          <Seekbar
-            posts={posts}
-            postId={this.post.id}
-            percentage={this.progressValue}
-          />
-        </View>
+          <Animated.View
+            style={{
+              position: "absolute",
+              width,
+
+              height,
+              transform: [
+                {
+                  translateX: Animated.multiply(this.postIndexValue, width * -1)
+                }
+              ]
+            }}
+          >
+            {posts.map(this.renderPost)}
+          </Animated.View>
+
+          <View style={[threadStyles.layer, threadStyles.gradientLayer]}>
+            <OverlayGradient
+              width={width}
+              bottomStartLocation={
+                (SCREEN_DIMENSIONS.height - BOTTOM_Y - 60 - SPACING.double) /
+                SCREEN_DIMENSIONS.height
+              }
+              height={height}
+              layoutDirection="column-reverse"
+            />
+          </View>
+
+          <View style={[threadStyles.layer, threadStyles.overlayLayer]}>
+            <FooterProfile profile={post.profile} />
+
+            <View style={threadStyles.sidebar}>
+              <View style={threadStyles.counts}>
+                <VerticalIconButton
+                  iconNode={
+                    <View
+                      style={{
+                        width: 39,
+                        height: 29,
+                        overflow: "visible"
+                      }}
+                    >
+                      <BitmapIconNewPost
+                        style={{
+                          height: 39,
+                          width: 39,
+                          position: "absolute",
+                          right: -4,
+                          top: 0,
+                          overflow: "visible"
+                        }}
+                      />
+                    </View>
+                  }
+                  size={VerticalIconButtonSize.default}
+                  count={thread.postsCount}
+                  onPress={this.handlePressReply}
+                />
+
+                <View style={{ height: 35, width: 1 }} />
+
+                <VerticalIconButton
+                  Icon={IconHeart}
+                  size={VerticalIconButtonSize.default}
+                  onPress={this.handlePressLike}
+                  count={post.likesCount}
+                />
+
+                <View style={{ height: 35, width: 1 }} />
+
+                <View
+                  style={{
+                    opacity:
+                      this.state.postIndex < this.props.posts.length - 1 ? 1 : 0
+                  }}
+                >
+                  <VerticalIconButton
+                    Icon={IconChevronRight}
+                    count={null}
+                    onPress={this.skip}
+                    size={VerticalIconButtonSize.default}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        </Animated.View>
+        {posts.length > 1 && (
+          <View
+            style={{
+              position: "absolute",
+              bottom: BOTTOM_Y,
+              flexDirection: "row",
+              alignItems: "center",
+              left: SPACING.normal,
+              display: isVisible ? "flex" : "none"
+            }}
+          >
+            <Seekbar
+              posts={posts}
+              segmentRefs={this.segmentRefs}
+              postId={this.post.id}
+              indexValue={this.postIndexValue}
+              percentage={this.progressValue}
+              changingPostValue={this.changingPostValue}
+            />
+          </View>
+        )}
       </Animated.View>
     );
   }

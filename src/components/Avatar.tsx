@@ -4,35 +4,48 @@ import { buildImgSrc, normalizeFormat as getSize } from "../lib/imgUri";
 import { View, StyleSheet } from "react-native";
 import CircularProgressBar from "./PostList/CircularProgressBar";
 
-export const Avatar = ({
-  PlaceholderComponent,
-  label,
-  size,
-  url,
-  srcWidth,
-  srcHeight,
-  isLocal = false,
-  style
-}) => {
-  const showPlaceholder = !url;
+export const Avatar = React.forwardRef(
+  (
+    {
+      PlaceholderComponent,
+      label,
+      size,
+      url,
+      srcWidth,
+      srcHeight,
+      isLocal = false,
+      style
+    },
+    ref
+  ) => {
+    const showPlaceholder = !url;
 
-  if (showPlaceholder) {
-    return <PlaceholderComponent size={size} label={label} style={style} />;
-  } else {
-    const _size = getSize(size);
-    const src = isLocal ? url : buildImgSrc(url, size);
+    if (showPlaceholder) {
+      return (
+        <PlaceholderComponent
+          ref={ref}
+          size={size}
+          label={label}
+          style={style}
+        />
+      );
+    } else {
+      const _size = getSize(size);
+      const src = isLocal ? url : buildImgSrc(url, size);
 
-    return (
-      <AvatarImage
-        url={src}
-        srcWidth={_size}
-        style={style}
-        srcHeight={_size}
-        size={size}
-      />
-    );
+      return (
+        <AvatarImage
+          ref={ref}
+          url={src}
+          srcWidth={_size}
+          style={style}
+          srcHeight={_size}
+          size={size}
+        />
+      );
+    }
   }
-};
+);
 
 export const ProgressAvatar = ({
   size,

@@ -37,27 +37,25 @@ const CustomFastImage = React.forwardRef(
 export const Image = hoistNonReactStatics(CustomFastImage, FastImage);
 export default Image;
 
-export const AvatarImage = ({
-  url,
-  size,
-  srcWidth,
-  isLocal,
-  srcHeight,
-  style = {},
-  ...otherProps
-}) => {
-  return (
-    <Image
-      {...otherProps}
-      style={[
-        style,
-        {
-          width: size,
-          height: size,
-          borderRadius: size / 2
-        }
-      ]}
-      source={{ uri: url, width: srcWidth, height: srcHeight }}
-    />
-  );
-};
+export const AvatarImage = React.forwardRef(
+  (
+    { url, size, srcWidth, isLocal, srcHeight, style = {}, ...otherProps },
+    ref
+  ) => {
+    return (
+      <Image
+        {...otherProps}
+        ref={ref}
+        style={[
+          style,
+          {
+            width: size,
+            height: size,
+            borderRadius: size / 2
+          }
+        ]}
+        source={{ uri: url, width: srcWidth, height: srcHeight }}
+      />
+    );
+  }
+);

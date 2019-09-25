@@ -42,7 +42,7 @@
     "point-in-polygon": "^1.0.1",
     "react": "16.9.0",
     "react-apollo": "^2.5.8",
-    "react-native": "0.61.0-rc.3",
+    "react-native": "0.61.0",
     "react-native-config": "^0.11.7",
     "react-native-console-time-polyfill": "^1.2.1",
     "react-native-device-info": "^2.3.2",

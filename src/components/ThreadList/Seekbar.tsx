@@ -1,14 +1,20 @@
 import * as React from "react";
 import { View, StyleSheet, ImageSourcePropType } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Transitioning,
+  TransitioningView,
+  Transition,
+  Extrapolate
+} from "react-native-reanimated";
 import {
   PostFragment,
   PostFragment_profile
 } from "../../lib/graphql/PostFragment";
 import { SCREEN_DIMENSIONS } from "../../../config";
-import { sumBy, last, memoize } from "lodash";
+import { sumBy, last, memoize, range } from "lodash";
 import { Avatar } from "../Avatar";
 import { SPACING } from "../../lib/styles";
+import { get } from "react-native-redash";
 
 const MAX_WIDTH = SCREEN_DIMENSIONS.width - SPACING.double * 2;
 
@@ -137,21 +143,85 @@ const seekbarStyles = StyleSheet.create({
   }
 });
 
+const AvatarSegment = React.forwardRef(
+  (
+    { segment, translateXValue, negativeOffset, indexValue, segmentRefs },
+    ref
+  ) => {
+    return (
+      <Animated.View
+        key={segment.id}
+        style={[
+          seekbarStyles.avatar,
+          {
+            opacity: Animated.block([
+              Animated.cond(
+                Animated.greaterThan(indexValue, segment.index - 1),
+                0,
+                1
+              )
+            ]),
+            transform: [
+              {
+                translateX: negativeOffset
+              },
+              {
+                translateX: segment.offset - AVATAR_WIDTH / 2
+              }
+            ]
+          }
+        ]}
+      >
+        <Avatar
+          size={AVATAR_WIDTH}
+          url={segment.profile.photoURL}
+          ref={segmentRefs[segment.id]}
+          label={segment.profile.username}
+        />
+      </Animated.View>
+    );
+  }
+);
+
 const SeekbarComponent = ({
   segments,
   position,
-  offset: translateX
+  offsetValue: translateXValue,
+  offset: translateX,
+  currentIndex,
+  indexValue,
+  segmentRefs,
+  changingPostValue
 }: {
   segments: Array<SeekbarSegment>;
   position: Animated.Value<number>;
   offset: number;
+  offsetValue: Animated.Value<number>;
 }) => {
   const { width: _width = 0, offset = 0 } = last(segments) || {};
+
+  const negativeOffset = React.useRef(Animated.multiply(translateXValue, -1));
 
   const totalWidth = _width + offset;
 
   return (
     <View style={seekbarStyles.wrapper}>
+      {/* <Animated.Code
+        exec={Animated.block([
+          Animated.set(
+            moveBackWhileTransitioningPost.current,
+            Animated.cond(
+              Animated.lessThan(changingPostValue, 1),
+              changingPostValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [Animated.multiply(position, -1), 0],
+                extrapolate: Animated.Extrapolate.CLAMP
+              }),
+              0
+            )
+          )
+        ])}
+      /> */}
       <Animated.View
         style={[
           seekbarStyles.container,
@@ -159,7 +229,7 @@ const SeekbarComponent = ({
           {
             transform: [
               { translateX: SPACING.normal },
-              { translateX: translateX * -1 }
+              { translateX: negativeOffset.current }
             ]
           }
         ]}
@@ -172,7 +242,7 @@ const SeekbarComponent = ({
               overflow: "hidden",
               transform: [
                 {
-                  translateX: translateX
+                  translateX: translateXValue
                 }
               ]
             }
@@ -187,6 +257,7 @@ const SeekbarComponent = ({
                   {
                     translateX: totalWidth * -1
                   },
+
                   {
                     translateX: position
                   }
@@ -204,11 +275,12 @@ const SeekbarComponent = ({
               top: KNOB_SIZE / -2 + 3,
               transform: [
                 {
-                  translateX: translateX
+                  translateX: translateXValue
                 },
                 {
                   translateX: position
                 },
+
                 {
                   translateX: KNOB_SIZE / -2
                 }
@@ -219,29 +291,14 @@ const SeekbarComponent = ({
       </Animated.View>
 
       {segments.map(segment => (
-        <Animated.View
+        <AvatarSegment
+          segment={segment}
+          segmentRefs={segmentRefs}
+          negativeOffset={negativeOffset.current}
           key={segment.id}
-          style={[
-            seekbarStyles.avatar,
-            {
-              opacity: segment.offset === translateX ? 0 : 1,
-              transform: [
-                {
-                  translateX: translateX * -1
-                },
-                {
-                  translateX: segment.offset - AVATAR_WIDTH / 2
-                }
-              ]
-            }
-          ]}
-        >
-          <Avatar
-            size={AVATAR_WIDTH}
-            url={segment.profile.photoURL}
-            label={segment.profile.username}
-          />
-        </Animated.View>
+          indexValue={indexValue}
+          translateXValue={translateXValue}
+        />
       ))}
     </View>
   );
@@ -268,6 +325,7 @@ export class Seekbar extends React.Component<Props, State> {
     super(props);
 
     const segments = getSegments(props.posts);
+
     this.state = {
       segments,
       posts: props.posts,
@@ -275,10 +333,17 @@ export class Seekbar extends React.Component<Props, State> {
       segmentIndex:
         segments.findIndex(segment => props.postId === segment.id) || 0
     };
+    this.segmentWidth = new Animated.Value(
+      segments[this.state.segmentIndex].width
+    );
   }
 
-  static getDerivedStateFromProps(props: Props, state: State) {
-    const changes: Partial<State> = {};
+  offsetValue = new Animated.Value(0);
+  segmentWidth: Animated.Value<number>;
+  position: Animated.Value<number>;
+
+  static getDerivedStateFromProps(props, state) {
+    const changes = {};
 
     if (
       props.posts !== state.posts ||
@@ -287,6 +352,7 @@ export class Seekbar extends React.Component<Props, State> {
       changes.segments = getSegments(props.posts);
       changes.segmentIndex =
         changes.segments.findIndex(segment => props.postId === segment.id) || 0;
+
       changes.posts = props.posts;
     }
 
@@ -302,6 +368,17 @@ export class Seekbar extends React.Component<Props, State> {
     return changes;
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.segments !== this.state.segments ||
+      prevState.segmentIndex !== this.state.segmentIndex
+    ) {
+      this.segmentWidth.setValue(
+        this.state.segments[this.state.segmentIndex].width
+      );
+    }
+  }
+
   render() {
     const { segments, segmentIndex, posts, postId } = this.state;
     const segment = segments[segmentIndex];
@@ -310,7 +387,16 @@ export class Seekbar extends React.Component<Props, State> {
       <SeekbarComponent
         segments={segments}
         offset={segment.offset}
-        position={Animated.multiply(this.props.percentage, segment.width)}
+        currentIndex={segment.index}
+        indexValue={this.props.indexValue}
+        offsetValue={Animated.interpolate(this.props.indexValue, {
+          inputRange: segments.map((segment, index) => index),
+          outputRange: segments.map(segment => segment.offset),
+          extrapolate: Animated.Extrapolate.CLAMP
+        })}
+        segmentRefs={this.props.segmentRefs}
+        changingPostValue={this.props.changingPostValue}
+        position={Animated.multiply(this.props.percentage, this.segmentWidth)}
       />
     );
   }
