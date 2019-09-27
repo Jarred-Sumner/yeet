@@ -28,37 +28,69 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
 import ThreadListPage from "./src/screens/ThreadList";
 import ReplyPage from "./src/screens/ReplyPage";
+import { createBottomTabNavigator } from "react-navigation";
+import CurrentProfilePage from "./src/screens/CurrentProfile";
+import SearchPage from "./src/screens/Search";
+import { Icon, IconName } from "./src/components/Icon";
+import { BottomTabBar } from "./src/components/BottomTabBar";
+
+const TAB_ICON_SIZE = 18;
 
 const Routes = createAppContainer(
   createStackNavigator(
     {
-      Home: createMaterialTopTabNavigator(
+      Home: createStackNavigator(
         {
-          FeedTab: createSharedElementStackNavigator(
-            createStackNavigator,
+          RootScreens: createBottomTabNavigator(
             {
-              ThreadList: ThreadListPage,
-              ReplyToPost: ReplyPage,
-              EditBlockPhotoInReply: ImagePickerPage
-            },
-            {
-              cardStyle: {
-                backgroundColor: "#000"
+              FeedTab: createSharedElementStackNavigator(
+                createStackNavigator,
+                {
+                  ThreadList: ThreadListPage,
+                  ReplyToPost: ReplyPage,
+                  EditBlockPhotoInReply: ImagePickerPage
+                },
+                {
+                  cardStyle: {
+                    backgroundColor: "#000"
+                  },
+                  defaultNavigationOptions: {
+                    header: () => null,
+                    headerTransparent: true
+                  }
+                },
+                {
+                  cardStyle: {
+                    backgroundColor: "#000"
+                  },
+                  defaultNavigationOptions: ({ navigation }) => ({
+                    header: () => null,
+                    mode: "modal",
+                    headerMode: "none",
+                    headerTransparent: true
+                  })
+                }
+              ),
+              ProfileTab: {
+                screen: CurrentProfilePage
               },
-              defaultNavigationOptions: {
-                header: () => null,
-                headerTransparent: true
+              SearchTab: {
+                screen: SearchPage
               }
             },
             {
-              cardStyle: {
-                backgroundColor: "#000"
+              tabBarComponent: () => null,
+              safeAreaInset: {
+                bottom: "never",
+                top: "never",
+                left: "never",
+                right: "never"
               },
-              defaultNavigationOptions: {
-                header: () => null,
-                mode: "modal",
-                headerMode: "none",
-                headerTransparent: true
+              tabBarOptions: {
+                keyboardHidesTabBar: true
+              },
+              cardStyle: {
+                backgroundColor: "transparent"
               }
             }
           ),
@@ -88,16 +120,6 @@ const Routes = createAppContainer(
           },
           defaultNavigationOptions: {
             header: () => null
-          },
-          tabBarComponent: () => null,
-          tabBarOptions: {
-            swipeEnabled: true,
-            tabBarPosition: "bottom",
-            lazy: true,
-            activeTintColor: "#ccc",
-            style: {
-              backgroundColor: "#000"
-            }
           }
         }
       ),

@@ -119,6 +119,7 @@ export const IconButton = ({
   opacity = 1,
   transform,
   size = 24,
+  iconNode,
   impact = null
 }) => {
   const handlePress = React.useCallback(
@@ -197,7 +198,7 @@ export const IconButton = ({
             }}
           />
           <Animated.View style={iconWrapperStyles}>
-            <Icon style={iconStyles} size={size} />
+            {iconNode || <Icon style={iconStyles} size={size} />}
           </Animated.View>
         </Animated.View>
       </BorderlessButton>
@@ -214,7 +215,7 @@ export const IconButton = ({
         onPress={handlePress}
       >
         <Animated.View key={`isLoading-${isLoading}`} style={containerStyles}>
-          <Icon style={iconStyles} size={size} />
+          {iconNode || <Icon style={iconStyles} size={size} />}
         </Animated.View>
       </BorderlessButton>
     );

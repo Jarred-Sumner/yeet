@@ -2,12 +2,19 @@
 import { memoize, uniqBy } from "lodash";
 import * as React from "react";
 import { Query } from "react-apollo";
-import { StyleSheet, View, InteractionManager } from "react-native";
+import {
+  StyleSheet,
+  View,
+  findNodeHandle,
+  UIManager,
+  InteractionManager
+} from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
+import { transformOrigin } from "react-native-redash";
 import { SharedElement } from "react-navigation-shared-element";
-import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import { ViewPosts } from "../../lib/graphql/ViewPosts";
 import { pxBoundsToPoint, scaleToWidth } from "../../lib/Rect";
@@ -15,15 +22,16 @@ import { SPACING } from "../../lib/styles";
 import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
 import { Avatar } from "../Avatar";
 import { BitmapIconNewPost } from "../BitmapIcon";
-import { IconChevronRight, IconHeart } from "../Icon";
+import { IconHeart } from "../Icon";
 import Media from "../PostList/ViewMedia";
 import { SemiBoldText } from "../Text";
-import {
-  VerticalIconButton,
-  VerticalIconButtonSize
-} from "../VerticalIconButton";
-import { Seekbar } from "./Seekbar";
-import { transformOrigin } from "react-native-redash";
+import { CountButton } from "./CountButton";
+import { Seekbar, BAR_HEIGHT } from "./Seekbar";
+import { TAB_BAR_OFFSET } from "../BottomTabBar";
+import { useLayout } from "react-native-hooks";
+
+const AVATAR_SIZE = 36;
+
 const {
   Clock,
   Value,
@@ -81,44 +89,52 @@ function runTiming({
         set(state.position, value),
         set(state.frameTime, 0),
         set(config.toValue, dest),
+        debug("Restart progress bar", state.position),
         startClock(clock)
       ]
     ),
     // we run the step here that is going to update position
     timing(clock, state, config),
+    debug("Tick progress bar", state.position),
     // if the animation is over we stop the clock
     cond(
       state.finished,
-      block([stopClock(clock), Animated.call([], onComplete)])
+      block([
+        stopClock(clock),
+        set(state.finished, 0),
+        set(state.position, 0),
+        set(state.time, 0),
+        set(state.frameTime, 0),
+        startClock(clock),
+        Animated.call([], onComplete)
+      ])
     ),
     // we made the block return the updated position
     state.position
   ]);
 
-  // return animationBlock;
-  return block([
-    Animated.onChange(
-      key,
-      cond(clockRunning(clock), [
-        stopClock(clock),
-        set(state.finished, 0),
-        set(state.time, 0),
-        set(state.position, value),
-        set(state.frameTime, 0),
-        set(config.toValue, dest)
-      ])
-    ),
-    // animationBlock
-    Animated.cond(
-      Animated.eq(key, -1),
-      [value],
-      cond(
-        Animated.eq(isPlaying, 0),
-        [stopClock(clock), state.position],
-        animationBlock
-      )
-    )
-  ]);
+  return animationBlock;
+  // return block([
+  //   Animated.eq(isPlaying, 0),
+  //   [
+  //     cond(
+  //       clockRunning(clock),
+  //       [
+  //         stopClock(clock),
+
+  //         set(state.finished, 0),
+  //         set(state.time, 0),
+  //         set(state.position, value),
+  //         set(state.frameTime, 0),
+  //         set(config.toValue, dest),
+  //         startClock(clock),
+  //         state.position
+  //       ],
+  //       1
+  //     )
+  //   ],
+  //   animationBlock
+  // ]);
 }
 
 export const OverlayGradient = ({
@@ -134,8 +150,13 @@ export const OverlayGradient = ({
       height={height}
       start={{ x: 0, y: 0 }}
       end={{ x: 0, y: 1 }}
-      locations={[bottomStartLocation, 1.0]}
-      colors={["rgba(0,0,0,0.0)", "rgba(0,0,0,0.15)"]}
+      locations={[0, topEndLocation, bottomStartLocation, 1.0]}
+      colors={[
+        "rgba(0,0,0,0.15)",
+        "rgba(0,0,0,0)",
+        "rgba(0,0,0,0.0)",
+        "rgba(0,0,0,0.25)"
+      ]}
     />
   );
 };
@@ -145,9 +166,18 @@ const threadStyles = StyleSheet.create({
     position: "relative",
     overflow: "visible"
   },
+  sidebar: {
+    alignItems: "flex-end",
+    flex: 0,
+    width: SCREEN_DIMENSIONS.width,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingBottom: SPACING.normal
+  },
   counts: {
     alignItems: "center",
-    overflow: "visible"
+    overflow: "visible",
+    flexDirection: "row"
   },
   layer: {
     ...StyleSheet.absoluteFillObject
@@ -159,23 +189,13 @@ const threadStyles = StyleSheet.create({
   profile: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: SPACING.half
+    paddingHorizontal: SPACING.normal
   },
   footer: {
     flexDirection: "row",
-    padding: SPACING.normal,
-    justifyContent: "space-between",
-    marginBottom: BOTTOM_Y
+    justifyContent: "space-between"
   },
-  sidebar: {
-    position: "absolute",
-    bottom: BOTTOM_Y + 24,
-    overflow: "visible",
-    right: 0
-  },
-  header: {
-    opacity: 1.0
-  },
+
   progressBars: {
     opacity: 1.0,
     position: "absolute",
@@ -217,18 +237,123 @@ const threadStyles = StyleSheet.create({
   likesCountText: {
     marginLeft: SPACING.normal,
     fontSize: 20
+  },
+  header: {
+    // marginTop: TOP_Y,
+    alignItems: "flex-start",
+    justifyContent: "center"
   }
 });
 
-const FooterProfile = ({ profile }) => (
+const Profile = React.forwardRef(({ profile, onLayout, hideText }, ref) => (
   <View style={threadStyles.footer}>
     <View style={threadStyles.profile}>
-      <Avatar label={profile.username} size={36} url={profile.photoURL} />
-      <SemiBoldText style={threadStyles.username}>
+      <View ref={ref} onLayout={onLayout}>
+        <Avatar
+          label={profile.username}
+          size={AVATAR_SIZE}
+          url={profile.photoURL}
+        />
+      </View>
+      <SemiBoldText
+        style={[threadStyles.username, hideText && { display: "none" }]}
+      >
         {profile.username}
       </SemiBoldText>
     </View>
   </View>
+));
+
+const AnimatedProfile = React.forwardRef(
+  (
+    {
+      profile,
+      progressValue,
+      x,
+      y,
+      width,
+      height,
+      endX,
+      endY,
+      animated = false,
+      isAnimatingNextPost,
+      parentHeight
+    },
+    ref
+  ) => {
+    if (animated) {
+      const animationProgress = Animated.cond(
+        Animated.eq(isAnimatingNextPost, 0),
+        0,
+        progressValue
+      );
+
+      const top = Animated.interpolate(animationProgress, {
+        inputRange: [0, 1],
+        outputRange: [endY, Animated.sub(y, BAR_HEIGHT + 1)],
+        extrapolate: Animated.Extrapolate.CLAMP
+      });
+
+      const left = Animated.interpolate(animationProgress, {
+        inputRange: [0, 1],
+        outputRange: [endX, Animated.sub(x, BAR_HEIGHT)],
+        extrapolate: Animated.Extrapolate.CLAMP
+      });
+
+      return (
+        <Animated.View
+          style={{
+            position: "absolute",
+            opacity: isAnimatingNextPost,
+            overflow: "visible",
+            top: top,
+            left: left,
+            width,
+            height,
+            transform: [
+              {
+                scale: Animated.interpolate(animationProgress, {
+                  inputRange: [0, 1],
+                  outputRange: [1, Animated.divide(width, AVATAR_SIZE)]
+                })
+              }
+            ]
+          }}
+        >
+          <Avatar
+            label={profile.username}
+            size={AVATAR_SIZE}
+            url={profile.photoURL}
+          />
+        </Animated.View>
+      );
+    } else {
+      const animationProgress = Animated.cond(
+        Animated.eq(isAnimatingNextPost, 0),
+        1,
+        progressValue
+      );
+
+      return (
+        <Animated.View
+          style={{
+            opacity: 1,
+            transform: [
+              {
+                translateX: Animated.interpolate(animationProgress, {
+                  inputRange: [0, 1],
+                  outputRange: [SCREEN_DIMENSIONS.width * -1, 0],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]
+          }}
+        >
+          <Profile ref={ref} profile={profile} />
+        </Animated.View>
+      );
+    }
+  }
 );
 
 const ViewPost = ({
@@ -292,40 +417,19 @@ class ThreadContainer extends React.Component {
   progressValue: Animated.Value<number>;
   progressClock: Animated.Clock;
   durationValue: Animated.Value<number>;
-  playId: Animated.Value<number>;
-  playValue: Animated.Value<number>;
   loadedPostIds = {};
-  changingPostValue = new Animated.Value(1);
+  progressValue = new Animated.Value(0);
+  isAnimatingNextPost = new Animated.Value(0);
 
   constructor(props) {
     super(props);
 
     const isPlaying = props.isVisible;
-    this.playValue = new Animated.Value<number>(isPlaying ? 1 : 0);
 
     this.state = { postIndex: 0, isPlaying, autoAdvance: isPlaying };
 
     this.progressClock = new Animated.Clock();
     this.durationValue = new Animated.Value<number>(this.autoplayDuration);
-    this.playId = new Animated.Value(-1);
-
-    this._progressValue = runTiming({
-      clock: this.progressClock,
-      value: 0,
-      dest: 1,
-      duration: this.autoplayDuration,
-      onComplete: this.handlePostEnded,
-      isPlaying: this.playValue,
-      key: this.playId
-    });
-    this.progressValue = this.changingPostValue.interpolate({
-      inputRange: [0, 1],
-      outputRange: [
-        Animated.multiply(this._progressValue, this.changingPostValue),
-        this._progressValue
-      ],
-      extrapolate: Animated.Extrapolate.CLAMP
-    });
 
     this.segmentRefs = {};
     props.posts.forEach(
@@ -333,13 +437,14 @@ class ThreadContainer extends React.Component {
     );
   }
 
-  segmentRefs: { [key: string]: React.Ref<View> } = {};
+  segmentRefs: { [key: string]: React.MutableRefObject<View> } = {};
 
   componentDidUpdate(prevProps) {
     const visibilityChange =
       this.props.isVisible !== prevProps.isVisible ||
       this.props.isNextVisible !== prevProps.isNextVisible ||
-      this.props.isPreviousVisible !== prevProps.isPreviousVisible;
+      this.props.isPreviousVisible !== prevProps.isPreviousVisible ||
+      prevProps.thread.id !== this.props.thread.id;
 
     if (
       this.props.posts !== prevProps.posts ||
@@ -384,45 +489,104 @@ class ThreadContainer extends React.Component {
       await this.loadNextPost(postIndex);
 
       if (this.loadedPostIds[nextPost.id]) {
-        this.startProgressAnimation();
+        this.startProgressAnimation(nextPost.id);
       }
+    } else if (!hasNextPost && this.state.autoAdvance) {
+      // this.progressValue.setValue(0);
+      this.startProgressAnimation();
     }
   };
 
   postIndexValue = new Animated.Value(0);
+  isRunningProgressAnimation = false;
+  nextPostAnimation: Animated.BackwardCompatibleWrapper = null;
 
-  loadNextPost = (postIndex: number) => {
-    return new Promise((resolve, reject) => {
-      this.playValue.setValue(0);
-      this.changingPostValue.setValue(1);
+  loadNextPost = (_postIndex: number) => {
+    return new Promise(async (resolve, reject) => {
       let _hasResolved = false;
-      Animated.timing(this.changingPostValue, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.cubic
-      }).start(({ finished }) => {
-        if (finished && this.state.postIndex !== postIndex) {
-          this.setState({ postIndex }, () => {
-            !_hasResolved && resolve();
-            _hasResolved = true;
-          });
-        }
+      const postIndex = _postIndex || this.state.postIndex;
+
+      if (this.isRunningProgressAnimation) {
+        this.progressAnimation.stop();
+      }
+
+      const post = this.props.posts[postIndex];
+      const segmentRef = this.segmentRefs[post.id];
+
+      const { width, height, y, x } = await new Promise((resolve, reject) => {
+        UIManager.measureLayout(
+          findNodeHandle(segmentRef.current),
+          findNodeHandle(this.overlayRef.current),
+          reject,
+          (x, y, width, height) => {
+            resolve({ x, y, width, height });
+          }
+        );
       });
 
-      Animated.timing(this.postIndexValue, {
+      // const x = this.seekbarRef.current.segmentByPostID(this.post.id);
+
+      const { x: endX, y: endY } = await new Promise((resolve, reject) => {
+        this.profileRef.current.measureInWindow((x, y, width, height) => {
+          resolve({ x, y, width, height });
+        });
+      });
+
+      console.log("HERE", { x, y, width, height, endX, endY });
+      this.profileAnimationStartHeight.setValue(height);
+      this.profileAnimationStartWidth.setValue(width);
+      this.profileAnimationStartX.setValue(x);
+      this.profileAnimationStartY.setValue(y);
+      this.profileAnimationEndX.setValue(endX);
+      this.profileAnimationEndY.setValue(endY);
+      console.log("HEREITH");
+
+      this.progressAnimation = Animated.timing(this.progressValue, {
+        toValue: 0.0,
+        duration: 500,
+        easing: Easing.ease
+      });
+
+      this.progressAnimation.start(({ finished }) => {
+        this.isRunningProgressAnimation = false;
+      });
+
+      this.isRunningProgressAnimation = true;
+
+      this.nextPostAnimation = Animated.timing(this.postIndexValue, {
         toValue: postIndex,
-        duration: 300,
-        easing: Easing.cubic
-      }).start(({ finished }) => {
+        duration: 500,
+        easing: Easing.ease
+      });
+
+      this.isAnimatingNextPost.setValue(1);
+      this.nextPostAnimation.start(({ finished }) => {
         if (finished && this.state.postIndex !== postIndex) {
           this.setState({ postIndex }, () => {
             !_hasResolved && resolve();
             _hasResolved = true;
+            this.isAnimatingNextPost.setValue(0);
+            // InteractionManager.runAfterInteractions(() =>
+
+            // );
+            this.nextPostAnimation = null;
           });
+        } else if (finished && this.state.postIndex === postIndex) {
+          this.isAnimatingNextPost.setValue(0);
         }
       });
     });
   };
+
+  componentWillUnmount() {
+    if (this.isRunningProgressAnimation) {
+      this.progressAnimation.stop();
+    }
+
+    if (this.nextPostAnimation) {
+      this.nextPostAnimation.stop();
+    }
+  }
 
   get post() {
     return this.props.posts[this.state.postIndex] || this.props.posts[0];
@@ -451,10 +615,34 @@ class ThreadContainer extends React.Component {
     return this.loadedPostIds[this.post.id] === true;
   }
 
-  startProgressAnimation = () => {
-    this.playId.setValue(this.post.id.hashCode());
-    this.playValue.setValue(1);
+  progressAnimation: Animated.BackwardCompatibleWrapper | null = null;
+  profileAnimationStartX = new Animated.Value(0);
+  profileAnimationStartY = new Animated.Value(0);
+  profileAnimationStartWidth = new Animated.Value(0);
+  profileAnimationStartHeight = new Animated.Value(0);
+  profileAnimationEndX = new Animated.Value(0);
+  profileAnimationEndY = new Animated.Value(0);
 
+  startProgressAnimation = () => {
+    if (this.isRunningProgressAnimation) {
+      this.progressAnimation.stop();
+    }
+
+    this.progressAnimation = Animated.timing(this.progressValue, {
+      toValue: 1.0,
+      duration: this.autoplayDuration,
+      easing: Easing.linear
+    });
+
+    this.progressAnimation.start(({ finished }) => {
+      if (finished) {
+        this.handlePostEnded();
+      }
+
+      this.isRunningProgressAnimation = false;
+    });
+
+    this.isRunningProgressAnimation = true;
     console.log("START PROGRESS", this.state.postIndex, this.post.id);
   };
 
@@ -475,7 +663,10 @@ class ThreadContainer extends React.Component {
       isPlaying: false,
       autoAdvance: false
     });
-    this.playValue.setValue(0);
+
+    if (this.isRunningProgressAnimation) {
+      this.progressAnimation.stop();
+    }
   };
 
   renderPost = (post, index) => {
@@ -501,31 +692,36 @@ class ThreadContainer extends React.Component {
           overflow: "hidden",
           position: "absolute",
 
+          opacity: Animated.cond(
+            this.isAnimatingNextPost,
+            this.postIndexValue.interpolate({
+              inputRange: [
+                index - 1,
+                index - 0.99,
+                index,
+                index + 0.01,
+                index + 1
+              ],
+              outputRange: [0, 1, 1, 1, 0],
+              extrapolate: Animated.Extrapolate.CLAMP
+            }),
+            Animated.cond(Animated.eq(this.postIndexValue, index), 1, 0)
+          ),
           transform: transformOrigin(
             new Animated.Value(0),
             new Animated.Value(0),
             {
-              scale: this.postIndexValue.interpolate({
-                inputRange: [index - 1, index, index + 1],
-                outputRange: [SCALE_BEFORE, 1, SCALE_AFTER],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            },
-            {
               translateX: this.postIndexValue.interpolate({
                 inputRange: [index - 1, index, index + 1],
-                outputRange: [
-                  (1.0 + 1.0 - SCALE_BEFORE) * width * index,
-                  1 * width * index,
-                  (1.0 + 1.0 - SCALE_AFTER) * width * index
-                ],
+                outputRange: [width, 0, width * -1],
                 extrapolate: Animated.Extrapolate.CLAMP
               })
             },
+
             {
-              translateY: this.postIndexValue.interpolate({
+              scale: this.postIndexValue.interpolate({
                 inputRange: [index - 1, index, index + 1],
-                outputRange: [height * -0.05, 0, height * -0.05],
+                outputRange: [0.9, 1, 0.9],
                 extrapolate: Animated.Extrapolate.CLAMP
               })
             }
@@ -542,11 +738,7 @@ class ThreadContainer extends React.Component {
             isPreviousVisible={isPreviousVisible}
             postsCount={this.props.thread.postsCount}
             progressValue={this.progressValue}
-            hideContent={
-              (!isVisible && this.state.postIndex !== index) ||
-              isNextVisible ||
-              isPreviousVisible
-            }
+            hideContent={!(isVisible || isNextVisible || isPreviousVisible)}
             paused={!isPlaying || this.state.postIndex !== index}
             width={width}
             height={height}
@@ -563,12 +755,12 @@ class ThreadContainer extends React.Component {
                 opacity: this.postIndexValue.interpolate({
                   inputRange: [
                     index - 1,
+                    index - 0.5,
                     index,
-                    index + 0.05,
-                    index + 0.2,
+                    index + 0.1,
                     index + 1
                   ],
-                  outputRange: [0, 0, 0.15, 0.65, 1],
+                  outputRange: [0, 0, 0, 0.25, 1],
                   extrapolate: Animated.Extrapolate.CLAMP
                 })
               }
@@ -586,6 +778,8 @@ class ThreadContainer extends React.Component {
       post: this.post
     });
   };
+
+  seekbarRef = React.createRef<Seekbar>();
 
   getItemLayout = (data: Array<PostFragment>, index: number) => {
     return {
@@ -616,6 +810,8 @@ class ThreadContainer extends React.Component {
 
   flatListRef = React.createRef<FlatList>();
   keyExtractor = item => item.id;
+  overlayRef = React.createRef<View>();
+  profileRef = React.createRef<View>();
 
   render() {
     const {
@@ -633,6 +829,7 @@ class ThreadContainer extends React.Component {
     } = this.props;
 
     const post = this.post;
+    const nextPost = posts[this.state.postIndex + 1];
 
     return (
       <Animated.View
@@ -658,12 +855,7 @@ class ThreadContainer extends React.Component {
               position: "absolute",
               width,
 
-              height,
-              transform: [
-                {
-                  translateX: Animated.multiply(this.postIndexValue, width * -1)
-                }
-              ]
+              height
             }}
           >
             {posts.map(this.renderPost)}
@@ -681,12 +873,21 @@ class ThreadContainer extends React.Component {
             />
           </View>
 
-          <View style={[threadStyles.layer, threadStyles.overlayLayer]}>
-            <FooterProfile profile={post.profile} />
-
+          <View
+            ref={this.overlayRef}
+            style={[threadStyles.layer, threadStyles.overlayLayer]}
+          >
             <View style={threadStyles.sidebar}>
+              <AnimatedProfile
+                profile={post.profile}
+                progressValue={this.progressValue}
+                ref={this.profileRef}
+                postIndexValue={this.postIndexValue}
+                isAnimatingNextPost={this.isAnimatingNextPost}
+              />
+
               <View style={threadStyles.counts}>
-                <VerticalIconButton
+                <CountButton
                   iconNode={
                     <View
                       style={{
@@ -700,67 +901,67 @@ class ThreadContainer extends React.Component {
                           height: 39,
                           width: 39,
                           position: "absolute",
-                          right: -4,
                           top: 0,
                           overflow: "visible"
                         }}
                       />
                     </View>
                   }
-                  size={VerticalIconButtonSize.default}
+                  size={42}
                   count={thread.postsCount}
+                  type="shadow"
                   onPress={this.handlePressReply}
                 />
 
-                <View style={{ height: 35, width: 1 }} />
-
-                <VerticalIconButton
+                <CountButton
                   Icon={IconHeart}
-                  size={VerticalIconButtonSize.default}
+                  color="white"
+                  type="shadow"
                   onPress={this.handlePressLike}
+                  size={32}
                   count={post.likesCount}
                 />
-
-                <View style={{ height: 35, width: 1 }} />
-
-                <View
-                  style={{
-                    opacity:
-                      this.state.postIndex < this.props.posts.length - 1 ? 1 : 0
-                  }}
-                >
-                  <VerticalIconButton
-                    Icon={IconChevronRight}
-                    count={null}
-                    onPress={this.skip}
-                    size={VerticalIconButtonSize.default}
-                  />
-                </View>
               </View>
             </View>
+
+            <View style={{ height: BAR_HEIGHT }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  display: isVisible ? "flex" : "none"
+                }}
+              >
+                {posts.length > 1 && (
+                  <Seekbar
+                    posts={posts}
+                    segmentRefs={this.segmentRefs}
+                    postId={this.post.id}
+                    ref={this.seekbarRef}
+                    indexValue={this.postIndexValue}
+                    percentage={this.progressValue}
+                  />
+                )}
+              </View>
+            </View>
+
+            {nextPost && (
+              <AnimatedProfile
+                profile={nextPost.profile}
+                progressValue={this.progressValue}
+                x={this.profileAnimationStartX}
+                y={this.profileAnimationStartY}
+                endX={this.profileAnimationEndX}
+                endY={this.profileAnimationEndY}
+                width={this.profileAnimationStartWidth}
+                height={this.profileAnimationStartHeight}
+                isAnimatingNextPost={this.isAnimatingNextPost}
+                animated
+                parentHeight={height}
+              />
+            )}
           </View>
         </Animated.View>
-        {posts.length > 1 && (
-          <View
-            style={{
-              position: "absolute",
-              bottom: BOTTOM_Y,
-              flexDirection: "row",
-              alignItems: "center",
-              left: SPACING.normal,
-              display: isVisible ? "flex" : "none"
-            }}
-          >
-            <Seekbar
-              posts={posts}
-              segmentRefs={this.segmentRefs}
-              postId={this.post.id}
-              indexValue={this.postIndexValue}
-              percentage={this.progressValue}
-              changingPostValue={this.changingPostValue}
-            />
-          </View>
-        )}
       </Animated.View>
     );
   }

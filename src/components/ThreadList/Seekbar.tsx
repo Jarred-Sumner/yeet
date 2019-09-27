@@ -16,10 +16,12 @@ import { Avatar } from "../Avatar";
 import { SPACING } from "../../lib/styles";
 import { get } from "react-native-redash";
 
-const MAX_WIDTH = SCREEN_DIMENSIONS.width - SPACING.double * 2;
+const MAX_WIDTH = SCREEN_DIMENSIONS.width;
+const SHOW_KNOB = false;
 
+export const BAR_HEIGHT = 4;
 const KNOB_SIZE = 12;
-const AVATAR_WIDTH = 24;
+const AVATAR_WIDTH = 18;
 
 type SeekbarSegment = {
   width: number;
@@ -85,7 +87,6 @@ const getSegments = (posts: Array<PostFragment>) => {
   const segment = last(segments);
 
   segment.width = MAX_WIDTH + segment.offset / MAX_WIDTH;
-  console.log({ width: segment.width });
   return segments;
 };
 
@@ -99,22 +100,22 @@ const seekbarStyles = StyleSheet.create({
     flexDirection: "row",
     position: "relative",
     flex: 0,
-    borderRadius: 6
+    borderRadius: SHOW_KNOB ? BAR_HEIGHT : 0
   },
   progressBarBackground: {
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     position: "absolute",
     top: 0,
     left: 0,
-    height: 6,
-    borderRadius: 6
+    height: BAR_HEIGHT,
+    borderRadius: SHOW_KNOB ? BAR_HEIGHT : 0
     // overflow: "hidden"
   },
   avatar: {
     width: AVATAR_WIDTH,
     height: AVATAR_WIDTH,
     position: "absolute",
-    top: (AVATAR_WIDTH - 6) / -2,
+    top: AVATAR_WIDTH * -1 - 1,
     opacity: 0.8
   },
   progressBar: {
@@ -122,14 +123,14 @@ const seekbarStyles = StyleSheet.create({
     overflow: "hidden",
     top: 0,
     bottom: 0,
-    height: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    height: BAR_HEIGHT,
+    backgroundColor: "rgba(255, 255, 255, 0.55)",
     flexDirection: "row",
     justifyContent: "flex-end",
     alignItems: "center"
   },
   knobContainer: {
-    height: 6,
+    height: BAR_HEIGHT,
     flexDirection: "row",
     alignItems: "center"
   },
@@ -137,6 +138,7 @@ const seekbarStyles = StyleSheet.create({
     width: KNOB_SIZE,
     height: KNOB_SIZE,
     borderRadius: KNOB_SIZE / 2,
+    display: SHOW_KNOB ? "flex" : "none",
     alignSelf: "center",
     overflow: "hidden",
     backgroundColor: "#ccc"
@@ -148,36 +150,38 @@ const AvatarSegment = React.forwardRef(
     { segment, translateXValue, negativeOffset, indexValue, segmentRefs },
     ref
   ) => {
+    if (!segmentRefs[segment.id]) {
+      segmentRefs[segment.id] = React.createRef();
+    }
+
+    const segmentRef = segmentRefs[segment.id];
     return (
       <Animated.View
         key={segment.id}
         style={[
           seekbarStyles.avatar,
           {
+            left: Animated.add(
+              negativeOffset,
+              segment.offset - AVATAR_WIDTH / 2
+            ),
             opacity: Animated.block([
               Animated.cond(
                 Animated.greaterThan(indexValue, segment.index - 1),
                 0,
                 1
               )
-            ]),
-            transform: [
-              {
-                translateX: negativeOffset
-              },
-              {
-                translateX: segment.offset - AVATAR_WIDTH / 2
-              }
-            ]
+            ])
           }
         ]}
       >
-        <Avatar
-          size={AVATAR_WIDTH}
-          url={segment.profile.photoURL}
-          ref={segmentRefs[segment.id]}
-          label={segment.profile.username}
-        />
+        <View ref={segmentRef}>
+          <Avatar
+            size={AVATAR_WIDTH}
+            url={segment.profile.photoURL}
+            label={segment.profile.username}
+          />
+        </View>
       </Animated.View>
     );
   }
@@ -205,7 +209,11 @@ const SeekbarComponent = ({
   const totalWidth = _width + offset;
 
   return (
-    <View style={seekbarStyles.wrapper}>
+    <View
+      shouldRasterizeIOS
+      renderToHardwareTextureAndroid
+      style={seekbarStyles.wrapper}
+    >
       {/* <Animated.Code
         exec={Animated.block([
           Animated.set(
@@ -228,7 +236,7 @@ const SeekbarComponent = ({
           { width: totalWidth },
           {
             transform: [
-              { translateX: SPACING.normal },
+              // { translateX: SPACING.normal },
               { translateX: negativeOffset.current }
             ]
           }
@@ -333,14 +341,16 @@ export class Seekbar extends React.Component<Props, State> {
       segmentIndex:
         segments.findIndex(segment => props.postId === segment.id) || 0
     };
-    this.segmentWidth = new Animated.Value(
-      segments[this.state.segmentIndex].width
-    );
+
+    this.segmentWidth.setValue(segments[this.state.segmentIndex].width);
   }
 
+  segmentWidth = new Animated.Value(0);
   offsetValue = new Animated.Value(0);
-  segmentWidth: Animated.Value<number>;
   position: Animated.Value<number>;
+
+  segmentByPostID = (postId: string) =>
+    this.state.segments.find(segment => segment.id === postId);
 
   static getDerivedStateFromProps(props, state) {
     const changes = {};
@@ -369,13 +379,11 @@ export class Seekbar extends React.Component<Props, State> {
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.segments !== this.state.segments ||
-      prevState.segmentIndex !== this.state.segmentIndex
-    ) {
-      this.segmentWidth.setValue(
-        this.state.segments[this.state.segmentIndex].width
-      );
+    const prevSegment = prevState.segments[prevState.segmentIndex];
+    const segment = this.state.segments[this.state.segmentIndex];
+
+    if (prevSegment !== segment) {
+      this.segmentWidth.setValue(segment.width);
     }
   }
 
@@ -395,7 +403,6 @@ export class Seekbar extends React.Component<Props, State> {
           extrapolate: Animated.Extrapolate.CLAMP
         })}
         segmentRefs={this.props.segmentRefs}
-        changingPostValue={this.props.changingPostValue}
         position={Animated.multiply(this.props.percentage, this.segmentWidth)}
       />
     );

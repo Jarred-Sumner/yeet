@@ -2,7 +2,7 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { Query } from "react-apollo";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, LayoutChangeEvent } from "react-native";
 import {
   BaseButton,
   FlatList as GestureFlatList
@@ -37,6 +37,11 @@ import { SPACING } from "../lib/styles";
 import VIEW_THREADS_QUERY from "../lib/ViewThreads.graphql";
 import LinearGradient from "react-native-linear-gradient";
 import { ViewThread } from "../components/ThreadList/ViewThread";
+import {
+  TAB_BAR_OFFSET,
+  BottomTabBar,
+  TAB_BAR_HEIGHT
+} from "../components/BottomTabBar";
 
 const LAYOUT_DIRECTION = "column-reverse";
 const LAYOUT_DIRECTION_OFFSET = {
@@ -127,15 +132,17 @@ const ThreadSectionCell = ({
   index,
   visibleIndex,
   scrollYOffset,
-  onPressReply
+  onPressReply,
+  height,
+  width
 }) => {
   const renderCell = React.useCallback(
     thread => {
       return (
         <ViewThread
-          maxHeight={section.height}
-          height={section.height}
-          width={section.width}
+          maxHeight={height}
+          height={height}
+          width={width}
           isLeftSide={index % 2 === 0}
           onPressReply={onPressReply}
           thread={thread}
@@ -287,6 +294,10 @@ class ThreadList extends React.PureComponent<Props, State> {
 
     this.state = {
       sections: [],
+      layout: {
+        height: SCREEN_DIMENSIONS.height - TAB_BAR_OFFSET,
+        width: SCREEN_DIMENSIONS.width
+      },
       snapToOffsets: [],
       postThreads: props.postThreads
     };
@@ -295,10 +306,16 @@ class ThreadList extends React.PureComponent<Props, State> {
   scrollYOffset = new Animated.Value<number>(-1 * TOP_Y);
 
   getItemLayout = (data: Array<ThreadSection>, index: number) => {
+    // return {
+    //   // length: data[index].height + SPACING.normal,
+    //   length: data[index].height,
+    //   offset: data[index].offset,
+    //   index
+    // };
+
     return {
-      // length: data[index].height + SPACING.normal,
-      length: data[index].height,
-      offset: data[index].offset,
+      length: this.state.layout.height,
+      offset: this.state.layout.height * index,
       index
     };
   };
@@ -311,7 +328,7 @@ class ThreadList extends React.PureComponent<Props, State> {
 
       newState.sections = createThreadSections(props.postThreads);
       newState.snapToOffsets = newState.sections.map(
-        ({ offset, height }, index) => offset + height
+        ({ offset, height }, index) => index * state.layout.height
       );
     }
 
@@ -341,6 +358,8 @@ class ThreadList extends React.PureComponent<Props, State> {
         visibleIndex={this.state.visibleIndex}
         scrollYOffset={this.scrollYOffset}
         section={section}
+        height={this.state.layout.height}
+        width={this.state.layout.width}
         onPressReply={this.handlePressReply}
         index={index}
       />
@@ -355,6 +374,14 @@ class ThreadList extends React.PureComponent<Props, State> {
   onScroll = onScroll({
     y: this.scrollYOffset
   });
+
+  handleLayout = ({
+    nativeEvent: {
+      layout: { height, width }
+    }
+  }: LayoutChangeEvent) => {
+    this.setState({ layout: { height: height - TAB_BAR_OFFSET, width } });
+  };
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {
     const [{ index: visibleIndex = -1 }] = viewableItems;
@@ -405,7 +432,10 @@ class ThreadList extends React.PureComponent<Props, State> {
           snapToOffsets={this.state.snapToOffsets}
           onScroll={this.onScroll}
           onViewableItemsChanged={this.onViewableItemsChanged}
-          extraData={this.state.visibleIndex}
+          extraData={[
+            this.state.visibleIndex,
+            Object.values(this.state.layout).join("-")
+          ].join("-")}
           scrollEventThrottle={1}
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
@@ -423,55 +453,7 @@ class ThreadList extends React.PureComponent<Props, State> {
           removeClippedSubviews
           getItemLayout={this.getItemLayout}
         />
-
-        <Animated.View
-          style={{
-            position: "absolute",
-            zIndex: 10,
-            top: 0,
-            left: 0,
-            right: 0
-          }}
-        >
-          <View style={{ position: "relative", width: "100%" }}>
-            <View
-              style={{
-                position: "absolute",
-                zIndex: 1
-              }}
-            >
-              <LinearGradient
-                width={SCREEN_DIMENSIONS.width}
-                height={HEADER_HEIGHT + TOP_Y + SPACING.double}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 0, y: 1 }}
-                colors={[
-                  "rgba(0,0,0,0.15)",
-                  "rgba(0,0,0,0.05)",
-                  "rgba(0,0,0,0.0)"
-                ]}
-                locations={[0, 0.75, 1.0]}
-              />
-            </View>
-
-            <View
-              style={{
-                marginTop: TOP_Y,
-                paddingHorizontal: SPACING.normal,
-                flexDirection: "row",
-                alignItems: "center",
-                height: HEADER_HEIGHT,
-                justifyContent: "space-between",
-                position: "absolute",
-                width: "100%",
-                zIndex: 2
-              }}
-            >
-              <IconProfile color="white" size={24} type="shadow" />
-              <IconPlus color="white" size={24} type="shadow" />
-            </View>
-          </View>
-        </Animated.View>
+        <BottomTabBar style={styles.tabBar} currentRoute="FeedTab" />
       </Animated.View>
     );
   }
@@ -479,6 +461,12 @@ class ThreadList extends React.PureComponent<Props, State> {
 
 const styles = StyleSheet.create({
   postList: {},
+  tabBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0
+  },
   postListItem: {
     borderRadius: 12,
     backgroundColor: "#000",
@@ -496,8 +484,7 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
-    backgroundColor: "#000",
-    flexDirection: LAYOUT_DIRECTION
+    backgroundColor: "#000"
   }
 });
 

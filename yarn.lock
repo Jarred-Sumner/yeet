@@ -6387,10 +6387,9 @@ react-native-portal@^1.3.0:
     prop-types "*"
     react "*"
 
-react-native-reanimated@^1.2.0:
+"react-native-reanimated@https://github.com/kmagiera/react-native-reanimated.git#master":
   version "1.2.0"
-  resolved "https://registry.yarnpkg.com/react-native-reanimated/-/react-native-reanimated-1.2.0.tgz#9219227a52a5dfa4d34c324596d6726ccd874293"
-  integrity sha512-vkWRHrPK5qfHP/ZawlRoo38oeYe9NZaaOH/lmFxRcsKzaSK6x3H5ZPXI8lK6MfTLveqwo1QhJje3zIKXO4nQQw==
+  resolved "https://github.com/kmagiera/react-native-reanimated.git#ac97ebba37e21dbd3de242328ad9409e25b8d200"
 
 react-native-redash@^7.5.1:
   version "7.5.1"
@@ -6519,10 +6518,10 @@ react-native-webp-support@TGPSKI/react-native-webp-support:
   version "0.4.0"
   resolved "https://codeload.github.com/TGPSKI/react-native-webp-support/tar.gz/fefbf58a3f59a82465a6ca1139ed2d922754c3da"
 
-react-native@0.61.0:
-  version "0.61.0"
-  resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.61.0.tgz#e9fc06cd9976295b11f7f1f72e4b840f0edd5d8e"
-  integrity sha512-JCpGS5bADDM4jCp3lylVPEY3ovvmV64VHxesofvpoKuMf8KWiItfQ48+EUP48mciTbSOsC75KCXy9bTPttiOMw==
+react-native@0.61.1:
+  version "0.61.1"
+  resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.61.1.tgz#ac2559f78f9e689356fedfa93159026a25313d7d"
+  integrity sha512-FjOhAgzjrPr2BjBITmCY+SHzWxfP/bv5ve3oN6ItoIPsVPjJG2QZE8yeByVdI4TzaZrGHU4Ag7/7hX4j39cj2Q==
   dependencies:
     "@babel/runtime" "^7.0.0"
     "@react-native-community/cli" "^3.0.0-alpha.1"
