@@ -10,7 +10,8 @@ import React from "react";
 import { StatusBar } from "react-native";
 import { PortalProvider, WhitePortal } from "react-native-portal";
 import { useScreens } from "react-native-screens";
-import { createAppContainer, createStackNavigator } from "react-navigation";
+import { createAppContainer } from "react-navigation";
+import { createStackNavigator } from "react-navigation-stack";
 import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 import { UserContextProvider } from "./src/components/UserContext";
 import { ApolloProvider } from "./src/containers/ApolloProvider";
@@ -28,7 +29,7 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
 import ThreadListPage from "./src/screens/ThreadList";
 import ReplyPage from "./src/screens/ReplyPage";
-import { createBottomTabNavigator } from "react-navigation";
+import { createBottomTabNavigator } from "react-navigation-tabs";
 import CurrentProfilePage from "./src/screens/CurrentProfile";
 import SearchPage from "./src/screens/Search";
 import { Icon, IconName } from "./src/components/Icon";
@@ -54,15 +55,16 @@ const Routes = createAppContainer(
                   cardStyle: {
                     backgroundColor: "#000"
                   },
-                  defaultNavigationOptions: {
-                    header: () => null,
-                    headerTransparent: true
-                  }
+                  headerMode: "none",
+                  defaultNavigationOptions: ({ navigation }) => ({
+                    header: () => null
+                  })
                 },
                 {
                   cardStyle: {
                     backgroundColor: "#000"
                   },
+                  headerMode: "none",
                   defaultNavigationOptions: ({ navigation }) => ({
                     header: () => null,
                     mode: "modal",
@@ -79,6 +81,7 @@ const Routes = createAppContainer(
               }
             },
             {
+              headerMode: "none",
               tabBarComponent: () => null,
               safeAreaInset: {
                 bottom: "never",
@@ -105,10 +108,10 @@ const Routes = createAppContainer(
               cardStyle: {
                 backgroundColor: "#000"
               },
+              headerMode: "none",
               defaultNavigationOptions: {
                 header: () => null,
                 mode: "modal",
-                headerMode: "none",
                 headerTransparent: true
               }
             }
@@ -118,8 +121,10 @@ const Routes = createAppContainer(
           cardStyle: {
             backgroundColor: "#000"
           },
+          headerMode: "none",
           defaultNavigationOptions: {
-            header: () => null
+            header: () => null,
+            headerMode: "none"
           }
         }
       ),
@@ -147,6 +152,7 @@ const Routes = createAppContainer(
     {
       mode: "modal",
       headerMode: "none",
+
       cardStyle: {
         backgroundColor: "#000"
       }

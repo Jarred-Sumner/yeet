@@ -15,6 +15,8 @@
     "@expo/react-native-action-sheet": "^3.0.3",
     "@react-native-community/async-storage": "^1.6.1",
     "@react-native-community/cameraroll": "^1.2.1",
+    "@react-native-community/masked-view": "^0.1.1",
+    "@react-navigation/core": "3.5.1",
     "@terrylinla/react-native-sketch-canvas": "^0.8.0",
     "apollo-cache-inmemory": "^1.6.2",
     "apollo-cache-persist": "^0.1.1",
@@ -45,6 +47,7 @@
     "react-native": "0.61.1",
     "react-native-config": "^0.11.7",
     "react-native-console-time-polyfill": "^1.2.1",
+    "react-native-cronet": "^0.4.0",
     "react-native-device-info": "^2.3.2",
     "react-native-fast-image": "https://github.com/Jarred-Sumner/react-native-fast-image.git",
     "react-native-formik": "^1.7.7",
@@ -76,9 +79,10 @@
     "react-native-video": "https://github.com/blitzcrank/react-native-video.git#master",
     "react-native-view-shot": "^3.0.2",
     "react-native-webp-support": "TGPSKI/react-native-webp-support",
-    "react-navigation": "^3.11.1",
+    "react-navigation": "^4.0.10",
     "react-navigation-hooks": "^1.0.3",
     "react-navigation-shared-element": "^0.5.0",
+    "react-navigation-stack": "^2.0.0-alpha.19",
     "react-navigation-tabs": "^2.5.2",
     "rn-fetch-blob": "^0.10.16",
     "svg-points": "^6.0.1",
@@ -86,9 +90,7 @@
     "yup": "^0.27.0"
   },
   "rnpm": {
-    "assets": [
-      "./assets/fonts/"
-    ]
+    "assets": ["./assets/fonts/"]
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",

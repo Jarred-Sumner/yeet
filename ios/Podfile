@@ -83,6 +83,8 @@ target 'yeet' do
 
   pod 'react-native-config', :path => '../node_modules/react-native-config'
 
+  pod 'react-native-cronet', :path => '../node_modules/react-native-cronet'
+
   post_install do |installer|
     installer.pods_project.targets.each do |target|
       if target.name == 'YogaKit'

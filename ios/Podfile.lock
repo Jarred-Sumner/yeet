@@ -2,6 +2,7 @@ PODS:
   - boost-for-react-native (1.63.0)
   - BVLinearGradient (2.5.6):
     - React
+  - Cronet (76.0.3809.123)
   - DoubleConversion (1.1.6)
   - FBLazyVector (0.61.1)
   - FBReactNativeSpec (0.61.1):
@@ -308,6 +309,9 @@ PODS:
     - React
   - react-native-config (0.11.7):
     - React
+  - react-native-cronet (0.4.0):
+    - Cronet
+    - React
   - react-native-image-picker (1.0.2):
     - React
   - react-native-photo-manipulator (1.0.2):
@@ -361,6 +365,8 @@ PODS:
   - rn-fetch-blob (0.10.16):
     - React-Core
   - RNCAsyncStorage (1.6.1):
+    - React
+  - RNCMaskedView (0.1.1):
     - React
   - RNDeviceInfo (2.3.2):
     - React
@@ -429,6 +435,7 @@ DEPENDENCIES:
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - "react-native-cameraroll (from `../node_modules/@react-native-community/cameraroll`)"
   - react-native-config (from `../node_modules/react-native-config`)
+  - react-native-cronet (from `../node_modules/react-native-cronet`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
   - react-native-photo-manipulator (from `../node_modules/react-native-photo-manipulator`)
   - react-native-video (from `../node_modules/react-native-video`)
@@ -447,6 +454,7 @@ DEPENDENCIES:
   - ReactNativePermissions (from `../node_modules/react-native-permissions`)
   - rn-fetch-blob (from `../node_modules/rn-fetch-blob`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-community/async-storage`)"
+  - "RNCMaskedView (from `../node_modules/@react-native-community/masked-view`)"
   - RNDeviceInfo (from `../node_modules/react-native-device-info`)
   - RNFastImage (from `../node_modules/react-native-fast-image`)
   - RNFS (from `../node_modules/react-native-fs`)
@@ -472,6 +480,7 @@ DEPENDENCIES:
 SPEC REPOS:
   https://github.com/cocoapods/specs.git:
     - boost-for-react-native
+    - Cronet
     - Firebase
     - FirebaseAnalytics
     - FirebaseCore
@@ -534,6 +543,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-community/cameraroll"
   react-native-config:
     :path: "../node_modules/react-native-config"
+  react-native-cronet:
+    :path: "../node_modules/react-native-cronet"
   react-native-image-picker:
     :path: "../node_modules/react-native-image-picker"
   react-native-photo-manipulator:
@@ -568,6 +579,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/rn-fetch-blob"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-community/async-storage"
+  RNCMaskedView:
+    :path: "../node_modules/@react-native-community/masked-view"
   RNDeviceInfo:
     :path: "../node_modules/react-native-device-info"
   RNFastImage:
@@ -602,6 +615,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   boost-for-react-native: 39c7adb57c4e60d6c5479dd8623128eb5b3f0f2c
   BVLinearGradient: e3aad03778a456d77928f594a649e96995f1c872
+  Cronet: 1fab2cb4f4406d24a356f6a2a590a9dc6a062859
   DoubleConversion: 5805e889d232975c086db112ece9ed034df7a0b2
   FBLazyVector: 0846affdb2924b01093eb696766ecb0104e409e0
   FBReactNativeSpec: c4cf958af1b97799b524f63a26a1c509c0295b04
@@ -637,6 +651,7 @@ SPEC CHECKSUMS:
   React-jsinspector: 574d597112f9ea3d1b717f6fb62aef764c70dd6f
   react-native-cameraroll: 3e5e34d36d93548ae7770ee8ab7b2ae9e778f571
   react-native-config: 55548054279d92e0e4566ea15a8b9b81028ec342
+  react-native-cronet: a84212c9dac5ed5535dea1d8411a0b5cf0aebd50
   react-native-image-picker: 5c15ac0251475ae0b9f21e17d08d7c28db847abc
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3
   react-native-video: 331eaf96cb034fedcc27f4f6ada3ac3cf6c0a78a
@@ -654,6 +669,7 @@ SPEC CHECKSUMS:
   ReactNativePermissions: f3beb8871251594a8ea2c6b19a3f8252d5c7379d
   rn-fetch-blob: 651b8d076b43d0d7aa294a3d9ec16c00aab8bef9
   RNCAsyncStorage: 2e2e3feb9bdadc752a026703d8c4065ca912e75a
+  RNCMaskedView: b79e193409a90bf6b5170d421684f437ff4e2278
   RNDeviceInfo: 17e34f6dd902f08d88cbe2c0b7a01be948d43641
   RNFastImage: 9b0c22643872bb7494c8d87bbbb66cc4c0d9e7a2
   RNFS: a8fbe7060fa49157d819466404794ad9c58e58cf
@@ -677,6 +693,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 68945a9d5245b2a8ab0a797c6333b0d4bc7c0547
   Yoga: d8c572ddec8d05b7dba08e4e5f1924004a177078
 
-PODFILE CHECKSUM: 94c35a66647f467f1a2fc27e222e81a150c17286
+PODFILE CHECKSUM: 2fc5a702295548795adec2b18360cef822d94300
 
 COCOAPODS: 1.7.5

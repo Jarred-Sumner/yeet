@@ -760,7 +760,7 @@ class ThreadContainer extends React.Component {
                     index + 0.1,
                     index + 1
                   ],
-                  outputRange: [0, 0, 0, 0.25, 1],
+                  outputRange: [0, 0, 0, 0.05, 1],
                   extrapolate: Animated.Extrapolate.CLAMP
                 })
               }
