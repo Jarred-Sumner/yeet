@@ -10,7 +10,10 @@ import {
 } from "../components/NewPost/NewPostFormat";
 
 const styles = StyleSheet.create({
-  container: {}
+  container: {
+    backgroundColor: "black",
+    flex: 1
+  }
 });
 
 export class NewPostPage extends React.Component {

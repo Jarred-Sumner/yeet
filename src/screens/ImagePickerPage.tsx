@@ -155,7 +155,8 @@ export class ImagePickerPage extends React.Component {
       <View
         style={{
           width: SCREEN_DIMENSIONS.width,
-          flex: 1
+          flex: 1,
+          backgroundColor: "black"
         }}
       >
         <AnimatedKeyboardTracker

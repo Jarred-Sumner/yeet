@@ -7,7 +7,10 @@ import { convertExportedBlocks, convertExportedNodes } from "../lib/Exporter";
 import { PostFormat } from "../components/NewPost/NewPostFormat";
 
 const styles = StyleSheet.create({
-  container: {}
+  container: {
+    flex: 1,
+    backgroundColor: "black"
+  }
 });
 
 class ReplyPage extends React.Component {

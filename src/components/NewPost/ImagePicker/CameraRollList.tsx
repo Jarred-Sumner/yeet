@@ -15,6 +15,7 @@ import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
 import Image from "../../Image";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
+import Video from "react-native-video";
 
 const ScrollView = createNativeWrapper(
   Animated.createAnimatedComponent(NavigationScrollView),
@@ -103,6 +104,8 @@ const PhotoCell = ({
     uri: photo.node.image.uri
   };
 
+  const MediaComponent = photo.node.type === "photo" ? Image : RNImage;
+
   return (
     <BaseButton
       exclusive
@@ -111,7 +114,13 @@ const PhotoCell = ({
       onPress={_onPress}
     >
       <View style={[photoCellStyles.container, { width, height }]}>
-        <Image source={source} resizeMode="contain" style={{ width, height }} />
+        <MediaComponent
+          paused
+          muted
+          source={source}
+          resizeMode="contain"
+          style={{ width, height }}
+        />
       </View>
     </BaseButton>
   );
@@ -228,7 +237,7 @@ export class CameraRollList extends React.Component<Props, State> {
     this.setState({ loadState: CameraRollListLoadState.loading });
 
     const params = {
-      assetType: "photos",
+      assetType: "All",
       groupTypes: "All",
       first: initial ? PAGE_LENGTH * 2 : PAGE_LENGTH
     };
@@ -307,7 +316,7 @@ export class CameraRollList extends React.Component<Props, State> {
             flexShrink: 0
           }}
           contentInsetAdjustmentBehavior="never"
-          removeClippedSubviews={scrollEnabled}
+          removeClippedSubviews={false}
           onScrollBeginDrag={onScrollBeginDrag}
           scrollEventThrottle={1}
           overScrollMode="always"

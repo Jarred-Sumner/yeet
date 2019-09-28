@@ -93,7 +93,7 @@ const Routes = createAppContainer(
                 keyboardHidesTabBar: true
               },
               cardStyle: {
-                backgroundColor: "transparent"
+                backgroundColor: "#000"
               }
             }
           ),
@@ -122,6 +122,7 @@ const Routes = createAppContainer(
             backgroundColor: "#000"
           },
           headerMode: "none",
+          mode: "modal",
           defaultNavigationOptions: {
             header: () => null,
             headerMode: "none"

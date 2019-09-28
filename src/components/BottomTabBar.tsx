@@ -64,7 +64,7 @@ export const BottomTabBar = ({ style, currentRoute }) => {
 
   const openRoute = React.useCallback(
     routeName => {
-      navigation.jump(routeName);
+      navigation.navigate(routeName);
     },
     [navigation]
   );
