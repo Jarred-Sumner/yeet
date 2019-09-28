@@ -928,7 +928,7 @@ class ThreadContainer extends React.Component {
               threadStyles.touchableLayer,
               {
                 width,
-                height: height - 100,
+                height: height - 120,
                 zIndex: 3
               }
             ]}
@@ -939,7 +939,7 @@ class ThreadContainer extends React.Component {
                 top: 0,
                 left: 0,
                 bottom: 0,
-                height: height - 100,
+                height: height - 120,
                 width: width * 0.33
               }}
               onPress={this.handleTapBack}
@@ -959,7 +959,7 @@ class ThreadContainer extends React.Component {
                 top: 0,
                 left: width * 0.33,
                 bottom: 0,
-                height: height - 100,
+                height: height - 120,
                 width: width * 0.33,
                 alignSelf: "center"
               }}
@@ -1055,6 +1055,8 @@ class ThreadContainer extends React.Component {
                   type="shadow"
                   onPress={this.handlePressReply}
                 />
+
+                <View style={{ width: SPACING.half, height: 1 }} />
 
                 <LikeCountButton
                   id={this.post.id}
