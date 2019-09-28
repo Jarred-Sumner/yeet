@@ -25,6 +25,7 @@ import { CountButton } from "./CountButton";
 import { BAR_HEIGHT, Seekbar } from "./Seekbar";
 import { UserContext, AuthState } from "../UserContext";
 import { LikeCountButton } from "./LikeCountButton";
+import { sendLightFeedback } from "../../lib/Vibration";
 
 const AVATAR_SIZE = 36;
 
@@ -674,6 +675,8 @@ class ThreadContainer extends React.Component {
         }
       }
     });
+
+    sendLightFeedback();
   };
 
   renderPost = (post, index) => {

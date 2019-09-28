@@ -38,23 +38,8 @@ const styles = StyleSheet.create({
   }
 });
 
-export class CountButton extends React.Component {
-  static defaultProps = {
-    Icon: IconHeart
-  };
-
-  render() {
-    const {
-      size,
-      count,
-      nextCount,
-      Icon,
-      color,
-      iconNode,
-      onPress,
-      iconSize
-    } = this.props;
-
+export const CountButton = React.memo(
+  ({ count, Icon, color, iconNode, onPress, iconSize }) => {
     return (
       <BaseButton disallowInterruption onPress={onPress}>
         <View style={styles.container}>
@@ -79,6 +64,6 @@ export class CountButton extends React.Component {
       </BaseButton>
     );
   }
-}
+);
 
 export default CountButton;
