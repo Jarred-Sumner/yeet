@@ -17,6 +17,8 @@
 #import <RNFastImage/FFFastImageViewManager.h>
 #import "SDImageCacheConfig.h"
 #import "yeet-Bridging-Header.h"
+#import <RCTCronetHTTPRequestHandler.h>
+#import <Cronet/Cronet.h>
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -39,10 +41,22 @@
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];
-
-
-
   SDImageCache.sharedImageCache.config.diskCacheReadingOptions = NSDataReadingMappedIfSafe;
+
+//  [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
+//    [Cronet setHttp2Enabled:YES];
+//    [Cronet setQuicEnabled:YES];
+//    [Cronet setBrotliEnabled:YES];
+//    [Cronet setHttpCacheType:CRNHttpCacheTypeDisk];
+//
+////    [Cronet addQuicHint:@"www.google.com" port:443 altPort:443];
+//
+//    [Cronet start];
+//
+//    [Cronet registerHttpProtocolHandler];
+//    [Cronet unregisterHttpProtocolHandler];
+//  }];
+//
 
   // Limit progress block callback frequency
   SDWebImageDownloader.sharedDownloader.config.minimumProgressInterval = 0.1;

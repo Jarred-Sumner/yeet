@@ -8,6 +8,12 @@ import { RectangleInputObject, ColorsInputObject } from "./globalTypes";
 // GraphQL mutation operation: CreatePost
 // ====================================================
 
+export interface CreatePost_createPost_likes {
+  __typename: "LikeList";
+  id: string;
+  profileIDs: string[];
+}
+
 export interface CreatePost_createPost_bounds {
   __typename: "Rectangle";
   x: number | null;
@@ -47,6 +53,7 @@ export interface CreatePost_createPost {
   id: string;
   likesCount: number;
   format: string;
+  likes: CreatePost_createPost_likes;
   blocks: JSON;
   nodes: JSON;
   bounds: CreatePost_createPost_bounds;

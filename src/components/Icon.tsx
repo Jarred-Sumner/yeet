@@ -1,8 +1,11 @@
 import React from "react";
 import { createIconSetFromFontello } from "react-native-vector-icons";
 import fontelloConfig from "./Icon/config.json";
+import Animated from "react-native-reanimated";
 
 export const Icon = createIconSetFromFontello(fontelloConfig);
+
+export const AnimatedIcon = Animated.createAnimatedComponent(Icon);
 
 // ➜ cat src/components/icon/config.json | jq .glyphs[].search[0]
 export enum IconName {

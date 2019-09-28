@@ -1,0 +1,7 @@
+#import "./PostFragment.graphql"
+
+mutation LikePost($postId: ID!) {
+  likePost(postId: $postId) {
+    ...PostFragment
+  }
+}

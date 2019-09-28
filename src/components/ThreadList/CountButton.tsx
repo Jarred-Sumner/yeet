@@ -4,6 +4,7 @@ import { IconHeart } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { Text, MediumText } from "../Text";
 import { BaseButton } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 
 const styles = StyleSheet.create({
   container: {
@@ -29,8 +30,11 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    color: "white",
-    marginTop: SPACING.normal
+    color: "white"
+  },
+  textContainer: {
+    marginTop: SPACING.normal,
+    position: "relative"
   }
 });
 
@@ -40,7 +44,16 @@ export class CountButton extends React.Component {
   };
 
   render() {
-    const { size, count, Icon, iconNode, onPress, iconSize } = this.props;
+    const {
+      size,
+      count,
+      nextCount,
+      Icon,
+      color,
+      iconNode,
+      onPress,
+      iconSize
+    } = this.props;
 
     return (
       <BaseButton disallowInterruption onPress={onPress}>
@@ -52,12 +65,15 @@ export class CountButton extends React.Component {
               style={[
                 styles.icon,
                 styles.textShadow,
-                iconSize && { fontSize: iconSize }
+                iconSize && { fontSize: iconSize },
+                color && { color }
               ].filter(Boolean)}
             />
           )}
           {typeof count === "number" ? (
-            <MediumText style={styles.text}>{count || 1}</MediumText>
+            <View style={styles.textContainer}>
+              <MediumText style={styles.text}>{count || 0}</MediumText>
+            </View>
           ) : null}
         </View>
       </BaseButton>

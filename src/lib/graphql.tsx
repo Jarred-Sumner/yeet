@@ -1,21 +1,17 @@
-import {
-  InMemoryCache,
-  IntrospectionFragmentMatcher
-} from "apollo-cache-inmemory";
+import AsyncStorage from "@react-native-community/async-storage";
+import { InMemoryCache } from "apollo-cache-inmemory";
 import { CachePersistor } from "apollo-cache-persist";
 import { ApolloClient } from "apollo-client";
-import { ApolloLink, concat } from "apollo-link";
-// import { BatchHttpLink } from "apollo-link-batch-http";
-import { HttpLink } from "apollo-link-http";
-import _ from "lodash";
-
+import { BatchHttpLink } from "apollo-link-batch-http";
+import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
-import { toIdValue } from "apollo-utilities";
+import _ from "lodash";
 import { Platform, StatusBar } from "react-native";
 import DeviceInfo from "react-native-device-info";
-import { Storage } from "./Storage";
 import { BASE_HOSTNAME } from "../../config";
-import AsyncStorage from "@react-native-community/async-storage";
+import { Storage } from "./Storage";
+import { toIdValue } from "apollo-utilities";
+
 // import introspectionQueryResultData from "../../static/fragmentTypes.json";
 // import Alert from "../lib/Alert";
 
@@ -51,44 +47,49 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 const GRAPHQL_URL = `${BASE_HOSTNAME}/graphql`;
 
-const authMiddleware = new ApolloLink((operation, forward) => {
-  // add the authorization to the headers
-  operation.setContext(({ headers = {} }) => ({
-    credentials: "omit",
-    headers: {
-      ...headers,
-      Authorization: `Bearer ${Storage.getCachedJWT()}`,
+const authLink = setContext((_, { headers: _headers }) => {
+  return Storage.getJWT().then(jwt => {
+    const headers = {
+      ..._headers,
+      Authorization: jwt ? `Bearer ${jwt}` : undefined,
       "X-Device-ID": DEVICE_ID,
       "X-App-Version": APP_VERSION,
       "X-Device-Timezone": TIMEZONE,
       "X-Platform-OS": Platform.OS,
       "X-Platform-Version": Platform.Version
-    }
-  }));
+    };
 
-  return forward(operation);
+    return { headers };
+  });
 });
 
 console.log("Initializing Apollo –", GRAPHQL_URL);
-const httpLink = new HttpLink({
+const httpLink = new BatchHttpLink({
   uri: GRAPHQL_URL,
-  fetch: customFetch
+  fetch: customFetch,
+  credentials: "include"
 });
 
 // const fragmentMatcher = new IntrospectionFragmentMatcher({
 //   introspectionQueryResultData
 // });
 
+const dataIdFromObject = o => {
+  if (!o.id) {
+    return Object.values(o).join(",");
+  } else {
+    return `${o.__typename}-${o.id}`;
+  }
+};
 const cache = new InMemoryCache({
   // fragmentMatcher,
-  dataIdFromObject: o => {
-    if (!o.id) {
-      return Object.values(o).join(",");
-    } else {
-      return `${o.__typename}-${o.id}`;
+  dataIdFromObject,
+  cacheRedirects: {
+    Query: {
+      post: (_, args) =>
+        toIdValue(dataIdFromObject({ __typename: "Post", id: args.id }))
     }
   }
-  // cacheRedirects: {}
 });
 
 const persistor = new CachePersistor({
@@ -97,7 +98,7 @@ const persistor = new CachePersistor({
 });
 
 const client = new ApolloClient({
-  link: concat(authMiddleware, httpLink, errorLink),
+  link: authLink.concat(httpLink).concat(errorLink),
   cache,
   fetchPolicy: "cache-and-network"
 });

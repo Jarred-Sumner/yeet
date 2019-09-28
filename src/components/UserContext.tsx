@@ -4,6 +4,7 @@ import { BlackPortal } from "react-native-portal";
 import { CurrentUserQuery_currentUser } from "../lib/graphql/CurrentUserQuery";
 import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import { Query } from "react-apollo";
+import { NetworkStatus } from "apollo-client";
 import { Storage } from "../lib/Storage";
 import { memoize } from "lodash";
 import { navigateWithParent } from "../lib/NavigationService";
@@ -56,9 +57,10 @@ class RawUserContextProvider extends React.Component<Props, State> {
   constructor(props) {
     super(props);
 
-    const authState = Storage.isSignedIn()
-      ? AuthState.loggedIn
-      : AuthState.checking;
+    const authState =
+      Storage.isSignedIn() || !!props.currentUser
+        ? AuthState.loggedIn
+        : AuthState.checking;
 
     this.state = {
       authState,
@@ -80,10 +82,13 @@ class RawUserContextProvider extends React.Component<Props, State> {
 
   loadJWT = async () => {
     const jwt = await Storage.getJWT();
+    console.log(this.props.currentUser);
 
-    if (this.props.currentUser === null && jwt) {
-      return this.props.reload();
-    } else if (!jwt && this.state.authState === AuthState.checking) {
+    if (
+      !jwt &&
+      this.state.authState === AuthState.checking &&
+      !this.props.isLoading
+    ) {
       this.setState({
         authState: AuthState.guest,
         contextValue: {
@@ -97,9 +102,18 @@ class RawUserContextProvider extends React.Component<Props, State> {
   componentDidUpdate(prevProps: Props, prevState: State) {
     let newState: Partial<State> = {};
 
+    console.log({
+      currentUser: this.props.currentUser,
+      data: this.props.data,
+      isLoading: this.props.isLoading,
+      isSignedIn: this.props.isSignedIn,
+      other: this.props.other
+    });
+
     if (
       prevProps.currentUser !== this.props.currentUser ||
-      this.props.error !== prevProps.error
+      this.props.error !== prevProps.error ||
+      (!this.props.isLoading && prevProps.isLoading)
     ) {
       if (this.props.error && !this.props.currentUser) {
         newState.authState = AuthState.error;
@@ -185,21 +199,21 @@ class RawUserContextProvider extends React.Component<Props, State> {
 export const UserContextProvider = props => {
   return (
     <Query
-      fetchPolicy="cache-and-network"
-      delay={!Storage.isSignedIn()}
+      fetchPolicy="network-only"
+      notifyOnNetworkStatusChange
       query={CURRENT_USER_QUERY}
     >
-      {({
-        data: { currentUser = null } = { currentUser: null },
-        loading,
-        load,
-        refetch,
-        error
-      }) => (
+      {({ data = {}, load, networkStatus, refetch, error, ...other }) => (
         <RawUserContextProvider
           reload={load || refetch}
           error={error}
-          currentUser={currentUser}
+          currentUser={data.currentUser}
+          data={data}
+          isLoading={
+            networkStatus === NetworkStatus.loading ||
+            networkStatus === NetworkStatus.refetch
+          }
+          other={other}
           isSignedIn={Storage.isSignedIn()}
         >
           {props.children}

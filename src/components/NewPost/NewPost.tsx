@@ -644,6 +644,7 @@ class RawNewPost extends React.Component<{}, State> {
 
     sendToast("Posted successfully", ToastType.success);
     this.setState({ showUploader: false, uploadData: null });
+    this.props.onCreate && this.props.onCreate(post);
   };
 
   renderStep() {

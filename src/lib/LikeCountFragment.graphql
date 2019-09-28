@@ -1,0 +1,4 @@
+fragment LikeCountFragment on LikeList {
+  id
+  profileIDs
+}

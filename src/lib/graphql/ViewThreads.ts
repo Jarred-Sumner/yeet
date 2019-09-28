@@ -6,6 +6,12 @@
 // GraphQL query operation: ViewThreads
 // ====================================================
 
+export interface ViewThreads_postThreads_firstPost_likes {
+  __typename: "LikeList";
+  id: string;
+  profileIDs: string[];
+}
+
 export interface ViewThreads_postThreads_firstPost_bounds {
   __typename: "Rectangle";
   x: number | null;
@@ -45,6 +51,7 @@ export interface ViewThreads_postThreads_firstPost {
   id: string;
   likesCount: number;
   format: string;
+  likes: ViewThreads_postThreads_firstPost_likes;
   blocks: JSON;
   nodes: JSON;
   bounds: ViewThreads_postThreads_firstPost_bounds;

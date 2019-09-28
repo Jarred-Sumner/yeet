@@ -3,16 +3,16 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PostFragment
+// GraphQL mutation operation: LikePost
 // ====================================================
 
-export interface PostFragment_likes {
+export interface LikePost_likePost_likes {
   __typename: "LikeList";
   id: string;
   profileIDs: string[];
 }
 
-export interface PostFragment_bounds {
+export interface LikePost_likePost_bounds {
   __typename: "Rectangle";
   x: number | null;
   y: number | null;
@@ -20,7 +20,7 @@ export interface PostFragment_bounds {
   height: number | null;
 }
 
-export interface PostFragment_media {
+export interface LikePost_likePost_media {
   __typename: "Media";
   id: string;
   width: number | null;
@@ -31,14 +31,14 @@ export interface PostFragment_media {
   url: string;
 }
 
-export interface PostFragment_profile {
+export interface LikePost_likePost_profile {
   __typename: "Profile";
   id: string;
   username: string;
   photoURL: string | null;
 }
 
-export interface PostFragment_colors {
+export interface LikePost_likePost_colors {
   __typename: "ColorGroup";
   background: string | null;
   primary: string | null;
@@ -46,18 +46,26 @@ export interface PostFragment_colors {
   secondary: string | null;
 }
 
-export interface PostFragment {
+export interface LikePost_likePost {
   __typename: "Post";
   id: string;
   likesCount: number;
   format: string;
-  likes: PostFragment_likes;
+  likes: LikePost_likePost_likes;
   blocks: JSON;
   nodes: JSON;
-  bounds: PostFragment_bounds;
-  media: PostFragment_media;
-  profile: PostFragment_profile;
-  colors: PostFragment_colors;
+  bounds: LikePost_likePost_bounds;
+  media: LikePost_likePost_media;
+  profile: LikePost_likePost_profile;
+  colors: LikePost_likePost_colors;
   autoplaySeconds: number;
   attachments: JSON;
+}
+
+export interface LikePost {
+  likePost: LikePost_likePost | null;
+}
+
+export interface LikePostVariables {
+  postId: string;
 }

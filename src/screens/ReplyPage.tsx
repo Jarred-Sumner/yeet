@@ -11,6 +11,10 @@ const styles = StyleSheet.create({
 });
 
 class ReplyPage extends React.Component {
+  handleCreate = () => {
+    this.props.navigation.pop();
+  };
+
   render() {
     const { navigation } = this.props;
     const post: PostFragment | null = navigation.getParam("post") || null;
@@ -38,6 +42,7 @@ class ReplyPage extends React.Component {
           defaultBlocks={blocks}
           defaultFormat={format}
           defaultBounds={bounds}
+          onCreate={this.handleCreate}
         />
       </View>
     );

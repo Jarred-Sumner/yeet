@@ -1,0 +1,7 @@
+#import "./PostFragment.graphql"
+
+query ViewPost($id: ID!) {
+  post(id: $id) {
+    ...PostFragment
+  }
+}

@@ -50,14 +50,14 @@ const SignupSchema = Yup.object().shape({
 class RawLoginPage extends React.Component {
   static navigationOptions = ({ navigation }) => ({
     title: "Login",
-    headerRight: (
+    headerRight: () => (
       <TouchableOpacity onPress={navigation.getParam("onSubmit")}>
         <View style={styles.loginButton}>
           <IconCheck size={14} color="white" />
         </View>
       </TouchableOpacity>
     ),
-    headerLeft: (
+    headerLeft: () => (
       <TouchableOpacity onPress={navigation.dismiss}>
         <View style={styles.loginButton}>
           <IconClose size={14} color="white" />

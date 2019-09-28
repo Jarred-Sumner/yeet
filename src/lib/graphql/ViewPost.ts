@@ -3,16 +3,16 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: PostFragment
+// GraphQL query operation: ViewPost
 // ====================================================
 
-export interface PostFragment_likes {
+export interface ViewPost_post_likes {
   __typename: "LikeList";
   id: string;
   profileIDs: string[];
 }
 
-export interface PostFragment_bounds {
+export interface ViewPost_post_bounds {
   __typename: "Rectangle";
   x: number | null;
   y: number | null;
@@ -20,7 +20,7 @@ export interface PostFragment_bounds {
   height: number | null;
 }
 
-export interface PostFragment_media {
+export interface ViewPost_post_media {
   __typename: "Media";
   id: string;
   width: number | null;
@@ -31,14 +31,14 @@ export interface PostFragment_media {
   url: string;
 }
 
-export interface PostFragment_profile {
+export interface ViewPost_post_profile {
   __typename: "Profile";
   id: string;
   username: string;
   photoURL: string | null;
 }
 
-export interface PostFragment_colors {
+export interface ViewPost_post_colors {
   __typename: "ColorGroup";
   background: string | null;
   primary: string | null;
@@ -46,18 +46,26 @@ export interface PostFragment_colors {
   secondary: string | null;
 }
 
-export interface PostFragment {
+export interface ViewPost_post {
   __typename: "Post";
   id: string;
   likesCount: number;
   format: string;
-  likes: PostFragment_likes;
+  likes: ViewPost_post_likes;
   blocks: JSON;
   nodes: JSON;
-  bounds: PostFragment_bounds;
-  media: PostFragment_media;
-  profile: PostFragment_profile;
-  colors: PostFragment_colors;
+  bounds: ViewPost_post_bounds;
+  media: ViewPost_post_media;
+  profile: ViewPost_post_profile;
+  colors: ViewPost_post_colors;
   autoplaySeconds: number;
   attachments: JSON;
+}
+
+export interface ViewPost {
+  post: ViewPost_post;
+}
+
+export interface ViewPostVariables {
+  id: string;
 }

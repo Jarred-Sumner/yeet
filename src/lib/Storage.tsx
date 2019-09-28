@@ -70,6 +70,14 @@ export class Storage {
     });
   }
 
+  static signOut() {
+    _cachedJWT = null;
+    return Promise.all([
+      Keystore.remove(this.formatKey(KEYS.JWT)),
+      Storage.removeItem(KEYS.CURRENT_USER_ID)
+    ]);
+  }
+
   static getJWT() {
     return Keystore.get(this.formatKey(KEYS.JWT)).then(
       jwt => {

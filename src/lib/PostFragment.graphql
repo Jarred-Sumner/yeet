@@ -1,8 +1,14 @@
+#import "./LikeCountFragment.graphql"
+
 fragment PostFragment on Post {
   id
   likesCount
   format
   __typename
+
+  likes {
+    ...LikeCountFragment
+  }
 
   blocks
   nodes

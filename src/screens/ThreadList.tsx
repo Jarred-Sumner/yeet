@@ -428,7 +428,7 @@ class ThreadList extends React.PureComponent<Props, State> {
           pagingEnabled
           decelerationRate="fast"
           initialNumToRender={1}
-          windowSize={2}
+          windowSize={4}
           snapToOffsets={this.state.snapToOffsets}
           onScroll={this.onScroll}
           onViewableItemsChanged={this.onViewableItemsChanged}

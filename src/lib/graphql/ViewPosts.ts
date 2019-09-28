@@ -6,6 +6,12 @@
 // GraphQL query operation: ViewPosts
 // ====================================================
 
+export interface ViewPosts_posts_likes {
+  __typename: "LikeList";
+  id: string;
+  profileIDs: string[];
+}
+
 export interface ViewPosts_posts_bounds {
   __typename: "Rectangle";
   x: number | null;
@@ -45,6 +51,7 @@ export interface ViewPosts_posts {
   id: string;
   likesCount: number;
   format: string;
+  likes: ViewPosts_posts_likes;
   blocks: JSON;
   nodes: JSON;
   bounds: ViewPosts_posts_bounds;
