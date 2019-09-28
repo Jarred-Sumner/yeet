@@ -1,7 +1,11 @@
 import assert from "assert";
 import * as React from "react";
 import { StyleSheet, View, Dimensions } from "react-native";
-import { calculateAspectRatioFit } from "../../lib/imageResize";
+import {
+  calculateAspectRatioFit,
+  convertLocalIdentifierToAssetLibrary,
+  convertCameraRollIDToRNFetchBlobId
+} from "../../lib/imageResize";
 import {
   ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
@@ -25,9 +29,10 @@ import {
 import { SemiBoldText } from "../Text";
 import Image from "../Image";
 import FastImage from "react-native-fast-image";
-import { YeetImageContainer } from "../../lib/imageSearch";
+import { YeetImageContainer, ImageMimeType } from "../../lib/imageSearch";
 import { connectActionSheet } from "@expo/react-native-action-sheet";
 import { SCREEN_DIMENSIONS } from "../../../config";
+import Video from "react-native-video";
 // import Image from "../Image";
 
 type Props = {
@@ -72,11 +77,50 @@ const stylesByFormat = {
   })
 };
 
+const MediaComponent = React.forwardRef(
+  ({ source, resizeMode, mimeType, style, ...otherProps }, ref) => {
+    const isVideo =
+      source.uri.endsWith(".mp4") || mimeType === ImageMimeType.mp4;
+
+    if (isVideo) {
+      const uri = source.uri.includes("ph://")
+        ? convertCameraRollIDToRNFetchBlobId(source.uri, ".mp4")
+        : source.uri;
+
+      return (
+        <Video
+          {...otherProps}
+          ref={ref}
+          loop
+          source={{
+            uri,
+            width: source.width,
+            height: source.height
+          }}
+          resizeMode={resizeMode}
+          style={style}
+        />
+      );
+    } else {
+      return (
+        <Image
+          {...otherProps}
+          ref={ref}
+          source={source}
+          resizeMode={resizeMode}
+          style={style}
+        />
+      );
+    }
+  }
+);
+
 const ScreenshotImage = React.forwardRef(
   ({ block }: { block: ImagePostBlockType }, ref) => {
     return (
-      <Image
+      <MediaComponent
         ref={ref}
+        mimeType={block.value.image.mimeType}
         source={{
           uri: block.value.image.uri,
           width: block.value.image.width,
@@ -100,8 +144,9 @@ const ScreenshotImage = React.forwardRef(
 const CaptionImage = React.forwardRef(
   ({ block }: { block: ImagePostBlockType }, ref) => {
     return (
-      <Image
+      <MediaComponent
         ref={ref}
+        mimeType={block.value.image.mimeType}
         source={{
           uri: block.value.image.uri,
           width: block.value.image.width,
@@ -125,8 +170,9 @@ const CaptionImage = React.forwardRef(
 const StickerImage = React.forwardRef(
   ({ block }: { block: ImagePostBlockType }, ref) => {
     return (
-      <Image
+      <MediaComponent
         ref={ref}
+        mimeType={block.value.image.mimeType}
         source={{
           uri: block.value.image.uri,
           width: block.value.image.width,

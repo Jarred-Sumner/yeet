@@ -24,7 +24,8 @@ export enum ImageMimeType {
   gif = "image/gif",
   jpg = "image/jpeg",
   jpeg = "image/jpeg",
-  webp = "image/webp"
+  webp = "image/webp",
+  mp4 = "video/mp4"
 }
 
 const mimeTypeFromFilename = (filename: string) =>
@@ -33,7 +34,8 @@ const mimeTypeFromFilename = (filename: string) =>
     gif: ImageMimeType.gif,
     jpg: ImageMimeType.jpg,
     jpeg: ImageMimeType.jpeg,
-    webp: ImageMimeType.webp
+    webp: ImageMimeType.webp,
+    mp4: ImageMimeType.mp4
   }[
     extname(filename || ".")
       .substring(1)
@@ -71,7 +73,12 @@ export type YeetImage = {
   height: number;
   duration: number;
   uri: string;
-  mimeType: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  mimeType:
+    | "image/jpeg"
+    | "image/png"
+    | "image/webp"
+    | "image/gif"
+    | "video/mp4";
   source: ImageSourceType;
   asset: ImageResolvedAssetSource;
   transform: YeetTransform;
@@ -199,7 +206,7 @@ export const imageContainerFromCameraRoll = (
 
 const normalizeOriginalImage = (image, transform = []): YeetImage => {
   const assetData = {
-    uri: image.webp || image.url,
+    uri: image.mp4 || image.webp || image.url,
     width: Number(image.width),
     height: Number(image.height)
   };
@@ -221,14 +228,18 @@ const findGiphyImage = (
     "fixed_height",
     "fixed_height_downsampled",
     "downsized_medium"
-  ]
+  ],
+  preferredContentType: "mp4" | "webp" = "mp4"
 ) => {
-  const webpItem = order.find(item => {
-    return image.images[item] && String(image.images[item].webp).length > 0;
+  const item = order.find(item => {
+    return (
+      image.images[item] &&
+      String(image.images[item][preferredContentType]).length > 0
+    );
   });
 
-  if (webpItem) {
-    return image.images[webpItem];
+  if (item) {
+    return image.images[item];
   } else {
     return image.images[
       order.find(item => {

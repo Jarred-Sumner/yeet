@@ -14,10 +14,12 @@ import {
   ImageSearchResponse,
   ImageSourceType,
   searchPhrase,
-  YeetImageContainer
+  YeetImageContainer,
+  ImageMimeType
 } from "../../../lib/imageSearch";
 import Image from "../../Image";
 import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
+import Video from "react-native-video";
 
 // import { Image } from "../Image";
 
@@ -37,7 +39,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#111"
   },
   container: {
-    backgroundColor: "#000"
+    backgroundColor: "#000",
+    position: "relative"
   },
   listHeaderHeight: {
     height: LIST_HEADER_HEIGHT
@@ -103,19 +106,29 @@ const ImageCell = React.memo(
     onPress,
     image,
     height,
-    width
+    width,
+    paused
   }: {
     onPress: Function;
     image: YeetImageContainer;
     height: number;
     width: number;
+    paused: boolean;
   }) => {
-    const [source, setSource] = React.useState({
-      width: image.preview.width,
-      height: image.preview.height,
-      uri: image.preview.uri,
-      cache: Image.cacheControl.web
-    });
+    const [source, setSource] = React.useState(
+      image.preview.mimeType === ImageMimeType.mp4
+        ? {
+            width: image.preview.width,
+            height: image.preview.height,
+            uri: image.preview.uri
+          }
+        : {
+            width: image.preview.width,
+            height: image.preview.height,
+            uri: image.preview.uri,
+            cache: Image.cacheControl.web
+          }
+    );
 
     const _onPress = React.useCallback(() => {
       onPress(image);
@@ -132,13 +145,19 @@ const ImageCell = React.memo(
       }
     }, [setSource, image]);
 
+    const MediaComponent =
+      image.preview.mimeType === ImageMimeType.mp4 ? Video : Image;
+
     return (
       <BaseButton exclusive={false} onPress={_onPress}>
         <View style={[photoCellStyles.container, { width, height }]}>
-          <Image
+          <MediaComponent
             incrementalLoad
             source={source}
             resizeMode="contain"
+            muted
+            loop
+            paused={paused}
             onError={onError}
             style={{ height, width }}
           />

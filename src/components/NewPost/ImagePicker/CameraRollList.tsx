@@ -1,6 +1,6 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Dimensions, StyleSheet, View, Image as RNImage } from "react-native";
+import { Image as RNImage, StyleSheet, View } from "react-native";
 import {
   BaseButton,
   FlatList as GestureHandlerFlatList
@@ -9,13 +9,14 @@ import createNativeWrapper from "react-native-gesture-handler/createNativeWrappe
 import Permissions from "react-native-permissions";
 import Animated from "react-native-reanimated";
 import { ScrollView as NavigationScrollView } from "react-navigation";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
+import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
+import { SPACING } from "../../../lib/styles";
+import Image from "../../Image";
 // import { Image } from "../Image";
 import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
-import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
-import Image from "../../Image";
-import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
-import Video from "react-native-video";
+import { DurationLabel } from "./DurationLabel";
 
 const ScrollView = createNativeWrapper(
   Animated.createAnimatedComponent(NavigationScrollView),
@@ -79,7 +80,13 @@ const photoCellStyles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255, 255, 255, 0.1)",
     overflow: "hidden",
-    justifyContent: "center"
+    justifyContent: "center",
+    position: "relative"
+  },
+  durationContainer: {
+    position: "absolute",
+    left: SPACING.half,
+    bottom: SPACING.half
   }
 });
 
@@ -104,7 +111,8 @@ const PhotoCell = ({
     uri: photo.node.image.uri
   };
 
-  const MediaComponent = photo.node.type === "photo" ? Image : RNImage;
+  const isVideo = photo.node.type === "video";
+  const MediaComponent = isVideo ? RNImage : Image;
 
   return (
     <BaseButton
@@ -121,6 +129,13 @@ const PhotoCell = ({
           resizeMode="contain"
           style={{ width, height }}
         />
+
+        {isVideo && (
+          <DurationLabel
+            duration={photo.node.image.playableDuration}
+            style={photoCellStyles.durationContainer}
+          />
+        )}
       </View>
     </BaseButton>
   );
