@@ -28,6 +28,14 @@ target 'yeet' do
   pod 'SDWebImagePhotosPlugin'
   pod 'SwiftyJSON', '~> 4.0'
   pod 'UIImageColors'
+  pod 'DVAssetLoaderDelegate'
+  pod 'Nuke'
+  pod 'Repeat'
+  pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
+  pod 'KTVHTTPCache', '~> 2.0.0'
+  
+
+  pod 'SwiftyBeaver'
 
 
 

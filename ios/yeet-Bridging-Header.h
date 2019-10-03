@@ -18,6 +18,13 @@
 #import <React/RCTInputAccessoryViewContent.h>
 #import <React/RCTTextAttributes.h>
 #import <React/RCTTextSelection.h>
+#import <React/RCTUIManagerObserverCoordinator.h>
+#import <REANode.h>
+#import <REAValueNode.h>
+#import <React/RCTInvalidating.h>
+#import <DVURLAsset.h>
+#import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
+#import <KTVHTTPCache/KTVHTTPCache.h>
 
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)
 
@@ -36,3 +43,31 @@ RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
 
 @end
 
+@interface RCT_EXTERN_MODULE(MediaFrameViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(source, MediaSource);
+RCT_EXPORT_VIEW_PROPERTY(percentage, Double);
+
+RCT_EXTERN_METHOD(reload:);
+
+@end
+
+@interface RCT_EXTERN_MODULE(MediaPlayerViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(autoPlay, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(sources, MediaSourceArray);
+RCT_EXPORT_VIEW_PROPERTY(onLoad, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onEnd, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);
+
+
+RCT_EXTERN_METHOD(pause:);
+RCT_EXTERN_METHOD(play:);
+RCT_EXTERN_METHOD(goNext:);
+RCT_EXTERN_METHOD(goBack:);
+RCT_EXTERN_METHOD(advance::);
+
+@end

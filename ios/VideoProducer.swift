@@ -9,7 +9,6 @@
 import Foundation
 import SwiftyJSON
 import SDWebImage
-import VFCabbage
 import AVFoundation
 import CoreImage
 
@@ -76,10 +75,12 @@ enum PostFormat: String {
   case blargh = "blargh"
 }
 
+
 enum MimeType: String {
   case png = "image/png"
   case webp = "image/webp"
   case jpg = "image/jpeg"
+  case mp4 = "video/mp4"
 }
 
 class YeetImage {

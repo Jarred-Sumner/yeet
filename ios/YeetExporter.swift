@@ -11,11 +11,13 @@ import SwiftyJSON
 
 
 
+
 @objc(YeetExporter)
 class YeetExporter: NSObject, RCTBridgeModule  {
   static func moduleName() -> String! {
     return "YeetExporter";
   }
+
 
   var bridge: RCTBridge!
 

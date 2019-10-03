@@ -6,6 +6,8 @@
  */
 
 #import "AppDelegate.h"
+#import "yeet-Bridging-Header.h"
+
 
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
@@ -16,9 +18,9 @@
 #import "YeetWebImageDecoder.h"
 #import <RNFastImage/FFFastImageViewManager.h>
 #import "SDImageCacheConfig.h"
-#import "yeet-Bridging-Header.h"
 #import <RCTCronetHTTPRequestHandler.h>
 #import <Cronet/Cronet.h>
+#import "EnableWebpDecoder.h"
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -28,6 +30,10 @@
 //
 
 @import Firebase;
+@import SBObjectiveCWrapper;
+@import Nuke;
+
+
 
 @implementation AppDelegate
 
@@ -37,7 +43,11 @@
   // Replace default manager's loader implementation
   SDWebImageManager.defaultImageLoader = SDImageLoadersManager.sharedManager;
   SDWebImagePhotosLoader.sharedLoader.imageRequestOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
-  
+  if (!KTVHTTPCache.proxyIsRunning) {
+    [KTVHTTPCache proxyStart:nil];
+  }
+
+  [EnableWebpDecoder enable];
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];

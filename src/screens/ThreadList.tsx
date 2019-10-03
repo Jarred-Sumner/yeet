@@ -289,6 +289,11 @@ type State = {
 };
 
 class ThreadList extends React.PureComponent<Props, State> {
+  viewabilityConfig = {
+    waitForInteraction: true,
+    viewAreaCoveragePercentThreshold: 75
+  };
+
   constructor(props: Props) {
     super(props);
 
@@ -299,7 +304,8 @@ class ThreadList extends React.PureComponent<Props, State> {
         width: SCREEN_DIMENSIONS.width
       },
       snapToOffsets: [],
-      postThreads: props.postThreads
+      postThreads: props.postThreads,
+      visibleIndex: 0
     };
   }
 
@@ -384,8 +390,12 @@ class ThreadList extends React.PureComponent<Props, State> {
   };
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {
-    const [{ index: visibleIndex = -1 }] = viewableItems;
-    this.setState({ visibleIndex });
+    if (viewableItems.length > 0) {
+      const [{ index: visibleIndex = -1 }] = viewableItems;
+      this.setState({ visibleIndex });
+    } else {
+      this.setState({ visibleIndex: -1 });
+    }
   };
   render() {
     const { postThreads = [] } = this.state;
@@ -427,7 +437,7 @@ class ThreadList extends React.PureComponent<Props, State> {
           snapToAlignment="bottom"
           pagingEnabled
           decelerationRate="fast"
-          initialNumToRender={1}
+          initialNumToRender={2}
           windowSize={4}
           snapToOffsets={this.state.snapToOffsets}
           onScroll={this.onScroll}
@@ -451,6 +461,7 @@ class ThreadList extends React.PureComponent<Props, State> {
           // }}
           contentInsetAdjustmentBehavior="never"
           removeClippedSubviews
+          viewabilityConfig={this.viewabilityConfig}
           getItemLayout={this.getItemLayout}
         />
         <BottomTabBar style={styles.tabBar} currentRoute="FeedTab" />

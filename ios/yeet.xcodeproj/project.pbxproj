@@ -15,6 +15,10 @@
 		200018A4DA63446A8EB65DE7 /* Proxima Nova Thin.otf in Resources */ = {isa = PBXBuildFile; fileRef = 57A630ABFF3B459CA8552F21 /* Proxima Nova Thin.otf */; };
 		6762C2C7CE5E45E190EFF82D /* ProximaNova-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */; };
 		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
+		830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */; };
+		8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */; };
+		83161E8A2344282800C271F3 /* MediaFrameViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83161E892344282800C271F3 /* MediaFrameViewManager.swift */; };
+		83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83161E8B2344758D00C271F3 /* AVCachableAsset.swift */; };
 		832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832E37EB232379FD0033E3A3 /* ContentExport.swift */; };
 		832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */; };
 		83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 83304885232098C200E816E8 /* YeetWebImageDecoder.m */; };
@@ -23,6 +27,7 @@
 		8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489923222C3F00E816E8 /* YeetExportData.swift */; };
 		8330489C23222D4800E816E8 /* EditorExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489B23222D4800E816E8 /* EditorExport.swift */; };
 		8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489D23223B0D00E816E8 /* VideoProducer.swift */; };
+		8330EAEA23416C2200A6D67B /* ImageQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */; };
 		83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */; };
 		8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051D232B0912004B2FF7 /* YeetTextInputView.swift */; };
 		83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */; };
@@ -33,6 +38,14 @@
 		838A18BC2328528E00FC8C22 /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 838A18B82328528E00FC8C22 /* WebPDemux.framework */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
 		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
+		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
+		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
+		83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */; };
+		83E1A52423459CFA00646DF9 /* WebpImageDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E1A52323459CFA00646DF9 /* WebpImageDecoder.swift */; };
+		83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E34D1D23442467001321C0 /* MediaFrameView.swift */; };
+		83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC5234197D80091D443 /* YeetImageView.swift */; };
+		83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC72341A6F60091D443 /* YeetVideoView.swift */; };
+		83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */; };
 		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
 		C7180071329E456BB6DEB0C5 /* Proxima Nova Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 0F2C14404E3D43D286E8A252 /* Proxima Nova Bold.otf */; };
 		CCF98551C2404D9D91E0D31B /* Proxima Nova Semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 27B596F270594285B7208411 /* Proxima Nova Semibold.otf */; };
@@ -66,6 +79,10 @@
 		61BF90C6FFD44674B828B97A /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		63AE1CAA636BE65F0051DE79 /* Pods-yeet-tvOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		830303C62324AD8C00BD2260 /* ExportableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableImage.swift; sourceTree = "<group>"; };
+		830418642345AAEE007C9E5A /* EnableWebpDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnableWebpDecoder.h; sourceTree = "<group>"; };
+		8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableMediaSource.swift; sourceTree = "<group>"; };
+		83161E892344282800C271F3 /* MediaFrameViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFrameViewManager.swift; sourceTree = "<group>"; };
+		83161E8B2344758D00C271F3 /* AVCachableAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AVCachableAsset.swift; sourceTree = "<group>"; };
 		832E37EB232379FD0033E3A3 /* ContentExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExport.swift; sourceTree = "<group>"; };
 		83304885232098C200E816E8 /* YeetWebImageDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YeetWebImageDecoder.m; sourceTree = "<group>"; };
 		83304887232098D600E816E8 /* YeetWebImageDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetWebImageDecoder.h; sourceTree = "<group>"; };
@@ -76,6 +93,8 @@
 		8330489923222C3F00E816E8 /* YeetExportData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetExportData.swift; sourceTree = "<group>"; };
 		8330489B23222D4800E816E8 /* EditorExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExport.swift; sourceTree = "<group>"; };
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
+		8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageQueuePlayer.swift; sourceTree = "<group>"; };
+		83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableWebpDecoder.swift; sourceTree = "<group>"; };
 		83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGPath+HighlightedCorners.swift"; sourceTree = "<group>"; };
 		8347051D232B0912004B2FF7 /* YeetTextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextInputView.swift; sourceTree = "<group>"; };
 		8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextInputViewManager.swift; sourceTree = "<group>"; };
@@ -88,6 +107,14 @@
 		838A18B72328528E00FC8C22 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
 		838A18B82328528E00FC8C22 /* WebPDemux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDemux.framework; sourceTree = "<group>"; };
 		83A72AFE23302EDD00453B25 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
+		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
+		83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaQueuePlayer.swift; sourceTree = "<group>"; };
+		83E1A52323459CFA00646DF9 /* WebpImageDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebpImageDecoder.swift; sourceTree = "<group>"; };
+		83E34D1D23442467001321C0 /* MediaFrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFrameView.swift; sourceTree = "<group>"; };
+		83E45AC5234197D80091D443 /* YeetImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetImageView.swift; sourceTree = "<group>"; };
+		83E45AC72341A6F60091D443 /* YeetVideoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetVideoView.swift; sourceTree = "<group>"; };
+		83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayerViewManager.swift; sourceTree = "<group>"; };
 		8C160B6697D042629D1797A5 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Fontisto.ttf"; sourceTree = "<group>"; };
 		9A5A9068C3B94F099E9F2DF5 /* Proxima Nova Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Proxima Nova Medium.ttf"; path = "../assets/fonts/Proxima Nova Medium.ttf"; sourceTree = "<group>"; };
 		9E75BF8917DECDA8BFCF861D /* Pods-yeet.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet.release.xcconfig"; path = "Target Support Files/Pods-yeet/Pods-yeet.release.xcconfig"; sourceTree = "<group>"; };
@@ -126,6 +153,9 @@
 		13B07FAE1A68108700A75B9A /* yeet */ = {
 			isa = PBXGroup;
 			children = (
+				83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */,
+				830418642345AAEE007C9E5A /* EnableWebpDecoder.h */,
+				831C520C233F2FC300F364A3 /* MediaPlayer */,
 				83470517232AF9BA004B2FF7 /* TextInput */,
 				8330488E2321BE7900E816E8 /* Exporting */,
 				008F07F21AC5B25A0029DE68 /* main.jsbundle */,
@@ -167,6 +197,25 @@
 				F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		831C520C233F2FC300F364A3 /* MediaPlayer */ = {
+			isa = PBXGroup;
+			children = (
+				83DC88DB2340559A00FBD467 /* MediaSource.swift */,
+				8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */,
+				83DC88DD23405F0800FBD467 /* MediaPlayer.swift */,
+				83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */,
+				83E34D1D23442467001321C0 /* MediaFrameView.swift */,
+				83161E892344282800C271F3 /* MediaFrameViewManager.swift */,
+				83E45AC5234197D80091D443 /* YeetImageView.swift */,
+				83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */,
+				83E45AC72341A6F60091D443 /* YeetVideoView.swift */,
+				83161E8B2344758D00C271F3 /* AVCachableAsset.swift */,
+				8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */,
+				83E1A52323459CFA00646DF9 /* WebpImageDecoder.swift */,
+			);
+			name = MediaPlayer;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -482,18 +531,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
+				83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
 				8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */,
+				83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */,
+				83E1A52423459CFA00646DF9 /* WebpImageDecoder.swift in Sources */,
+				83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
 				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
+				83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */,
+				83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */,
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
+				83161E8A2344282800C271F3 /* MediaFrameViewManager.swift in Sources */,
+				83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */,
 				83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */,
+				83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */,
+				8330EAEA23416C2200A6D67B /* ImageQueuePlayer.swift in Sources */,
 				833048942322000D00E816E8 /* YeetExporter.swift in Sources */,
+				83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */,
+				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,
 				83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */,
 			);

@@ -1,31 +1,30 @@
 // @flow
-import { memoize, uniqBy, uniq } from "lodash";
+import { memoize, uniq, uniqBy } from "lodash";
 import * as React from "react";
-import { Query, Mutation } from "react-apollo";
+import { Mutation, Query } from "react-apollo";
 import { findNodeHandle, StyleSheet, UIManager, View } from "react-native";
-import { BaseButton, FlatList } from "react-native-gesture-handler";
+import { BaseButton } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
-import { transformOrigin } from "react-native-redash";
 import { useFocusState } from "react-navigation-hooks";
-import { SharedElement } from "react-navigation-shared-element";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import { ViewPosts } from "../../lib/graphql/ViewPosts";
-import { pxBoundsToPoint, scaleToWidth } from "../../lib/Rect";
-import { SPACING } from "../../lib/styles";
-import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
+import { ViewThreads_postThreads } from "../../lib/graphql/ViewThreads";
 import LIKE_POST_MUTATION from "../../lib/LikePost.graphql";
+import { SPACING } from "../../lib/styles";
+import { sendLightFeedback } from "../../lib/Vibration";
+import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
 import { Avatar } from "../Avatar";
 import { BitmapIconNewPost } from "../BitmapIcon";
-import { IconHeart, IconPlay } from "../Icon";
-import Media from "../PostList/ViewMedia";
+import { IconPlay } from "../Icon";
+import MediaFrame from "../MediaFrame";
+import MediaPlayer from "../MediaPlayer";
 import { SemiBoldText } from "../Text";
+import { AuthState, UserContext } from "../UserContext";
 import { CountButton } from "./CountButton";
-import { BAR_HEIGHT, Seekbar } from "./Seekbar";
-import { UserContext, AuthState } from "../UserContext";
 import { LikeCountButton } from "./LikeCountButton";
-import { sendLightFeedback } from "../../lib/Vibration";
+import { BAR_HEIGHT, Seekbar } from "./Seekbar";
 
 const AVATAR_SIZE = 36;
 
@@ -254,86 +253,54 @@ const AnimatedProfile = React.forwardRef(
   }
 );
 
-const ViewPost = ({
-  post,
-  threadId,
-  width,
-  progressValue,
-  hideContent = false,
-  height,
-  isVisible,
-  isNextVisible,
-  isPreviousVisible,
-  postsCount,
-  onPressReply,
-  onPressLike,
-
-  onLoad,
-  offset,
-  paused
-}) => {
-  const profile = post.profile;
-
-  const { height: trueHeight } = scaleToWidth(
-    width,
-    pxBoundsToPoint(post.media, post.media.pixelRatio)
-  );
-
-  const handleLoad = React.useCallback(
-    data => {
-      onLoad(post.id, data);
-    },
-    [onLoad, post.id]
-  );
-
-  return (
-    <>
-      <Animated.View style={[threadStyles.layer, threadStyles.mediaLayer]}>
-        <SharedElement
-          style={{ width, height: trueHeight }}
-          id={`post.${post.id}.media`}
-        >
-          <Media
-            containerWidth={width}
-            containerHeight={trueHeight}
-            // translateY={translateYValue.current}
-            width={width}
-            height={trueHeight}
-            onLoad={handleLoad}
-            size="full"
-            hideContent={hideContent}
-            paused={paused}
-            media={post.media}
-          />
-        </SharedElement>
-      </Animated.View>
-    </>
-  );
+type State = {
+  postIndex: number;
+  nextPostIndex: number;
+  isPlaying: boolean;
+  autoAdvance: boolean;
+  autoPlay: boolean;
 };
 
-class ThreadContainer extends React.Component {
-  progressValue: Animated.Value<number>;
-  progressClock: Animated.Clock;
-  durationValue: Animated.Value<number>;
-  loadedPostIds = {};
-  progressValue = new Animated.Value(0);
-  isAnimatingNextPost = new Animated.Value(0);
-  isFastAnimation = new Animated.Value(0);
+type Props = {
+  posts: Array<PostFragment>;
+  isVisible: boolean;
+  isNextVisible: boolean;
+  isPreviousVisible: boolean;
+  thread: ViewThreads_postThreads;
+  threadId: string;
+  fetchMore: Function;
+  width: number;
+  height: number;
+};
+
+class ThreadContainer extends React.Component<Props, State> {
+  isAnimatingNextPost: Animated.Value<number>;
+  forwardProgressValue: Animated.Value<number>;
+  backwardProgressValue: Animated.Value<number>;
+  progressValue: Animated.Node<number>;
 
   constructor(props) {
     super(props);
 
     const isPlaying = props.isVisible;
 
+    this.isAnimatingNextPost = new Animated.Value<number>(0);
+    this.forwardProgressValue = new Animated.Value<number>(0.0);
+    this.backwardProgressValue = new Animated.Value<number>(1.0);
+
+    this.progressValue = Animated.cond(
+      Animated.eq(this.isAnimatingNextPost, 1),
+      this.backwardProgressValue,
+      this.forwardProgressValue
+    );
+
     this.state = {
       postIndex: 0,
       nextPostIndex: -1,
+      autoPlay: isPlaying,
       isPlaying,
       autoAdvance: isPlaying
     };
-
-    this.progressClock = new Animated.Clock();
-    this.durationValue = new Animated.Value<number>(this.autoplayDuration);
 
     this.segmentRefs = {};
     props.posts.forEach(
@@ -364,7 +331,7 @@ class ThreadContainer extends React.Component {
     if (visibilityChange && this.props.isVisible) {
       this.play();
     } else if (visibilityChange && !this.props.isVisible) {
-      this.pause();
+      this.stop();
     }
 
     if (
@@ -395,6 +362,7 @@ class ThreadContainer extends React.Component {
   }
 
   handlePostEnded = async () => {
+    console.log("END");
     this.goNext();
   };
 
@@ -403,56 +371,67 @@ class ThreadContainer extends React.Component {
   };
 
   goNext = async (fast: boolean = false) => {
-    console.log("GO NEXT");
     const postIndex = this.state.postIndex + 1;
     const hasNextPost = postIndex < this.props.posts.length;
 
     if (hasNextPost) {
-      const nextPost = this.props.posts[postIndex];
-
       await this.loadNextPost(postIndex, fast);
-
-      if (this.loadedPostIds[nextPost.id]) {
-        this.startProgressAnimation(nextPost.id);
-      }
-    } else if (!hasNextPost) {
-      // this.progressValue.setValue(0);
-      this.startProgressAnimation();
     }
   };
 
   goBack = async (fast: boolean = false) => {
-    console.log("GO BACK");
-    const postIndex = this.state.postIndex - 1;
+    const postIndex = Math.max(this.state.postIndex - 1, 0);
     const prevPost = this.props.posts[postIndex];
 
     if (!!prevPost && this.state.autoAdvance) {
       await this.loadNextPost(postIndex, fast);
-
-      if (this.loadedPostIds[prevPost.id]) {
-        this.startProgressAnimation(prevPost.id);
-      }
-    } else if (!prevPost) {
-      // this.progressValue.setValue(0);
-      this.startProgressAnimation(this.props.posts[0]);
     }
   };
 
-  postIndexValue = new Animated.Value(0);
+  postIndexValue = new Animated.Value<number>(0);
   isRunningProgressAnimation = false;
-  nextPostAnimation: Animated.BackwardCompatibleWrapper = null;
+
+  forwardProgressAnimation: Animated.BackwardCompatibleWrapper = null;
+  postIndexAnimation: Animated.BackwardCompatibleWrapper = null;
+  backwardsProgressAnimation: Animated.BackwardCompatibleWrapper = null;
 
   loadNextPost = (_postIndex: number, animateFaster: boolean = false) => {
+    this.isAnimatingToNextPost = true;
+
+    const postIndex =
+      typeof _postIndex === "number" ? _postIndex : this.state.postIndex;
+
+    if (this.state.postIndex === 0 && _postIndex === 0) {
+      this.mediaPlayerRef.current.advance(0);
+      this.isAnimatingToNextPost = false;
+      this.cancelAnimations();
+      return Promise.resolve();
+    }
+
+    if (animateFaster) {
+      this.postIndexValue.setValue(postIndex);
+      this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {
+        this.mediaPlayerRef.current.advance(postIndex);
+      });
+
+      this.isAnimatingToNextPost = false;
+      this.cancelAnimations();
+      return Promise.resolve();
+    }
+
     return new Promise(async (resolve, reject) => {
-      let _hasResolved = false;
-      const postIndex = _postIndex || this.state.postIndex;
+      await new Promise((resolve, reject) => {
+        window.requestAnimationFrame(() => {
+          this.cancelAnimations();
 
-      if (this.isRunningProgressAnimation) {
-        this.progressAnimation.stop();
-        this.isRunningProgressAnimation = false;
-      }
+          this.backwardProgressValue.setValue(1.0);
+          this.forwardProgressValue.setValue(1.0);
+          resolve();
+        });
+      });
 
-      this.isFastAnimation.setValue(animateFaster ? 1 : 0);
+      this.isRunningProgressAnimation = true;
+      this.isAnimatingToNextPost = true;
 
       if (postIndex !== this.state.nextPostIndex) {
         this.setState({ nextPostIndex: postIndex });
@@ -480,76 +459,102 @@ class ThreadContainer extends React.Component {
         });
       });
 
-      this.profileAnimationStartHeight.setValue(height);
-      this.profileAnimationStartWidth.setValue(width);
-      this.profileAnimationStartX.setValue(x);
-      this.profileAnimationStartY.setValue(y);
-      this.profileAnimationEndX.setValue(endX);
-      this.profileAnimationEndY.setValue(endY);
+      await new Promise((resolve, reject) =>
+        window.requestAnimationFrame(() => {
+          this.profileAnimationStartHeight.setValue(height);
+          this.profileAnimationStartWidth.setValue(width);
+          this.profileAnimationStartX.setValue(x);
+          this.profileAnimationStartY.setValue(y);
+          this.profileAnimationEndX.setValue(endX);
+          this.profileAnimationEndY.setValue(endY);
 
-      this.progressValue.setValue(1.0);
-      this.progressAnimation = Animated.timing(this.progressValue, {
-        toValue: 0.0,
-        duration: animateFaster ? 50 : 500,
-        easing: animateFaster ? Easing.linear : Easing.ease
-      });
+          resolve();
+        })
+      );
 
-      const cbKey = Math.random();
-      this.progressAnimationCallbackKey = cbKey;
-      this.progressAnimation.start(({ finished }) => {
-        if (this.progressAnimationCallbackKey !== cbKey) {
-          return;
+      await new Promise((resolve, reject) =>
+        window.requestAnimationFrame(() => {
+          this.cancelAnimations();
+          this.isAnimatingNextPost.setValue(1);
+          resolve();
+        })
+      );
+
+      const backwardsProgressAnimation = Animated.timing(
+        this.backwardProgressValue,
+        {
+          toValue: 0.0,
+          duration: 500,
+          easing: Easing.ease
         }
-        this.isRunningProgressAnimation = false;
+      );
+
+      backwardsProgressAnimation.start(() => {
+        if (backwardsProgressAnimation === this.backwardsProgressAnimation) {
+          this.backwardsProgressAnimation = null;
+        }
       });
 
-      this.isRunningProgressAnimation = true;
+      this.backwardsProgressAnimation = backwardsProgressAnimation;
 
-      this.nextPostAnimation = Animated.timing(this.postIndexValue, {
+      const postIndexAnimation = Animated.timing(this.postIndexValue, {
         toValue: postIndex,
-        duration: animateFaster ? 50 : 500,
-        easing: animateFaster ? Easing.linear : Easing.ease
+        duration: 500,
+        easing: Easing.ease
       });
 
-      this.isAnimatingNextPost.setValue(1);
-      this.nextPostAnimation.start(({ finished }) => {
-        if (finished && this.state.postIndex !== postIndex) {
-          this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {
-            !_hasResolved && resolve();
-            _hasResolved = true;
-            this.isAnimatingNextPost.setValue(0);
-            // InteractionManager.runAfterInteractions(() =>
+      this.postIndexAnimation = postIndexAnimation;
 
-            // );
-            this.nextPostAnimation = null;
+      postIndexAnimation.start(({ finished }) => {
+        if (postIndexAnimation === this.postIndexAnimation) {
+          this.postIndexAnimation = null;
+        }
+
+        if (finished) {
+          this.forwardProgressValue.setValue(0.0);
+
+          this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {
+            window.requestAnimationFrame(() => {
+              this.backwardProgressValue.setValue(1.0);
+            });
+            resolve();
           });
-        } else if (finished && this.state.postIndex === postIndex) {
-          this.isAnimatingNextPost.setValue(0);
+        } else {
+          reject();
         }
       });
-    });
+
+      this.mediaPlayerRef.current.advance(postIndex);
+      this.mediaPlayerRef.current.pause();
+    }).then(
+      () => {
+        this.isAnimatingNextPost.setValue(0);
+        this.isAnimatingToNextPost = false;
+        this.mediaPlayerRef.current.play();
+      },
+      () => {
+        this.isAnimatingToNextPost = false;
+        this.isAnimatingNextPost.setValue(0);
+        this.mediaPlayerRef.current.play();
+      }
+    );
   };
 
-  componentWillUnmount() {
-    if (this.isRunningProgressAnimation) {
-      this.progressAnimation.stop();
-    }
+  cancelAnimations = () =>
+    [
+      this.postIndexAnimation,
+      this.backwardsProgressAnimation,
+      this.forwardProgressAnimation
+    ]
+      .filter(Boolean)
+      .forEach(animation => animation.stop());
 
-    if (this.nextPostAnimation) {
-      this.nextPostAnimation.stop();
-    }
+  componentWillUnmount() {
+    this.cancelAnimations();
   }
 
   get post() {
-    return this.props.posts[this.state.postIndex] || this.props.posts[0];
-  }
-
-  get nextPost() {
-    return this.props.posts[this.state.postIndex + 1];
-  }
-
-  get autoplayDuration() {
-    return Math.floor(this.post.autoplaySeconds * 1000);
+    return this.props.posts[this.state.postIndex];
   }
 
   play = () => {
@@ -557,15 +562,7 @@ class ThreadContainer extends React.Component {
       isPlaying: true,
       autoAdvance: true
     });
-
-    if (this.isPostLoaded) {
-      this.startProgressAnimation();
-    }
   };
-
-  get isPostLoaded() {
-    return this.loadedPostIds[this.post.id] === true;
-  }
 
   progressAnimation: Animated.BackwardCompatibleWrapper | null = null;
   profileAnimationStartX = new Animated.Value(0);
@@ -576,55 +573,29 @@ class ThreadContainer extends React.Component {
   profileAnimationEndY = new Animated.Value(0);
   progressAnimationCallbackKey = Math.random();
 
-  startProgressAnimation = () => {
-    if (this.isRunningProgressAnimation) {
-      this.progressAnimation.stop();
-    }
-
-    this.progressAnimation = Animated.timing(this.progressValue, {
-      toValue: 1.0,
-      duration: this.autoplayDuration,
-      easing: Easing.linear
-    });
-
-    const cbKey = Math.random();
-    this.progressAnimationCallbackKey = cbKey;
-    this.progressAnimation.start(({ finished }) => {
-      if (this.progressAnimationCallbackKey !== cbKey) {
-        return;
-      }
-      if (finished) {
-        this.handlePostEnded();
-      }
-
-      this.isRunningProgressAnimation = false;
-    });
-
-    this.isRunningProgressAnimation = true;
-    console.log("START PROGRESS", this.state.postIndex, this.post.id);
-  };
-
   onMediaPlay = () => {};
-
-  onLoad = (postId, { currentTime, duration }) => {
-    this.loadedPostIds[postId] = true;
-
-    if (this.state.isPlaying && postId === this.post.id) {
-      this.startProgressAnimation();
-    }
-  };
 
   onMediaPause = () => {};
 
   pause = () => {
     this.setState({
       isPlaying: false,
+      autoPlay: false,
       autoAdvance: false
     });
 
-    if (this.isRunningProgressAnimation) {
-      this.progressAnimation.stop();
-    }
+    this.cancelAnimations();
+  };
+
+  stop = () => {
+    this.setState({
+      isPlaying: false,
+      autoAdvance: false,
+      autoPlay: false
+    });
+
+    this.cancelAnimations();
+    this.mediaPlayerRef.current.advance(this.state.postIndex);
   };
 
   get hasLikedPost() {
@@ -677,118 +648,6 @@ class ThreadContainer extends React.Component {
     });
 
     sendLightFeedback();
-  };
-
-  renderPost = (post, index) => {
-    const {
-      offset,
-      isVisible,
-      isNextVisible,
-      isPreviousVisible,
-      width,
-      height,
-      isScreenBlurred
-    } = this.props;
-    const { isPlaying } = this.state;
-
-    const SCALE_BEFORE = 0.75;
-    const SCALE_AFTER = 0.75;
-
-    return (
-      <Animated.View
-        key={post.id}
-        style={{
-          width,
-          height,
-          overflow: "hidden",
-          position: "absolute",
-
-          opacity: Animated.cond(
-            this.isAnimatingNextPost,
-            this.postIndexValue.interpolate({
-              inputRange: [
-                index - 1,
-                index - 0.99,
-                index,
-                index + 0.01,
-                index + 1
-              ],
-              outputRange: [0, 1, 1, 1, 0],
-              extrapolate: Animated.Extrapolate.CLAMP
-            }),
-            Animated.cond(Animated.eq(this.postIndexValue, index), 1, 0)
-          ),
-          transform: transformOrigin(
-            new Animated.Value(0),
-            new Animated.Value(0),
-            {
-              translateX: this.postIndexValue.interpolate({
-                inputRange: [index - 1, index, index + 1],
-                outputRange: [width, 0, width * -1],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            },
-
-            {
-              scale: this.postIndexValue.interpolate({
-                inputRange: [index - 1, index, index + 1],
-                outputRange: [0.9, 1, 0.9],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            }
-          )
-        }}
-      >
-        <View style={{ width, height, position: "relative" }}>
-          <ViewPost
-            post={post}
-            offset={offset}
-            isVisible={isVisible}
-            isNextVisible={isNextVisible}
-            onLoad={this.onLoad}
-            isPreviousVisible={isPreviousVisible}
-            postsCount={this.props.thread.postsCount}
-            progressValue={this.progressValue}
-            hideContent={
-              !(isVisible || isNextVisible || isPreviousVisible) ||
-              Math.abs(this.state.postIndex - index) > 1
-            }
-            paused={
-              !isPlaying || this.state.postIndex !== index || isScreenBlurred
-            }
-            width={width}
-            height={height}
-            onPressLike={this.handlePressLike}
-            onPressReply={this.handlePressReply}
-          />
-
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: "black",
-                zIndex: 10,
-                opacity: Animated.cond(
-                  Animated.eq(this.isFastAnimation, 1),
-                  0,
-                  this.postIndexValue.interpolate({
-                    inputRange: [
-                      index - 1,
-                      index - 0.5,
-                      index,
-                      index + 0.1,
-                      index + 1
-                    ],
-                    outputRange: [0, 0, 0, 0.05, 1],
-                    extrapolate: Animated.Extrapolate.CLAMP
-                  })
-                )
-              }
-            ]}
-          />
-        </View>
-      </Animated.View>
-    );
   };
 
   handlePressReply = () => {
@@ -844,10 +703,75 @@ class ThreadContainer extends React.Component {
     this.goNext(true);
   };
 
-  flatListRef = React.createRef<FlatList>();
-  keyExtractor = item => item.id;
   overlayRef = React.createRef<View>();
   profileRef = React.createRef<View>();
+  mediaPlayerRef = React.createRef<MediaPlayer>();
+  isAnimatingToNextPost = false;
+  lastProgress: number | null = null;
+
+  handleProgress = ({
+    nativeEvent: { index, id, url, elapsed, interval: animationDuration }
+  }) => {
+    const post = this.props.posts.find(({ media }) => media.id === id);
+
+    if (!post || this.isAnimatingToNextPost) {
+      return;
+    }
+
+    let progress = (elapsed + animationDuration) / post.autoplaySeconds;
+    if (progress > 1) {
+      progress = progress - Math.floor(progress);
+    }
+
+    const isRestarting =
+      this.lastProgress !== null && this.lastProgress > progress;
+
+    const isAboutToAdvance =
+      this.state.postIndex < this.props.posts.length - 1 &&
+      (elapsed + animationDuration) / post.autoplaySeconds >= 1.0;
+
+    if (isAboutToAdvance) {
+      const forwardProgressAnimation = Animated.timing(
+        this.forwardProgressValue,
+        {
+          toValue: 1.0,
+          duration: animationDuration * 1000,
+          easing: Easing.linear
+        }
+      );
+
+      this.forwardProgressAnimation = forwardProgressAnimation;
+
+      this.forwardProgressAnimation.start(() => {
+        if (forwardProgressAnimation === this.forwardProgressAnimation) {
+          this.forwardProgressAnimation = null;
+        }
+      });
+      return;
+    }
+
+    // if (isRestarting) {
+    //   this.forwardProgressValue.setValue(0.0);
+    // }
+
+    const forwardProgressAnimation = Animated.timing(
+      this.forwardProgressValue,
+      {
+        toValue: progress,
+        duration: animationDuration * 1000,
+        easing: Easing.linear
+      }
+    );
+    this.forwardProgressAnimation = forwardProgressAnimation;
+
+    this.forwardProgressAnimation.start(() => {
+      if (this.forwardProgressAnimation === forwardProgressAnimation) {
+        this.forwardProgressAnimation = null;
+      }
+    });
+
+    this.lastProgress = progress;
+  };
 
   render() {
     const {
@@ -867,6 +791,24 @@ class ThreadContainer extends React.Component {
     const post = this.post;
     const nextPost = posts[this.state.nextPostIndex];
 
+    const sources = this.props.posts.map(
+      ({
+        media: { id, url, mimeType, width, height, duration, pixelRatio },
+        bounds,
+        autoplaySeconds
+      }) => ({
+        url,
+        id,
+        mimeType,
+        width,
+        pixelRatio,
+        height,
+        duration,
+        bounds,
+        playDuration: autoplaySeconds
+      })
+    );
+
     return (
       <Animated.View
         style={[
@@ -882,7 +824,6 @@ class ThreadContainer extends React.Component {
         <Animated.View
           style={{
             width,
-
             height
           }}
         >
@@ -894,7 +835,133 @@ class ThreadContainer extends React.Component {
               height
             }}
           >
-            {posts.map(this.renderPost)}
+            <Animated.View
+              style={{
+                position: "relative",
+                width,
+                height
+              }}
+            >
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  zIndex: 1,
+                  width,
+                  height,
+                  opacity: Animated.eq(this.isAnimatingNextPost, 1),
+                  transform: [
+                    {
+                      scale: Animated.interpolate(this.progressValue, {
+                        inputRange: [0, 1],
+                        outputRange: [0.75, 1],
+                        extrapolate: Animated.Extrapolate.CLAMP
+                      })
+                    },
+                    {
+                      translateX: Animated.interpolate(this.progressValue, {
+                        inputRange: [0, 1],
+                        outputRange: [-1.25 * width, 0],
+                        extrapolate: Animated.Extrapolate.CLAMP
+                      })
+                    },
+                    {
+                      translateY: Animated.interpolate(this.progressValue, {
+                        inputRange: [0, 1],
+                        outputRange: [height * -0.05, 0],
+                        extrapolate: Animated.Extrapolate.CLAMP
+                      })
+                    }
+                  ]
+                }}
+              >
+                <MediaFrame
+                  source={sources[this.state.postIndex]}
+                  style={{
+                    width,
+                    height
+                  }}
+                />
+
+                <Animated.View
+                  style={[
+                    StyleSheet.absoluteFill,
+                    {
+                      backgroundColor: "black",
+                      zIndex: 10,
+                      opacity: Animated.interpolate(this.progressValue, {
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [1, 0.05, 0],
+                        extrapolate: Animated.Extrapolate.CLAMP
+                      })
+                    }
+                  ]}
+                />
+              </Animated.View>
+
+              <Animated.View
+                style={{
+                  position: "absolute",
+                  zIndex: 2,
+                  width,
+                  height,
+                  transform: [
+                    {
+                      scale: Animated.block([
+                        Animated.cond(
+                          Animated.eq(this.isAnimatingNextPost, 1),
+                          Animated.interpolate(this.progressValue, {
+                            inputRange: [0, 1],
+                            outputRange: [1, 0.75],
+                            extrapolate: Animated.Extrapolate.CLAMP
+                          }),
+                          1
+                        )
+                      ])
+                    },
+                    {
+                      translateX: Animated.block([
+                        Animated.cond(
+                          Animated.eq(this.isAnimatingNextPost, 1),
+                          Animated.interpolate(this.progressValue, {
+                            inputRange: [0, 1],
+                            outputRange: [0, 1.25 * width],
+                            extrapolate: Animated.Extrapolate.CLAMP
+                          }),
+                          0
+                        )
+                      ])
+                    },
+                    {
+                      translateY: Animated.block([
+                        Animated.cond(
+                          Animated.eq(this.isAnimatingNextPost, 1),
+                          Animated.interpolate(this.progressValue, {
+                            inputRange: [0, 1],
+                            outputRange: [0, height * -0.05],
+                            extrapolate: Animated.Extrapolate.CLAMP
+                          }),
+                          0
+                        )
+                      ])
+                    }
+                  ]
+                }}
+              >
+                <MediaPlayer
+                  sources={sources}
+                  autoPlay={this.state.autoPlay && this.props.isVisible}
+                  paused={!this.state.isPlaying}
+                  ref={this.mediaPlayerRef}
+                  onProgress={this.handleProgress}
+                  onEnd={this.handlePostEnded}
+                  onError={this.handleError}
+                  style={{
+                    width,
+                    height
+                  }}
+                />
+              </Animated.View>
+            </Animated.View>
           </Animated.View>
 
           <View
@@ -904,9 +971,9 @@ class ThreadContainer extends React.Component {
               threadStyles.gradientLayer,
               {
                 backgroundColor:
-                  this.state.isPlaying || !isVisible
-                    ? undefined
-                    : "rgba(0, 0, 0, 0.65)"
+                  !this.state.isPlaying && isVisible
+                    ? "rgba(0, 0, 0, 0.65)"
+                    : undefined
               }
             ]}
           >
@@ -1066,14 +1133,13 @@ class ThreadContainer extends React.Component {
             </View>
 
             <View style={{ height: BAR_HEIGHT }}>
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  display: isVisible ? "flex" : "none"
-                }}
-              >
-                {posts.length > 1 && (
+              {posts.length > 1 && (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center"
+                  }}
+                >
                   <Seekbar
                     posts={posts}
                     segmentRefs={this.segmentRefs}
@@ -1082,8 +1148,8 @@ class ThreadContainer extends React.Component {
                     indexValue={this.postIndexValue}
                     percentage={this.progressValue}
                   />
-                )}
-              </View>
+                </View>
+              )}
             </View>
 
             {nextPost && (
@@ -1119,7 +1185,7 @@ export const ViewThread = ({ isVisible, thread, ...otherProps }) => {
       {likePost => (
         <Query
           query={VIEW_POSTS_QUERY}
-          skip={!isVisible || isBlurred}
+          delay={!isVisible || isBlurred}
           notifyOnNetworkStatusChange
           variables={{
             threadId: thread.id,

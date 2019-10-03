@@ -19,7 +19,7 @@ import { get } from "react-native-redash";
 const MAX_WIDTH = SCREEN_DIMENSIONS.width;
 const SHOW_KNOB = false;
 
-export const BAR_HEIGHT = 4;
+export const BAR_HEIGHT = 2;
 const KNOB_SIZE = 12;
 const AVATAR_WIDTH = 18;
 
@@ -328,7 +328,6 @@ type State = {
 };
 
 export class Seekbar extends React.Component<Props, State> {
-  duration = new Animated.Value(0);
   constructor(props: Props) {
     super(props);
 
@@ -346,7 +345,6 @@ export class Seekbar extends React.Component<Props, State> {
   }
 
   segmentWidth = new Animated.Value(0);
-  offsetValue = new Animated.Value(0);
   position: Animated.Value<number>;
 
   segmentByPostID = (postId: string) =>

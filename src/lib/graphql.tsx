@@ -84,6 +84,7 @@ const dataIdFromObject = o => {
 const cache = new InMemoryCache({
   // fragmentMatcher,
   dataIdFromObject,
+
   cacheRedirects: {
     Query: {
       post: (_, args) =>

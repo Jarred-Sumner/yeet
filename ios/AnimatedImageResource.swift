@@ -8,11 +8,10 @@
 
 import Foundation
 import SDWebImage
-import VFCabbage
 import CoreImage
 import AVFoundation
 import UIKit
-
+import VFCabbage
 
 
 @available(iOS 10.0, *)
