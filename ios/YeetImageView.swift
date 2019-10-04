@@ -17,8 +17,8 @@ class YeetImageView : UIImageView {
   @objc var errored = false
   @objc var needsReload = false
   @objc var onLoadEvent: [String: NSNumber] = [:]
-  private var _source: MediaSource? = nil
-  @objc var source: MediaSource? {
+  private var _source: TrackableImageSource? = nil
+  @objc var source: TrackableImageSource? {
     get {
       return _source
     }
@@ -27,7 +27,7 @@ class YeetImageView : UIImageView {
       let old = _source
       self._source = newValue
 
-      if (newValue != old && newValue?.uri != old?.uri) {
+      if (newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) {
         self.loadImage()
       }
    }
@@ -50,41 +50,37 @@ class YeetImageView : UIImageView {
     self.image = image
   }
 
-
-
   func loadImage() {
-    guard let source = self.source else {
+    guard let _source = source else {
       self.image = nil
-      self.imageTask?.cancel()
       return
     }
 
-    if self.imageTask != nil {
-      self.imageTask?.cancel()
+    let url = YeetImageView.imageUri(source: _source.mediaSource, bounds: bounds)
+    self.imageTask = Nuke.loadImage(with: ImageRequest(url: url, processors: [], priority: .normal, options: ImageRequestOptions()), into: self) { [weak self] response in
+      self?.handleLoad(response: response)
     }
+  }
 
-    var loadOptions = ImageLoadingOptions.init(
-      contentModes: .init(success: .center, failure: .center, placeholder: .center)
-    )
-//
-//    Nuke.loadImage(with: <#T##ImageRequest#>, options: <#T##ImageLoadingOptions#>, into: <#T##ImageDisplayingView#>, progress: <#T##ImageTask.ProgressHandler?##ImageTask.ProgressHandler?##(ImageResponse?, Int64, Int64) -> Void#>, completion: <#T##ImageTask.Completion?##ImageTask.Completion?##(Result<ImageResponse, ImagePipeline.Error>) -> Void#>)
-//
-//
+  func handleLoad(response: Result<ImageResponse, ImagePipeline.Error>) {
+    do {
+      try response.get()
+      self._source?.onLoad()
+    } catch  {
+      print("[YeetImageView] \(error)")
+    }
+  }
 
-    let scale = bounds.size.width / CGFloat(truncating: source.width)
-
+  static func imageUri(source: MediaSource, bounds: CGRect) -> URL {
     let cropBounds = source.naturalBounds
 
-
-
     let cropMaxX = cropBounds.size.width - cropBounds.origin.x
-    let cropMaxY = cropBounds.size.height - cropBounds.origin.y
 
     let maxX = min(
       cropMaxX, CGFloat(source.width.doubleValue * source.pixelRatio.doubleValue), bounds.size.width * UIScreen.main.nativeScale
     )
 
-    var cropRect = [
+    let cropRect = [
       "cx": cropBounds.origin.x,
       "cy": cropBounds.origin.y,
 //      "cw": cropMaxX,
@@ -95,21 +91,11 @@ class YeetImageView : UIImageView {
       return "\(key)\(Int(floor(value)))"
     }.joined(separator: ",")
 
-    let imgUri = URL(string: "https://i.webthing.co/\(cropRectString),\(Int(floor(maxX)))x/\(source.uri.absoluteString)")!
+    return URL(string: "https://i.webthing.co/\(cropRectString),\(Int(floor(maxX)))x/\(source.uri.absoluteString)")!
+  }
 
-
-    self.imageTask = Nuke.loadImage(
-      with: imgUri,
-      options: loadOptions,
-      into: self,
-      completion: {[weak self] response in
-        self?.imageTask = nil
-        guard let onLoad = self?.onLoadImage else {
-          return
-        }
-
-        onLoad(response)
-    })
+  static func imageTask(source: MediaSource, bounds: CGRect, progress: ImageTask.ProgressHandler? = nil, completion: @escaping ImageTask.Completion) -> ImageTask? {
+    return ImagePipeline.shared.loadImage(with: imageUri(source: source, bounds: bounds), progress: progress, completion: completion)
   }
 
   deinit {

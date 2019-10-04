@@ -33,7 +33,8 @@ target 'yeet' do
   pod 'Repeat'
   pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
   pod 'KTVHTTPCache', '~> 2.0.0'
-  
+  pod 'MulticastDelegateSwift'
+
 
   pod 'SwiftyBeaver'
 

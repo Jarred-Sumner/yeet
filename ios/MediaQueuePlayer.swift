@@ -9,7 +9,37 @@
 import Foundation
 import Nuke
 
-class MediaQueuePlayer {
+class MediaQueuePlayer : TrackableMediaSourceDelegate {
+  func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
+    guard let _current = current else {
+      return
+    }
+
+    guard mediaSource == _current else {
+      return
+    }
+
+    let desiredStatus = self.status
+    let shouldStartPlaying = desiredStatus == .playing && status == .ready
+
+    if shouldStartPlaying {
+      _current.play()
+      self.status = _current.status
+    }
+    
+  }
+
+  func onProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
+
+  }
+
+  typealias ChangeMediaEventBlock = (_ newMedia: TrackableMediaSource?, _ oldMedia: TrackableMediaSource?, _ index: Int) -> Void
+  var onChangeMedia: ChangeMediaEventBlock? = nil {
+    didSet (newValue) {
+      newValue?(self.current, nil, index)
+    }
+  }
+
   var videoPlayer: AVPlayer = {
     let player = AVPlayer()
     player.automaticallyWaitsToMinimizeStalling = false
@@ -17,107 +47,107 @@ class MediaQueuePlayer {
     return player
   }()
   lazy var playerLayer = AVPlayerLayer(player: self.videoPlayer)
-  var imagePlayer = ImageQueuePlayer()
   var mediaSources: Array<MediaSource> = []
-  var onEnd: (_ index: Int?, _ mediaSource: MediaSource?) -> Void
-  var onChange: (_ index: Int?, _ mediaSource: MediaSource?) -> Void
-  var onProgress: (_ index: Int?, _ mediaSource: MediaSource?, _ elapsed: CMTime, _ totalElapsed: CMTime, _ interval: Double) -> Void
 
   var index: Int = 0
-  var looper: AVPlayerLooper? = nil
-  var desiredLoopCount: Int {
-    guard let currentItem = self.currentItem else { return 0}
-    guard currentItem.isVideo else { return 0 }
+  var bounds: CGRect {
+    didSet(newValue) {
+      [
+        previous,
+        current,
+        next
+        ].filter { tracker in
+          return tracker != nil && tracker!.mediaSource.isImage
+      }.forEach { _tracker in
+        let tracker = _tracker as! TrackableImageSource
 
-    let duration = currentItem.playDuration.doubleValue
-    let realDuration = currentItem.duration.doubleValue
-    return Int(max(ceil(realDuration / duration),0))
-  }
+        tracker.bounds = newValue
+      }
 
-  var loopDuration: Double {
-    guard let currentItem = self.currentItem else { return .zero }
-    guard currentItem.isVideo else { return .zero }
-    guard currentLoopCount > 0 else {return .zero }
-
-
-    return currentItem.duration.doubleValue * Double(currentLoopCount)
-  }
-  var currentLoopCount = 0
-
-  var videoTimeObserverToken: Any? = nil
-  var videoEndObserver: Any? = nil
-  static let periodicInterval = 0.15
-
-  func addPeriodicTimeObserver() {
-    if videoTimeObserverToken != nil {
-      return
-    }
-
-    // Notify every half second
-    let timeScale = CMTimeScale(NSEC_PER_SEC)
-    let time = CMTime(seconds: MediaQueuePlayer.periodicInterval, preferredTimescale: timeScale)
-
-    videoTimeObserverToken = videoPlayer
-      .addPeriodicTimeObserver(
-        forInterval: time,
-        queue: .main) { [weak self] time in
-        guard let playerItem = self?.videoPlayer.currentItem else {
-          return
-        }
-
-        guard let item = self?.mediaSourceFromPlayerItem(playerItem: playerItem) else {
-          return
-        }
-        guard let index = self?.mediaSources.firstIndex(of: item) else {
-          return
-        }
-
-        self?.handleProgress(index: index, mediaSource: item, elapsed: time, interval: MediaQueuePlayer.periodicInterval)
     }
   }
 
-  func addBoundaryTimeObserver() {
-    if videoEndObserver != nil {
-      videoPlayer.removeTimeObserver(videoEndObserver)
-      videoEndObserver = nil
+  var previous: TrackableMediaSource? = nil {
+    willSet(newValue) {
+       guard newValue == nil else {
+         return
+       }
+
+       guard let tracker = previous else {
+         return
+       }
+
+       if !tracker.delegate.containsDelegate(self) {
+         tracker.delegate.removeDelegate(self)
+       }
+     }
+
+     didSet (newValue) {
+       guard let tracker = newValue else {
+         return
+       }
+
+       if !tracker.delegate.containsDelegate(self) {
+         tracker.delegate.addDelegate(self)
+       }
+     }
+  }
+  var current: TrackableMediaSource? = nil {
+    willSet(newValue) {
+       guard newValue == nil else {
+         return
+       }
+
+       guard let tracker = current else {
+         return
+       }
+
+       if !tracker.delegate.containsDelegate(self) {
+         tracker.delegate.removeDelegate(self)
+       }
+     }
+
+     didSet (newValue) {
+      guard let tracker = newValue else {
+        return
+      }
+
+      tracker.alwaysLoop = isLast(item: tracker.mediaSource)
+     }
+  }
+  var next: TrackableMediaSource? = nil {
+    willSet(newValue) {
+      guard newValue == nil else {
+        return
+      }
+
+      guard let tracker = next else {
+        return
+      }
+
+      if !tracker.delegate.containsDelegate(self) {
+        tracker.delegate.removeDelegate(self)
+      }
     }
 
-    let timeScale = CMTimeScale(NSEC_PER_SEC)
+    didSet (newValue) {
+      guard let tracker = newValue else {
+        return
+      }
 
-
-    let times = [NSValue(time: CMTimeMakeWithSeconds(currentItem!.playDuration.doubleValue, preferredTimescale: timeScale))]
-    let playerItemURL = self.currentItem?.asset?.url
-
-    videoEndObserver = videoPlayer
-      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
-        guard let playerItem = self?.videoPlayer.currentItem else {
-          return
-        }
-
-        let urlAsset = playerItem.asset as! AVURLAsset
-        if urlAsset.url != playerItemURL {
-          return
-        }
-
-        guard let item = self?.mediaSourceFromPlayerItem(playerItem: playerItem) else {
-               return
-             }
-         guard let index = self?.mediaSources.firstIndex(of: item) else {
-           return
-         }
-
-        self?.handleEnd(index: index, mediaSource: item)
+      if !tracker.delegate.containsDelegate(self) {
+        tracker.delegate.addDelegate(self)
+      }
     }
   }
 
 
-  init(mediaSources: Array<MediaSource> = [], onChange: @escaping (_ index: Int?, _ mediaSource: MediaSource?) -> Void, onProgress: @escaping (_ index: Int?, _ mediaSource: MediaSource?, _ elapsed: CMTime, _ totalElapsed: CMTime, _ interval: Double) -> Void, onEnd: @escaping (_ index: Int?, _ mediaSource: MediaSource?) -> Void) {
-    self.onChange = onChange
-    self.onProgress = onProgress
-    self.onEnd = onEnd
+  init(mediaSources: Array<MediaSource> = [], bounds: CGRect, onChangeMedia: ChangeMediaEventBlock? = nil) {
+    self.bounds = bounds
+    self.mediaSources = mediaSources
+    self.onChangeMedia = onChangeMedia
     self.update(mediaSources: mediaSources)
 
-    addPeriodicTimeObserver()
   }
 
   var videoMediaSources: Array<MediaSource> {
@@ -132,168 +162,133 @@ class MediaQueuePlayer {
     }
   }
 
+  var allowPrefetching = false
+
   var paused: Bool {
-
-    guard let item = currentItem  else {
-      return false
-    }
-
-    if item.isVideo {
-      return videoPlayer.timeControlStatus == AVPlayer.TimeControlStatus.paused
-    } else if (item.isImage) {
-      return imagePlayer.paused
-    } else {
-      return false
-    }
+    return status == .paused
   }
 
   var playing: Bool {
-    guard let item = currentItem  else {
-      return false
+    return status == .playing
+  }
+
+  private func trackable(mediaSource: MediaSource?) -> TrackableMediaSource? {
+    guard let mediaSource = mediaSource else {
+      return nil
     }
 
-    if item.isVideo {
-      return videoPlayer.timeControlStatus == AVPlayer.TimeControlStatus.playing || videoPlayer.timeControlStatus == AVPlayer.TimeControlStatus.waitingToPlayAtSpecifiedRate
-    } else if (item.isImage) {
-      return !imagePlayer.paused
+    if mediaSource.isVideo {
+      return TrackableVideoSource(mediaSource: mediaSource, player: videoPlayer, playerLayer: playerLayer)
+    } else if mediaSource.isImage {
+      return TrackableImageSource(mediaSource: mediaSource, bounds: bounds)
     } else {
-      return false
+      return nil
     }
   }
 
-
+  var status = TrackableMediaSource.Status.pending
 
   func update(mediaSources: Array<MediaSource>) {
     let _mediaSources = self.mediaSources
-    let removedItems = self.mediaSources.filter { mediaSource in
-      return mediaSources.firstIndex(of: mediaSource) == nil
-    }
-
-    removedItems.forEach { item in
-      stopObservingMediaSource(mediaSource: item)
-    }
 
     var newIndex = 0
     let oldIndex = self.index
     let oldCurrentItem = self.currentItem
+    let oldNextItem = self.nextItem
+    let oldPreviousItem = self.previousItem
 
     if let _currentItem = currentItem {
       newIndex = mediaSources.firstIndex(of: _currentItem) ?? 0
     }
 
+    if newIndex != oldIndex {
+      self.index = newIndex
+    }
+
     self.mediaSources = mediaSources
+
     let newCurrentItem = self.currentItem
-    imagePlayer.update(images: self.imageMediaSources)
+    let newNextItem = self.nextItem
+    let newPreviousItem = self.previousItem
 
+    if newPreviousItem != oldPreviousItem {
+      if newPreviousItem != nil && current?.mediaSource == newPreviousItem {
+        previous = current
+      } else if oldPreviousItem != nil && next?.mediaSource == newPreviousItem {
+        previous = next
+      } else {
+        previous = trackable(mediaSource: newPreviousItem)
+      }
+    }
 
-    if (newIndex != oldIndex || newCurrentItem != oldCurrentItem) {
-      if newCurrentItem != nil && newCurrentItem != oldCurrentItem {
-        if let oldVideoPlayerItem = videoPlayer.currentItem {
-           stopObservingPlayerItem(playerItem: oldVideoPlayerItem)
-         }
-
-        observeMediaSource(mediaSource: newCurrentItem!)
+    if newCurrentItem != oldCurrentItem {
+      let oldCurrent = current
+      if newCurrentItem != nil && next?.mediaSource == newCurrentItem {
+        current = next
+      } else if newCurrentItem != nil && previous?.mediaSource == newCurrentItem {
+        current = previous
+      } else {
+        current = trackable(mediaSource: newCurrentItem)
       }
 
-      if newCurrentItem != nil && newCurrentItem!.isVideo && videoPlayer.currentItem != newCurrentItem!.playerItem {
-        addPeriodicTimeObserver()
+      onChangeMedia?(current, oldCurrent, index)
+    }
 
-        let wasPlaying = playing
-        if newCurrentItem?.id != oldCurrentItem?.id || videoPlayer.currentItem != newCurrentItem?.playerItem {
-          videoPlayer.replaceCurrentItem(with: newCurrentItem!.playerItem!)
+    if newNextItem != oldNextItem {
+      if newNextItem != nil && current?.mediaSource == newNextItem {
+        next = current
+      } else if newNextItem != nil && previous?.mediaSource == newNextItem {
+        next = previous
+      } else {
+        next = trackable(mediaSource: newNextItem)
+      }
+    }
+
+    previous?.alwaysLoop = previousItem != nil && isLast(item: previousItem!)
+    current?.alwaysLoop = currentItem != nil && isLast(item: currentItem!)
+    next?.alwaysLoop = nextItem != nil && isLast(item: nextItem!)
+
+    if let _current = current {
+      if _current.status != status {
+        if _current.status == .pending && status == .playing {
+          _current.load() { [weak self] tracker in
+            guard let this = self else {
+              return
+            }
+
+            guard tracker == this.current else {
+              return
+            }
+
+            if this.status == .playing {
+              _current.start()
+              _current.play()
+            }
+          }
+        } else if _current.status == .loaded && (status == .playing) {
+          _current.start()
+          _current.play()
+        } else if _current.status == .playing && (status != .playing) {
+          _current.pause()
         }
-
-        if playing != wasPlaying && wasPlaying {
-          videoPlayer.seek(to: .zero)
-          videoPlayer.play()
-        }
-      } else if (newCurrentItem != nil && newCurrentItem?.isImage ?? false && oldCurrentItem?.isVideo ?? false) {
-        removePeriodicTimeObserver()
-      }
-      onChange(newIndex, newCurrentItem)
-    }
-
-//    if self.looper != nil {
-//      self.looper?.disableLooping()
-//      self.looper = nil
-//    }
-
-//
-//    if let lastMediaSource = self.mediaSources.last {
-//      if lastMediaSource.isVideo {
-//        if let playerItem = lastMediaSource.playerItem {
-//        }
-//      }
-//    }
-  }
-
-  func shouldLoopItem(mediaSource: MediaSource?) -> Bool {
-    if mediaSource == nil {
-      return false
-    }
-
-    return self.isLast(item: mediaSource!) || self.remainingLoopCount > 0
-  }
-
-  var remainingLoopCount: Int {
-    return min(max(self.desiredLoopCount - self.currentLoopCount, 0), desiredLoopCount)
-  }
-
-  func observeMediaSource(mediaSource: MediaSource) {
-    if mediaSource.isVideo {
-      guard let playerItem = mediaSource.playerItem else {
-        return
       }
 
-      observePlayerItem(playerItem: playerItem)
-    } else {
-
-    }
-  }
-
-  func observePlayerItem(playerItem: AVPlayerItem) {
-    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-
-    addBoundaryTimeObserver()
-  }
-
-  func stopObservingPlayerItem(playerItem: AVPlayerItem) {
-     NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-
-  }
-
-  func stopObservingMediaSource(mediaSource: MediaSource) {
-    if mediaSource.isVideo {
-      guard let playerItem = mediaSource.playerItem else {
-        return
+      if !_current.delegate.containsDelegate(self) {
+        _current.delegate.addDelegate(self)
       }
-
-      stopObservingPlayerItem(playerItem: playerItem)
-    } else {
-
     }
+
+    if allowPrefetching {
+      self.prefetchNext()
+    }
+
   }
 
-  func mediaSourceFromPlayerItem(playerItem: AVPlayerItem) ->  MediaSource?  {
-    return self.videoMediaSources.first { mediaSource in
-      return mediaSource.playerItem == playerItem
-    }
-  }
-
-  @objc(handlePlayerItemReachedEnd:)
-  func handlePlayerItemReachedEnd(notification: NSNotification) {
-    guard let mediaSource = self.mediaSourceFromPlayerItem(playerItem: notification.object as! AVPlayerItem) else {
-      return
-    }
-
-    guard let mediaSourceIndex = self.mediaSources.firstIndex(of: mediaSource) else {
-      return
-    }
-
-    if shouldLoopItem(mediaSource: mediaSource) {
-      self.loopCurrentItem()
-    } else {
-      self.handleEnd(index: mediaSourceIndex, mediaSource: mediaSource)
+  func prefetchNext() {
+    if let _next = next {
+      if (_next.status == .pending || _next.status == .error) {
+        _next.load()
+      }
     }
   }
 
@@ -305,6 +300,14 @@ class MediaQueuePlayer {
     return item == mediaSources.last
   }
 
+  var previousItem: MediaSource? {
+    if (index - 1 > 0) && mediaSources.count > 0 {
+      return mediaSources[index - 1]
+    } else {
+      return nil
+    }
+  }
+
   var currentItem: MediaSource? {
     if mediaSources.count > index {
       return mediaSources[index]
@@ -314,96 +317,89 @@ class MediaQueuePlayer {
   }
 
   var nextItem: MediaSource? {
-    return mediaSources[min(index + 1, max(mediaSources.count - 1, 0))]
+    if index + 1 < mediaSources.count {
+      return mediaSources[index + 1]
+    } else {
+      return nil
+    }
   }
 
   func play() {
-
-    if let item = self.currentItem {
-      if item.isVideo {
-        addPeriodicTimeObserver()
-        addBoundaryTimeObserver()
-        videoPlayer.playImmediately(atRate: 1.0)
-      } else if item.isImage {
-        imagePlayer.play { [weak self] _ in
-          self?.advanceToNextItem()
-        }
-      }
-    }
-  }
-
-  func loopCurrentItem() {
-    guard let item = currentItem else {
+    guard let _current = current else {
       return
     }
-
-    if item.isVideo {
-      videoPlayer.seek(to: .zero)
-      if playing {
-        videoPlayer.play()
-      }
-
-      currentLoopCount = currentLoopCount + 1
-    }
+    _current.play()
+    self.status = _current.status
   }
 
   func advance(to: Int) {
     let newIndex = min(to, max(mediaSources.count - 1, 0))
     if (newIndex == index) {
-       guard let currentItem = self.currentItem else {
+       guard let current = self.current else {
          return
        }
 
-      if currentItem.isVideo {
-        videoPlayer.seek(to: .zero)
-      }
+      current.restart()
       return;
     }
 
-    let oldItem = currentItem
-    self.index = newIndex
-
-
-    guard let currentItem = self.currentItem else {
-      return
-    }
-
-
-    if let _oldItem = oldItem {
-      stopObservingMediaSource(mediaSource: _oldItem)
-    }
-
-    if videoEndObserver != nil {
-      videoPlayer.removeTimeObserver(videoEndObserver)
-      videoEndObserver = nil
-    }
-
-    observeMediaSource(mediaSource: currentItem)
-
-    if currentItem.isVideo {
-
-      self.currentLoopCount = 0
-      addPeriodicTimeObserver()
-      addBoundaryTimeObserver()
-      
-      if let playerItem = currentItem.playerItem {
-        videoPlayer.replaceCurrentItem(with: playerItem)
-        videoPlayer.seek(to: .zero)
-      }
+    var oldCurrent = current
+    if newIndex == index - 1 {
+      self.index = newIndex
+      next = current
+      current = previous == nil ? trackable(mediaSource: currentItem) : previous
+      previous = trackable(mediaSource: previousItem)
+    } else if newIndex == index + 1 {
+      self.index = newIndex
+      current = next == nil ? trackable(mediaSource: currentItem) : next
+      next = trackable(mediaSource: nextItem)
     } else {
-      removePeriodicTimeObserver()
-      self.imagePlayer.advanceToNextItem { [weak self] _ in
-        self?.handleEnd(index: newIndex, mediaSource: currentItem)
-      }
+      self.index = newIndex
+      previous = trackable(mediaSource: previousItem)
+      current = trackable(mediaSource: currentItem)
+      next = trackable(mediaSource: nextItem)
     }
 
-    onChange(self.index, self.currentItem)
+    if previous == nil {
+      previous = trackable(mediaSource: previousItem)
+    }
 
-    guard let nextItem = self.nextItem else {
+    if current == nil {
+      current = trackable(mediaSource: currentItem)
+    }
+
+    if next == nil {
+      next = trackable(mediaSource: nextItem)
+    }
+
+    previous?.restart()
+    next?.restart()
+    current?.restart()
+
+    guard let current = self.current else {
       return
     }
 
-    videoPlayer.actionAtItemEnd = .none
+    if !current.delegate.containsDelegate(self) {
+      current.delegate.addDelegate(self)
+    }
+
+    if status == .playing {
+      current.load() { [weak self] tracker in
+        guard tracker == current else {
+          return
+        }
+
+        tracker.start()
+        tracker.play()
+      }
+    }
+
+    if allowPrefetching {
+      self.prefetchNext()
+    }
+
+    onChangeMedia?(current, oldCurrent, index)
   }
 
   func advanceToNextItem() {
@@ -418,46 +414,22 @@ class MediaQueuePlayer {
     self.advance(to: previousIndex)
   }
 
-  func handleProgress(index: Int, mediaSource: MediaSource, elapsed: CMTime, interval: Double) {
-    self.onProgress(index, mediaSource, CMTime(seconds: elapsed.seconds, preferredTimescale: CMTimeScale(NSEC_PER_SEC)), CMTime(seconds: elapsed.seconds + loopDuration, preferredTimescale: CMTimeScale(NSEC_PER_SEC)), interval)
-  }
-
-  func handleEnd(index: Int, mediaSource: MediaSource) {
-    self.onEnd(index, mediaSource)
-  }
-
   func pause() {
-    removePeriodicTimeObserver()
-    if playing {
-      videoPlayer.pause()
+    guard let _current = current else {
+      return
     }
-
-    if !imagePlayer.paused {
-      imagePlayer.pause()
-    }
-  }
-
-  func removePeriodicTimeObserver() {
-      if let videoTimeObserverToken = videoTimeObserverToken {
-        videoPlayer.removeTimeObserver(videoTimeObserverToken)
-        self.videoTimeObserverToken = nil
-      }
+    _current.pause()
+    self.status = _current.status
   }
 
   func stop() {
     videoPlayer.pause()
     videoPlayer.replaceCurrentItem(with: nil)
-    removePeriodicTimeObserver()
-    if currentItem != nil {
-      stopObservingMediaSource(mediaSource: currentItem!)
-    }
-    imagePlayer.stop()
+    current?.stop()
+    previous?.stop()
+    next?.stop()
     playerLayer.removeFromSuperlayer()
-
-    if videoEndObserver != nil {
-      videoPlayer.removeTimeObserver(videoEndObserver)
-      videoEndObserver = nil
-    }
+    status = .pending
   }
 
   deinit {

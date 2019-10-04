@@ -65,17 +65,8 @@ class MediaSource : NSObject  {
     return _videoAsset
   }
 
-  lazy var playerItem: AVPlayerItem? = {
-//    guard let asset = self.videoAsset else {
-//      return nil
-//    }
-
-
-    let _playerItem = AVPlayerItem(asset: asset!)
-    
-    return _playerItem
-  }()
-
+  var playerItem: AVPlayerItem? = nil
+  
   var isVideo: Bool {
     return self.mimeType == MimeType.mp4
   }

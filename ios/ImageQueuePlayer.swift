@@ -19,7 +19,7 @@ class ImageQueuePlayer {
     return timer?.state == Repeater.State.paused || timer == nil
   }
 
-  func pause() {
+    func pause() {
     self.timer?.pause()
   }
 

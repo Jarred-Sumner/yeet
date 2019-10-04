@@ -18,7 +18,46 @@ enum MediaPlayerContentType {
 }
 
 @objc(MediaPlayer)
-class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
+class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
+  func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
+    guard mediaSource == current && current != nil else {
+      return
+    }
+
+    let item = mediaSource.mediaSource
+
+    self.onLoad([
+      "index": index,
+      "id": item.id,
+      "status": mediaSource.status.rawValue,
+      "url": item.uri.absoluteString,
+    ])
+  }
+
+  func onProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
+    let item = mediaSource.mediaSource
+
+    guard item == currentItem else {
+      return
+    }
+
+    guard let index = mediaQueue?.index else {
+      return
+    }
+
+    guard self.canSendEvents else {
+      return
+    }
+
+    self.onProgress([
+      "index": index,
+      "id": item.id,
+      "url": item.uri.absoluteString,
+      "elapsed": elapsed,
+      "interval": TrackableMediaSource.periodicInterval,
+    ])
+  }
+
   var imageView: YeetImageView? = nil
   var videoView: YeetVideoView? = nil {
     didSet (newValue) {
@@ -55,39 +94,30 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
       if mediaQueue == nil {
         mediaQueue = MediaQueuePlayer(
           mediaSources: newValue,
-          onChange: { [weak self] newIndex, mediaSource in
-            self?.handleChange(index: newIndex, mediaSource: mediaSource)
-          },
-          onProgress: { [weak self] newIndex, mediaSource, elapsed, totalElapsed, interval in
-            guard let index = newIndex else {
-              return
-            }
-
-            guard let item = mediaSource else {
-              return
-            }
-
-            if self?.canSendEvents ?? false {
-              self?.onProgress([
-                "index": index,
-                "id": item.id,
-                "url": item.uri.absoluteString,
-                "assetPosition": CMTimeGetSeconds(elapsed),
-                "interval": interval,
-                "elapsed": CMTimeGetSeconds(totalElapsed),
-              ])
-            }
-        }) { [weak self] newIndex, mediaSource in
-          if self?.canSendEvents ?? false {
-            self?.onEnd([
-              "index": newIndex!,
-              "id": mediaSource!.id,
-              "url": mediaSource!.uri.absoluteString,
-            ])
+          bounds: bounds
+        )  { [weak self] newMedia, oldMedia, index in
+          guard let this = self else {
+            return
           }
+
+          if let old = oldMedia {
+            if old.delegate.containsDelegate(this) {
+              old.delegate.removeDelegate(this)
+            }
+          }
+
+          if let new = newMedia {
+            if new.delegate.containsDelegate(this) {
+             new.delegate.addDelegate(this)
+             }
+          }
+
+          guard let index = this.mediaQueue?.index else {
+            return
+          }
+
+          this.handleChange(index: index, mediaSource: newMedia?.mediaSource)
         }
-
-
 
         self.setNeedsLayout()
       } else {
@@ -103,6 +133,10 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
 
   var currentItem: MediaSource? {
     return mediaQueue?.currentItem
+  }
+
+  var current: TrackableMediaSource? {
+    return mediaQueue?.current
   }
 
   @objc(paused)
@@ -205,6 +239,10 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
     super.layoutSubviews()
 
     layoutContentView()
+
+    if bounds != mediaQueue?.bounds {
+      mediaQueue?.bounds = bounds
+    }
   }
 
   var isContentViewImage: Bool { return type(of: contentView) == YeetImageView.self }
@@ -245,15 +283,10 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
 
         self.imageView = imageView
         self.addSubview(imageView)
-        imageView.onLoadImage = { [weak self] response in
-          
-
-          self?.mediaQueue?.play()
-        }
       }
       self.imageView?.frame = bounds
 
-      self.imageView?.source = mediaQueue!.currentItem
+      self.imageView?.source = current as! TrackableImageSource?
       self.contentType = MediaPlayerContentType.image
     }
   }
@@ -283,7 +316,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
       if contentViewShouldChange {
         this.setNeedsDisplay()
       } else if this.shouldShowImageView {
-        this.imageView?.source = mediaSource
+        this.imageView?.source = this.current as! TrackableImageSource?
       }
     }
 
@@ -339,20 +372,34 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
         return
       }
 
-      guard this.hasAutoPlayed == false else {
-        return
-      }
+      this.current?.load() { [weak self] source in
+        guard let this = self else {
+          return
+        }
 
-      guard this.autoPlay else {
-        return
-      }
+        guard source == this.current else {
+          return
+        }
 
-      if this.contentType == MediaPlayerContentType.video {
-        this.mediaQueue?.videoPlayer.seek(to: .zero)
-      }
 
-      this.play()
-      this.hasAutoPlayed = true
+        if source.mediaSource.isVideo {
+          source.onLoad()
+        }
+
+        source.start()
+
+        guard this.hasAutoPlayed == false else {
+           return
+         }
+
+         guard this.autoPlay else {
+           return
+         }
+
+        source.play()
+
+        this.hasAutoPlayed = true
+      }
     }
 
   }
@@ -391,8 +438,6 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
     let index = mediaQueue!.index
     let error = item.isVideo ? mediaQueue!.videoPlayer.error : nil
 
-
-
     self.onLoad([
       "index": index,
       "id": item.id,
@@ -400,6 +445,10 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating {
       "error": error,
       "url": item.uri.absoluteString,
     ])
+  }
+
+  func handleLoad() {
+    
   }
 
   @objc(invalidate)
