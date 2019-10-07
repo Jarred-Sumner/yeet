@@ -8,13 +8,20 @@ import {
 import React from "react";
 
 const VIEW_NAME = "MediaPlayerView";
-const NativeMediaPlayer = requireNativeComponent(VIEW_NAME);
+let NativeMediaPlayer;
+if (typeof NativeMediaPlayer === "undefined") {
+  NativeMediaPlayer = requireNativeComponent(VIEW_NAME);
+}
+
+type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
 export class MediaPlayer extends React.Component {
   nativeRef = React.createRef();
 
+  static NativeModule = NativeModules["MediaPlayerViewManager"];
+
   callNativeMethod = (name, args = null) => {
-    UIManager.dispatchViewManagerCommand(
+    return UIManager.dispatchViewManagerCommand(
       findNodeHandle(this),
       UIManager.getViewManagerConfig(VIEW_NAME).Commands[name],
       args
@@ -36,20 +43,58 @@ export class MediaPlayer extends React.Component {
   };
 
   advance = (index: number) => {
-    this.callNativeMethod("advance", [index]);
+    return MediaPlayer.NativeModule.advance(findNodeHandle(this), index);
   };
 
-  goNext = () => {
-    this.callNativeMethod("goNext");
+  goNext = (cb: MediaPlayerCallbackFunction = function() {}) => {
+    return new Promise((resolve, reject) => {
+      MediaPlayer.NativeModule.goNext(index, (err, res) =>
+        err ? reject(err) : resolve(res)
+      );
+    });
   };
 
-  goBack = () => {
-    this.callNativeMethod("goBack");
+  goBack = (cb: MediaPlayerCallbackFunction = function() {}) => {
+    return new Promise((resolve, reject) => {
+      MediaPlayer.NativeModule.goBack(findNodeHandle(this), (err, res) =>
+        err ? reject(err) : resolve(res)
+      );
+    });
   };
 
   setNativeProps = nativeProps => {
     this.nativeRef.current.setNativeProps(nativeProps);
   };
+
+  shouldComponentUpdate(nextProps) {
+    const {
+      paused,
+      sources,
+      style,
+      onProgress,
+      onChangeItem,
+      onEnd,
+      autoPlay,
+      prefetch
+    } = this.props;
+
+    if (
+      paused !== nextProps.paused ||
+      autoPlay !== nextProps.autoPlay ||
+      onProgress !== nextProps.onProgress ||
+      onChangeItem !== nextProps.onChangeItem ||
+      onEnd !== nextProps.onEnd ||
+      style != nextProps.style ||
+      prefetch != nextProps.prefetch
+    ) {
+      return true;
+    }
+
+    const currentSourceIDs = sources.map(({ id }) => id).join("-");
+    const newSourceIDs = nextProps.map(({ id }) => id).join("-");
+
+    return currentSourceIDs !== newSourceIDs;
+  }
 
   componentDidUpdate(prevProps) {
     const { paused } = this.props;
@@ -66,8 +111,9 @@ export class MediaPlayer extends React.Component {
     const {
       sources,
       style,
-
+      prefetch,
       onEnd,
+      id,
       paused = false,
       onProgress,
       onChangeItem
@@ -78,6 +124,8 @@ export class MediaPlayer extends React.Component {
         style={style}
         sources={sources}
         onEnd={onEnd}
+        id={id}
+        prefetch={prefetch}
         onProgress={onProgress}
         onChangeItem={onChangeItem}
         autoPlay={this.props.autoPlay}

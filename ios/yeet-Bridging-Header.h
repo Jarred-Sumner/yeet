@@ -47,8 +47,9 @@ RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
 
 RCT_EXPORT_VIEW_PROPERTY(source, MediaSource);
 RCT_EXPORT_VIEW_PROPERTY(percentage, Double);
+RCT_EXPORT_VIEW_PROPERTY(id, NSString);
 
-RCT_EXTERN_METHOD(reload:);
+_RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueNode:(nonnull NSNumber*)queueNode, FALSE)
 
 @end
 
@@ -56,6 +57,8 @@ RCT_EXTERN_METHOD(reload:);
 
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(autoPlay, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(prefetch, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(id, NSString);
 RCT_EXPORT_VIEW_PROPERTY(sources, MediaSourceArray);
 RCT_EXPORT_VIEW_PROPERTY(onLoad, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock);
@@ -66,8 +69,12 @@ RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);
 
 RCT_EXTERN_METHOD(pause:);
 RCT_EXTERN_METHOD(play:);
-RCT_EXTERN_METHOD(goNext:);
-RCT_EXTERN_METHOD(goBack:);
-RCT_EXTERN_METHOD(advance::);
+RCT_EXTERN_METHOD(goNext:::);
+RCT_EXTERN_METHOD(goBack:::);
+RCT_EXTERN_METHOD(advance:(nonnull NSNumber*)tag index:(nonnull NSNumber*)node callback:(RCTResponseSenderBlock)callback);
+
+_RCT_EXTERN_REMAP_METHOD(advance, advance:(nonnull NSNumber*)tag index:(nonnull NSNumber*)node resolve:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject, NO);
+_RCT_EXTERN_REMAP_METHOD(goNextWithResolver, goNextWithResolver::::, NO);
+_RCT_EXTERN_REMAP_METHOD(goBackWithResolver, goBackWithResolver::::, NO);
 
 @end

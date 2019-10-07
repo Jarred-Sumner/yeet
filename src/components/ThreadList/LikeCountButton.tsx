@@ -26,9 +26,7 @@ export const LikeCountButton = ({ id, onPress }) => {
     variables: { id },
     fetchPolicy: "cache-only"
   });
-  const {
-    currentUser: { id: userId = null }
-  } = React.useContext(UserContext);
+  const { userId } = React.useContext(UserContext);
 
   const post = (query.data || {}).post;
 

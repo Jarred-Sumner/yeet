@@ -17,7 +17,11 @@ import Foundation
 
   init(frame: CGRect, playerLayer: AVPlayerLayer) {
     self.playerLayer = playerLayer
+    playerLayer.videoGravity = .resizeAspectFill
+
     super.init(frame: frame)
+
+    playerLayer.frame = frame
   }
 
   required init?(coder: NSCoder) {
@@ -28,8 +32,8 @@ import Foundation
     super.layoutSublayers(of: layer)
     if playerLayer.superlayer == nil  && layer != playerLayer {
       playerLayer.frame = layer.bounds
-      playerLayer.videoGravity = .resizeAspectFill
-      self.layer.addSublayer(playerLayer  )
+
+      self.layer.addSublayer(playerLayer)
     }
   }
 

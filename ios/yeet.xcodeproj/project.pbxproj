@@ -27,7 +27,6 @@
 		8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489923222C3F00E816E8 /* YeetExportData.swift */; };
 		8330489C23222D4800E816E8 /* EditorExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489B23222D4800E816E8 /* EditorExport.swift */; };
 		8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489D23223B0D00E816E8 /* VideoProducer.swift */; };
-		8330EAEA23416C2200A6D67B /* ImageQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */; };
 		83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */; };
 		8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051D232B0912004B2FF7 /* YeetTextInputView.swift */; };
 		83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */; };
@@ -37,6 +36,8 @@
 		838A18BB2328528E00FC8C22 /* WebP.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 838A18B72328528E00FC8C22 /* WebP.framework */; };
 		838A18BC2328528E00FC8C22 /* WebPDemux.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 838A18B82328528E00FC8C22 /* WebPDemux.framework */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
+		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
+		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
 		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
 		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
@@ -93,7 +94,6 @@
 		8330489923222C3F00E816E8 /* YeetExportData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetExportData.swift; sourceTree = "<group>"; };
 		8330489B23222D4800E816E8 /* EditorExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExport.swift; sourceTree = "<group>"; };
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
-		8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageQueuePlayer.swift; sourceTree = "<group>"; };
 		83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableWebpDecoder.swift; sourceTree = "<group>"; };
 		83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CGPath+HighlightedCorners.swift"; sourceTree = "<group>"; };
 		8347051D232B0912004B2FF7 /* YeetTextInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextInputView.swift; sourceTree = "<group>"; };
@@ -106,6 +106,8 @@
 		838A18B62328528E00FC8C22 /* WebPDecoder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDecoder.framework; sourceTree = "<group>"; };
 		838A18B72328528E00FC8C22 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
 		838A18B82328528E00FC8C22 /* WebPDemux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDemux.framework; sourceTree = "<group>"; };
+		839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableVideoSource.swift; sourceTree = "<group>"; };
+		839E8B4123481460004BC67E /* TrackableImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableImageSource.swift; sourceTree = "<group>"; };
 		83A72AFE23302EDD00453B25 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
 		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
@@ -204,6 +206,8 @@
 			children = (
 				83DC88DB2340559A00FBD467 /* MediaSource.swift */,
 				8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */,
+				839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */,
+				839E8B4123481460004BC67E /* TrackableImageSource.swift */,
 				83DC88DD23405F0800FBD467 /* MediaPlayer.swift */,
 				83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */,
 				83E34D1D23442467001321C0 /* MediaFrameView.swift */,
@@ -212,7 +216,6 @@
 				83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */,
 				83E45AC72341A6F60091D443 /* YeetVideoView.swift */,
 				83161E8B2344758D00C271F3 /* AVCachableAsset.swift */,
-				8330EAE923416C2200A6D67B /* ImageQueuePlayer.swift */,
 				83E1A52323459CFA00646DF9 /* WebpImageDecoder.swift */,
 			);
 			name = MediaPlayer;
@@ -540,7 +543,9 @@
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
 				8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */,
 				83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */,
+				839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */,
 				83E1A52423459CFA00646DF9 /* WebpImageDecoder.swift in Sources */,
+				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
 				83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
 				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
@@ -552,7 +557,6 @@
 				83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */,
 				83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */,
 				83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */,
-				8330EAEA23416C2200A6D67B /* ImageQueuePlayer.swift in Sources */,
 				833048942322000D00E816E8 /* YeetExporter.swift in Sources */,
 				83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */,
 				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,

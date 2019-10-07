@@ -74,12 +74,12 @@ const threadStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject
   },
   touchableLayer: {
-    zIndex: 2,
+    zIndex: 6,
     position: "relative",
     justifyContent: "flex-end"
   },
   overlayLayer: {
-    zIndex: 2,
+    zIndex: 5,
     alignSelf: "flex-end",
     justifyContent: "flex-end"
   },
@@ -116,7 +116,7 @@ const threadStyles = StyleSheet.create({
     justifyContent: "center"
   },
   gradientLayer: {
-    zIndex: 1
+    zIndex: 4
   },
   remixCount: {
     color: "white",
@@ -187,7 +187,7 @@ const AnimatedProfile = React.forwardRef(
 
       const top = Animated.interpolate(animationProgress, {
         inputRange: [0, 1],
-        outputRange: [endY, Animated.sub(y, BAR_HEIGHT + 1)],
+        outputRange: [endY, Animated.sub(y, BAR_HEIGHT + 2)],
         extrapolate: Animated.Extrapolate.CLAMP
       });
 
@@ -395,52 +395,56 @@ class ThreadContainer extends React.Component<Props, State> {
   postIndexAnimation: Animated.BackwardCompatibleWrapper = null;
   backwardsProgressAnimation: Animated.BackwardCompatibleWrapper = null;
 
-  loadNextPost = (_postIndex: number, animateFaster: boolean = false) => {
+  loadNextPost = async (_postIndex: number, animateFaster: boolean = false) => {
     this.isAnimatingToNextPost = true;
 
     const postIndex =
       typeof _postIndex === "number" ? _postIndex : this.state.postIndex;
 
     if (this.state.postIndex === 0 && _postIndex === 0) {
-      this.mediaPlayerRef.current.advance(0);
       this.isAnimatingToNextPost = false;
       this.cancelAnimations();
+
+      this.forwardProgressValue.setValue(0);
+
+      await this.mediaPlayerRef.current.advance(0);
+      this.mediaPlayerRef.current.play();
+
       return Promise.resolve();
     }
 
     if (animateFaster) {
-      this.postIndexValue.setValue(postIndex);
-      this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {
-        this.mediaPlayerRef.current.advance(postIndex);
-      });
-
-      this.isAnimatingToNextPost = false;
-      this.cancelAnimations();
-      return Promise.resolve();
-    }
-
-    return new Promise(async (resolve, reject) => {
-      await new Promise((resolve, reject) => {
-        window.requestAnimationFrame(() => {
-          this.cancelAnimations();
-
-          this.backwardProgressValue.setValue(1.0);
-          this.forwardProgressValue.setValue(1.0);
-          resolve();
-        });
-      });
-
-      this.isRunningProgressAnimation = true;
       this.isAnimatingToNextPost = true;
 
-      if (postIndex !== this.state.nextPostIndex) {
-        this.setState({ nextPostIndex: postIndex });
-      }
+      this.cancelAnimations();
+      this.forwardProgressValue.setValue(0);
 
-      const post = this.props.posts[postIndex];
-      const segmentRef = this.segmentRefs[post.id];
+      this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {});
+      await this.mediaPlayerRef.current.advance(postIndex);
 
-      const { width, height, y, x } = await new Promise((resolve, reject) => {
+      this.postIndexValue.setValue(postIndex);
+      this.mediaPlayerRef.current.play();
+      this.isAnimatingToNextPost = false;
+      return;
+    }
+
+    this.cancelAnimations();
+
+    this.backwardProgressValue.setValue(1.0);
+    this.forwardProgressValue.setValue(1.0);
+
+    this.isRunningProgressAnimation = true;
+    this.isAnimatingToNextPost = true;
+
+    if (postIndex !== this.state.nextPostIndex) {
+      this.setState({ nextPostIndex: postIndex });
+    }
+
+    const post = this.props.posts[postIndex];
+    const segmentRef = this.segmentRefs[post.id];
+
+    const [{ width, height, y, x }, { x: endX, y: endY }] = await Promise.all([
+      new Promise((resolve, reject) => {
         UIManager.measureLayout(
           findNodeHandle(segmentRef.current),
           findNodeHandle(this.overlayRef.current),
@@ -449,37 +453,28 @@ class ThreadContainer extends React.Component<Props, State> {
             resolve({ x, y, width, height });
           }
         );
-      });
-
-      // const x = this.seekbarRef.current.segmentByPostID(this.post.id);
-
-      const { x: endX, y: endY } = await new Promise((resolve, reject) => {
+      }),
+      new Promise((resolve, reject) => {
         this.profileRef.current.measureInWindow((x, y, width, height) => {
           resolve({ x, y, width, height });
         });
-      });
+      })
+    ]);
 
-      await new Promise((resolve, reject) =>
-        window.requestAnimationFrame(() => {
-          this.profileAnimationStartHeight.setValue(height);
-          this.profileAnimationStartWidth.setValue(width);
-          this.profileAnimationStartX.setValue(x);
-          this.profileAnimationStartY.setValue(y);
-          this.profileAnimationEndX.setValue(endX);
-          this.profileAnimationEndY.setValue(endY);
+    // const x = this.seekbarRef.current.segmentByPostID(this.post.id);
+    this.profileAnimationStartHeight.setValue(height);
+    this.profileAnimationStartWidth.setValue(width);
+    this.profileAnimationStartX.setValue(x);
+    this.profileAnimationStartY.setValue(y);
+    this.profileAnimationEndX.setValue(endX);
+    this.profileAnimationEndY.setValue(endY);
 
-          resolve();
-        })
-      );
+    this.mediaFrameRef.current.captureFrame(this.mediaPlayerRef);
+    await this.mediaPlayerRef.current.advance(postIndex);
 
-      await new Promise((resolve, reject) =>
-        window.requestAnimationFrame(() => {
-          this.cancelAnimations();
-          this.isAnimatingNextPost.setValue(1);
-          resolve();
-        })
-      );
+    this.isAnimatingNextPost.setValue(1);
 
+    await new Promise((resolve, reject) => {
       const backwardsProgressAnimation = Animated.timing(
         this.backwardProgressValue,
         {
@@ -523,21 +518,11 @@ class ThreadContainer extends React.Component<Props, State> {
           reject();
         }
       });
+    });
 
-      this.mediaPlayerRef.current.advance(postIndex);
-      this.mediaPlayerRef.current.pause();
-    }).then(
-      () => {
-        this.isAnimatingNextPost.setValue(0);
-        this.isAnimatingToNextPost = false;
-        this.mediaPlayerRef.current.play();
-      },
-      () => {
-        this.isAnimatingToNextPost = false;
-        this.isAnimatingNextPost.setValue(0);
-        this.mediaPlayerRef.current.play();
-      }
-    );
+    this.isAnimatingNextPost.setValue(0);
+    this.isAnimatingToNextPost = false;
+    this.mediaPlayerRef.current.play();
   };
 
   cancelAnimations = () =>
@@ -714,7 +699,7 @@ class ThreadContainer extends React.Component<Props, State> {
   }) => {
     const post = this.props.posts.find(({ media }) => media.id === id);
 
-    if (!post || this.isAnimatingToNextPost) {
+    if (!post || this.isAnimatingToNextPost || id !== this.post.media.id) {
       return;
     }
 
@@ -722,9 +707,6 @@ class ThreadContainer extends React.Component<Props, State> {
     if (progress > 1) {
       progress = progress - Math.floor(progress);
     }
-
-    const isRestarting =
-      this.lastProgress !== null && this.lastProgress > progress;
 
     const isAboutToAdvance =
       this.state.postIndex < this.props.posts.length - 1 &&
@@ -747,6 +729,9 @@ class ThreadContainer extends React.Component<Props, State> {
           this.forwardProgressAnimation = null;
         }
       });
+
+      this.mediaFrameRef.current.captureFrame(this.mediaPlayerRef);
+
       return;
     }
 
@@ -772,6 +757,9 @@ class ThreadContainer extends React.Component<Props, State> {
 
     this.lastProgress = progress;
   };
+
+  mediaFrameRef = React.createRef();
+  nextMediaFrameRef = React.createRef();
 
   render() {
     const {
@@ -845,7 +833,7 @@ class ThreadContainer extends React.Component<Props, State> {
               <Animated.View
                 style={{
                   position: "absolute",
-                  zIndex: 1,
+                  zIndex: 3,
                   width,
                   height,
                   opacity: Animated.eq(this.isAnimatingNextPost, 1),
@@ -876,6 +864,8 @@ class ThreadContainer extends React.Component<Props, State> {
               >
                 <MediaFrame
                   source={sources[this.state.postIndex]}
+                  ref={this.mediaFrameRef}
+                  id={thread.id}
                   style={{
                     width,
                     height
@@ -901,7 +891,7 @@ class ThreadContainer extends React.Component<Props, State> {
               <Animated.View
                 style={{
                   position: "absolute",
-                  zIndex: 2,
+                  zIndex: 3,
                   width,
                   height,
                   transform: [
@@ -949,8 +939,10 @@ class ThreadContainer extends React.Component<Props, State> {
               >
                 <MediaPlayer
                   sources={sources}
+                  id={thread.id}
                   autoPlay={this.state.autoPlay && this.props.isVisible}
                   paused={!this.state.isPlaying}
+                  prefetch={isVisible}
                   ref={this.mediaPlayerRef}
                   onProgress={this.handleProgress}
                   onEnd={this.handlePostEnded}
@@ -995,8 +987,7 @@ class ThreadContainer extends React.Component<Props, State> {
               threadStyles.touchableLayer,
               {
                 width,
-                height: height - 120,
-                zIndex: 3
+                height: height - 120
               }
             ]}
           >
@@ -1133,7 +1124,7 @@ class ThreadContainer extends React.Component<Props, State> {
             </View>
 
             <View style={{ height: BAR_HEIGHT }}>
-              {posts.length > 1 && (
+              {posts.length > 1 && isVisible && (
                 <View
                   style={{
                     flexDirection: "row",

@@ -142,6 +142,7 @@ PODS:
   - libwebp/mux (1.0.3):
     - libwebp/demux
   - libwebp/webp (1.0.3)
+  - MemoryCache (1.1.0)
   - MulticastDelegateSwift (2.1.4)
   - nanopb (0.3.901):
     - nanopb/decode (= 0.3.901)
@@ -436,6 +437,7 @@ DEPENDENCIES:
   - Folly (from `../node_modules/react-native/third-party-podspecs/Folly.podspec`)
   - glog (from `../node_modules/react-native/third-party-podspecs/glog.podspec`)
   - KTVHTTPCache (~> 2.0.0)
+  - MemoryCache
   - MulticastDelegateSwift
   - Nuke
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
@@ -521,6 +523,7 @@ SPEC REPOS:
     - KTVCocoaHTTPServer
     - KTVHTTPCache
     - libwebp
+    - MemoryCache
     - MulticastDelegateSwift
     - nanopb
     - Nuke
@@ -676,6 +679,7 @@ SPEC CHECKSUMS:
   KTVCocoaHTTPServer: df8d7b861e603ff8037e9b2138aca2563a6b768d
   KTVHTTPCache: 588c3eb16f6bd1e6fde1e230dabfb7bd4e490a4d
   libwebp: 057912d6d0abfb6357d8bb05c0ea470301f5d61e
+  MemoryCache: 145f843f3bc78432693f0670bc643475c9bfdbf0
   MulticastDelegateSwift: 84c42e7a0a31385d8222bbbb4c89bcdb00cb5f4d
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
   Nuke: 757b88d4ef35a40366cf08c2cd8ea8d12142dbbf
@@ -736,6 +740,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 68945a9d5245b2a8ab0a797c6333b0d4bc7c0547
   Yoga: d8c572ddec8d05b7dba08e4e5f1924004a177078
 
-PODFILE CHECKSUM: 32ecf8f5913d0d4b393153954d257330cfcc96d1
+PODFILE CHECKSUM: d78a0524d323a6bb36c91ecd151530aa994b1bb6
 
 COCOAPODS: 1.7.5

@@ -28,6 +28,8 @@ class YeetImageView : UIImageView {
       self._source = newValue
 
       if (newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) {
+        old?.hasLoaded = false
+        old?.stop()
         self.loadImage()
       }
    }
@@ -48,6 +50,10 @@ class YeetImageView : UIImageView {
 
   @objc open override func nuke_display(image: Image?) {
     self.image = image
+
+    DispatchQueue.main.async { [weak self] in
+      self?._source?.onLoad()
+    }
   }
 
   func loadImage() {
@@ -57,18 +63,8 @@ class YeetImageView : UIImageView {
     }
 
     let url = YeetImageView.imageUri(source: _source.mediaSource, bounds: bounds)
-    self.imageTask = Nuke.loadImage(with: ImageRequest(url: url, processors: [], priority: .normal, options: ImageRequestOptions()), into: self) { [weak self] response in
-      self?.handleLoad(response: response)
-    }
-  }
-
-  func handleLoad(response: Result<ImageResponse, ImagePipeline.Error>) {
-    do {
-      try response.get()
-      self._source?.onLoad()
-    } catch  {
-      print("[YeetImageView] \(error)")
-    }
+    self.contentMode = .scaleAspectFit
+    self.imageTask = Nuke.loadImage(with: ImageRequest(url: url, processors: [], priority: .normal, options: ImageRequestOptions()), into: self)
   }
 
   static func imageUri(source: MediaSource, bounds: CGRect) -> URL {
@@ -94,7 +90,7 @@ class YeetImageView : UIImageView {
     return URL(string: "https://i.webthing.co/\(cropRectString),\(Int(floor(maxX)))x/\(source.uri.absoluteString)")!
   }
 
-  static func imageTask(source: MediaSource, bounds: CGRect, progress: ImageTask.ProgressHandler? = nil, completion: @escaping ImageTask.Completion) -> ImageTask? {
+  static func imageTask(source: MediaSource, bounds: CGRect, progress: ImageTask.ProgressHandler? = nil, completion: ImageTask.Completion? = nil) -> ImageTask? {
     return ImagePipeline.shared.loadImage(with: imageUri(source: source, bounds: bounds), progress: progress, completion: completion)
   }
 

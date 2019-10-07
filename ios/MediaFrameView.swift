@@ -9,17 +9,89 @@
 import Foundation
 import Nuke
 
+@discardableResult
+func measure<A>(name: String = "", _ block: () -> A) -> A {
+    let startTime = CACurrentMediaTime()
+    let result = block()
+    let timeElapsed = CACurrentMediaTime() - startTime
+    print("Time: \(name) - \(timeElapsed)")
+    return result
+}
+
 @objc class MediaFrameView : UIImageView {
+  init() {
+    super.init(frame: .zero)
+
+    self.contentMode = .scaleAspectFill
+    self.clipsToBounds =  true
+
+    NotificationCenter.default.addObserver(forName: NSNotification.Name(rawValue: MediaQueuePlayer.Notification.willChangeCurrentItem.rawValue), object: nil, queue: .none) { [weak self] notification in
+      guard let objects = notification.object as! Array<AnyObject?>? else {
+        return
+      }
+
+      guard let mediaQueue = objects[0] as! MediaQueuePlayer? else {
+        return
+      }
+
+      guard let trackableMedia = objects[1] as! TrackableMediaSource? else {
+        return
+      }
+
+      guard mediaQueue.id == self?.id else {
+        return
+      }
+
+      if trackableMedia.mediaSource.isVideo {
+        let _trackableMedia = trackableMedia as! TrackableVideoSource
+        if let playerItem = _trackableMedia.player.currentItem {
+
+          self?.image = self?.imageFrom(mediaId: _trackableMedia.mediaSource.id, playerItem: playerItem, output: _trackableMedia.player.currentItem?.outputs.first! as! AVPlayerItemVideoOutput)
+        }
+
+      }
+    }
+  }
+
+  static var frameCache: NSCache<NSString, UIImage> = {
+    let cache = NSCache<NSString, UIImage>()
+    cache.countLimit = 3
+
+    return cache
+
+  }()
+
+
+  required init?(coder: NSCoder) {
+    fatalError()
+  }
+
+  var playerItemObserver: NSKeyValueObservation? = nil
+
 
   @objc var source: MediaSource? = nil {
     didSet {
       self.updateSource()
+      self.observePlayerItem()
     }
   }
 
-  @objc var percentage = 1.0 {
-    didSet {
-      self.updateSource()
+  @objc var percentage = 1.0
+//    didSet {
+//      self.updateSource()
+//    }
+//  }
+
+  func observePlayerItem() {
+    if playerItemObserver != nil {
+      playerItemObserver?.invalidate()
+      playerItemObserver = nil
+    }
+
+    if source?.isVideo ?? false {
+      playerItemObserver = source?.observe(\MediaSource.playerItem) {[weak self]  _,_ in
+        self?.updateSource()
+      }
     }
   }
 
@@ -29,50 +101,83 @@ import Nuke
   }
 
 
+  var imageGenerator: AVAssetImageGenerator? = nil {
+    willSet (newValue) {
+      self.imageGenerator?.cancelAllCGImageGeneration()
+    }
+  }
+
+  var output: AVPlayerItemVideoOutput? = nil {
+    willSet (newValue) {
+      if let _output = self.output {
+        source?.playerItem?.remove(_output)
+      }
+    }
+  }
+
+  func imageFrom(mediaId: String, playerItem: AVPlayerItem, output: AVPlayerItemVideoOutput) -> UIImage? {
+    var cachedImage = MediaFrameView.frameCache.object(forKey: mediaId as NSString)
+
+    if cachedImage == nil {
+      measure { [weak self] in
+        cachedImage = self?._imageFrom(playerItem: playerItem, output: output)
+      }
+      if let _cachedImage = cachedImage {
+        MediaFrameView.frameCache.setObject(_cachedImage, forKey: mediaId as NSString)
+      }
+    }
+
+    return cachedImage
+  }
+
+  func _imageFrom(playerItem: AVPlayerItem, output: AVPlayerItemVideoOutput) -> UIImage? {
+    guard playerItem.status == .readyToPlay else {
+       return nil
+     }
+
+      if output.hasNewPixelBuffer(forItemTime: playerItem.duration) {
+        if let buffer = output.copyPixelBuffer(forItemTime: playerItem.duration, itemTimeForDisplay: nil) {
+          let ciImage = CIImage.init(cvPixelBuffer: buffer)
+          let ciContext = CIContext()
+          ciContext.createCGImage(ciImage, from: CGRect(origin: .zero, size: CGSize(width: CVPixelBufferGetWidth(buffer), height: CVPixelBufferGetHeight(buffer))) )
+          let image = UIImage(ciImage: ciImage)
+
+          ciContext.clearCaches()
+
+          return image
+        }
+      }
+
+    return nil
+
+  }
 
   func updateSource() {
-
     guard let source = self.source else {
       self.image = nil
       return
     }
 
-    if source.isVideo {
-      DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-        guard let asset = source.asset else {
-          return
-        }
+   if source.isImage {
+      let url = YeetImageView.imageUri(source: source, bounds: bounds)
+      self.contentMode = .center
 
-        guard let percentage = self?.percentage else {
-          return
-        }
-
-        let imageGenerator = AVAssetImageGenerator(asset: asset)
-        imageGenerator.appliesPreferredTrackTransform = true
-
-        let seconds = source.duration.doubleValue
-        let time = CMTime(seconds: max(min(seconds * percentage, seconds), 0), preferredTimescale: .max)
-
-        imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { [weak self] time, image, actualTime, result, error in
-          DispatchQueue.main.async { [weak self] in
-            guard result == AVAssetImageGenerator.Result.succeeded else {
-              print("ERROR \(error)")
-              return
-            }
-
-            if let _image = image {
-              self?.image = UIImage(cgImage: _image)
-            }
-
-            self?.contentMode = .scaleAspectFill
-            self?.clipsToBounds =  true
-          }
-        }
-      }
-
-
-    } else if source.isImage {
-      Nuke.loadImage(with: source.uri, into: self)
+      self.imageTask = Nuke.loadImage(with: url, into: self)
+      self.imageGenerator = nil
     }
+  }
+
+  var imageTask: ImageTask? = nil {
+    willSet {
+      self.imageTask?.cancel()
+    }
+  }
+
+  @objc(id) var id: String? = nil
+
+  deinit {
+    self.imageGenerator?.cancelAllCGImageGeneration()
+    self.imageTask?.cancel()
+    NotificationCenter.default.removeObserver(self)
   }
 }

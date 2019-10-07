@@ -18,12 +18,14 @@ export enum AuthState {
 
 export type UserContextType = {
   currentUser: CurrentUserQuery_currentUser;
+  userId: string | null;
   authState: AuthState;
   requireAuthentication: (cb) => boolean;
 };
 
 const DEFAULT_USER_CONTEXT = {
   currentUser: null,
+  userId: null,
   authState: AuthState.checking,
   requireAuthentication: cb => true
 };
@@ -48,7 +50,13 @@ const buildContextValue = memoize(
     currentUser: CurrentUserQuery_currentUser,
     authState: AuthState,
     requireAuthentication: () => boolean
-  ) => ({ currentUser, authState, requireAuthentication })
+  ) => ({
+    currentUser,
+    authState,
+    requireAuthentication,
+    userId:
+      typeof currentUser === "object" && !!currentUser ? currentUser.id : null
+  })
 );
 
 export let globalUserContext = DEFAULT_USER_CONTEXT;
@@ -101,14 +109,6 @@ class RawUserContextProvider extends React.Component<Props, State> {
 
   componentDidUpdate(prevProps: Props, prevState: State) {
     let newState: Partial<State> = {};
-
-    console.log({
-      currentUser: this.props.currentUser,
-      data: this.props.data,
-      isLoading: this.props.isLoading,
-      isSignedIn: this.props.isSignedIn,
-      other: this.props.other
-    });
 
     if (
       prevProps.currentUser !== this.props.currentUser ||

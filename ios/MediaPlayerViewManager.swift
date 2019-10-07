@@ -12,7 +12,7 @@ import Foundation
 class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
   func invalidate() {
-    MediaSource.clearCache()
+//    MediaSource.clearCache()
   }
 
   override static func moduleName() -> String! {
@@ -29,16 +29,16 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
   }
 
   func withView(tag: NSNumber, block: @escaping (_ mediaPlayer: MediaPlayer) -> Void) {
-     DispatchQueue.main.async { [weak self] in
-      if let view = self?.bridge.uiManager.view(forReactTag: tag) {
-        block(view as! MediaPlayer)
+    DispatchQueue.main.async { [weak self] in
+      if let _view = (self?.bridge.uiManager.view(forReactTag: tag) as! MediaPlayer?) {
+        block(_view)
       }
     }
   }
 
   @objc(pause:)
   func pause(tag: NSNumber) {
-    withView(tag: tag) { [weak self] view in
+    withView(tag: tag) { view in
       view.pause()
     }
   }
@@ -50,27 +50,70 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     }
   }
 
-  @objc(goNext:)
-  func goNext(tag: NSNumber) {
+  @objc(goNext::)
+  func goNext(tag: NSNumber, cb: @escaping RCTResponseSenderBlock) {
     withView(tag: tag) { [weak self] view in
-      view.goNext()
+      view.goNext { tracker in
+        cb([nil, tracker])
+      }
     }
   }
 
-  @objc(goBack:)
-  func goBack(tag: NSNumber) {
+  @objc(goNextWithResolver:::)
+  func goNextWithResolver(tag: NSNumber, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
     withView(tag: tag) { [weak self] view in
-      view.goBack()
+      view.goNext { tracker in
+        resolver(tracker)
+      }
     }
   }
 
-  @objc(advance::)
-  func advance(tag: NSNumber, index: NSNumber) {
+  @objc(goBack::)
+  func goBack(tag: NSNumber, cb: @escaping RCTResponseSenderBlock) {
     withView(tag: tag) { [weak self] view in
-      view.advance(to: index.intValue)
+      view.goBack { tracker in
+        cb([nil, tracker])
+      }
     }
   }
 
+  @objc(goBackWithResolver:::)
+  func goBackWithResolver(tag: NSNumber, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+    withView(tag: tag) { [weak self] view in
+      view.goBack { tracker in
+        resolver(tracker)
+      }
+    }
+  }
+
+  @objc(advance:index:callback:)
+  func advance(_ tag: NSNumber, _ index: NSNumber, _ cb: @escaping RCTResponseSenderBlock) {
+    withView(tag: tag) { view in
+      view.advance(to: index.intValue) { tracker in
+        cb([nil, tracker])
+      }
+    }
+  }
+
+  @objc(advance:index:resolve:rejecter:)
+  func advance(_ tag: NSNumber, _ index: NSNumber, _ resolve: @escaping RCTPromiseResolveBlock, _ rejecter: @escaping RCTPromiseRejectBlock) {
+     withView(tag: tag) { view in
+       view.advance(to: index.intValue) { tracker in
+         resolve(tracker)
+       }
+     }
+   }
 
   
+
+  static let cacheDelegate = MediaPlayerCacheDelegate()
+ 
+}
+
+class MediaPlayerCacheDelegate : NSObject, NSCacheDelegate {
+  func cache(_ cache: NSCache<AnyObject, AnyObject>, willEvictObject obj: Any) {
+    let mediaSource = obj as! MediaSource
+
+    print("WILL EVICT \(mediaSource.id)")
+  }
 }

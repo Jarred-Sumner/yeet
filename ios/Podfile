@@ -34,6 +34,7 @@ target 'yeet' do
   pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
   pod 'KTVHTTPCache', '~> 2.0.0'
   pod 'MulticastDelegateSwift'
+  pod 'MemoryCache'
 
 
   pod 'SwiftyBeaver'

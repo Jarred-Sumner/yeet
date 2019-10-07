@@ -26,15 +26,16 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     let item = mediaSource.mediaSource
 
-    self.onLoad([
-      "index": index,
-      "id": item.id,
-      "status": mediaSource.status.rawValue,
-      "url": item.uri.absoluteString,
-    ])
+    self.sendStatusUpdate(status: status, mediaSource: mediaSource)
   }
 
-  func onProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
+  @objc(prefetch) var prefetch: Bool = false {
+    didSet(newValue) {
+      self.mediaQueue?.allowPrefetching = newValue
+    }
+  }
+
+  func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
     let item = mediaSource.mediaSource
 
     guard item == currentItem else {
@@ -77,6 +78,12 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
+  @objc(id) var id: NSString? {
+    didSet(newValue) {
+      mediaQueue?.id = newValue as String?
+    }
+  }
+
   @objc(sources)
   var sources: Array<MediaSource> {
     get {
@@ -94,7 +101,9 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
       if mediaQueue == nil {
         mediaQueue = MediaQueuePlayer(
           mediaSources: newValue,
-          bounds: bounds
+          bounds: bounds,
+          id: id as String?,
+          allowPrefetching: prefetch
         )  { [weak self] newMedia, oldMedia, index in
           guard let this = self else {
             return
@@ -107,9 +116,9 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
           }
 
           if let new = newMedia {
-            if new.delegate.containsDelegate(this) {
-             new.delegate.addDelegate(this)
-             }
+            if !new.delegate.containsDelegate(this) {
+              new.delegate.addDelegate(this)
+            }
           }
 
           guard let index = this.mediaQueue?.index else {
@@ -118,6 +127,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
           this.handleChange(index: index, mediaSource: newMedia?.mediaSource)
         }
+
 
         self.setNeedsLayout()
       } else {
@@ -336,19 +346,19 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     mediaQueue?.play()
   }
 
-  @objc(goNext)
-  func goNext() {
-    mediaQueue?.advanceToNextItem()
+  func goNext(cb: TrackableMediaSource.onLoadCallback? = nil) {
+    mediaQueue?.advanceToNextItem(cb: cb)
   }
 
-  @objc(goBack)
-  func goBack() {
-    mediaQueue?.advanceToPreviousItem()
+  func goBack(cb: TrackableMediaSource.onLoadCallback? = nil) {
+    mediaQueue?.advanceToPreviousItem(cb: cb)
   }
 
-  @objc(advance:)
-  func advance(to: Int) {
-    mediaQueue?.advance(to: to)
+  @objc(advance::)
+  func advance(to: Int, cb: TrackableMediaSource.onLoadCallback? = nil) {
+    mediaQueue?.advance(to: to) { tracker in
+      cb?(tracker)
+    }
   }
 
   @objc(uiManagerDidPerformLayout:)
@@ -381,24 +391,13 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
           return
         }
 
-
-        if source.mediaSource.isVideo {
-          source.onLoad()
+        if (this.autoPlay && !this.hasAutoPlayed) {
+          source.play()
+          this.hasAutoPlayed = true
+        } else {
+          source.prepare()
         }
 
-        source.start()
-
-        guard this.hasAutoPlayed == false else {
-           return
-         }
-
-         guard this.autoPlay else {
-           return
-         }
-
-        source.play()
-
-        this.hasAutoPlayed = true
       }
     }
 
@@ -445,6 +444,40 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
       "error": error,
       "url": item.uri.absoluteString,
     ])
+  }
+
+  func sendStatusUpdate(status: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
+    guard canSendEvents else {
+      return
+    }
+
+    guard mediaSource.mediaSource.id == current?.mediaSource.id else {
+      return
+    }
+
+    if status == .loaded || status == .ready {
+      self.onLoad([
+        "index": index,
+        "id": mediaSource.mediaSource.id,
+        "status": mediaSource.status.rawValue,
+        "url": mediaSource.mediaSource.uri.absoluteString,
+      ])
+    } else if status == .ended {
+      self.onEnd([
+        "index": index,
+        "id": mediaSource.mediaSource.id,
+        "status": mediaSource.status.rawValue,
+        "url": mediaSource.mediaSource.uri.absoluteString,
+      ])
+    } else if status == .error {
+      self.onError([
+        "index": index,
+        "id": mediaSource.mediaSource.id,
+        "status": mediaSource.status.rawValue,
+        "url": mediaSource.mediaSource.uri.absoluteString,
+      ])
+    }
+
   }
 
   func handleLoad() {
