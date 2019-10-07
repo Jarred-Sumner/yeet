@@ -24,7 +24,7 @@ class MediaSource : NSObject  {
   let pixelRatio: NSNumber
   let bounds: CGRect
 
-  static let ENABLE_VIDE_CACHE = false
+  static let ENABLE_VIDE_CACHE = true
 
 
   static var cache: NSCache<NSString, MediaSource> = {
@@ -44,7 +44,7 @@ class MediaSource : NSObject  {
 //  lazy var asset = AVURLAsset(url: uri)
 
   lazy var assetURI: URL = {
-    if !MediaSource.ENABLE_VIDE_CACHE {
+    if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 {
       return uri
     }
 

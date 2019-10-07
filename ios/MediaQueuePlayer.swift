@@ -53,9 +53,11 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
      if #available(iOS 10.0, *) {
        player.automaticallyWaitsToMinimizeStalling = true
      }
+
+
     return player
   }()
-  lazy var playerLayer = AVPlayerLayer(player: self.videoPlayer)
+  lazy var playerLayer: AVPlayerLayer  = AVPlayerLayer(player: self.videoPlayer)
   var mediaSources: Array<MediaSource> = []
 
   var index: Int = 0
@@ -450,11 +452,13 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
 
         tracker.start()
 
-        cb?(tracker)
-
         if isVideoToVideo {
           self?.videoPlayer.seek(to: .zero)
         }
+
+        cb?(tracker)
+
+
       }
     }
 
@@ -495,7 +499,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     current?.stop()
     previous?.stop()
     next?.stop()
-    playerLayer.removeFromSuperlayer()
+//    playerLayer?.removeFromSuperlayer()
     status = .pending
   }
 

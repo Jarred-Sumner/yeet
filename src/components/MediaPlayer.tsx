@@ -42,8 +42,15 @@ export class MediaPlayer extends React.Component {
     this.callNativeMethod("pause");
   };
 
-  advance = (index: number) => {
-    return MediaPlayer.NativeModule.advance(findNodeHandle(this), index);
+  advance = (index: number, withFrame: Boolean = false) => {
+    if (withFrame) {
+      return MediaPlayer.NativeModule.advanceWithFrame(
+        findNodeHandle(this),
+        index
+      );
+    } else {
+      return MediaPlayer.NativeModule.advance(findNodeHandle(this), index);
+    }
   };
 
   goNext = (cb: MediaPlayerCallbackFunction = function() {}) => {

@@ -17,6 +17,7 @@
     "@react-native-community/async-storage": "^1.6.1",
     "@react-native-community/cameraroll": "^1.2.1",
     "@react-native-community/masked-view": "^0.1.1",
+    "@react-native-community/netinfo": "^4.4.0",
     "@react-navigation/core": "3.5.1",
     "@terrylinla/react-native-sketch-canvas": "^0.8.0",
     "apollo-cache-inmemory": "^1.6.2",

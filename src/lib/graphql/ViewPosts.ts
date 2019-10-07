@@ -28,6 +28,9 @@ export interface ViewPosts_posts_media {
   mimeType: string | null;
   duration: number;
   pixelRatio: number | null;
+  highQualityUrl: string;
+  mediumQualityUrl: string;
+  lowQualityUrl: string;
   url: string;
 }
 

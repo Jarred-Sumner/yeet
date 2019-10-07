@@ -13,11 +13,11 @@ import SwiftyBeaver
 class TrackableVideoSource : TrackableMediaSource {
   let player: AVPlayer
 
-  let playerLayer: AVPlayerLayer
+  var playerLayer: AVPlayerLayer?
   var boundaryObserverToken: Any? = nil
   var periodicObserverToken: Any? = nil
 
-  init(mediaSource: MediaSource, player: AVPlayer, playerLayer: AVPlayerLayer) {
+  init(mediaSource: MediaSource, player: AVPlayer, playerLayer: AVPlayerLayer?) {
     self.player = player
     self.playerLayer = playerLayer
 

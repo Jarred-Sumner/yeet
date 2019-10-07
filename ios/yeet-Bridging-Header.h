@@ -49,7 +49,7 @@ RCT_EXPORT_VIEW_PROPERTY(source, MediaSource);
 RCT_EXPORT_VIEW_PROPERTY(percentage, Double);
 RCT_EXPORT_VIEW_PROPERTY(id, NSString);
 
-_RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueNode:(nonnull NSNumber*)queueNode, FALSE)
+_RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueNode:(nonnull NSNumber*)queueNode async:(BOOL)async, FALSE)
 
 @end
 
@@ -72,6 +72,7 @@ RCT_EXTERN_METHOD(play:);
 RCT_EXTERN_METHOD(goNext:::);
 RCT_EXTERN_METHOD(goBack:::);
 RCT_EXTERN_METHOD(advance:(nonnull NSNumber*)tag index:(nonnull NSNumber*)node callback:(RCTResponseSenderBlock)callback);
+RCT_EXTERN_METHOD(advanceWithFrame:(nonnull NSNumber*)tag index:(nonnull NSNumber*)node resolve:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject);
 
 _RCT_EXTERN_REMAP_METHOD(advance, advance:(nonnull NSNumber*)tag index:(nonnull NSNumber*)node resolve:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject, NO);
 _RCT_EXTERN_REMAP_METHOD(goNextWithResolver, goNextWithResolver::::, NO);

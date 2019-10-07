@@ -28,6 +28,9 @@ export interface LikePost_likePost_media {
   mimeType: string | null;
   duration: number;
   pixelRatio: number | null;
+  highQualityUrl: string;
+  mediumQualityUrl: string;
+  lowQualityUrl: string;
   url: string;
 }
 

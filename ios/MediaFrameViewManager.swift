@@ -25,35 +25,64 @@ class MediaFrameViewManager: RCTViewManager {
   }
 
 
-  @objc(updateFrame:queueNode:)
-  func updateFrame(node: NSNumber, queueNode: NSNumber) {
-    DispatchQueue.main.async { [weak self] in
-      guard let queuePlayerView = (self?.bridge.uiManager.view(forReactTag: queueNode) as! MediaPlayer?) else {
-        return
+  @objc(updateFrame:queueNode:async:)
+  func updateFrame(node: NSNumber, queueNode: NSNumber, async: Bool = true) {
+    if async {
+      DispatchQueue.main.async { [weak self] in
+        guard let queuePlayerView = (self?.bridge.uiManager.view(forReactTag: queueNode) as! MediaPlayer?) else {
+          return
+        }
+        guard let frameView = (self?.bridge.uiManager.view(forReactTag: node) as! MediaFrameView?) else {
+          return
+        }
+
+         guard let current = queuePlayerView.current else {
+           return
+         }
+
+         guard let playerItem = current.mediaSource.playerItem else {
+           return
+         }
+
+          DispatchQueue.global(qos: .userInteractive).sync {
+            weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
+
+            DispatchQueue.main.async {
+              if frameView.image != image {
+                frameView.image = image
+              }
+            }
+          }
+
       }
-      guard let frameView = (self?.bridge.uiManager.view(forReactTag: node) as! MediaFrameView?) else {
-        return
-      }
+    } else {
+      DispatchQueue.main.sync { [weak self] in
+        guard let queuePlayerView = (self?.bridge.uiManager.view(forReactTag: queueNode) as! MediaPlayer?) else {
+          return
+        }
+        guard let frameView = (self?.bridge.uiManager.view(forReactTag: node) as! MediaFrameView?) else {
+          return
+        }
 
-       guard let current = queuePlayerView.current else {
-         return
-       }
+         guard let current = queuePlayerView.current else {
+           return
+         }
 
-       guard let playerItem = current.mediaSource.playerItem else {
-         return
-       }
+         guard let playerItem = current.mediaSource.playerItem else {
+           return
+         }
 
-      DispatchQueue.global(qos: .userInteractive).sync {
-        weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
 
-        DispatchQueue.main.async {
+          weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
+
           if frameView.image != image {
             frameView.image = image
           }
-        }
-      }
 
+
+      }
     }
+
 
   }
 }

@@ -26,6 +26,9 @@ fragment PostFragment on Post {
     mimeType
     duration
     pixelRatio
+    highQualityUrl
+    mediumQualityUrl
+    lowQualityUrl
     url
     __typename
   }

@@ -22,6 +22,7 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
   init() {
     super.init(frame: .zero)
 
+    self.isUserInteractionEnabled = false
     self.contentMode = .scaleAspectFill
     self.clipsToBounds =  true
 

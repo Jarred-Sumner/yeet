@@ -2,7 +2,19 @@
 import { memoize, uniq, uniqBy } from "lodash";
 import * as React from "react";
 import { Mutation, Query } from "react-apollo";
-import { findNodeHandle, StyleSheet, UIManager, View } from "react-native";
+import {
+  findNodeHandle,
+  StyleSheet,
+  UIManager,
+  View,
+  InteractionManager
+} from "react-native";
+import {
+  useNetInfo,
+  NetInfoStateType,
+  NetInfoCellularGeneration
+} from "@react-native-community/netinfo";
+
 import { BaseButton } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
@@ -278,6 +290,7 @@ class ThreadContainer extends React.Component<Props, State> {
   forwardProgressValue: Animated.Value<number>;
   backwardProgressValue: Animated.Value<number>;
   progressValue: Animated.Node<number>;
+  showMediaFrame: Animated.Value<number>;
 
   constructor(props) {
     super(props);
@@ -287,6 +300,7 @@ class ThreadContainer extends React.Component<Props, State> {
     this.isAnimatingNextPost = new Animated.Value<number>(0);
     this.forwardProgressValue = new Animated.Value<number>(0.0);
     this.backwardProgressValue = new Animated.Value<number>(1.0);
+    this.showMediaFrame = new Animated.Value<number>(0);
 
     this.progressValue = Animated.cond(
       Animated.eq(this.isAnimatingNextPost, 1),
@@ -419,11 +433,12 @@ class ThreadContainer extends React.Component<Props, State> {
       this.cancelAnimations();
       this.forwardProgressValue.setValue(0);
 
-      this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {});
-      await this.mediaPlayerRef.current.advance(postIndex);
+      await this.mediaPlayerRef.current.advance(postIndex, true);
+
+      this.setState({ postIndex, nextPostIndex: postIndex + 1 });
 
       this.postIndexValue.setValue(postIndex);
-      this.mediaPlayerRef.current.play();
+
       this.isAnimatingToNextPost = false;
       return;
     }
@@ -522,7 +537,6 @@ class ThreadContainer extends React.Component<Props, State> {
 
     this.isAnimatingNextPost.setValue(0);
     this.isAnimatingToNextPost = false;
-    this.mediaPlayerRef.current.play();
   };
 
   cancelAnimations = () =>
@@ -759,7 +773,6 @@ class ThreadContainer extends React.Component<Props, State> {
   };
 
   mediaFrameRef = React.createRef();
-  nextMediaFrameRef = React.createRef();
 
   render() {
     const {
@@ -773,7 +786,8 @@ class ThreadContainer extends React.Component<Props, State> {
       isNextVisible,
       isPreviousVisible,
       width,
-      paused
+      paused,
+      isSlowConnection
     } = this.props;
 
     const post = this.post;
@@ -781,11 +795,23 @@ class ThreadContainer extends React.Component<Props, State> {
 
     const sources = this.props.posts.map(
       ({
-        media: { id, url, mimeType, width, height, duration, pixelRatio },
+        media: {
+          id,
+          url,
+          highQualityUrl,
+          mediumQualityUrl,
+          lowQualityUrl,
+          mimeType,
+          width,
+          height,
+          duration,
+          pixelRatio
+        },
         bounds,
         autoplaySeconds
       }) => ({
-        url,
+        // url: lowQualityUrl,
+        url: isSlowConnection ? mediumQualityUrl : highQualityUrl,
         id,
         mimeType,
         width,
@@ -836,7 +862,7 @@ class ThreadContainer extends React.Component<Props, State> {
                   zIndex: 3,
                   width,
                   height,
-                  opacity: Animated.eq(this.isAnimatingNextPost, 1),
+                  opacity: this.isAnimatingNextPost,
                   transform: [
                     {
                       scale: Animated.interpolate(this.progressValue, {
@@ -1170,6 +1196,14 @@ export const ViewThread = ({ isVisible, thread, ...otherProps }) => {
   const { currentUser, requireAuthentication, authState } = React.useContext(
     UserContext
   );
+  const netInfo = useNetInfo();
+
+  let isSlowConnection =
+    !netInfo.isInternetReachable || netInfo.type === NetInfoStateType.vpn;
+  if (netInfo.type === NetInfoStateType.cellular) {
+    isSlowConnection =
+      netInfo.details.cellularGeneration !== NetInfoCellularGeneration["4g"];
+  }
 
   return (
     <Mutation mutation={LIKE_POST_MUTATION}>
@@ -1195,6 +1229,7 @@ export const ViewThread = ({ isVisible, thread, ...otherProps }) => {
               fetchMore={fetchMore}
               currentUser={currentUser}
               requireAuthentication={requireAuthentication}
+              isSlowConnection={isSlowConnection}
               authState={authState}
               posts={uniqBy([thread.firstPost, ...posts], "id")}
               {...otherProps}

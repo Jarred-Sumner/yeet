@@ -10,10 +10,11 @@ export class MediaFrame extends React.Component {
   nativeRef = React.createRef();
   static NativeModule = NativeModules["MediaFrameViewManager"];
 
-  captureFrame = (mediaQueueRef: React.RefObject<any>) => {
+  captureFrame = (mediaQueueRef: React.RefObject<any>, async = true) => {
     return MediaFrame.NativeModule.updateFrame(
       findNodeHandle(this),
-      findNodeHandle(mediaQueueRef.current)
+      findNodeHandle(mediaQueueRef.current),
+      async
     );
   };
 

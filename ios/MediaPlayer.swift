@@ -78,6 +78,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
+
   @objc(id) var id: NSString? {
     didSet(newValue) {
       mediaQueue?.id = newValue as String?
@@ -245,6 +246,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     return desiredContentType == MediaPlayerContentType.image
   }
 
+
+
   override func layoutSubviews() {
     super.layoutSubviews()
 
@@ -253,6 +256,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     if bounds != mediaQueue?.bounds {
       mediaQueue?.bounds = bounds
     }
+
   }
 
   var isContentViewImage: Bool { return type(of: contentView) == YeetImageView.self }
@@ -279,7 +283,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     if shouldShowVideoView {
       if self.videoView == nil {
-        let videoView = YeetVideoView(frame: self.bounds, playerLayer: mediaQueue!.playerLayer)
+        let videoView = YeetVideoView(frame: self.bounds, playerLayer: playerLayer!)
+
         self.videoView = videoView
         self.addSubview(videoView)
       } else {
@@ -354,10 +359,38 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     mediaQueue?.advanceToPreviousItem(cb: cb)
   }
 
-  @objc(advance::)
-  func advance(to: Int, cb: TrackableMediaSource.onLoadCallback? = nil) {
-    mediaQueue?.advance(to: to) { tracker in
+  @objc(advance:::)
+  func advance(to: Int, withFrame: Bool = false, cb: TrackableMediaSource.onLoadCallback? = nil) {
+    var didPause = true
+
+
+    let wasPlaying = mediaQueue?.playing == true
+
+    let nextTrack = mediaQueue?.mediaSources[to]
+    let shouldSwap = nextTrack !== currentItem && nextTrack?.isVideo ?? false && current?.mediaSource.isVideo ?? false
+
+    weak var asset = currentItem?.asset
+    let time = mediaQueue?.videoPlayer.currentTime()
+
+    mediaQueue?.advance(to: to) { [weak self] tracker in
+//      if (shouldSwap && asset != nil) {
+//        self?.videoView?.swapCurrentItem(playerItem: AVPlayerItem(asset: asset!), time: time!)
+//      }
+
+      if (wasPlaying) {
+        self?.mediaQueue?.pause()
+      }
+
       cb?(tracker)
+
+      if (wasPlaying) {
+        self?.mediaQueue?.play()
+      }
+
+//      if shouldSwap {
+//        self?.videoView?.unswap()
+//      }
+
     }
   }
 

@@ -104,7 +104,15 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
      }
    }
 
-  
+  @objc(advanceWithFrame:index:resolve:rejecter:)
+  func advanceWithFrame(_ tag: NSNumber, _ index: NSNumber, _ resolve: @escaping RCTPromiseResolveBlock, _ rejecter: @escaping RCTPromiseRejectBlock) {
+     withView(tag: tag) { view in
+      view.advance(to: index.intValue, withFrame: true) { tracker in
+         resolve(tracker)
+       }
+     }
+   }
+
 
   static let cacheDelegate = MediaPlayerCacheDelegate()
  
