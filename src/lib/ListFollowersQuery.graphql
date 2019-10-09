@@ -1,0 +1,9 @@
+#import "FollowerListItemFragment.graphql"
+
+query ListFollowers($profileId: ID!, $limit: Int, $offset: Int) {
+  profile(id: $profileId) {
+    followers(limit: $limit, offset: $offset) {
+      ...FollowerListItemFragment
+    }
+  }
+}

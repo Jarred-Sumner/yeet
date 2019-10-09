@@ -35,6 +35,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
   }
 
+  var mediaFrameView = MediaFrameView()
+
   func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
     let item = mediaSource.mediaSource
 
@@ -78,6 +80,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
+  var player = SwappablePlayer()
+
 
   @objc(id) var id: NSString? {
     didSet(newValue) {
@@ -104,7 +108,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
           mediaSources: newValue,
           bounds: bounds,
           id: id as String?,
-          allowPrefetching: prefetch
+          allowPrefetching: prefetch,
+          player: player
         )  { [weak self] newMedia, oldMedia, index in
           guard let this = self else {
             return
@@ -138,9 +143,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
   }
   var mediaQueue: MediaQueuePlayer? = nil
-  var playerLayer : AVPlayerLayer? {
-    return mediaQueue?.playerLayer
-  }
+
 
   var currentItem: MediaSource? {
     return mediaQueue?.currentItem
@@ -215,8 +218,11 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     if (self.sources.count > 0) {
       DispatchQueue.main.async { [weak self] in
         self?.layoutContentView()
+
+        self?.mediaFrameView.isHidden = true
       }
      }
+
   }
 
   var contentView: UIView? {
@@ -257,6 +263,11 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
       mediaQueue?.bounds = bounds
     }
 
+    mediaFrameView.frame = bounds
+
+    if mediaFrameView.superview == nil {
+      self.addSubview(mediaFrameView)
+    }
   }
 
   var isContentViewImage: Bool { return type(of: contentView) == YeetImageView.self }
@@ -283,7 +294,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     if shouldShowVideoView {
       if self.videoView == nil {
-        let videoView = YeetVideoView(frame: self.bounds, playerLayer: playerLayer!)
+        let videoView = YeetVideoView(frame: self.bounds, player: player)
 
         self.videoView = videoView
         self.addSubview(videoView)
@@ -367,30 +378,25 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     let wasPlaying = mediaQueue?.playing == true
 
     let nextTrack = mediaQueue?.mediaSources[to]
-    let shouldSwap = nextTrack !== currentItem && nextTrack?.isVideo ?? false && current?.mediaSource.isVideo ?? false
 
-    weak var asset = currentItem?.asset
-    let time = mediaQueue?.videoPlayer.currentTime()
-
-    mediaQueue?.advance(to: to) { [weak self] tracker in
-//      if (shouldSwap && asset != nil) {
-//        self?.videoView?.swapCurrentItem(playerItem: AVPlayerItem(asset: asset!), time: time!)
+    if withFrame {
+//      if to != mediaQueue?.index {
+//        mediaFrameView.image = mediaFrameView.imageFrom(mediaId: currentItem!.id, playerItem: (mediaQueue?.videoPlayer.currentItem)!, output: currentItem!.videoOutput!)
 //      }
+//      mediaFrameView.isHidden = false
 
-      if (wasPlaying) {
-        self?.mediaQueue?.pause()
-      }
+    }
 
+    if wasPlaying {
+      mediaQueue?.pause()
+    }
+    mediaQueue?.advance(to: to) { [weak self] tracker in
       cb?(tracker)
 
-      if (wasPlaying) {
+      if wasPlaying {
         self?.mediaQueue?.play()
+        
       }
-
-//      if shouldSwap {
-//        self?.videoView?.unswap()
-//      }
-
     }
   }
 
@@ -525,6 +531,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
   deinit {
     mediaQueue?.stop()
+    player.firstPlayer.pause()
+    player.secondPlayer.pause()
     bridge?.uiManager.observerCoordinator.remove(self)
   }
 }

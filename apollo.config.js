@@ -1,7 +1,7 @@
 module.exports = {
   client: {
     service: {
-      name: "moveschat",
+      name: "yeetapp",
       url: "http://localhost:3000/api/graphql",
       // optional headers,
       includes: ["lib", "componetns", "pages"],

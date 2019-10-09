@@ -8,53 +8,43 @@
 
 import Foundation
 
-@objc  class YeetVideoView: UIView {
-  var swapPlayer = AVPlayer()
-  var swapPlayerLayer: AVPlayerLayer
+@objc class YeetVideoView: UIView {
+  var firstPlayerLayer: AVPlayerLayer
+  var secondPlayerLayer: AVPlayerLayer
+  var player: SwappablePlayer
+  var observer: NSKeyValueObservation? = nil
 
-  var playerLayer: AVPlayerLayer {
-    didSet {
-      self.setNeedsLayout()
-    }
-  }
-
-  init(frame: CGRect, playerLayer: AVPlayerLayer) {
-    self.playerLayer = playerLayer
-    playerLayer.videoGravity = .resizeAspectFill
-    swapPlayerLayer = AVPlayerLayer(player: swapPlayer)
-
+  init(frame: CGRect, player: SwappablePlayer) {
+    self.player = player
+    self.firstPlayerLayer = player.firstPlayerLayer
+    self.secondPlayerLayer = player.secondPlayerLayer
+    firstPlayerLayer.videoGravity = .resizeAspectFill
+    secondPlayerLayer.videoGravity = .resizeAspectFill
 
     super.init(frame: frame)
 
-    playerLayer.needsDisplayOnBoundsChange = true
-    playerLayer.frame = frame
+    firstPlayerLayer.needsDisplayOnBoundsChange = true
+    firstPlayerLayer.frame = frame
 
-    swapPlayerLayer.needsDisplayOnBoundsChange = true
-    swapPlayerLayer.frame = frame
-    swapPlayerLayer.isHidden = true
+    secondPlayerLayer.needsDisplayOnBoundsChange = true
+    secondPlayerLayer.frame = frame
 
     layer.needsDisplayOnBoundsChange = true
-    layer.addSublayer(playerLayer)
-    layer.addSublayer(swapPlayerLayer)
-  }
+    layer.addSublayer(firstPlayerLayer)
+    layer.addSublayer(secondPlayerLayer)
 
-  func swapCurrentItem(playerItem: AVPlayerItem, time: CMTime) {
-    guard let player = playerLayer.player else {
-      return
+    observer = player.observe(\SwappablePlayer.currentPlayer, options: .new) { [weak self] player, change in
+      CATransaction.begin()
+      CATransaction.setAnimationDuration(.zero)
+      if change.newValue == self?.firstPlayerLayer.player {
+        self?.firstPlayerLayer.isHidden = false
+        self?.secondPlayerLayer.isHidden = true
+      } else if change.newValue == self?.secondPlayerLayer.player {
+        self?.firstPlayerLayer.isHidden = true
+        self?.secondPlayerLayer.isHidden = false
+      }
+      CATransaction.commit()
     }
-
-    swapPlayer.seek(to: time)
-    swapPlayer.replaceCurrentItem(with: playerItem)
-    swapPlayer.play()
-
-    swapPlayerLayer.isHidden = false
-  }
-
-  func unswap() {
-    swapPlayerLayer.isHidden = true
-    swapPlayer.pause()
-    swapPlayer.replaceCurrentItem(with: nil)
-    swapPlayer.cancelPendingPrerolls()
   }
 
   required init?(coder: NSCoder) {
@@ -64,13 +54,15 @@ import Foundation
   override func layoutSubviews() {
     super.layoutSubviews()
 
-
     CATransaction.begin()
     CATransaction.setAnimationDuration(.zero)
-    playerLayer.frame = layer.bounds
-    swapPlayerLayer.frame = layer.bounds
+    firstPlayerLayer.frame = layer.bounds
+    secondPlayerLayer.frame = layer.bounds
     CATransaction.commit()
+  }
 
+  deinit {
+    observer?.invalidate()
   }
 }
 

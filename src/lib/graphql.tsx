@@ -101,7 +101,8 @@ const persistor = new CachePersistor({
 const client = new ApolloClient({
   link: authLink.concat(httpLink).concat(errorLink),
   cache,
-  fetchPolicy: "cache-and-network"
+  fetchPolicy: "cache-and-network",
+  resolvers: {}
 });
 
 // persistor.purge().then(() => {

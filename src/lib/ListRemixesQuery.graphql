@@ -1,0 +1,9 @@
+#import "./PostListItemFragment.graphql"
+
+query ListRemixes($profileId: ID!, $limit: Int, $offset: Int) {
+  profile(id: $profileId) {
+    posts(limit: $limit, offset: $offset, remix: true) {
+      ...PostListItemFragment
+    }
+  }
+}

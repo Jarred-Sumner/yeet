@@ -48,6 +48,7 @@
   }
 
   [EnableWebpDecoder enable];
+  
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];

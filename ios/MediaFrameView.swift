@@ -136,18 +136,20 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
        return nil
      }
 
-      if output.hasNewPixelBuffer(forItemTime: playerItem.duration) {
-        if let buffer = output.copyPixelBuffer(forItemTime: playerItem.duration, itemTimeForDisplay: nil) {
-          let ciImage = CIImage.init(cvPixelBuffer: buffer)
-          let ciContext = CIContext()
-          ciContext.createCGImage(ciImage, from: CGRect(origin: .zero, size: CGSize(width: CVPixelBufferGetWidth(buffer), height: CVPixelBufferGetHeight(buffer))) )
-          let image = UIImage(ciImage: ciImage)
-
-          ciContext.clearCaches()
-
-          return image
+      let asset = playerItem.asset as! AVURLAsset
+    let time = playerItem.currentTime()
+    do {
+      if asset.url.pathExtension == "mp4" {
+        let imageGenerator = AVAssetImageGenerator(asset: asset)
+        return try UIImage(cgImage: imageGenerator.copyCGImage(at: time, actualTime: nil))
+      } else if output.hasNewPixelBuffer(forItemTime: time) {
+        if let buffer = output.copyPixelBuffer(forItemTime: time, itemTimeForDisplay: nil) {
+          return UIImage(ciImage: CIImage.init(cvPixelBuffer: buffer), scale: CGFloat(1), orientation: .up)
         }
       }
+    } catch {
+      return nil
+    }
 
     return nil
 

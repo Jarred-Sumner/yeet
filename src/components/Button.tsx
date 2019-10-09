@@ -1,67 +1,106 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  ActivityIndicator
-} from "react-native";
+import { View, StyleSheet, ActivityIndicator, Easing } from "react-native";
 import Animated, { Transitioning, Transition } from "react-native-reanimated";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
-import { BorderlessButton } from "react-native-gesture-handler";
+import {
+  BorderlessButton,
+  TouchableHighlight
+} from "react-native-gesture-handler";
 import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
+import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import tinycolor from "tinycolor2";
 
 const styles = StyleSheet.create({
-  primaryColor: {
+  color_primaryColor: {
     backgroundColor: COLORS.primary
+  },
+  color_secondaryColor: {
+    backgroundColor: COLORS.secondary
+  },
+  color_secondaryOpacityColor: {
+    backgroundColor: COLORS.secondaryOpacity
+  },
+  color_muted: {
+    backgroundColor: "#444"
   },
   buttonContainer: {
     borderRadius: 4,
-    height: 46,
+    height: 50,
+    overflow: "visible",
     paddingHorizontal: SPACING.normal,
-    width: 300,
+    maxWidth: 300,
+    width: "100%",
+    flex: 0,
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center"
   },
   buttonText: {
     color: "white",
+    textAlign: "center",
+    textAlignVertical: "center",
     fontSize: 18
   }
 });
 
-export const Button = ({ children, onPress, disabled, style }) => {
+const BUTTON_COLOR_STYLE = {
+  [COLORS.primary]: styles.color_primaryColor,
+  [COLORS.secondary]: styles.color_secondaryColor,
+  [COLORS.secondaryOpacity]: styles.color_secondaryOpacityColor,
+  [COLORS.muted]: styles.color_muted
+};
+
+export const Button = ({
+  children,
+  onPress,
+  disabled,
+  style,
+  color = COLORS.primary
+}) => {
   const scaleTransformValue = React.useRef(new Animated.Value(1));
   const handlePressIn = React.useCallback(() => {
-    Animated.spring(scaleTransformValue.current, {
-      toValue: 1.05,
-      useNativeDriver: true
+    Animated.timing(scaleTransformValue.current, {
+      duration: 100,
+      easing: Easing.ease,
+      toValue: 1.05
     }).start();
-  }, [scaleTransformValue]);
+  }, [scaleTransformValue.current]);
 
   const handlePressOut = React.useCallback(() => {
-    Animated.spring(scaleTransformValue.current, {
-      toValue: 1,
-      useNativeDriver: true
+    Animated.timing(scaleTransformValue.current, {
+      duration: 100,
+      easing: Easing.ease,
+      toValue: 1
     }).start();
-  }, [scaleTransformValue]);
+  }, [scaleTransformValue.current]);
 
   return (
-    <TouchableWithoutFeedback
+    <TouchableHighlight
       disabled={disabled}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       onPress={onPress}
+      underlayColor={color}
+      style={{
+        overflow: "visible",
+        flexDirection: "row",
+        flex: 0,
+        alignSelf: "center",
+        justifyContent: "center",
+        alignItems: "center"
+      }}
     >
       <Animated.View
         style={[
           styles.buttonContainer,
-          styles.primaryColor,
+          BUTTON_COLOR_STYLE[color],
           style,
           {
             opacity: scaleTransformValue.current.interpolate({
               inputRange: [1.0, 1.05],
-              outputRange: [1.0, 0.8]
+              outputRange: [1.0, 0.8],
+              extrapolate: Animated.Extrapolate.CLAMP
             }),
             transform: [
               {
@@ -73,7 +112,7 @@ export const Button = ({ children, onPress, disabled, style }) => {
       >
         <SemiBoldText style={styles.buttonText}>{children}</SemiBoldText>
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </TouchableHighlight>
   );
 };
 

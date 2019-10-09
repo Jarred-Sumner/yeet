@@ -1,4 +1,5 @@
 import { PixelRatio } from "react-native";
+import qs from "qs";
 
 export const IMAGE_HOST = "https://i.webthing.co";
 // export const IMAGE_HOST = "https://d2kjmdvibq1qcy.cloudfront.net"
@@ -24,5 +25,18 @@ const normalizeSize = (size, rawHeight) => {
 };
 
 export const buildImgSrc = (source, rawSize, rawHeight) => {
-  return `${IMAGE_HOST}/${normalizeSize(rawSize, rawHeight)}/${source}`;
+  if (source.startsWith("https://image.mux.com")) {
+    const vars = qs.stringify({
+      ...qs.parse(source.split("?")[1]),
+      // width: PixelRatio.roundToNearestPixel(rawSize),
+      height: PixelRatio.roundToNearestPixel(rawHeight || rawSize),
+      fit_mode: "preserve",
+      start: 0,
+      end: 3
+    });
+
+    return [source.split("?")[0], vars].join("?");
+  } else {
+    return `${IMAGE_HOST}/${normalizeSize(rawSize, rawHeight)}/${source}`;
+  }
 };

@@ -11,15 +11,47 @@ import AVFoundation
 import SwiftyBeaver
 
 class TrackableVideoSource : TrackableMediaSource {
-  let player: AVPlayer
+  var _player: AVPlayer
+  var player: AVPlayer {
+    get {
+      return _player
+    }
 
-  var playerLayer: AVPlayerLayer?
+    set(newValue) {
+      if (newValue == _player) {
+        return
+      }
+
+      let hadPlayerItemInside = self.playerItem != nil && _player.currentItem == self.playerItem!
+
+      let restartObservers = newValue !== _player && isObserving
+      if restartObservers {
+        stopObservers()
+      }
+
+
+
+      _player = player
+
+      if restartObservers {
+        startObservers()
+      }
+
+      if hadPlayerItemInside {
+        _player.replaceCurrentItem(with: nil)
+      }
+
+      if canPlay  {
+        self.start()
+      }
+    }
+  }
   var boundaryObserverToken: Any? = nil
   var periodicObserverToken: Any? = nil
 
-  init(mediaSource: MediaSource, player: AVPlayer, playerLayer: AVPlayerLayer?) {
-    self.player = player
-    self.playerLayer = playerLayer
+  init(mediaSource: MediaSource, player: AVPlayer) {
+    _player = player
+
 
     super.init(mediaSource: mediaSource)
   }
@@ -107,7 +139,7 @@ class TrackableVideoSource : TrackableMediaSource {
 
   func handleLoad(asset: AVURLAsset) {
     self.isAlreadyLoading = false
-    let playerItem = AVPlayerItem(asset: asset)
+    let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["duration", "tracks", "playable"])
     self.playerItem = playerItem
     self.hasLoaded = true
     self.onLoad()
@@ -183,8 +215,11 @@ class TrackableVideoSource : TrackableMediaSource {
     }
 
     if player.currentItem != playerItem {
-      player.seek(to: .zero)
       player.replaceCurrentItem(with: playerItem)
+      player.seek(to: .zero)
+
+//      player.seek(to: .zero)
+      
       self.status = .ready
     }
 

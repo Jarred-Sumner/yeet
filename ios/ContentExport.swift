@@ -234,7 +234,7 @@ class ContentExport {
         let assetExport =  AVAssetExportSession(asset: composition, presetName:AVAssetExportPresetHEVCHighestQuality)
         assetExport?.outputFileType = AVFileType.mp4
         assetExport?.outputURL = url
-        assetExport?.shouldOptimizeForNetworkUse = true
+        assetExport?.shouldOptimizeForNetworkUse = true   
         assetExport?.videoComposition = layercomposition
 
 

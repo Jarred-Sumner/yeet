@@ -44,13 +44,17 @@ export enum IconName {
   background = "background",
   redact = "redact",
   profile = "profile",
-  back = "back"
+  back = "back",
+  notification = "notification"
 }
 
 export const IconPlus = props => <Icon {...props} name={IconName.plus} />;
 export const IconView = props => <Icon {...props} name={IconName.view} />;
 export const IconPlay = props => <Icon {...props} name={IconName.play} />;
 export const IconPhoto = props => <Icon {...props} name={IconName.photo} />;
+export const IconNotification = props => (
+  <Icon {...props} name={IconName.notification} />
+);
 export const IconPencil = props => <Icon {...props} name={IconName.pencil} />;
 export const IconPanels = props => <Icon {...props} name={IconName.panels} />;
 export const IconList = props => <Icon {...props} name={IconName.list} />;

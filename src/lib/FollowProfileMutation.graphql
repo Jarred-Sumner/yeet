@@ -1,0 +1,3 @@
+mutation FollowProfileMutation($profileId: ID!) {
+  followProfile(id: $profileId)
+}

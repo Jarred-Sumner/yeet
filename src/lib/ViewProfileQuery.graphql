@@ -1,0 +1,13 @@
+query ViewProfile($profileId: ID!) {
+  profile(id: $profileId) {
+    id
+    username
+    photoURL
+
+    followersCount
+    remixesCount
+    postsCount
+  }
+
+  following(profileId: $profileId)
+}

@@ -88,7 +88,7 @@ class MediaSource : NSObject  {
       _onLoadAsset.append(callback)
 
       if let _asset = asset {
-        _asset.loadValuesAsynchronously(forKeys: ["duration", "tracks"]) { [weak self] in
+        _asset.loadValuesAsynchronously(forKeys: ["duration", "tracks", "playable"]) { [weak self] in
           guard let this = self else {
             return
           }

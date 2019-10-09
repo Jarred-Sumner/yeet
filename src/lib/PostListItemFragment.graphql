@@ -1,0 +1,14 @@
+fragment PostListItemFragment on Post {
+  id
+  likesCount
+  threadId
+
+  media {
+    id
+    width
+    height
+    pixelRatio
+
+    previewUrl
+  }
+}

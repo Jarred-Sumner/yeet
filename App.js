@@ -32,6 +32,7 @@ import ReplyPage from "./src/screens/ReplyPage";
 import { createBottomTabNavigator } from "react-navigation-tabs";
 import CurrentProfilePage from "./src/screens/CurrentProfile";
 import SearchPage from "./src/screens/Search";
+import NotificationsPage from "./src/screens/Notifications";
 import { Icon, IconName } from "./src/components/Icon";
 import { BottomTabBar } from "./src/components/BottomTabBar";
 
@@ -73,16 +74,18 @@ const Routes = createAppContainer(
                   })
                 }
               ),
+              NotificationsTab: {
+                screen: NotificationsPage
+              },
               ProfileTab: {
                 screen: CurrentProfilePage
-              },
-              SearchTab: {
-                screen: SearchPage
               }
             },
             {
               headerMode: "none",
               tabBarComponent: () => null,
+              initialRouteName: "ProfileTab",
+
               safeAreaInset: {
                 bottom: "never",
                 top: "never",

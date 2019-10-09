@@ -8,10 +8,12 @@
 
 import Foundation
 import Nuke
-
+import SwiftyBeaver
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
   @objc static func enable() {
+    SwiftyBeaver.addDestination(ConsoleDestination())
+
     Nuke.ImageDecoderRegistry.shared.register { (context) -> ImageDecoding? in
         WebPImageDecoder.enable(context: context)
     }

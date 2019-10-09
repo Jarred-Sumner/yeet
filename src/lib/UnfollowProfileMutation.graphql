@@ -1,0 +1,3 @@
+mutation UnfollowProfileMutation($profileId: ID!) {
+  unfollowProfile(id: $profileId)
+}

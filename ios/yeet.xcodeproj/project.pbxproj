@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
@@ -39,6 +38,8 @@
 		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
 		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
+		83CD0583234AF4F900BE093D /* static.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 83CD0582234AF4F900BE093D /* static.mp4 */; };
+		83CD0585234AFA5400BE093D /* SwappablePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CD0584234AFA5400BE093D /* SwappablePlayer.swift */; };
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
 		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
 		83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */; };
@@ -109,6 +110,8 @@
 		839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableVideoSource.swift; sourceTree = "<group>"; };
 		839E8B4123481460004BC67E /* TrackableImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableImageSource.swift; sourceTree = "<group>"; };
 		83A72AFE23302EDD00453B25 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
+		83CD0582234AF4F900BE093D /* static.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = static.mp4; sourceTree = "<group>"; };
+		83CD0584234AFA5400BE093D /* SwappablePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwappablePlayer.swift; sourceTree = "<group>"; };
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
 		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
 		83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaQueuePlayer.swift; sourceTree = "<group>"; };
@@ -204,8 +207,10 @@
 		831C520C233F2FC300F364A3 /* MediaPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				83CD0582234AF4F900BE093D /* static.mp4 */,
 				83DC88DB2340559A00FBD467 /* MediaSource.swift */,
 				8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */,
+				83CD0584234AFA5400BE093D /* SwappablePlayer.swift */,
 				839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */,
 				839E8B4123481460004BC67E /* TrackableImageSource.swift */,
 				83DC88DD23405F0800FBD467 /* MediaPlayer.swift */,
@@ -390,6 +395,7 @@
 				83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
+				83CD0583234AF4F900BE093D /* static.mp4 in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				C7180071329E456BB6DEB0C5 /* Proxima Nova Bold.otf in Resources */,
 				F10E9F60D54F4B658F5AF748 /* Proxima Nova Medium.ttf in Resources */,
@@ -534,6 +540,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83CD0585234AFA5400BE093D /* SwappablePlayer.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,

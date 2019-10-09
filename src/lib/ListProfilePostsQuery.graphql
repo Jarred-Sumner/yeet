@@ -1,0 +1,9 @@
+#import "./PostListItemFragment.graphql"
+
+query ListProfilePosts($profileId: ID!, $limit: Int, $offset: Int) {
+  profile(id: $profileId) {
+    posts(limit: $limit, offset: $offset) {
+      ...PostListItemFragment
+    }
+  }
+}

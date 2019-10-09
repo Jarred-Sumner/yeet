@@ -3,12 +3,19 @@ import { View, StyleSheet } from "react-native";
 
 import Animated from "react-native-reanimated";
 import { RectButton } from "react-native-gesture-handler";
-import { IconHome, IconPlus, IconSearch, IconProfile } from "./Icon";
+import {
+  IconHome,
+  IconPlus,
+  IconSearch,
+  IconProfile,
+  IconNotification
+} from "./Icon";
 import { useNavigation } from "react-navigation-hooks";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
 import { SPACING } from "../lib/styles";
 import LinearGradient from "react-native-linear-gradient";
 import { BAR_HEIGHT } from "./ThreadList/Seekbar";
+import { UserContext, AuthState } from "./UserContext";
 
 export const TAB_BAR_HEIGHT = 56.5;
 export const TAB_BAR_OFFSET = TAB_BAR_HEIGHT + BOTTOM_Y;
@@ -55,18 +62,33 @@ const TabBarIcon = ({ Icon, focused, onPress, route }) => {
 const ROUTES_ICONS_MAPPING = {
   FeedTab: IconHome,
   NewPostStack: IconPlus,
-  SearchTab: IconSearch,
+  NotificationsTab: IconNotification,
   ProfileTab: IconProfile
 };
 
+const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab"];
+
 export const BottomTabBar = ({ style, currentRoute }) => {
   const navigation = useNavigation();
+  const { authState, requireAuthentication } = React.useContext(UserContext);
 
   const openRoute = React.useCallback(
     routeName => {
-      navigation.navigate(routeName);
+      if (
+        REQUIRES_AUTH.includes(routeName) &&
+        authState !== AuthState.loggedIn
+      ) {
+        requireAuthentication(() => openRoute(routeName));
+        return;
+      }
+
+      if (routeName.includes("Stack")) {
+        navigation.navigate(routeName);
+      } else {
+        navigation.navigate(routeName);
+      }
     },
-    [navigation]
+    [navigation, authState, requireAuthentication]
   );
 
   return (

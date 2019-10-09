@@ -10,6 +10,12 @@ import Foundation
 import SDWebImage
 import Nuke
 
+
+enum YeetImageViewResizeMode : String {
+  case aspectFit = "aspectFit"
+  case aspectFill = "aspectFill"
+}
+
 @objc(YeetImageView)
 class YeetImageView : UIImageView {
   @objc var sentOnLoadStart = false
@@ -36,13 +42,32 @@ class YeetImageView : UIImageView {
   }
   var imageTask: ImageTask? = nil
 
+
+  var _resizeMode: YeetImageViewResizeMode = .aspectFill
+  @objc(resizeMode)
+  var resizeMode: String {
+    get {
+      return _resizeMode.rawValue
+    }
+
+    set (newValue) {
+      if YeetImageViewResizeMode.aspectFill.rawValue == newValue {
+        _resizeMode = .aspectFill
+        self.contentMode = .scaleAspectFill
+      } else if YeetImageViewResizeMode.aspectFit.rawValue == newValue {
+        _resizeMode = .aspectFit
+        self.contentMode = .scaleAspectFit
+      }
+    }
+  }
+
   init() {
     super.init(image: nil)
     self.clipsToBounds = true
     
   }
 
-  var onLoadImage:ImageTask.Completion? = nil
+
 
   required init?(coder: NSCoder) {
     fatalError("not implemented")

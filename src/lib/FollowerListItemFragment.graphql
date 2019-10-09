@@ -1,0 +1,5 @@
+fragment FollowerListItemFragment on Profile {
+  id
+  username
+  photoURL
+}
