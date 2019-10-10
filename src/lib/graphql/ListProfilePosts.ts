@@ -45,11 +45,13 @@ export interface ListProfilePosts_profile_posts {
   offset: number;
   limit: number;
   hasMore: boolean;
+  id: string;
   data: ListProfilePosts_profile_posts_data[];
 }
 
 export interface ListProfilePosts_profile {
   __typename: "Profile";
+  id: string;
   posts: ListProfilePosts_profile_posts;
 }
 

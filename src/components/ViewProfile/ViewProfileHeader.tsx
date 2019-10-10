@@ -6,7 +6,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { Avatar } from "../Avatar";
 import { SemiBoldText, MediumText, Text } from "../Text";
-import { Button } from "../Button";
+import { Button, BackButton } from "../Button";
 import { COLORS, SPACING } from "../../lib/styles";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -37,6 +37,12 @@ const styles = StyleSheet.create({
   },
   muted: {
     color: COLORS.muted
+  },
+  backButtonContainer: {
+    position: "absolute",
+    top: TOP_Y,
+    marginTop: SPACING.normal,
+    left: SPACING.normal
   },
   background: {
     zIndex: 0,
@@ -119,6 +125,7 @@ const countStyles = StyleSheet.create({
     width: "100%",
     height: COUNTER_HEIGHT
   },
+
   row: {
     flex: 1,
     height: COUNTER_HEIGHT,
@@ -223,6 +230,7 @@ const ViewProfileHeaderComponent = ({
   followersCount,
   username,
   photoURL,
+  backButtonBehavior,
   isCurrentUser,
   isFollowing,
   translateY,
@@ -265,6 +273,10 @@ const ViewProfileHeaderComponent = ({
       <Background />
 
       <View style={[StyleSheet.absoluteFill, styles.content]}>
+        <View pointerEvents="box-none" style={styles.backButtonContainer}>
+          <BackButton behavior={backButtonBehavior} />
+        </View>
+
         <View style={styles.top}>
           <AvatarComponent
             size={AVATAR_SIZE}
@@ -331,6 +343,7 @@ export class ViewProfileHeader extends React.Component<Props> {
       isFollowing,
       isCurrentUser,
       onChangeSection,
+      backButtonBehavior,
       onFollow,
       onUnfollow,
       section,
@@ -354,6 +367,7 @@ export class ViewProfileHeader extends React.Component<Props> {
         section={section}
         isCurrentUser={isCurrentUser}
         editAvatar={this.handlePressAvatar}
+        backButtonBehavior={backButtonBehavior}
       />
     );
   }

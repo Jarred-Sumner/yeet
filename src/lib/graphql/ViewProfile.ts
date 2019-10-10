@@ -11,6 +11,7 @@ export interface ViewProfile_profile {
   id: string;
   username: string;
   photoURL: string | null;
+  isFollowing: boolean;
   followersCount: number;
   remixesCount: number;
   postsCount: number;
@@ -18,7 +19,6 @@ export interface ViewProfile_profile {
 
 export interface ViewProfile {
   profile: ViewProfile_profile;
-  following: boolean;
 }
 
 export interface ViewProfileVariables {

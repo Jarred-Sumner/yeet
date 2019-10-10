@@ -18,7 +18,7 @@ import {
 import { BaseButton } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
-import { useFocusState } from "react-navigation-hooks";
+import { useFocusState, useNavigation } from "react-navigation-hooks";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import { ViewPosts } from "../../lib/graphql/ViewPosts";
@@ -154,24 +154,46 @@ const threadStyles = StyleSheet.create({
   }
 });
 
-const Profile = React.forwardRef(({ profile, onLayout, hideText }, ref) => (
-  <View style={threadStyles.footer}>
-    <View style={threadStyles.profile}>
-      <View ref={ref} onLayout={onLayout}>
-        <Avatar
-          label={profile.username}
-          size={AVATAR_SIZE}
-          url={profile.photoURL}
-        />
-      </View>
-      <SemiBoldText
-        style={[threadStyles.username, hideText && { display: "none" }]}
-      >
-        {profile.username}
-      </SemiBoldText>
+const ProfileComponent = React.forwardRef(
+  ({ profile, onLayout, hideText, onPress }, ref) => (
+    <View style={threadStyles.footer}>
+      <BaseButton onPress={onPress}>
+        <View style={threadStyles.profile}>
+          <View ref={ref} onLayout={onLayout}>
+            <Avatar
+              label={profile.username}
+              size={AVATAR_SIZE}
+              url={profile.photoURL}
+            />
+          </View>
+          <SemiBoldText
+            style={[threadStyles.username, hideText && { display: "none" }]}
+          >
+            {profile.username}
+          </SemiBoldText>
+        </View>
+      </BaseButton>
     </View>
-  </View>
-));
+  )
+);
+
+const Profile = React.forwardRef(({ profile, onLayout, hideText }, ref) => {
+  const navigation = useNavigation();
+
+  const handlePress = React.useCallback(() => {
+    navigation.navigate("ViewProfile", { profileId: profile.id });
+  }, [profile.id, navigation]);
+
+  return (
+    <ProfileComponent
+      profile={profile}
+      onLayout={onLayout}
+      ref={ref}
+      hideText={hideText}
+      onPress={handlePress}
+    />
+  );
+});
 
 const AnimatedProfile = React.forwardRef(
   (

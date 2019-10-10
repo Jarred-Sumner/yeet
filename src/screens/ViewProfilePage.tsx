@@ -7,28 +7,29 @@ import {
   HEADER_HEIGHT,
   COUNTER_HEIGHT
 } from "../components/ViewProfile/ViewProfileHeader";
-import { BackButtonBehavior } from "../components/Button";
+import { useNavigationParam, useNavigation } from "react-navigation-hooks";
+import { useBackButtonBehavior } from "../components/Button";
 
-export const CurrentProfilePage = ({}) => {
-  const { userId } = React.useContext(UserContext);
+export const ViewProfilePage = () => {
+  const profileId = useNavigationParam("profileId");
+  const backButtonBehavior = useBackButtonBehavior();
 
   return (
     <View style={{ flex: 1, backgroundColor: "#111" }}>
       <ViewProfile
-        profileId={userId}
-        backButtonBehavior={BackButtonBehavior.none}
+        profileId={profileId}
+        backButtonBehavior={backButtonBehavior}
         contentOffset={{
           y: 0,
           x: 0
         }}
         contentInset={{
-          bottom: TAB_BAR_HEIGHT + COUNTER_HEIGHT,
+          bottom: COUNTER_HEIGHT,
           top: 0
         }}
       />
-      <BottomTabBar currentRoute="ProfileTab" />
     </View>
   );
 };
 
-export default CurrentProfilePage;
+export default ViewProfilePage;

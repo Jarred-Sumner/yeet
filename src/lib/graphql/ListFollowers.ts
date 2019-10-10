@@ -18,11 +18,13 @@ export interface ListFollowers_profile_followers {
   hasMore: boolean;
   limit: number;
   offset: number;
+  id: string;
   data: ListFollowers_profile_followers_data[];
 }
 
 export interface ListFollowers_profile {
   __typename: "Profile";
+  id: string;
   followers: ListFollowers_profile_followers;
 }
 

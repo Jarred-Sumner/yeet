@@ -2,10 +2,13 @@
 
 query ListProfilePosts($profileId: ID!, $limit: Int, $offset: Int) {
   profile(id: $profileId) {
+    id
+
     posts(limit: $limit, offset: $offset) {
       offset
       limit
       hasMore
+      id
 
       data {
         ...PostListItemFragment

@@ -27,7 +27,8 @@ import {
   useMutation,
   MutationHookOptions,
   MutationResult,
-  MutationFunction
+  MutationFunction,
+  useLazyQuery
 } from "react-apollo";
 import {
   ViewProfile as ViewProfileQuery,
@@ -65,7 +66,7 @@ import { ScrollView as NavigationScrollView } from "react-navigation";
 import Animated from "react-native-reanimated";
 import { TOP_Y } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
-import { FetchMoreOptions } from "apollo-client";
+import { FetchMoreOptions, NetworkStatus } from "apollo-client";
 import {
   FOLLOWER_LIST_ITEM_HEIGHT,
   FollowerListItem
@@ -82,6 +83,13 @@ import {
   FollowProfileMutation,
   FollowProfileMutationVariables
 } from "../../lib/graphql/FollowProfileMutation";
+import { BackButtonBehavior } from "../Button";
+import { useNavigation } from "react-navigation-hooks";
+import { NavigationProp } from "react-navigation";
+import {
+  ListRemixesQuery,
+  ListRemixesQueryVariables
+} from "../../lib/graphql/ListRemixesQuery";
 
 type ListItemType = ListFollowers | ListProfilePosts | ListRemixes;
 type ListItemVariables =
@@ -148,6 +156,8 @@ type Props = {
   profileId: string;
   updateAvatar: MutationFunction<UpdateAvatar, UpdateAvatarVariables>;
 
+  navigation: NavigationProp;
+  backButtonBehavior?: BackButtonBehavior;
   fetchMore: (opts: FetchMoreOptions<ListItemType, ListItemVariables>) => void;
   setSection: (section: ViewProfileSection) => void;
 };
@@ -160,7 +170,8 @@ class RawViewProfile extends React.Component<Props> {
     contentOffset: {
       y: COLLAPSE_OFFSET,
       x: 0
-    }
+    },
+    backButtonBehavior: BackButtonBehavior.back
   };
 
   scrollY = new Animated.Value(this.props.contentOffset.y);
@@ -231,10 +242,11 @@ class RawViewProfile extends React.Component<Props> {
         {profile && (
           <ViewProfileHeader
             profile={this.props.profile}
-            isFollowing={this.props.following}
+            isFollowing={this.props.profile.isFollowing}
             isCurrentUser={this.props.isCurrentUser}
             updateAvatar={this.props.updateAvatar}
             translateY={this.translateY}
+            backButtonBehavior={this.props.backButtonBehavior}
             section={this.props.section}
             onChangeSection={this.handleChangeSection}
             onFollow={this.handleFollow}
@@ -288,7 +300,11 @@ class RawViewProfile extends React.Component<Props> {
     });
   };
 
-  openProfile = (id: string) => {};
+  openProfile = (profileId: string) => {
+    this.props.navigation.push("ViewProfile", {
+      profileId
+    });
+  };
   renderItem = ({ item, index }: { item: ListItem; index: number }) => {
     if (item.__typename === "Post") {
       let extraSpacing = 0;
@@ -485,14 +501,22 @@ const QUERY_TO_SECTION_MAPPING = {
   [ViewProfileSection.remixes]: LIST_REMIXES_QUERY
 };
 
-export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
+export const ViewProfile = ({
+  profileId,
+  contentInset,
+  contentOffset,
+  backButtonBehavior
+}) => {
   const [section, setSection] = React.useState(ViewProfileSection.posts);
+
+  const navigation = useNavigation();
 
   const {
     loading,
     data: { profile = null, following = false } = {}
   } = useQuery<ViewProfileQuery, ViewProfileVariables>(VIEW_PROFILE_QUERY, {
     variables: { profileId },
+
     notifyOnNetworkStatusChange: true
   });
 
@@ -516,24 +540,67 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
     ]
   });
 
-  const query = QUERY_TO_SECTION_MAPPING[section];
-  const { loading: loadingSection, data, fetchMore } = useQuery<
-    ListItemType,
-    ListItemVariables
-  >(query, {
-    variables: {
+  const variables = React.useMemo(
+    () => ({
       profileId,
       offset: 0,
       limit: 20
-    },
+    }),
+    [profileId]
+  );
+
+  const [loadPosts, postsQuery] = useLazyQuery<
+    ListProfilePosts,
+    ListProfilePostsVariables
+  >(LIST_PROFILE_POSTS_QUERY, {
+    variables,
     notifyOnNetworkStatusChange: true
   });
 
+  const {
+    loading: loadingPostsSection,
+    data: postsData,
+    fetchMore: fetchMorePosts,
+    networkStatus: postsNetworkStatus
+  } = postsQuery || {};
+
+  const [loadRemixes, remixesQuery] = useLazyQuery<
+    ListRemixesQuery,
+    ListRemixesQueryVariables
+  >(LIST_REMIXES_QUERY, {
+    variables,
+    notifyOnNetworkStatusChange: true
+  });
+
+  const {
+    loading: loadingRemixesSection,
+    data: remixesData,
+    networkStatus: remixNetworkStatus,
+    fetchMore: fetchMoreRemixes
+  } = remixesQuery || {};
+
+  const [loadFollowers, followersQuery] = useLazyQuery<
+    ListFollowers,
+    ListFollowersVariables
+  >(LIST_FOLLOWERS_QUERY, {
+    variables,
+    notifyOnNetworkStatusChange: true
+  });
+
+  const {
+    loading: loadingFollowersSection,
+    data: followersData,
+    networkStatus: followersNetworkStatus,
+    fetchMore: fetchMoreFollowers
+  } = followersQuery || {};
+
   let listData = [];
   let hasMore = false;
+  let fetchMore;
+  let loadingSection = true;
 
-  if (section == ViewProfileSection.followers) {
-    const _data = (data || {
+  if (section === ViewProfileSection.followers) {
+    const _data = (followersData || {
       profile: {
         followers: {
           data: [],
@@ -542,12 +609,21 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
       }
     }) as ListFollowers;
 
-    if (typeof _data.profile.followers === "object") {
+    if (
+      typeof _data.profile.followers === "object" &&
+      followersNetworkStatus !== NetworkStatus.setVariables
+    ) {
       listData = _data.profile.followers.data;
       hasMore = _data.profile.followers.hasMore;
+    } else {
+      listData = [];
+      hasMore = false;
     }
-  } else if (section == ViewProfileSection.posts) {
-    const _data = (data || {
+
+    fetchMore = fetchMoreFollowers;
+    loadingSection = loadingFollowersSection;
+  } else if (section === ViewProfileSection.posts) {
+    const _data = (postsData || {
       profile: {
         posts: {
           data: [],
@@ -556,12 +632,24 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
       }
     }) as ListProfilePosts;
 
-    if (typeof _data.profile.posts === "object") {
+    if (
+      typeof _data.profile.posts === "object" &&
+      postsNetworkStatus !== NetworkStatus.setVariables
+    ) {
       listData = _data.profile.posts.data;
       hasMore = _data.profile.posts.hasMore;
+    } else {
+      listData = [];
+      hasMore = false;
     }
-  } else if (section == ViewProfileSection.remixes) {
-    const _data = (data || {
+
+    fetchMore = fetchMorePosts;
+    loadingSection = loadingPostsSection;
+  } else if (
+    section === ViewProfileSection.remixes &&
+    remixNetworkStatus !== NetworkStatus.setVariables
+  ) {
+    const _data = (remixesData || {
       profile: {
         posts: {
           data: [],
@@ -573,8 +661,24 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
     if (typeof _data.profile.posts === "object") {
       listData = _data.profile.posts.data;
       hasMore = _data.profile.posts.hasMore;
+    } else {
+      listData = [];
+      hasMore = false;
     }
+
+    fetchMore = fetchMoreRemixes;
+    loadingSection = loadingRemixesSection;
   }
+
+  React.useEffect(() => {
+    if (section === ViewProfileSection.followers) {
+      loadFollowers();
+    } else if (section == ViewProfileSection.posts) {
+      loadPosts();
+    } else if (section === ViewProfileSection.remixes) {
+      loadRemixes();
+    }
+  }, [section, loadFollowers, loadPosts, loadRemixes]);
 
   const { userId } = React.useContext(UserContext);
 
@@ -585,6 +689,7 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
       loadingProfile={loading}
       following={following}
       followProfile={followProfile}
+      navigation={navigation}
       unfollowProfile={unfollowProfile}
       contentInset={contentInset}
       section={section}
@@ -592,6 +697,7 @@ export const ViewProfile = ({ profileId, contentInset, contentOffset }) => {
       fetchMore={fetchMore}
       data={listData}
       setSection={setSection}
+      backButtonBehavior={backButtonBehavior}
       hasMore={hasMore}
       contentOffset={contentOffset}
       isCurrentUser={userId === profileId}

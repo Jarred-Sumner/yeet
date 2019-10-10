@@ -1,5 +1,11 @@
 import * as React from "react";
-import { View, StyleSheet, ActivityIndicator, Easing } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Easing,
+  StyleProp
+} from "react-native";
 import Animated, { Transitioning, Transition } from "react-native-reanimated";
 import { SemiBoldText } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
@@ -10,6 +16,8 @@ import {
 import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import tinycolor from "tinycolor2";
+import { useNavigation } from "react-navigation-hooks";
+import { IconBack, IconClose } from "./Icon";
 
 const styles = StyleSheet.create({
   color_primaryColor: {
@@ -261,4 +269,60 @@ export const IconButton = ({
   } else {
     return null;
   }
+};
+
+export enum BackButtonBehavior {
+  none = "none",
+  back = "back",
+  close = "close"
+}
+
+export const useBackButtonBehavior = (): BackButtonBehavior => {
+  const navigation = useNavigation();
+
+  if (navigation.isFirstRouteInParent()) {
+    return BackButtonBehavior.close;
+  } else {
+    return BackButtonBehavior.back;
+  }
+};
+
+export const BackButton = ({
+  behavior = BackButtonBehavior.none,
+  style,
+  routeName,
+  size = 24,
+  ...otherProps
+}: {
+  behavior: BackButtonBehavior;
+  style?: StyleProp<View> | null;
+  routeName?: string;
+  size?: number;
+}) => {
+  const navigation = useNavigation();
+
+  const handlePress = React.useCallback(() => {
+    if (behavior === BackButtonBehavior.back) {
+      navigation.goBack(routeName);
+    } else if (behavior === BackButtonBehavior.close) {
+      navigation.goBack(routeName);
+    }
+  }, [behavior, navigation]);
+
+  if (behavior === BackButtonBehavior.none) {
+    return null;
+  }
+
+  const IconComponent = BackButtonBehavior.back ? IconBack : IconClose;
+
+  return (
+    <IconButton
+      {...otherProps}
+      Icon={IconComponent}
+      size={size}
+      type="shadow"
+      onPress={handlePress}
+      // iconStyle={style}
+    />
+  );
 };

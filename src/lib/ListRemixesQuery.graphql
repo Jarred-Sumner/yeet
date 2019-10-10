@@ -2,10 +2,13 @@
 
 query ListRemixesQuery($profileId: ID!, $limit: Int, $offset: Int) {
   profile(id: $profileId) {
+    id
+
     posts(limit: $limit, offset: $offset, remix: true) {
       offset
       limit
       hasMore
+      id
 
       data {
         ...PostListItemFragment

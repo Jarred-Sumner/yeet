@@ -2,10 +2,13 @@
 
 query ListFollowers($profileId: ID!, $limit: Int, $offset: Int) {
   profile(id: $profileId) {
+    id
+
     followers(limit: $limit, offset: $offset) {
       hasMore
       limit
       offset
+      id
 
       data {
         ...FollowerListItemFragment

@@ -45,11 +45,13 @@ export interface ListRemixesQuery_profile_posts {
   offset: number;
   limit: number;
   hasMore: boolean;
+  id: string;
   data: ListRemixesQuery_profile_posts_data[];
 }
 
 export interface ListRemixesQuery_profile {
   __typename: "Profile";
+  id: string;
   posts: ListRemixesQuery_profile_posts;
 }
 

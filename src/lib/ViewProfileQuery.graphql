@@ -3,11 +3,10 @@ query ViewProfile($profileId: ID!) {
     id
     username
     photoURL
+    isFollowing
 
     followersCount
     remixesCount
     postsCount
   }
-
-  following(profileId: $profileId)
 }

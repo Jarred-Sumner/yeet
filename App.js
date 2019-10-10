@@ -35,8 +35,13 @@ import SearchPage from "./src/screens/Search";
 import NotificationsPage from "./src/screens/Notifications";
 import { Icon, IconName } from "./src/components/Icon";
 import { BottomTabBar } from "./src/components/BottomTabBar";
+import ViewProfilePage from "./src/screens/ViewProfilePage";
 
 const TAB_ICON_SIZE = 18;
+
+const SHARED_GLOBAL_SCREENS = {
+  ViewProfile: ViewProfilePage
+};
 
 const Routes = createAppContainer(
   createStackNavigator(
@@ -50,7 +55,8 @@ const Routes = createAppContainer(
                 {
                   ThreadList: ThreadListPage,
                   ReplyToPost: ReplyPage,
-                  EditBlockPhotoInReply: ImagePickerPage
+                  EditBlockPhotoInReply: ImagePickerPage,
+                  ...SHARED_GLOBAL_SCREENS
                 },
                 {
                   cardStyle: {
@@ -77,9 +83,15 @@ const Routes = createAppContainer(
               NotificationsTab: {
                 screen: NotificationsPage
               },
-              ProfileTab: {
-                screen: CurrentProfilePage
-              }
+              ProfileTab: createStackNavigator(
+                {
+                  CurrentProfilePage: CurrentProfilePage,
+                  ...SHARED_GLOBAL_SCREENS
+                },
+                {
+                  headerMode: "none"
+                }
+              )
             },
             {
               headerMode: "none",
@@ -105,7 +117,8 @@ const Routes = createAppContainer(
             {
               ChooseDefaultPhoto: ImagePickerPage,
               NewPost: NewPostPage,
-              EditBlockPhoto: ImagePickerPage
+              EditBlockPhoto: ImagePickerPage,
+              ...SHARED_GLOBAL_SCREENS
             },
             {
               cardStyle: {
@@ -132,8 +145,10 @@ const Routes = createAppContainer(
           }
         }
       ),
+      ...SHARED_GLOBAL_SCREENS,
       UploadPost: UploadPostPage,
       InsertSticker: ImagePickerPage,
+
       Auth: createStackNavigator(
         {
           Signup: SignUpScreen,
