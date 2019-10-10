@@ -3,10 +3,10 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL query operation: ListProfilePosts
+// GraphQL query operation: ListRemixesQuery
 // ====================================================
 
-export interface ListProfilePosts_profile_posts_data_bounds {
+export interface ListRemixesQuery_profile_posts_data_bounds {
   __typename: "Rectangle";
   x: number | null;
   y: number | null;
@@ -14,14 +14,14 @@ export interface ListProfilePosts_profile_posts_data_bounds {
   height: number | null;
 }
 
-export interface ListProfilePosts_profile_posts_data_profile {
+export interface ListRemixesQuery_profile_posts_data_profile {
   __typename: "Profile";
   id: string;
   photoURL: string | null;
   username: string;
 }
 
-export interface ListProfilePosts_profile_posts_data_media {
+export interface ListRemixesQuery_profile_posts_data_media {
   __typename: "Media";
   id: string;
   width: number | null;
@@ -30,34 +30,34 @@ export interface ListProfilePosts_profile_posts_data_media {
   previewUrl: string;
 }
 
-export interface ListProfilePosts_profile_posts_data {
+export interface ListRemixesQuery_profile_posts_data {
   __typename: "Post";
   id: string;
   likesCount: number;
   threadId: string;
-  bounds: ListProfilePosts_profile_posts_data_bounds;
-  profile: ListProfilePosts_profile_posts_data_profile;
-  media: ListProfilePosts_profile_posts_data_media;
+  bounds: ListRemixesQuery_profile_posts_data_bounds;
+  profile: ListRemixesQuery_profile_posts_data_profile;
+  media: ListRemixesQuery_profile_posts_data_media;
 }
 
-export interface ListProfilePosts_profile_posts {
+export interface ListRemixesQuery_profile_posts {
   __typename: "PostTypeList";
   offset: number;
   limit: number;
   hasMore: boolean;
-  data: ListProfilePosts_profile_posts_data[];
+  data: ListRemixesQuery_profile_posts_data[];
 }
 
-export interface ListProfilePosts_profile {
+export interface ListRemixesQuery_profile {
   __typename: "Profile";
-  posts: ListProfilePosts_profile_posts;
+  posts: ListRemixesQuery_profile_posts;
 }
 
-export interface ListProfilePosts {
-  profile: ListProfilePosts_profile;
+export interface ListRemixesQuery {
+  profile: ListRemixesQuery_profile;
 }
 
-export interface ListProfilePostsVariables {
+export interface ListRemixesQueryVariables {
   profileId: string;
   limit?: number | null;
   offset?: number | null;

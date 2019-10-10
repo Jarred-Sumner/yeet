@@ -10,6 +10,7 @@ import { Button } from "../Button";
 import { COLORS, SPACING } from "../../lib/styles";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
+import { EditableAvatar, RawEditableAvatar } from "../EditableAvatar";
 
 export enum ViewProfileSection {
   followers,
@@ -104,7 +105,7 @@ const UnFollowButton = ({ onPress }) => (
 
 const SettingsButton = ({ onPress }) => (
   <Button color={COLORS.muted} onPress={onPress}>
-    Settings
+    Edit avatar
   </Button>
 );
 
@@ -225,10 +226,12 @@ const ViewProfileHeaderComponent = ({
   isCurrentUser,
   isFollowing,
   translateY,
-  openSettings,
+  editAvatar,
+  avatarRef,
   onFollow,
   onUnfollow,
-  onPressAvatar,
+  onChangeAvatar,
+  onBlurAvatar = () => {},
   section,
   onChangeSection
 }) => {
@@ -239,10 +242,12 @@ const ViewProfileHeaderComponent = ({
     : FollowButton;
 
   const onPressButton = isCurrentUser
-    ? openSettings
+    ? editAvatar
     : isFollowing
     ? onUnfollow
     : onFollow;
+
+  const AvatarComponent = isCurrentUser ? EditableAvatar : Avatar;
 
   return (
     <Animated.View
@@ -261,7 +266,15 @@ const ViewProfileHeaderComponent = ({
 
       <View style={[StyleSheet.absoluteFill, styles.content]}>
         <View style={styles.top}>
-          <Avatar size={AVATAR_SIZE} url={photoURL} label={username} />
+          <AvatarComponent
+            size={AVATAR_SIZE}
+            url={photoURL}
+            src={photoURL}
+            ref={avatarRef}
+            onChange={onChangeAvatar}
+            onBlur={onBlurAvatar}
+            label={username}
+          />
           <SemiBoldText style={styles.username}>
             <Text style={styles.muted}>@</Text>
             {username}
@@ -290,9 +303,27 @@ export class ViewProfileHeader extends React.Component<Props> {
   handleUnfollow = () => {};
 
   handleEditPhoto = () => {};
-  handlePressAvatar = () => {};
+  handlePressAvatar = () => {
+    if (!this.props.isCurrentUser) {
+      return;
+    }
+
+    this.avatarRef.current.tapAvatar();
+  };
 
   handleOpenSettings = () => {};
+
+  handleUpdateAvatar = (mediaId: string | null) => {
+    if (!this.props.isCurrentUser) {
+      return;
+    }
+
+    return this.props.updateAvatar({
+      variables: { mediaId }
+    });
+  };
+
+  avatarRef = React.createRef<RawEditableAvatar>();
 
   render() {
     const {
@@ -311,17 +342,18 @@ export class ViewProfileHeader extends React.Component<Props> {
         remixesCount={profile.remixesCount}
         followersCount={profile.followersCount}
         photoURL={profile.photoURL}
+        avatarRef={this.avatarRef}
         username={profile.username}
         postsCount={profile.postsCount}
         isFollowing={isFollowing}
         onUnfollow={onUnfollow}
         translateY={translateY}
         onFollow={onFollow}
-        onPressAvatar={this.handlePressAvatar}
+        onChangeAvatar={this.handleUpdateAvatar}
         onChangeSection={onChangeSection}
         section={section}
         isCurrentUser={isCurrentUser}
-        openSettings={this.handleOpenSettings}
+        editAvatar={this.handlePressAvatar}
       />
     );
   }

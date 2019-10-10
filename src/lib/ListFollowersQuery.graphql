@@ -3,7 +3,13 @@
 query ListFollowers($profileId: ID!, $limit: Int, $offset: Int) {
   profile(id: $profileId) {
     followers(limit: $limit, offset: $offset) {
-      ...FollowerListItemFragment
+      hasMore
+      limit
+      offset
+
+      data {
+        ...FollowerListItemFragment
+      }
     }
   }
 }

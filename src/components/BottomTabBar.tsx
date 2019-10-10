@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-evenly",
     alignItems: "center",
     position: "absolute",
-    backgroundColor: "rgba(0,0,0,0.85)",
+    backgroundColor: "rgba(0,0,0,0.95)",
     left: 0,
     bottom: 0,
     right: 0,
@@ -53,7 +53,7 @@ const TabBarIcon = ({ Icon, focused, onPress, route }) => {
   return (
     <RectButton onPress={handlePress}>
       <Animated.View style={styles.buttonContainer}>
-        <Icon size={24} color={focused ? "#fff" : "#aaa"} />
+        <Icon size={24} color={focused ? "#fff" : "#999"} />
       </Animated.View>
     </RectButton>
   );

@@ -3,6 +3,19 @@ fragment PostListItemFragment on Post {
   likesCount
   threadId
 
+  bounds {
+    x
+    y
+    width
+    height
+  }
+
+  profile {
+    id
+    photoURL
+    username
+  }
+
   media {
     id
     width

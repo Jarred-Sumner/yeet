@@ -32,10 +32,18 @@ export const isTapInside = (
 
 export const scaleToWidth = (
   width: number,
-  dimensions: DimensionsRect
-): DimensionsRect => {
+  dimensions: Partial<BoundsRect>
+): BoundsRect => {
   return {
+    x:
+      typeof dimensions.x === "number"
+        ? (width / dimensions.width) * dimensions.x
+        : 0,
     width,
+    y:
+      typeof dimensions.y === "number"
+        ? (width / dimensions.width) * dimensions.y
+        : 0,
     height: PixelRatio.roundToNearestPixel(
       (width / dimensions.width) * dimensions.height
     )

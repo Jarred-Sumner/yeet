@@ -85,7 +85,7 @@ type Props = {
   onChange: (mediaId: string) => void;
 };
 
-class RawEditableAvatar extends React.Component<Props> {
+export class RawEditableAvatar extends React.Component<Props> {
   willUnmount = false;
   s3Upload: S3Upload | null = null;
   canceled: boolean = false;
@@ -194,8 +194,12 @@ class RawEditableAvatar extends React.Component<Props> {
     this.canceled = false;
   };
 
+  tapAvatar = () => {
+    this.props.openImagePicker();
+  };
+
   render() {
-    const { lastPhoto: localPhoto, openImagePicker, size } = this.props;
+    const { lastPhoto: localPhoto, size } = this.props;
     const isLocal = !!(
       localPhoto &&
       !localPhoto.error &&
@@ -205,7 +209,7 @@ class RawEditableAvatar extends React.Component<Props> {
     const url = isLocal ? localPhoto.uri : this.props.src;
 
     return (
-      <TouchableWithoutFeedback onPress={openImagePicker}>
+      <TouchableWithoutFeedback onPress={this.tapAvatar}>
         <View style={[styles.container, { borderRadius: size / 2 }]}>
           <Avatar
             PlaceholderComponent={AvatarPlaceholder}
@@ -222,27 +226,30 @@ class RawEditableAvatar extends React.Component<Props> {
   }
 }
 
-export const EditableAvatar = ({ src, value, onChange, size, onBlur }) => {
-  const imagePicker = React.useContext(ImagePickerContext);
+export const EditableAvatar = React.forwardRef(
+  ({ src, value, onChange, size, onBlur }, ref) => {
+    const imagePicker = React.useContext(ImagePickerContext);
 
-  const _openImagePicker = React.useCallback(() => {
-    imagePicker.openImagePicker({
-      mediaType: "photo",
-      allowsEditing: true,
-      maxWidth: 600,
-      maxHeight: 600
-    });
-  }, [imagePicker.openImagePicker]);
+    const _openImagePicker = React.useCallback(() => {
+      imagePicker.openImagePicker({
+        mediaType: "photo",
+        allowsEditing: true,
+        maxWidth: 600,
+        maxHeight: 600
+      });
+    }, [imagePicker.openImagePicker]);
 
-  return (
-    <RawEditableAvatar
-      src={src}
-      value={value}
-      lastPhoto={imagePicker.lastPhoto}
-      onBlur={onBlur}
-      size={size}
-      openImagePicker={_openImagePicker}
-      onChange={onChange}
-    />
-  );
-};
+    return (
+      <RawEditableAvatar
+        src={src}
+        value={value}
+        ref={ref}
+        lastPhoto={imagePicker.lastPhoto}
+        onBlur={onBlur}
+        size={size}
+        openImagePicker={_openImagePicker}
+        onChange={onChange}
+      />
+    );
+  }
+);

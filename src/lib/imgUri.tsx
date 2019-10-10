@@ -29,7 +29,7 @@ export const buildImgSrc = (source, rawSize, rawHeight) => {
     const vars = qs.stringify({
       ...qs.parse(source.split("?")[1]),
       // width: PixelRatio.roundToNearestPixel(rawSize),
-      height: PixelRatio.roundToNearestPixel(rawHeight || rawSize),
+      width: PixelRatio.getPixelSizeForLayoutSize(rawSize),
       fit_mode: "preserve",
       start: 0,
       end: 3
