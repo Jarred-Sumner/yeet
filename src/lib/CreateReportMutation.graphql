@@ -1,0 +1,8 @@
+mutation CreateReportMutation(
+  $id: ID!
+  $type: String!
+  $kind: String!
+  $body: String
+) {
+  createReport(id: $id, type: $type, kind: $kind, body: $body)
+}

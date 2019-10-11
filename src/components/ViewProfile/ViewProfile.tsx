@@ -8,10 +8,9 @@ import {
   SimpleTask,
   PromiseTask
 } from "react-native";
-import {
-  FlatList as GestureFlatList,
-  State
-} from "react-native-gesture-handler";
+import { State } from "react-native-gesture-handler";
+import { FlatList, ScrollView } from "../FlatList";
+
 import { uniqBy } from "lodash";
 import CURRENT_USER_QUERY from "../../lib/currentUserQuery.graphql";
 import VIEW_PROFILE_QUERY from "../../lib/ViewProfileQuery.graphql";
@@ -62,7 +61,6 @@ import {
   POST_LIST_ITEM_WIDTH
 } from "./PostListItem";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
-import { ScrollView as NavigationScrollView } from "react-navigation";
 import Animated from "react-native-reanimated";
 import { TOP_Y } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
@@ -90,19 +88,13 @@ import {
   ListRemixesQuery,
   ListRemixesQueryVariables
 } from "../../lib/graphql/ListRemixesQuery";
+import FollowerSeparatorComponent from "../ItemSeparatorComponent";
 
 type ListItemType = ListFollowers | ListProfilePosts | ListRemixes;
 type ListItemVariables =
   | ListFollowersVariables
   | ListProfilePostsVariables
   | ListRemixesVariables;
-
-const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(NavigationScrollView),
-  {
-    disallowInterruption: true
-  }
-);
 
 const styles = StyleSheet.create({
   container: {
@@ -111,21 +103,10 @@ const styles = StyleSheet.create({
   separator: {
     height: 3,
     width: 1
-  },
-  followerSeparator: {
-    height: StyleSheet.hairlineWidth,
-    width: "100%",
-    backgroundColor: COLORS.muted,
-    opacity: 0.25
   }
 });
 
 const PostSeparatorComponent = () => <View style={styles.separator} />;
-const FollowerSeparatorComponent = () => (
-  <View style={styles.followerSeparator} />
-);
-
-const FlatList = Animated.createAnimatedComponent(GestureFlatList);
 
 type ListItem = PostListItem | FollowerListItemFragment;
 

@@ -20,12 +20,14 @@ export type UserContextType = {
   currentUser: CurrentUserQuery_currentUser;
   userId: string | null;
   authState: AuthState;
+  badgeCount: number;
   requireAuthentication: (cb) => boolean;
 };
 
 const DEFAULT_USER_CONTEXT = {
   currentUser: null,
   userId: null,
+  badgeCount: 0,
   authState: AuthState.checking,
   requireAuthentication: cb => true
 };
@@ -49,11 +51,13 @@ const buildContextValue = memoize(
   (
     currentUser: CurrentUserQuery_currentUser,
     authState: AuthState,
-    requireAuthentication: () => boolean
+    requireAuthentication: () => boolean,
+    badgeCount = 0
   ) => ({
     currentUser,
     authState,
     requireAuthentication,
+    badgeCount: currentUser ? currentUser.badgeCount : badgeCount,
     userId:
       typeof currentUser === "object" && !!currentUser ? currentUser.id : null
   })
@@ -77,7 +81,8 @@ class RawUserContextProvider extends React.Component<Props, State> {
       contextValue: buildContextValue(
         props.currentUser,
         authState,
-        this.handleRequireAuthentication
+        this.handleRequireAuthentication,
+        props.currentUser ? props.currentUser.badgeCount : 0
       )
     };
 
@@ -127,7 +132,8 @@ class RawUserContextProvider extends React.Component<Props, State> {
     const contextValue = buildContextValue(
       this.props.currentUser,
       newState.authState || this.state.authState,
-      this.handleRequireAuthentication
+      this.handleRequireAuthentication,
+      this.props.currentUser ? this.props.currentUser.badgeCount : 0
     );
 
     if (contextValue !== this.state.contextValue) {

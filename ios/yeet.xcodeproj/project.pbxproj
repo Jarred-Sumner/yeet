@@ -5,14 +5,14 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB11A68108700A75B9A /* LaunchScreen.xib */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
-		200018A4DA63446A8EB65DE7 /* Proxima Nova Thin.otf in Resources */ = {isa = PBXBuildFile; fileRef = 57A630ABFF3B459CA8552F21 /* Proxima Nova Thin.otf */; };
-		6762C2C7CE5E45E190EFF82D /* ProximaNova-Regular.otf in Resources */ = {isa = PBXBuildFile; fileRef = C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */; };
+		6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */; };
 		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
 		830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */; };
 		8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */; };
@@ -49,9 +49,6 @@
 		83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC72341A6F60091D443 /* YeetVideoView.swift */; };
 		83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */; };
 		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
-		C7180071329E456BB6DEB0C5 /* Proxima Nova Bold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 0F2C14404E3D43D286E8A252 /* Proxima Nova Bold.otf */; };
-		CCF98551C2404D9D91E0D31B /* Proxima Nova Semibold.otf in Resources */ = {isa = PBXBuildFile; fileRef = 27B596F270594285B7208411 /* Proxima Nova Semibold.otf */; };
-		F10E9F60D54F4B658F5AF748 /* Proxima Nova Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A5A9068C3B94F099E9F2DF5 /* Proxima Nova Medium.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -128,6 +125,7 @@
 		C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "ProximaNova-Regular.otf"; path = "../assets/fonts/ProximaNova-Regular.otf"; sourceTree = "<group>"; };
 		D5114AD872654918B44679D5 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
 		D66386338575CF6C78F7BD18 /* Pods-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-yeetTests/Pods-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
+		DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter.var.ttf; path = ../assets/fonts/Inter.var.ttf; sourceTree = "<group>"; };
 		DF1FE5A6BC8B6AE8B7E6AF75 /* Pods-yeet-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOS.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOS/Pods-yeet-tvOS.release.xcconfig"; sourceTree = "<group>"; };
 		E0E0DAE39A4E029A9D86DEA4 /* Pods-yeet.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet.debug.xcconfig"; path = "Target Support Files/Pods-yeet/Pods-yeet.debug.xcconfig"; sourceTree = "<group>"; };
 		E3CB30E9A5274D5897429CAB /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
@@ -322,6 +320,7 @@
 				263646170E124074ADE84F8C /* Octicons.ttf */,
 				2B5EF1418C52406596EC0DA0 /* SimpleLineIcons.ttf */,
 				4CA3A3CBD49D44F6BB9B0675 /* Zocial.ttf */,
+				DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -397,11 +396,7 @@
 				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
 				83CD0583234AF4F900BE093D /* static.mp4 in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
-				C7180071329E456BB6DEB0C5 /* Proxima Nova Bold.otf in Resources */,
-				F10E9F60D54F4B658F5AF748 /* Proxima Nova Medium.ttf in Resources */,
-				CCF98551C2404D9D91E0D31B /* Proxima Nova Semibold.otf in Resources */,
-				200018A4DA63446A8EB65DE7 /* Proxima Nova Thin.otf in Resources */,
-				6762C2C7CE5E45E190EFF82D /* ProximaNova-Regular.otf in Resources */,
+				6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

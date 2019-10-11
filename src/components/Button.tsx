@@ -7,7 +7,7 @@ import {
   StyleProp
 } from "react-native";
 import Animated, { Transitioning, Transition } from "react-native-reanimated";
-import { SemiBoldText } from "./Text";
+import { SemiBoldText, LETTER_SPACING_MAPPING } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
 import {
   BorderlessButton,
@@ -48,7 +48,8 @@ const styles = StyleSheet.create({
     color: "white",
     textAlign: "center",
     textAlignVertical: "center",
-    fontSize: 18
+    fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"]
   }
 });
 

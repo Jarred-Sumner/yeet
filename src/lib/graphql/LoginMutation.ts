@@ -12,6 +12,7 @@ export interface LoginMutation_login {
   photoURL: string | null;
   username: string;
   email: string;
+  badgeCount: number;
   jwt: string | null;
 }
 

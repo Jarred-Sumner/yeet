@@ -1,0 +1,14 @@
+#import "./NotificationsListItemFragment.graphql"
+
+query NotificationsListQuery($limit: Int, $offset: Int) {
+  notifications(limit: $limit, offset: $offset) {
+    offset
+    limit
+    hasMore
+    id
+
+    data {
+      ...NotificationsListItemFragment
+    }
+  }
+}

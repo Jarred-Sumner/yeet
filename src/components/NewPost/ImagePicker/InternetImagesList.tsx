@@ -1,10 +1,7 @@
 import { debounce, throttle, uniqBy } from "lodash";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import {
-  BaseButton,
-  FlatList as GestureHandlerFlatList
-} from "react-native-gesture-handler";
+import { BaseButton } from "react-native-gesture-handler";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import Animated from "react-native-reanimated";
@@ -20,17 +17,9 @@ import {
 import Image from "../../Image";
 import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 import Video from "react-native-video";
+import { FlatList, ScrollView } from "../../FlatList";
 
 // import { Image } from "../Image";
-
-const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(KeyboardAwareScrollView),
-  {
-    disallowInterruption: true
-  }
-);
-
-const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
 

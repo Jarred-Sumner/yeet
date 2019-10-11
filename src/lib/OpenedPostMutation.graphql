@@ -1,0 +1,3 @@
+mutation OpenedPostMutation($postId: ID!, $postThreadId: ID) {
+  openedPost(postId: $postId, postThreadId: $postThreadId)
+}

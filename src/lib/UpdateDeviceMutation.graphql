@@ -1,0 +1,13 @@
+mutation UpdateDeviceMutation(
+  $pushToken: String
+  $onesignalToken: String
+  $uid: String!
+  $timezone: String
+) {
+  updateDevice(
+    pushToken: $pushToken
+    onesignalToken: $onesignalToken
+    uid: $uid
+    timezone: $timezone
+  )
+}

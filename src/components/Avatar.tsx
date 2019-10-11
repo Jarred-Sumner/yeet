@@ -1,8 +1,27 @@
 import * as React from "react";
 import { AvatarImage } from "./Image";
 import { buildImgSrc, normalizeFormat as getSize } from "../lib/imgUri";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, StyleProp } from "react-native";
 import CircularProgressBar from "./PostList/CircularProgressBar";
+import { UserContext } from "./UserContext";
+
+type CommonAvatarProps = {
+  PlaceholderComponent: React.ComponentType<{
+    label: string;
+    size: number;
+    style: StyleProp<any>;
+  }>;
+  size: number;
+  srcWidth?: number;
+  srcHeight?: number;
+  style?: StyleProp<any>;
+};
+
+type AvatarProps = CommonAvatarProps & {
+  isLocal: Boolean;
+  label: string;
+  url: string | null;
+};
 
 export const Avatar = React.forwardRef(
   (
@@ -15,7 +34,7 @@ export const Avatar = React.forwardRef(
       srcHeight,
       isLocal = false,
       style
-    },
+    }: AvatarProps,
     ref
   ) => {
     const showPlaceholder = !url;
@@ -85,4 +104,21 @@ export const ProgressAvatar = ({
       </View>
     </View>
   );
+};
+
+export const CurrentUserAvatar = (props: CommonAvatarProps) => {
+  const { currentUser } = React.useContext(UserContext);
+
+  if (currentUser) {
+    return (
+      <Avatar
+        {...props}
+        isLocal={false}
+        url={currentUser.photoURL}
+        label={currentUser.username}
+      />
+    );
+  } else {
+    return <Avatar {...props} isLocal={false} url={null} label={"Guest"} />;
+  }
 };

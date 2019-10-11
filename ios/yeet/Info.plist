@@ -58,11 +58,6 @@
 	<key>UIAppFonts</key>
 	<array>
 		<string>iconfont.ttf</string>
-		<string>Proxima Nova Bold.otf</string>
-		<string>Proxima Nova Medium.ttf</string>
-		<string>Proxima Nova Semibold.otf</string>
-		<string>Proxima Nova Thin.otf</string>
-		<string>ProximaNova-Regular.otf</string>
 		<string>AntDesign.ttf</string>
 		<string>Entypo.ttf</string>
 		<string>EvilIcons.ttf</string>
@@ -79,6 +74,7 @@
 		<string>Octicons.ttf</string>
 		<string>SimpleLineIcons.ttf</string>
 		<string>Zocial.ttf</string>
+		<string>Inter.var.ttf</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

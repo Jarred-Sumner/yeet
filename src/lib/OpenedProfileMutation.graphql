@@ -1,0 +1,3 @@
+mutation OpenedProfileMutation($profileId: ID!) {
+  openedProfile(profileId: $profileId)
+}

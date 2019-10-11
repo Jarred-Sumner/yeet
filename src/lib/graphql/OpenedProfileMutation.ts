@@ -3,14 +3,13 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: UserFragment
+// GraphQL mutation operation: OpenedProfileMutation
 // ====================================================
 
-export interface UserFragment {
-  __typename: "User";
-  id: string;
-  photoURL: string | null;
-  username: string;
-  email: string;
-  badgeCount: number;
+export interface OpenedProfileMutation {
+  openedProfile: boolean | null;
+}
+
+export interface OpenedProfileMutationVariables {
+  profileId: string;
 }

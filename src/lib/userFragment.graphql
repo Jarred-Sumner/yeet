@@ -3,4 +3,5 @@ fragment UserFragment on User {
   photoURL
   username
   email
+  badgeCount
 }

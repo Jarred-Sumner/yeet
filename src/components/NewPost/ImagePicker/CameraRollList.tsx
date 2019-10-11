@@ -1,14 +1,9 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
 import { Image as RNImage, StyleSheet, View } from "react-native";
-import {
-  BaseButton,
-  FlatList as GestureHandlerFlatList
-} from "react-native-gesture-handler";
-import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
+import { BaseButton } from "react-native-gesture-handler";
 import Permissions from "react-native-permissions";
 import Animated from "react-native-reanimated";
-import { ScrollView as NavigationScrollView } from "react-navigation";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
 import { SPACING } from "../../../lib/styles";
@@ -17,15 +12,7 @@ import Image from "../../Image";
 import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { DurationLabel } from "./DurationLabel";
-
-const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(NavigationScrollView),
-  {
-    disallowInterruption: true
-  }
-);
-
-const FlatList = Animated.createAnimatedComponent(GestureHandlerFlatList);
+import { FlatList, ScrollView } from "../../FlatList";
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
 

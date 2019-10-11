@@ -799,10 +799,13 @@
     ts-node "^8"
     tslib "^1"
 
-"@expo/react-native-action-sheet@^3.0.3":
-  version "3.0.3"
-  resolved "https://registry.yarnpkg.com/@expo/react-native-action-sheet/-/react-native-action-sheet-3.0.3.tgz#1d69a2668784961c6d458babe52e9a02893936a2"
-  integrity sha512-MsVDCDQwJthoolqUqbg1nF8hmzA2gYfvnUV6j/h4gXPSKsrLqdaQz+Vi5onCB18oxmUZbYQ1+QNU+n1PwTp0Zw==
+"@expo/react-native-action-sheet@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@expo/react-native-action-sheet/-/react-native-action-sheet-3.2.0.tgz#1254adf0f633f557dfc343324fb7e39f293badf4"
+  integrity sha512-fpHLhSvhG6/oxH5r25SyeZ4Q/t0/vCqHCBObT7KgnxOxzp2kxMcF3nqAjsd2a/i1CB4lQaiabfYTzpeFmZkFfw==
+  dependencies:
+    "@types/hoist-non-react-statics" "^3.3.1"
+    hoist-non-react-statics "^3.3.0"
 
 "@hapi/address@2.x.x":
   version "2.1.1"
@@ -1365,6 +1368,14 @@
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/@types/giphy-api/-/giphy-api-2.0.2.tgz#a9ca00cce8c31ab511dd848af2244daaf7ca79f8"
   integrity sha512-tcYC4IcFs3FG9sGhGirQLl0ahyexxFJcgN0OKtkRXjwDoLgk7Si202aupgxFlC5pPUjJVFYD0e9Hv40psI6nnQ==
+
+"@types/hoist-non-react-statics@^3.3.1":
+  version "3.3.1"
+  resolved "https://registry.yarnpkg.com/@types/hoist-non-react-statics/-/hoist-non-react-statics-3.3.1.tgz#1124aafe5118cb591977aeb1ceaaed1070eb039f"
+  integrity sha512-iMIqiko6ooLrTh1joXodJK5X9xeEALT1kM5G3ZLhD3hszxBdIEd5C75U834D9mLcINgD4OyZf5uQXjkuYydWvA==
+  dependencies:
+    "@types/react" "*"
+    hoist-non-react-statics "^3.3.0"
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0":
   version "2.0.1"
@@ -7591,10 +7602,10 @@ react-native@0.61.1:
     stacktrace-parser "^0.1.3"
     whatwg-fetch "^3.0.0"
 
-react-navigation-hooks@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/react-navigation-hooks/-/react-navigation-hooks-1.0.3.tgz#8c203c1a4eff453d2cc07b33667abdd2a6417ab8"
-  integrity sha512-w9H7hVJGS2rhonpnih4LgJ6Elrg2Xc41njvmwlI7ZwEo0JDJt/D4sulYvJcvrxhslmVNbu14F8KwgeCTwTWXjg==
+react-navigation-hooks@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/react-navigation-hooks/-/react-navigation-hooks-1.1.0.tgz#337c41a50ebc7b9030bb9d9333cd4fd6e1f86b68"
+  integrity sha512-ZY/aiYJ88KXaOo8iOa4171O/0x6ztGhUPd2OYzdaJhLT/tP64zi5HB/RZFImuKhaBTODXjoSpFaOTA5xpePG4g==
 
 react-navigation-shared-element@^0.5.0:
   version "0.5.0"

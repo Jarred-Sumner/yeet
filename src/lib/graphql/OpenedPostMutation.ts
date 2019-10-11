@@ -3,14 +3,14 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: UserFragment
+// GraphQL mutation operation: OpenedPostMutation
 // ====================================================
 
-export interface UserFragment {
-  __typename: "User";
-  id: string;
-  photoURL: string | null;
-  username: string;
-  email: string;
-  badgeCount: number;
+export interface OpenedPostMutation {
+  openedPost: boolean | null;
+}
+
+export interface OpenedPostMutationVariables {
+  postId: string;
+  postThreadId?: string | null;
 }

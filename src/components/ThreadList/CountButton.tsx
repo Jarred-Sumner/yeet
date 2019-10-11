@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { IconHeart } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
-import { Text, MediumText } from "../Text";
+import { Text, MediumText, LETTER_SPACING_MAPPING } from "../Text";
 import { BaseButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 
@@ -30,6 +30,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"],
     color: "white"
   },
   textContainer: {

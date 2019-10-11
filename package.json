@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "@apollo/react-hooks": "^3.1.1",
-    "@expo/react-native-action-sheet": "^3.0.3",
+    "@expo/react-native-action-sheet": "^3.2.0",
     "@react-native-community/async-storage": "^1.6.1",
     "@react-native-community/cameraroll": "^1.2.1",
     "@react-native-community/masked-view": "^0.1.1",
@@ -86,7 +86,7 @@
     "react-native-view-shot": "^3.0.2",
     "react-native-webp-support": "TGPSKI/react-native-webp-support",
     "react-navigation": "^4.0.10",
-    "react-navigation-hooks": "^1.0.3",
+    "react-navigation-hooks": "^1.1.0",
     "react-navigation-shared-element": "^0.5.0",
     "react-navigation-stack": "^2.0.0-alpha.19",
     "react-navigation-tabs": "^2.5.2",

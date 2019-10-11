@@ -1,21 +1,15 @@
 import * as React from "react";
-import { View, StyleSheet } from "react-native";
-
-import Animated from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
-import {
-  IconHome,
-  IconPlus,
-  IconSearch,
-  IconProfile,
-  IconNotification
-} from "./Icon";
+import Animated from "react-native-reanimated";
 import { useNavigation } from "react-navigation-hooks";
-import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
-import { SPACING } from "../lib/styles";
-import LinearGradient from "react-native-linear-gradient";
+import { BOTTOM_Y } from "../../config";
+import { SPACING, COLORS } from "../lib/styles";
+import { IconHome, IconNotification, IconPlus, IconProfile } from "./Icon";
 import { BAR_HEIGHT } from "./ThreadList/Seekbar";
-import { UserContext, AuthState } from "./UserContext";
+import { AuthState, UserContext } from "./UserContext";
+import { SemiBoldText, BoldText } from "./Text";
+import tinyColor from "tinycolor2";
 
 export const TAB_BAR_HEIGHT = 56.5;
 export const TAB_BAR_OFFSET = TAB_BAR_HEIGHT + BOTTOM_Y;
@@ -42,10 +36,45 @@ const styles = StyleSheet.create({
     height: TAB_BAR_HEIGHT,
     justifyContent: "center",
     alignItems: "center"
+  },
+  iconWrapper: {
+    position: "relative"
+  },
+  badgeContainer: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: tinyColor("#fa3e3e")
+      .darken(25)
+      .toRgbString(),
+    position: "absolute",
+    top: -9,
+    right: -9,
+    alignItems: "center",
+    justifyContent: "center"
+    // transform: [{ scale: 0.9 }]
+  },
+  bigBadgeContainer: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    top: -11,
+    right: -11
+  },
+  focusedBadgeContainer: {
+    backgroundColor: "#fa3e3e"
+    // transform: [{ scale: 1 }]
+  },
+  badgeText: {
+    color: "#ccc",
+    textAlign: "center"
+  },
+  focusedBadgeText: {
+    color: "white"
   }
 });
 
-const TabBarIcon = ({ Icon, focused, onPress, route }) => {
+const TabBarIcon = ({ Icon, focused, onPress, route, badgeCount = 0 }) => {
   const handlePress = React.useCallback(() => {
     onPress(route);
   }, [route, onPress]);
@@ -53,7 +82,25 @@ const TabBarIcon = ({ Icon, focused, onPress, route }) => {
   return (
     <RectButton onPress={handlePress}>
       <Animated.View style={styles.buttonContainer}>
-        <Icon size={24} color={focused ? "#fff" : "#999"} />
+        <View style={styles.iconWrapper}>
+          <Icon size={24} color={focused ? "#fff" : "#999"} />
+          {badgeCount > 0 && (
+            <View
+              style={[
+                styles.badgeContainer,
+                badgeCount > 9 && styles.bigBadgeContainer,
+                focused && styles.focusedBadgeContainer
+              ]}
+            >
+              <BoldText
+                adjustsFontSizeToFit
+                style={[styles.badgeText, focused && styles.focusedBadgeText]}
+              >
+                {Math.min(badgeCount, 99)}
+              </BoldText>
+            </View>
+          )}
+        </View>
       </Animated.View>
     </RectButton>
   );
@@ -70,7 +117,13 @@ const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab"];
 
 export const BottomTabBar = ({ style, currentRoute }) => {
   const navigation = useNavigation();
-  const { authState, requireAuthentication } = React.useContext(UserContext);
+
+  const {
+    authState,
+    requireAuthentication,
+    currentUser,
+    badgeCount
+  } = React.useContext(UserContext);
 
   const openRoute = React.useCallback(
     routeName => {
@@ -114,6 +167,7 @@ export const BottomTabBar = ({ style, currentRoute }) => {
               key={route}
               Icon={Icon}
               route={route}
+              badgeCount={route === "NotificationsTab" ? badgeCount : 0}
               focused={
                 currentRoute
                   ? route === currentRoute

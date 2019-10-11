@@ -5,7 +5,12 @@ import { ViewProfile_profile } from "../../lib/graphql/ViewProfile";
 import LinearGradient from "react-native-linear-gradient";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { Avatar } from "../Avatar";
-import { SemiBoldText, MediumText, Text } from "../Text";
+import {
+  SemiBoldText,
+  MediumText,
+  Text,
+  LETTER_SPACING_MAPPING
+} from "../Text";
 import { Button, BackButton } from "../Button";
 import { COLORS, SPACING } from "../../lib/styles";
 import { TouchableHighlight } from "react-native-gesture-handler";
@@ -153,15 +158,15 @@ const countStyles = StyleSheet.create({
   label: {
     color: COLORS.muted,
     fontSize: 16,
-    lineHeight: 16,
+    letterSpacing: LETTER_SPACING_MAPPING["16"],
     textAlign: "center",
     flex: 0
   },
 
   value: {
     color: "#f1f1f1",
-    fontSize: 24,
-    lineHeight: 24,
+    fontSize: 20,
+    letterSpacing: LETTER_SPACING_MAPPING["20"],
     textAlign: "center",
     flex: 0
   }

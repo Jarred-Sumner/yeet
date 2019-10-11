@@ -1,0 +1,18 @@
+fragment NotificationsListItemFragment on Notification {
+  id
+
+  notifiableId
+  notifiableType
+
+  status
+  kind
+  occurredAt
+  label
+  path
+
+  participant {
+    id
+    photoURL
+    username
+  }
+}

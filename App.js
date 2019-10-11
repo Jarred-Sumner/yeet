@@ -36,11 +36,18 @@ import NotificationsPage from "./src/screens/Notifications";
 import { Icon, IconName } from "./src/components/Icon";
 import { BottomTabBar } from "./src/components/BottomTabBar";
 import ViewProfilePage from "./src/screens/ViewProfilePage";
+import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 
 const TAB_ICON_SIZE = 18;
 
+GlobalViewProfilePage.navigationOptions = {
+  header: null
+};
+
 const SHARED_GLOBAL_SCREENS = {
-  ViewProfile: ViewProfilePage
+  ViewProfile: {
+    screen: GlobalViewProfilePage
+  }
 };
 
 const Routes = createAppContainer(
@@ -80,9 +87,24 @@ const Routes = createAppContainer(
                   })
                 }
               ),
-              NotificationsTab: {
-                screen: NotificationsPage
-              },
+              NotificationsTab: createStackNavigator(
+                {
+                  NotificationsPage: {
+                    screen: NotificationsPage,
+                    navigationOptions: navigation => ({
+                      title: "Activity",
+                      headerTintColor: "#f1f1f1",
+                      headerStyle: {
+                        backgroundColor: "#000"
+                      }
+                    })
+                  },
+                  ...SHARED_GLOBAL_SCREENS
+                },
+                {
+                  headerMode: "float"
+                }
+              ),
               ProfileTab: createStackNavigator(
                 {
                   CurrentProfilePage: CurrentProfilePage,

@@ -3,14 +3,16 @@
 // This file was automatically generated and should not be edited.
 
 // ====================================================
-// GraphQL fragment: UserFragment
+// GraphQL mutation operation: CreateReportMutation
 // ====================================================
 
-export interface UserFragment {
-  __typename: "User";
+export interface CreateReportMutation {
+  createReport: boolean | null;
+}
+
+export interface CreateReportMutationVariables {
   id: string;
-  photoURL: string | null;
-  username: string;
-  email: string;
-  badgeCount: number;
+  type: string;
+  kind: string;
+  body?: string | null;
 }

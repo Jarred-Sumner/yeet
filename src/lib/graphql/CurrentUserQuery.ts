@@ -12,6 +12,7 @@ export interface CurrentUserQuery_currentUser {
   photoURL: string | null;
   username: string;
   email: string;
+  badgeCount: number;
 }
 
 export interface CurrentUserQuery {

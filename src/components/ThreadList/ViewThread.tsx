@@ -32,7 +32,7 @@ import { BitmapIconNewPost } from "../BitmapIcon";
 import { IconPlay } from "../Icon";
 import MediaFrame from "../MediaFrame";
 import MediaPlayer from "../MediaPlayer";
-import { SemiBoldText } from "../Text";
+import { SemiBoldText, LETTER_SPACING_MAPPING } from "../Text";
 import { AuthState, UserContext } from "../UserContext";
 import { CountButton } from "./CountButton";
 import { LikeCountButton } from "./LikeCountButton";
@@ -80,7 +80,8 @@ const threadStyles = StyleSheet.create({
   counts: {
     alignItems: "center",
     overflow: "visible",
-    flexDirection: "row"
+    flexDirection: "row",
+    marginBottom: SPACING.half
   },
   layer: {
     ...StyleSheet.absoluteFillObject
@@ -114,7 +115,8 @@ const threadStyles = StyleSheet.create({
     right: 0
   },
   username: {
-    fontSize: 20,
+    fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"],
     marginLeft: SPACING.normal
   },
   likesCount: {
@@ -141,11 +143,13 @@ const threadStyles = StyleSheet.create({
   remixCountText: {
     marginLeft: SPACING.normal,
 
-    fontSize: 20
+    fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"]
   },
   likesCountText: {
     marginLeft: SPACING.normal,
-    fontSize: 20
+    fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"]
   },
   header: {
     // marginTop: TOP_Y,

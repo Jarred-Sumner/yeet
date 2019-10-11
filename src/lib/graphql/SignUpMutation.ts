@@ -12,6 +12,7 @@ export interface SignUpMutation_signUp {
   photoURL: string | null;
   username: string;
   email: string;
+  badgeCount: number;
   jwt: string | null;
 }
 
