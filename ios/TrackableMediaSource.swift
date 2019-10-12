@@ -35,6 +35,36 @@ class TrackableMediaSource : NSObject {
     case paused = "paused"
     case ended = "ended"
     case error = "error"
+
+    var stringValue: String {
+      switch self {
+      case Status.pending:
+        return "pending"
+
+      case .loading:
+        return "loading"
+
+      case .loaded:
+        return "loaded"
+
+      case .ready:
+        return "ready"
+
+      case .playing:
+        return "playing"
+
+      case .paused:
+        return "paused"
+
+      case .ended:
+        return "ended"
+
+      case .error:
+        return "error"
+
+    }
+
+    }
   }
 
   var assetDuration : Double {

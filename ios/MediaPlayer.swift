@@ -27,6 +27,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     let item = mediaSource.mediaSource
 
     self.sendStatusUpdate(status: status, mediaSource: mediaSource)
+
+    imageView?.animated = status == .playing
   }
 
   @objc(prefetch) var prefetch: Bool = false {
@@ -35,7 +37,6 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
   }
 
-  var mediaFrameView = MediaFrameView()
 
   func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
     let item = mediaSource.mediaSource
@@ -52,13 +53,24 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
       return
     }
 
-    self.onProgress([
+    self.onProgress?([
       "index": index,
       "id": item.id,
+      "status": mediaSource.status.stringValue,
       "url": item.uri.absoluteString,
       "elapsed": elapsed,
       "interval": TrackableMediaSource.periodicInterval,
     ])
+  }
+
+  @objc(muted) var muted: Bool {
+    get {
+      return mediaQueue?.player.muted ?? false
+    }
+
+    set (newValue) {
+      mediaQueue?.player.muted = newValue
+    }
   }
 
   var imageView: YeetImageView? = nil
@@ -176,19 +188,19 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   var autoPlay = true
 
   @objc(onChangeItem)
-  var onChangeItem: RCTDirectEventBlock = { _ in }
+  var onChangeItem: RCTDirectEventBlock? = nil
 
   @objc(onLoad)
-  var onLoad: RCTDirectEventBlock = { _ in }
+  var onLoad: RCTDirectEventBlock? = nil
 
   @objc(onEnd)
-  var onEnd: RCTDirectEventBlock = { _ in }
+  var onEnd: RCTDirectEventBlock? = nil
 
   @objc(onError)
-  var onError: RCTDirectEventBlock = { _ in }
+  var onError: RCTDirectEventBlock? = nil
 
   @objc(onProgress)
-  var onProgress: RCTDirectEventBlock = { _ in }
+  var onProgress: RCTDirectEventBlock? = nil
 
   init(bridge: RCTBridge? = nil) {
     self.bridge = bridge
@@ -218,8 +230,6 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     if (self.sources.count > 0) {
       DispatchQueue.main.async { [weak self] in
         self?.layoutContentView()
-
-        self?.mediaFrameView.isHidden = true
       }
      }
 
@@ -261,12 +271,6 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     if bounds != mediaQueue?.bounds {
       mediaQueue?.bounds = bounds
-    }
-
-    mediaFrameView.frame = bounds
-
-    if mediaFrameView.superview == nil {
-      self.addSubview(mediaFrameView)
     }
   }
 
@@ -348,7 +352,12 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
 
     if canSendEvents {
-      onChangeItem(["url": _mediaSource.uri.absoluteString, "index": _index])
+      onChangeItem?([
+        "index": _index,
+        "id": _mediaSource.id,
+        "status": mediaQueue!.current!.status.rawValue,
+        "url": _mediaSource.uri.absoluteString,
+      ])
     }
   }
 
@@ -380,10 +389,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     let nextTrack = mediaQueue?.mediaSources[to]
 
     if withFrame {
-//      if to != mediaQueue?.index {
-//        mediaFrameView.image = mediaFrameView.imageFrom(mediaId: currentItem!.id, playerItem: (mediaQueue?.videoPlayer.currentItem)!, output: currentItem!.videoOutput!)
-//      }
-//      mediaFrameView.isHidden = false
+
 
     }
 
@@ -455,7 +461,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     let error = item.isVideo ? mediaQueue!.videoPlayer.error : nil
 
 
-    self.onLoad([
+    self.onLoad?([
       "index": index,
       "id": item.id,
       "status": "ready",
@@ -476,7 +482,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     let index = mediaQueue!.index
     let error = item.isVideo ? mediaQueue!.videoPlayer.error : nil
 
-    self.onLoad([
+    self.onError?([
       "index": index,
       "id": item.id,
       "status": "error",
@@ -495,21 +501,21 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
 
     if status == .loaded || status == .ready {
-      self.onLoad([
+      self.onLoad?([
         "index": index,
         "id": mediaSource.mediaSource.id,
         "status": mediaSource.status.rawValue,
         "url": mediaSource.mediaSource.uri.absoluteString,
       ])
     } else if status == .ended {
-      self.onEnd([
+      self.onEnd?([
         "index": index,
         "id": mediaSource.mediaSource.id,
         "status": mediaSource.status.rawValue,
         "url": mediaSource.mediaSource.uri.absoluteString,
       ])
     } else if status == .error {
-      self.onError([
+      self.onError?([
         "index": index,
         "id": mediaSource.mediaSource.id,
         "status": mediaSource.status.rawValue,

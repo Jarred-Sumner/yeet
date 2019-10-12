@@ -83,25 +83,43 @@ enum MimeType: String {
   case mp4 = "video/mp4"
 }
 
-class YeetImage {
+class YeetMedia {
   let width: NSNumber;
   let height: NSNumber;
   let source: String;
   let mimeType: MimeType;
   let uri: String;
   let duration: NSNumber;
-  let image: ExportableImage;
 
-  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: ExportableImage) {
+
+  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber) {
     self.width = width
     self.height = height
     self.source = source
     self.mimeType = MimeType.init(rawValue: mimeType) ?? MimeType.webp
     self.uri = uri
     self.duration = duration
-    self.image = image
   }
 }
+
+class YeetImage : YeetMedia {
+  let image: ExportableImage;
+
+  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: ExportableImage) {
+    self.image = image
+    super.init(width: width, height: height, source: source, mimeType: mimeType, uri: uri, duration: duration)
+  }
+}
+
+class YeetVideo : YeetMedia {
+  let video: AVURLAsset
+
+  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, asset: AVURLAsset) {
+    self.video = asset
+    super.init(width: width, height: height, source: source, mimeType: mimeType, uri: uri, duration: duration)
+  }
+}
+
 
 struct ImageFrameRange {
   let timespan: ClosedRange<TimeInterval>
@@ -111,6 +129,7 @@ struct ImageFrameRange {
 enum BlockType : String {
   case image = "image"
   case text = "text"
+//  case video = "video"
 }
 
 class ContentBlock {
@@ -126,7 +145,6 @@ class ContentBlock {
   var position: NodePosition = NodePosition(y: 0.0, scale: 1.0, rotate: 0, x: 0.0)
   var totalDuration: TimeInterval = 0
   var text: String?
-
 
   var ranges: Array<ImageFrameRange> = []
 
@@ -146,6 +164,9 @@ class ContentBlock {
       } else if (type == BlockType.image) {
         self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
         self.value = YeetImage(width: _value["width"].numberValue, height: _value["height"].numberValue, source: _value["source"].stringValue, mimeType: _value["mimeType"].stringValue, uri: _value["uri"].stringValue, duration: _value["duration"].numberValue, image: image)
+//      } else if (type == BlockType.video) {
+//        self.dimensions = YeetImageRect(x: dimensions["x"].numberValue, y: dimensions["y"].numberValue, maxX: dimensions["maxX"].numberValue, maxY: dimensions["maxY"].numberValue, width: dimensions["width"].numberValue, height: dimensions["height"].numberValue)
+//        self.value = YeetVideo(width: _value["width"].numberValue, height: _value["height"].numberValue, source: _value["source"].stringValue, mimeType: _value["mimeType"].stringValue, uri: _value["uri"].stringValue, duration: _value["duration"].numberValue, image: image)
       } else {
         self.dimensions = YeetImageRect(x: 0, y: 0, maxX: 0, maxY: 0, width: 0, height: 0)
         self.value = YeetImage(width: 0, height: 0, source: "blank", mimeType: MimeType.jpg.rawValue, uri: "blank://", duration: 0, image: image)

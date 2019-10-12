@@ -3,9 +3,12 @@ import {
   requireNativeComponent,
   View,
   UIManager,
-  findNodeHandle
+  findNodeHandle,
+  StyleProp
 } from "react-native";
-import React from "react";
+import React, { ReactEventHandler } from "react";
+import { ImageMimeType } from "../lib/imageSearch";
+import { DimensionsRect } from "../lib/Rect";
 
 const VIEW_NAME = "MediaPlayerView";
 let NativeMediaPlayer;
@@ -15,7 +18,64 @@ if (typeof NativeMediaPlayer === "undefined") {
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
-export class MediaPlayer extends React.Component {
+export enum MediaPlayerStatus {
+  pending = "pending",
+  loading = "loading",
+  loaded = "loaded",
+  ready = "ready",
+  playing = "playing",
+  paused = "paused",
+  ended = "ended",
+  error = "error"
+}
+
+export type MediaSource = {
+  id: string;
+  url: string;
+  mimeType: ImageMimeType;
+  width: number;
+  height: number;
+  pixelRatio: number;
+  duration: number;
+  bounds: DimensionsRect;
+  playDuration: number;
+};
+
+type StatusEventData = {
+  index: number;
+  id: string;
+  status: MediaPlayerStatus;
+  url: string;
+};
+
+type ProgressEventData = StatusEventData & {
+  elapsed: number;
+  interval: number;
+};
+
+type Props = {
+  autoPlay: boolean;
+  sources: Array<MediaSource>;
+  style: StyleProp<any>;
+  prefetch?: boolean;
+  muted?: boolean;
+  onEnd?: ReactEventHandler<StatusEventData>;
+  onLoad?: ReactEventHandler<StatusEventData>;
+  id: string;
+  paused?: boolean;
+  onProgress?: ReactEventHandler<ProgressEventData>;
+  onChangeItem?: ReactEventHandler<StatusEventData>;
+};
+
+export class MediaPlayer extends React.Component<Props> {
+  static defaultProps = {
+    autoPlay: false,
+    paused: true,
+    prefetch: false,
+    muted: false,
+    sources: []
+  };
+
   nativeRef = React.createRef();
 
   static NativeModule = NativeModules["MediaPlayerViewManager"];

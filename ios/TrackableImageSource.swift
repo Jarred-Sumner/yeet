@@ -37,7 +37,7 @@ class TrackableImageSource: TrackableMediaSource {
       self.progressTimer = nil
     }
 
-    self.progressTimer = Repeater.init(interval: .seconds(TrackableMediaSource.periodicInterval), mode: .infinite, tolerance: .milliseconds(8), queue: .main) { [weak self] _ in
+    self.progressTimer = Repeater.init(interval: .seconds(TrackableMediaSource.periodicInterval), mode: .infinite, tolerance: .milliseconds(16), queue: .main) { [weak self] _ in
 
       let progressTime = (self?.progressTime ?? .zero) + CMTime(seconds: TrackableMediaSource.periodicInterval, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
       self?.progressTime = progressTime

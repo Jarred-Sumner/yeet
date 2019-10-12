@@ -223,11 +223,13 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     let newNextItem = self.nextItem
     let newPreviousItem = self.previousItem
 
-    if newPreviousItem != oldPreviousItem {
+    if newPreviousItem != oldPreviousItem || previous == nil {
       if newPreviousItem != nil && current?.mediaSource == newPreviousItem {
         previous = current
       } else if oldPreviousItem != nil && next?.mediaSource == newPreviousItem {
         previous = next
+      } else if newPreviousItem == nil {
+        previous = nil
       } else {
         previous = trackable(mediaSource: newPreviousItem, player: nextPlayer)
       }
@@ -235,33 +237,42 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
 
     let oldCurrent = current
 
-    if newCurrentItem != oldCurrentItem {
+    if newCurrentItem != oldCurrentItem || current == nil {
       if newCurrentItem != nil && next?.mediaSource == newCurrentItem {
         current = next
       } else if newCurrentItem != nil && previous?.mediaSource == newCurrentItem {
         current = previous
+      } else if newCurrentItem == nil {
+        current = nil
       } else {
         current = trackable(mediaSource: newCurrentItem, player: videoPlayer)
       }
     }
 
-    if newNextItem != oldNextItem {
+    if newNextItem != oldNextItem || next == nil {
       if newNextItem != nil && current?.mediaSource == newNextItem {
         next = current
       } else if newNextItem != nil && previous?.mediaSource == newNextItem {
         next = previous
+      } else if newNextItem == nil {
+        next = nil
       } else {
         next = trackable(mediaSource: newNextItem, player: nextPlayer)
       }
     }
 
-    previous?.alwaysLoop = previousItem != nil && isLast(item: previousItem!)
-    current?.alwaysLoop = currentItem != nil && isLast(item: currentItem!)
-    next?.alwaysLoop = nextItem != nil && isLast(item: nextItem!)
+    if mediaSources.count > 1 {
+      previous?.alwaysLoop = previousItem != nil && isLast(item: previousItem!)
+      current?.alwaysLoop = currentItem != nil && isLast(item: currentItem!)
+      next?.alwaysLoop = nextItem != nil && isLast(item: nextItem!)
 
-    previous?.isActive = false
-    next?.isActive = false
-    current?.isActive = true
+      previous?.isActive = false
+      next?.isActive = false
+      current?.isActive = true
+    } else if mediaSources.count == 1 {
+      current?.alwaysLoop = true
+      current?.isActive = true
+    }
 
     if let _current = current {
       if !_current.delegate.containsDelegate(self) {
@@ -293,10 +304,10 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
         _current.play()
       } else if _current.status == .playing && (status != .playing) {
         _current.pause()
+      } else {
+
       }
     }
-
-
 
     if allowPrefetching {
       self.prefetchNext()

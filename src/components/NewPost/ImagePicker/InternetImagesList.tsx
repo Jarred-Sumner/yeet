@@ -18,6 +18,7 @@ import Image from "../../Image";
 import ImageSearch, { IMAGE_SEARCH_HEIGHT } from "./ImageSearch";
 import Video from "react-native-video";
 import { FlatList, ScrollView } from "../../FlatList";
+import MediaPlayer, { MediaSource } from "../../MediaPlayer";
 
 // import { Image } from "../Image";
 
@@ -104,50 +105,48 @@ const ImageCell = React.memo(
     width: number;
     paused: boolean;
   }) => {
-    const [source, setSource] = React.useState(
-      image.preview.mimeType === ImageMimeType.mp4
-        ? {
-            width: image.preview.width,
-            height: image.preview.height,
-            uri: image.preview.uri
-          }
-        : {
-            width: image.preview.width,
-            height: image.preview.height,
-            uri: image.preview.uri,
-            cache: Image.cacheControl.web
-          }
-    );
+    let _source = image.preview || image.image;
+
+    const [source, setSource] = React.useState<MediaSource>({
+      id: image.id,
+      url: _source.uri,
+      mimeType: _source.mimeType,
+      width: _source.width,
+      height: _source.height,
+      bounds: {
+        width: _source.width,
+        height: _source.height
+      },
+      pixelRatio: 1.0,
+      duration: _source.duration,
+      playDuration: _source.duration
+    });
 
     const _onPress = React.useCallback(() => {
       onPress(image);
     }, [onPress, image]);
 
-    const onError = React.useCallback(() => {
-      if (image.sourceType === ImageSourceType.giphy) {
-        setSource({
-          width: Number(image.source.images.fixed_height_small_still.width),
-          height: Number(image.source.images.fixed_height_small_still.height),
-          uri: image.source.images.fixed_height_small_still.url,
-          cache: Image.cacheControl.web
-        });
-      }
-    }, [setSource, image]);
-
-    const MediaComponent =
-      image.preview.mimeType === ImageMimeType.mp4 ? Video : Image;
+    // const onError = React.useCallback(() => {
+    //   if (image.sourceType === ImageSourceType.giphy) {
+    //     setSource({
+    //       width: Number(image.source.images.fixed_height_small_still.width),
+    //       height: Number(image.source.images.fixed_height_small_still.height),
+    //       uri: image.source.images.fixed_height_small_still.url,
+    //       cache: Image.cacheControl.web
+    //     });
+    //   }
+    // }, [setSource, image]);
 
     return (
       <BaseButton exclusive={false} onPress={_onPress}>
         <View style={[photoCellStyles.container, { width, height }]}>
-          <MediaComponent
-            incrementalLoad
-            source={source}
-            resizeMode="contain"
+          <MediaPlayer
+            sources={[source]}
             muted
             loop
-            paused={paused}
-            onError={onError}
+            id={image.id}
+            autoPlay
+            // onError={onError}
             style={{ height, width }}
           />
         </View>

@@ -41,10 +41,14 @@ class MediaSource : NSObject  {
     self.cache.removeAllObjects()
   }
 
+  var isHTTProtocol: Bool {
+    return uri.scheme == "http" || uri.scheme == "https"
+  }
+
 //  lazy var asset = AVURLAsset(url: uri)
 
   lazy var assetURI: URL = {
-    if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 {
+    if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 || !self.isHTTProtocol {
       return uri
     }
 
@@ -177,7 +181,7 @@ class MediaSource : NSObject  {
 
     if (mediaSource == nil) {
       mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio)
-//      cache.setObject(mediaSource!, forKey: uri as NSString)
+      cache.setObject(mediaSource!, forKey: uri as NSString)
     }
 
     return mediaSource!

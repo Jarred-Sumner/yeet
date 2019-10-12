@@ -14,6 +14,17 @@ class SwappablePlayer : NSObject {
   var secondPlayer: AVPlayer
   var secondPlayerLayer: AVPlayerLayer
 
+  var muted: Bool {
+    get {
+      return !firstPlayer.isMuted && !secondPlayer.isMuted
+    }
+
+    set (newValue) {
+      firstPlayer.isMuted = newValue
+      secondPlayer.isMuted = newValue
+    }
+  }
+
 
   func other(player: AVPlayer) -> AVPlayer {
     return player == firstPlayer ? secondPlayer : firstPlayer

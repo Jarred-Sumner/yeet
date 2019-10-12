@@ -2,7 +2,7 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { Query } from "react-apollo";
-import { StyleSheet, View, LayoutChangeEvent } from "react-native";
+import { StyleSheet, View, LayoutChangeEvent, StatusBar } from "react-native";
 import {
   BaseButton,
   FlatList as GestureFlatList
@@ -402,32 +402,8 @@ class ThreadList extends React.PureComponent<Props, State> {
 
     return (
       <Animated.View style={[styles.page]}>
-        {/* <Animated.Code
-          exec={Animated.block([
-            // Animated.onChange(
-            //   this.scrollYOffset,
-            //   Animated.block([
-            Animated.set(
-              this.scrollVelocity,
-              Animated.diffClamp(this.scrollYOffset, -50, 50)
-            )
-            // Animated.onChange(
-            //   this.scrollVelocity,
-            //   Animated.block([
-            //     Animated.set(
-            //       this.translateCells,
+        <StatusBar hidden showHideTransition="fade" />
 
-            //     )
-            //   ])
-            // )
-            // decay(this.translateClock, this.scrollVelocity, {})
-            // Animated.cond(Animated.eq(Animated.diff(this.scrollYOffset), 0), [
-            //   Animated.set(this.scrollVelocity, 0)
-            // ])
-            // ])
-            // )
-          ])}
-        /> */}
         <FlatList
           data={this.state.sections}
           renderItem={this.handleRenderItem}

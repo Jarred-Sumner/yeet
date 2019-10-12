@@ -73,12 +73,7 @@ export type YeetImage = {
   height: number;
   duration: number;
   uri: string;
-  mimeType:
-    | "image/jpeg"
-    | "image/png"
-    | "image/webp"
-    | "image/gif"
-    | "video/mp4";
+  mimeType: ImageMimeType;
   source: ImageSourceType;
   asset: ImageResolvedAssetSource;
   transform: YeetTransform;

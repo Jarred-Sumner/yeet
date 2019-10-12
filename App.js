@@ -118,7 +118,7 @@ const Routes = createAppContainer(
             {
               headerMode: "none",
               tabBarComponent: () => null,
-              initialRouteName: "ProfileTab",
+              // initialRouteName: "ProfileTab",
 
               safeAreaInset: {
                 bottom: "never",
