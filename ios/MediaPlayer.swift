@@ -539,6 +539,5 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     mediaQueue?.stop()
     player.firstPlayer.pause()
     player.secondPlayer.pause()
-    bridge?.uiManager.observerCoordinator.remove(self)
   }
 }

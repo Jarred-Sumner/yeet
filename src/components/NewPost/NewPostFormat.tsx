@@ -23,7 +23,7 @@ export enum PostFormat {
 
 export const minImageWidthByFormat = (format: PostFormat) => {
   if (format === PostFormat.sticker) {
-    return 100;
+    return SCREEN_DIMENSIONS.width * 0.75;
   } else {
     return POST_WIDTH;
   }

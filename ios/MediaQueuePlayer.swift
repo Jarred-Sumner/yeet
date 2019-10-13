@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import Nuke
 import SwiftyBeaver
 
 class MediaQueuePlayer : TrackableMediaSourceDelegate {

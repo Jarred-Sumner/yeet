@@ -1,38 +1,33 @@
+import { connectActionSheet } from "@expo/react-native-action-sheet";
 import assert from "assert";
 import * as React from "react";
-import { StyleSheet, View, Dimensions } from "react-native";
+import { StyleSheet, StyleProp } from "react-native";
+import FastImage from "react-native-fast-image";
 import {
-  calculateAspectRatioFit,
-  convertLocalIdentifierToAssetLibrary,
-  convertCameraRollIDToRNFetchBlobId
-} from "../../lib/imageResize";
+  LongPressGestureHandler,
+  State as GestureState
+} from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import Video from "react-native-video";
+import { SharedElement } from "react-navigation-shared-element";
+import { SCREEN_DIMENSIONS } from "../../../config";
+import { convertCameraRollIDToRNFetchBlobId } from "../../lib/imageResize";
+import {
+  ImageMimeType,
+  YeetImageContainer,
+  mediaSourceFromImage,
+  mediaSourcesFromImage
+} from "../../lib/imageSearch";
+import Image from "../Image";
+import { ImagePicker, LIST_HEADER_HEIGHT } from "./ImagePicker";
 import {
   ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
   PostFormat,
-  POST_WIDTH,
-  MAX_POST_HEIGHT,
   presetsByFormat
 } from "./NewPostFormat";
-import { ImagePicker, LIST_HEADER_HEIGHT } from "./ImagePicker";
-import { SharedElement } from "react-navigation-shared-element";
-import Animated from "react-native-reanimated";
-import { debounce } from "lodash";
-import {
-  FlingGestureHandler,
-  Directions,
-  State as GestureState,
-  ScrollView,
-  TapGestureHandler,
-  LongPressGestureHandler
-} from "react-native-gesture-handler";
-import { SemiBoldText } from "../Text";
-import Image from "../Image";
-import FastImage from "react-native-fast-image";
-import { YeetImageContainer, ImageMimeType } from "../../lib/imageSearch";
-import { connectActionSheet } from "@expo/react-native-action-sheet";
-import { SCREEN_DIMENSIONS } from "../../../config";
-import Video from "react-native-video";
+import MediaPlayer from "../MediaPlayer";
+import { BoundsRect } from "../../lib/Rect";
 // import Image from "../Image";
 
 type Props = {
@@ -78,40 +73,36 @@ const stylesByFormat = {
 };
 
 const MediaComponent = React.forwardRef(
-  ({ source, resizeMode, mimeType, style, ...otherProps }, ref) => {
-    const isVideo =
-      source.uri.endsWith(".mp4") || mimeType === ImageMimeType.mp4;
+  (
+    {
+      source,
+      dimensions,
+      playDuration,
+      style,
+      ...otherProps
+    }: {
+      source: YeetImageContainer;
+      dimensions: BoundsRect;
+      playDuration?: number | null;
+      style: StyleProp<any>;
+    },
+    ref
+  ) => {
+    const sources = React.useMemo(
+      () => mediaSourcesFromImage(source, dimensions, playDuration),
+      [mediaSourcesFromImage, source, playDuration, dimensions]
+    );
 
-    if (isVideo) {
-      const uri = source.uri.includes("ph://")
-        ? convertCameraRollIDToRNFetchBlobId(source.uri, ".mp4")
-        : source.uri;
-
-      return (
-        <Video
-          {...otherProps}
-          ref={ref}
-          loop
-          source={{
-            uri,
-            width: source.width,
-            height: source.height
-          }}
-          resizeMode={resizeMode}
-          style={style}
-        />
-      );
-    } else {
-      return (
-        <Image
-          {...otherProps}
-          ref={ref}
-          source={source}
-          resizeMode={resizeMode}
-          style={style}
-        />
-      );
-    }
+    return (
+      <MediaPlayer
+        {...otherProps}
+        paused={false}
+        autoPlay
+        ref={ref}
+        sources={sources}
+        style={style}
+      />
+    );
   }
 );
 
@@ -120,14 +111,8 @@ const ScreenshotImage = React.forwardRef(
     return (
       <MediaComponent
         ref={ref}
-        mimeType={block.value.image.mimeType}
-        source={{
-          uri: block.value.image.uri,
-          width: block.value.image.width,
-          height: block.value.image.height,
-          cache: FastImage.cacheControl.web
-        }}
-        resizeMode="stretch"
+        source={block.value}
+        dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
           {
@@ -146,14 +131,8 @@ const CaptionImage = React.forwardRef(
     return (
       <MediaComponent
         ref={ref}
-        mimeType={block.value.image.mimeType}
-        source={{
-          uri: block.value.image.uri,
-          width: block.value.image.width,
-          height: block.value.image.height,
-          cache: FastImage.cacheControl.web
-        }}
-        resizeMode="stretch"
+        source={block.value}
+        dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
           {
@@ -172,14 +151,8 @@ const StickerImage = React.forwardRef(
     return (
       <MediaComponent
         ref={ref}
-        mimeType={block.value.image.mimeType}
-        source={{
-          uri: block.value.image.uri,
-          width: block.value.image.width,
-          height: block.value.image.height,
-          cache: FastImage.cacheControl.web
-        }}
-        resizeMode="stretch"
+        source={block.value}
+        dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
           {

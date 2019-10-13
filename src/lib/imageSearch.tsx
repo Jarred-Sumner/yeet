@@ -18,6 +18,9 @@ import {
   SkewYTransform
 } from "react-native";
 import { extname } from "path";
+import { MediaSource } from "../components/MediaPlayer";
+import { DimensionsRect, BoundsRect } from "./Rect";
+import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 
 export enum ImageMimeType {
   png = "image/png",
@@ -27,6 +30,22 @@ export enum ImageMimeType {
   webp = "image/webp",
   mp4 = "video/mp4"
 }
+
+export const extensionByMimeType = (mimeType: ImageMimeType) => {
+  if (mimeType === ImageMimeType.png) {
+    return ".png";
+  } else if (mimeType === ImageMimeType.gif) {
+    return ".gif";
+  } else if (mimeType === ImageMimeType.jpg) {
+    return ".jpg";
+  } else if (mimeType === ImageMimeType.webp) {
+    return ".webp";
+  } else if (mimeType === ImageMimeType.mp4) {
+    return ".mp4";
+  } else {
+    return ".mp4";
+  }
+};
 
 const mimeTypeFromFilename = (filename: string) =>
   ({
@@ -321,4 +340,38 @@ export const getSourceDimensions = (
   } else {
     return { width: 0, height: 0, x: 0, y: 0, maxX: 0, maxY: 0 };
   }
+};
+
+export const mediaSourceFromImage = (
+  container: YeetImageContainer,
+  dimensions: BoundsRect,
+  playDuration?: number
+): MediaSource => {
+  const { image } = container;
+
+  const { width, height, uri: _url, mimeType, duration } = image;
+
+  const url = _url.includes("ph://")
+    ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
+    : _url;
+
+  return {
+    url,
+    width,
+    height,
+    mimeType,
+    duration,
+    playDuration: playDuration || duration,
+    id: container.id,
+    bounds: dimensions,
+    pixelRatio: 1.0
+  };
+};
+
+export const mediaSourcesFromImage = (
+  container: YeetImageContainer,
+  dimensions: BoundsRect,
+  playDuration?: number
+): Array<MediaSource> => {
+  return [mediaSourceFromImage(container, dimensions, playDuration)];
 };

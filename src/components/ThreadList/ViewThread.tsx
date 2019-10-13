@@ -31,7 +31,7 @@ import { Avatar } from "../Avatar";
 import { BitmapIconNewPost } from "../BitmapIcon";
 import { IconPlay } from "../Icon";
 import MediaFrame from "../MediaFrame";
-import MediaPlayer from "../MediaPlayer";
+import MediaPlayer, { MediaPlayerComponent } from "../MediaPlayer";
 import { SemiBoldText, LETTER_SPACING_MAPPING } from "../Text";
 import { AuthState, UserContext } from "../UserContext";
 import { CountButton } from "./CountButton";
@@ -447,8 +447,10 @@ class ThreadContainer extends React.Component<Props, State> {
 
       this.forwardProgressValue.setValue(0);
 
-      await this.mediaPlayerRef.current.advance(0);
-      this.mediaPlayerRef.current.play();
+      if (this.mediaPlayerRef.current) {
+        await this.mediaPlayerRef.current.advance(0);
+        this.mediaPlayerRef.current.play();
+      }
 
       return Promise.resolve();
     }
@@ -459,7 +461,9 @@ class ThreadContainer extends React.Component<Props, State> {
       this.cancelAnimations();
       this.forwardProgressValue.setValue(0);
 
-      await this.mediaPlayerRef.current.advance(postIndex, true);
+      if (this.mediaPlayerRef.current) {
+        await this.mediaPlayerRef.current.advance(postIndex, true);
+      }
 
       this.setState({ postIndex, nextPostIndex: postIndex + 1 });
 
@@ -486,9 +490,15 @@ class ThreadContainer extends React.Component<Props, State> {
 
     const [{ width, height, y, x }, { x: endX, y: endY }] = await Promise.all([
       new Promise((resolve, reject) => {
+        const segmentHandle = findNodeHandle(segmentRef.current);
+        const overlayHandle = findNodeHandle(this.overlayRef.current);
+        if (!segmentHandle || !overlayHandle) {
+          reject();
+        }
+
         UIManager.measureLayout(
-          findNodeHandle(segmentRef.current),
-          findNodeHandle(this.overlayRef.current),
+          segmentHandle,
+          overlayHandle,
           reject,
           (x, y, width, height) => {
             resolve({ x, y, width, height });
@@ -511,7 +521,9 @@ class ThreadContainer extends React.Component<Props, State> {
     this.profileAnimationEndY.setValue(endY);
 
     this.mediaFrameRef.current.captureFrame(this.mediaPlayerRef);
-    await this.mediaPlayerRef.current.advance(postIndex);
+    if (this.mediaPlayerRef.current) {
+      await this.mediaPlayerRef.current.advance(postIndex);
+    }
 
     this.isAnimatingNextPost.setValue(1);
 
@@ -620,7 +632,9 @@ class ThreadContainer extends React.Component<Props, State> {
     });
 
     this.cancelAnimations();
-    this.mediaPlayerRef.current.advance(this.state.postIndex);
+    if (this.mediaPlayerRef.current) {
+      this.mediaPlayerRef.current.advance(this.state.postIndex);
+    }
   };
 
   get hasLikedPost() {
@@ -730,7 +744,7 @@ class ThreadContainer extends React.Component<Props, State> {
 
   overlayRef = React.createRef<View>();
   profileRef = React.createRef<View>();
-  mediaPlayerRef = React.createRef<MediaPlayer>();
+  mediaPlayerRef = React.createRef<MediaPlayerComponent>();
   isAnimatingToNextPost = false;
   lastProgress: number | null = null;
 

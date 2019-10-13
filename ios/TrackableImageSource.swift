@@ -8,12 +8,10 @@
 
 import Foundation
 import Repeat
-import Nuke
 
 class TrackableImageSource: TrackableMediaSource {
   var timer: Repeater? = nil
   var progressTimer: Repeater? = nil
-  var task: ImageTask? = nil
   var progressTime: CMTime = .zero
   var bounds: CGRect
 
@@ -59,15 +57,7 @@ class TrackableImageSource: TrackableMediaSource {
       return
     }
 
-    if task != nil && ImagePipeline.shared.cachedResponse(for: task!.request) != nil
-    {
-      return
-    }
-
-    if self.task == nil || self.task!.progress.isCancelled {
-      self.task = YeetImageView.imageTask(source: mediaSource, bounds: bounds)
-      self.status = .loading
-    }
+    self.status = .loading
   }
 
   override func onLoad() {
@@ -129,10 +119,6 @@ class TrackableImageSource: TrackableMediaSource {
   deinit {
     timer?.removeAllObservers(thenStop: true)
     progressTimer?.removeAllObservers(thenStop: true)
-
-    if !(task?.progress.isFinished ?? false) {
-      task?.cancel()
-    }
   }
 }
 

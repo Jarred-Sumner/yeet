@@ -29,12 +29,15 @@ target 'yeet' do
   pod 'SwiftyJSON', '~> 4.0'
   pod 'UIImageColors'
   pod 'DVAssetLoaderDelegate'
-  pod 'Nuke'
   pod 'Repeat'
   pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
   pod 'KTVHTTPCache', '~> 2.0.0'
   pod 'MulticastDelegateSwift'
-  pod 'MemoryCache'
+
+  pod 'PINCache', git: "https://github.com/pinterest/PINCache.git"
+  pod 'PINRemoteImage', modular_headers: true, git: "https://github.com/pinterest/PINRemoteImage.git"
+  pod 'PINRemoteImage/WebP', modular_headers: true, git: "https://github.com/pinterest/PINRemoteImage.git"
+  pod 'libwebp', modular_headers: true
 
 
   pod 'SwiftyBeaver'

@@ -1,57 +1,26 @@
+import { connectActionSheet } from "@expo/react-native-action-sheet";
 import CameraRoll from "@react-native-community/cameraroll";
-import { debounce } from "lodash";
 import * as React from "react";
-import { Dimensions, Keyboard, StyleSheet, View } from "react-native";
-import DeviceInfo from "react-native-device-info";
-import {
-  ScrollView,
-  State as GestureState,
-  TextInput
-} from "react-native-gesture-handler";
+import { Keyboard, StyleSheet, View } from "react-native";
+import { ScrollView, State as GestureState, TextInput } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
-import { getInset } from "react-native-safe-area-view";
 import { NavigationEvents } from "react-navigation";
 import tinycolor from "tinycolor2";
+import { IS_SIMULATOR, TOP_Y } from "../../../config";
 import { startExport } from "../../lib/Exporter";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 import { SPACING } from "../../lib/styles";
+import { sendLightFeedback } from "../../lib/Vibration";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
-import { EditorFooter, isDeletePressed } from "./EditorFooter";
+import { sendToast, ToastType } from "../Toast";
+import { isDeletePressed } from "./EditorFooter";
 import { ImagePickerRoute } from "./ImagePicker";
 import { ActiveLayer } from "./layers/ActiveLayer";
-import {
-  buildImageBlock,
-  buildTextBlock,
-  FocusType,
-  isPlaceholderImageBlock,
-  MAX_POST_HEIGHT,
-  minImageWidthByFormat,
-  PostBlockType,
-  PostFormat,
-  POST_WIDTH,
-  presetsByFormat
-} from "./NewPostFormat";
-import {
-  buildEditableNode,
-  EditableNode,
-  EditableNodeMap
-} from "./Node/BaseNode";
+import { buildImageBlock, buildTextBlock, FocusType, isPlaceholderImageBlock, MAX_POST_HEIGHT, minImageWidthByFormat, PostBlockType, PostFormat, POST_WIDTH, presetsByFormat } from "./NewPostFormat";
+import { buildEditableNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
-import {
-  DEFAULT_TOOLBAR_BUTTON_TYPE,
-  ToolbarButtonType,
-  ToolbarType
-} from "./Toolbar";
-import { sendLightFeedback } from "../../lib/Vibration";
-import { sendToast, ToastType } from "../Toast";
-import { connectActionSheet } from "@expo/react-native-action-sheet";
-import {
-  IS_SIMULATOR,
-  TOP_Y,
-  BOTTOM_Y,
-  SCREEN_DIMENSIONS
-} from "../../../config";
+import { DEFAULT_TOOLBAR_BUTTON_TYPE, ToolbarButtonType, ToolbarType } from "./Toolbar";
 
 const { block, cond, set, eq, sub } = Animated;
 

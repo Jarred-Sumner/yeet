@@ -21,6 +21,15 @@ import Foundation
     firstPlayerLayer.videoGravity = .resizeAspectFill
     secondPlayerLayer.videoGravity = .resizeAspectFill
 
+    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+    firstPlayerLayer.allowsEdgeAntialiasing = shouldAntiAlias
+    secondPlayerLayer.allowsEdgeAntialiasing = shouldAntiAlias
+
+    if shouldAntiAlias {
+      firstPlayerLayer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
+      secondPlayerLayer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
+    }
+
     super.init(frame: frame)
 
     firstPlayerLayer.needsDisplayOnBoundsChange = true
@@ -59,6 +68,15 @@ import Foundation
     firstPlayerLayer.frame = layer.bounds
     secondPlayerLayer.frame = layer.bounds
     CATransaction.commit()
+
+    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+    firstPlayerLayer.allowsEdgeAntialiasing = shouldAntiAlias
+    secondPlayerLayer.allowsEdgeAntialiasing = shouldAntiAlias
+
+    if shouldAntiAlias {
+      firstPlayerLayer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
+      secondPlayerLayer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
+    }
   }
 
   deinit {

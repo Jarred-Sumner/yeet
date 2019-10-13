@@ -7,7 +7,7 @@
 //
 
 import Foundation
-import Nuke
+import PINRemoteImage
 
 @discardableResult
 func measure<A>(name: String = "", _ block: () -> A) -> A {
@@ -162,25 +162,35 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
     }
 
    if source.isImage {
-      let url = YeetImageView.imageUri(source: source, bounds: bounds)
+      let (url, scale) = YeetImageView.imageUri(source: source, bounds: bounds)
       self.contentMode = .center
 
-      self.imageTask = Nuke.loadImage(with: url, into: self)
-      self.imageGenerator = nil
+
+
+      self.pin_setImage(from: url, processorKey: nil, processor: nil) { [weak self] result in
+        guard let bounds = self?.bounds else {
+          return
+        }
+
+        if let image = result.image {
+          if image.scale != scale {
+            self?.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
+          } else {
+            self?.image = image
+          }
+        }
+
+
+      }
     }
   }
 
-  var imageTask: ImageTask? = nil {
-    willSet {
-      self.imageTask?.cancel()
-    }
-  }
 
   @objc(id) var id: String? = nil
 
   deinit {
     self.imageGenerator?.cancelAllCGImageGeneration()
-    self.imageTask?.cancel()
+    self.pin_cancelImageDownload()
     NotificationCenter.default.removeObserver(self)
   }
 }

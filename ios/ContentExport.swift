@@ -143,7 +143,6 @@ class ContentExport {
 
         let image = block.value.image.firstFrame;
 
-
         if block.value.image.isAnimated {
           layer.contents =  image.cgImage!
           var images: Array<UIImage> = []

@@ -10,7 +10,7 @@ import Foundation
 import AVFoundation
 import SwiftyBeaver
 import SwiftyJSON
-
+import Photos
 
 @objc(MediaSource)
 class MediaSource : NSObject  {
@@ -45,6 +45,13 @@ class MediaSource : NSObject  {
     return uri.scheme == "http" || uri.scheme == "https"
   }
 
+  var isFromCameraRoll: Bool {
+    guard let scheme = uri.scheme else {
+      return false
+    }
+    return scheme.starts(with: "ph") || scheme.starts(with: "assets-library")
+  }
+
 //  lazy var asset = AVURLAsset(url: uri)
 
   lazy var assetURI: URL = {
@@ -61,13 +68,18 @@ class MediaSource : NSObject  {
     }
   }()
 
+  private var _asset: AVURLAsset? = nil
 
   lazy var asset: AVURLAsset? = {
     if (!isVideo) {
       return nil
     }
 
-    return AVURLAsset(url: assetURI)
+    if (_asset == nil) {
+      _asset = AVURLAsset(url: assetURI)
+    }
+
+    return _asset
   }()
 
 
@@ -78,6 +90,24 @@ class MediaSource : NSObject  {
   }
 
   var assetStatus : AssetLoadStatus = .pending
+  private var _phAsset: PHAsset? = nil
+  static let videoAssetManager = PHImageManager()
+
+  static func fetchRequest(url: URL) -> PHFetchResult<PHAsset>? {
+    let fetchOptions = PHFetchOptions()
+    fetchOptions.fetchLimit = 1
+    guard let scheme = url.scheme else {
+      return nil
+    }
+
+    if scheme.starts(with: "ph") {
+      return PHAsset.fetchAssets(withLocalIdentifiers: [url.path], options:fetchOptions )
+    } else if scheme.starts(with: "assets-library") {
+      return PHAsset.fetchAssets(withALAssetURLs: [url], options: fetchOptions)
+    } else {
+      return nil
+    }
+  }
   
   typealias LoadAssetCallback = (_ asset: AVURLAsset?) -> Void
   private var _onLoadAsset: Array<LoadAssetCallback> = []
@@ -90,21 +120,28 @@ class MediaSource : NSObject  {
     if assetStatus == .pending {
       assetStatus = .loading
       _onLoadAsset.append(callback)
+      if isFromCameraRoll {
+        let request = PHVideoRequestOptions()
+        request.isNetworkAccessAllowed = true
+        request.deliveryMode = .highQualityFormat
 
-      if let _asset = asset {
-        _asset.loadValuesAsynchronously(forKeys: ["duration", "tracks", "playable"]) { [weak self] in
-          guard let this = self else {
-            return
-          }
+        guard let fetchReq = MediaSource.fetchRequest(url: uri) else {
+          callback(nil)
+          return
+        }
 
-          this._onLoadAsset.forEach { [weak self] cb in
-            cb(self?.asset)
-          }
+        guard let asset = fetchReq.firstObject else {
+          callback(nil)
+          return
+        }
 
-          this.assetStatus = .loaded
+        MediaSource.videoAssetManager.requestAVAsset(forVideo: asset, options: request) { [weak self] asset, _,_  in
+          self?._asset = asset as! AVURLAsset
+
+          self?.loadAVAsset()
         }
       } else {
-        self.assetStatus = .pending
+        self.loadAVAsset()
       }
 
     } else if assetStatus == .loading {
@@ -112,6 +149,24 @@ class MediaSource : NSObject  {
     } else if assetStatus == .loaded {
       callback(asset)
     }
+  }
+
+  private func loadAVAsset() {
+    if let _asset = asset {
+     _asset.loadValuesAsynchronously(forKeys: ["duration", "tracks", "playable"]) { [weak self] in
+       guard let this = self else {
+         return
+       }
+
+       this._onLoadAsset.forEach { [weak self] cb in
+         cb(self?._asset)
+       }
+
+       this.assetStatus = .loaded
+     }
+   } else {
+     self.assetStatus = .pending
+   }
   }
 
   var videoOutput: AVPlayerItemVideoOutput? = nil
@@ -130,7 +185,7 @@ class MediaSource : NSObject  {
         let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String : kCVPixelFormatType_32BGRA] )
         playerItem.add(videoOutput)
         playerItem.preferredForwardBufferDuration = TimeInterval(1)
-        playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = true
+        playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = false
         self.videoOutput = videoOutput
       } else {
         self.videoOutput = nil

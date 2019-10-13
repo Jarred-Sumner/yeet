@@ -6,9 +6,11 @@ import {
   findNodeHandle,
   StyleProp
 } from "react-native";
-import React, { ReactEventHandler } from "react";
+import React, { ReactEventHandler, useImperativeHandle } from "react";
 import { ImageMimeType } from "../lib/imageSearch";
 import { DimensionsRect } from "../lib/Rect";
+import { useFocusEffect } from "react-navigation-hooks";
+import hoistNonReactStatics from "hoist-non-react-statics";
 
 const VIEW_NAME = "MediaPlayerView";
 let NativeMediaPlayer;
@@ -67,7 +69,7 @@ type Props = {
   onChangeItem?: ReactEventHandler<StatusEventData>;
 };
 
-export class MediaPlayer extends React.Component<Props> {
+export class MediaPlayerComponent extends React.Component<Props> {
   static defaultProps = {
     autoPlay: false,
     paused: true,
@@ -158,7 +160,7 @@ export class MediaPlayer extends React.Component<Props> {
     }
 
     const currentSourceIDs = sources.map(({ id }) => id).join("-");
-    const newSourceIDs = nextProps.map(({ id }) => id).join("-");
+    const newSourceIDs = nextProps.sources.map(({ id }) => id).join("-");
 
     return currentSourceIDs !== newSourceIDs;
   }
@@ -202,5 +204,31 @@ export class MediaPlayer extends React.Component<Props> {
     );
   }
 }
+
+const _MediaPlayer = (React.forwardRef((props: Props, ref) => {
+  const [autoPaused, setAutoPaused] = React.useState(false);
+  const _ref = React.useRef<MediaPlayerComponent>(null);
+  useImperativeHandle(ref, () => _ref.current);
+
+  const pauseOnUnfocus = React.useCallback(() => {
+    if (autoPaused) {
+      _ref.current && _ref.current.play();
+    }
+
+    return () => {
+      _ref.current && _ref.current.pause();
+      setAutoPaused(true);
+    };
+  }, [_ref.current, setAutoPaused, autoPaused]);
+
+  useFocusEffect(pauseOnUnfocus);
+
+  return <MediaPlayerComponent ref={_ref} {...props} />;
+}) as unknown) as MediaPlayerComponent;
+
+export const MediaPlayer = hoistNonReactStatics(
+  _MediaPlayer,
+  MediaPlayerComponent
+);
 
 export default MediaPlayer;

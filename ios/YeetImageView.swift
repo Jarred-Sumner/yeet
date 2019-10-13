@@ -7,17 +7,19 @@
 //
 
 import Foundation
-import SDWebImage
-import Nuke
+import PINRemoteImage
 import SwiftyBeaver
+import Photos
 
 enum YeetImageViewResizeMode : String {
   case aspectFit = "aspectFit"
   case aspectFill = "aspectFill"
 }
 
+typealias ImageFetchCompletionBlock = (_ image: UIImage?) -> Void
+
 @objc(YeetImageView)
-class YeetImageView : SDAnimatedImageView {
+class YeetImageView : PINAnimatedImageView {
   @objc var sentOnLoadStart = false
   @objc var completed = false
   @objc var errored = false
@@ -33,16 +35,55 @@ class YeetImageView : SDAnimatedImageView {
       self._source = newValue
       self.mediaSource = newValue?.mediaSource
 
-      if (newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) {
+      if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri)  || self.image == nil) {
         old?.hasLoaded = false
         old?.stop()
+
+        if let imageRequestID = imageRequestID {
+          YeetImageView.phImageManager.cancelImageRequest(imageRequestID)
+          self.imageRequestID = nil
+        }
+
+        if self.pin_downloadImageOperationUUID() != nil {
+          self.pin_cancelImageDownload()
+        }
+
         self.loadImage()
       }
    }
   }
 
+  static let phImageManager = PHCachingImageManager()
+
+
+  var imageRequestID: PHImageRequestID? = nil
+
+  static func fetchCameraRollAsset(mediaSource: MediaSource, bounds: CGRect, contentMode: UIView.ContentMode, completion: @escaping ImageFetchCompletionBlock) -> PHImageRequestID? {
+    let request = PHImageRequestOptions()
+    request.isNetworkAccessAllowed = true
+    request.deliveryMode = .opportunistic
+
+    phImageManager.allowsCachingHighQualityImages = false
+
+
+    guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
+      completion(nil)
+      return nil
+    }
+
+    guard let asset = fetchReq.firstObject else {
+      completion(nil)
+      return nil
+    }
+
+    let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
+
+    return phImageManager.requestImage(for: asset, targetSize: bounds.size, contentMode: _contentMode, options: request) { image, _ in
+      completion(image)
+    }
+  }
+
   @objc(source) var mediaSource: MediaSource? = nil
-  var imageTask: ImageTask? = nil
 
   var _resizeMode: YeetImageViewResizeMode = .aspectFill
   @objc(resizeMode)
@@ -63,9 +104,22 @@ class YeetImageView : SDAnimatedImageView {
   }
 
   init() {
-    super.init(image: nil)
+    super.init(frame: .zero)
     self.contentMode = .scaleAspectFit
+    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+    layer.allowsEdgeAntialiasing = shouldAntiAlias
+    layer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
+
+
     self.clipsToBounds = true
+    self.pin_updateWithProgress = true
+  }
+
+  override func layoutSubviews() {
+    super.layoutSubviews()
+    
+    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+    layer.allowsEdgeAntialiasing = shouldAntiAlias
   }
 
 
@@ -85,19 +139,14 @@ class YeetImageView : SDAnimatedImageView {
         return
       }
 
-      if (isAnimating) {
-        self.stopAnimating()
-      } else {
-        self.startAnimating()
+      DispatchQueue.main.async { [weak self] in
+        if (self?.isAnimating ?? false) {
+            self?.stopAnimating()
+          } else {
+            self?.startAnimating()
+          }
       }
-    }
-  }
 
-  @objc open override func nuke_display(image: Image?) {
-    self.image = image
-
-    if (image?.sd_isAnimated ?? false) {
-      self.isAnimatedImage = true
     }
   }
 
@@ -107,33 +156,46 @@ class YeetImageView : SDAnimatedImageView {
       return
     }
 
-    let url = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
+    if mediaSource.isHTTProtocol {
+      let (url, scale) = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
 
-    if self.imageTask != nil && self.imageTask!.request.urlRequest.url == url && !(self.imageTask!.progress.isCancelled) {
-      return
+      self.pin_setImage(from: url, processorKey: nil, processor: nil) { [weak self] result in
+        self?.handleImageLoad(image: result.image, scale: scale, error: result.error)
+      }
+    } else if mediaSource.isFromCameraRoll {
+      self.imageRequestID = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, bounds: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)), contentMode: self.contentMode) { [weak self] image in
+        if self?.imageRequestID != nil {
+          self?.imageRequestID = nil
+        }
+
+        self?.handleImageLoad(image: image, scale: UIScreen.main.nativeScale)
+      }
     }
 
-    let processors = [
-      ImageProcessor.Resize(size: bounds.size, contentMode: contentMode == .scaleAspectFit ? .aspectFit : .aspectFill)
-    ]
-
-    let imageRequest = ImageRequest.init(url: url, processors: processors, priority: .normal, options: ImageRequestOptions())
-
-    let completionBlock: ImageTask.Completion = { [weak self] resp in
-      self?.handleLoad(resp)
-    }
-
-    self.imageTask = Nuke.loadImage(with: imageRequest, options: .shared,  into: self, progress: nil, completion: completionBlock)
     onLoadStartEvent?(["id": mediaSource.id])
   }
+
+  func handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
+    if let image = image {
+      if image.scale != scale {
+        self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
+      } else {
+        self.image = image
+      }
+    } else {
+      self.image = nil
+    }
+
+    self.handleLoad(success: image != nil, error: error)
+  }
+
 
   @objc (onLoadStart) var onLoadStartEvent: RCTDirectEventBlock? = nil
   @objc (onLoad) var onLoadEvent: RCTDirectEventBlock? = nil
   @objc (onError) var onErrorEvent: RCTDirectEventBlock? = nil
 
-  func handleLoad(_ response: Result<ImageResponse, ImagePipeline.Error>) {
-    do {
-      try response.get()
+  func handleLoad(success: Bool, error: Error? = nil) {
+    if (success) {
       DispatchQueue.main.async { [weak self] in
         self?._source?.onLoad()
       }
@@ -145,34 +207,39 @@ class YeetImageView : SDAnimatedImageView {
 
 
       onLoadEvent?([ "id": mediaSource.id ])
-    } catch {
+    } else {
       guard let mediaSource = self.mediaSource else {
         return
       }
 
-      onErrorEvent?([ "id": mediaSource.id, "error": error.localizedDescription ])
-      DispatchQueue.main.async { [weak self] in
-        self?._source?.onError(error: error)
+      onErrorEvent?([ "id": mediaSource.id, "error": error!.localizedDescription ])
+      if error != nil {
+        DispatchQueue.main.async { [weak self] in
+          if let error = error {
+            self?._source?.onError(error: error)
+          }
+        }
       }
 
     }
+
   }
 
   static let imageUriCache = NSCache<NSString, AnyObject>()
 
-  static func imageUri(source: MediaSource, bounds: CGRect) -> URL {
+  static func imageUri(source: MediaSource, bounds: CGRect) -> (URL, CGFloat) {
     let cacheKey = "\(source.id)-\(bounds.size.width)-\(bounds.size.height)-\(bounds.origin.y)-\(bounds.origin.x)" as NSString
 
     if let cachedURI = imageUriCache.object(forKey: cacheKey) as! URL? {
-      return cachedURI
+      return (cachedURI, imageScale(source: source, bounds: bounds))
     } else {
       let url = _imageUri(source: source, bounds: bounds)
       imageUriCache.setObject(url as AnyObject, forKey: cacheKey)
-      return url
+      return (url, imageScale(source: source, bounds: bounds))
     }
   }
 
-  static func _imageUri(source: MediaSource, bounds: CGRect) -> URL {
+  static func imageWidth(source: MediaSource, bounds: CGRect) -> CGFloat {
     let cropBounds = source.naturalBounds
 
     let cropMaxX = cropBounds.size.width - cropBounds.origin.x
@@ -187,15 +254,31 @@ class YeetImageView : SDAnimatedImageView {
     ].min() ?? .zero
 
 
-    let maxX = Int(floor(_maxX))
+    return _maxX
+  }
+
+  static func imageScale(source: MediaSource, bounds: CGRect) -> CGFloat {
+    let maxX = imageWidth(source: source, bounds: bounds)
+    let boundsWidth = bounds.size.width > .zero ? bounds.size.width : UIScreen.main.bounds.width
+
+    return maxX < CGFloat(1) ? CGFloat(1) : maxX / boundsWidth
+  }
+
+  static func _imageUri(source: MediaSource, bounds: CGRect) -> URL {
+    if (!source.isHTTProtocol) {
+      return source.uri
+    }
+
+    let maxX = imageWidth(source: source, bounds: bounds)
+
     if (maxX == 0) {
       return source.uri
     }
 
 
     let cropRect = [
-      "cx": cropBounds.origin.x,
-      "cy": cropBounds.origin.y,
+      "cx": source.naturalBounds.origin.x,
+      "cy": source.naturalBounds.origin.y,
 //      "cw": cropMaxX,
 //      "ch": cropMaxY
     ]
@@ -213,11 +296,13 @@ class YeetImageView : SDAnimatedImageView {
     return URL(string: urlString)!
   }
 
-  static func imageTask(source: MediaSource, bounds: CGRect, progress: ImageTask.ProgressHandler? = nil, completion: ImageTask.Completion? = nil) -> ImageTask? {
-    return ImagePipeline.shared.loadImage(with: imageUri(source: source, bounds: bounds), progress: progress, completion: completion)
-  }
 
   deinit {
-    self.imageTask?.cancel()
+    self.pin_cancelImageDownload()
+
+    if let imageRequest = self.imageRequestID {
+      YeetImageView.phImageManager.cancelImageRequest(imageRequest)
+      self.imageRequestID = nil
+    }
   }
 }
