@@ -5,15 +5,19 @@ import SpriteKit
 import Photos
 import SDWebImage
 import UIImageColors
+import SwiftyBeaver
+import Promises
+
+typealias ExportableSlice = (Array<AVAssetTrack>, Array<ExportableBlock>)
 
 class ContentExport {
   static let CONVERT_PNG_TO_WEBP = true
 
-  private static func getFramesAnimation(frames: [UIImage], duration: CFTimeInterval) -> CAAnimation {
+  private static func getFramesAnimation(frames: [CGImage], duration: CFTimeInterval) -> CAAnimation {
     let animation = CAKeyframeAnimation(keyPath:#keyPath(CALayer.contents))
     animation.calculationMode = CAAnimationCalculationMode.discrete
     animation.duration = duration
-    animation.values =  frames.map {$0.cgImage! }
+    animation.values =  frames
     animation.speed = 1.0
     animation.repeatCount = Float(ceil(Double(frames.count) / duration))
     animation.isRemovedOnCompletion = false
@@ -53,209 +57,433 @@ class ContentExport {
     ]
   }
 
+  static func composeImageLayer(image: ExportableImageSource, frame: CGRect, duration: TimeInterval, block: ContentBlock? = nil) -> CALayer {
+    let layer = CALayer()
+    layer.bounds = frame
+    layer.frame = frame
+
+    setupInnerLayer(layer: layer, block: block)
+
+    if (image.isAnimated) {
+      layer.contents = image.firstFrame
+      var images: Array<CGImage> = []
+
+      for frameIndex in 0...image.animatedImageFrameCount - 1 {
+        let frame = image.animatedImageFrame(at: UInt(frameIndex))
+
+        images.append(frame)
+      }
+
+      layer.add(getFramesAnimation(frames: images, duration: duration), forKey: nil)
+    } else if (image.mediaSource.mimeType == .png) {
+//      layer.shouldRasterize = true
+      if (ContentExport.CONVERT_PNG_TO_WEBP) {
+        let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image.staticImage!, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
+        layer.contents = newImage.cgImage!
+      } else {
+        layer.contents = UIImage.init(data: image.staticImage!.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
+      }
+//      layer.contentsFormat = .RGBA16Float
+    } else {
+//      layer.shouldRasterize = true
+      layer.contents = image.staticImage!.cgImage!
+//      layer.contentsFormat = .RGBA16Float
+    }
+
+    return layer
+  }
+
+  static func composeAnimationLayer(parentLayer: CALayer, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>) -> (CGRect) {
+    let contentsScale = UIScreen.main.scale
+
+    var maxY = CGFloat(0)
+    var minY = estimatedBounds.size.height
+    resources.forEach { resource in
+      guard let block = resource.block else {
+        return
+      }
+
+      guard let image = block.value.image.image else {
+        return
+      }
+
+      let frame = block.nodeFrame ?? block.frame
+
+      if (frame.origin.y + frame.size.height > maxY) {
+       maxY = frame.origin.y + frame.size.height
+      }
+
+      if (frame.origin.y < minY) {
+       minY = frame.origin.y
+      }
+
+      let layer = composeImageLayer(image: image, frame: frame, duration: duration, block: block)
+
+
+      parentLayer.addSublayer(layer)
+    }
+
+    return CGRect(x: estimatedBounds.origin.x, y: minY, width: estimatedBounds.size.width, height: maxY)
+  }
+
+  static var blankTrack: AVAssetTrack {
+    let vidAsset = AVURLAsset(url: Bundle.main.url(forResource: "blank_1080p", withExtension: ".mp4")!)
+
+    return vidAsset.tracks(withMediaType: AVMediaType.video)[0]
+  }
+
+  static func createVideoLayer(frame: CGRect, containerFrame: CGRect, bounds: CGRect, scale: CGFloat, transform: CGAffineTransform, naturalSize: CGSize) -> (CALayer, CALayer) {
+    let videoLayer = CALayer()
+    let containerLayer = CALayer()
+
+    containerLayer.contentsGravity = .resizeAspectFill
+    containerLayer.bounds = CGRect(origin: .zero, size: frame.size)
+    containerLayer.frame = frame
+    containerLayer.contentsScale = CGFloat(UIScreen.main.nativeScale)
+
+    let contentsTransform = ContentsGravityTransformation(for: containerLayer, naturalSize: naturalSize)
+    containerLayer.setAffineTransform(CGAffineTransform.init(scaleX: contentsTransform.scale.width, y: contentsTransform.scale.height))
+
+    containerLayer.contentsGravity = .center
+
+
+//    containerLayer.bounds = CGRect(origin: .zero, size: frame.size)
+//    containerLayer.frame = containerFrame
+//    containerLayer.isGeometryFlipped = true
+//    containerLayer.masksToBounds = true
+
+//    containerLayer.frame = containerFrame
+//
+//    containerLayer.bounds = CGRect(origin: .zero, size: containerFrame.size)
+
+
+//    videoLayer.bounds = bounds
+//    videoLayer.bounds = frame
+//    videoLayer.bounds = bounds
+    videoLayer.frame = frame
+    videoLayer.contentsScale = CGFloat(UIScreen.main.nativeScale)
+    videoLayer.contentsGravity = .center
+    videoLayer.setAffineTransform(transform)
+    videoLayer.masksToBounds = true
+    videoLayer.isGeometryFlipped = true
+    videoLayer.isOpaque = false
+    videoLayer.backgroundColor = UIColor.clear.cgColor
+
+//    let
+
+
+
+
+    containerLayer.addSublayer(videoLayer)
+
+    return (containerLayer, videoLayer)
+  }
+
+  static func setupInnerLayer(layer: CALayer, block: ContentBlock? = nil) {
+    layer.masksToBounds = true
+    layer.allowsEdgeAntialiasing = true
+    layer.contentsScale = UIScreen.main.nativeScale
+    layer.isOpaque = false
+    layer.backgroundColor = UIColor.clear.cgColor
+    layer.contentsGravity = .resizeAspectFill
+    layer.isGeometryFlipped = true
+    layer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15) // all sides
+//    layer.adjustAnchorPoint(anchorPoint: CGPoint(x: CGFloat(0.5), y: CGFloat.zero))
+
+
+    if let block = block {
+      layer.cornerRadius = CGFloat(block.dimensions.cornerRadius.doubleValue * block.position.scale.doubleValue)
+      layer.setAffineTransform(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)))
+    }
+  }
+
+  static func sliceResources (resources: Array<ExportableBlock>) -> Array<Array<ExportableBlock>> {
+    guard resources.count > 1  else {
+      return [resources]
+    }
+
+    let videoIndices = resources.filter { resource in
+
+      guard let block = resource.block else {
+        return false
+      }
+
+      return block.value.image.isVideo
+    }.compactMap { videoBlock in
+      return resources.firstIndex(of: videoBlock)
+    }
+
+    guard videoIndices.count > 0 else {
+      return [resources]
+    }
+
+
+    var slices: Array<Array<ExportableBlock>> = []
+
+    var lastVideoSlice = 0
+    videoIndices.forEach { index in
+      if index > lastVideoSlice + 1 {
+        slices.append(
+          Array(resources[lastVideoSlice + 1...index - 1])
+        )
+      }
+
+      slices.append(
+        [resources[index]]
+      )
+
+      lastVideoSlice = index
+    }
+
+    if lastVideoSlice < resources.count - 1 {
+      slices.append(
+        Array(resources[lastVideoSlice + 1...resources.count - 1])
+      )
+    }
+
+    return slices
+  }
 
   static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, complete: @escaping(ContentExport?)->()) {
     do {
-      let composition = AVMutableComposition()
-      let vidAsset = AVURLAsset(url: Bundle.main.url(forResource: "blank_1080p", withExtension: ".mp4")!)
-
-      let videoTrack = vidAsset.tracks(withMediaType: AVMediaType.video)[0]
-
-
-      let vid_timerange = CMTimeRangeMake(start: CMTime.zero, duration: CMTime(seconds: [duration, 0.01].max()! ))
-
-      let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
-      try! track!.insertTimeRange(vid_timerange, of: videoTrack, at: .zero)
-
-//      let contentsScale = type == ExportType.mp4 ? CGFloat(1) : UIScreen.main.scale
-            let contentsScale = UIScreen.main.scale
-
-
-      // Watermark Effect
-
-      // Original video from frontal camera.
-      let videolayer = CALayer()
-      videolayer.frame = estimatedBounds
-      videolayer.opacity = 1.0
-      videolayer.backgroundColor = UIColor.black.cgColor
-      videolayer.contentsGravity = .topLeft
-
-
-      let parentlayer = CALayer()
-      parentlayer.bounds = estimatedBounds
-      parentlayer.frame = estimatedBounds
-      parentlayer.isGeometryFlipped = type == ExportType.mp4
-      parentlayer.addSublayer(videolayer)
-      parentlayer.contentsScale = contentsScale
-
-//      parentlayer.isGeometryFlipped = type == ExportType.mp4
-      parentlayer.contentsGravity = type == ExportType.mp4 ? .resize   : .resize
-
-//      parentlayer.anchorPoint = CGPoint(x: 0.5, y: -0.5)
-//      parentlayer.transform = CATransform3DMakeAffineTransform(CGAffineTransform.identity.translatedBy(x: CGFloat(bounds.size.width * 0.5), y: CGFloat(bounds.size.width * -0.5)).scaledBy(x: CGFloat(UIScreen.main.scale), y: UIScreen.main.scale))
-
-//      parentlayer.transform = CATransform3DMakeAffineTransform(CGAffineTransform.identity.scaledBy(x: CGFloat(1), y: CGFloat(-1)))
-      var maxY = CGFloat(0)
-      var minY = estimatedBounds.size.height
-      resources.forEach { resource in
-        guard let block = resource.block else {
-          return
-        }
-
-
-        let layer = CALayer()
-
-        if let frame = block.nodeFrame {
-          layer.frame = frame;
-
-          if (frame.origin.y + frame.size.height > maxY) {
-            maxY = frame.origin.y + frame.size.height
-          }
-
-          if (frame.origin.y < minY) {
-            minY = frame.origin.y
-          }
-        } else {
-          layer.frame = block.frame;
-          if (block.frame.origin.y + block.frame.size.height > maxY) {
-            maxY = block.frame.origin.y  + block.frame.size.height
-
-          }
-
-          if (block.frame.origin.y < minY) {
-            minY = block.frame.origin.y
-          }
-        }
-
-        layer.masksToBounds = true
-        layer.cornerRadius = CGFloat(block.dimensions.cornerRadius.doubleValue * block.position.scale.doubleValue)
-        layer.allowsEdgeAntialiasing = true
-        layer.contentsScale = contentsScale
-        layer.isOpaque = false
-        layer.backgroundColor = UIColor.clear.cgColor
-        layer.contentsGravity = .resizeAspect
-        layer.isGeometryFlipped = true
-
-        layer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15) // all sides
-
-
-        layer.setAffineTransform(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)))
-
-        let image = block.value.image.firstFrame;
-
-        if block.value.image.isAnimated {
-          layer.contents =  image.cgImage!
-          var images: Array<UIImage> = []
-
-          for frameIndex in 0...block.value.image.animatedImageFrameCount - 1 {
-            let image = block.value.image.animatedImageFrame(at: frameIndex)!
-
-            images.append(image)
-          }
-
-          layer.add(getFramesAnimation(frames: images, duration: block.totalDuration), forKey: nil)
-        } else if (block.value.mimeType == MimeType.png) {
-          layer.shouldRasterize = true
-          if (ContentExport.CONVERT_PNG_TO_WEBP) {
-            let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
-            layer.contents = newImage.cgImage!
-          } else {
-            layer.contents = UIImage.init(data: image.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
-          }
-          layer.contentsFormat = .RGBA16Float
-
-        } else {
-          layer.shouldRasterize = true
-          layer.contents = image.cgImage!
-          layer.contentsFormat = .RGBA16Float
-        }
-
-        parentlayer.addSublayer(layer)
-
-      }
-
-      let cropRect = CGRect(x: estimatedBounds.origin.x, y: minY, width: estimatedBounds.size.width, height: maxY)
-
-
-//      parentlayer.frame = CGRect(x: estimatedBounds.origin.x, y: minY, width: estimatedBounds.size.width, height: maxY).applying(CGAffineTransform.init(scaleX: contentsScale, y: contentsScale))
-//      parentlayer.setAffineTransform(CGAffineTransform.init(translationX: estimatedBounds.size.width / contentsScale, y: parentlayer.frame.height / CGFloat(2)).scaledBy(x: contentsScale, y: contentsScale))
-
-//      parentlayer.bounds = bounds
-//      parentlayer.frame = bounds
-//      parentlayer.masksToBounds = true
-////      parentlayer.sublayers?.forEach({ layer in
-////        layer.bounds = bounds
-////      })
-//
-////      parentlayer.setNeedsLayout()
-
-
-      let resolution = CGSize(width: cropRect.size.width * contentsScale, height: cropRect.size.height * contentsScale)
-
+      
+      let contentsScale = UIScreen.main.scale
+      let parentLayer = CALayer()
+      parentLayer.bounds = estimatedBounds
+      parentLayer.frame = estimatedBounds
+      parentLayer.contentsScale = contentsScale
+      parentLayer.contentsGravity = .topLeft
+      parentLayer.isGeometryFlipped = true
+      parentLayer.masksToBounds = true
+      parentLayer.isOpaque = false
 
 
       if (type == ExportType.mp4) {
-        let colors = UIImage.image(from: parentlayer)!.getColors()
-//        videolayer.frame = CGRect(origin: .zero, size: bounds.size)
-//        parentlayer.setAffineTransform(CGAffineTransform.init(translationX: cropRect.size.width / contentsScale, y: (cropRect.size.height / contentsScale) + (cropRect.size.height - parentlayer.frame.size.height)).scaledBy(x: contentsScale, y: contentsScale))
+        let startPrepTime = CACurrentMediaTime()
 
-        parentlayer.bounds = cropRect
-        let y = parentlayer.bounds.origin.y + (cropRect.size.height * contentsScale)  * (parentlayer.anchorPoint.y )
-        let x = parentlayer.bounds.origin.x + (cropRect.size.width * contentsScale) * parentlayer.anchorPoint.x
-        parentlayer.position = CGPoint(x: x, y: y)
-        parentlayer.setAffineTransform(CGAffineTransform(scaleX: contentsScale, y: contentsScale))
-
-
-
+        let seconds = [duration, 3.0].max()!
+        let vid_timerange = CMTimeRangeMake(start: CMTime.zero, duration: CMTime(seconds: seconds))
+        let composition = AVMutableComposition()
+        let slicedResources = sliceResources(resources: resources)
         let layercomposition = AVMutableVideoComposition()
         layercomposition.frameDuration = CMTime(value: 1, timescale: 30)
-//        layercomposition.renderSize = CGSize(width: cropRect.size.width, height: max(cropRect.size.height, estimatedBounds.size.height) +  (cropRect.size.height - parentlayer.frame.size.height)).applying(.init(scaleX: contentsScale, y: contentsScale))
-        layercomposition.renderSize = CGSize(width: parentlayer.bounds.size.width * contentsScale, height: parentlayer.bounds.size.height * contentsScale)
-        layercomposition.animationTool = AVVideoCompositionCoreAnimationTool(
-          postProcessingAsVideoLayer: videolayer, in: parentlayer)
 
+        var videoLayers: Array<CALayer> = []
+        var animationLayers: Array<CALayer> = []
 
-        // instruction for watermark
+        var bounds = estimatedBounds
+        let videos = resources.filter { resource in
+          return resource.block!.value.image.isVideo
+        }
+
+        if videos.count == 0 {
+          let (containerLayer, videoLayer) = createVideoLayer(frame: estimatedBounds, containerFrame: estimatedBounds, bounds: estimatedBounds, scale: contentsScale, transform: CGAffineTransform.identity, naturalSize: estimatedBounds.size)
+
+          parentLayer.addSublayer(containerLayer)
+          videoLayers.append(videoLayer)
+        }
+
         let instruction = AVMutableVideoCompositionInstruction()
-        instruction.timeRange = CMTimeRangeMake(start: CMTime.zero, duration: CMTime(seconds: [duration, 0.01].max()!, preferredTimescale: 1000000))
-        let layerinstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-	        layerinstruction.setTransform(videoTrack.preferredTransform, at: CMTime.zero)
-//        layerinstruction.setTransform(videoTrack.preferredTransform, at: .zero)
-        instruction.layerInstructions = [layerinstruction] as [AVVideoCompositionLayerInstruction]
-        layercomposition.instructions = [instruction] as [AVVideoCompositionInstructionProtocol]
-//
-//        let cropXOffset = cropRect.origin.x * contentsScale
-//        let cropYOffset = min((cropRect.origin.y) * contentsScale * CGFloat(-1), CGFloat.zero)
-//        layerinstruction.setCropRectangle(CGRect(origin: CGPoint(x: cropXOffset, y: cropYOffset), size: CGSize(width: layercomposition.renderSize.width - cropXOffset, height: layercomposition.renderSize.height - cropYOffset)), at: .zero)
+        instruction.timeRange = vid_timerange
+        instruction.backgroundColor = UIColor.clear.cgColor
 
+        var importedVideoCount = 0
+
+        resources.forEach { resource in
+//          guard let resource = resources.first else {
+//            return
+//          }
+
+          guard let block = resource.block else {
+            return
+          }
+
+          let isVideo = block.value.image.isVideo
+          let isImage = block.value.image.isImage
+
+          if (isVideo) {
+            guard let video = block.value.image.video  else {
+              return
+            }
+
+            let resizeScale = UIScreen.main.nativeScale
+            let asset =  video.asset
+
+            let frame = block.nodeFrame ?? block.frame
+
+            if importedVideoCount == 0 {
+//              let asset = try! await(asset.resize(to: CGRect(origin: .zero, size: frame.size), transform: CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)), duration: CMTime(seconds: seconds)))
+              let vidAsset = asset.tracks(withMediaType: .video).first!
+              let videoFrame = CGRect(origin: .zero, size: vidAsset.naturalSize)
+              let originalSize = vidAsset.naturalSize
+
+              let horizScale = frame.size.width / originalSize.width
+              let vertScale = frame.size.height / originalSize.height
+              let scale = min(horizScale, vertScale)
+
+
+              let scaledSize = CGSize(width: originalSize.width * scale, height: originalSize.height * scale)
+
+              let maxSize = frame.size.width < originalSize.width ? frame.size : originalSize
+              let minSize = frame.size.width > originalSize.width ? frame.size : originalSize
+              let topLeft = CGPoint(x: (originalSize.width - scaledSize.width) * 0.5, y:(originalSize.height - scaledSize.height) * 0.5)
+
+              guard let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                return
+              }
+              try! track.insertTimeRange(vidAsset.timeRange, of: vidAsset, at: .zero)
+
+              var orientationTransform = vidAsset.preferredTransform
+
+              if (orientationTransform.tx == originalSize.width || orientationTransform.tx == originalSize.height) {
+                orientationTransform.tx = frame.size.width
+              }
+
+              if (orientationTransform.ty == originalSize.width || orientationTransform.ty == originalSize.height) {
+                orientationTransform.ty = frame.size.height
+              }
+
+              let transform = CGAffineTransform.identity.scaledBy(x: scale, y: scale).concatenating(orientationTransform)
+              track.preferredTransform = vidAsset.preferredTransform
+              track.naturalTimeScale = vidAsset.naturalTimeScale
+              let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+
+              instruction.layerInstructions.append(layerInstruction)
+              layercomposition.frameDuration = vidAsset.minFrameDuration
+
+
+              let videoLayer = CALayer()
+              videoLayer.bounds = CGRect(origin: .zero, size: frame.size)
+              videoLayer.frame = frame
+              setupInnerLayer(layer: videoLayer, block: block)
+              videoLayer.contentsScale = CGFloat( 1)
+              videoLayer.borderWidth = CGFloat(2)
+              videoLayer.borderColor = UIColor.red.cgColor
+              videoLayer.backgroundColor = UIColor.clear.cgColor
+
+              videoLayer.contentsGravity = .resizeAspectFill
+
+              let xf = transform.concatenating(videoLayer.affineTransform())
+//              videoLayer.setAffineTransform(xf)
+              
+              SwiftyBeaver.info("""
+              \(CGPoint.zero.applying(xf))
+              \(CGPoint(x: 1, y: 1).applying(xf))
+
+""")
+
+//              wrapperLayer.addSublayer(videoLayer)
+
+              videoLayers.append(videoLayer)
+              parentLayer.addSublayer(videoLayer)
+              importedVideoCount = 1
+            } else {
+              do {
+                let imageSource = try await(video.generateThumbnail(size: frame.size))
+                let layer = composeImageLayer(image: imageSource, frame: frame, duration: block.totalDuration, block: block)
+                parentLayer.addSublayer(layer)
+              } catch {
+                SwiftyBeaver.error("Composing \(block.id) failed.\n\(error)")
+              }
+
+            }
+
+            if (Double(bounds.width) < block.dimensions.maxX.doubleValue) {
+              bounds.size.width = CGFloat(block.dimensions.maxX.doubleValue)
+            }
+
+            if (Double(bounds.height) < block.dimensions.maxY.doubleValue) {
+              bounds.size.height = CGFloat(block.dimensions.maxY.doubleValue)
+            }
+
+          } else if (isImage) {
+            let cropRect = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: seconds, resources: resources)
+
+            let _width = cropRect.size.width * contentsScale
+            let _height = cropRect.size.width * contentsScale
+
+            if _width > bounds.size.width {
+              bounds.size.width = _width
+            }
+
+            if _height > bounds.size.height {
+              bounds.size.height = _height
+            }
+          }
+        }
+
+        layercomposition.instructions.append(instruction)
+        layercomposition.renderSize = parentLayer.bounds.size
+
+        if videoLayers.count > 1 {
+          layercomposition.animationTool = .init(postProcessingAsVideoLayers: videoLayers, in: parentLayer)
+        } else if videoLayers.count == 1 {
+          layercomposition.animationTool = .init(postProcessingAsVideoLayer: videoLayers.first!, in: parentLayer)
+        }
+
+
+        let layerInstruction = instruction.layerInstructions.first! as! AVMutableVideoCompositionLayerInstruction
+
+        if (layercomposition.renderSize.width == .zero || layercomposition.renderSize.height == .zero) {
+          SwiftyBeaver.error("Invalid video export size \(layercomposition.renderSize)")
+          complete(nil)
+          return
+        }
 
         // Use AVAssetExportSession to export video
-        let assetExport =  AVAssetExportSession(asset: composition, presetName:AVAssetExportPresetHEVCHighestQuality)
+        let assetExport = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHEVC1920x1080)
         assetExport?.outputFileType = AVFileType.mp4
         assetExport?.outputURL = url
-        assetExport?.shouldOptimizeForNetworkUse = true   
-        assetExport?.videoComposition = layercomposition
+        assetExport?.canPerformMultiplePassesOverSourceMediaData = true
+
+        assetExport?.timeRange = vid_timerange
+        assetExport?.shouldOptimizeForNetworkUse = true
 
 
+        if layercomposition.instructions.count > 0 {
+          assetExport?.videoComposition = layercomposition
+        }
 
+        let timeSpentPreparing = CACurrentMediaTime() - startPrepTime
+        SwiftyBeaver.info("Preparing video export with \(resources.count) completed in \(timeSpentPreparing)s")
+        SwiftyBeaver.info("Starting video export...")
+        let startExportTime = CACurrentMediaTime()
         assetExport?.exportAsynchronously(completionHandler: {
+          let timeSpentExporting = CACurrentMediaTime() - startExportTime
+
           switch assetExport!.status {
           case AVAssetExportSessionStatus.failed:
-            print("failed")
-            print(assetExport?.error ?? "unknown error")
+
+            SwiftyBeaver.error("Video Export failed. \n\(assetExport?.error)")
             complete(nil)
           case AVAssetExportSessionStatus.cancelled:
-            print("cancelled")
-            print(assetExport?.error ?? "unknown error")
+            SwiftyBeaver.warning("Video Export cancelled")
             complete(nil)
           default:
-            print("Movie complete")
+            var resolution = CGSize(width: bounds.size.width, height: bounds.size.height)
+            var colors: UIImageColors? = nil
+
+            do {
+              let imageGenerator = AVAssetImageGenerator(asset: assetExport!.asset)
+              imageGenerator.appliesPreferredTrackTransform = true
+              let thumbnail = try UIImage(cgImage: imageGenerator.copyCGImage(at: CMTime(seconds: 0, preferredTimescale: 1), actualTime: nil))
+
+              resolution = thumbnail.size
+              colors = thumbnail.getColors()
+            } catch {
+
+            }
+
+            let duration = CMTimeGetSeconds(assetExport!.asset.duration)
+            SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
 
             complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
           }
         })
       } else {
-        let fullImage = UIImage.image(from: parentlayer)!.sd_croppedImage(with: cropRect)!
+        let cropRect = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources)
+
+        let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!.sd_flippedImage(withHorizontal: false, vertical: true)!
         let imageData: NSData
         let compressionQuality = isDigitalOnly ? CGFloat(1) : CGFloat(0.99)
         if (type == ExportType.png) {
@@ -267,6 +495,7 @@ class ContentExport {
         }
 
         imageData.write(to: url, atomically: true)
+        let resolution = fullImage.size
 
 
         complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
@@ -323,4 +552,142 @@ extension UIColor {
   var rgbaString:String {
     return String(format: "rgba(%d,%d,%d,%f)", Int(rgbComponents.red * 255), Int(rgbComponents.green * 255),Int(rgbComponents.blue * 255),rgbComponents.alpha )
   }
+}
+
+
+extension CGAffineTransform {
+    init(from: CGRect, toRect to: CGRect) {
+        self.init(translationX: to.midX-from.midX, y: to.midY-from.midY)
+        self = self.scaledBy(x: to.width/from.width, y: to.height/from.height)
+    }
+}
+
+
+extension CALayer {
+  func adjustAnchorPoint(anchorPoint: CGPoint) {
+      var newPoint = CGPoint(x: bounds.size.width * anchorPoint.x,
+                             y: bounds.size.height * anchorPoint.y)
+
+
+      var oldPoint = CGPoint(x: bounds.size.width * anchorPoint.x,
+                             y: bounds.size.height * anchorPoint.y)
+
+      newPoint = newPoint.applying(affineTransform())
+      oldPoint = oldPoint.applying(affineTransform())
+
+      var position = self.position
+      position.x -= oldPoint.x
+      position.x += newPoint.x
+
+      position.y -= oldPoint.y
+      position.y += newPoint.y
+
+      self.position = position
+      self.anchorPoint = anchorPoint
+  }
+}
+
+extension CGAffineTransform {
+  func from(_ source: CGRect, destination: CGRect) -> CGAffineTransform {
+    return self
+//           .translatedBy(x: destination.midX - source.midX, y: destination.midY - source.midY)
+          .scaledBy(x: destination.width / source.width, y: destination.height / source.height)
+  }
+}
+
+
+struct ContentsGravityTransformation {
+    /// `offset` is in the provided `layer`'s own (`bounds`) coordinates
+    let offset: CGPoint
+
+    /// `scale` is a proportion by which the `layer` will be transformed in each `width` and `height`
+    let scale: CGSize
+
+  init(for layer: CALayer, naturalSize: CGSize) {
+        let scaledContents = CGSize(
+            width: CGFloat(naturalSize.width) / layer.contentsScale,
+            height: CGFloat(naturalSize.height) / layer.contentsScale
+        )
+
+        let bounds = layer.bounds
+        var distanceToMinX: CGFloat {
+            return -((bounds.width - scaledContents.width) * layer.anchorPoint.x)
+        }
+        var distanceToMinY: CGFloat {
+            return -((bounds.height - scaledContents.height) * layer.anchorPoint.y)
+        }
+        var distanceToMaxX: CGFloat {
+            return (bounds.width - scaledContents.width) * (1 - layer.anchorPoint.x)
+        }
+        var distanceToMaxY: CGFloat {
+            return (bounds.height - scaledContents.height) * (1 - layer.anchorPoint.y)
+        }
+
+        switch layer.contentsGravity {
+        case .resize:
+            offset = .zero
+            scale = CGSize(width: bounds.width / scaledContents.width, height: bounds.height / scaledContents.height)
+            break
+        case .resizeAspectFill:
+            offset = .zero
+            let maxScale = max(bounds.width / scaledContents.width, bounds.height / scaledContents.height)
+            scale = CGSize(width: maxScale, height: maxScale)
+            break
+        case .resizeAspect:
+            offset = .zero
+            let minScale = min(bounds.width / scaledContents.width, bounds.height / scaledContents.height)
+            scale = CGSize(width: minScale, height: minScale)
+            break
+        case .center:
+            offset = .zero
+            scale = .defaultScale
+          break
+        case .left:
+            offset = CGPoint(x: distanceToMinX, y: 0.0)
+            scale = .defaultScale
+          break
+        case .right:
+            offset = CGPoint(x: distanceToMaxX, y: 0.0)
+            scale = .defaultScale
+          break
+        case .top:
+            offset = CGPoint(x: 0.0, y: distanceToMinY)
+            scale = .defaultScale
+          break
+        case .bottom:
+            offset = CGPoint(x: 0.0, y: distanceToMaxY)
+            scale = .defaultScale
+          break
+        case .topLeft:
+            offset = CGPoint(x: distanceToMinX, y: distanceToMinY)
+            scale = .defaultScale
+          break
+        case .topRight:
+            offset = CGPoint(x: distanceToMaxX, y: distanceToMinY)
+            scale = .defaultScale
+          break
+        case .bottomLeft:
+            offset = CGPoint(x: distanceToMinX, y: distanceToMaxY)
+            scale = .defaultScale
+          break
+        case .bottomRight:
+            offset = CGPoint(x: distanceToMaxX, y: distanceToMaxY)
+            scale = .defaultScale
+            break
+        default:
+          offset = .zero
+          scale = .defaultScale
+      }
+    }
+}
+
+private extension CGSize {
+  static let defaultScale = CGSize(width: UIScreen.main.nativeScale, height: UIScreen.main.nativeScale)
+}
+
+extension CGFloat {
+    func roundedToScreenScale(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGFloat {
+        let scale: CGFloat = 1.0 / UIScreen.main.scale
+        return scale * (self / scale).rounded(rule)
+    }
 }

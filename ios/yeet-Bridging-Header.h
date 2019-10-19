@@ -6,7 +6,6 @@
 #import <React/RCTBridge.h>
 #import <SDWebImage/SDAnimatedImage.h>
 #import <React/RCTUIManager.h>
-#import <FFFastImageView.h>
 #import <React/RCTUIManagerUtils.h>
 #import <SDWebImageWebPCoder.h>
 #import <React/RCTMultilineTextInputView.h>
@@ -25,6 +24,8 @@
 #import <DVURLAsset.h>
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
 #import <KTVHTTPCache/KTVHTTPCache.h>
+#import <FFFastImageView.h>
+
 
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)
 

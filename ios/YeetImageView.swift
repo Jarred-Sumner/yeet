@@ -57,30 +57,56 @@ class YeetImageView : PINAnimatedImageView {
 
 
   var imageRequestID: PHImageRequestID? = nil
+  var livePhotoRequestID: PHLivePhotoRequestID? = nil
 
-  static func fetchCameraRollAsset(mediaSource: MediaSource, bounds: CGRect, contentMode: UIView.ContentMode, completion: @escaping ImageFetchCompletionBlock) -> PHImageRequestID? {
-    let request = PHImageRequestOptions()
-    request.isNetworkAccessAllowed = true
-    request.deliveryMode = .opportunistic
-
-    phImageManager.allowsCachingHighQualityImages = false
-
-
+  static func fetchCameraRollAsset(mediaSource: MediaSource, bounds: CGRect, contentMode: UIView.ContentMode, completion: @escaping ImageFetchCompletionBlock) -> (PHImageRequestID?, PHLivePhotoRequestID?) {
     guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
       completion(nil)
-      return nil
+      return (nil, nil)
     }
 
     guard let asset = fetchReq.firstObject else {
       completion(nil)
-      return nil
+      return (nil, nil)
     }
 
     let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
 
-    return phImageManager.requestImage(for: asset, targetSize: bounds.size, contentMode: _contentMode, options: request) { image, _ in
-      completion(image)
-    }
+    phImageManager.allowsCachingHighQualityImages = false
+
+    var livePhotoRequestID: PHLivePhotoRequestID? = nil
+    var imageRequestID: PHImageRequestID? = nil
+
+//    if asset.mediaSubtypes.contains(.photoLive) {
+//      let request = PHLivePhotoRequestOptions()
+//      request.isNetworkAccessAllowed = true
+//      request.deliveryMode = .opportunistic
+//
+//      livePhotoRequestID = phImageManager.requestLivePhoto(for: asset, targetSize: bounds.size, contentMode: _contentMode, options: request) { livePhoto, _ in
+//        guard let livePhoto = livePhoto else {
+//          return
+//        }
+//
+//        let assetResources = PHAssetResource.assetResources(for: livePhoto)
+//
+//        let photoResource = assetResources.first { resource in
+//          return resource.type == .photo
+//        }
+//
+//        phImageManager.
+//      }
+//    } else {
+      let request = PHImageRequestOptions()
+      request.isNetworkAccessAllowed = true
+      request.deliveryMode = .opportunistic
+
+       imageRequestID = phImageManager.requestImage(for: asset, targetSize: bounds.size, contentMode: _contentMode, options: request) { image, _ in
+        completion(image)
+      }
+//    }
+
+
+    return (imageRequestID, livePhotoRequestID)
   }
 
   @objc(source) var mediaSource: MediaSource? = nil
@@ -117,7 +143,7 @@ class YeetImageView : PINAnimatedImageView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-    
+
     let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
     layer.allowsEdgeAntialiasing = shouldAntiAlias
   }
@@ -146,7 +172,6 @@ class YeetImageView : PINAnimatedImageView {
             self?.startAnimating()
           }
       }
-
     }
   }
 
@@ -163,13 +188,16 @@ class YeetImageView : PINAnimatedImageView {
         self?.handleImageLoad(image: result.image, scale: scale, error: result.error)
       }
     } else if mediaSource.isFromCameraRoll {
-      self.imageRequestID = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, bounds: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)), contentMode: self.contentMode) { [weak self] image in
+
+      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, bounds: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)), contentMode: self.contentMode) { [weak self] image in
         if self?.imageRequestID != nil {
           self?.imageRequestID = nil
         }
 
         self?.handleImageLoad(image: image, scale: UIScreen.main.nativeScale)
       }
+
+      self.imageRequestID = imageRequestID
     }
 
     onLoadStartEvent?(["id": mediaSource.id])
@@ -267,6 +295,12 @@ class YeetImageView : PINAnimatedImageView {
   static func _imageUri(source: MediaSource, bounds: CGRect) -> URL {
     if (!source.isHTTProtocol) {
       return source.uri
+    }
+
+    if let host = source.uri.host {
+      if host.contains("giphy") {
+        return source.uri
+      }
     }
 
     let maxX = imageWidth(source: source, bounds: bounds)

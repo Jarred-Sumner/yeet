@@ -30,7 +30,6 @@ class ExportableBlock : ImageResource {
 
     self.selectedTimeRange = CMTimeRange(start: CMTime.zero, duration: duration)
 
-    block.value.image.preloadAllFrames()
   }
 
   required init() {
@@ -42,37 +41,38 @@ class ExportableBlock : ImageResource {
 
 
   open override func image(at time: CMTime, renderSize: CGSize) -> CIImage? {
-    if let block = self.block {
-      if block.type == BlockType.text {
-
-        if (self.lastCIImage == nil) {
-          self.lastCIImage = CIImage.init(image: block.value.image.staticImage!)
-        }
-
-        return self.lastCIImage
-      }
-
-      let duration = block.totalDuration
-      var frameRange = block.ranges.first(where: { imageFrameRange in
-        return imageFrameRange.timespan.contains(time.seconds)
-      })
-
-      if frameRange?.frameOffset == lastOffset && self.lastCIImage != nil {
-        return self.lastCIImage
-      }
-
-    if let frame = block.value.image.animatedImageFrame(at: frameRange!.frameOffset) {
-        self.lastCIImage = CIImage.init(image: frame)
-        self.lastOffset = frameRange!.frameOffset
-        return self.lastCIImage
-      } else {
-        return nil
-      }
-    } else {
+    guard let block = self.block else {
       return nil
     }
 
+    guard let image = block.value.image.image else {
+      return nil
+    }
+
+    if image.isAnimated {
+      if (self.lastCIImage == nil) {
+        self.lastCIImage = CIImage.init(image: image.staticImage!)
+      }
+
+      return self.lastCIImage
+    } else {
+      guard let frameRange = block.ranges.first(where: { imageFrameRange in
+        return imageFrameRange.timespan.contains(time.seconds)
+      }) else {
+        return nil
+      }
+
+      if frameRange.frameOffset == lastOffset && self.lastCIImage != nil {
+        return self.lastCIImage
+      }
+
+      self.lastCIImage = CIImage.init(cgImage: image.animatedImageFrame(at: frameRange.frameOffset))
+       self.lastOffset = frameRange.frameOffset
+       return self.lastCIImage
+    }
   }
+
+  
 
   // MARK: - NSCopying
   open override func copy(with zone: NSZone? = nil) -> Any {

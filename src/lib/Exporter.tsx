@@ -4,7 +4,8 @@ import {
   View,
   ScrollView,
   UIManager,
-  Image
+  Image,
+  PixelRatio
 } from "react-native";
 import {
   YeetImageRect,
@@ -134,6 +135,8 @@ const createExportableNode = (
   nodeBounds: BoundsRect,
   nodeViewTag: number
 ): ExportableNode => {
+  console.log("POSITION", node.position);
+
   return {
     block: createExportableBlock(node.block, viewTag, blockBounds),
     frame: nodeBounds,
@@ -150,7 +153,12 @@ const createExportableNode = (
 const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
   new Promise((resolve, _reject) =>
     UIManager.measure(findNodeHandle(ref), (x, y, width, height) => {
-      resolve({ x, y, width, height });
+      resolve({
+        x: PixelRatio.roundToNearestPixel(x),
+        y: PixelRatio.roundToNearestPixel(y),
+        width: PixelRatio.roundToNearestPixel(width),
+        height: PixelRatio.roundToNearestPixel(height)
+      });
     })
   );
 

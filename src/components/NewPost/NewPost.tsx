@@ -4,7 +4,12 @@ import * as React from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
 import { Transition, Transitioning } from "react-native-reanimated";
 import { withNavigation } from "react-navigation";
-import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import {
+  BOTTOM_Y,
+  SCREEN_DIMENSIONS,
+  TOP_Y,
+  IS_DEVELOPMENT
+} from "../../../config";
 import { ContentExport, ExportData } from "../../lib/Exporter";
 import { resizeImage } from "../../lib/imageResize";
 import {
@@ -93,6 +98,62 @@ const DEFAULT_POST_FIXTURE = {
     blocks: []
   }
 };
+
+// const DEVELOPMENT_POST_FIXTURE = {
+//   format: "screenshot",
+//   blocks: [
+//     {
+//       type: "image",
+//       format: "screenshot",
+//       dimensions: { width: 414, height: 552, x: 0, y: 0, maxX: 414, maxY: 552 },
+//       id: "bmoRLK-ZMTsio5thJW5KT",
+//       contentId: "ph://60863845-FF9C-4F04-A910-398D016B6384/L0/001",
+//       viewTag: 803,
+//       frame: { x: 0, y: 0, width: 414, height: 552 },
+//       value: {
+//         width: 768,
+//         height: 1024,
+//         source: "cameraRoll",
+//         mimeType: "image/jpeg",
+//         uri: "ph://60863845-FF9C-4F04-A910-398D016B6384/L0/001",
+//         duration: 0
+//       }
+//     }
+//   ],
+//   nodes: [
+//     {
+//       block: {
+//         type: "image",
+//         format: "sticker",
+//         dimensions: {
+//           width: 310.5,
+//           height: 172.638,
+//           x: 0,
+//           y: 0,
+//           maxX: 310.5,
+//           maxY: 172.638
+//         },
+//         id: "jUlqsRfWmT8OvTgrn0v2C",
+//         contentId: "d3DiXTPbqh83K",
+//         viewTag: 1379,
+//         frame: { x: 15, y: 15, width: 310.5, height: 172.5 },
+//         value: {
+//           width: 500,
+//           height: 278,
+//           source: "giphy",
+//           mimeType: "video/mp4",
+//           uri:
+//             "https://media0.giphy.com/media/d3DiXTPbqh83K/giphy.mp4?cid=f94a78089e09d52157b4b8b1ff9b2ecdba13c8fcbc47a708&rid=giphy.mp4",
+//           duration: 1
+//         }
+//       },
+//       frame: { x: 52.75, y: 322.6809997558594, width: 310.5, height: 172.5 },
+//       viewTag: 1385,
+//       position: { x: 52.75, rotate: 0, scale: 1, y: 322.681 }
+//     }
+//   ],
+//   bounds: { x: 0, y: 0, width: 414, height: 754 }
+// };
 
 // const DEVELOPMENT_POST_FIXTURE = {
 //   format: PostFormat.screenshot,
@@ -441,7 +502,10 @@ const styles = StyleSheet.create({
 const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 
 // const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
-export const DEFAULT_POST = DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
+export const DEFAULT_POST =
+  IS_DEVELOPMENT && typeof DEVELOPMENT_POST_FIXTURE !== "undefined"
+    ? DEVELOPMENT_POST_FIXTURE
+    : DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
 
 const DEFAULT_BOUNDS = {
   x: 0,

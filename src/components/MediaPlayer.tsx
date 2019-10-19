@@ -69,6 +69,29 @@ type Props = {
   onChangeItem?: ReactEventHandler<StatusEventData>;
 };
 
+const clean = (
+  sources: Array<Partial<MediaSource | null>>
+): Array<MediaSource> => {
+  return sources
+    .filter(source => {
+      if (!source || typeof source !== "object") {
+        return false;
+      }
+
+      return source.url && source.id && source.width && source.height;
+    })
+    .map(source => {
+      return {
+        ...source,
+        playDuration: source.playDuration || 0,
+        duration: source.duration || 0,
+        pixelRatio: source.pixelRatio || 1.0,
+        width: source.width || 0,
+        height: source.height || 0
+      };
+    });
+};
+
 export class MediaPlayerComponent extends React.Component<Props> {
   static defaultProps = {
     autoPlay: false,
@@ -191,7 +214,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
     return (
       <NativeMediaPlayer
         style={style}
-        sources={sources}
+        sources={clean(sources)}
         onEnd={onEnd}
         id={id}
         prefetch={prefetch}

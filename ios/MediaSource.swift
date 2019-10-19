@@ -254,8 +254,10 @@ extension RCTConvert {
     let dictionary = self.nsDictionary(json) as! Dictionary<String, Any>
 
     let bounds = CGRect.from(json: JSON(dictionary["bounds"]) )
+    let uri =  dictionary["url"] as! String
 
-    return MediaSource.from(uri: dictionary["url"] as! String, mimeType: MimeType.init(rawValue: dictionary["mimeType"] as! String)!, duration: dictionary["duration"] as! NSNumber, playDuration: dictionary["playDuration"] as! NSNumber, id: dictionary["id"] as! String, width: dictionary["width"] as! NSNumber, height: dictionary["height"] as! NSNumber, bounds: bounds, pixelRatio: dictionary["pixelRatio"] as! NSNumber)
+
+    return MediaSource.from(uri: uri, mimeType: MimeType.init(rawValue: dictionary["mimeType"] as! String)!, duration: dictionary["duration"] as! NSNumber, playDuration: dictionary["playDuration"] as! NSNumber, id: dictionary["id"] as! String, width: dictionary["width"] as! NSNumber, height: dictionary["height"] as! NSNumber, bounds: bounds, pixelRatio: dictionary["pixelRatio"] as! NSNumber)
   }
 
   @objc(MediaSourceArray:)

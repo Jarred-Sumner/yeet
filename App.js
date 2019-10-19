@@ -147,6 +147,7 @@ const Routes = createAppContainer(
                 backgroundColor: "#000"
               },
               headerMode: "none",
+              initialRouteName: "NewPost",
               defaultNavigationOptions: {
                 header: () => null,
                 mode: "modal",
@@ -161,6 +162,7 @@ const Routes = createAppContainer(
           },
           headerMode: "none",
           mode: "modal",
+          initialRouteName: "NewPostStack",
           defaultNavigationOptions: {
             header: () => null,
             headerMode: "none"

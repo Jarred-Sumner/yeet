@@ -33,6 +33,7 @@ target 'yeet' do
   pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
   pod 'KTVHTTPCache', '~> 2.0.0'
   pod 'MulticastDelegateSwift'
+  pod 'PromisesSwift', modular_headers: true
 
   pod 'PINCache', git: "https://github.com/pinterest/PINCache.git"
   pod 'PINRemoteImage', modular_headers: true, git: "https://github.com/pinterest/PINRemoteImage.git"
@@ -58,45 +59,49 @@ target 'yeet' do
   pod 'Yoga', :path => '../node_modules/react-native/ReactCommon/Yoga'
 
   pod 'DoubleConversion', :podspec => '../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec', modular_headers: true
-  pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec'
-  pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
+  pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec', modular_headers: false
+  pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec', modular_headers: false
   pod 'VFCabbage',  :modular_headers => true
 
 
   use_native_modules!
-  pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info'
+  pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info', modular_headers: false
 
-  pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient'
+  pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient', modular_headers: false
 
-  pod 'react-native-video', :path => '../node_modules/react-native-video'
+  pod 'react-native-video', :path => '../node_modules/react-native-video', modular_headers: false
 
-  pod 'react-native-image-picker', :path => '../node_modules/react-native-image-picker'
+  pod 'react-native-image-picker', :path => '../node_modules/react-native-image-picker', modular_headers: false
 
-  pod 'rn-fetch-blob', :path => '../node_modules/rn-fetch-blob'
+  pod 'rn-fetch-blob', :path => '../node_modules/rn-fetch-blob', modular_headers: false
 
-  pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback'
+  pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback', modular_headers: false
 
-  pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios'
+  pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios', modular_headers: false
+  use_modular_headers!
 
 
 
+  pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
+  pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas', modular_headers: false
 
-  pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios'
-  pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas'
+  pod 'RNFS', :path => '../node_modules/react-native-fs', modular_headers: false
 
-  pod 'RNFS', :path => '../node_modules/react-native-fs'
-
-  pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element'
+  pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element', modular_headers: false
 
   # pod 'react-native-photos-framework', :path => '../node_modules//react-native-photos-framework'
 
-  pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler'
+  pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler', modular_headers: false
 
-  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated'
+  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated', modular_headers: false
 
-  pod 'react-native-config', :path => '../node_modules/react-native-config'
+  pod 'react-native-config', :path => '../node_modules/react-native-config', modular_headers: false
 
-  pod 'react-native-cronet', :path => '../node_modules/react-native-cronet'
+  pod 'react-native-cronet', :path => '../node_modules/react-native-cronet', modular_headers: false
+
+  pod 'RNFastImage', :path => '../node_modules/react-native-fast-image', modular_headers: false
+
+  pod "NextLevelSessionExporter", modular_headers: false
 
   post_install do |installer|
     installer.pods_project.targets.each do |target|

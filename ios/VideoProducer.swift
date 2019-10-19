@@ -78,6 +78,7 @@ enum PostFormat: String {
 
 enum MimeType: String {
   case png = "image/png"
+  case gif = "image/gif"
   case webp = "image/webp"
   case jpg = "image/jpeg"
   case mp4 = "video/mp4"
@@ -103,9 +104,9 @@ class YeetMedia {
 }
 
 class YeetImage : YeetMedia {
-  let image: ExportableImage;
+  let image: ExportableMediaSource;
 
-  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: ExportableImage) {
+  init(width: NSNumber, height: NSNumber, source: String, mimeType: String, uri: String, duration: NSNumber, image: ExportableMediaSource) {
     self.image = image
     super.init(width: width, height: height, source: source, mimeType: mimeType, uri: uri, duration: duration)
   }
@@ -150,11 +151,16 @@ class ContentBlock {
 
 
 
-  init(value: JSON?, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableImage, position: JSON?, frame: CGRect, nodeFrame: CGRect?, text: String?, type: BlockType) {
+  init(value: JSON?, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableMediaSource, position: JSON?, frame: CGRect, nodeFrame: CGRect?, text: String?, type: BlockType) {
 
 
-    self.frame = frame
-    self.nodeFrame = nodeFrame
+    self.frame = CGRect(origin: CGPoint(x: frame.origin.x.roundedToScreenScale(), y: frame.origin.y.roundedToScreenScale()), size: CGSize(width: frame.size.width.roundedToScreenScale(), height: frame.size.height.roundedToScreenScale()))
+    if let nodeFrame = nodeFrame {
+      self.nodeFrame = CGRect(origin: CGPoint(x: nodeFrame.origin.x.roundedToScreenScale(), y: nodeFrame.origin.y.roundedToScreenScale()), size: CGSize(width: nodeFrame.size.width.roundedToScreenScale(), height: nodeFrame.size.height.roundedToScreenScale()))
+    } else {
+      self.nodeFrame = nil
+    }
+
 
     if let _value = value {
       if (type == BlockType.text) {
@@ -198,15 +204,22 @@ class ContentBlock {
 
 
   func calculateRanges() {
-    if (!value.image.isAnimated || type != BlockType.image) {
+    guard type == BlockType.image else {
       return
     }
 
+    guard let image = value.image.image else {
+      return
+    }
 
-    for i in 0...value.image.animatedImageFrameCount - 1 {
-      let newDuration = value.image.animatedImageDuration(at: i)
+    guard image.isAnimated else {
+      return
+    }
 
-      self.ranges.append(ImageFrameRange(timespan: TimeInterval(totalDuration)...TimeInterval(newDuration + totalDuration), frameOffset: i))
+    for i in 0...image.animatedImageFrameCount - 1 {
+      let newDuration = image.animatedImageDuration(at: UInt(i))
+
+      self.ranges.append(ImageFrameRange(timespan: TimeInterval(totalDuration)...TimeInterval(newDuration + totalDuration), frameOffset: UInt(i)))
       totalDuration = newDuration + totalDuration
     }
   }
@@ -234,12 +247,22 @@ enum ExportType : String {
 
 class VideoProducer {
   let data: JSON
-  let images: Dictionary<String, ExportableImage>
+  let images: Dictionary<String, ExportableMediaSource>
   let blocks: Array<ContentBlock>
 
   var hasAnyAnimations: Bool {
     return blocks.first(where: { imageBlock in
-      return imageBlock.value.image.isAnimated
+      guard let image = imageBlock.value.image.image else {
+        return false
+      }
+
+      return image.isAnimated
+    }) != nil
+  }
+
+  var hasAnyVideos: Bool {
+    return blocks.first(where: { imageBlock in
+      return imageBlock.value.image.video != nil
     }) != nil
   }
 
@@ -249,7 +272,7 @@ class VideoProducer {
     }.count == self.blocks.count
   }
 
-  static func getBlocks(data: JSON, images: Dictionary<String, ExportableImage>) -> Array<ContentBlock> {
+  static func getBlocks(data: JSON, images: Dictionary<String, ExportableMediaSource>) -> Array<ContentBlock> {
     var blocks: Array<ContentBlock> = []
     var currentIndex = 0
 
@@ -310,8 +333,6 @@ class VideoProducer {
     }.max()!
   }
 
-
-
   func start(estimatedBounds: CGRect, isServerOnly: Bool = false, callback: @escaping RCTResponseSenderBlock) {
     let resources = self.blocks.map { block in
       return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
@@ -323,7 +344,7 @@ class VideoProducer {
     var exportType: ExportType
 
 
-    if (self.hasAnyAnimations) {
+    if (self.hasAnyAnimations || self.hasAnyVideos) {
       exportType = .mp4
       exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
     } else if (isServerOnly) {
@@ -338,15 +359,18 @@ class VideoProducer {
     }
 
 
-    ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital) { export in
-      if let _export = export {
-        print("Export \(_export.url)")
-        callback([nil, _export.dictionaryValue()])
-      } else {
-        callback([])
-      }
+    DispatchQueue.global(qos: .default).async {
+      ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital) { export in
+        if let _export = export {
+          print("Export \(_export.url)")
+          callback([nil, _export.dictionaryValue()])
+        } else {
+          callback([])
+        }
 
+      }
     }
+
 //    let timeline = Timeline()
 //
 //
@@ -386,7 +410,7 @@ class VideoProducer {
   }
 
 
-  init(data: JSON, images: Dictionary<String, ExportableImage>) {
+  init(data: JSON, images: Dictionary<String, ExportableMediaSource>) {
     self.data = data
     self.blocks = VideoProducer.getBlocks(data: data, images: images).sorted(by: { a, b in
       return a.zIndex.intValue < b.zIndex.intValue

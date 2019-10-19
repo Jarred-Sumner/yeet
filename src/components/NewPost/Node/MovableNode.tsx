@@ -353,6 +353,36 @@ export class MovableNode extends Component<Props> {
                   )
                 ),
                 Animated.onChange(
+                  this.rotationGestureState,
+                  Animated.call(
+                    [
+                      this.X,
+                      this.Y,
+                      this.R,
+                      this.Z,
+                      this.panGestureState,
+                      this.absoluteX,
+                      this.absoluteY
+                    ],
+                    this.updatePosition
+                  )
+                ),
+                Animated.onChange(
+                  this.scaleGestureState,
+                  Animated.call(
+                    [
+                      this.X,
+                      this.Y,
+                      this.R,
+                      this.Z,
+                      this.panGestureState,
+                      this.absoluteX,
+                      this.absoluteY
+                    ],
+                    this.updatePosition
+                  )
+                ),
+                Animated.onChange(
                   this.absoluteX,
                   Animated.set(this.props.absoluteX, this.absoluteX)
                 ),

@@ -2,7 +2,11 @@ import { connectActionSheet } from "@expo/react-native-action-sheet";
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
 import { Keyboard, StyleSheet, View } from "react-native";
-import { ScrollView, State as GestureState, TextInput } from "react-native-gesture-handler";
+import {
+  ScrollView,
+  State as GestureState,
+  TextInput
+} from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
@@ -17,10 +21,29 @@ import { sendToast, ToastType } from "../Toast";
 import { isDeletePressed } from "./EditorFooter";
 import { ImagePickerRoute } from "./ImagePicker";
 import { ActiveLayer } from "./layers/ActiveLayer";
-import { buildImageBlock, buildTextBlock, FocusType, isPlaceholderImageBlock, MAX_POST_HEIGHT, minImageWidthByFormat, PostBlockType, PostFormat, POST_WIDTH, presetsByFormat } from "./NewPostFormat";
-import { buildEditableNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
+import {
+  buildImageBlock,
+  buildTextBlock,
+  FocusType,
+  isPlaceholderImageBlock,
+  MAX_POST_HEIGHT,
+  minImageWidthByFormat,
+  PostBlockType,
+  PostFormat,
+  POST_WIDTH,
+  presetsByFormat
+} from "./NewPostFormat";
+import {
+  buildEditableNode,
+  EditableNode,
+  EditableNodeMap
+} from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
-import { DEFAULT_TOOLBAR_BUTTON_TYPE, ToolbarButtonType, ToolbarType } from "./Toolbar";
+import {
+  DEFAULT_TOOLBAR_BUTTON_TYPE,
+  ToolbarButtonType,
+  ToolbarType
+} from "./Toolbar";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -719,7 +742,11 @@ class RawwPostEditor extends React.Component<Props, State> {
   handleDownload = async () => {
     try {
       const [snapshot, _] = await this.createSnapshot(false);
+
       console.time("Camera Roll");
+      if (IS_SIMULATOR) {
+        return sendToast("Skipped save due to simulator", ToastType.success);
+      }
       return CameraRoll.saveToCameraRoll(
         snapshot.uri,
         String(snapshot.type).includes("image") ? "photo" : "video"

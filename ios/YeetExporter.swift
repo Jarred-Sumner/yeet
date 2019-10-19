@@ -29,7 +29,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
       if let exportData = try? JSON(data: dataObject) {
 
         self.getImages(data: exportData) { images in
-          DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+          DispatchQueue.global(qos: .default).async { [weak self] in
             autoreleasepool { [weak self] in
               self?.producer = VideoProducer(data: exportData, images: images)
 
@@ -70,8 +70,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     return true
   }
 
-  func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, ExportableImage>) -> Void) -> Void {
-    var dict = Dictionary<String, ExportableImage>();
+  func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, ExportableMediaSource>) -> Void) -> Void {
+    var dict = Dictionary<String, ExportableMediaSource>();
 
 
     RCTExecuteOnUIManagerQueue {
@@ -105,14 +105,14 @@ class YeetExporter: NSObject, RCTBridgeModule  {
               return
             }
 
-            dict[block["id"].stringValue] = ExportableImage(image: screenshot)
-          } else if block["type"].stringValue == "image" {
+            dict[block["id"].stringValue] = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
+          } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
             guard let view = registry[block["viewTag"].numberValue] else {
               return;
             }
 
-            if let imageView = self.findImageView(view: view) {
-              dict[block["id"].stringValue] = ExportableImage(image: imageView.image!)
+            if let mediaPlayer = self.findMediaPlayer(view) {
+              dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer)
             }
 
           }
@@ -126,16 +126,16 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
   }
 
-  func findImageView(view: UIView) -> FFFastImageView? {
-    if type(of: view) == FFFastImageView.self {
-      return view as! FFFastImageView;
+  func findMediaPlayer(_ view: UIView) -> MediaPlayer? {
+    if type(of: view) == MediaPlayer.self {
+      return view as! MediaPlayer;
     } else if (view.subviews.count > 0) {
       for subview in view.subviews {
-        if (type(of: subview) == FFFastImageView.self) {
-          return subview as! FFFastImageView
+        if (type(of: subview) == MediaPlayer.self) {
+          return subview as! MediaPlayer
         } else if (subview.subviews.count > 0) {
-          if let imageView = findImageView(view: subview) {
-            return imageView
+          if let player = findMediaPlayer(subview) {
+            return player
           }
         }
 
