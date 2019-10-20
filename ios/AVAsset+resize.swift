@@ -11,100 +11,88 @@ import UIKit
 import AVFoundation
 import Promises
 import SwiftyBeaver
+import Photos
+import NextLevelSessionExporter
 
-extension AVAsset {
-  func resize(to: CGRect, transform: CGAffineTransform, duration: CMTime, backgroundColor: UIColor? = UIColor.systemPink, scale: Float = Float(UIScreen.main.nativeScale)) -> Promise<AVURLAsset> {
+
+extension AVURLAsset {
+  static func resolveCameraURL(cameraURL: URL) -> Promise<URL?> {
+    return Promise(on: .global(qos: .background)) { resolve, reject in
+      let fetchOpts = PHFetchOptions.init()
+      fetchOpts.fetchLimit = 1
+
+      var fetchResult = PHAsset.fetchAssets(withALAssetURLs: [cameraURL], options: fetchOpts)
+      guard let videoAsset = fetchResult.firstObject else {
+        resolve(nil)
+        return
+      }
+
+        let options: PHVideoRequestOptions = PHVideoRequestOptions()
+        options.version = .original
+
+        PHImageManager.default().requestAVAsset(forVideo: videoAsset, options: options, resultHandler: { (asset, audioMix, info) in
+            if let urlAsset = asset as? AVURLAsset {
+                let localVideoUrl = urlAsset.url
+                resolve(localVideoUrl)
+            } else {
+                resolve(nil)
+            }
+        })
+    }
+  }
+
+  func resize(url: URL, to: CGRect, duration: Double, scale: CGFloat) -> Promise<AVURLAsset> {
+    let dest = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(url.pathExtension.contains("mov") ?  ".mov" : ".mp4"))
+
+    let width = Int(floor(to.width - to.origin.x))
+    let height = Int(floor(to.height - to.origin.y))
+
     return Promise(on: .global(qos: .background)) { [weak self] resolve, reject in
-      self?.resize(to: to, bounds: to, transform: transform, duration: duration, backgroundColor: backgroundColor, scale: scale) { asset, error in
-        if let asset = asset {
-          resolve(asset)
-        } else {
-          reject(error ?? NSError(domain: "com.codeblogcorp.yeet.avasset-resize", code: 0, userInfo: nil))
+      let asset = AVURLAsset(url: url)
+
+      asset.loadValuesAsynchronously(forKeys: ["tracks", "duration"]) {
+        guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+          // TADA!
+          SwiftyBeaver.error("Tried to resize AVURLAsset without a video track")
+          resolve(self!)
+          return
         }
 
-      }
-    }
-  }
+        let exporter = NextLevelSessionExporter(withAsset: asset)
+        exporter.outputFileType = AVFileType.mp4
+        exporter.outputURL = dest
 
-  func resize(to: CGRect, bounds: CGRect, transform: CGAffineTransform, duration: CMTime, backgroundColor: UIColor? = UIColor.systemPink, scale: Float = Float(UIScreen.main.nativeScale)) -> Promise<AVURLAsset> {
-    return Promise(on: .global(qos: .background)) { [weak self] resolve, reject in
-      self?.resize(to: to, bounds: bounds, transform: transform, duration: duration, backgroundColor: backgroundColor, scale: scale) { asset, error in
-           if let asset = asset {
-             resolve(asset)
-           } else {
-             reject(error ?? NSError(domain: "com.codeblogcorp.yeet.avasset-resize", code: 0, userInfo: nil))
-           }
+        let compressionDict: [String: Any] = [
+            AVVideoAverageBitRateKey: NSNumber(value: videoTrack.estimatedDataRate),
+            AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel as String,
+        ]
+        exporter.videoOutputConfiguration = [
+            AVVideoCodecKey: AVVideoCodecType.h264,
+            AVVideoWidthKey: NSNumber(integerLiteral: width),
+            AVVideoHeightKey: NSNumber(integerLiteral: height),
+            AVVideoScalingModeKey: AVVideoScalingModeResize,
+            AVVideoCompressionPropertiesKey: compressionDict
+        ]
+        exporter.timeRange = CMTimeRange(start: .zero, duration: CMTime(seconds: duration))
 
-      }
-    }
-  }
+        exporter.export { result  in
+          let status = try! result.get()
 
-  func resize(to: CGRect, bounds: CGRect, transform: CGAffineTransform, duration: CMTime, backgroundColor: UIColor? = UIColor.systemPink, scale: Float = Float(UIScreen.main.nativeScale), completion: @escaping (_ asset: AVURLAsset?, _ error: Error?) -> Void) {
-    let composition = AVMutableComposition()
-
-
-    let videoComposition = AVMutableVideoComposition()
-    videoComposition.renderSize = bounds.size.applying(CGAffineTransform(scaleX: CGFloat(scale), y: CGFloat(scale)))
-
-    let videoTrack = tracks(withMediaType: .video).first!
-    videoComposition.frameDuration = videoTrack.minFrameDuration
-
-    var currentSize = CGSize.zero
-
-
-    let instruction = AVMutableVideoCompositionInstruction()
-    instruction.timeRange = videoTrack.timeRange
-    instruction.backgroundColor = UIColor.clear.cgColor
-    currentSize = videoTrack.naturalSize
-
-    let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: videoTrack)
-
-    let scaleX = to.size.width / currentSize.width
-    layerInstruction.setTransform(transform.translatedBy(x: to.origin.x, y: to.origin.y).scaledBy(x: scaleX, y: scaleX).scaledBy(x: CGFloat(scale), y: CGFloat(scale)), at: .zero)
-
-    let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)
-    try! track?.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: videoTrack.timeRange.start)
-
-    instruction.layerInstructions.append(layerInstruction)
-    videoComposition.instructions.append(instruction)
-
-
-    var presetName = AVAssetExportPresetHighestQuality
-
-    if #available(iOS 13.0, *) {
-      presetName = AVAssetExportPresetHighestQuality
-    }
-
-    guard let session = AVAssetExportSession(asset: self, presetName: presetName) else {
-      completion(nil, nil)
-      return
-    }
-
-
-    session.timeRange = CMTimeRange(start: CMTime(seconds: 0, preferredTimescale: CMTimeScale(1)), duration: duration)
-    session.shouldOptimizeForNetworkUse = false
-    session.outputFileType = [AVFileType.mp4, AVFileType.mov].first { type in
-      return session.supportedFileTypes.contains(type)
-    }
-
-    session.videoComposition = videoComposition
-    session.outputURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(session.outputFileType == AVFileType.mp4 ?  ".mp4" : ".mov"))
-    session.exportAsynchronously(completionHandler: { [weak self] in
-    SwiftyBeaver.info("""
-Resize Video
-      \(currentSize) -> \(to)
-      Render Size: \(videoComposition.renderSize)
-      Success?: \(session.status == AVAssetExportSession.Status.completed)
-      Path: \(session.outputURL!.absoluteString)
-      Duration: \(CMTimeGetSeconds(duration))
-
-""")
-      if session.status == AVAssetExportSession.Status.completed {
-        completion(AVURLAsset(url: session.outputURL!), nil)
-      } else {
-        completion(nil, session.error)
+          if status == .completed {
+            resolve(AVURLAsset(url: dest))
+          }
+        }
       }
 
-    })
+
+    }
   }
+}
+
+extension Double {
+    /// Rounds the double to decimal places value
+    func rounded(toPlaces places:Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
 }

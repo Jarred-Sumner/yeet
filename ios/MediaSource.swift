@@ -54,7 +54,7 @@ class MediaSource : NSObject  {
 
 //  lazy var asset = AVURLAsset(url: uri)
 
-  lazy var assetURI: URL = {
+  func getAssetURI() -> URL {
     if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 || !self.isHTTProtocol {
       return uri
     }
@@ -66,6 +66,10 @@ class MediaSource : NSObject  {
     } else {
       return self.uri
     }
+  }
+
+  lazy var assetURI: URL = {
+    return self.getAssetURI()
   }()
 
   private var _asset: AVURLAsset? = nil

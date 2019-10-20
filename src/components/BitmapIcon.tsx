@@ -7,10 +7,24 @@ import {
 } from "react-native";
 
 export enum BitmapIconName {
-  newPost = "Icon__new-post"
+  newPost = "Icon__new-post",
+  plus = "Icon__miniPlus"
 }
 
-export const getBitmapIconSource = (name: BitmapIconName) => ({ uri: name });
+const SIZES_BY_NAME = {
+  [BitmapIconName.plus]: {
+    width: 19,
+    height: 19
+  }
+};
+
+export const getBitmapIconSource = (
+  name: BitmapIconName
+): ImageSourcePropType => {
+  const size = SIZES_BY_NAME[name] || {};
+
+  return { uri: name, ...size };
+};
 
 export const BitmapIconImage = ({
   name,
@@ -34,4 +48,11 @@ export const BitmapIconNewPost = ({
     name={BitmapIconName.newPost}
     style={style}
   />
+);
+
+export const BitmapIconPlus = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.plus} />
 );

@@ -17,7 +17,9 @@ export const generateFilename = (extension = "png") =>
 
 export const convertLocalIdentifierToAssetLibrary = (localIdentifier, ext) => {
   const hash = localIdentifier.split("/")[0];
-  return `assets-library://asset/asset.${ext}?id=${hash}&ext=${ext}`;
+  const withoutLeadingDot = ext.startsWith(".") ? ext.substr(1) : ext;
+
+  return `assets-library://asset/asset.${withoutLeadingDot}?id=${hash}&ext=${ext}`;
 };
 
 export const convertCameraRollIDToRNFetchBlobId = (assetPath, extension) =>
