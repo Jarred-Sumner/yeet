@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<testsuites name='yeetTests.xctest' tests='1' failures='0'>
+  <testsuite name='yeetTests.ContentExportTest' tests='1' failures='0'>
+    <testcase classname='yeetTests.ContentExportTest' name='Two_Videos___Transparent_PNG__exports_successfully' time='3.856'/>
+  </testsuite>
+</testsuites>

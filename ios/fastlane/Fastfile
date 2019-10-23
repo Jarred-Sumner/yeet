@@ -1,0 +1,109 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  lane :tests do
+    run_tests(scheme: "yeet", workspace: 'yeet.xcworkspace', devices: [
+      "iPhone 11"
+    ])
+  end
+
+  lane :beta do
+    increment_build_number(build_number: Time.now.to_i)
+    build_number = get_build_number
+    version_number = get_version_number
+
+    get_certificates(output_path: 'config') # invokes cert
+    get_provisioning_profile(output_path: 'config') # invokes sigh
+
+    build_app(
+      workspace: 'yeet.xcworkspace',
+      scheme: 'yeet',
+      output_directory: 'releases/beta',
+      output_name: "Yeet Beta - #{build_number}"
+    )
+    upload_to_testflight
+    store_size_xcarchive
+    add_git_tag(grouping: 'fastlane-builds', prefix: 'v', postfix: '-beta')
+    commit_version_bump(message: 'Bump beta version')
+  end
+
+  desc 'Push a new release build to the App Store'
+  lane :release do
+    increment_build_number(build_number: Time.now.to_i)
+    build_number = get_build_number
+    version_number = get_version_number
+
+    get_certificates(output_path: 'config') # invokes cert
+    get_provisioning_profile(output_path: 'config') # invokes sigh
+
+    build_app(
+      workspace: 'yeet.xcworkspace',
+      scheme: 'yeet',
+      output_directory: 'releases/production',
+      output_name: "Yeet-v#{version_number}-#{build_number}",
+      clean: true
+    )
+    upload_to_app_store(
+      automatic_release: true,
+      reject_if_possible: true,
+      submit_for_review: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submission_information: {
+        add_id_info_limits_tracking: true,
+        add_id_info_serves_ads: false,
+        add_id_info_tracks_action: true,
+        add_id_info_tracks_install: true,
+        add_id_info_uses_idfa: true,
+        content_rights_has_rights: true,
+        content_rights_contains_third_party_content: true,
+        export_compliance_platform: 'ios',
+        export_compliance_compliance_required: false,
+        export_compliance_encryption_updated: false,
+        export_compliance_app_type: nil,
+        export_compliance_uses_encryption: false,
+        export_compliance_is_exempt: false,
+        export_compliance_contains_third_party_cryptography: false,
+        export_compliance_contains_proprietary_cryptography: false,
+        export_compliance_available_on_french_store: false
+      }
+    )
+    postrelease
+  end
+
+  lane :postrelease do
+    build_number = get_build_number
+    version_number = get_version_number
+
+    upload_symbols_to_bugsnag
+    commit_version_bump(
+      message: 'Bump version', xcodeproj: 'yeet.xcodeproj', force: true
+    )
+    set_github_release(
+      repository_name: 'jarred-sumner/yeet',
+      api_token: ENV['GITHUB_ACCESS_TOKEN'],
+      name: "Yeet v#{version_number}-#{build_number}",
+      tag_name: "releases/prod/v#{version_number}-#{build_number}",
+      description: 'Latest',
+      commitish: 'master',
+      upload_assets: [
+        "./releases/production/Yeet-v#{version_number}-#{build_number}.ipa"
+      ]
+    )
+  end
+end

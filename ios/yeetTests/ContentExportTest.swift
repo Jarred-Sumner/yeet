@@ -13,7 +13,6 @@ import Foundation
 import PromiseKit
 
 
-
 @testable import yeet
 
 
@@ -24,6 +23,12 @@ class ContentExportTest: QuickSpec {
 
   func runVideoProducer(videoProducer: VideoProducer, bounds: CGRect, isServerOnly: Bool, exportURL: URL, scale: CGFloat) -> Promise<URL?> {
     return Promise<URL?>() { promise in
+      if FileManager.default.fileExists(atPath: exportURL.path) {
+        try! FileManager.default.removeItem(at: exportURL)
+      }
+
+
+
       videoProducer.start(estimatedBounds: bounds, isServerOnly: isServerOnly, exportURL: exportURL, scale: scale) { response in
         guard let response = response else {
           fail("Empty")
@@ -83,8 +88,8 @@ class ContentExportTest: QuickSpec {
       }
     }
   }
+
   override func spec() {
-    
 
 
     describe("Two Videos + Transparent PNG") {
@@ -93,13 +98,10 @@ class ContentExportTest: QuickSpec {
       let estimatedBounds = CGRect.from(json: fixture["bounds"])
       let destination = Fixtures.twoVideosTransparentPNGOutputURL!
 
-      if FileManager.default.fileExists(atPath: destination.path) {
-        try! FileManager.default.removeItem(at: destination)
-      }
 
       it("exports successfully") {
 
-        waitUntil(timeout: 20.0) { done in
+        waitUntil(timeout: 40.0) { done in
           firstly {
             self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(1))
           }.ensure {
@@ -108,6 +110,22 @@ class ContentExportTest: QuickSpec {
         }
 
       }
+
+      describe("@2x") {
+        it("exports successfully") {
+          let destination = Fixtures.twoVideosTransparentPNGOutputURL2x!
+          waitUntil(timeout: 20.0) { done in
+            firstly {
+              self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(2))
+            }.ensure {
+              done()
+            }
+          }
+
+        }
+      }
+
+
     }
   }
 }

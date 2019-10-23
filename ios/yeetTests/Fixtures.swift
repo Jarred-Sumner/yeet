@@ -16,7 +16,9 @@ class Fixtures {
   static let bundle = Bundle(for: Fixtures.self)
   static let twoVideosDirectory =  "Fixtures/twoVideos"
   static let twoVideosTransparentPNGOutputPath = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video.mp4"
+  static let twoVideosTransparentPNGOutputPath2x = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video@2x.mp4"
   static let twoVideosTransparentPNGOutputURL = URL(string: "file://" + Fixtures.twoVideosTransparentPNGOutputPath)
+  static let twoVideosTransparentPNGOutputURL2x = URL(string: "file://" + Fixtures.twoVideosTransparentPNGOutputPath2x)
 
   static let twoVideosTransparentPNGJSONPath = Fixtures.bundle.resourceURL!.appendingPathComponent(Fixtures.twoVideosDirectory, isDirectory: true).appendingPathComponent("export.json")
   static let twoVideosTransparentPNGJSON = JSON(parseJSON: try! String(contentsOf: Fixtures.twoVideosTransparentPNGJSONPath, encoding: .utf8))
@@ -96,7 +98,7 @@ class Fixtures {
 
           mediaPlayer.layoutContentView()
           mediaQueue.current?.load()
-          mediaQueue.play()
+//          mediaQueue.play()
 
           let item = mediaQueue.current!
 

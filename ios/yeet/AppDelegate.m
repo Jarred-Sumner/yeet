@@ -49,8 +49,6 @@
   }
 
 
-  
-
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];
   SDImageCache.sharedImageCache.config.diskCacheReadingOptions = NSDataReadingMappedIfSafe;
@@ -96,8 +94,9 @@
   rootView.backgroundColor = [[UIColor alloc] initWithRed:1.0f green:1.0f blue:1.0f alpha:1];
 #ifndef TEST
 [FIRApp configure];
-[EnableWebpDecoder enable];
 #endif
+[EnableWebpDecoder enable];
+
 
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UIViewController *rootViewController = [UIViewController new];

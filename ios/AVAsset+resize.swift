@@ -40,16 +40,16 @@ extension AVURLAsset {
     }
   }
 
-  func resize(url: URL, to: CGRect, duration: Double, scale: CGFloat, transform: CGAffineTransform) -> Promise<AVURLAsset> {
-
-
+  func crop(dest: URL, bounds: CGRect) -> Promise<AVURLAsset> {
     return Promise<AVURLAsset>() { promise in
-        let asset = AVMutableComposition()
+      if !self.isPlayable {
+       SwiftyBeaver.error("Video resize failed due to unplayable")
+        promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 909, userInfo: ["url": self.url]))
+       return
+      }
 
-
-      let dest = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(url.pathExtension.contains("mov") ?  ".mov" : ".mp4"))
-
-
+      let composition = AVMutableComposition()
+      let videoComposition = AVMutableVideoComposition()
 
       guard let videoTrack = self.tracks(withMediaType: .video).first else {
          // TADA!
@@ -58,53 +58,70 @@ extension AVURLAsset {
         return
        }
 
+      let instruction = AVMutableVideoCompositionInstruction()
+      let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid)!
+
+      try! track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
+      let layerInstruction = AVMutableVideoCompositionLayerInstruction.init(assetTrack: track)
+      layerInstruction.setCropRectangle(bounds, at: .zero)
+      instruction.layerInstructions = [layerInstruction]
+
+      if let audioTrack = self.tracks(withMediaType: .audio).first {
+        let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)!
+        try! track.insertTimeRange(audioTrack.timeRange, of: audioTrack, at: .zero)
+      }
+
+      guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHEVCHighestQuality) else {
+        promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 9090, userInfo: ["url": self.url]))
+        return
+      }
+
+      videoComposition.instructions = [instruction]
+      exportSession.shouldOptimizeForNetworkUse = true
+      exportSession.outputURL = dest
+      exportSession.outputFileType = .mp4
+      exportSession.videoComposition = videoComposition
+      exportSession.timeRange = videoTrack.timeRange
+
+      exportSession.exportAsynchronously {
+        promise.fulfill(AVURLAsset(url: dest))
+      }
+    }
+  }
+
+  static let resizeQueue = DispatchQueue(label: "com.codeblogcorp.resizeQueue", attributes: .initiallyInactive, autoreleaseFrequency: .workItem)
+
+  func resize(url: URL, to: CGRect, duration: Double, scale: CGFloat, transform: CGAffineTransform) -> Promise<AVURLAsset> {
+    
+
+    return Promise<AVURLAsset> { promise in
+
+      let dest = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(url.pathExtension.contains("mov") ?  ".mov" : ".mp4"))
 
 
-      let scaleX = to.width / videoTrack.naturalSize.width
-      let scaleY = to.height / videoTrack.naturalSize.height
+      if !self.isPlayable {
+        SwiftyBeaver.error("Video resize failed due to unplayable")
+        promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 909, userInfo: ["url": dest]))
+        return
+       }
 
-      let _bounds = CGRect(origin: .zero, size: CGSize( width: videoTrack.naturalSize.width * scaleX, height: videoTrack.naturalSize.height * scaleY ))
-      let bounds = _bounds.applying(transform)
-//      let size = bounds.standardized.size
-      let size = to.standardized.size
+      guard let videoTrack = self.tracks(withMediaType: .video).first else {
+         // TADA!
+         SwiftyBeaver.error("Tried to resize AVURLAsset without a video track")
+        promise.fulfill(self)
+        return
+       }
+      
+
+      let scaleTransform = CGAffineTransform.init(scaleX: scale, y: scale)
+      let originalSize = videoTrack.naturalSize
+      let size = to.applying(scaleTransform).standardized.size
       
       let width = Int(size.width)
       let height = Int(size.height)
 
-
-
-
-        guard let track = asset.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-          return
-        }
-
-        try! track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
-
-        let videoComposition = AVMutableVideoComposition()
-        let instruction = AVMutableVideoCompositionInstruction()
-        instruction.timeRange = videoTrack.timeRange
-        instruction.backgroundColor = UIColor.black.cgColor
-
-        let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
-
-      let scaleTransform = CGAffineTransform.init(scaleX: scaleX, y: scaleY)
-      let _centerPoint = CGPoint(x: videoTrack.naturalSize.width / 2, y: videoTrack.naturalSize.height / 2)
-      let centerPoint = _centerPoint.applying(scaleTransform)
-
-      let translateTransform = CGAffineTransform.init(translationX: (centerPoint.x + _centerPoint.x) / 2, y: (centerPoint.y + _centerPoint.y) / 2)
-
-      let layerTransform = CGAffineTransform.identity.concatenating(scaleTransform).concatenating(translateTransform).concatenating(transform)
-      layerInstruction.setTransform(layerTransform, at: .zero)
-//      layerInstruction.setTransform(CGAffineTransform.init(scaleX: scaleX, y: scaleY).translatedBy(x: abs( (bounds.size.width / 2) + abs(bounds.origin.x / 2) ) , y: abs( (bounds.size.height / 2) - abs(to.size.height / 2)) * -1  ).concatenating(transform), at: .zero)
-        instruction.layerInstructions = [layerInstruction]
-
-        videoComposition.instructions = [instruction]
-        videoComposition.renderSize = size
-        videoComposition.frameDuration = videoTrack.minFrameDuration
-
-
         let exporter = NextLevelSessionExporter(withAsset: self)
-        exporter.outputFileType = AVFileType.mp4
+      exporter.outputFileType = AVFileType.mov
         exporter.outputURL = dest
 
         let compressionDict: [String: Any] = [
@@ -114,8 +131,8 @@ extension AVURLAsset {
 
         exporter.videoOutputConfiguration = [
           AVVideoCodecKey: AVVideoCodecType.h264,
-          AVVideoWidthKey: NSNumber(integerLiteral: width),
-          AVVideoHeightKey: NSNumber(integerLiteral: height),
+          AVVideoWidthKey: NSNumber(integerLiteral: width ),
+          AVVideoHeightKey: NSNumber(integerLiteral: height ),
           AVVideoScalingModeKey: AVVideoScalingModeResize,
           AVVideoCompressionPropertiesKey: compressionDict
         ]
@@ -146,12 +163,15 @@ extension AVURLAsset {
           if (isAudioSupported) {
             exporter.audioOutputConfiguration = [
                 AVFormatIDKey: kAudioFormatMPEG4AAC,
-                AVChannelLayoutKey: channelLayout,
                 AVEncoderBitRateKey: NSNumber(value: audioTrack.estimatedDataRate),
-                AVNumberOfChannelsKey: NSNumber(value: numberOfChannels),
+                AVNumberOfChannelsKey: NSNumber(integerLiteral: numberOfChannels),
                 AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
-                AVSampleRateKey: NSNumber(value: sampleRate)
+                AVSampleRateKey: NSNumber(floatLiteral: sampleRate)
             ]
+
+            if numberOfChannels > 1 {
+              exporter.audioOutputConfiguration![AVChannelLayoutKey] = channelLayout
+            }
           } else {
             
             exporter.audioOutputConfiguration = [
@@ -170,25 +190,22 @@ extension AVURLAsset {
         exporter.export { result  in
           switch (result) {
           case .success(let status):
-            var originalSize = CGSize.zero
-            if let _track = self.tracks(withMediaType: .video).first {
-              originalSize = _track.naturalSize
-            }
-
-            SwiftyBeaver.info("""
-Resized video successfully
-  \(originalSize.width)x\(originalSize.height) -> \(width)x\(height)
-  \(dest)
-""")
             let _newAsset = AVURLAsset(url: dest)
-              if _newAsset.isPlayable {
+            _newAsset.loadValuesAsynchronously(forKeys: ["playable", "duration", "tracks"]) {
+              var _error: NSError? = nil
+              let status = _newAsset.statusOfValue(forKey: "playable", error: &_error)
+
+              if status == .loaded && _newAsset.isPlayable {
+                SwiftyBeaver.info("""
+                 Resized video successfully
+                   \(originalSize.width)x\(originalSize.height) -> \(width)x\(height)
+                   \(dest)
+                 """)
                 promise.fulfill(_newAsset)
               } else {
-                promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: -209, userInfo: ["url": dest]))
+                promise.reject(_error ?? NSError(domain: "com.codeblogcorp.yeet", code: -209, userInfo: ["url": dest]))
               }
-
-
-
+            }
 
           case .failure(let error):
 

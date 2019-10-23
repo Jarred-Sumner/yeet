@@ -107,15 +107,19 @@ target 'yeet' do
     pod 'react-native-cronet', :path => '../node_modules/react-native-cronet', modular_headers: false
 
     pod 'RNFastImage', :path => '../node_modules/react-native-fast-image', modular_headers: false
+
+
+
+    target "yeetTests" do
+      inherit! :search_paths
+
+      pod 'Quick', modular_headers: false
+      pod 'Nimble', modular_headers: true, git: "https://github.com/Quick/Nimble.git"
+    end
 end
 
 
-target "yeetTests" do
-   shared_deps
 
-   pod 'Quick', modular_headers: false
-   pod 'Nimble', modular_headers: true, git: "https://github.com/Quick/Nimble.git"
- end
 
 
  post_install do |installer|
