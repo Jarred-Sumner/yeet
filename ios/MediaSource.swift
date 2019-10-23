@@ -45,6 +45,10 @@ class MediaSource : NSObject  {
     return uri.scheme == "http" || uri.scheme == "https"
   }
 
+  var isFileProtocol: Bool {
+    return uri.scheme == "file"
+  }
+
   var isFromCameraRoll: Bool {
     guard let scheme = uri.scheme else {
       return false

@@ -198,6 +198,12 @@ class YeetImageView : PINAnimatedImageView {
       }
 
       self.imageRequestID = imageRequestID
+    } else if mediaSource.isFileProtocol {
+      if mediaSource.mimeType == MimeType.gif || mediaSource.mimeType == MimeType.webp {
+        self.image = try! PINCachedAnimatedImage.init(animatedImageData: Data.init(contentsOf: mediaSource.uri)) as! UIImage?
+      } else {
+        self.image = try! UIImage.init(data: Data.init(contentsOf: mediaSource.uri))
+      }
     }
 
     onLoadStartEvent?(["id": mediaSource.id])

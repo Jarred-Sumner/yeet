@@ -1,0 +1,129 @@
+{
+  "blocks": [
+    {
+      "type": "image",
+      "format": "screenshot",
+      "dimensions": {
+        "width": 414,
+        "height": 232.875,
+        "x": 0,
+        "y": 0,
+        "maxX": 414,
+        "maxY": 232.875
+      },
+      "id": "1231232",
+      "contentId": "ph://3AF0B0CE-6099-4140-894A-7DBC81C055CC/L0/001",
+      "viewTag": 477,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 414,
+        "height": 233
+      },
+      "value": {
+        "width": 1280,
+        "height": 720,
+        "source": "cameraRoll",
+        "mimeType": "video/mp4",
+        "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/grid-video.mp4",
+        "duration": 176.101
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "block": {
+        "type": "image",
+        "format": "sticker",
+        "dimensions": {
+          "width": 310.5,
+          "height": 413.99999999999994,
+          "x": 0,
+          "y": 0,
+          "maxX": 310.5,
+          "maxY": 413.99999999999994
+        },
+        "id": "zctYUmTCVV-LsxaRqyvoT",
+        "contentId": "ph://0B66E91A-4AF6-4642-A331-6E978C75C564/L0/001",
+        "viewTag": 1049,
+        "frame": {
+          "x": 15,
+          "y": 15,
+          "width": 168.34060273630558,
+          "height": 214.56291227553126
+        },
+        "value": {
+          "width": 450,
+          "height": 600,
+          "source": "cameraRoll",
+          "mimeType": "image/png",
+          "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/transparent.png",
+          "duration": 0
+        }
+      },
+      "frame": {
+        "x": -53.17030136815278,
+        "y": 19.718543862234384,
+        "width": 168.34060273630558,
+        "height": 214.56291227553126
+      },
+      "viewTag": 1055,
+      "position": {
+        "x": -124.25,
+        "rotate": 0.08380991780867997,
+        "scale": 0.4892671411519556,
+        "y": -79.99999999999997
+      }
+    },
+    {
+      "block": {
+        "type": "image",
+        "format": "sticker",
+        "dimensions": {
+          "width": 310.5,
+          "height": 310.5,
+          "x": 0,
+          "y": 0,
+          "maxX": 310.5,
+          "maxY": 310.5
+        },
+        "id": "FICXkPXLh94NPjxS9A0EQ",
+        "contentId": "ph://2DB01537-9E0C-4D1D-9D3F-1C6CAE2737A7/L0/001",
+        "viewTag": 2003,
+        "frame": {
+          "x": 15,
+          "y": 15,
+          "width": 169.50579529423823,
+          "height": 169.50579529423825
+        },
+        "value": {
+          "width": 360,
+          "height": 360,
+          "source": "cameraRoll",
+          "mimeType": "video/mp4",
+          "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/yeet.mp4",
+          "duration": 4.97
+        }
+      },
+      "frame": {
+        "x": 257.74710235288086,
+        "y": 65.74710235288089,
+        "width": 169.50579529423823,
+        "height": 169.50579529423825
+      },
+      "viewTag": 2007,
+      "position": {
+        "x": 187.25,
+        "rotate": -0.01806837990229715,
+        "scale": 0.536310179435099,
+        "y": -4.75
+      }
+    }
+  ],
+  "bounds": {
+    "x": 0,
+    "y": 0,
+    "width": 414,
+    "height": 754
+  }
+}

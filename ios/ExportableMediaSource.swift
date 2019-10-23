@@ -8,10 +8,12 @@
 
 import Foundation
 import PINRemoteImage
-import Promises
+import PromiseKit
 
 class ExportableMediaSource {
   var mediaSource: MediaSource
+  var view: UIView? = nil
+  var nodeView: UIView? = nil
 
   open var duration: NSNumber {
     return mediaSource.duration
@@ -35,7 +37,7 @@ class ExportableVideoSource : ExportableMediaSource {
   var asset: AVAsset
 
   func generateThumbnail(size: CGSize, scale: CGFloat = CGFloat(1)) -> Promise<ExportableImageSource> {
-    return Promise.init(on: .global(qos: .background)) { [weak self] resolve, reject in
+    return Promise<ExportableImageSource>() { [weak self] promise in
       guard let asset = self?.asset else {
         return
       }
@@ -44,34 +46,38 @@ class ExportableVideoSource : ExportableMediaSource {
       imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: CMTime.zero)]) { [weak self] time, cgImage, otherTime, status, error  in
         if status == .succeeded && cgImage != nil {
           guard let image = UIImage(cgImage: cgImage!).sd_resizedImage(with: size.applying(CGAffineTransform.init(scaleX: scale, y: scale)), scaleMode: .aspectFill) else {
-             reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
+            promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
             return
           }
           guard let mediaSource = self?.mediaSource else {
-            reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
+            promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
             return
           }
         
-          resolve(ExportableImageSource(thumbnail: image, id: mediaSource.id))
+          promise.fulfill(ExportableImageSource(thumbnail: image, id: mediaSource.id))
         } else {
-          reject(error ?? NSError(domain: "com.codeblogcorp.yeet", code: 404, userInfo: nil))
+          promise.reject(error ?? NSError(domain: "com.codeblogcorp.yeet", code: 404, userInfo: nil))
         }
 
       }
     }
   }
 
-  init(mediaSource: MediaSource, asset: AVAsset, playerItem: AVPlayerItem) {
+  init(mediaSource: MediaSource, asset: AVAsset, playerItem: AVPlayerItem, view: UIView? = nil, nodeView: UIView? = nil) {
     self.asset = asset
     self.playerItem = playerItem
 
     super.init(mediaSource: mediaSource)
+    self.view = view
+    self.nodeView = nodeView
+
   }
 }
 
 class ExportableImageSource : ExportableMediaSource {
   var animatedImage: PINCachedAnimatedImage? = nil
   var staticImage: UIImage? = nil
+
 
   var isAnimated: Bool {
     return self.animatedImage != nil
@@ -114,30 +120,43 @@ class ExportableImageSource : ExportableMediaSource {
   }
 
 
-  init(mediaSource: MediaSource, animatedImage: PINCachedAnimatedImage?, staticImage: UIImage?)  {
+  init(mediaSource: MediaSource, animatedImage: PINCachedAnimatedImage?, staticImage: UIImage?, view: UIView? = nil, nodeView: UIView? = nil)  {
     self.animatedImage = animatedImage
     self.staticImage = staticImage
 
+
     super.init(mediaSource: mediaSource)
+
+    self.view = view
+    self.nodeView = nodeView
   }
 
-  init(screenshot: UIImage, id: String) {
+  init(screenshot: UIImage, id: String, view: UIView? = nil, nodeView: UIView? = nil) {
     staticImage = screenshot
     animatedImage = nil
 
+
     super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: screenshot.size.width), height: NSNumber(nonretainedObject: screenshot.size.height), bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: NSNumber(nonretainedObject: screenshot.scale)))
+
+    self.view = view
+    self.nodeView = nodeView
   }
 
-  init(thumbnail: UIImage, id: String) {
+  init(thumbnail: UIImage, id: String, view: UIView? = nil, nodeView: UIView? = nil) {
+
+
     staticImage = thumbnail
     animatedImage = nil
 
     super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale)))
+
+    self.view = view
+    self.nodeView = nodeView
   }
 }
 
 extension ExportableMediaSource {
-  static func from(mediaPlayer: MediaPlayer) -> ExportableMediaSource? {
+  static func from(mediaPlayer: MediaPlayer, nodeView: UIView?) -> ExportableMediaSource? {
     guard let current = mediaPlayer.current else {
       return nil
     }
@@ -146,20 +165,24 @@ extension ExportableMediaSource {
       return nil
     }
 
-    if current.mediaSource.isVideo {
+    let isVideo = current.mediaSource.isVideo
+
+    if isVideo {
       guard let playerItem = mediaQueue.videoPlayer.currentItem else {
         return nil
       }
       let asset = playerItem.asset
 
-      return ExportableVideoSource(mediaSource: current.mediaSource, asset: asset, playerItem: playerItem)
+      return ExportableVideoSource(mediaSource: current.mediaSource, asset: asset, playerItem: playerItem, view: mediaPlayer, nodeView: nodeView)
     } else if current.mediaSource.isImage {
       guard let imageView = mediaPlayer.imageView else {
         return nil
       }
 
 
-      return ExportableImageSource(mediaSource: current.mediaSource, animatedImage: imageView.isAnimatedImage ? imageView.animatedImage : nil, staticImage: imageView.isAnimatedImage ? imageView.animatedImage?.coverImage : imageView.image)
+      let staticImage = imageView.animatedImage?.coverImage ?? imageView.image
+
+      return ExportableImageSource(mediaSource: current.mediaSource, animatedImage: imageView.isAnimatedImage ? imageView.animatedImage : nil, staticImage: staticImage, view: mediaPlayer, nodeView: nodeView)
     } else {
       return nil
     }

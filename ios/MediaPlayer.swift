@@ -116,37 +116,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
       }
 
       if mediaQueue == nil {
-        mediaQueue = MediaQueuePlayer(
-          mediaSources: newValue,
-          bounds: bounds,
-          id: id as String?,
-          allowPrefetching: prefetch,
-          player: player
-        )  { [weak self] newMedia, oldMedia, index in
-          guard let this = self else {
-            return
-          }
-
-          if let old = oldMedia {
-            if old.delegate.containsDelegate(this) {
-              old.delegate.removeDelegate(this)
-            }
-          }
-
-          if let new = newMedia {
-            if !new.delegate.containsDelegate(this) {
-              new.delegate.addDelegate(this)
-            }
-          }
-
-          guard let index = this.mediaQueue?.index else {
-            return
-          }
-
-          this.handleChange(index: index, mediaSource: newMedia?.mediaSource)
-        }
-
-
+        self.createMediaQueue(sources: newValue)
         self.setNeedsLayout()
       } else {
         mediaQueue?.update(mediaSources: newValue)
@@ -155,6 +125,38 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
   }
   var mediaQueue: MediaQueuePlayer? = nil
+
+  func createMediaQueue(sources: Array<MediaSource>) {
+    mediaQueue = MediaQueuePlayer(
+      mediaSources: sources,
+      bounds: bounds,
+      id: id as String?,
+      allowPrefetching: prefetch,
+      player: player
+    )  { [weak self] newMedia, oldMedia, index in
+      guard let this = self else {
+        return
+      }
+
+      if let old = oldMedia {
+        if old.delegate.containsDelegate(this) {
+          old.delegate.removeDelegate(this)
+        }
+      }
+
+      if let new = newMedia {
+        if !new.delegate.containsDelegate(this) {
+          new.delegate.addDelegate(this)
+        }
+      }
+
+      guard let index = this.mediaQueue?.index else {
+        return
+      }
+
+      this.handleChange(index: index, mediaSource: newMedia?.mediaSource)
+    }
+  }
 
 
   var currentItem: MediaSource? {
@@ -204,6 +206,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
   init(bridge: RCTBridge? = nil) {
     self.bridge = bridge
+
 
     super.init(frame: .zero)
 

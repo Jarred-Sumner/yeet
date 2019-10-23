@@ -3,26 +3,47 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 
 flipperkit_version = '0.23.6'
 
-target 'yeet' do
+def shared_deps
   # Pods for yeet
-  pod 'FBLazyVector', :path => "../node_modules/react-native/Libraries/FBLazyVector"
-  pod 'FBReactNativeSpec', :path => "../node_modules/react-native/Libraries/FBReactNativeSpec"
-  pod 'RCTRequired', :path => "../node_modules/react-native/Libraries/RCTRequired"
-  pod 'RCTTypeSafety', :path => "../node_modules/react-native/Libraries/TypeSafety"
-  pod 'React', :path => '../node_modules/react-native/'
-  pod 'React-Core', :path => '../node_modules/react-native/'
-  pod 'React-CoreModules', :path => '../node_modules/react-native/React/CoreModules'
-  pod 'React-Core/DevSupport', :path => '../node_modules/react-native/'
-  pod 'React-RCTActionSheet', :path => '../node_modules/react-native/Libraries/ActionSheetIOS'
-  pod 'React-RCTAnimation', :path => '../node_modules/react-native/Libraries/NativeAnimation'
-  pod 'React-RCTBlob', :path => '../node_modules/react-native/Libraries/Blob'
-  pod 'React-RCTImage', :path => '../node_modules/react-native/Libraries/Image'
-  pod 'React-RCTLinking', :path => '../node_modules/react-native/Libraries/LinkingIOS'
-  pod 'React-RCTNetwork', :path => '../node_modules/react-native/Libraries/Network'
-  pod 'React-RCTSettings', :path => '../node_modules/react-native/Libraries/Settings'
-  pod 'React-RCTText', :path => '../node_modules/react-native/Libraries/Text'
-  pod 'React-RCTVibration', :path => '../node_modules/react-native/Libraries/Vibration'
-  pod 'React-Core/RCTWebSocket', :path => '../node_modules/react-native/'
+   pod 'FBLazyVector', :path => "../node_modules/react-native/Libraries/FBLazyVector"
+   pod 'FBReactNativeSpec', :path => "../node_modules/react-native/Libraries/FBReactNativeSpec"
+   pod 'RCTRequired', :path => "../node_modules/react-native/Libraries/RCTRequired"
+   pod 'RCTTypeSafety', :path => "../node_modules/react-native/Libraries/TypeSafety"
+   pod 'React', :path => '../node_modules/react-native/'
+   pod 'React-Core', :path => '../node_modules/react-native/'
+   pod 'React-CoreModules', :path => '../node_modules/react-native/React/CoreModules'
+   pod 'React-Core/DevSupport', :path => '../node_modules/react-native/'
+   pod 'React-RCTActionSheet', :path => '../node_modules/react-native/Libraries/ActionSheetIOS'
+   pod 'React-RCTAnimation', :path => '../node_modules/react-native/Libraries/NativeAnimation'
+   pod 'React-RCTBlob', :path => '../node_modules/react-native/Libraries/Blob'
+   pod 'React-RCTImage', :path => '../node_modules/react-native/Libraries/Image'
+   pod 'React-RCTLinking', :path => '../node_modules/react-native/Libraries/LinkingIOS'
+   pod 'React-RCTNetwork', :path => '../node_modules/react-native/Libraries/Network'
+   pod 'React-RCTSettings', :path => '../node_modules/react-native/Libraries/Settings'
+   pod 'React-RCTText', :path => '../node_modules/react-native/Libraries/Text', modular_headers: false
+   pod 'React-RCTVibration', :path => '../node_modules/react-native/Libraries/Vibration'
+   pod 'React-Core/RCTWebSocket', :path => '../node_modules/react-native/'
+
+   pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
+
+   # pod 'FlipperKit', "~> #{flipperkit_version}"
+   # pod 'FlipperKit/SKIOSNetworkPlugin', "~> #{flipperkit_version}"
+   # pod 'FlipperKit/FlipperKitUserDefaultsPlugin', "~> #{flipperkit_version}"
+   # pod 'FlipperKit/FlipperKitLayoutPlugin', "~> #{flipperkit_version}"
+
+   pod 'React-cxxreact', :path => '../node_modules/react-native/ReactCommon/cxxreact'
+   pod 'React-jsi', :path => '../node_modules/react-native/ReactCommon/jsi'
+   pod 'React-jsiexecutor', :path => '../node_modules/react-native/ReactCommon/jsiexecutor'
+   pod 'React-jsinspector', :path => '../node_modules/react-native/ReactCommon/jsinspector'
+   pod 'ReactCommon/jscallinvoker', :path => "../node_modules/react-native/ReactCommon"
+   pod 'ReactCommon/turbomodule/core', :path => "../node_modules/react-native/ReactCommon"
+   pod 'Yoga', :path => '../node_modules/react-native/ReactCommon/yoga', modular_headers: false
+
+   pod 'DoubleConversion', :podspec => '../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec', modular_headers: true
+   pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec', modular_headers: false
+   pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec', modular_headers: false
+
+
   pod 'SDWebImageWebPCoder'
   pod 'SDWebImage', '5.1.1', :modular_headers => true
   pod 'SDWebImagePhotosPlugin'
@@ -30,114 +51,104 @@ target 'yeet' do
   pod 'UIImageColors'
   pod 'DVAssetLoaderDelegate'
   pod 'Repeat'
-  pod 'SBObjectiveCWrapper', git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
   pod 'KTVHTTPCache', '~> 2.0.0'
   pod 'MulticastDelegateSwift'
-  pod 'PromisesSwift', modular_headers: true
+  pod 'PromiseKit', modular_headers: true
 
   pod 'PINCache', git: "https://github.com/pinterest/PINCache.git"
   pod 'PINRemoteImage', modular_headers: true, git: "https://github.com/pinterest/PINRemoteImage.git"
   pod 'PINRemoteImage/WebP', modular_headers: true, git: "https://github.com/pinterest/PINRemoteImage.git"
   pod 'libwebp', modular_headers: true
-
-
-  pod 'SwiftyBeaver'
-
-  
-
-  # pod 'FlipperKit', "~> #{flipperkit_version}"
-  # pod 'FlipperKit/SKIOSNetworkPlugin', "~> #{flipperkit_version}"
-  # pod 'FlipperKit/FlipperKitUserDefaultsPlugin', "~> #{flipperkit_version}"
-  # pod 'FlipperKit/FlipperKitLayoutPlugin', "~> #{flipperkit_version}"
-
-  pod 'React-cxxreact', :path => '../node_modules/react-native/ReactCommon/cxxreact'
-  pod 'React-jsi', :path => '../node_modules/react-native/ReactCommon/jsi'
-  pod 'React-jsiexecutor', :path => '../node_modules/react-native/ReactCommon/jsiexecutor'
-  pod 'React-jsinspector', :path => '../node_modules/react-native/ReactCommon/jsinspector'
-  pod 'ReactCommon/jscallinvoker', :path => "../node_modules/react-native/ReactCommon"
-  pod 'ReactCommon/turbomodule/core', :path => "../node_modules/react-native/ReactCommon"
-  pod 'Yoga', :path => '../node_modules/react-native/ReactCommon/Yoga'
-
-  pod 'DoubleConversion', :podspec => '../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec', modular_headers: true
-  pod 'glog', :podspec => '../node_modules/react-native/third-party-podspecs/glog.podspec', modular_headers: false
-  pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec', modular_headers: false
   pod 'VFCabbage',  :modular_headers => true
-
-
-  use_native_modules!
-  pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info', modular_headers: false
-
-  pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient', modular_headers: false
-
-  pod 'react-native-video', :path => '../node_modules/react-native-video', modular_headers: false
-
-  pod 'react-native-image-picker', :path => '../node_modules/react-native-image-picker', modular_headers: false
-
-  pod 'rn-fetch-blob', :path => '../node_modules/rn-fetch-blob', modular_headers: false
-
-  pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback', modular_headers: false
-
-  pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios', modular_headers: false
-  use_modular_headers!
-
-
-
-  pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
-  pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas', modular_headers: false
-
-  pod 'RNFS', :path => '../node_modules/react-native-fs', modular_headers: false
-
-  pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element', modular_headers: false
-
-  # pod 'react-native-photos-framework', :path => '../node_modules//react-native-photos-framework'
-
-  pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler', modular_headers: false
-
-  pod 'RNReanimated', :path => '../node_modules/react-native-reanimated', modular_headers: false
-
-  pod 'react-native-config', :path => '../node_modules/react-native-config', modular_headers: false
-
-  pod 'react-native-cronet', :path => '../node_modules/react-native-cronet', modular_headers: false
-
-  pod 'RNFastImage', :path => '../node_modules/react-native-fast-image', modular_headers: false
-
   pod "NextLevelSessionExporter", modular_headers: false
 
+  pod 'SwiftyBeaver'
+end
 
-  post_install do |installer|
-    installer.pods_project.targets.each do |target|
-      if target.name == 'YogaKit'
-        target.build_configurations.each do |config|
-          config.build_settings['SWIFT_VERSION'] = '4.1'
-        end
-      elsif target.name == 'react-native-config'
-        phase = target.project.new(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
-        phase.shell_script = "cd ../../"\
-                              " && RNC_ROOT=./node_modules/react-native-config/"\
-                              " && export SYMROOT=$RNC_ROOT/ios/ReactNativeConfig"\
-                              " && export BUILD_DIR=$RNC_ROOT/ios/ReactNativeConfig"\
-                              " && ruby $RNC_ROOT/ios/ReactNativeConfig/BuildDotenvConfig.ruby"
+target 'yeet' do
+  use_native_modules!
+  use_modular_headers!
 
-        target.build_phases << phase
-        target.build_phases.move(phase,0)
-      end
-    end
-    file_name = Dir.glob("*.xcodeproj")[0]
-    app_project = Xcodeproj::Project.open(file_name)
-    app_project.native_targets.each do |target|
-      target.build_configurations.each do |config|
-        cflags = config.build_settings['OTHER_CFLAGS'] || '$(inherited) '
-        unless cflags.include? '-DFB_SONARKIT_ENABLED=1'
-          puts 'Adding -DFB_SONARKIT_ENABLED=1 in OTHER_CFLAGS...'
-          cflags << '-DFB_SONARKIT_ENABLED=1'
-        end
-        config.build_settings['OTHER_CFLAGS'] = cflags
-      end
-      app_project.save
-    end
-    installer.pods_project.save
-  end
+  shared_deps
+
+
+    pod 'RNDeviceInfo', :path => '../node_modules/react-native-device-info', modular_headers: false
+
+    pod 'BVLinearGradient', :path => '../node_modules/react-native-linear-gradient', modular_headers: false
+
+    pod 'react-native-video', :path => '../node_modules/react-native-video', modular_headers: false
+
+    pod 'react-native-image-picker', :path => '../node_modules/react-native-image-picker', modular_headers: false
+
+    pod 'rn-fetch-blob', :path => '../node_modules/rn-fetch-blob', modular_headers: false
+
+    pod 'RNReactNativeHapticFeedback', :path => '../node_modules/react-native-haptic-feedback', modular_headers: false
+
+    pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios', modular_headers: false
+
+
+
+
+    pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
+    pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas', modular_headers: false
+
+    pod 'RNFS', :path => '../node_modules/react-native-fs', modular_headers: false
+
+    pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element', modular_headers: false
+
+    # pod 'react-native-photos-framework', :path => '../node_modules//react-native-photos-framework'
+
+    pod 'RNGestureHandler', :path => '../node_modules/react-native-gesture-handler', modular_headers: false
+
+    pod 'RNReanimated', :path => '../node_modules/react-native-reanimated', modular_headers: false
+
+    pod 'react-native-config', :path => '../node_modules/react-native-config', modular_headers: false
+
+    pod 'react-native-cronet', :path => '../node_modules/react-native-cronet', modular_headers: false
+
+    pod 'RNFastImage', :path => '../node_modules/react-native-fast-image', modular_headers: false
 end
 
 
+target "yeetTests" do
+   shared_deps
+
+   pod 'Quick', modular_headers: false
+   pod 'Nimble', modular_headers: true, git: "https://github.com/Quick/Nimble.git"
+ end
+
+
+ post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    if target.name == 'YogaKit'
+      target.build_configurations.each do |config|
+        config.build_settings['SWIFT_VERSION'] = '4.1'
+      end
+    elsif target.name == 'react-native-config'
+      phase = target.project.new(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+      phase.shell_script = "cd ../../"\
+                            " && RNC_ROOT=./node_modules/react-native-config/"\
+                            " && export SYMROOT=$RNC_ROOT/ios/ReactNativeConfig"\
+                            " && export BUILD_DIR=$RNC_ROOT/ios/ReactNativeConfig"\
+                            " && ruby $RNC_ROOT/ios/ReactNativeConfig/BuildDotenvConfig.ruby"
+
+      target.build_phases << phase
+      target.build_phases.move(phase,0)
+    end
+  end
+  file_name = Dir.glob("*.xcodeproj")[0]
+  app_project = Xcodeproj::Project.open(file_name)
+  app_project.native_targets.each do |target|
+    target.build_configurations.each do |config|
+      cflags = config.build_settings['OTHER_CFLAGS'] || '$(inherited) '
+      unless cflags.include? '-DFB_SONARKIT_ENABLED=1'
+        puts 'Adding -DFB_SONARKIT_ENABLED=1 in OTHER_CFLAGS...'
+        cflags << '-DFB_SONARKIT_ENABLED=1'
+      end
+      config.build_settings['OTHER_CFLAGS'] = cflags
+    end
+    app_project.save
+  end
+  installer.pods_project.save
+end
 

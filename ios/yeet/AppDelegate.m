@@ -29,7 +29,9 @@
 //#import <SKIOSNetworkPlugin/SKIOSNetworkAdapter.h>
 //
 
+#ifndef TEST
 @import Firebase;
+#endif
 @import SBObjectiveCWrapper;
 
 
@@ -46,7 +48,7 @@
     [KTVHTTPCache proxyStart:nil];
   }
 
-  [EnableWebpDecoder enable];
+
   
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
@@ -92,7 +94,11 @@
                                             initialProperties:nil];
 
   rootView.backgroundColor = [[UIColor alloc] initWithRed:1.0f green:1.0f blue:1.0f alpha:1];
+#ifndef TEST
 [FIRApp configure];
+[EnableWebpDecoder enable];
+#endif
+
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;

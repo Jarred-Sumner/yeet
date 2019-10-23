@@ -243,6 +243,19 @@ enum ExportType : String {
   case mp4 = "video/mp4"
   case webp = "image/webp"
   case jpg = "image/jpeg"
+
+  func fileExtension() -> String {
+    switch(self) {
+      case .png:
+        return ".png"
+      case .webp:
+        return ".webp"
+      case .mp4:
+        return ".mp4"
+      case .jpg:
+        return ".jpg"
+    }
+  }
 }
 
 class VideoProducer {
@@ -295,9 +308,11 @@ class VideoProducer {
       let type = block["type"].stringValue == "image" ? BlockType.image : BlockType.text
       let value = block["value"]
       let text = type == BlockType.text ? block["value"].stringValue : nil
+      let id = block["id"].stringValue
+      let image = images[id]!
 
 
-      blocks.append(ContentBlock(value: value, dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: block["id"].stringValue, zIndex: NSNumber(value: currentIndex), image: images[block["id"].stringValue]!, position: node?["position"], frame: frame, nodeFrame: nodeFrame, text: text, type: type))
+      blocks.append(ContentBlock(value: value, dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: id, zIndex: NSNumber(value: currentIndex), image: image, position: node?["position"], frame: frame, nodeFrame: nodeFrame, text: text, type: type))
 
 
       currentIndex = currentIndex + 1
@@ -333,36 +348,38 @@ class VideoProducer {
     }.max()!
   }
 
-  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, callback: @escaping RCTResponseSenderBlock) {
+
+
+  static func generateExportURL(type: ExportType) -> URL {
+     return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".\(type.fileExtension())"))
+  }
+
+  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil, callback: @escaping RCTResponseSenderBlock) {
     let resources = self.blocks.map { block in
       return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
     }
 
     let isDigital = self.isDigitalOnly
 
-    var exportURL: URL
+
     var exportType: ExportType
 
 
     if (self.hasAnyAnimations || self.hasAnyVideos) {
       exportType = .mp4
-      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
     } else if (isServerOnly) {
       exportType = .webp
-      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".webp"))
     } else if (isDigital) {
       exportType = .png
-      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".png"))
     } else {
       exportType = .jpg
-      exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".jpg"))
     }
 
+    let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
-    DispatchQueue.global(qos: .default).async {
-      ContentExport.export(url: exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital) { export in
+    DispatchQueue.global(qos: .background).async {
+      ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital, scale: scale) { export in
         if let _export = export {
-          print("Export \(_export.url)")
           callback([nil, _export.dictionaryValue()])
         } else {
           callback([])
@@ -370,43 +387,6 @@ class VideoProducer {
 
       }
     }
-
-//    let timeline = Timeline()
-//
-//
-//    timeline.overlays = trackItems
-//    timeline.videoChannel = [backgroundTrack]
-//
-//    if #available(iOS 10.0, *) {
-//      timeline.backgroundColor = CIColor.black
-//    }
-////
-////
-////    timeline.renderSize = self.resolution()
-////    
-////
-////    let compositionGenerator = CompositionGenerator(timeline: timeline)
-////
-////
-////    var presetName = AVAssetExportPresetHighestQuality
-////    if #available(iOS 11.0, *) {
-////      presetName = AVAssetExportPresetHEVCHighestQuality
-////    }
-////
-////    guard let exportSession = compositionGenerator.buildExportSession(presetName: presetName) else { return; }
-////
-////    exportSession.outputFileType = AVFileType.mp4
-////    exportSession.shouldOptimizeForNetworkUse = false
-////
-////
-//    let exportURL = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".mp4"))
-////    exportSession.outputURL = exportURL
-////    print("[VideoProducer] Exporting \(timeline.renderSize) of \(self.maxDuration()) seconds with \(self.imageBlocks.count) images")
-////
-////    exportSession.exportAsynchronously(completionHandler: {
-////
-////    })
-
   }
 
 

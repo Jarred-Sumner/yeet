@@ -1,7 +1,7 @@
 import Foundation
 import UIKit
 import AVFoundation
-import Promises
+import PromiseKit
 import SwiftyBeaver
 
 extension AVAsset {
@@ -77,9 +77,9 @@ Combining \(videos.count) videos
   IDs:            \(ids)
 """)
 
-    return Promise(on: .global(qos: .background)) { resolve, reject in
+    return Promise<CombinedAsset>() { seal in
       guard let session = AVAssetExportSession(asset: composition, presetName: presetName) else {
-        reject(NSError(domain: "com.codeblogcorp.yeet", code: -006, userInfo: nil))
+        seal.reject(NSError(domain: "com.codeblogcorp.yeet", code: -006, userInfo: nil))
         return
       }
 
@@ -112,9 +112,9 @@ Combining \(videos.count) videos
                 Offsets:  \(_offsets)
 
           """)
-          resolve(CombinedAsset(asset: asset, offsets: offsets))
+          seal.fulfill(CombinedAsset(asset: asset, offsets: offsets))
         } else {
-          reject(session.error ?? NSError(domain: "com.codeblogcorp.yeet", code: -007, userInfo: nil))
+          seal.reject(session.error ?? NSError(domain: "com.codeblogcorp.yeet", code: -007, userInfo: nil))
         }
       })
     }

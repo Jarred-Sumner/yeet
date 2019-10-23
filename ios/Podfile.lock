@@ -150,6 +150,7 @@ PODS:
   - nanopb/decode (0.3.901)
   - nanopb/encode (0.3.901)
   - NextLevelSessionExporter (0.4.2)
+  - Nimble (8.0.4)
   - PINCache (3.0.1-beta.8):
     - PINCache/Arc-exception-safe (= 3.0.1-beta.8)
     - PINCache/Core (= 3.0.1-beta.8)
@@ -168,10 +169,17 @@ PODS:
   - PINRemoteImage/WebP (3.0.0-beta.14):
     - libwebp
     - PINRemoteImage/Core
-  - PromisesObjC (1.2.8)
-  - PromisesSwift (1.2.8):
-    - PromisesObjC (= 1.2.8)
+  - PromiseKit (6.11.0):
+    - PromiseKit/CorePromise (= 6.11.0)
+    - PromiseKit/Foundation (= 6.11.0)
+    - PromiseKit/UIKit (= 6.11.0)
+  - PromiseKit/CorePromise (6.11.0)
+  - PromiseKit/Foundation (6.11.0):
+    - PromiseKit/CorePromise
+  - PromiseKit/UIKit (6.11.0):
+    - PromiseKit/CorePromise
   - Protobuf (3.10.0)
+  - Quick (2.2.0)
   - RCTRequired (0.61.1)
   - RCTTypeSafety (0.61.1):
     - FBLazyVector (= 0.61.1)
@@ -463,10 +471,12 @@ DEPENDENCIES:
   - libwebp
   - MulticastDelegateSwift
   - NextLevelSessionExporter
+  - Nimble (from `https://github.com/Quick/Nimble.git`)
   - PINCache (from `https://github.com/pinterest/PINCache.git`)
   - PINRemoteImage (from `https://github.com/pinterest/PINRemoteImage.git`)
   - PINRemoteImage/WebP (from `https://github.com/pinterest/PINRemoteImage.git`)
-  - PromisesSwift
+  - PromiseKit
+  - Quick
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
   - React (from `../node_modules/react-native/`)
@@ -524,7 +534,7 @@ DEPENDENCIES:
   - SwiftyJSON (~> 4.0)
   - UIImageColors
   - VFCabbage
-  - Yoga (from `../node_modules/react-native/ReactCommon/Yoga`)
+  - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
   trunk:
@@ -555,9 +565,9 @@ SPEC REPOS:
     - nanopb
     - NextLevelSessionExporter
     - PINOperation
-    - PromisesObjC
-    - PromisesSwift
+    - PromiseKit
     - Protobuf
+    - Quick
     - Repeat
     - SDWebImage
     - SDWebImagePhotosPlugin
@@ -581,6 +591,8 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/Folly.podspec"
   glog:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
+  Nimble:
+    :git: https://github.com/Quick/Nimble.git
   PINCache:
     :git: https://github.com/pinterest/PINCache.git
   PINRemoteImage:
@@ -678,9 +690,12 @@ EXTERNAL SOURCES:
   SBObjectiveCWrapper:
     :git: https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git
   Yoga:
-    :path: "../node_modules/react-native/ReactCommon/Yoga"
+    :path: "../node_modules/react-native/ReactCommon/yoga"
 
 CHECKOUT OPTIONS:
+  Nimble:
+    :commit: 4ce709fb95e18bbc72c35c2fd21831aaf88380dd
+    :git: https://github.com/Quick/Nimble.git
   PINCache:
     :commit: 9497152d5188d3387a4e6a1053ba6a6ca83e8ef0
     :git: https://github.com/pinterest/PINCache.git
@@ -724,12 +739,13 @@ SPEC CHECKSUMS:
   MulticastDelegateSwift: 84c42e7a0a31385d8222bbbb4c89bcdb00cb5f4d
   nanopb: 2901f78ea1b7b4015c860c2fdd1ea2fee1a18d48
   NextLevelSessionExporter: f711cf5c676030161413ad997d4528694d1613e0
+  Nimble: 66110543b37eed1302fa50f2ad411f22d2548373
   PINCache: 534fd41d358d828dfdf227a0d327f3673a65e20b
   PINOperation: 24b774353ca248fcf87d67b2d61eef42087c125a
   PINRemoteImage: c4a78eebe06532b97cf7ac8f930bf1b420d766ea
-  PromisesObjC: c119f3cd559f50b7ae681fa59dc1acd19173b7e6
-  PromisesSwift: 37bad6f4daddb02f7c9c531efe91e8b21c13ee2f
+  PromiseKit: e4863d06976e7dee5e41c04fc7371c16b3600292
   Protobuf: a4dc852ad69c027ca2166ed287b856697814375b
+  Quick: 7fb19e13be07b5dfb3b90d4f9824c855a11af40e
   RCTRequired: 53825815218847d3e9c7b6d92ad2d197a926d51e
   RCTTypeSafety: d886540c518e53064dfa081bf7693fd650699b92
   React: 5dea58967c421bd1fdf6b94c18b9ed0f5134683c
@@ -787,6 +803,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: d8c572ddec8d05b7dba08e4e5f1924004a177078
 
-PODFILE CHECKSUM: 94f099746ca9caf59b976458d4757bdac80f3260
+PODFILE CHECKSUM: e08de2bf7e6922256b37bf4eefd1dd0f0cf5379c
 
 COCOAPODS: 1.8.3

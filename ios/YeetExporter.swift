@@ -88,11 +88,16 @@ class YeetExporter: NSObject, RCTBridgeModule  {
          var allBlocks = data["blocks"].arrayValue
         allBlocks.append(contentsOf: nodeBlocks)
         allBlocks.forEach { block in
-          if block["type"].stringValue == "text" {
-            let node = nodeBlocks.first(where: { node in
-              return node["block"].dictionaryValue["id"]?.stringValue == block["id"].stringValue
-            })
+          let node = data["nodes"].arrayValue.first { node in
+            if let blockId = node["block"].dictionaryValue["id"]?.stringValue {
+              return blockId == block["id"].stringValue
+            } else {
+              return false
+            }
 
+          }
+
+          if block["type"].stringValue == "text" {
             var viewTag: NSNumber
 
             if let _node = node {
@@ -111,8 +116,12 @@ class YeetExporter: NSObject, RCTBridgeModule  {
               return;
             }
 
+            let nodeViewTag = node?["viewTag"].numberValue
+            let nodeView = nodeViewTag != nil ? registry[nodeViewTag!] : nil
+
             if let mediaPlayer = self.findMediaPlayer(view) {
-              dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer)
+
+              dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: nodeView)
             }
 
           }

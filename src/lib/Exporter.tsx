@@ -80,6 +80,7 @@ type ExportableBlock = ExportableImageBlock | ExportableTextBlock;
 export type ExportableNode = {
   block: ExportableBlock;
   frame: BoundsRect;
+  viewTag: number;
   position: EditableNodeStaticPosition;
 };
 
@@ -135,8 +136,6 @@ const createExportableNode = (
   nodeBounds: BoundsRect,
   nodeViewTag: number
 ): ExportableNode => {
-  console.log("POSITION", node.position);
-
   return {
     block: createExportableBlock(node.block, viewTag, blockBounds),
     frame: nodeBounds,
