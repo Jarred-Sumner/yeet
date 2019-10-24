@@ -8,7 +8,7 @@
 
 import Foundation
 import PINRemoteImage
-import PromiseKit
+import Promise
 
 class ExportableMediaSource {
   var mediaSource: MediaSource
@@ -37,7 +37,7 @@ class ExportableVideoSource : ExportableMediaSource {
   var asset: AVAsset
 
   func generateThumbnail(size: CGSize, scale: CGFloat = CGFloat(1)) -> Promise<ExportableImageSource> {
-    return Promise<ExportableImageSource>() { [weak self] promise in
+    return Promise<ExportableImageSource>() { [weak self] resolve, reject in
       guard let asset = self?.asset else {
         return
       }
@@ -46,17 +46,17 @@ class ExportableVideoSource : ExportableMediaSource {
       imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: CMTime.zero)]) { [weak self] time, cgImage, otherTime, status, error  in
         if status == .succeeded && cgImage != nil {
           guard let image = UIImage(cgImage: cgImage!).sd_resizedImage(with: size.applying(CGAffineTransform.init(scaleX: scale, y: scale)), scaleMode: .aspectFill) else {
-            promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
+            reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
             return
           }
           guard let mediaSource = self?.mediaSource else {
-            promise.reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
+            reject(NSError(domain: "com.codeblogcorp.yeet", code: 400, userInfo: nil))
             return
           }
         
-          promise.fulfill(ExportableImageSource(thumbnail: image, id: mediaSource.id))
+          resolve(ExportableImageSource(thumbnail: image, id: mediaSource.id))
         } else {
-          promise.reject(error ?? NSError(domain: "com.codeblogcorp.yeet", code: 404, userInfo: nil))
+          reject(error ?? NSError(domain: "com.codeblogcorp.yeet", code: 404, userInfo: nil))
         }
 
       }

@@ -169,15 +169,7 @@ PODS:
   - PINRemoteImage/WebP (3.0.0-beta.14):
     - libwebp
     - PINRemoteImage/Core
-  - PromiseKit (6.11.0):
-    - PromiseKit/CorePromise (= 6.11.0)
-    - PromiseKit/Foundation (= 6.11.0)
-    - PromiseKit/UIKit (= 6.11.0)
-  - PromiseKit/CorePromise (6.11.0)
-  - PromiseKit/Foundation (6.11.0):
-    - PromiseKit/CorePromise
-  - PromiseKit/UIKit (6.11.0):
-    - PromiseKit/CorePromise
+  - Promises (2.0.4)
   - Protobuf (3.10.0)
   - Quick (2.2.0)
   - RCTRequired (0.61.1)
@@ -475,7 +467,7 @@ DEPENDENCIES:
   - PINCache (from `https://github.com/pinterest/PINCache.git`)
   - PINRemoteImage (from `https://github.com/pinterest/PINRemoteImage.git`)
   - PINRemoteImage/WebP (from `https://github.com/pinterest/PINRemoteImage.git`)
-  - PromiseKit
+  - Promises
   - Quick
   - RCTRequired (from `../node_modules/react-native/Libraries/RCTRequired`)
   - RCTTypeSafety (from `../node_modules/react-native/Libraries/TypeSafety`)
@@ -565,7 +557,7 @@ SPEC REPOS:
     - nanopb
     - NextLevelSessionExporter
     - PINOperation
-    - PromiseKit
+    - Promises
     - Protobuf
     - Quick
     - Repeat
@@ -743,7 +735,7 @@ SPEC CHECKSUMS:
   PINCache: 534fd41d358d828dfdf227a0d327f3673a65e20b
   PINOperation: 24b774353ca248fcf87d67b2d61eef42087c125a
   PINRemoteImage: c4a78eebe06532b97cf7ac8f930bf1b420d766ea
-  PromiseKit: e4863d06976e7dee5e41c04fc7371c16b3600292
+  Promises: fcb83dc6be43294a8d30c343636ed1a45a8d2e0a
   Protobuf: a4dc852ad69c027ca2166ed287b856697814375b
   Quick: 7fb19e13be07b5dfb3b90d4f9824c855a11af40e
   RCTRequired: 53825815218847d3e9c7b6d92ad2d197a926d51e
@@ -803,6 +795,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: d8c572ddec8d05b7dba08e4e5f1924004a177078
 
-PODFILE CHECKSUM: e173ceeb1df967f2daaf9cd4312d02342ff600a8
+PODFILE CHECKSUM: 845736c320b4a2a25e0e803a8f51234b5aed8c37
 
 COCOAPODS: 1.8.3

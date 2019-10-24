@@ -5,6 +5,8 @@ import { View, StyleSheet, StyleProp } from "react-native";
 import CircularProgressBar from "./PostList/CircularProgressBar";
 import { UserContext } from "./UserContext";
 
+import { Avatar as PlaceholderAvatar } from "react-native-paper";
+
 type CommonAvatarProps = {
   PlaceholderComponent: React.ComponentType<{
     label: string;
@@ -26,7 +28,7 @@ type AvatarProps = CommonAvatarProps & {
 export const Avatar = React.forwardRef(
   (
     {
-      PlaceholderComponent,
+      PlaceholderComponent = PlaceholderAvatar,
       label,
       size,
       url,
@@ -40,6 +42,7 @@ export const Avatar = React.forwardRef(
     const showPlaceholder = !url;
 
     if (showPlaceholder) {
+      return null;
       return (
         <PlaceholderComponent
           ref={ref}

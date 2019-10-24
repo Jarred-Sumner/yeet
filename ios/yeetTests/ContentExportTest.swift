@@ -10,11 +10,9 @@ import XCTest
 import Quick
 import Nimble
 import Foundation
-import PromiseKit
-
+import Promise
 
 @testable import yeet
-
 
 
 class ContentExportTest: QuickSpec {
@@ -22,23 +20,21 @@ class ContentExportTest: QuickSpec {
   static let OPEN_VIDEOS = true
 
   func runVideoProducer(videoProducer: VideoProducer, bounds: CGRect, isServerOnly: Bool, exportURL: URL, scale: CGFloat) -> Promise<URL?> {
-    return Promise<URL?>() { promise in
+    return Promise<URL?>() { resolve, reject in
       if FileManager.default.fileExists(atPath: exportURL.path) {
         try! FileManager.default.removeItem(at: exportURL)
       }
 
-
-
       videoProducer.start(estimatedBounds: bounds, isServerOnly: isServerOnly, exportURL: exportURL, scale: scale) { response in
         guard let response = response else {
           fail("Empty")
-          promise.fulfill(nil)
+          resolve(nil)
           return
         }
 
         guard response.count > 0 else {
           fail("Empty")
-          promise.fulfill(nil)
+          resolve(nil)
           return
         }
 
@@ -47,44 +43,45 @@ class ContentExportTest: QuickSpec {
 
         if error != nil {
           fail(error!.localizedDescription)
-          promise.fulfill(nil)
+          resolve(nil)
           return
         }
 
         if let exportDictionary = response[1] as? Dictionary<String, Any> {
           guard let uriString = exportDictionary["uri"] as? String  else {
             fail("\(exportDictionary) is invalid")
-            promise.fulfill(nil)
+            resolve(nil)
             return
           }
 
           guard let uri = URL(string: uriString)  else {
             fail("\(uriString) is invalid")
-            promise.fulfill(nil)
+            resolve(nil)
             return
           }
 
           let asset = AVURLAsset(url: uri)
 
+          
           if asset.isPlayable {
 
 
-            promise.fulfill(uri)
+            resolve(uri)
             return
           } else {
             fail("\(uriString) is invalid")
 
-            promise.fulfill(nil)
+            resolve(nil)
             return
           }
 
 
         } else {
           fail("No content")
-          promise.fulfill(nil)
+          resolve(nil)
         }
 
-        promise.fulfill(nil)
+        resolve(nil)
       }
     }
   }
@@ -102,9 +99,7 @@ class ContentExportTest: QuickSpec {
       it("exports successfully") {
 
         waitUntil(timeout: 40.0) { done in
-          firstly {
-            self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(1))
-          }.ensure {
+          self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(1)).then { video in
             done()
           }
         }
@@ -114,10 +109,8 @@ class ContentExportTest: QuickSpec {
       describe("@2x") {
         it("exports successfully") {
           let destination = Fixtures.twoVideosTransparentPNGOutputURL2x!
-          waitUntil(timeout: 20.0) { done in
-            firstly {
-              self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(2))
-            }.ensure {
+          waitUntil(timeout: 40.0) { done in
+            self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(2)).then { video in
               done()
             }
           }
