@@ -60,9 +60,8 @@ struct NodePosition {
   let x: NSNumber
 
   // CoreImage is bottom left oriented
-  func transform(flipY: Bool) -> CGAffineTransform {
-
-    return CGAffineTransform(translationX: CGFloat(x.doubleValue), y: CGFloat(y.doubleValue * (flipY ? -1.0 : 1.0))).rotated(by: CGFloat(rotate.doubleValue)).scaledBy(x: CGFloat(scale.doubleValue), y: CGFloat(scale.doubleValue))
+  func transform() -> CGAffineTransform {
+    return CGAffineTransform.init(rotationAngle: CGFloat(rotate.doubleValue))
   }
 }
 
@@ -149,6 +148,11 @@ class ContentBlock {
 
   var ranges: Array<ImageFrameRange> = []
 
+  var renderedFrame: CGRect {
+    let frame = (self.nodeFrame ?? self.frame)
+
+    return frame.applying(position.transform())
+  }
 
 
   init(value: JSON?, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableMediaSource, position: JSON?, frame: CGRect, nodeFrame: CGRect?, text: String?, type: BlockType) {
@@ -227,7 +231,7 @@ class ContentBlock {
 
   func maxSize() -> CGSize {
     let original = dimensions.rect()
-    let transform = position.transform(flipY: true);
+    let transform = position.transform()
     let origin = original.applying(transform).origin
     return CGSize(
       width: (original.width + origin.x) * transform.scaleX,
@@ -247,13 +251,13 @@ enum ExportType : String {
   func fileExtension() -> String {
     switch(self) {
       case .png:
-        return ".png"
+        return "png"
       case .webp:
-        return ".webp"
+        return "webp"
       case .mp4:
-        return ".mp4"
+        return "mp4"
       case .jpg:
-        return ".jpg"
+        return "jpg"
     }
   }
 }
@@ -354,6 +358,8 @@ class VideoProducer {
      return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".\(type.fileExtension())"))
   }
 
+  static let contentExportQueue = DispatchQueue.init(label: "com.codeblogcorp.ContentExportQueue", qos: .utility, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+
   func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil, callback: @escaping RCTResponseSenderBlock) {
     let resources = self.blocks.map { block in
       return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
@@ -377,15 +383,11 @@ class VideoProducer {
 
     let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
-    DispatchQueue.global(qos: .background).async {
-      ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital, scale: scale) { export in
-        if let _export = export {
-          callback([nil, _export.dictionaryValue()])
-        } else {
-          callback([])
-        }
 
-      }
+    ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital, scale: scale).then { export in
+        callback([nil, export.dictionaryValue()])
+    }.catch { error in
+      callback([error, nil])
     }
   }
 

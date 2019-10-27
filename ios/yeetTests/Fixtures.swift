@@ -14,14 +14,22 @@ import SwiftyJSON
 
 class Fixtures {
   static let bundle = Bundle(for: Fixtures.self)
+
   static let twoVideosDirectory =  "Fixtures/twoVideos"
   static let twoVideosTransparentPNGOutputPath = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video.mp4"
   static let twoVideosTransparentPNGOutputPath2x = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video@2x.mp4"
   static let twoVideosTransparentPNGOutputURL = URL(string: "file://" + Fixtures.twoVideosTransparentPNGOutputPath)
   static let twoVideosTransparentPNGOutputURL2x = URL(string: "file://" + Fixtures.twoVideosTransparentPNGOutputPath2x)
-
   static let twoVideosTransparentPNGJSONPath = Fixtures.bundle.resourceURL!.appendingPathComponent(Fixtures.twoVideosDirectory, isDirectory: true).appendingPathComponent("export.json")
   static let twoVideosTransparentPNGJSON = JSON(parseJSON: try! String(contentsOf: Fixtures.twoVideosTransparentPNGJSONPath, encoding: .utf8))
+
+  static let hiGifDirectory =  "Fixtures/higif"
+  static let hiGifTransparentPNGOutputPath = Fixtures.bundle.resourcePath! + "/" + Fixtures.hiGifDirectory + "/test-video.mp4"
+  static let hiGifTransparentPNGOutputPath2x = Fixtures.bundle.resourcePath! + "/" + Fixtures.hiGifDirectory + "/test-video@2x.mp4"
+  static let hiGifTransparentPNGOutputURL = URL(string: "file://" + Fixtures.hiGifTransparentPNGOutputPath)
+  static let hiGifTransparentPNGOutputURL2x = URL(string: "file://" + Fixtures.hiGifTransparentPNGOutputPath2x)
+  static let hiGifTransparentPNGJSONPath = Fixtures.bundle.resourceURL!.appendingPathComponent(Fixtures.hiGifDirectory, isDirectory: true).appendingPathComponent("export.json")
+  static let hiGifTransparentPNGJSON = JSON(parseJSON: try! String(contentsOf: Fixtures.hiGifTransparentPNGJSONPath, encoding: .utf8))
 
   static func videoProducer(fixture: JSON) -> VideoProducer {
     let imagesDict = self.getImages(data: fixture)

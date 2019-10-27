@@ -1,0 +1,86 @@
+
+{
+  "blocks": [
+    {
+      "type": "image",
+      "format": "screenshot",
+      "dimensions": {
+        "width": 414,
+        "height": 413.99999999999994,
+        "x": 0,
+        "y": 0,
+        "maxX": 414,
+        "maxY": 413.99999999999994
+      },
+      "id": "QhA9QWJxiHQHthJEMR9JM",
+      "contentId": "ph://C436DF32-8FA2-4DDA-B2FC-5B83466F29CC/L0/001",
+      "viewTag": 903,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 414,
+        "height": 414
+      },
+      "value": {
+        "width": 400,
+        "height": 400,
+        "source": "cameraRoll",
+        "mimeType": "image/jpeg",
+        "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/higif/qD9MFJX-_400x400.jpg",
+        "duration": 0
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "block": {
+        "type": "image",
+        "format": "sticker",
+        "dimensions": {
+          "width": 310.5,
+          "height": 310.5,
+          "x": 0,
+          "y": 0,
+          "maxX": 310.5,
+          "maxY": 310.5
+        },
+        "id": "oLJnbwihejMePG3AFTr6F",
+        "contentId": "l0FF56cexcW2JAXCJj",
+        "viewTag": 1479,
+        "frame": {
+          "x": 15,
+          "y": 15,
+          "width": 643.00788191693,
+          "height": 643.00788191693
+        },
+        "value": {
+          "width": 480,
+          "height": 480,
+          "source": "giphy",
+          "mimeType": "video/mp4",
+          "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/higif/hi-giphy.mp4",
+          "duration": 1
+        }
+      },
+      "frame": {
+        "x": -114.50394095846502,
+        "y": 77.496059041535,
+        "width": 643.00788191693,
+        "height": 643.00788191693
+      },
+      "viewTag": 1485,
+      "position": {
+        "x": 51.75,
+        "rotate": -0.4577542912756755,
+        "scale": 1.5466070297485432,
+        "y": 243.75
+      }
+    }
+  ],
+  "bounds": {
+    "x": 0,
+    "y": 0,
+    "width": 414,
+    "height": 754
+  }
+}

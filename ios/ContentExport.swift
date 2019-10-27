@@ -12,7 +12,51 @@ import NextLevelSessionExporter
 
 typealias ExportableSlice = (Array<AVAssetTrack>, Array<ExportableBlock>)
 
+class ContentExportError : NSError {
+  enum ErrorCode : Int {
+    case exportCancelled = -1
+    case insertVideoTrackFailed = -2
+    case resourceMissingBlock = -3
+    case assetUnplayable = -4
+    case videoTrackUnplayable = -5
+    case renderSizeIsZero = -6
+    case failedToCreateExportSession = -7
+    case videoMissingFromResource = -8
+    case unknownError = 0
+
+  }
+
+  static let ERROR_MESAGES: [ErrorCode : String] = [
+    ErrorCode.unknownError: "Something went wrong. Please try again.",
+    ErrorCode.videoMissingFromResource: "Something went wrong. Please try again.",
+    ErrorCode.insertVideoTrackFailed: "Something went wrong. Please try again.",
+    ErrorCode.resourceMissingBlock: "Something went wrong. Please try again.",
+    ErrorCode.assetUnplayable: "One of the videos might be broken. Please try again.",
+    ErrorCode.videoTrackUnplayable: "One of the videos might be broken. Please try again.",
+    ErrorCode.renderSizeIsZero: "Can't save an empty screen.",
+    ErrorCode.failedToCreateExportSession: "Can't export an empty screen.",
+  ]
+
+  let errorCode: ErrorCode
+
+
+  required init?(coder: NSCoder) {
+    fatalError()
+  }
+
+  override var localizedDescription: String {
+    return ContentExportError.ERROR_MESAGES[self.errorCode] ?? "Something went wrong. Please try again."
+  }
+
+  init(_ errorCode: ErrorCode, userInfo: [String: Any]? = nil) {
+    self.errorCode = errorCode
+
+    super.init(domain: "com.codeblogcorp.ContentExportError", code: errorCode.rawValue,  userInfo: userInfo)
+  }
+}
+
 class ContentExport {
+
   static let CONVERT_PNG_TO_WEBP = true
 
   #if DEBUG
@@ -153,46 +197,78 @@ class ContentExport {
     }
   }
 
-  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil, complete: @escaping(ContentExport?)->()) {
-    do {
-//      let _estimatedBounds = CGRect(origin: estimatedBounds.origin, size: estimatedBounds.size.h264Friendly())
-//      let h264RenderScale = _estimatedBounds.size.width / estimatedBounds.size.width
-//
-//      let _contentsScale = (scale != nil ? scale! : UIScreen.main.scale)
-//      let contentsScale = _estimatedBounds.applying(CGAffineTransform.init(scaleX: _contentsScale, y: _contentsScale)).size.h264Friendly().width / _estimatedBounds.size.width
-
+  // The gist of how this works is as follows.
+  // 1. How big is it?
+  //    - AVFoundation accepts an array of layers to display the video into. This means that
+  //    we can't just set the size & aspect ratio of the video like we would with an AVPlayerLayer.
+  //    - Instead, we merge all the videos together in a straight line (at 0,0) going downward
+  //    - When a user puts multiple videos into their video, then it plays the entire video in each of those boxes.
+  //    - To do that...we need to figure out what the actual size is.
+  //    - We figure out the size by seeing the height and width of each frame
+  // 2. Lay out the videos & images
+  //    - Every video & every image is rendered via a single CALayer object. Animations too.
+  //    - Images are normal CALayer objects with frame and bounds and such. They're not interesting.
+  //    - The videos contents (eventually) becomes the entire video that's rendered.
+  //    - That means we need to crop it to only display the actual video we want.
+  //    - so we set contentsRect to do that.
+  //    - and we scale the video from it's natural size to whatever frame.size says it shoudl be
+  // 3. AVAssetExportSession does it's magic.
+  // 4. We take the video output...and crop it.
+  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil) -> Promise<ContentExport> {
+    return Promise<ContentExport>(queue: VideoProducer.contentExportQueue) { resolve, reject in
       let contentsScale = (scale != nil ? scale! : UIScreen.main.scale)
       let VIDEO_MARGIN = contentsScale
+
       var renderSize = CGSize.zero
-      var naturalVideoSize = CGSize.zero
       var videoCount = 0
+      var yOffset = CGFloat.zero
+      var xOffset = CGFloat.zero
+      var cropWidth = CGFloat.zero
+      var cropHeight = CGFloat.zero
 
       for resource in resources {
         if let block = resource.block {
-          let frame = (block.nodeFrame ?? block.frame)
+          let _frame = (block.nodeFrame ?? block.frame)
+          let frame = CGRect(
+            origin: _frame.origin,
+            size: _frame.applying(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))).size
+          )
 
           if block.value.image.isVideo {
             videoCount = videoCount + 1
-            if let vidAsset = block.value.image.video?.asset {
-              if let vidTrack = vidAsset.tracks(withMediaType: .video).first {
-                if vidTrack.naturalSize.width > naturalVideoSize.width {
-                  naturalVideoSize = CGSize(
-                    width: vidTrack.naturalSize.width,
-                    height: naturalVideoSize.height
-                  )
-                }
-
-                naturalVideoSize = CGSize(
-                  width: naturalVideoSize.width,
-                  height: vidTrack.naturalSize.height + naturalVideoSize.height
-                )
-              }
-            }
           }
 
-          let maxX = min(frame.origin.x + frame.width, estimatedBounds.width)
-          let maxY = frame.origin.y + frame.height
+          let minY = min(frame.origin.y, yOffset)
+          let minX = min(frame.origin.x, xOffset)
 
+          if minY < yOffset {
+            yOffset = minY
+          }
+
+          if minX < xOffset {
+            xOffset = minX
+          }
+
+          let _cropWidth = min(
+            max(block.renderedFrame.maxX, cropWidth),
+            estimatedBounds.width
+          )
+
+          let _cropHeight = min(
+            max(block.renderedFrame.maxY, cropHeight),
+            estimatedBounds.height
+          )
+
+          if _cropWidth > cropWidth {
+            cropWidth = _cropWidth
+          }
+
+          if _cropHeight > cropHeight {
+            cropHeight = _cropHeight
+          }
+
+          let maxX = abs(frame.origin.x) + abs(frame.width)
+          let maxY = abs(frame.origin.y) + abs(frame.height)
 
           if maxX > renderSize.width {
             renderSize.width = maxX
@@ -205,24 +281,29 @@ class ContentExport {
         }
       }
 
-      naturalVideoSize = CGSize(
-        width: naturalVideoSize.width,
-        height: naturalVideoSize.height + (CGFloat(videoCount) * CGFloat(VIDEO_MARGIN))
-      )
-
       let scaleTransform = CGAffineTransform.init(scaleX: contentsScale, y: contentsScale)
+      let downscaleTransform = CGAffineTransform.init(scaleX: 1 / contentsScale, y: 1 / contentsScale)
+
+
+      let ptVideoContainerRect = CGRect(origin: .zero, size: renderSize)
+      let videoContainerRect = ptVideoContainerRect.applying(scaleTransform)
+
 
       let parentLayer = CALayer()
+      let centerPoint = CGPoint(x: .zero, y: yOffset * CGFloat(-1))
 
+      let cropRect = CGRect(
+        origin: centerPoint,
+        size: CGSize(width: cropWidth, height: cropHeight)
+      ).applying(scaleTransform)
 
-      parentLayer.bounds = CGRect(origin: .zero, size: estimatedBounds.size)
-      parentLayer.frame = CGRect(origin: .zero, size: estimatedBounds.size)
-
+      parentLayer.bounds = ptVideoContainerRect
+      parentLayer.frame = CGRect(origin: CGPoint(x: .zero, y: yOffset), size: ptVideoContainerRect.size)
 
       parentLayer.contentsScale = contentsScale
       parentLayer.contentsGravity = .resize
       parentLayer.isGeometryFlipped = true
-      parentLayer.masksToBounds = true
+      parentLayer.masksToBounds = false
       parentLayer.isOpaque = true
 
 
@@ -239,12 +320,9 @@ class ContentExport {
 
         var videoLayers: Array<CALayer> = []
 
-
         let videos = resources.filter { resource in
           return resource.block!.value.image.isVideo
         }
-
-        var resizedAssets: Dictionary<String, AVURLAsset> = [:]
 
         let instruction = AVMutableVideoCompositionInstruction()
         instruction.timeRange = vid_timerange
@@ -273,18 +351,15 @@ class ContentExport {
               return
             }
 
-            let resizeScale = UIScreen.main.nativeScale
-//            guard let _asset = resizedAssets[block.value.image.mediaSource.id] else {
-//              return
-//            }
-
             let _asset = video.asset
             guard _asset.isPlayable else {
+              reject(ContentExportError(.assetUnplayable))
               return
             }
 
             let vidAsset = _asset.tracks(withMediaType: .video).first!
             guard vidAsset.isPlayable else {
+              reject(ContentExportError(.videoTrackUnplayable))
               return
             }
 
@@ -293,29 +368,41 @@ class ContentExport {
             let loopCount = ( seconds / assetDuration).rounded(.up)
             let nodeView = video.nodeView
 
+            let scaledSize = CGSize(
+              width: frame.size.width,
+              height: frame.size.height
+            )
 
-            let scaleX =  (frame.size.width * contentsScale) / vidAsset.naturalSize.width
-            let scaleY =  (frame.size.height * contentsScale) / vidAsset.naturalSize.height
+            let scaleX = scaledSize.width / vidAsset.naturalSize.width
+            let scaleY = scaledSize.height / vidAsset.naturalSize.height
 
+            let rotationTransform = CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))
             let _videoTransform =  CGAffineTransform
               .identity
+              .rotated(by: CGFloat(block.position.rotate.doubleValue * -1) )
               .scaledBy(x: scaleX, y: scaleY)
+              .rotated(by: CGFloat(block.position.rotate.doubleValue) )
 
             let videoTransform = _videoTransform
             let videoTranslateTransform = CGAffineTransform.init(translationX: .zero, y: lastVideoTranslateY)
             let layerTransform = CGAffineTransform.identity.concatenating(videoTransform).concatenating(videoTranslateTransform).concatenating(vidAsset.preferredTransform)
 
-             guard let view = video.view else {
-               return
-             }
+            let videoRect = CGRect(origin: .zero, size: vidAsset.naturalSize).applying(layerTransform)
 
 
+             let view = video.view
 
               guard let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
+                reject(ContentExportError(.insertVideoTrackFailed))
                 return
               }
               for _ in 0...Int(loopCount) {
-                try! track.insertTimeRange(CMTimeRangeMake(start: .zero, duration: vidAsset.timeRange.duration), of: vidAsset, at: .zero)
+                do {
+                  try track.insertTimeRange(CMTimeRangeMake(start: .zero, duration: vidAsset.timeRange.duration), of: vidAsset, at: .zero)
+                } catch(let error) {
+                  reject(error)
+                  return
+                }
               }
 
               let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
@@ -329,57 +416,67 @@ class ContentExport {
               }
 
 
-
             let videoLayer = CALayer()
             
             setupInnerLayer(layer: videoLayer, block: block)
 
-            videoLayer.isGeometryFlipped = !parentLayer.isGeometryFlipped
+            videoLayer.isGeometryFlipped = false
             videoLayer.backgroundColor = UIColor.clear.cgColor
             videoLayer.contentsGravity = .topLeft
-            videoLayer.contentsScale = contentsScale
-            videoLayer.masksToBounds = true
+            videoLayer.masksToBounds = false
 
             if self.SHOW_BORDERS {
               videoLayer.borderWidth = CGFloat(2)
               videoLayer.borderColor = UIColor.red.cgColor
             }
 
-            let vidRect =  CGRect(origin: .zero, size: vidAsset.naturalSize).applying(layerTransform)
+            let interRect = ptVideoContainerRect.intersection(videoRect)
 
-            videoLayer.bounds  = CGRect(origin: .zero, size: frame.size)
-            videoLayer.frame = CGRect(origin: frame.origin, size: frame.size)
+            // The coordinates provided are relative to the top left of the screen
+            // The coordiantes rendered are relative to the bottom left of parentLayer.frame.
+            videoLayer.backgroundColor = UIColor.clear.cgColor
 
-            let videoContainerRect = estimatedBounds.applying(scaleTransform)
-            let interRect = videoContainerRect.intersection(vidRect)
 
+
+
+//            videoLayer.frame = CGRect(origin: frame.origin, size: frame.size.applying(rotationTransform))
+            videoLayer.frame = CGRect(origin: CGPoint(x: frame.origin.x, y: .zero), size: frame.size.applying(rotationTransform))
+            videoLayer.bounds = CGRect(origin: .zero, size: videoLayer.frame.size)
+//
             let contentsRect = CGRect(
               origin: CGPoint(
-                x: interRect.origin.x / videoContainerRect.width,
-                y: interRect.origin.y / videoContainerRect.height
+                x: interRect.origin.x / ptVideoContainerRect.width,
+                y: interRect.origin.y / ptVideoContainerRect.height
               ),
               size: CGSize(
-                width: interRect.width / videoContainerRect.width,
-                height: interRect.height / videoContainerRect.height
+                width: interRect.width / ptVideoContainerRect.width,
+                height: interRect.height / ptVideoContainerRect.height
               )
             )
             videoLayer.contentsRect = contentsRect
 
+
+            let videoTrackSize = vidAsset.naturalSize
+
+            videoLayer.contentsScale = scaleX
             
             videoLayers.append(videoLayer)
             parentLayer.addSublayer(videoLayer)
+//            containerLayer.addSublayer(videoLayer)
+//                        parentLayer.addSublayer(containerLayer)
 
             SwiftyBeaver.info("""
 Bounds diff:
 - translation \(videoTransform.translation())
 - Editor: \(frame)
-- View: \(view.bounds),\(view.frame)
+- View: \(view?.bounds),\(view?.frame)
+- vidRect: \(videoRect)
 - Node: \(nodeView?.bounds),\(nodeView?.frame)
 - Node Transform: \(nodeView?.transform)
-
+- contentsScale: \(videoLayer.contentsScale)
 """)
 
-            lastVideoTranslateY =  vidRect.maxY + VIDEO_MARGIN
+            lastVideoTranslateY = videoRect.maxY
           } else if (isImage) {
             let cropRect = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: parentLayer.bounds, duration: seconds, resources: resources)
 
@@ -388,24 +485,17 @@ Bounds diff:
           }
         }
 
-
-//        parentLayer.bounds = CGRect(origin: .zero, size: renderSize.h264Friendly())
         parentLayer.backgroundColor = UIColor.clear.cgColor
 
 
         renderSize = renderSize.applying(scaleTransform)
-        let renderBounds = parentLayer.bounds.applying(scaleTransform)
+
 
         layercomposition.instructions.append(instruction)
-        layercomposition.renderSize = estimatedBounds.applying(scaleTransform).size
-//        parentLayer.frame = CGRect(origin: .zero, size: renderSize)
-
-
+        layercomposition.renderSize = renderSize
 
         parentLayer.applyScale(x: contentsScale, y: contentsScale )
 
-
-//        layercomposition.renderSize = renderSize
 
         if videoLayers.count > 1 {
           layercomposition.animationTool = .init(postProcessingAsVideoLayers: videoLayers, in: parentLayer)
@@ -415,40 +505,23 @@ Bounds diff:
 
         if (layercomposition.renderSize.width == .zero || layercomposition.renderSize.height == .zero) {
           SwiftyBeaver.error("Invalid video export size \(layercomposition.renderSize)")
-          complete(nil)
+          reject(ContentExportError(.renderSizeIsZero))
           return
         }
 
 
 
-        // TRY masking to only what's visible
 
-        // Use AVAssetExportSession to export video
-        let assetExport = NextLevelSessionExporter(withAsset: composition)
+        guard let assetExport = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+          reject(ContentExportError(.failedToCreateExportSession))
+          return
+        }
 
 
         assetExport.outputFileType = AVFileType.mp4
         assetExport.outputURL = VideoProducer.generateExportURL(type: type)
-//        assetExport.outputURL = url
-        assetExport.videoOutputConfiguration = [
-            AVVideoCodecKey: AVVideoCodecType.h264,
-            AVVideoWidthKey: NSNumber(integerLiteral: Int(floor(layercomposition.renderSize.h264Friendly().width))),
-            AVVideoHeightKey: NSNumber(integerLiteral: Int(floor(layercomposition.renderSize.h264Friendly().height))),
-            AVVideoScalingModeKey: AVVideoScalingModeResize,
-            AVVideoCompressionPropertiesKey: [
-              AVVideoAverageBitRateKey: NSNumber(integerLiteral: 6000000),
-              AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel as String,
-            ]
-        ]
-
-        assetExport.audioOutputConfiguration = [
-            AVFormatIDKey: kAudioFormatMPEG4AAC,
-            AVEncoderBitRateKey: NSNumber(integerLiteral: 128000),
-            AVNumberOfChannelsKey: NSNumber(integerLiteral: 2),
-            AVSampleRateKey: NSNumber(value: Float(44100))
-        ]
-
         assetExport.timeRange = vid_timerange
+
 
         if layercomposition.instructions.count > 0 {
           assetExport.videoComposition = layercomposition
@@ -458,53 +531,52 @@ Bounds diff:
         SwiftyBeaver.info("Preparing video export with \(resources.count) completed in \(timeSpentPreparing)s")
         SwiftyBeaver.info("Starting video export...")
         let startExportTime = CACurrentMediaTime()
-        assetExport.export { result in
-
-
-          switch(result) {
-          case .success(let status):
-              switch status {
-              case AVAssetExportSessionStatus.failed:
-                SwiftyBeaver.error("Video Export failed.")
-                complete(nil)
-              case AVAssetExportSessionStatus.cancelled:
-                SwiftyBeaver.warning("Video Export cancelled")
-
-                complete(nil)
-              default:
-                var resolution = renderSize
-                var colors: UIImageColors? = nil
-
-                do {
-                  let imageGenerator = AVAssetImageGenerator(asset: assetExport.asset!)
-                  imageGenerator.appliesPreferredTrackTransform = true
-                  let thumbnail = try UIImage(cgImage: imageGenerator.copyCGImage(at: CMTime(seconds: 0, preferredTimescale: 1), actualTime: nil))
-
-                  resolution = thumbnail.size
-                  colors = thumbnail.getColors()
-                } catch {
-
-                }
-
-                let duration = CMTimeGetSeconds(assetExport.asset!.duration)
-
-
-
+        assetExport.exportAsynchronously {
+          VideoProducer.contentExportQueue.async {
+            let status = assetExport.status
+            switch status {
+            case .completed:
+                let duration = CMTimeGetSeconds(assetExport.asset.duration)
                 let fullAsset = AVURLAsset(url: assetExport.outputURL!)
-                
-                fullAsset.crop(to: CGRect(origin: .zero, size: renderSize.h264Friendly()), dest: url).then { _ in
+                SwiftyBeaver.info("""
+Cropping video...
+  \(renderSize) -> \(cropRect)
+  \(assetExport.outputURL!.absoluteString)
+
+""")
+
+                fullAsset.crop(to: cropRect, dest: url).then(on: VideoProducer.contentExportQueue) { asset in
+                  var resolution = cropRect.size
+                  var colors: UIImageColors? = nil
+
+                  do {
+                    let imageGenerator = AVAssetImageGenerator(asset: asset)
+                    imageGenerator.appliesPreferredTrackTransform = true
+                    let thumbnail = try UIImage(cgImage: imageGenerator.copyCGImage(at: CMTime(seconds: 0, preferredTimescale: 1), actualTime: nil))
+
+                    resolution = thumbnail.size
+                    colors = thumbnail.getColors()
+                  } catch {
+
+                  }
+
                   let timeSpentExporting = CACurrentMediaTime() - startExportTime
                   SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
 
-
-                  complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
+                  resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
                 }
 
+              case AVAssetExportSessionStatus.cancelled:
+                SwiftyBeaver.warning("Video Export cancelled")
+                reject(ContentExportError(.exportCancelled))
+
+            default:
+               SwiftyBeaver.error("Video Export incomplete. \(assetExport.error)")
+               reject(assetExport.error ?? ContentExportError(.unknownError))
+
             }
-          case .failure(let error):
-            SwiftyBeaver.error(error.localizedDescription, context: error)
-            complete(nil)
-          }
+            }
+
 
 
         }
@@ -527,10 +599,8 @@ Bounds diff:
         let resolution = fullImage.size
 
 
-        complete(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
+        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
       }
-    } catch {
-      print("VideoWatermarker->getWatermarkLayer everything is baaaad =(")
     }
   }
 
@@ -594,12 +664,13 @@ extension CGAffineTransform {
 
 extension CALayer {
   func applyScale(x: CGFloat, y: CGFloat) {
+    let _scaleTransform = CGAffineTransform.init(scaleX: x, y: y)
+    let to = frame.applying(_scaleTransform)
 
-    let scaleTransform = self.affineTransform().scaledBy(x: x, y: y)
-    let to = bounds.applying(scaleTransform)
+    let scaleTransform = self.affineTransform().concatenating(_scaleTransform)
     self.anchorPoint = CGPoint(x: 0.5, y: 0.5)
     self.position = CGPoint(x: to.midX, y: to.midY)
-    self.setAffineTransform(scaleTransform)
+    self.setAffineTransform(self.affineTransform().concatenating(scaleTransform))
   }
 }
 
@@ -627,17 +698,7 @@ extension UIColor {
 
 extension CGFloat {
   func toClosestMultiple(_ of: CGFloat) -> CGFloat {
-    let roundedOf = of.rounded(.down)
-    let roundedSelf = self.rounded(.down)
-
-    if Int(roundedSelf) % Int(roundedOf) == .zero {
-      return roundedSelf
-    } else if roundedSelf < roundedOf {
-      return roundedOf
-    } else {
-      return (roundedSelf / of + CGFloat(1)) * of
-    }
-
+     return floor(self / of) * of
   }
 }
 
@@ -647,9 +708,49 @@ extension CGSize {
 
     return CGSize(
       width: h264Width,
-      height: (h264Width / width) * height
+      height: floor((h264Width / width) * height)
     )
   }
 }
 
+extension CGRect {
+  func h264Friendly() -> CGRect {
+    let size = self.size.h264Friendly()
 
+//    let origin = CGPoint(
+//      x: self.origin.x + self.size.width - size.width,
+//      y: self.origin.y + self.size.height - size.height
+//    )
+
+    return CGRect(
+      origin: origin,
+      size: size
+    )
+//      size: CGSize(
+//        width: size.width - origin.x,
+//        height: size.height - origin.y
+//      )
+//    )
+  }
+}
+
+
+
+
+extension CALayer {
+  func mask(to: CGRect, inverse: Bool = false) {
+      let path = UIBezierPath(rect: to)
+      let maskLayer = CAShapeLayer()
+
+      if inverse {
+        path.append(UIBezierPath(rect: self.bounds))
+        maskLayer.fillRule = .nonZero
+      } else {
+        maskLayer.fillRule = .evenOdd
+    }
+
+      maskLayer.path = path.cgPath
+
+      self.mask = maskLayer
+  }
+}
