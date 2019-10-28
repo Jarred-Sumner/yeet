@@ -148,10 +148,26 @@ class ContentBlock {
 
   var ranges: Array<ImageFrameRange> = []
 
-  var renderedFrame: CGRect {
+  func renderedFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
     let frame = (self.nodeFrame ?? self.frame)
 
-    return frame.applying(position.transform())
+    return frame.applying(position.transform()).normalize(scale: scale)
+  }
+
+  func scaledFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
+    let frame = (self.nodeFrame ?? self.frame)
+
+    return frame.normalize(scale: scale)
+  }
+
+  
+  func maxRenderedFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
+    let frame = (self.nodeFrame ?? self.frame)
+
+    return CGRect(
+      origin: frame.origin,
+      size: frame.applying(position.transform()).size
+    ).normalize(scale: scale)
   }
 
 
