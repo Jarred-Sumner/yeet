@@ -116,6 +116,7 @@ class ContentExport {
 
     setupInnerLayer(layer: layer, block: block)
 
+    layer.contentsScale = scale
 
     if (image.isAnimated) {
       layer.contents = image.firstFrame
