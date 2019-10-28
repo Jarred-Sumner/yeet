@@ -296,11 +296,7 @@ class ContentExport {
       renderSize.width = max(minRenderWidth, renderSize.width)
       renderSize.height = max(minRenderHeight, renderSize.height)
 
-      let downscaleTransform = CGAffineTransform.init(scaleX: 1 / contentsScale, y: 1 / contentsScale)
-
-
       let videoContainerRect = CGRect(origin: .zero, size: renderSize)
-
 
       let parentLayer = CALayer()
       let centerPoint = CGPoint(x: .zero, y: yOffset * CGFloat(-1))
