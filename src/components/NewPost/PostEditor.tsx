@@ -47,12 +47,10 @@ import {
 
 const { block, cond, set, eq, sub } = Animated;
 
-export const HEADER_HEIGHT = 30 + TOP_Y + SPACING.normal;
+export const HEADER_HEIGHT = 30 + SPACING.normal;
 
 const styles = StyleSheet.create({
   safeWrapper: {
-    paddingTop: TOP_Y,
-    borderRadius: 12,
     backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
@@ -65,7 +63,6 @@ const styles = StyleSheet.create({
     width: POST_WIDTH
   },
   wrapper: {
-    borderRadius: 12,
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
@@ -1105,21 +1102,8 @@ class RawwPostEditor extends React.Component<Props, State> {
           styles.wrapper,
           {
             backgroundColor: post.backgroundColor,
-            shadowColor: tinycolor(post.backgroundColor)
-              .lighten(10)
-              .toString(),
-            borderWidth: 0,
-            borderColor: tinycolor(post.backgroundColor)
-              .lighten(5)
-              .toString(),
-            shadowOpacity: 0.25,
             height: MAX_POST_HEIGHT,
-            width: POST_WIDTH,
-            shadowOffset: {
-              width: 0,
-              height: 0
-            },
-            shadowRadius: 2
+            width: POST_WIDTH
           }
         ]}
       >
@@ -1192,7 +1176,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           <PostPreview
             bounds={bounds}
             blocks={post.blocks}
-            paddingTop={presets.paddingTop || 0}
+            paddingTop={(presets.paddingTop || 0) + this.props.yInset}
             inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
             focusTypeValue={this.focusTypeValue}

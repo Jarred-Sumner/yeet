@@ -2,26 +2,34 @@ import * as React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import Carousel from "react-native-snap-carousel";
-import { MediumText } from "../Text";
+import { SemiBoldText } from "../Text";
 import { CAROUSEL_HEIGHT, PostFormat } from "./NewPostFormat";
+import { TOP_Y } from "../../../config";
+import { SPACING } from "../../lib/styles";
 
+const ITEM_WIDTH = 120;
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
 const styles = StyleSheet.create({
   container: {
-    height: CAROUSEL_HEIGHT,
     backgroundColor: "black",
-    alignItems: "center"
+    alignItems: "center",
+    width: "100%",
+    height: CAROUSEL_HEIGHT
   },
   item: {
+    paddingTop: TOP_Y + SPACING.half,
+    paddingBottom: SPACING.half,
     justifyContent: "center",
-    alignItems: "center",
     height: CAROUSEL_HEIGHT,
-    width: 100
+    alignItems: "center",
+    width: ITEM_WIDTH
   },
   label: {
     color: "white",
-    fontSize: 18
+    fontSize: 18,
+    textTransform: "uppercase",
+    flexWrap: "nowrap"
   }
 });
 
@@ -69,7 +77,13 @@ const offsets = FORMATS.map(({ width }, index) => width * index);
 const FormatPickerListItem = ({ item: format, contentOffsetY }) => {
   return (
     <Animated.View style={styles.item}>
-      <MediumText style={[styles.label]}>{format.label}</MediumText>
+      <SemiBoldText
+        adjustsFontSizeToFit
+        numberOfLines={1}
+        style={[styles.label]}
+      >
+        {format.label}
+      </SemiBoldText>
     </Animated.View>
   );
 };
@@ -101,13 +115,15 @@ export class FormatPicker extends React.PureComponent {
         data={FORMATS}
         renderItem={this.renderItem}
         sliderWidth={SCREEN_WIDTH}
-        itemWidth={100}
+        itemWidth={ITEM_WIDTH}
         itemHeight={CAROUSEL_HEIGHT}
         horizontal
         sliderHeight={CAROUSEL_HEIGHT}
         enableSnap
         firstItem={this.getFirstItem}
         useScrollView
+        layoutCardOffset={0}
+        inactiveSlideScale={1}
         layout="default"
         style={styles.container}
         onSnapToItem={this.handleSnap}

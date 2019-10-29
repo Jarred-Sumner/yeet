@@ -55,7 +55,6 @@ class ActiveLayerComponent extends React.Component<Props> {
 
   componentDidUpdate(prevProps: Props) {
     if (prevProps.toolbarType !== this.props.toolbarType) {
-      this.toolbarContainer.current.animateNextTransition();
       this.footerContainer.current.animateNextTransition();
     }
   }
@@ -80,26 +79,6 @@ class ActiveLayerComponent extends React.Component<Props> {
           style={[styles.layer, { width, height }]}
         >
           <View pointerEvents="box-none" style={styles.container}>
-            <Transitioning.View
-              ref={this.toolbarContainer}
-              pointerEvents="box-none"
-              transition={
-                <Transition.Sequence>
-                  <Transition.Out type="fade" delayMs={0} durationMs={200} />
-                  <Transition.In
-                    type="fade"
-                    durationMs={200}
-                    delayMs={0}
-                    interpolation="easeIn"
-                  />
-                  <Transition.Change interpolation="easeOut" />
-                </Transition.Sequence>
-              }
-              style={[styles.toolbar]}
-            >
-              {toolbar}
-            </Transitioning.View>
-
             <Transitioning.View
               ref={this.footerContainer}
               pointerEvents="box-none"
@@ -147,6 +126,7 @@ const Footer = ({
   opacity,
   waitFor,
   panX,
+  toolbar,
   panY
 }) => {
   if (type === ToolbarType.default || type === ToolbarType.text) {
@@ -156,6 +136,7 @@ const Footer = ({
         waitFor={waitFor}
         panX={panX}
         panY={panY}
+        toolbar={toolbar}
         onPressSend={onSend}
       />
     );
@@ -194,18 +175,6 @@ export const ActiveLayer = ({
       toolbarType={toolbarType}
       controlsOpacity={controlsOpacity}
       focusType={focusType}
-      toolbar={
-        <Toolbar
-          type={toolbarType}
-          opacity={controlsOpacity}
-          key={`toolbar-${toolbarType}`}
-          isModal={isPageModal}
-          panX={panX}
-          panY={panY}
-          onPress={onPressToolbarButton}
-          onBack={onBack}
-        />
-      }
       footer={
         <Footer
           type={toolbarType}
@@ -214,6 +183,18 @@ export const ActiveLayer = ({
           panX={panX}
           panY={panY}
           onSend={onSend}
+          toolbar={
+            <Toolbar
+              type={toolbarType}
+              opacity={controlsOpacity}
+              key={`toolbar-${toolbarType}`}
+              isModal={isPageModal}
+              panX={panX}
+              panY={panY}
+              onPress={onPressToolbarButton}
+              onBack={onBack}
+            />
+          }
           key={`footer-${
             [ToolbarType.default, ToolbarType.text].includes(toolbarType)
               ? ToolbarType.default

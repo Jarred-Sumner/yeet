@@ -18,11 +18,12 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     position: "absolute",
-    paddingHorizontal: SPACING.double,
-    paddingBottom: SPACING.normal,
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    paddingRight: SPACING.normal,
+    paddingBottom: BOTTOM_Y,
     left: 0,
     right: 0,
-    bottom: SPACING.normal,
+    bottom: 0,
     width: "100%",
     justifyContent: "space-between"
   },
@@ -60,19 +61,14 @@ const NextButton = ({ onPress, waitFor }) => {
   );
 };
 
-export const EditorFooter = ({ onPressDownload, onPressSend, waitFor }) => (
+export const EditorFooter = ({
+  onPressDownload,
+  onPressSend,
+  waitFor,
+  toolbar
+}) => (
   <View pointerEvents="box-none" style={styles.footer}>
-    <View pointerEvents="box-none" style={[styles.footerSide]}>
-      <IconButton
-        onPress={onPressDownload}
-        Icon={IconDownload}
-        color="#fff"
-        impact="light"
-        waitFor={waitFor}
-        size={32}
-        type="shadow"
-      />
-    </View>
+    {toolbar}
 
     <View
       pointerEvents="box-none"

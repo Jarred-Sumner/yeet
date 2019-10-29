@@ -182,6 +182,7 @@ export const PostPreview = React.forwardRef(
       onBlurNode,
       children,
       maxHeight,
+      minY,
       paddingTop,
       onChangePhoto,
       onTapBlock,
@@ -227,13 +228,17 @@ export const PostPreview = React.forwardRef(
           x: 0,
           y: paddingTop * -1
         }}
+        contentOffset={{
+          x: 0,
+          y: paddingTop * -1
+        }}
         scrollEnabled={!swipeOnly}
         onScroll={onScroll}
         onLayout={onLayout}
         keyboardShouldPersistTaps="always"
         contentInsetAdjustmentBehavior="never"
         keyboardOpeningTime={0}
-        extraScrollHeight={-1 * CAROUSEL_HEIGHT - getInset("bottom")}
+        extraScrollHeight={paddingTop}
         ref={scrollRef}
         paddingTop={paddingTop}
         // enableResetScrollToCoords={false}
@@ -241,21 +246,19 @@ export const PostPreview = React.forwardRef(
         //   x: 0,
         //   y: paddingTop * -1
         // }}
-        // contentInset={{
-        //   top: paddingTop,
-        //   bottom: 0
-        // }}
+        contentInset={{
+          top: paddingTop,
+          bottom: 0
+        }}
         style={{
           maxHeight,
           width: bounds.width,
           flex: 1,
-          borderRadius: 12,
           // overflow: "visible",
           backgroundColor
         }}
         contentContainerStyle={[
           {
-            borderRadius: 12,
             position: "relative"
           }
         ]}

@@ -15,6 +15,7 @@ import {
   IconClose
 } from "../Icon";
 import { TOP_Y } from "../../../config";
+import { BitmapIconPlus } from "../BitmapIcon";
 
 export enum ToolbarType {
   default = "default",
@@ -25,29 +26,41 @@ export enum ToolbarType {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    marginTop: TOP_Y + SPACING.half,
-    justifyContent: "space-between",
-    paddingHorizontal: 15 / 2,
+    justifyContent: "space-evenly",
+    overflow: "visible",
+
     alignItems: "center",
-    flex: 1
+    flex: 1,
+    maxWidth: 220
   },
-  side: {
-    flexDirection: "row"
+  buttonContainer: {
+    position: "relative",
+    flexShrink: 0,
+    paddingHorizontal: SPACING.normal,
+    overflow: "visible"
   },
-  buttonContainer: {},
   buttonIcon: {
     textShadowColor: "rgba(0, 0, 0, 0.5)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 5,
-    paddingVertical: SPACING.normal,
-    paddingHorizontal: 15
+    paddingVertical: SPACING.normal
+  },
+  plusIcon: {
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    overflow: "visible"
   }
 });
 
 export const ToolbarButton = ({ Icon, size, onPress, color, isActive }) => (
-  <TouchableOpacity onPressIn={onPress}>
+  <TouchableOpacity style={styles.touchable} onPressIn={onPress}>
     <View style={styles.buttonContainer}>
       <Icon size={size} style={[styles.buttonIcon, { color }]} />
+
+      <View style={styles.plusIcon}>
+        <BitmapIconPlus />
+      </View>
     </View>
   </TouchableOpacity>
 );
@@ -56,7 +69,7 @@ export const TextToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconText}
-      size={24}
+      size={30}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -68,7 +81,7 @@ const PlusToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconPlus}
-      size={24}
+      size={30}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -80,7 +93,7 @@ const DrawToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconDraw}
-      size={24}
+      size={30}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -92,7 +105,7 @@ const PhotoToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconPhoto}
-      size={24}
+      size={30}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -104,7 +117,7 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       Icon={IconSticker}
-      size={38}
+      size={36}
       isActive={isActive}
       color="white"
       onPress={onPress}
@@ -117,7 +130,7 @@ const BackToolbarButton = ({ isActive, onPress, Icon }) => (
     onPress={onPress}
     type={"shadow"}
     color="white"
-    size={24}
+    size={30}
     Icon={Icon}
   />
 );
@@ -178,35 +191,16 @@ export const DefaultToolbar = ({
         isActive={activeButton === ToolbarButtonType.photo}
         onPress={onPressPhoto}
       />
-      <DrawToolbarButton
-        isActive={activeButton === ToolbarButtonType.draw}
+      <StickerToolbarButton
+        isActive={activeButton === ToolbarButtonType.sticker}
         onPress={onPressDraw}
-      />
-      <PlusToolbarButton
-        isActive={activeButton === ToolbarButtonType.plus}
-        onPress={onPressPlus}
       />
     </>
   );
 
   return (
     <Animated.View pointerEvents="box-none" style={styles.container}>
-      <Animated.View
-        pointerEvents="box-none"
-        style={[styles.side, styles.leftSide]}
-      >
-        <BackToolbarButton
-          onPress={onBack}
-          Icon={type === ToolbarType.default && !isModal ? IconBack : IconClose}
-        />
-      </Animated.View>
-
-      <Animated.View
-        pointerEvents="box-none"
-        style={[styles.side, styles.rightSide]}
-      >
-        {_children}
-      </Animated.View>
+      {_children}
     </Animated.View>
   );
 };
