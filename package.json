@@ -15,7 +15,7 @@
     "@apollo/react-hooks": "^3.1.1",
     "@expo/react-native-action-sheet": "^3.2.0",
     "@react-native-community/async-storage": "^1.6.1",
-    "@react-native-community/cameraroll": "^1.2.1",
+    "@react-native-community/cameraroll": "https://github.com/Jarred-Sumner/react-native-cameraroll.git#master",
     "@react-native-community/masked-view": "^0.1.1",
     "@react-native-community/netinfo": "^4.4.0",
     "@react-navigation/core": "3.5.1",
@@ -96,9 +96,7 @@
     "yup": "^0.27.0"
   },
   "rnpm": {
-    "assets": [
-      "./assets/fonts/"
-    ]
+    "assets": ["./assets/fonts/"]
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",

@@ -81,6 +81,11 @@ enum MimeType: String {
   case webp = "image/webp"
   case jpg = "image/jpeg"
   case mp4 = "video/mp4"
+  case heic = "image/heic"
+  case heif = "image/heif"
+  case tiff = "image/tiff"
+  case mov = "video/quicktime"
+  case bmp = "image/bmp"
 }
 
 class YeetMedia {

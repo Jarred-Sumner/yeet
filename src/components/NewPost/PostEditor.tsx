@@ -18,7 +18,7 @@ import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 import { sendToast, ToastType } from "../Toast";
-import { isDeletePressed } from "./EditorFooter";
+import { isDeletePressed, FOOTER_HEIGHT } from "./EditorFooter";
 import { ImagePickerRoute } from "./ImagePicker";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import {
@@ -164,6 +164,7 @@ type State = {
   focusedBlockId: string | null;
   focusType: FocusType | null;
   isSaving: boolean;
+  bottomInset: number;
 };
 
 // https://media.giphy.com/media/jQS9YkJXofyeI/giphy.gif
@@ -481,7 +482,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
       focusedBlockId: null,
       focusType: null,
-      isSaving: false
+      isSaving: false,
+      bottomInset: 0
     };
 
     this._blockInputRefs = new Map([
@@ -1076,6 +1078,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.scrollRef.current.handleKeyboardEvent(event);
   };
 
+  handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
+
   handleBack = () => {
     if (this.state.focusType !== null) {
       this.handleBlur();
@@ -1177,6 +1181,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             bounds={bounds}
             blocks={post.blocks}
             paddingTop={(presets.paddingTop || 0) + this.props.yInset}
+            paddingBottom={FOOTER_HEIGHT}
             inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
             focusTypeValue={this.focusTypeValue}
@@ -1249,7 +1254,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             isFrozen
             opacity={this.controlsOpacityValue}
             pointerEvents="none"
-            width={sizeStyle.height}
+            height={sizeStyle.height}
           >
             <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
           </Layer>
@@ -1280,6 +1285,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               controlsOpacity={this.controlsOpacityValue}
               blur={this.handleBlur}
               focusType={this.state.focusType}
+              onChangeFooterHeight={this.handleChangeBottomInset}
               toolbarType={this.toolbarType}
               isNodeFocused={this.state.focusType === FocusType.absolute}
               activeButton={this.state.activeButton}

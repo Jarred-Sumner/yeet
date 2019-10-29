@@ -5,7 +5,12 @@ import { BaseButton } from "react-native-gesture-handler";
 import Permissions from "react-native-permissions";
 import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
-import { imageContainerFromCameraRoll } from "../../../lib/imageSearch";
+import {
+  imageContainerFromCameraRoll,
+  mediaSourceFromImage,
+  mimeTypeFromFilename,
+  isVideo
+} from "../../../lib/imageSearch";
 import { SPACING } from "../../../lib/styles";
 import Image from "../../Image";
 // import { Image } from "../Image";
@@ -13,16 +18,27 @@ import { DeniedPhotoPermission } from "../DeniedPhotoPermission";
 import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { DurationLabel } from "./DurationLabel";
 import { FlatList, ScrollView } from "../../FlatList";
+import MediaPlayer from "../../MediaPlayer";
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
+
+export enum CameraRollMediaType {
+  none = "none",
+  panorama = "panorama",
+  hdr = "hdr",
+  screenshot = "screenshot",
+  live = "live",
+  videoStreamed = "video-streamed",
+  videoHighfps = "video-highfps",
+  timelapse = "timelapse",
+  portrait = "portrait"
+}
 
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#000"
   },
-  listHeaderHeight: {
-    height: LIST_HEADER_HEIGHT
-  },
+
   headerText: {
     fontSize: 24,
     textAlign: "center"
@@ -35,7 +51,10 @@ const styles = StyleSheet.create({
 type Props = {
   height: number;
   width: number;
+  mediaType: CameraRollMediaType | null;
+  aspectRatio: number;
   animatedYOffset: Animated.Value<number>;
+  columnCount: number;
 };
 
 const NUM_COLUMNS = 3;
@@ -55,8 +74,6 @@ type State = {
   loadState: CameraRollListLoadState;
   page: Pick<CameraRoll.PhotoIdentifiersPage, "page_info">;
 };
-
-const PAGE_LENGTH = NUM_COLUMNS * NUM_COLUMNS;
 
 const photoCellStyles = StyleSheet.create({
   container: {
@@ -92,14 +109,47 @@ const PhotoCell = ({
     onPress(photo);
   }, [onPress, photo]);
 
-  const source = {
-    width: photo.node.image.width,
-    height: photo.node.image.height,
-    uri: photo.node.image.uri
-  };
+  const _isVideo = photo.node.type === "video";
+  // const source = React.useMemo(() => {
+  //   if (isVideo) {
+  //     return {
+  //       width: photo.node.image.width,
+  //       height: photo.node.image.height,
+  //       uri: photo.node.image.uri
+  //     };
+  //   } else {
+  //     return [
+  //       mediaSourceFromImage(imageContainerFromCameraRoll(photo), {
+  //         width,
+  //         height,
+  //         x: 0,
+  //         y: 0
+  //       })
+  //     ];
+  //   }
+  // }, [
+  //   imageContainerFromCameraRoll,
+  //   mediaSourceFromImage,
+  //   photo,
+  //   isVideo,
+  //   width,
+  //   height
+  // ]);
 
-  const isVideo = photo.node.type === "video";
-  const MediaComponent = isVideo ? RNImage : Image;
+  const source = _isVideo
+    ? {
+        width: photo.node.image.width,
+        height: photo.node.image.height,
+        uri: photo.node.image.uri
+      }
+    : mediaSourceFromImage(imageContainerFromCameraRoll(photo), {
+        width,
+        height,
+        x: 0,
+        y: 0
+      });
+
+  const MediaComponent = _isVideo ? RNImage : Image;
 
   return (
     <BaseButton
@@ -112,12 +162,13 @@ const PhotoCell = ({
         <MediaComponent
           paused
           muted
-          source={source}
-          resizeMode="contain"
+          source={_isVideo ? source : undefined}
+          mediaSource={!_isVideo ? source : undefined}
+          resizeMode="cover"
           style={{ width, height }}
         />
 
-        {isVideo && (
+        {_isVideo && (
           <DurationLabel
             duration={photo.node.image.playableDuration}
             style={photoCellStyles.durationContainer}
@@ -131,7 +182,11 @@ const PhotoCell = ({
 export class CameraRollList extends React.Component<Props, State> {
   static defaultProps = {
     animatedYOffset: new Animated.Value(0),
-    initialScrollOffset: 0
+    initialScrollOffset: 0,
+    mediaType: null,
+    aspectRatio: 16 / 9,
+    scrollEnabled: true,
+    columnCount: 3
   };
 
   handleScroll = Animated.event(
@@ -152,14 +207,11 @@ export class CameraRollList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    const desiredAspectRatio =
-      SCREEN_DIMENSIONS.height / SCREEN_DIMENSIONS.width;
-
-    const columnWidth = Math.floor(props.width / NUM_COLUMNS) - 2;
+    const columnWidth = Math.floor(props.width / props.columnCount) - 2;
 
     this.state = {
       columnWidth,
-      cellHeight: desiredAspectRatio * columnWidth,
+      cellHeight: props.aspectRatio * columnWidth,
 
       photos: [],
       loadState: CameraRollListLoadState.pending,
@@ -177,6 +229,47 @@ export class CameraRollList extends React.Component<Props, State> {
     if (this.props.scrollEnabled) {
       this.flatListRef.current.getNode().flashScrollIndicators();
     }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.photos !== this.state.photos) {
+    }
+  }
+
+  startCaching = (photos: Array<CameraRoll.PhotoIdentifier>) => {
+    const bounds = {
+      width: this.state.columnWidth,
+      height: this.state.cellHeight,
+      x: 0,
+      y: 0
+    };
+
+    const mediaSources = photos.map(photo =>
+      mediaSourceFromImage(imageContainerFromCameraRoll(photo), bounds)
+    );
+
+    MediaPlayer.startCaching(mediaSources, bounds, "cover");
+  };
+
+  stopCaching = () => {
+    const bounds = {
+      width: this.state.columnWidth,
+      height: this.state.cellHeight,
+      x: 0,
+      y: 0
+    };
+
+    const mediaSources = this.state.photos.map(photo =>
+      mediaSourceFromImage(imageContainerFromCameraRoll(photo), bounds)
+    );
+
+    if (mediaSources.length > 0) {
+      MediaPlayer.stopCaching(mediaSources, bounds, "cover");
+    }
+  };
+
+  componentWillUnmount() {
+    this.stopCaching();
   }
 
   checkPermissions = async () => {
@@ -219,7 +312,6 @@ export class CameraRollList extends React.Component<Props, State> {
   };
 
   handlePickPhoto = (photo: CameraRoll.PhotoIdentifier) => {
-    console.log("PHOTO");
     this.props.onChange(imageContainerFromCameraRoll(photo));
   };
 
@@ -240,9 +332,12 @@ export class CameraRollList extends React.Component<Props, State> {
 
     const params = {
       assetType: "All",
-      groupTypes: "All",
-      first: initial ? PAGE_LENGTH * 2 : PAGE_LENGTH
+      first: initial ? this.pageLength * 2 : this.pageLength
     };
+
+    if (this.props.mediaType) {
+      params.mediaSubtypes = this.props.mediaType;
+    }
 
     if (!initial) {
       params.after = this.state.page.end_cursor;
@@ -250,11 +345,14 @@ export class CameraRollList extends React.Component<Props, State> {
 
     const response = await CameraRoll.getPhotos(params);
 
+    const nextBatch = response.edges;
     this.setState({
-      photos: [...this.state.photos, ...response.edges],
+      photos: [...this.state.photos, ...nextBatch],
       page: response.page_info,
       loadState: CameraRollListLoadState.complete
     });
+
+    this.startCaching(nextBatch);
   };
 
   keyExtractor = (item: CameraRoll.PhotoIdentifier, _index: number) =>
@@ -283,6 +381,10 @@ export class CameraRollList extends React.Component<Props, State> {
 
   renderScrollView = props => <ScrollView {...props} />;
 
+  get pageLength() {
+    return this.props.columnCount * this.props.columnCount;
+  }
+
   render() {
     const { loadState, photos } = this.state;
     const {
@@ -293,7 +395,8 @@ export class CameraRollList extends React.Component<Props, State> {
       paddingBottom = 0,
       onScrollBeginDrag,
       scrollEnabled,
-      pointerEvents
+      pointerEvents,
+      columnCount
     } = this.props;
 
     if (loadState === CameraRollListLoadState.denied) {
@@ -306,9 +409,17 @@ export class CameraRollList extends React.Component<Props, State> {
           data={photos}
           pointerEvents={pointerEvents}
           getItemLayout={this.getItemLayout}
-          initialNumToRender={Math.floor(PAGE_LENGTH * 1.5)}
+          contentInset={{
+            top: paddingTop,
+            bottom: paddingBottom
+          }}
+          contentOffset={{
+            y: paddingTop * -1,
+            x: 0
+          }}
+          initialNumToRender={Math.floor(this.pageLength * 1.5)}
           renderItem={this.handleRenderItem}
-          numColumns={NUM_COLUMNS}
+          numColumns={columnCount}
           onScroll={this.handleScroll}
           ref={this.flatListRef}
           style={{
@@ -333,10 +444,21 @@ export class CameraRollList extends React.Component<Props, State> {
       return (
         <View style={{ width, height, flexDirection: "row", flexWrap: "wrap" }}>
           {photos
-            .slice(0, Math.floor(PAGE_LENGTH * 1.5))
+            .slice(0, Math.floor(this.pageLength * 1.5))
             .map(this.renderStandaloneItem)}
         </View>
       );
     }
   }
 }
+
+export const ScreenshotList = (props: Partial<Props>) => {
+  return (
+    <CameraRollList
+      {...props}
+      mediaType={CameraRollMediaType.screenshot}
+      columnCount={3}
+      aspectRatio={SCREEN_DIMENSIONS.height / SCREEN_DIMENSIONS.width}
+    />
+  );
+};

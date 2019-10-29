@@ -10,6 +10,8 @@ import { IconDownload, IconSend, IconTrash } from "../Icon";
 import { MAX_POST_HEIGHT } from "./NewPostFormat";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 
+export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
+
 const styles = StyleSheet.create({
   footerSide: {
     flexDirection: "row",
@@ -18,9 +20,9 @@ const styles = StyleSheet.create({
   footer: {
     flexDirection: "row",
     position: "absolute",
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
     paddingRight: SPACING.normal,
     paddingBottom: BOTTOM_Y,
+    height: FOOTER_HEIGHT,
     left: 0,
     right: 0,
     bottom: 0,

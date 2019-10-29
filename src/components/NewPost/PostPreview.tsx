@@ -191,6 +191,7 @@ export const PostPreview = React.forwardRef(
       focusTypeValue,
       contentViewRef,
       swipeOnly,
+      paddingBottom,
       onScroll,
       onSwipe,
       bounces,
@@ -211,10 +212,6 @@ export const PostPreview = React.forwardRef(
     //     animated: false
     //   });
     // }, [scrollRef.current, paddingTop]);
-
-    const BackgroundGestureHandler = swipeOnly
-      ? LongPressGestureHandler
-      : TapGestureHandler;
 
     return (
       <ScrollView
@@ -248,8 +245,9 @@ export const PostPreview = React.forwardRef(
         // }}
         contentInset={{
           top: paddingTop,
-          bottom: 0
+          bottom: paddingBottom
         }}
+        paddingBottom={paddingBottom}
         style={{
           maxHeight,
           width: bounds.width,
@@ -263,7 +261,7 @@ export const PostPreview = React.forwardRef(
           }
         ]}
       >
-        <BackgroundGestureHandler
+        <TapGestureHandler
           onHandlerStateChange={onTapBackground}
           onGestureEvent={onTapBackground}
           waitFor={waitFor}
@@ -272,7 +270,12 @@ export const PostPreview = React.forwardRef(
         >
           <Animated.View
             ref={contentViewRef}
-            style={{ minHeight: layout.height - paddingTop }}
+            style={{
+              minHeight:
+                layout && typeof layout.height === "number"
+                  ? layout.height - paddingTop
+                  : undefined
+            }}
           >
             <BlockList
               setBlockInputRef={setBlockInputRef}
@@ -292,7 +295,7 @@ export const PostPreview = React.forwardRef(
 
             {children}
           </Animated.View>
-        </BackgroundGestureHandler>
+        </TapGestureHandler>
       </ScrollView>
     );
   }

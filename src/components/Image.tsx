@@ -1,40 +1,44 @@
-import FastImage from "react-native-fast-image";
+// import FastImage from "react-native-fast-image";
 import React from "react";
 import hoistNonReactStatics from "hoist-non-react-statics";
+import MediaPlayer, { MediaPlayerComponent } from "./MediaPlayer";
+import { mediaSourceFromSource } from "../lib/imageSearch";
 
 const CustomFastImage = React.forwardRef(
-  ({ source, incrementalLoad = false, ...props }, ref) => {
-    if (
-      typeof source === "object" &&
-      typeof source.uri === "string" &&
-      source.uri.startsWith("ph://")
-    ) {
-      const { uri, ...otherSource } = source;
-      return (
-        <FastImage
-          ref={ref}
-          incrementalLoad={false}
-          source={{
-            uri: source.uri.replace("ph://", "photos://asset/"),
-            ...otherSource
-          }}
-          {...props}
-        />
-      );
-    } else {
-      return (
-        <FastImage
-          ref={ref}
-          source={source}
-          incrementalLoad={incrementalLoad}
-          {...props}
-        />
-      );
-    }
+  (
+    {
+      source,
+      mediaSource,
+      style,
+      borderRadius = 0,
+      incrementalLoad = false,
+      ...props
+    },
+    ref
+  ) => {
+    let sources = mediaSource
+      ? [mediaSource]
+      : [
+          mediaSourceFromSource(source, {
+            width: source.width,
+            height: source.height
+          })
+        ];
+
+    return (
+      <MediaPlayer
+        ref={ref}
+        sources={sources}
+        borderRadius={borderRadius}
+        style={style}
+        incrementalLoad={incrementalLoad}
+        {...props}
+      />
+    );
   }
 );
 
-export const Image = hoistNonReactStatics(CustomFastImage, FastImage);
+export const Image = hoistNonReactStatics(CustomFastImage, MediaPlayer);
 export default Image;
 
 export const AvatarImage = React.forwardRef(
@@ -46,12 +50,12 @@ export const AvatarImage = React.forwardRef(
       <Image
         {...otherProps}
         ref={ref}
+        borderRadius={size / 2}
         style={[
           style,
           {
             width: size,
-            height: size,
-            borderRadius: size / 2
+            height: size
           }
         ]}
         source={{ uri: url, width: srcWidth, height: srcHeight }}

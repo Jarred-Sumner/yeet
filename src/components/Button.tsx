@@ -314,7 +314,8 @@ export const BackButton = ({
     return null;
   }
 
-  const IconComponent = BackButtonBehavior.back ? IconBack : IconClose;
+  const IconComponent =
+    behavior === BackButtonBehavior.back ? IconBack : IconClose;
 
   return (
     <IconButton

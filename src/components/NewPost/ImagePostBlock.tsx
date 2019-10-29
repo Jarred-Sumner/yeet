@@ -117,8 +117,8 @@ const ScreenshotImage = React.forwardRef(
           stylesByFormat[block.format].image,
           {
             transform: block.value.image.transform,
-            width: block.config.dimensions.maxX - block.config.dimensions.x,
-            height: block.config.dimensions.maxY - block.config.dimensions.y
+            width: block.config.dimensions.width,
+            height: block.config.dimensions.height
           }
         ]}
       />
@@ -137,8 +137,8 @@ const CaptionImage = React.forwardRef(
           stylesByFormat[block.format].image,
           {
             transform: block.value.image.transform,
-            width: block.config.dimensions.maxX - block.config.dimensions.x,
-            height: block.config.dimensions.maxY - block.config.dimensions.y
+            width: block.config.dimensions.width,
+            height: block.config.dimensions.height
           }
         ]}
       />
@@ -158,8 +158,8 @@ const StickerImage = React.forwardRef(
           {
             transform: block.value.image.transform,
             borderRadius: 2,
-            width: block.config.dimensions.maxX - block.config.dimensions.x,
-            height: block.config.dimensions.maxY - block.config.dimensions.y
+            width: block.config.dimensions.width,
+            height: block.config.dimensions.height
           }
         ]}
       />
@@ -243,17 +243,16 @@ class RawImagePostBlock extends React.Component<Props> {
               styles.container,
               stylesByFormat[block.format].container,
               {
-                width: block.config.dimensions.maxX - block.config.dimensions.x,
-                height:
-                  block.config.dimensions.maxY - block.config.dimensions.y,
+                width: block.config.dimensions.width,
+                height: block.config.dimensions.height,
                 overflow: "hidden"
               }
             ]}
           >
             <SharedElement
               style={{
-                width: block.config.dimensions.maxX - block.config.dimensions.x,
-                height: block.config.dimensions.maxY - block.config.dimensions.y
+                width: block.config.dimensions.width,
+                height: block.config.dimensions.height
               }}
               id={`block.imagePicker.${block.id}`}
             >
@@ -288,22 +287,7 @@ class RawImagePostBlock extends React.Component<Props> {
               flex: 1,
               backgroundColor: "#000"
             }}
-          >
-            <SharedElement
-              style={{
-                width: SCREEN_DIMENSIONS.width,
-                height: SCREEN_DIMENSIONS.height
-              }}
-              id={`block.imagePicker.${block.id}`}
-            >
-              <ImagePicker
-                width={SCREEN_DIMENSIONS.width}
-                scrollEnabled={false}
-                onChange={this.handleChangeImage}
-                height={SCREEN_DIMENSIONS.height}
-              />
-            </SharedElement>
-          </Animated.View>
+          ></Animated.View>
 
           {this.props.children}
         </Animated.View>

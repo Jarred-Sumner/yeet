@@ -15,7 +15,8 @@ import {
   TranslateXTransform,
   TranslateYTransform,
   SkewXTransform,
-  SkewYTransform
+  SkewYTransform,
+  ImageSourcePropType
 } from "react-native";
 import { extname } from "path";
 import { MediaSource } from "../components/MediaPlayer";
@@ -28,8 +29,16 @@ export enum ImageMimeType {
   jpg = "image/jpeg",
   jpeg = "image/jpeg",
   webp = "image/webp",
-  mp4 = "video/mp4"
+  mp4 = "video/mp4",
+  mov = "video/quicktime",
+  heic = "image/heif",
+  heif = "image/heif",
+  tiff = "image/tiff",
+  bmp = "image/bmp"
 }
+
+export const isVideo = (mimeType: ImageMimeType) =>
+  [ImageMimeType.mov, ImageMimeType.mp4].includes(mimeType);
 
 export const extensionByMimeType = (mimeType: ImageMimeType) => {
   if (mimeType === ImageMimeType.png) {
@@ -42,19 +51,33 @@ export const extensionByMimeType = (mimeType: ImageMimeType) => {
     return ".webp";
   } else if (mimeType === ImageMimeType.mp4) {
     return ".mp4";
+  } else if (mimeType === ImageMimeType.heic) {
+    return ".heic";
+  } else if (mimeType === ImageMimeType.tiff) {
+    return ".tiff";
+  } else if (mimeType === ImageMimeType.mov) {
+    return ".mov";
+  } else if (mimeType === ImageMimeType.bmp) {
+    return ".bmp";
   } else {
-    return ".mp4";
+    return null;
   }
 };
 
-const mimeTypeFromFilename = (filename: string) =>
+export const mimeTypeFromFilename = (filename: string) =>
   ({
     png: ImageMimeType.png,
     gif: ImageMimeType.gif,
     jpg: ImageMimeType.jpg,
     jpeg: ImageMimeType.jpeg,
     webp: ImageMimeType.webp,
-    mp4: ImageMimeType.mp4
+    heic: ImageMimeType.heic,
+    tiff: ImageMimeType.tiff,
+    tif: ImageMimeType.tiff,
+    mp4: ImageMimeType.mp4,
+    plist: ImageMimeType.jpg,
+    bmp: ImageMimeType.bmp,
+    mov: ImageMimeType.mov
   }[
     extname(filename || ".")
       .substring(1)
@@ -201,10 +224,16 @@ export const imageContainerFromCameraRoll = (
     height
   };
 
+  const mimeType = mimeTypeFromFilename(filename);
+
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for photo: ${JSON.stringify(photo)}`);
+  }
+
   const image = {
     ...assetData,
     duration: duration,
-    mimeType: mimeTypeFromFilename(filename),
+    mimeType,
     source: ImageSourceType.cameraRoll,
     asset: Image.resolveAssetSource(assetData),
     transform
@@ -351,9 +380,18 @@ export const mediaSourceFromImage = (
 
   const { width, height, uri: _url, mimeType, duration } = image;
 
-  const url = _url.includes("ph://")
-    ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
-    : _url;
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for asset ${JSON.stringify(container)}`);
+  }
+
+  if (_url === null) {
+    throw Error(`Invalid url for asset ${JSON.stringify(container)}`);
+  }
+
+  const url =
+    mimeType !== undefined && _url.includes("ph://")
+      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
+      : _url;
 
   return {
     url,
@@ -363,6 +401,41 @@ export const mediaSourceFromImage = (
     duration,
     playDuration: playDuration || duration,
     id: container.id,
+    bounds: dimensions,
+    pixelRatio: 1.0
+  };
+};
+
+export const mediaSourceFromSource = (
+  source: ImageSourcePropType,
+  dimensions: BoundsRect,
+  duration: number = 0
+): MediaSource => {
+  const { width = 0, uri: _url, height = 0 } = source;
+
+  if (!_url) {
+    throw Error(`Invalid url for asset ${JSON.stringify(source)}`);
+  }
+
+  const mimeType = mimeTypeFromFilename(_url.split("?")[0]);
+
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for asset ${JSON.stringify(source)}`);
+  }
+
+  const url =
+    mimeType !== undefined && _url.includes("ph://")
+      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
+      : _url;
+
+  return {
+    url,
+    width,
+    height,
+    mimeType,
+    duration,
+    playDuration: duration,
+    id: url,
     bounds: dimensions,
     pixelRatio: 1.0
   };

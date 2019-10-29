@@ -37,6 +37,7 @@ import { Icon, IconName } from "./src/components/Icon";
 import { BottomTabBar } from "./src/components/BottomTabBar";
 import ViewProfilePage from "./src/screens/ViewProfilePage";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
+import { IS_SIMULATOR } from "./config";
 
 const TAB_ICON_SIZE = 18;
 
@@ -137,7 +138,6 @@ const Routes = createAppContainer(
           NewPostStack: createSharedElementStackNavigator(
             createStackNavigator,
             {
-              ChooseDefaultPhoto: ImagePickerPage,
               NewPost: NewPostPage,
               EditBlockPhoto: ImagePickerPage,
               ...SHARED_GLOBAL_SCREENS
@@ -147,7 +147,7 @@ const Routes = createAppContainer(
                 backgroundColor: "#000"
               },
               headerMode: "none",
-              initialRouteName: "NewPost",
+              initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
               defaultNavigationOptions: {
                 header: () => null,
                 mode: "modal",
@@ -162,7 +162,7 @@ const Routes = createAppContainer(
           },
           headerMode: "none",
           mode: "modal",
-          initialRouteName: "NewPostStack",
+          initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
           defaultNavigationOptions: {
             header: () => null,
             headerMode: "none"

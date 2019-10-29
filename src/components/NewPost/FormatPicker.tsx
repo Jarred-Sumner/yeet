@@ -2,10 +2,12 @@ import * as React from "react";
 import { Dimensions, StyleSheet } from "react-native";
 import Animated from "react-native-reanimated";
 import Carousel from "react-native-snap-carousel";
-import { SemiBoldText } from "../Text";
+import { BoldText, BlackText, ExtraBoldText } from "../Text";
 import { CAROUSEL_HEIGHT, PostFormat } from "./NewPostFormat";
 import { TOP_Y } from "../../../config";
 import { SPACING } from "../../lib/styles";
+import { BorderlessButton } from "react-native-gesture-handler";
+import { sendLightFeedback } from "../../lib/Vibration";
 
 const ITEM_WIDTH = 120;
 const SCREEN_WIDTH = Dimensions.get("screen").width;
@@ -27,7 +29,8 @@ const styles = StyleSheet.create({
   },
   label: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
+    letterSpacing: 0.5,
     textTransform: "uppercase",
     flexWrap: "nowrap"
   }
@@ -74,17 +77,26 @@ const FORMATS: Array<PostFormatData> = [
 
 const offsets = FORMATS.map(({ width }, index) => width * index);
 
-const FormatPickerListItem = ({ item: format, contentOffsetY }) => {
+const FormatPickerListItem = ({ item: format, contentOffsetY, onPress }) => {
+  const handlePress = React.useCallback(() => {
+    onPress(format);
+  }, [format, onPress]);
   return (
-    <Animated.View style={styles.item}>
-      <SemiBoldText
-        adjustsFontSizeToFit
-        numberOfLines={1}
-        style={[styles.label]}
-      >
-        {format.label}
-      </SemiBoldText>
-    </Animated.View>
+    <BorderlessButton
+      activeOpacity={1}
+      disallowInterruption
+      onPress={handlePress}
+    >
+      <Animated.View style={styles.item}>
+        <ExtraBoldText
+          adjustsFontSizeToFit
+          numberOfLines={1}
+          style={[styles.label]}
+        >
+          {format.label}
+        </ExtraBoldText>
+      </Animated.View>
+    </BorderlessButton>
   );
 };
 
@@ -97,17 +109,36 @@ export class FormatPicker extends React.PureComponent {
 
   renderItem = ({ item }) => {
     return (
-      <FormatPickerListItem item={item} contentOffsetY={this.xOffsetValue} />
+      <FormatPickerListItem
+        onPress={this.onPressItem}
+        item={item}
+        contentOffsetY={this.xOffsetValue}
+      />
     );
   };
 
+  onPressItem = (format: Object) => {
+    const index = FORMATS.indexOf(format);
+    this.carouselRef.current.snapToItem(index);
+  };
+
+  goNext = () => {
+    this.carouselRef.current.snapToNext();
+  };
+
+  goPrevious = () => {
+    this.carouselRef.current.snapToPrev();
+  };
+
   handleSnap = index => {
+    sendLightFeedback();
     this.props.onChangeFormat(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
   getFirstItem = FORMATS.findIndex(
     ({ value }) => this.props.defaultFormat === value
   );
+  carouselRef = React.createRef<Carousel>();
 
   render() {
     return (
@@ -118,6 +149,7 @@ export class FormatPicker extends React.PureComponent {
         itemWidth={ITEM_WIDTH}
         itemHeight={CAROUSEL_HEIGHT}
         horizontal
+        ref={this.carouselRef}
         sliderHeight={CAROUSEL_HEIGHT}
         enableSnap
         firstItem={this.getFirstItem}

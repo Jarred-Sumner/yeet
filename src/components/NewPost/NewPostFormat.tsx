@@ -4,12 +4,11 @@ import { getInset } from "react-native-safe-area-view";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 
-export const CAROUSEL_HEIGHT = 60 + getInset("top");
+export const CAROUSEL_HEIGHT = 40 + getInset("top") + SPACING.half;
 
 export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 
-export const MAX_POST_HEIGHT =
-  SCREEN_DIMENSIONS.height - TOP_Y - CAROUSEL_HEIGHT;
+export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y;
 
 export enum PostFormat {
   screenshot = "screenshot",
@@ -105,6 +104,7 @@ export const buildImageBlock = ({
   dimensions = {}
 }: {
   image: YeetImageContainer;
+  dimensions: Partial<YeetImageRect>;
 }): ImagePostBlock => {
   const id = _id || generateBlockId();
 
@@ -121,6 +121,8 @@ export const buildImageBlock = ({
       }
     };
   }
+
+  const { width: _width, height: _height, ..._dimensions } = dimensions;
 
   return {
     type: "image",
@@ -140,7 +142,7 @@ export const buildImageBlock = ({
           maxX: width,
           maxY: height
         },
-        dimensions
+        _dimensions
       )
     }
   };

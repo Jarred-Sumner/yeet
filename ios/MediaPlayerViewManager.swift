@@ -36,6 +36,24 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     }
   }
 
+  @objc (startCachingMediaSources:bounds:contentMode:)
+  func startCaching(mediaSources: AnyObject, bounds: CGRect, contentMode: UIView.ContentMode) {
+    let _mediaSources = RCTConvert.mediaSourceArray(json: mediaSources)
+    YeetImageView.startCaching(mediaSources: _mediaSources, bounds: bounds, contentMode: contentMode)
+  }
+
+  @objc (stopCachingMediaSources:bounds:contentMode:)
+  func stopCaching(mediaSources: AnyObject, bounds: CGRect, contentMode: UIView.ContentMode) {
+    let _mediaSources = RCTConvert.mediaSourceArray(json: mediaSources)
+    YeetImageView.stopCaching(mediaSources: _mediaSources, bounds: bounds, contentMode: contentMode)
+  }
+
+  @objc (stopCachingAll)
+  func stopCachingAll() {
+    YeetImageView.stopCaching()
+  }
+    
+
   @objc(pause:)
   func pause(tag: NSNumber) {
     withView(tag: tag) { view in

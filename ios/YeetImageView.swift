@@ -59,6 +59,60 @@ class YeetImageView : PINAnimatedImageView {
   var imageRequestID: PHImageRequestID? = nil
   var livePhotoRequestID: PHLivePhotoRequestID? = nil
 
+  @objc (startCachingMediaSources:bounds:contentMode:)
+  static func startCaching(mediaSources: Array<MediaSource>, bounds: CGRect, contentMode: UIView.ContentMode) {
+
+    let urls = mediaSources.filter { mediaSource in
+      return mediaSource.isFromCameraRoll
+    }.map { mediaSource in
+      return mediaSource.uri
+    }
+
+    guard let fetchReq = MediaSource.fetchRequest(urls: urls) else {
+      return
+    }
+
+
+    let request = PHImageRequestOptions()
+    request.isNetworkAccessAllowed = true
+    request.deliveryMode = .opportunistic
+
+
+    let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
+
+
+    phImageManager.startCachingImages(for: fetchReq.objects(at: IndexSet.init(integersIn: 0...fetchReq.count - 1)), targetSize: bounds.size, contentMode: _contentMode, options: request)
+  }
+
+  @objc (stopCachingMediaSources:bounds:contentMode:)
+  static func stopCaching(mediaSources: Array<MediaSource>, bounds: CGRect, contentMode: UIView.ContentMode) {
+    let urls = mediaSources.filter { mediaSource in
+      return mediaSource.isFromCameraRoll
+    }.map { mediaSource in
+      return mediaSource.uri
+    }
+
+    guard let fetchReq = MediaSource.fetchRequest(urls: urls) else {
+      return
+    }
+
+
+    let request = PHImageRequestOptions()
+    request.isNetworkAccessAllowed = true
+    request.deliveryMode = .opportunistic
+
+
+    let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
+
+    phImageManager.stopCachingImages(for: fetchReq.objects(at: IndexSet.init(integersIn: 0...fetchReq.count - 1)), targetSize: bounds.size, contentMode: _contentMode, options: request)
+  }
+
+  @objc (stopCaching)
+  static func stopCaching() {
+    phImageManager.stopCachingImagesForAllAssets()
+  }
+
+
   static func fetchCameraRollAsset(mediaSource: MediaSource, bounds: CGRect, contentMode: UIView.ContentMode, completion: @escaping ImageFetchCompletionBlock) -> (PHImageRequestID?, PHLivePhotoRequestID?) {
     guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
       completion(nil)
@@ -135,7 +189,7 @@ class YeetImageView : PINAnimatedImageView {
     let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
     layer.allowsEdgeAntialiasing = shouldAntiAlias
     layer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
-
+    self.backgroundColor = .clear
 
     self.clipsToBounds = true
     self.pin_updateWithProgress = true

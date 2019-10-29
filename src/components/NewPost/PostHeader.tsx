@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   content: {
     height: CAROUSEL_HEIGHT,
     flexDirection: "row",
-    backgroundColor: "rgba(0, 0, 0, 0.95)",
+    backgroundColor: "rgba(0, 0, 0, 0.97)",
     flexShrink: 0,
 
     position: "relative"
@@ -49,10 +49,11 @@ const styles = StyleSheet.create({
   backButtonContainer: {
     zIndex: 1,
     alignSelf: "center",
-    top: (CAROUSEL_HEIGHT - TOP_Y) / 2 - SPACING.half,
+    top: 0,
     left: SPACING.normal,
 
     height: CAROUSEL_HEIGHT,
+    paddingTop: TOP_Y,
     flexDirection: "row",
     alignItems: "center"
   }
@@ -68,11 +69,9 @@ const BackButtonGradient = ({
     height={height}
     pointerEvents="none"
     start={{ x: 0, y: 0 }}
-    end={{ x: 0.5, y: 1 }}
-    angle={90}
-    angleCenter={{ x: 0.0, y: 0.0 }}
-    locations={[0.0, 0.25, 0.5]}
-    colors={["rgba(0,0,0, 1)", "rgba(0,0,0, 1)", "rgba(0,0,0, 0)"]}
+    end={{ x: 1, y: 1 }}
+    locations={[0.0, 0.4]}
+    colors={["rgba(0,0,0, 0.95)", "rgba(0,0,0, 0)"]}
   />
 );
 
@@ -95,24 +94,27 @@ const BackButtonLayer = () => {
         <BackButton
           color="white"
           style={styles.backButton}
-          behavior={backButtonBehavior}
+          behavior={BackButtonBehavior.close}
         />
       </View>
     </View>
   );
 };
 
-export const PostHeader = ({ defaultFormat, onChangeFormat }) => {
-  return (
-    <View style={styles.wrapper}>
-      <View style={styles.content}>
-        <FormatPicker
-          defaultFormat={defaultFormat}
-          onChangeFormat={onChangeFormat}
-        />
+export const PostHeader = React.forwardRef(
+  ({ defaultFormat, onChangeFormat }, ref) => {
+    return (
+      <View style={styles.wrapper}>
+        <View style={styles.content}>
+          <FormatPicker
+            defaultFormat={defaultFormat}
+            ref={ref}
+            onChangeFormat={onChangeFormat}
+          />
 
-        <BackButtonLayer />
+          <BackButtonLayer />
+        </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+);

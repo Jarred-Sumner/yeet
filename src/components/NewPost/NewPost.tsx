@@ -2,7 +2,7 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
-import { Transition, Transitioning } from "react-native-reanimated";
+import Animated, { Transition, Transitioning } from "react-native-reanimated";
 import { withNavigation } from "react-navigation";
 import {
   BOTTOM_Y,
@@ -35,6 +35,14 @@ import {
 import { EditableNodeMap } from "./Node/BaseNode";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
+import { ImagePicker } from "./ImagePicker";
+import ImageCropper from "./ImageCropper";
+import {
+  FlingGestureHandler,
+  Directions,
+  State as GestureState
+} from "react-native-gesture-handler";
+import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -52,7 +60,7 @@ type State = {
 const DEFAULT_POST_FIXTURE = {
   [PostFormat.screenshot]: {
     format: PostFormat.screenshot,
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
     blocks: [
       {
         type: "image",
@@ -110,8 +118,7 @@ const styles = StyleSheet.create({
   },
 
   page: {
-    flex: 1,
-    backgroundColor: "#000"
+    flex: 1
   },
   titleContainer: {
     left: 0,
@@ -191,17 +198,20 @@ class RawNewPost extends React.Component<{}, State> {
         x: DEFAULT_BOUNDS.x,
         y: DEFAULT_BOUNDS.y
       },
-      step: NewPostStep.editPhoto
+      step: NewPostStep.choosePhoto
     };
   }
 
   handleChangePost = post => this.setState({ post });
 
   handleChoosePhoto = (photo: YeetImageContainer) => {
+    const post = this.buildPostWithImage(photo, getSourceDimensions(photo));
     this.setState({
-      step: NewPostStep.resizePhoto,
-      defaultPhoto: photo
+      step: NewPostStep.editPhoto,
+      defaultPhoto: photo,
+      post: post
     });
+
     this.stepContainerRef.current.animateNextTransition();
   };
 
@@ -209,16 +219,18 @@ class RawNewPost extends React.Component<{}, State> {
     image: YeetImageContainer,
     dimensions: YeetImageRect
   ) => {
-    const displayWidth = Math.min(POST_WIDTH, image.image.width);
-    let { width: sourceWidth } = getSourceDimensions(image);
+    const displayWidth = Math.min(POST_WIDTH, dimensions.width);
+    let { width: sourceWidth, height: sourceHeight } = getSourceDimensions(
+      image
+    );
 
     const displaySize = {
       width: displayWidth,
-      height: image.image.height * (displayWidth / sourceWidth)
+      height: sourceHeight * (displayWidth / sourceWidth)
     };
 
     return buildPost({
-      format: DEFAULT_FORMAT,
+      format: this.state.post.format,
       width: displaySize.width,
       height: displaySize.height,
       blocks: [
@@ -226,7 +238,7 @@ class RawNewPost extends React.Component<{}, State> {
           image,
           dimensions,
           autoInserted: true,
-          format: DEFAULT_FORMAT,
+          format: this.state.post.format,
           width: displaySize.width,
           height: displaySize.height,
           required: true
@@ -257,6 +269,8 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleChangeFormat = (format: PostFormat) => {
+    this.stepContainerRef.current.animateNextTransition();
+
     if (
       this.state.post.blocks.length === 0 &&
       DEFAULT_POST_FIXTURE[format].blocks.length > 0
@@ -270,7 +284,7 @@ class RawNewPost extends React.Component<{}, State> {
       });
     }
 
-    this.stepContainerRef.current.animateNextTransition();
+    this.animatedYOffset.setValue(0);
   };
 
   handleBackToChoosePhoto = () => {
@@ -285,61 +299,136 @@ class RawNewPost extends React.Component<{}, State> {
   stepContainerRef = React.createRef();
   postUploaderRef = React.createRef<RawPostUploader>();
 
+  onFlingLeft = ({ nativeEvent: { state, ...other } }) => {
+    if (state === GestureState.ACTIVE) {
+      this.formatPickerRef.current.goNext();
+    }
+  };
+
+  onFlingRight = ({ nativeEvent: { state, ...other } }) => {
+    if (state === GestureState.ACTIVE) {
+      this.formatPickerRef.current.goPrevious();
+    }
+  };
+
+  formatPickerRef = React.createRef<FormatPicker>();
+
   render() {
     const { step, showUploader, uploadData, inlineNodes } = this.state;
     const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
-      <View style={styles.page}>
-        <StatusBar hidden showHideTransition="slide" />
+      <FlingGestureHandler
+        onHandlerStateChange={this.onFlingRight}
+        direction={Directions.RIGHT}
+      >
+        <Animated.View style={styles.page}>
+          <FlingGestureHandler
+            onHandlerStateChange={this.onFlingLeft}
+            direction={Directions.LEFT}
+          >
+            <Animated.View style={styles.page}>
+              <StatusBar hidden showHideTransition="slide" />
 
-        <Transitioning.View
-          ref={this.stepContainerRef}
-          transition={
-            <Transition.Together>
-              <Transition.In type="fade" />
-              <Transition.Out type="fade" />
-            </Transition.Together>
-          }
-          style={{ width: POST_WIDTH, flex: 1 }}
-        >
-          <PostEditor
-            bounds={this.state.bounds}
-            post={this.state.post}
-            key={this.state.post.format}
-            onBack={this.handleBack}
-            yInset={CAROUSEL_HEIGHT}
-            navigation={this.props.navigation}
-            onChange={this.handleChangePost}
-            isReply={!this.props.threadId}
-            content
-            onChangeFormat={this.handleChangeFormat}
-            inlineNodes={inlineNodes}
-            onChangeNodes={this.handleChangeNodes}
-            onSubmit={this.handleCreatePost}
-          />
-        </Transitioning.View>
+              <Transitioning.View
+                ref={this.stepContainerRef}
+                transition={
+                  <Transition.Together>
+                    <Transition.In type="fade" />
+                    <Transition.Out type="fade" />
+                  </Transition.Together>
+                }
+                style={{ width: POST_WIDTH, height: SCREEN_DIMENSIONS.height }}
+              >
+                <Animated.View
+                  style={{
+                    width: POST_WIDTH,
+                    height: SCREEN_DIMENSIONS.height
+                  }}
+                  key={`${this.state.post.format}-${this.state.step}`}
+                >
+                  {this.renderStep()}
+                </Animated.View>
+              </Transitioning.View>
 
-        {showUploader && (
-          <PostUploader
-            {...uploadData}
-            ref={this.postUploaderRef}
-            width={SCREEN_DIMENSIONS.width}
-            height={SCREEN_DIMENSIONS.height}
-            onUpload={this.handleUploadComplete}
-          />
-        )}
+              {showUploader && (
+                <PostUploader
+                  {...uploadData}
+                  ref={this.postUploaderRef}
+                  width={SCREEN_DIMENSIONS.width}
+                  height={SCREEN_DIMENSIONS.height}
+                  onUpload={this.handleUploadComplete}
+                />
+              )}
 
-        <PostHeader
-          defaultFormat={this.state.post.format}
-          onChangeFormat={this.handleChangeFormat}
-        />
-      </View>
+              <PostHeader
+                defaultFormat={this.state.post.format}
+                onChangeFormat={this.handleChangeFormat}
+                ref={this.formatPickerRef}
+              />
+            </Animated.View>
+          </FlingGestureHandler>
+        </Animated.View>
+      </FlingGestureHandler>
     );
   }
 
   handleChangeNodes = (inlineNodes: EditableNodeMap) => {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
+
+  animatedYOffset = new Animated.Value<number>(0);
+
+  renderStep() {
+    const { inlineNodes, step } = this.state;
+
+    const { format } = this.state.post;
+
+    if (step === NewPostStep.editPhoto) {
+      return (
+        <PostEditor
+          bounds={this.state.bounds}
+          post={this.state.post}
+          key={this.state.post.format}
+          onBack={this.handleBack}
+          navigation={this.props.navigation}
+          onChange={this.handleChangePost}
+          isReply={!this.props.threadId}
+          onChangeFormat={this.handleChangeFormat}
+          inlineNodes={inlineNodes}
+          yInset={CAROUSEL_HEIGHT}
+          onChangeNodes={this.handleChangeNodes}
+          onSubmit={this.handleCreatePost}
+        />
+      );
+    } else if (step === NewPostStep.choosePhoto) {
+      if (format === PostFormat.screenshot) {
+        return (
+          <ScreenshotList
+            height={SCREEN_DIMENSIONS.height}
+            width={SCREEN_DIMENSIONS.width}
+            scrollEnabled
+            paddingTop={CAROUSEL_HEIGHT}
+            animatedYOffset={this.animatedYOffset}
+            onChange={this.handleChoosePhoto}
+          />
+        );
+      } else {
+        return (
+          <CameraRollList
+            height={SCREEN_DIMENSIONS.height}
+            width={SCREEN_DIMENSIONS.width}
+            scrollEnabled
+            paddingTop={CAROUSEL_HEIGHT}
+            tabBarHeight={CAROUSEL_HEIGHT}
+            animatedYOffset={this.animatedYOffset}
+            onChange={this.handleChoosePhoto}
+          />
+        );
+      }
+    } else {
+      return null;
+    }
+  }
 
   handleCreatePost = (_file: ContentExport, data: ExportData) => {
     const { colors, ...file } = _file;

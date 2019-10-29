@@ -46,7 +46,9 @@ export enum iOSFontFamily {
   thin = "Inter",
   semiBold = "Inter",
   medium = "Inter",
-  bold = "Inter"
+  bold = "Inter",
+  extraBoldFont = "Inter",
+  black = "Inter"
 }
 
 export const FontFamily = Platform.select({
@@ -87,6 +89,18 @@ export const fontStyleSheets = StyleSheet.create({
   boldFont: {
     fontFamily: FontFamily.bold,
     fontWeight: "bold",
+    color: "white",
+    letterSpacing: LETTER_SPACING_MAPPING["16"]
+  },
+  extraBoldFont: {
+    fontFamily: FontFamily.extraBoldFont,
+    fontWeight: "700",
+    color: "white",
+    letterSpacing: LETTER_SPACING_MAPPING["16"]
+  },
+  blackFont: {
+    fontFamily: FontFamily.black,
+    fontWeight: "900",
     color: "white",
     letterSpacing: LETTER_SPACING_MAPPING["16"]
   }
@@ -146,6 +160,24 @@ export const BoldText = ({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.boldFont, style])}
+  >
+    {children}
+  </RNText>
+);
+
+export const ExtraBoldText = ({ children, style, ...otherProps }) => (
+  <RNText
+    {...otherProps}
+    style={combinedStyles([fontStyleSheets.extraBoldFont, style])}
+  >
+    {children}
+  </RNText>
+);
+
+export const BlackText = ({ children, style, ...otherProps }) => (
+  <RNText
+    {...otherProps}
+    style={combinedStyles([fontStyleSheets.blackFont, style])}
   >
     {children}
   </RNText>

@@ -335,7 +335,7 @@ PODS:
     - React-cxxreact (= 0.61.1)
     - React-jsi (= 0.61.1)
   - React-jsinspector (0.61.1)
-  - react-native-cameraroll (1.2.1):
+  - react-native-cameraroll (1.2.3):
     - React
   - react-native-config (0.11.7):
     - React
@@ -480,7 +480,7 @@ DEPENDENCIES:
   - React-jsi (from `../node_modules/react-native/ReactCommon/jsi`)
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
-  - "react-native-cameraroll (from `../node_modules/@react-native-community/cameraroll`)"
+  - react-native-cameraroll (from `../../../react-native-cameraroll`)
   - react-native-config (from `../node_modules/react-native-config`)
   - react-native-cronet (from `../node_modules/react-native-cronet`)
   - react-native-image-picker (from `../node_modules/react-native-image-picker`)
@@ -608,7 +608,7 @@ EXTERNAL SOURCES:
   React-jsinspector:
     :path: "../node_modules/react-native/ReactCommon/jsinspector"
   react-native-cameraroll:
-    :path: "../node_modules/@react-native-community/cameraroll"
+    :path: "../../../react-native-cameraroll"
   react-native-config:
     :path: "../node_modules/react-native-config"
   react-native-cronet:
@@ -747,7 +747,7 @@ SPEC CHECKSUMS:
   React-jsi: 61ff417c95e6c3af50fb96399037e80752fb5ce7
   React-jsiexecutor: ee45274419eb95614bbbadb98e20684c5f29996e
   React-jsinspector: 574d597112f9ea3d1b717f6fb62aef764c70dd6f
-  react-native-cameraroll: 3e5e34d36d93548ae7770ee8ab7b2ae9e778f571
+  react-native-cameraroll: 266b33079a333d168c3ee1ad0a3a7aaeb380fa6d
   react-native-config: 55548054279d92e0e4566ea15a8b9b81028ec342
   react-native-cronet: a84212c9dac5ed5535dea1d8411a0b5cf0aebd50
   react-native-image-picker: 5c15ac0251475ae0b9f21e17d08d7c28db847abc

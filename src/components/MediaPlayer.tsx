@@ -7,8 +7,8 @@ import {
   StyleProp
 } from "react-native";
 import React, { ReactEventHandler, useImperativeHandle } from "react";
-import { ImageMimeType } from "../lib/imageSearch";
-import { DimensionsRect } from "../lib/Rect";
+import { ImageMimeType, YeetImageRect } from "../lib/imageSearch";
+import { DimensionsRect, BoundsRect } from "../lib/Rect";
 import { useFocusEffect } from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
 
@@ -78,7 +78,7 @@ const clean = (
         return false;
       }
 
-      return source.url && source.id && source.width && source.height;
+      return source.url && source.width && source.height;
     })
     .map(source => {
       return {
@@ -104,6 +104,38 @@ export class MediaPlayerComponent extends React.Component<Props> {
   nativeRef = React.createRef();
 
   static NativeModule = NativeModules["MediaPlayerViewManager"];
+
+  static startCaching(
+    mediaSources: Array<Partial<MediaSource | null>>,
+    size: BoundsRect,
+    contentMode: string
+  ) {
+    const _mediaSources = clean(mediaSources);
+
+    MediaPlayerComponent.NativeModule.startCachingMediaSources(
+      _mediaSources,
+      size,
+      contentMode
+    );
+  }
+
+  static stopCaching(
+    mediaSources: Array<Partial<MediaSource | null>>,
+    size: BoundsRect,
+    contentMode: string
+  ) {
+    const _mediaSources = clean(mediaSources);
+
+    MediaPlayerComponent.NativeModule.startCachingMediaSources(
+      _mediaSources,
+      size,
+      contentMode
+    );
+  }
+
+  static stopCachingAll() {
+    MediaPlayerComponent.NativeModule.stopCachingAll();
+  }
 
   callNativeMethod = (name, args = null) => {
     return UIManager.dispatchViewManagerCommand(
@@ -206,6 +238,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       prefetch,
       onEnd,
       id,
+      borderRadius = 0,
       paused = false,
       onProgress,
       onChangeItem
@@ -217,6 +250,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         sources={clean(sources)}
         onEnd={onEnd}
         id={id}
+        borderRadius={borderRadius}
         prefetch={prefetch}
         onProgress={onProgress}
         onChangeItem={onChangeItem}

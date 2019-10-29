@@ -210,6 +210,8 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     super.init(frame: .zero)
 
+    self.backgroundColor = .clear
+
     if (self.sources.count > 0) {
       DispatchQueue.main.async { [weak self] in
         self?.layoutContentView()
@@ -265,6 +267,14 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     return desiredContentType == MediaPlayerContentType.image
   }
 
+  @objc(borderRadius)
+  var borderRadius = CGFloat.zero {
+    didSet (newValue) {
+      DispatchQueue.main.async { [weak self] in
+        self?.adjustCornerRadius()
+      }
+    }
+  }
 
 
   override func layoutSubviews() {
@@ -275,6 +285,14 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     if bounds != mediaQueue?.bounds {
       mediaQueue?.bounds = bounds
     }
+
+    self.adjustCornerRadius()
+  }
+
+  func adjustCornerRadius() {
+    self.layer.cornerRadius = borderRadius
+    self.clipsToBounds = borderRadius > .zero
+    self.layer.masksToBounds = borderRadius > .zero
   }
 
   var isContentViewImage: Bool { return type(of: contentView) == YeetImageView.self }
@@ -404,7 +422,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
       if wasPlaying {
         self?.mediaQueue?.play()
-        
+
       }
     }
   }
@@ -414,11 +432,11 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 //    DispatchQueue.main.async { [weak self] in
 //      self?.layoutContentView()
 //    }
-//    
+//
   }
 
   var hasAutoPlayed = false
-  
+
   @objc(uiManagerDidPerformMounting:)
   func uiManagerDidPerformMounting(_ manager: RCTUIManager!) {
     if (self.hasAutoPlayed || !self.autoPlay) {
@@ -529,7 +547,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   }
 
   func handleLoad() {
-    
+
   }
 
   @objc(invalidate)

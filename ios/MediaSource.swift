@@ -116,6 +116,27 @@ class MediaSource : NSObject  {
       return nil
     }
   }
+
+  static func fetchRequest(urls: [URL]) -> PHFetchResult<PHAsset>? {
+     let fetchOptions = PHFetchOptions()
+      fetchOptions.fetchLimit = urls.count
+
+      guard let firstURL = urls.first else {
+        return nil
+      }
+
+      guard let scheme = firstURL.scheme else {
+       return nil
+     }
+
+     if scheme.starts(with: "ph") {
+      return PHAsset.fetchAssets(withLocalIdentifiers: urls.map { url in url.path }, options:fetchOptions )
+     } else if scheme.starts(with: "assets-library") {
+       return PHAsset.fetchAssets(withALAssetURLs: urls, options: fetchOptions)
+     } else {
+       return nil
+     }
+   }
   
   typealias LoadAssetCallback = (_ asset: AVURLAsset?) -> Void
   private var _onLoadAsset: Array<LoadAssetCallback> = []
@@ -131,7 +152,7 @@ class MediaSource : NSObject  {
       if isFromCameraRoll {
         let request = PHVideoRequestOptions()
         request.isNetworkAccessAllowed = true
-        request.deliveryMode = .highQualityFormat
+        request.deliveryMode = .automatic
 
         guard let fetchReq = MediaSource.fetchRequest(url: uri) else {
           callback(nil)
@@ -143,11 +164,28 @@ class MediaSource : NSObject  {
           return
         }
 
-        MediaSource.videoAssetManager.requestAVAsset(forVideo: asset, options: request) { [weak self] asset, _,_  in
-          self?._asset = asset as! AVURLAsset
+        if asset.mediaSubtypes.contains(.photoLive) {
+          let videoResource = PHAssetResource.assetResources(for: asset).first { resource in
+            return resource.type == .pairedVideo
+          }
 
-          self?.loadAVAsset()
+          guard videoResource != nil else {
+            callback(nil)
+            return
+          }
+
+        } else if asset.mediaType == .video || asset.mediaType == .audio {
+          MediaSource.videoAssetManager.requestAVAsset(forVideo: asset, options: request) { [weak self] _asset, _,error  in
+            if let __asset = _asset {
+              self?._asset = __asset as? AVURLAsset
+              self?.loadAVAsset()
+            } else {
+              SwiftyBeaver.error("Loading AVAsset failed.\n\(error!)")
+            }
+          }
         }
+
+
       } else {
         self.loadAVAsset()
       }
@@ -203,11 +241,31 @@ class MediaSource : NSObject  {
   }
   
   var isVideo: Bool {
-    return self.mimeType == MimeType.mp4
+    return (self.mimeType == .mp4 || self.mimeType == .mov) && !isLivePhoto
   }
 
+  lazy var isLivePhoto: Bool = {
+    guard self.isFromCameraRoll else {
+      return false
+    }
+
+    guard let phAsset = MediaSource.fetchRequest(url: uri)?.firstObject else {
+      return false
+    }
+
+    return phAsset.mediaSubtypes.contains(.photoLive)
+  }()
+
   var isImage: Bool {
-    return [MimeType.png, MimeType.webp, MimeType.jpg].contains(self.mimeType)
+    let isImageMimeType = [MimeType.png, MimeType.webp, MimeType.jpg, MimeType.heic, MimeType.heif, MimeType.tiff, MimeType.gif, MimeType.bmp].contains(self.mimeType)
+
+    if isImageMimeType {
+      return true
+    } else if isFromCameraRoll {
+      return isLivePhoto
+    } else {
+      return false
+    }
   }
 
   var naturalBounds: CGRect {
@@ -264,8 +322,15 @@ extension RCTConvert {
     let bounds = CGRect.from(json: JSON(dictionary["bounds"]) )
     let uri =  dictionary["url"] as! String
 
+    let mimeType = MimeType.init(rawValue: dictionary["mimeType"] as! String)!
+    let duration = dictionary["duration"] as! NSNumber
+    let playDuration = dictionary["playDuration"] as! NSNumber
+    let id = dictionary["id"] as! String
+    let width = dictionary["width"] as! NSNumber
+    let height = dictionary["height"] as! NSNumber
+    let pixelRatio = dictionary["pixelRatio"] as! NSNumber
 
-    return MediaSource.from(uri: uri, mimeType: MimeType.init(rawValue: dictionary["mimeType"] as! String)!, duration: dictionary["duration"] as! NSNumber, playDuration: dictionary["playDuration"] as! NSNumber, id: dictionary["id"] as! String, width: dictionary["width"] as! NSNumber, height: dictionary["height"] as! NSNumber, bounds: bounds, pixelRatio: dictionary["pixelRatio"] as! NSNumber)
+    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio)
   }
 
   @objc(MediaSourceArray:)

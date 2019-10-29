@@ -117,6 +117,20 @@ export class KeyboardAwareScrollView extends React.Component {
         this.setState({ keyboardSpace });
       }
     }
+
+    if (
+      this.props.paddingBottom !== prevProps.paddingBottom ||
+      this.props.paddingTop !== prevProps.paddingTop
+    ) {
+      const responder = this.getScrollResponder();
+
+      responder.setNativeProps({
+        contentInset: {
+          top: this.props.paddingTop,
+          bottom: this.props.paddingBottom
+        }
+      });
+    }
   }
 
   componentWillUnmount() {
@@ -364,6 +378,7 @@ export class KeyboardAwareScrollView extends React.Component {
       contentContainerStyle,
       onScroll,
       paddingTop = 0,
+      paddingBottom = 0,
       ...otherProps
     } = this.props;
     const { keyboardSpace } = this.state;
@@ -380,7 +395,10 @@ export class KeyboardAwareScrollView extends React.Component {
         <ScrollView
           {...otherProps}
           keyboardDismissMode="interactive"
-          contentInset={{ top: paddingTop, bottom: keyboardSpace }}
+          contentInset={{
+            top: paddingTop,
+            bottom: keyboardSpace + paddingBottom
+          }}
           automaticallyAdjustContentInsets={false}
           showsVerticalScrollIndicator={true}
           scrollEventThrottle={1}

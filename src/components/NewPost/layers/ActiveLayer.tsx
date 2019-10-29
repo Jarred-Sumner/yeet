@@ -59,6 +59,14 @@ class ActiveLayerComponent extends React.Component<Props> {
     }
   }
 
+  onLayoutFooter = ({
+    nativeEvent: {
+      layout: { x, y, width, height }
+    }
+  }) => {
+    this.props.onChangeFooterHeight && this.props.onChangeFooterHeight(height);
+  };
+
   render() {
     const {
       children,
@@ -82,6 +90,7 @@ class ActiveLayerComponent extends React.Component<Props> {
             <Transitioning.View
               ref={this.footerContainer}
               pointerEvents="box-none"
+              onLayout={this.onLayoutFooter}
               transition={
                 <Transition.Sequence>
                   <Transition.Out type="fade" delayMs={0} durationMs={100} />
