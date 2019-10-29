@@ -153,7 +153,7 @@ export const isPlaceholderImageBlock = (block: ImagePostBlock) => {
 export const presetsByFormat = {
   [PostFormat.caption]: {
     borderRadius: 8,
-    paddingTop: 48,
+    paddingTop: 0,
     textTop: 12,
     paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
