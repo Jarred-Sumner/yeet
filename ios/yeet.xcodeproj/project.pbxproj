@@ -36,6 +36,7 @@
 		8349A29923579C0200795FAA /* YeetCompositor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8349A29823579C0200795FAA /* YeetCompositor.swift */; };
 		8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8349A29C2357A87D00795FAA /* CombinedAsset.swift */; };
 		834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */; };
+		834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834CDE69236A324E006D5A74 /* YeetError.swift */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
 		836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836B71C823566EF1003BF812 /* AVAsset+resize.swift */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
@@ -125,6 +126,7 @@
 		834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedImageResource.swift; sourceTree = "<group>"; };
 		834B3D11232307AD00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = ../../../../Downloads/blank_1080p.mp4; sourceTree = "<group>"; };
 		834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = /Users/jarred/Code/yeet/yeet/ios/blank_1080p.mp4; sourceTree = "<absolute>"; };
+		834CDE69236A324E006D5A74 /* YeetError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetError.swift; sourceTree = "<group>"; };
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMediaSource.swift; sourceTree = "<group>"; };
 		836B71C823566EF1003BF812 /* AVAsset+resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+resize.swift"; sourceTree = "<group>"; };
@@ -208,6 +210,7 @@
 				8330488823209F3E00E816E8 /* YeetAnimatedImage.h */,
 				8330488923209F3E00E816E8 /* YeetAnimatedImage.m */,
 				83304887232098D600E816E8 /* YeetWebImageDecoder.h */,
+				834CDE69236A324E006D5A74 /* YeetError.swift */,
 			);
 			name = yeet;
 			sourceTree = "<group>";
@@ -654,6 +657,7 @@
 				83CD0585234AFA5400BE093D /* SwappablePlayer.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
+				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */,
 				83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */,

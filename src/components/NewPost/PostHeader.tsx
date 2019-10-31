@@ -9,7 +9,10 @@ import {
   BackButtonBehavior,
   useBackButtonBehavior
 } from "../Button";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
+import Animated from "react-native-reanimated";
+
+export const CAROUSEL_BACKGROUND = "rgba(0, 0, 10, 0.97)";
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -18,13 +21,22 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 9999,
+    overflow: "visible",
     height: CAROUSEL_HEIGHT
   },
   content: {
     height: CAROUSEL_HEIGHT,
     flexDirection: "row",
-    backgroundColor: "rgba(0, 0, 0, 0.97)",
+    overflow: "visible",
+    backgroundColor: CAROUSEL_BACKGROUND,
     flexShrink: 0,
+    shadowRadius: 1,
+    shadowOffset: {
+      width: 0,
+      height: 1
+    },
+    shadowColor: "rgb(0, 0, 30)",
+    shadowOpacity: 0.8,
 
     position: "relative"
   },
@@ -102,9 +114,19 @@ const BackButtonLayer = () => {
 };
 
 export const PostHeader = React.forwardRef(
-  ({ defaultFormat, onChangeFormat }, ref) => {
+  (
+    {
+      defaultFormat,
+      translateY = 0,
+      onChangeFormat,
+      controlsOpacityValue: opacity
+    },
+    ref
+  ) => {
     return (
-      <View style={styles.wrapper}>
+      <Animated.View
+        style={[styles.wrapper, { opacity, transform: [{ translateY }] }]}
+      >
         <View style={styles.content}>
           <FormatPicker
             defaultFormat={defaultFormat}
@@ -114,7 +136,7 @@ export const PostHeader = React.forwardRef(
 
           <BackButtonLayer />
         </View>
-      </View>
+      </Animated.View>
     );
   }
 );

@@ -192,6 +192,7 @@ export const normalizeResizedImage = (
   const image = {
     ...assetData,
     duration: duration,
+    playDuration: duration,
     mimeType: original.image.mimeType,
     source: ImageSourceType.cameraRoll,
     asset: Image.resolveAssetSource(assetData),
@@ -257,6 +258,7 @@ const normalizeOriginalImage = (image, transform = []): YeetImage => {
   return {
     ...assetData,
     duration: Number(image.length || 1),
+    playDuration: Number(image.length || 1),
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     asset: Image.resolveAssetSource(assetData),
@@ -364,11 +366,70 @@ export const getSourceDimensions = (
 
     return { width, height, x: 0, y: 0, maxX: width, maxY: height };
   } else if (image.sourceType === ImageSourceType.yeet) {
-    const { width, height } = image.source.image;
+    const { width, height } = image.image;
     return { width, height, x: 0, y: 0, maxX: width, maxY: height };
   } else {
     return { width: 0, height: 0, x: 0, y: 0, maxX: 0, maxY: 0 };
   }
+};
+
+export const imageFromMediaSource = (
+  mediaSource: Partial<MediaSource>
+): YeetImage => {
+  const {
+    width = 0,
+    url: _url,
+    height = 0,
+    pixelRatio,
+    mimeType: _mimeType,
+    duration = 0,
+    playDuration = 0
+  } = mediaSource;
+
+  if (!_url) {
+    throw Error(`Invalid url for asset ${JSON.stringify(mediaSource)}`);
+  }
+
+  const mimeType =
+    ImageMimeType[_mimeType] || mimeTypeFromFilename(_url.split("?")[0]);
+
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for asset ${JSON.stringify(mediaSource)}`);
+  }
+
+  const url =
+    mimeType !== undefined && _url.includes("ph://")
+      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
+      : _url;
+
+  return {
+    uri: url,
+    width,
+    height,
+    mimeType,
+    duration,
+    asset: {
+      width,
+      height,
+      uri: url,
+      scale: pixelRatio
+    },
+    transform: [],
+    source: ImageSourceType.yeet
+  };
+};
+
+export const imageContainerFromMediaSource = (
+  mediaSource: Partial<MediaSource>,
+  source: YeetImageContainer
+): YeetImageContainer => {
+  return {
+    id: mediaSource.id,
+    sourceType: ImageSourceType.yeet,
+    image: imageFromMediaSource(mediaSource),
+    preview: imageFromMediaSource(mediaSource),
+    source
+  };
 };
 
 export const mediaSourceFromImage = (

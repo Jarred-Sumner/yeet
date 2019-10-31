@@ -159,6 +159,10 @@ export class MediaPlayerComponent extends React.Component<Props> {
     this.callNativeMethod("pause");
   };
 
+  crop = (bounds: BoundsRect, size: DimensionsRect) => {
+    return MediaPlayer.NativeModule.crop(findNodeHandle(this), bounds, size);
+  };
+
   advance = (index: number, withFrame: Boolean = false) => {
     if (withFrame) {
       return MediaPlayer.NativeModule.advanceWithFrame(
@@ -241,6 +245,8 @@ export class MediaPlayerComponent extends React.Component<Props> {
       borderRadius = 0,
       paused = false,
       onProgress,
+      onLoad,
+      onError,
       onChangeItem
     } = this.props;
 
@@ -253,6 +259,8 @@ export class MediaPlayerComponent extends React.Component<Props> {
         borderRadius={borderRadius}
         prefetch={prefetch}
         onProgress={onProgress}
+        onLoad={onLoad}
+        onError={onError}
         onChangeItem={onChangeItem}
         autoPlay={this.props.autoPlay}
         paused={paused}

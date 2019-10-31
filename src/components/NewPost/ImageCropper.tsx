@@ -21,20 +21,31 @@ import { IconChevronRight, IconChevronLeft } from "../Icon";
 import { ResizableImage } from "./ResizableImage";
 import { resizeImage } from "../../lib/imageResize";
 import { BoldText } from "../Text";
-import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
+import {
+  YeetImageContainer,
+  YeetImageRect,
+  YeetImage
+} from "../../lib/imageSearch";
 import { BOTTOM_Y, TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { CAROUSEL_HEIGHT } from "./NewPostFormat";
 
 const FOOTER_HEIGHT = 32 + BOTTOM_Y;
 
-const TOP_IMAGE_Y = TOP_Y + SPACING.normal;
+const TOP_IMAGE_Y = TOP_Y + CAROUSEL_HEIGHT;
 
 const styles = StyleSheet.create({
   container: {
     position: "relative",
+    alignSelf: "flex-end",
     flex: 1,
     width: "100%"
   },
-  content: { flex: 1, width: "100%" }
+  content: {
+    flex: 1,
+    width: "100%",
+    alignSelf: "flex-end",
+    justifyContent: "center"
+  }
 });
 
 const nextButtonStyles = StyleSheet.create({
@@ -103,8 +114,8 @@ type Props = {
 
 type State = {
   crop: YeetImageRect;
-  photoSource: ImageResolvedAssetSource;
-  originalSource: ImageResolvedAssetSource;
+  photoSource: YeetImage;
+  originalSource: YeetImage;
 };
 
 export class ImageCropper extends React.Component<Props, State> {
@@ -119,15 +130,17 @@ export class ImageCropper extends React.Component<Props, State> {
         width: image.width,
         height: image.height
       },
-      originalSource: image.asset,
-      photoSource: image.asset
+      originalSource: image,
+      photoSource: image
     };
   }
 
   transitionRef = React.createRef();
 
-  handleNext = () => {
-    this.props.onDone(this.resizableImageRef.current.currentCrop());
+  handleNext = async () => {
+    const result = await this.resizableImageRef.current.performCrop();
+
+    this.props.onDone(result);
   };
 
   resizableImageRef = React.createRef<ResizableImage>();
@@ -143,10 +156,13 @@ export class ImageCropper extends React.Component<Props, State> {
       originalSource
     } = this.state;
 
-    const maxImageHeight =
-      SCREEN_DIMENSIONS.height - FOOTER_HEIGHT - SPACING.double - 150;
+    const isVerticalPhoto = photoSource.height / photoSource.width > 1.0;
+    const isHorizontalPhoto = photoSource.width / photoSource.height > 1.0;
 
-    const maxImageWidth = (maxImageHeight / 812) * SCREEN_DIMENSIONS.width;
+    let maxImageHeight =
+      SCREEN_DIMENSIONS.height - TOP_IMAGE_Y - FOOTER_HEIGHT - SPACING.double;
+
+    let maxImageWidth = SCREEN_DIMENSIONS.width;
 
     return (
       <View style={styles.container}>
@@ -154,8 +170,8 @@ export class ImageCropper extends React.Component<Props, State> {
           ref={this.transitionRef}
           transition={
             <Transition.Sequence>
-              {/* <Transition.Change interpolation="linear" />
-              <Transition.In type="scale" /> */}
+              <Transition.Change interpolation="linear" />
+              <Transition.In type="scale" />
             </Transition.Sequence>
           }
           style={styles.content}
@@ -163,15 +179,12 @@ export class ImageCropper extends React.Component<Props, State> {
           <ResizableImage
             key={photoSource.uri}
             ref={this.resizableImageRef}
-            originalPhoto={{
-              width: photo.image.width,
-              height: photo.image.height
-            }}
+            originalPhoto={this.props.photo}
             photo={crop}
-            source={photoSource}
-            originalSource={originalSource}
+            source={this.props.photo}
+            originalSource={this.props.photo}
             minY={TOP_IMAGE_Y}
-            maxY={maxImageHeight - TOP_IMAGE_Y}
+            maxY={maxImageHeight}
             maxWidth={maxImageWidth}
             maxHeight={maxImageHeight}
             onCrop={this.handleCrop}

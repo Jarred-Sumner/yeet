@@ -163,13 +163,13 @@ export const presetsByFormat = {
     color: "white"
   },
   [PostFormat.screenshot]: {
-    backgroundColor: "#fff",
+    backgroundColor: "#000",
     borderRadius: 0,
     textTop: 60,
     paddingTop: 0,
     padding: 0,
     paddingVertical: 0,
-    color: "black"
+    color: "white"
   },
   [PostFormat.canvas]: {
     backgroundColor: "#000",

@@ -1,0 +1,85 @@
+{
+  "blocks": [
+    {
+      "type": "image",
+      "format": "screenshot",
+      "dimensions": {
+        "width": 414,
+        "height": 380.66666666666663,
+        "x": 0,
+        "y": 0,
+        "maxX": 1242,
+        "maxY": 1142
+      },
+      "id": "E8mxFR3X8RAPZmwpt8M_T",
+      "contentId": "ph://6B50B0BE-3CCE-46B8-AB88-2FD95F3848E6/L0/001_cropped",
+      "viewTag": 867,
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "width": 414,
+        "height": 380.5
+      },
+      "value": {
+        "width": 1242,
+        "height": 1142,
+        "source": "yeet",
+        "mimeType": "image/webp",
+        "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/screenshot.webp",
+        "duration": 0
+      }
+    }
+  ],
+  "nodes": [
+    {
+      "block": {
+        "type": "image",
+        "format": "sticker",
+        "dimensions": {
+          "width": 310.5,
+          "height": 232.254,
+          "x": 0,
+          "y": 0,
+          "maxX": 310.5,
+          "maxY": 232.254
+        },
+        "id": "isWn2nSxlewxLM7W8gTkT",
+        "contentId": "LdOyjZ7io5Msw",
+        "viewTag": 2967,
+        "frame": {
+          "x": 15,
+          "y": 15,
+          "width": 241.85113854278507,
+          "height": 212.1506487570541
+        },
+        "value": {
+          "width": 500,
+          "height": 374,
+          "source": "giphy",
+          "mimeType": "video/mp4",
+          "uri": "file:///Users/jarred/Code/yeet/yeet/ios/yeetTests/Fixtures/money.mp4",
+          "duration": 1
+        }
+      },
+      "frame": {
+        "x": 80.07443072860747,
+        "y": 304.5476614613167,
+        "width": 241.85113854278507,
+        "height": 212.1506487570541
+      },
+      "viewTag": 2973,
+      "position": {
+        "x": 45.75,
+        "rotate": -0.3580468358841249,
+        "scale": 0.6496351567300861,
+        "y": 294.373
+      }
+    }
+  ],
+  "bounds": {
+    "x": 0,
+    "y": 0,
+    "width": 414,
+    "height": 804
+  }
+}

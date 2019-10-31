@@ -137,7 +137,7 @@ class ContentExport {
         layer.contents = UIImage.init(data: image.staticImage!.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
       }
     } else {
-      layer.contents = image.staticImage!.cgImage!
+      layer.contents = image.firstFrame.cgImage!
     }
 
     return layer
@@ -250,7 +250,7 @@ class ContentExport {
             xOffset = minX
           }
 
-          let renderedFrame = block.scaledFrame(scale: contentsScale)
+          let renderedFrame = block.maxRenderedFrame(scale: contentsScale)
 
           let _cropWidth = min(
             max(renderedFrame.origin.x + renderedFrame.width, cropWidth),
@@ -291,10 +291,37 @@ class ContentExport {
         }
       }
 
+      if renderSize.width == .zero {
+        renderSize.width = cropWidth
+      }
+
+      if renderSize.height == .zero {
+        renderSize.height = cropHeight
+      }
+      
+
       let minRenderWidth = abs(xOffset) + cropWidth
       let minRenderHeight = abs(yOffset) + cropHeight
-      renderSize.width = max(minRenderWidth, renderSize.width)
-      renderSize.height = max(minRenderHeight, renderSize.height)
+
+      var renderSizeScale = CGFloat(1)
+      if minRenderWidth > renderSize.width || minRenderHeight > renderSize.height {
+        renderSizeScale = max(
+          minRenderWidth / renderSize.width,
+          minRenderHeight / renderSize.height
+        )
+
+        let size = CGSize(
+          width: renderSize.width * renderSizeScale,
+          height: renderSize.height * renderSizeScale
+        )
+
+        videoYPositions.forEach { key, value in
+          videoYPositions[key] = value * renderSizeScale
+        }
+
+        renderSize = size
+      }
+
 
       let videoContainerRect = CGRect(origin: .zero, size: renderSize)
 
@@ -303,7 +330,7 @@ class ContentExport {
 
       let cropRect = CGRect(
         origin: centerPoint,
-        size: CGSize(width: cropWidth, height: cropHeight)
+        size: CGSize(width: min(cropWidth, renderSize.width), height: min(cropHeight, renderSize.height))
       )
 
       parentLayer.bounds = videoContainerRect
@@ -372,8 +399,8 @@ class ContentExport {
             let nodeView = video.nodeView
 
 
-            let scaleX = frame.width / vidAsset.naturalSize.width
-            let scaleY = frame.height / vidAsset.naturalSize.height
+            let scaleX = (frame.width / vidAsset.naturalSize.width) * renderSizeScale
+            let scaleY = (frame.height / vidAsset.naturalSize.height) * renderSizeScale
 
             let rotationTransform = CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))
 
@@ -464,11 +491,7 @@ class ContentExport {
             // 862 x 644
             // 812 x 466
             // 812 x 339
-            if videoCount == 1 {
-              videoLayer.contentsScale =  videoContainerRect.height / interRect.height
-            } else {
-              videoLayer.contentsScale =  CGFloat(1)
-            }
+            videoLayer.contentsScale = renderSizeScale * (videoContainerRect.height / interRect.height)
 
             
             videoLayers.append(videoLayer)
@@ -513,19 +536,14 @@ Bounds diff:
           return
         }
 
-
-
-
         guard let assetExport = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
           reject(ContentExportError(.failedToCreateExportSession))
           return
         }
 
-
         assetExport.outputFileType = AVFileType.mp4
         assetExport.outputURL = VideoProducer.generateExportURL(type: type)
         assetExport.timeRange = vid_timerange
-
 
         if layercomposition.instructions.count > 0 {
           assetExport.videoComposition = layercomposition
@@ -586,9 +604,10 @@ Cropping video...
         }
 
       } else {
-        let cropRect = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale)
+        parentLayer.isGeometryFlipped = false
+        let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale)
 
-        let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!.sd_flippedImage(withHorizontal: false, vertical: true)!
+         let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
         let imageData: NSData
         let compressionQuality = isDigitalOnly ? CGFloat(1) : CGFloat(0.99)
         if (type == ExportType.png) {
@@ -708,11 +727,11 @@ extension CGFloat {
 
 extension CGSize {
   func h264Friendly() -> CGSize {
-    let h264Width = self.width.toClosestMultiple(CGFloat(16))
+    let h264Width = abs(self.width.toClosestMultiple(CGFloat(16)))
 
     return CGSize(
       width: h264Width,
-      height: floor((h264Width / width) * height)
+      height: abs(floor((h264Width / width) * height))
     )
   }
 }
@@ -733,7 +752,7 @@ extension CGRect {
     return CGRect(
       origin: origin,
       size: size
-    )
+      )
 //      size: CGSize(
 //        width: size.width - origin.x,
 //        height: size.height - origin.y

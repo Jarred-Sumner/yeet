@@ -87,6 +87,35 @@ class ContentExportTest: QuickSpec {
   }
 
   override func spec() {
+    describe("Money Screenshot") {
+     let fixture = Fixtures.moneyJSON
+      let videoProducer = Fixtures.videoProducer(fixture: fixture)
+      let estimatedBounds = CGRect.from(json: fixture["bounds"])
+      let destination = Fixtures.moneyOutputURL!
+
+
+      it("exports successfully") {
+
+        waitUntil(timeout: 40.0) { done in
+          self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(1)).then { video in
+            done()
+          }
+        }
+
+      }
+
+      it("@2x exports successfully") {
+        let destination = Fixtures.moneyOutputURL2x!
+        waitUntil(timeout: 40.0) { done in
+          self.runVideoProducer(videoProducer: videoProducer, bounds: estimatedBounds, isServerOnly: true, exportURL: destination, scale: CGFloat(2)).then { video in
+            done()
+          }
+        }
+
+      }
+    }
+
+
     describe("Hi Gif") {
       let fixture = Fixtures.hiGifTransparentPNGJSON
       let videoProducer = Fixtures.videoProducer(fixture: fixture)
@@ -114,8 +143,6 @@ class ContentExportTest: QuickSpec {
 
       }
     }
-
-
 
     describe("Two Videos + Transparent PNG") {
       let fixture = Fixtures.twoVideosTransparentPNGJSON

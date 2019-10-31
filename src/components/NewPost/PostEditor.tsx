@@ -98,18 +98,8 @@ const MiddleSheet = ({ width, height }) => {
       end={{ x: 0, y: 1 }}
       // angle={180}
       // angleCenter={{ x: 0.0, y: 0.0 }}
-      locations={[
-        0.0,
-        (60 + SPACING.half) / MAX_POST_HEIGHT,
-        1.0 - 60 / MAX_POST_HEIGHT,
-        1.0
-      ]}
-      colors={[
-        "rgba(0,0,0,0.1)",
-        "rgba(100,100,100,0.0)",
-        "rgba(100,100,100,0.0)",
-        "rgba(0,0,0,0.1)"
-      ]}
+      locations={[0.0, 0.8, 1.0]}
+      colors={["rgba(0,0,0,0)", "rgba(0,0,0,0)", "rgba(0,0,0,0.25)"]}
     />
   );
 };
@@ -810,7 +800,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   keyboardVisibleValue = new Animated.Value<number>(0);
   focusedBlockValue = new Animated.Value<number>(-1);
   focusTypeValue = new Animated.Value<FocusType | -1>(-1);
-  controlsOpacityValue = new Animated.Value(1);
+
   tapX = new Animated.Value(-1);
   tapY = new Animated.Value(-1);
 
@@ -1126,21 +1116,21 @@ class RawwPostEditor extends React.Component<Props, State> {
                 cond(
                   eq(this.focusTypeValue, FocusType.panning),
 
-                  Animated.block([set(this.controlsOpacityValue, 1.0)])
+                  Animated.block([set(this.props.controlsOpacityValue, 1.0)])
                 ),
                 cond(
                   eq(this.focusTypeValue, FocusType.absolute),
-                  set(this.controlsOpacityValue, 1.0)
+                  set(this.props.controlsOpacityValue, 1.0)
                 ),
 
                 cond(eq(this.focusTypeValue, FocusType.static), [
                   set(
-                    this.controlsOpacityValue,
+                    this.props.controlsOpacityValue,
                     sub(1.0, this.keyboardVisibleValue)
                   )
                 ]),
                 cond(eq(this.focusTypeValue, -1), [
-                  set(this.controlsOpacityValue, 1.0)
+                  set(this.props.controlsOpacityValue, 1.0)
                 ])
               ])
             ),
@@ -1189,9 +1179,10 @@ class RawwPostEditor extends React.Component<Props, State> {
             onTapBlock={this.handleTapBlock}
             minY={bounds.y}
             contentViewRef={this.contentViewRef}
-            backgroundColor={post.backgroundColor}
+            backgroundColor={post.backgroundColor || "#000"}
             focusedBlockValue={this.focusedBlockValue}
             onTapBackground={this.onTapBackground}
+            scrollY={this.props.scrollY}
             ref={this.scrollRef}
             maxX={bounds.width}
             swipeOnly={this.hasPlaceholderImageBlocks()}
@@ -1212,7 +1203,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               flipY
               pointerEvents="box-none"
               zIndex={LayerZIndex.inlineNodes}
-              opacity={this.controlsOpacityValue}
+              opacity={this.props.controlsOpacityValue}
             >
               <DarkSheet
                 opacity={Animated.cond(
@@ -1248,16 +1239,16 @@ class RawwPostEditor extends React.Component<Props, State> {
             </Layer>
           </PostPreview>
 
-          <Layer
+          {/* <Layer
             zIndex={LayerZIndex.sheet}
             width={sizeStyle.width}
             isFrozen
-            opacity={this.controlsOpacityValue}
+            opacity={this.props.controlsOpacityValue}
             pointerEvents="none"
             height={sizeStyle.height}
           >
             <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
-          </Layer>
+          </Layer> */}
 
           <Layer
             isShown
@@ -1282,7 +1273,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               onPressToolbarButton={this.handlePressToolbarButton}
               isFocused={!!this.state.focusedBlockId}
               insertTextNode={this.handleInsertText}
-              controlsOpacity={this.controlsOpacityValue}
+              controlsOpacity={this.props.controlsOpacityValue}
               blur={this.handleBlur}
               focusType={this.state.focusType}
               onChangeFooterHeight={this.handleChangeBottomInset}

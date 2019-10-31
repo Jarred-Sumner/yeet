@@ -15,7 +15,12 @@ import {
   IconClose
 } from "../Icon";
 import { TOP_Y } from "../../../config";
-import { BitmapIconPlus } from "../BitmapIcon";
+import {
+  BitmapIconPlus,
+  BitmapIconAddText,
+  BitmapIconAddPhoto,
+  BitmapIconAddSticker
+} from "../BitmapIcon";
 
 export enum ToolbarType {
   default = "default",
@@ -27,23 +32,17 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     justifyContent: "space-evenly",
+
     overflow: "visible",
 
     alignItems: "center",
     flex: 1,
-    maxWidth: 220
+    maxWidth: 240
   },
   buttonContainer: {
     position: "relative",
     flexShrink: 0,
-    paddingHorizontal: SPACING.normal,
     overflow: "visible"
-  },
-  buttonIcon: {
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 5,
-    paddingVertical: SPACING.normal
   },
   plusIcon: {
     position: "absolute",
@@ -53,46 +52,16 @@ const styles = StyleSheet.create({
   }
 });
 
-export const ToolbarButton = ({ Icon, size, onPress, color, isActive }) => (
+export const ToolbarButton = ({ icon, size, onPress, color, isActive }) => (
   <TouchableOpacity style={styles.touchable} onPressIn={onPress}>
-    <View style={styles.buttonContainer}>
-      <Icon size={size} style={[styles.buttonIcon, { color }]} />
-
-      <View style={styles.plusIcon}>
-        <BitmapIconPlus />
-      </View>
-    </View>
+    <View style={styles.buttonContainer}>{icon}</View>
   </TouchableOpacity>
 );
 
 export const TextToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      Icon={IconText}
-      size={30}
-      isActive={isActive}
-      color="white"
-      onPress={onPress}
-    />
-  );
-};
-
-const PlusToolbarButton = ({ isActive, onPress }) => {
-  return (
-    <ToolbarButton
-      Icon={IconPlus}
-      size={30}
-      isActive={isActive}
-      color="white"
-      onPress={onPress}
-    />
-  );
-};
-
-const DrawToolbarButton = ({ isActive, onPress }) => {
-  return (
-    <ToolbarButton
-      Icon={IconDraw}
+      icon={<BitmapIconAddText />}
       size={30}
       isActive={isActive}
       color="white"
@@ -104,7 +73,7 @@ const DrawToolbarButton = ({ isActive, onPress }) => {
 const PhotoToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      Icon={IconPhoto}
+      icon={<BitmapIconAddPhoto />}
       size={30}
       isActive={isActive}
       color="white"
@@ -116,7 +85,7 @@ const PhotoToolbarButton = ({ isActive, onPress }) => {
 const StickerToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      Icon={IconSticker}
+      icon={<BitmapIconAddSticker />}
       size={36}
       isActive={isActive}
       color="white"
@@ -124,16 +93,6 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
     />
   );
 };
-
-const BackToolbarButton = ({ isActive, onPress, Icon }) => (
-  <ToolbarButton
-    onPress={onPress}
-    type={"shadow"}
-    color="white"
-    size={30}
-    Icon={Icon}
-  />
-);
 
 export enum ToolbarButtonType {
   sticker = "sticker",

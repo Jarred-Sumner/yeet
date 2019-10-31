@@ -31,7 +31,6 @@ const CustomFastImage = React.forwardRef(
         sources={sources}
         borderRadius={borderRadius}
         style={style}
-        incrementalLoad={incrementalLoad}
         {...props}
       />
     );

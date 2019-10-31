@@ -147,11 +147,12 @@ const Routes = createAppContainer(
                 backgroundColor: "#000"
               },
               headerMode: "none",
-              initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
+              // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
               defaultNavigationOptions: {
                 header: () => null,
                 mode: "modal",
-                headerTransparent: true
+                headerTransparent: true,
+                gesturesEnabled: false
               }
             }
           )
@@ -162,7 +163,7 @@ const Routes = createAppContainer(
           },
           headerMode: "none",
           mode: "modal",
-          initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
+          // initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
           defaultNavigationOptions: {
             header: () => null,
             headerMode: "none"

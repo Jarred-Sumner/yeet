@@ -10,6 +10,7 @@ import Foundation
 import PINRemoteImage
 import SwiftyBeaver
 import Photos
+import Promise
 
 enum YeetImageViewResizeMode : String {
   case aspectFit = "aspectFit"
@@ -113,7 +114,7 @@ class YeetImageView : PINAnimatedImageView {
   }
 
 
-  static func fetchCameraRollAsset(mediaSource: MediaSource, bounds: CGRect, contentMode: UIView.ContentMode, completion: @escaping ImageFetchCompletionBlock) -> (PHImageRequestID?, PHLivePhotoRequestID?) {
+  static func fetchCameraRollAsset(mediaSource: MediaSource, size: CGSize, cropRect: CGRect = .zero, contentMode: UIView.ContentMode, deliveryMode: PHImageRequestOptionsDeliveryMode = .opportunistic, completion: @escaping ImageFetchCompletionBlock) -> (PHImageRequestID?, PHLivePhotoRequestID?) {
     guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
       completion(nil)
       return (nil, nil)
@@ -152,9 +153,14 @@ class YeetImageView : PINAnimatedImageView {
 //    } else {
       let request = PHImageRequestOptions()
       request.isNetworkAccessAllowed = true
-      request.deliveryMode = .opportunistic
+      if cropRect != .zero {
+        request.normalizedCropRect = cropRect.integral
+        request.resizeMode = .exact
+      }
 
-       imageRequestID = phImageManager.requestImage(for: asset, targetSize: bounds.size, contentMode: _contentMode, options: request) { image, _ in
+      request.deliveryMode = deliveryMode
+
+       imageRequestID = phImageManager.requestImage(for: asset, targetSize: size, contentMode: _contentMode, options: request) { image, _ in
         completion(image)
       }
 //    }
@@ -165,7 +171,7 @@ class YeetImageView : PINAnimatedImageView {
 
   @objc(source) var mediaSource: MediaSource? = nil
 
-  var _resizeMode: YeetImageViewResizeMode = .aspectFill
+  var _resizeMode: YeetImageViewResizeMode = .aspectFit
   @objc(resizeMode)
   var resizeMode: String {
     get {
@@ -229,7 +235,56 @@ class YeetImageView : PINAnimatedImageView {
     }
   }
 
-  func loadImage() {
+  func loadFullSizeImage(contentMode: UIView.ContentMode, size: CGSize, cropRect: CGRect = .zero) -> Promise<UIImage> {
+    return Promise<UIImage>() { resolve, reject in
+      guard let mediaSource = self.mediaSource else {
+        reject(YeetError.init(code: .invalidMediaSource))
+        return
+      }
+
+      if mediaSource.isHTTProtocol {
+        let (url, _) = YeetImageView.imageUri(source: mediaSource, bounds: CGRect(origin: .zero, size: size))
+
+        PINRemoteImageManager.shared().downloadImage(with: url) { result in
+          if let image = result.image {
+            resolve(image)
+          } else {
+            reject(result.error ?? YeetError.init(code: .fetchMediaFailed))
+          }
+        }
+      } else if mediaSource.isFromCameraRoll {
+        let (_, _) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: size, cropRect: cropRect, contentMode: contentMode, deliveryMode: .highQualityFormat) {  image in
+          if let image = image {
+            resolve(image)
+          } else {
+            reject(YeetError.init(code: .fetchMediaFailed))
+          }
+        }
+      } else if mediaSource.isFileProtocol {
+        var image: UIImage? = nil
+
+        do {
+          if mediaSource.mimeType == MimeType.gif || mediaSource.mimeType == MimeType.webp {
+            image = try PINCachedAnimatedImage.init(animatedImageData: Data.init(contentsOf: mediaSource.uri)) as! UIImage?
+          } else {
+            image = try UIImage.init(data: Data.init(contentsOf: mediaSource.uri))
+          }
+        } catch {
+          reject(error)
+          return
+        }
+
+        if let _image = image {
+          resolve(_image)
+        } else {
+          reject(YeetError.init(code: .fetchMediaFailed))
+        }
+      }
+    }
+
+  }
+
+  func loadImage(async: Bool = true) {
     guard let mediaSource = self.mediaSource else {
       self.image = nil
       return
@@ -237,13 +292,11 @@ class YeetImageView : PINAnimatedImageView {
 
     if mediaSource.isHTTProtocol {
       let (url, scale) = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
-
       self.pin_setImage(from: url, processorKey: nil, processor: nil) { [weak self] result in
         self?.handleImageLoad(image: result.image, scale: scale, error: result.error)
       }
     } else if mediaSource.isFromCameraRoll {
-
-      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, bounds: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)), contentMode: self.contentMode) { [weak self] image in
+      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: self.contentMode) { [weak self] image in
         if self?.imageRequestID != nil {
           self?.imageRequestID = nil
         }
@@ -253,17 +306,55 @@ class YeetImageView : PINAnimatedImageView {
 
       self.imageRequestID = imageRequestID
     } else if mediaSource.isFileProtocol {
-      if mediaSource.mimeType == MimeType.gif || mediaSource.mimeType == MimeType.webp {
-        self.image = try! PINCachedAnimatedImage.init(animatedImageData: Data.init(contentsOf: mediaSource.uri)) as! UIImage?
-      } else {
-        self.image = try! UIImage.init(data: Data.init(contentsOf: mediaSource.uri))
-      }
+
+     do {
+      try self.loadFileImage(async: async)
+     }  catch {
+       self.handleImageLoad(image: nil, scale: CGFloat(1), error: error)
+       return
+     }
+
     }
 
     onLoadStartEvent?(["id": mediaSource.id])
   }
 
-  func handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
+  func _loadFileImage(async: Bool = true) throws {
+    let data = try Data.init(contentsOf: mediaSource!.uri) as NSData
+
+    var image: UIImage? = nil
+    if data.pin_isAnimatedGIF() || data.pin_isAnimatedWebP() {
+      self.isAnimatedImage = true
+      image = PINCachedAnimatedImage.init(animatedImageData: data as Data) as! UIImage?
+    } else {
+      self.isAnimatedImage = false
+      image = UIImage.pin_decodedImage(with: data as Data)
+    }
+
+    self.handleImageLoad(image: image, scale: image?.scale ?? CGFloat(1), error: nil, async: async)
+  }
+  func loadFileImage(async: Bool = true) throws {
+    if async {
+      DispatchQueue.global(qos: .userInitiated).async {
+        try! self._loadFileImage(async: async)
+      }
+    } else {
+      try self._loadFileImage(async: async)
+    }
+  }
+
+  func handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil, async: Bool = true) {
+    if async {
+      DispatchQueue.main.async {
+        self._handleImageLoad(image: image, scale: scale, error: error)
+      }
+    } else {
+        self._handleImageLoad(image: image, scale: scale, error: error)
+    }
+
+  }
+
+  func _handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
     if let image = image {
       if image.scale != scale {
         self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
@@ -276,6 +367,11 @@ class YeetImageView : PINAnimatedImageView {
 
     self.handleLoad(success: image != nil, error: error)
   }
+
+
+
+
+
 
 
   @objc (onLoadStart) var onLoadStartEvent: RCTDirectEventBlock? = nil

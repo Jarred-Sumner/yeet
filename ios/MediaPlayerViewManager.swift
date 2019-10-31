@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftyBeaver
 
 @objc(MediaPlayerViewManager)
 class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
@@ -32,6 +33,129 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     DispatchQueue.main.async { [weak self] in
       if let _view = (self?.bridge.uiManager.view(forReactTag: tag) as! MediaPlayer?) {
         block(_view)
+      }
+    }
+  }
+
+  @objc (crop:bounds:originalSize:resolver:rejecter:)
+  func crop(_ tag: NSNumber, bounds: CGRect, originalSize: CGSize, resolver: @escaping RCTPromiseResolveBlock, rejecter: @escaping RCTPromiseRejectBlock) {
+
+    withView(tag: tag) { view in
+      guard let mediaSource = view.currentItem else {
+        YeetError.reject(code: .invalidMediaSource, block: rejecter)
+        return
+      }
+
+      if mediaSource.isImage {
+        guard let imageView = view.imageView else {
+          YeetError.reject(code: .invalidTag, block: rejecter)
+          return
+        }
+
+        imageView.loadFullSizeImage(contentMode: UIView.ContentMode.scaleToFill, size: originalSize, cropRect: bounds).then(on: DispatchQueue.global(qos: .userInitiated)) { image in
+          autoreleasepool {
+            let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension("webp")
+
+             SwiftyBeaver.info("""
+               Cropping image
+                 \(image.size.width)x\(image.size.height) -> \(bounds)
+                 \(filePath.absoluteString)
+               """)
+
+            var croppedImage: UIImage? = nil
+
+            if let cgImage = image.cgImage {
+              guard let croppedImageRef: CGImage = cgImage.cropping(to: bounds)
+               else {
+                  YeetError.reject(code: .imageCropFailure, block: rejecter)
+                  return
+               }
+
+              croppedImage = UIImage.init(cgImage: croppedImageRef, scale: image.scale, orientation: image.imageOrientation)
+            } else if let ciImage = image.ciImage {
+              let croppedImageRef: CIImage = ciImage.cropped(to: bounds)
+
+              croppedImage = UIImage.init(ciImage: croppedImageRef, scale: image.scale, orientation: image.imageOrientation)
+            }
+
+            var data: Data? = nil
+            if [MimeType.webp, MimeType.png, MimeType.tiff, MimeType.bmp].contains(mediaSource.mimeType) {
+              data = croppedImage?.sd_imageData(as: .webP, compressionQuality: 1.0, firstFrameOnly: false)
+            } else {
+              data = croppedImage?.sd_imageData(as: .webP, compressionQuality: 0.99, firstFrameOnly: false)
+            }
+
+            guard let _data = data else {
+              YeetError.reject(code: .imageEncodingFailure, block: rejecter)
+              return
+            }
+
+            do {
+              try _data.write(to: filePath)
+            } catch {
+              YeetError.reject(code: .writingDataFailure, block: rejecter)
+              return
+            }
+
+            let scale = image.scale
+            let size = croppedImage!.size.applying(CGAffineTransform.init(scaleX: CGFloat(1) / scale, y: CGFloat(1) / scale))
+
+            resolver([
+              "url": filePath.absoluteString,
+              "width": NSNumber(value: Double(size.width)),
+              "height": NSNumber(value: Double(size.height)),
+              "mimeType": MimeType.webp.rawValue,
+              "duration": NSNumber(value: 0),
+              "playDuration": NSNumber(value: 0),
+              "pixelRatio": NSNumber(value: Double(scale)),
+              "id": mediaSource.id + "_cropped"
+            ])
+
+            SwiftyBeaver.info("Cropped successfully")
+          }
+        }.catch { error in
+          rejecter(nil, nil, error)
+        }
+      } else if mediaSource.isVideo {
+        mediaSource.loadAsset { asset in
+          guard let asset = asset  else {
+            YeetError.reject(code: .loadAVAssetFailure, block: rejecter)
+            return
+          }
+
+          let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension(".mp4")
+
+          asset.crop(to: bounds.h264Friendly(), dest: filePath).then(on: DispatchQueue.global(qos: .userInitiated)) { newAsset in
+            newAsset.load().then(on: DispatchQueue.global(qos: .userInitiated)) { _ in
+              guard let videoTrack = newAsset.tracks(withMediaType: .video).first else {
+                YeetError.reject(code: .loadAVAssetFailure, block: rejecter)
+                return
+              }
+
+
+
+              let size = videoTrack.naturalSize
+
+              SwiftyBeaver.info("""
+                Cropped video
+                  \(originalSize.width)x\(originalSize.height) -> \(bounds)
+                  \(filePath.absoluteString)
+                """)
+              resolver([
+                "url": filePath.absoluteString,
+                "width": NSNumber(value: Double(size.width)),
+                "height": NSNumber(value: Double(size.height)),
+                "mimeType": MimeType.mp4.rawValue,
+                "duration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
+                "playDuration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
+                "pixelRatio": NSNumber(value: 1),
+                "id": mediaSource.id + "_cropped"
+              ])
+            }
+          }
+        }
+      } else {
+        YeetError.reject(code: .invalidMediaSource, block: rejecter)
       }
     }
   }

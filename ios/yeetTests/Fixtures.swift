@@ -15,6 +15,14 @@ import SwiftyJSON
 class Fixtures {
   static let bundle = Bundle(for: Fixtures.self)
 
+  static let moneyDirectory =  "Fixtures/money"
+  static let moneyOutputPath = Fixtures.bundle.resourcePath! + "/" + Fixtures.moneyDirectory + "/test-video.mp4"
+  static let moneyOutputPath2x = Fixtures.bundle.resourcePath! + "/" + Fixtures.moneyDirectory + "/test-video@2x.mp4"
+  static let moneyOutputURL = URL(string: "file://" + Fixtures.moneyOutputPath)
+  static let moneyOutputURL2x = URL(string: "file://" + Fixtures.moneyOutputPath2x)
+  static let moneyJSONPath = Fixtures.bundle.resourceURL!.appendingPathComponent(Fixtures.moneyDirectory, isDirectory: true).appendingPathComponent("export.json")
+  static let moneyJSON = JSON(parseJSON: try! String(contentsOf: Fixtures.moneyJSONPath, encoding: .utf8))
+
   static let twoVideosDirectory =  "Fixtures/twoVideos"
   static let twoVideosTransparentPNGOutputPath = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video.mp4"
   static let twoVideosTransparentPNGOutputPath2x = Fixtures.bundle.resourcePath! + "/" + Fixtures.twoVideosDirectory + "/test-video@2x.mp4"
@@ -113,7 +121,7 @@ class Fixtures {
           if mediaSource.isImage {
             let imageView = mediaPlayer.imageView!
 
-            imageView.loadImage()
+            try! imageView.loadImage(async: false)
           } else if mediaSource.isVideo {
             mediaSource.assetStatus = .loaded
             mediaQueue.current!.start()

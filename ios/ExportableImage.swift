@@ -7,9 +7,10 @@
 //
 
 import Foundation
+import PINRemoteImage
 
 class ExportableImage {
-  var animatedImage: SDAnimatedImage? = nil
+  var animatedImage: PINCachedAnimatedImage? = nil
   var staticImage: UIImage? = nil
 
   var isAnimated: Bool {
@@ -18,7 +19,7 @@ class ExportableImage {
 
   var animatedImageFrameCount: UInt {
     if let image = self.animatedImage {
-      return image.animatedImageFrameCount;
+      return UInt(image.frameCount);
     } else {
       return 0;
     }
@@ -27,7 +28,7 @@ class ExportableImage {
 
   var firstFrame: UIImage {
     if (self.animatedImage != nil) {
-      return self.animatedImage!
+      return self.animatedImage!.coverImage!
     } else {
       return self.staticImage!
     }
@@ -35,31 +36,29 @@ class ExportableImage {
   
   func animatedImageDuration(at: UInt) -> TimeInterval {
     if let image = self.animatedImage {
-      return image.animatedImageDuration(at: at);
+      return image.duration(at: at);
     } else {
       return 0;
     }
   }
 
-  func animatedImageFrame(at: UInt) -> UIImage? {
+  func animatedImageFrame(at: UInt) -> CGImage? {
     if let image = self.animatedImage {
-      return image.animatedImageFrame(at: at)
+      return image.image(at: at)!.takeRetainedValue()
     } else {
-      return staticImage!;
+      return staticImage!.cgImage
     }
   }
 
   required init (image: UIImage) {
-    if type(of: image) == SDAnimatedImage.self {
-      self.animatedImage = image as? SDAnimatedImage
+    if type(of: image) == PINCachedAnimatedImage.self {
+      self.animatedImage = image as! PINCachedAnimatedImage
     } else {
       self.staticImage = image
     }
   }
 
   func preloadAllFrames() {
-    if let image = self.animatedImage {
-      return image.preloadAllFrames()
-    }
+
   }
 }

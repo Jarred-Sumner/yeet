@@ -323,12 +323,12 @@ extension RCTConvert {
     let uri =  dictionary["url"] as! String
 
     let mimeType = MimeType.init(rawValue: dictionary["mimeType"] as! String)!
-    let duration = dictionary["duration"] as! NSNumber
-    let playDuration = dictionary["playDuration"] as! NSNumber
-    let id = dictionary["id"] as! String
+    let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
+    let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
+    let id = dictionary["id"] as? String ?? uri
     let width = dictionary["width"] as! NSNumber
     let height = dictionary["height"] as! NSNumber
-    let pixelRatio = dictionary["pixelRatio"] as! NSNumber
+    let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
 
     return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio)
   }

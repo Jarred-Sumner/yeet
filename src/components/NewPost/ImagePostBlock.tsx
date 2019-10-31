@@ -78,6 +78,7 @@ const MediaComponent = React.forwardRef(
       source,
       dimensions,
       playDuration,
+      borderRadius,
       style,
       ...otherProps
     }: {
@@ -93,11 +94,14 @@ const MediaComponent = React.forwardRef(
       [mediaSourcesFromImage, source, playDuration, dimensions]
     );
 
+    console.log(sources);
+
     return (
       <MediaPlayer
         {...otherProps}
         paused={false}
         autoPlay
+        borderRadius={borderRadius}
         ref={ref}
         sources={sources}
         style={style}
@@ -153,11 +157,11 @@ const StickerImage = React.forwardRef(
         ref={ref}
         source={block.value}
         dimensions={block.config.dimensions}
+        borderRadius={2}
         style={[
           stylesByFormat[block.format].image,
           {
             transform: block.value.image.transform,
-            borderRadius: 2,
             width: block.config.dimensions.width,
             height: block.config.dimensions.height
           }

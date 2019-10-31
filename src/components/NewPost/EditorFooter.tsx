@@ -9,32 +9,37 @@ import { IconButton } from "../Button";
 import { IconDownload, IconSend, IconTrash } from "../Icon";
 import { MAX_POST_HEIGHT } from "./NewPostFormat";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { BitmapIconNext } from "../BitmapIcon";
+import { CAROUSEL_BACKGROUND } from "./PostHeader";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
 const styles = StyleSheet.create({
   footerSide: {
     flexDirection: "row",
-    alignItems: "flex-end"
+    alignItems: "center"
   },
   footer: {
     flexDirection: "row",
     position: "absolute",
+    paddingTop: SPACING.half,
     paddingRight: SPACING.normal,
     paddingBottom: BOTTOM_Y,
+    backgroundColor: CAROUSEL_BACKGROUND,
     height: FOOTER_HEIGHT,
     left: 0,
     right: 0,
     bottom: 0,
     width: "100%",
+    shadowRadius: StyleSheet.hairlineWidth,
+    shadowOffset: {
+      width: 0,
+      height: -1
+    },
+    shadowColor: "rgb(0, 0, 30)",
+    shadowOpacity: 0.8,
+
     justifyContent: "space-between"
-  },
-  footerCenter: {
-    justifyContent: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.25)",
-    paddingVertical: SPACING.half,
-    bottom: 0,
-    paddingBottom: SPACING.half
   }
 });
 
@@ -57,8 +62,7 @@ const NextButton = ({ onPress, waitFor }) => {
       size={24}
       type="fill"
       onPress={onPress}
-      Icon={IconSend}
-      backgroundColor={COLORS.secondary}
+      iconNode={<BitmapIconNext />}
     />
   );
 };

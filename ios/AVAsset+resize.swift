@@ -100,7 +100,6 @@ extension AVURLAsset {
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
 
-        let targetSize = to.size
         var naturalSize = videoTrack.naturalSize
 
         var transform = videoTrack.preferredTransform
@@ -118,7 +117,13 @@ extension AVURLAsset {
 //            naturalSize.width = naturalSize.height
 //            naturalSize.height = tempWidth
 //        }
-        videoComposition.renderSize = targetSize
+
+        let _to = to.h264Friendly()
+
+        let scaleX = to.width / _to.width
+        let scaleY = to.height / _to.height
+
+        videoComposition.renderSize = _to.size
 
         // center the video
 //
@@ -138,11 +143,39 @@ extension AVURLAsset {
 
 
 
+        let scaleTransform = CGAffineTransform.init(scaleX: scaleX, y: scaleY)
+//        let scaleTransform = CGAffineTransform.init(scaleX: scaleX, y: scaleY)
 
-        layerInstruction.setCropRectangle(to, at: .zero)
+        if to.origin != .zero {
+          layerInstruction.setTransform(scaleTransform.translatedBy(x: _to.origin.x * -1, y: _to.origin.y * -1), at: .zero)
+        } else {
+          layerInstruction.setTransform(scaleTransform, at: .zero)
+        }
+
+        layerInstruction.setCropRectangle(_to, at: .zero)
 
 
-        guard let exportSession = AVAssetExportSession(asset: composition, presetName: AVAssetExportPreset1920x1080) else {
+
+        let duration = CMTimeGetSeconds(videoTrack.timeRange.duration)
+
+        var presetName = AVAssetExportPresetMediumQuality
+        if duration < 60.0 {
+          presetName = AVAssetExportPresetHighestQuality
+
+//          if videoComposition.renderSize.width <= 640 && videoComposition.renderSize.height <= 480 {
+//            presetName = AVAssetExportPreset640x480
+//          } else if videoComposition.renderSize.width <= 960 && videoComposition.renderSize.height <= 540 {
+//            presetName = AVAssetExportPreset960x540
+//          } else if videoComposition.renderSize.width <= 1280 && videoComposition.renderSize.height <= 720 {
+//            presetName = AVAssetExportPreset1280x720
+//          } else if videoComposition.renderSize.width <= 1920 && videoComposition.renderSize.height <= 1080 {
+//            presetName = AVAssetExportPreset1920x1080
+//          } else if videoComposition.renderSize.width <= 3840 && videoComposition.renderSize.height <= 2160 {
+//            presetName = AVAssetExportPreset3840x2160
+//          }
+        }
+
+        guard let exportSession = AVAssetExportSession(asset: composition, presetName: presetName) else {
           reject(NSError(domain: "com.codeblogcorp.yeet", code: 999))
           return
         }

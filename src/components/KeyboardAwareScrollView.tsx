@@ -85,6 +85,7 @@ export class KeyboardAwareScrollView extends React.Component {
   static defaultProps = {
     enableAutomaticScroll: ScrollIntoViewDefaultOptions.enableAutomaticScroll,
     extraHeight: ScrollIntoViewDefaultOptions.extraHeight,
+    scrollY: new Animated.Value(0),
     extraScrollHeight: ScrollIntoViewDefaultOptions.extraScrollHeight,
     enableResetScrollToCoords:
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
@@ -418,6 +419,8 @@ export class KeyboardAwareScrollView extends React.Component {
         />
         <Animated.Code
           exec={Animated.block([
+            Animated.set(this.props.scrollY, this.contentOffsetValue),
+
             Animated.onChange(this.contentOffsetValue, [
               Animated.call([this.contentOffsetValue], this._handleOnScroll)
             ])

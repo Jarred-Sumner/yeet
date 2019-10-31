@@ -2,16 +2,25 @@ import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import {
   PanGestureHandler,
-  State as GestureState
+  State as GestureState,
+  ScrollView
 } from "react-native-gesture-handler";
+import { isNumber } from "lodash";
 import Animated from "react-native-reanimated";
 import { limit, preserveOffset, runDelay } from "react-native-redash";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
-import { YeetImageRect } from "../../lib/imageSearch";
+import { YeetImageRect, mediaSourceFromImage } from "../../lib/imageSearch";
 import { COLORS } from "../../lib/styles";
 import Image from "../Image";
-
-const AnimatedImage = Animated.createAnimatedComponent(Image);
+import { MediaPlayerComponent } from "../MediaPlayer";
+import { BoundsRect } from "../../lib/Rect";
+import {
+  SCREEN_DIMENSIONS,
+  TOP_Y,
+  BOTTOM_Y,
+  IS_SIMULATOR
+} from "../../../config";
+import { getInset } from "react-native-safe-area-view";
 
 const {
   Value,
@@ -39,7 +48,7 @@ const {
   interpolate
 } = Animated;
 
-const ENABLE_DEBUG_MODE = false;
+const ENABLE_DEBUG_MODE = IS_SIMULATOR;
 const USE_NATIVE_DRIVER = true;
 
 const RESIZE_BAR_HEIGHT = 14;
@@ -109,9 +118,11 @@ const ResizeBar = React.forwardRef(
       side,
       width,
       yOffset,
+      gestureRef,
       height,
       onGestureEvent,
       onHandlerStateChange,
+      simultaneousHandlers,
       min,
       max
     },
@@ -121,6 +132,8 @@ const ResizeBar = React.forwardRef(
       <>
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
+          simultaneousHandlers={simultaneousHandlers}
+          ref={gestureRef}
           onHandlerStateChange={onHandlerStateChange}
         >
           <Animated.View
@@ -194,6 +207,11 @@ type State = {
     y: number;
     height: number;
     width: number;
+    scale: number;
+    contentOffset: {
+      x: number;
+      y: number;
+    };
   };
 };
 
@@ -221,14 +239,26 @@ export class ResizableImage extends React.Component<Props> {
     );
 
     const crop = {
+      initialScale: photo.width / width,
       width,
       height,
       x: 0,
       top: 0,
-      bottom: 0
+      bottom: 0,
+      scale: 1.0,
+      contentOffset: {
+        x: 0,
+        y: 0
+      }
     };
 
-    // const height = photo.height * (_height - photo.
+    const isProbablyAScreenshotFromThisPhone =
+      photo.width / SCREEN_DIMENSIONS.scale === SCREEN_DIMENSIONS.width &&
+      photo.height / SCREEN_DIMENSIONS.scale === SCREEN_DIMENSIONS.height;
+
+    if (isProbablyAScreenshotFromThisPhone && TOP_Y > 0) {
+      crop.top = (TOP_Y * SCREEN_DIMENSIONS.scale) / crop.initialScale;
+    }
 
     this.height = height;
     this.heightValue = new Animated.Value(height);
@@ -236,16 +266,15 @@ export class ResizableImage extends React.Component<Props> {
     this._bottomOffsetValue.setValue(0);
 
     this.yOffsetValue = limit(
-      preserveOffset(this._yOffsetValue, this.yOffsetGestureState),
+      preserveOffset(
+        this._yOffsetValue,
+        this.yOffsetGestureState,
+        new Animated.Value(crop.top)
+      ),
       this.yOffsetGestureState,
-      crop.top === 0 ? 0 : crop.top / -2,
+      0,
       Animated.max(sub(this.heightValue, this.bottomOffsetValue), 10)
     );
-
-    // this.yOffsetValue = preserveOffset(
-    //   this._yOffsetValue,
-    //   this.yOffsetGestureState
-    // );
 
     this.bottomOffsetValue = limit(
       preserveOffset(this._bottomOffsetValue, this.heightGestureState),
@@ -253,10 +282,6 @@ export class ResizableImage extends React.Component<Props> {
       multiply(sub(this.heightValue, this.yOffsetValue), -1),
       0
     );
-    // this.bottomOffsetValue = preserveOffset(
-    //   this._bottomOffsetValue,
-    //   this.heightGestureState
-    // );
 
     this.onTranslateY = Animated.event(
       [
@@ -286,7 +311,7 @@ export class ResizableImage extends React.Component<Props> {
     };
   }
 
-  imageLoadedValue = new Animated.Value(0);
+  imageLoadedValue = new Animated.Value(1);
 
   handleCrop = ([yOffset, bottomOffset]) => {
     this.setState({
@@ -303,9 +328,75 @@ export class ResizableImage extends React.Component<Props> {
     return this.state.crop;
   };
 
-  handleImageLoad = () => {
-    this.imageLoadedValue.setValue(1);
+  handleImageLoad = ({ nativeEvent }) => {
+    console.log("LOAD", nativeEvent);
   };
+  handleImageError = ({ nativeEvent }) => {
+    console.log("ERROR", nativeEvent);
+  };
+
+  handleScroll = ({
+    nativeEvent: { zoomScale: scale, contentOffset, ...other }
+  }) => {
+    this.setState({
+      crop: {
+        ...this.state.crop,
+        scale: isNumber(scale) ? scale : this.state.crop.scale,
+        contentOffset:
+          typeof contentOffset === "object"
+            ? contentOffset
+            : this.state.crop.contentOffset
+      }
+    });
+  };
+
+  imageRef = React.createRef<MediaPlayerComponent>();
+
+  performCrop = () => {
+    const {
+      top: top,
+      bottom = 0,
+      width: _width,
+      height: _height,
+      scale,
+      initialScale,
+      contentOffset: _offset
+    } = this.state.crop;
+
+    const naturalSize = {
+      width: this.props.photo.width,
+      height: this.props.photo.height
+    };
+    // The crop works like this:
+    // - You can crop from the top or the bottom
+    // - When cropping from the top or bottom, it is not proportional.
+    // - You can also zoom up to 6x.
+    const offset = {
+      x: Math.max((_offset.x / scale) * initialScale, 0),
+      y: Math.max(((_offset.y + top) / scale) * initialScale, 0)
+    };
+
+    const size = {
+      width: naturalSize.width - offset.x,
+      height:
+        naturalSize.height -
+        offset.y -
+        (Math.abs(bottom) / scale) * initialScale
+    };
+
+    const cropArea: BoundsRect = {
+      ...offset,
+      ...size
+    };
+
+    return this.imageRef.current.crop(cropArea, {
+      width: _width * initialScale,
+      height: _height * initialScale
+    });
+  };
+
+  bottomPanRef = React.createRef<PanGestureHandler>();
+  topPanRef = React.createRef<PanGestureHandler>();
 
   render() {
     const {
@@ -389,31 +480,54 @@ export class ResizableImage extends React.Component<Props> {
                 side="top"
                 yOffset={this.yOffsetValue}
                 min={crop.top * -1}
+                gestureRef={this.topPanRef}
                 height={crop.height}
                 max={crop.height}
                 width={crop.width}
                 onGestureEvent={this.onTranslateY}
                 onHandlerStateChange={this.onTranslateY}
+                simultaneousHandlers={[this.bottomPanRef]}
               />
 
-              <AnimatedImage
-                source={source}
-                pointerEvents="none"
-                onLoad={this.handleImageLoad}
-                resizeMode="cover"
+              <ScrollView
+                bouncesZoom={false}
+                onMomentumScrollEnd={this.handleScroll}
+                onScrollAnimationEnd={this.handleScroll}
+                onScrollEndDrag={this.handleScroll}
+                maximumZoomScale={6.0}
+                waitFor={[this.topPanRef, this.bottomPanRef]}
+                bounces={false}
+                minimumZoomScale={1.0}
+                zoomScale={this.state.crop.scale}
+                contentOffset={this.state.crop.contentOffset}
                 style={{
                   width: crop.width,
                   height: crop.height
                 }}
-              />
+              >
+                <Image
+                  mediaSource={mediaSourceFromImage(source)}
+                  pointerEvents="none"
+                  onLoad={this.handleImageLoad}
+                  onError={this.handleImageError}
+                  ref={this.imageRef}
+                  resizeMode="cover"
+                  style={{
+                    width: crop.width,
+                    height: crop.height
+                  }}
+                />
+              </ScrollView>
 
               <ResizeBar
                 side="bottom"
                 yOffset={this.bottomOffsetValue}
                 height={crop.height}
                 width={crop.width}
+                gestureRef={this.bottomPanRef}
                 min={0}
                 max={crop.height}
+                simultaneousHandlers={[this.topPanRef]}
                 onGestureEvent={this.onChangeHeight}
                 onHandlerStateChange={this.onChangeHeight}
               />

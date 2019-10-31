@@ -2,7 +2,11 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
 import { StatusBar, StyleSheet, View } from "react-native";
-import Animated, { Transition, Transitioning } from "react-native-reanimated";
+import Animated, {
+  Transition,
+  Transitioning,
+  Easing
+} from "react-native-reanimated";
 import { withNavigation } from "react-navigation";
 import {
   BOTTOM_Y,
@@ -11,11 +15,13 @@ import {
   TOP_Y
 } from "../../../config";
 import { ContentExport, ExportData } from "../../lib/Exporter";
-import { resizeImage } from "../../lib/imageResize";
+import { resizeImage, calculateAspectRatioFit } from "../../lib/imageResize";
 import {
   getSourceDimensions,
   YeetImageContainer,
-  YeetImageRect
+  YeetImageRect,
+  imageContainerFromCameraRoll,
+  imageContainerFromMediaSource
 } from "../../lib/imageSearch";
 import { COLORS, SPACING } from "../../lib/styles";
 import { PostUploader, RawPostUploader } from "../PostUploader";
@@ -155,6 +161,11 @@ const styles = StyleSheet.create({
   }
 });
 
+enum StickyHeaderBehavior {
+  revealOnScrollUp = 1,
+  absoluteTop = 2
+}
+
 const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 
 // const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
@@ -179,6 +190,9 @@ class RawNewPost extends React.Component<{}, State> {
     threadId: null,
     thread: null
   };
+
+  controlsOpacityValue = new Animated.Value(1);
+
   constructor(props) {
     super(props);
 
@@ -204,30 +218,68 @@ class RawNewPost extends React.Component<{}, State> {
 
   handleChangePost = post => this.setState({ post });
 
-  handleChoosePhoto = (photo: YeetImageContainer) => {
+  transitionToEditPhoto = (photo: YeetImageContainer) => {
     const post = this.buildPostWithImage(photo, getSourceDimensions(photo));
+
+    this.animatedTranslateY.setValue(1);
+
+    Animated.timing(this.animatedTranslateY, {
+      toValue: CAROUSEL_HEIGHT * -1,
+      duration: 400,
+      easing: Easing.elastic()
+    }).start(() => {
+      window.requestAnimationFrame(() => {
+        this.scrollY.setValue(CAROUSEL_HEIGHT);
+        this.animatedTranslateY.setValue(0);
+      });
+    });
+
     this.setState({
       step: NewPostStep.editPhoto,
       defaultPhoto: photo,
       post: post
     });
+    this.stepContainerRef.current.animateNextTransition();
+  };
+
+  transitionToCropPhoto = (photo: YeetImageContainer) => {
+    this.setState({
+      step: NewPostStep.resizePhoto,
+      defaultPhoto: photo
+    });
 
     this.stepContainerRef.current.animateNextTransition();
+  };
+
+  handleChoosePhoto = (photo: YeetImageContainer) => {
+    const cropThreshold = 0.66;
+    const { height } = calculateAspectRatioFit(
+      photo.image.width,
+      photo.image.height,
+      SCREEN_DIMENSIONS.width,
+      SCREEN_DIMENSIONS.height
+    );
+
+    const aspectFitCropRatio = height / SCREEN_DIMENSIONS.height;
+    const shouldCropPhoto = aspectFitCropRatio > cropThreshold;
+
+    if (shouldCropPhoto) {
+      this.transitionToCropPhoto(photo);
+    } else {
+      this.transitionToEditPhoto(photo);
+    }
   };
 
   buildPostWithImage = (
     image: YeetImageContainer,
     dimensions: YeetImageRect
   ) => {
-    const displayWidth = Math.min(POST_WIDTH, dimensions.width);
-    let { width: sourceWidth, height: sourceHeight } = getSourceDimensions(
-      image
+    const displaySize = calculateAspectRatioFit(
+      dimensions.width,
+      dimensions.height,
+      POST_WIDTH,
+      MAX_POST_HEIGHT
     );
-
-    const displaySize = {
-      width: displayWidth,
-      height: sourceHeight * (displayWidth / sourceWidth)
-    };
 
     return buildPost({
       format: this.state.post.format,
@@ -247,26 +299,36 @@ class RawNewPost extends React.Component<{}, State> {
     });
   };
 
-  handleEditPhoto = async ({ top, bottom, height, width, x }) => {
-    const image = this.state.defaultPhoto;
+  handleCropPhoto = mediaSource => {
+    const photo = imageContainerFromMediaSource(
+      mediaSource,
+      this.state.defaultPhoto
+    );
 
-    const [croppedPhoto, dimensions] = await resizeImage({
-      image,
-      top,
-      bottom,
-      height,
-      x,
-      width
-    });
-
-    this.setState({
-      step: NewPostStep.editPhoto,
-      croppedPhoto,
-      post: this.buildPostWithImage(croppedPhoto, dimensions)
-    });
-
-    this.stepContainerRef.current.animateNextTransition();
+    this.transitionToEditPhoto(photo);
   };
+
+  scrollY = new Animated.Value<number>(CAROUSEL_HEIGHT * -1);
+
+  clampedScrollY = Animated.cond(
+    Animated.greaterThan(this.scrollY, CAROUSEL_HEIGHT * -1),
+    Animated.diffClamp(this.scrollY, 0, CAROUSEL_HEIGHT),
+    0
+  );
+
+  scrollUpTranslateY = Animated.interpolate(this.clampedScrollY, {
+    inputRange: [0, CAROUSEL_HEIGHT],
+    outputRange: [0, CAROUSEL_HEIGHT * -1],
+    extrapolate: Animated.Extrapolate.CLAMP
+  });
+
+  animatedTranslateY = new Animated.Value(0);
+
+  translateY = Animated.cond(
+    Animated.lessThan(this.animatedTranslateY, 0),
+    this.animatedTranslateY,
+    this.scrollUpTranslateY
+  );
 
   handleChangeFormat = (format: PostFormat) => {
     this.stepContainerRef.current.animateNextTransition();
@@ -284,11 +346,14 @@ class RawNewPost extends React.Component<{}, State> {
       });
     }
 
-    this.animatedYOffset.setValue(0);
+    window.requestAnimationFrame(() => {
+      this.scrollY.setValue(0);
+    });
   };
 
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
+    this.scrollY.setValue(0);
     this.stepContainerRef.current.animateNextTransition();
   };
 
@@ -333,7 +398,7 @@ class RawNewPost extends React.Component<{}, State> {
                 ref={this.stepContainerRef}
                 transition={
                   <Transition.Together>
-                    <Transition.In type="fade" />
+                    {/* <Transition.In type="fade" /> */}
                     <Transition.Out type="fade" />
                   </Transition.Together>
                 }
@@ -364,6 +429,8 @@ class RawNewPost extends React.Component<{}, State> {
                 defaultFormat={this.state.post.format}
                 onChangeFormat={this.handleChangeFormat}
                 ref={this.formatPickerRef}
+                translateY={this.translateY}
+                controlsOpacityValue={this.controlsOpacityValue}
               />
             </Animated.View>
           </FlingGestureHandler>
@@ -375,8 +442,6 @@ class RawNewPost extends React.Component<{}, State> {
   handleChangeNodes = (inlineNodes: EditableNodeMap) => {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
-
-  animatedYOffset = new Animated.Value<number>(0);
 
   renderStep() {
     const { inlineNodes, step } = this.state;
@@ -394,10 +459,25 @@ class RawNewPost extends React.Component<{}, State> {
           onChange={this.handleChangePost}
           isReply={!this.props.threadId}
           onChangeFormat={this.handleChangeFormat}
+          controlsOpacityValue={this.controlsOpacityValue}
+          scrollY={this.scrollY}
           inlineNodes={inlineNodes}
           yInset={CAROUSEL_HEIGHT}
           onChangeNodes={this.handleChangeNodes}
           onSubmit={this.handleCreatePost}
+        />
+      );
+    } else if (step === NewPostStep.resizePhoto) {
+      return (
+        <ImageCropper
+          height={SCREEN_DIMENSIONS.height}
+          width={SCREEN_DIMENSIONS.width}
+          scrollEnabled
+          source={this.state.defaultPhoto}
+          photo={this.state.defaultPhoto}
+          paddingTop={CAROUSEL_HEIGHT}
+          animatedYOffset={this.scrollY}
+          onDone={this.handleCropPhoto}
         />
       );
     } else if (step === NewPostStep.choosePhoto) {
@@ -408,7 +488,7 @@ class RawNewPost extends React.Component<{}, State> {
             width={SCREEN_DIMENSIONS.width}
             scrollEnabled
             paddingTop={CAROUSEL_HEIGHT}
-            animatedYOffset={this.animatedYOffset}
+            animatedYOffset={this.scrollY}
             onChange={this.handleChoosePhoto}
           />
         );
@@ -420,7 +500,7 @@ class RawNewPost extends React.Component<{}, State> {
             scrollEnabled
             paddingTop={CAROUSEL_HEIGHT}
             tabBarHeight={CAROUSEL_HEIGHT}
-            animatedYOffset={this.animatedYOffset}
+            animatedYOffset={this.scrollY}
             onChange={this.handleChoosePhoto}
           />
         );

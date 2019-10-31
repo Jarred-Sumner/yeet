@@ -180,6 +180,7 @@ export const PostPreview = React.forwardRef(
       focusType,
       focusedBlockValue,
       onBlurNode,
+      scrollY,
       children,
       maxHeight,
       minY,
@@ -223,26 +224,27 @@ export const PostPreview = React.forwardRef(
         overScrollMode="always"
         defaultPosition={{
           x: 0,
-          y: paddingTop * -1
+          y: 0
         }}
         contentOffset={{
           x: 0,
-          y: paddingTop * -1
+          y: 0
         }}
         scrollEnabled={!swipeOnly}
         onScroll={onScroll}
         onLayout={onLayout}
+        scrollY={scrollY}
         keyboardShouldPersistTaps="always"
         contentInsetAdjustmentBehavior="never"
         keyboardOpeningTime={0}
-        extraScrollHeight={paddingTop}
+        extraScrollHeight={0}
         ref={scrollRef}
         paddingTop={paddingTop}
-        // enableResetScrollToCoords={false}
-        // resetScrollToCoords={{
-        //   x: 0,
-        //   y: paddingTop * -1
-        // }}
+        enableResetScrollToCoords
+        resetScrollToCoords={{
+          x: 0,
+          y: 0
+        }}
         contentInset={{
           top: paddingTop,
           bottom: paddingBottom
@@ -257,7 +259,8 @@ export const PostPreview = React.forwardRef(
         }}
         contentContainerStyle={[
           {
-            position: "relative"
+            position: "relative",
+            backgroundColor
           }
         ]}
       >

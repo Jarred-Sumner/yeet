@@ -182,7 +182,7 @@ extension ExportableMediaSource {
 
       let staticImage = imageView.animatedImage?.coverImage ?? imageView.image
 
-      return ExportableImageSource(mediaSource: current.mediaSource, animatedImage: imageView.isAnimatedImage ? imageView.animatedImage : nil, staticImage: staticImage, view: mediaPlayer, nodeView: nodeView)
+      return ExportableImageSource(mediaSource: current.mediaSource, animatedImage: imageView.animatedImage, staticImage: staticImage, view: mediaPlayer, nodeView: nodeView)
     } else {
       return nil
     }

@@ -8,13 +8,33 @@ import {
 
 export enum BitmapIconName {
   newPost = "Icon__new-post",
-  plus = "Icon__miniPlus"
+  plus = "Icon__miniPlus",
+  addPhoto = "Icon__addPhoto",
+  addSticker = "Icon__addSticker",
+  addText = "Icon__addText",
+  next = "Icon__next"
 }
 
 const SIZES_BY_NAME = {
   [BitmapIconName.plus]: {
     width: 19,
     height: 19
+  },
+  [BitmapIconName.addPhoto]: {
+    width: 41,
+    height: 38
+  },
+  [BitmapIconName.addSticker]: {
+    width: 43,
+    height: 43
+  },
+  [BitmapIconName.addText]: {
+    width: 47,
+    height: 41
+  },
+  [BitmapIconName.next]: {
+    width: 51,
+    height: 51
   }
 };
 
@@ -55,4 +75,32 @@ export const BitmapIconPlus = ({
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.plus} />
+);
+
+export const BitmapIconAddPhoto = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.addPhoto} />
+);
+
+export const BitmapIconAddSticker = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.addSticker} />
+);
+
+export const BitmapIconAddText = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.addText} />
+);
+
+export const BitmapIconNext = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.next} />
 );
