@@ -7,11 +7,12 @@
 //
 
 import Foundation
-import Repeat
+import SwiftyTimer
 
 class TrackableImageSource: TrackableMediaSource {
-  var timer: Repeater? = nil
-  var progressTimer: Repeater? = nil
+  var timer: Timer? = nil
+  var timerElapsed: TimeInterval = 0.0
+  var progressTimer: Timer? = nil
   var progressTime: CMTime = .zero
   var bounds: CGRect
 
@@ -21,22 +22,18 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   func setupTimers() {
-    if self.timer != nil {
-      self.timer?.removeAllObservers(thenStop: true)
-      self.timer = nil
-    }
+    self.timer?.invalidate()
 
-    self.timer = Repeater.init(interval: .seconds(duration), mode: .finite(1), tolerance: .milliseconds(8), queue: .main) { [weak self] timer in
+    self.timer = Timer.new(after: mediaSource.playDuration.doubleValue - timerElapsed) { [weak self] in
+      if let timerElapsed = self?.timer?.timeInterval ?? nil {
+        self?.timerElapsed = timerElapsed
+      }
+
       self?.handleEnd()
     }
 
-    if self.progressTimer != nil {
-      self.progressTimer?.removeAllObservers(thenStop: true)
-      self.progressTimer = nil
-    }
-
-    self.progressTimer = Repeater.init(interval: .seconds(TrackableMediaSource.periodicInterval), mode: .infinite, tolerance: .milliseconds(16), queue: .main) { [weak self] _ in
-
+    self.progressTimer?.invalidate()
+    self.progressTimer = Timer.new(every: TrackableMediaSource.periodicInterval) { [weak self] in
       let progressTime = (self?.progressTime ?? .zero) + CMTime(seconds: TrackableMediaSource.periodicInterval, preferredTimescale: CMTimeScale(NSEC_PER_SEC))
       self?.progressTime = progressTime
 
@@ -46,9 +43,10 @@ class TrackableImageSource: TrackableMediaSource {
 
   func handleEnd() {
     self.onEnd()
-  }
 
-  
+    self.timer?.invalidate()
+    self.progressTimer?.invalidate()
+  }
 
   override func load(onLoad callback: onLoadCallback? = nil) {
     _onLoadCallbacks.append(callback)
@@ -61,11 +59,17 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   override func onLoad() {
-    if self.progressTimer == nil || self.timer == nil {
-      self.setupTimers()
+    if needsTimers {
+      if self.progressTimer == nil || self.timer == nil {
+        self.setupTimers()
+      }
     }
 
     super.onLoad()
+  }
+
+  var needsTimers : Bool {
+    return mediaSource.duration.doubleValue > 0.0 && !alwaysLoop
   }
 
   override func play() {
@@ -78,8 +82,10 @@ class TrackableImageSource: TrackableMediaSource {
       return
     }
 
-    timer.start()
-    progressTimer?.start()
+    if needsTimers {
+      timer.start()
+      progressTimer?.start()
+    }
 
     super.play()
   }
@@ -94,31 +100,36 @@ class TrackableImageSource: TrackableMediaSource {
       return
     }
 
-    timer.pause()
-    progressTimer?.pause()
+    if needsTimers {
+      timerElapsed = timer.timeInterval
+      timer.invalidate()
+      progressTimer?.invalidate()
+    }
+
 
     super.pause()
   }
 
   func resetTimers(restart: Bool = false) {
-    timer?.reset(nil, restart: restart)
-    progressTimer?.reset(nil, restart: restart)
+    timerElapsed = 0.0
+    timer?.invalidate()
+    progressTimer?.invalidate()
     self.progressTime = .zero
   }
 
   override func reset() {
     super.reset()
 
-    timer?.removeAllObservers(thenStop: true)
-    progressTimer?.removeAllObservers(thenStop: true)
+    timerElapsed = 0.0
     self.progressTime = .zero
-
+    timer?.invalidate()
+    progressTimer?.invalidate()
     self.setupTimers()
   }
 
   deinit {
-    timer?.removeAllObservers(thenStop: true)
-    progressTimer?.removeAllObservers(thenStop: true)
+    timer?.invalidate()
+    progressTimer?.invalidate()
   }
 }
 
