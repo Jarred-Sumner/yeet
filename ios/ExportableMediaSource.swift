@@ -168,7 +168,8 @@ extension ExportableMediaSource {
     let isVideo = current.mediaSource.isVideo
 
     if isVideo {
-      guard let playerItem = mediaQueue.videoPlayer.currentItem else {
+      let trackableVideo = current as! TrackableVideoSource
+      guard let playerItem = trackableVideo.playerItem else {
         return nil
       }
       let asset = playerItem.asset

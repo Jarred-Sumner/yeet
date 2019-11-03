@@ -38,6 +38,7 @@ import { BottomTabBar } from "./src/components/BottomTabBar";
 import ViewProfilePage from "./src/screens/ViewProfilePage";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import { IS_SIMULATOR } from "./config";
+import { FeedPage } from "./src/screens/Feed";
 
 const TAB_ICON_SIZE = 18;
 
@@ -61,7 +62,7 @@ const Routes = createAppContainer(
               FeedTab: createSharedElementStackNavigator(
                 createStackNavigator,
                 {
-                  ThreadList: ThreadListPage,
+                  ThreadList: FeedPage,
                   ReplyToPost: ReplyPage,
                   EditBlockPhotoInReply: ImagePickerPage,
                   ...SHARED_GLOBAL_SCREENS
