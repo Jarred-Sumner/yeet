@@ -54,7 +54,7 @@ target 'yeet' do
    pod 'SwiftyJSON', '~> 4.0'
    pod 'UIImageColors'
    pod 'DVAssetLoaderDelegate'
-   pod 'Repeat'
+   pod 'SwiftyTimer'
    pod 'KTVHTTPCache', '~> 2.0.0'
    pod 'MulticastDelegateSwift'
    pod 'Promises', modular_headers: true
