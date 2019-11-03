@@ -265,14 +265,14 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
   };
 
   _handleSearch = () => {
-    this.loadImages(true);
-
     this.flatListRef.current.getNode().scrollToIndex({
       index: 0,
       viewOffset: 0,
       viewPosition: 0,
       animated: true
     });
+
+    this.loadImages(true);
   };
 
   handleSearch = debounce(this._handleSearch, 200, { trailing: true });

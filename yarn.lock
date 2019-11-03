@@ -1168,9 +1168,9 @@
   resolved "https://registry.yarnpkg.com/@react-native-community/async-storage/-/async-storage-1.6.1.tgz#19be07fc1d65c77bdeb20f46108ba12076aad1c5"
   integrity sha512-1WA28xfdhG+unkTEk/lXnqI2izv6belo0CYw7UdvaeHm8TIYT6eTmIIdGR7oiCa2xSKEnaPQqRMH6h7gyLNbww==
 
-"@react-native-community/cameraroll@https://github.com/Jarred-Sumner/react-native-cameraroll.git#master":
+"@react-native-community/cameraroll@https://github.com/Jarred-Sumner/react-native-cameraroll.git":
   version "1.2.3"
-  resolved "https://github.com/Jarred-Sumner/react-native-cameraroll.git#ba3c0bed977977637cb332eeb51de8d851d71ee0"
+  resolved "https://github.com/Jarred-Sumner/react-native-cameraroll.git#6a88be54e358578a8d4f43312f5683e1d8becad9"
 
 "@react-native-community/cli-platform-android@^2.9.0":
   version "2.9.0"
