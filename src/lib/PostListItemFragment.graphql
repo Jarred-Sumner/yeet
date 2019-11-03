@@ -21,7 +21,10 @@ fragment PostListItemFragment on Post {
     width
     height
     pixelRatio
+    mimeType
+    duration
 
     previewUrl
+    url
   }
 }

@@ -8,17 +8,15 @@ import Animated from "react-native-reanimated";
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "column",
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "visible",
-    paddingHorizontal: SPACING.normal
+    overflow: "visible"
   },
   textShadow: {
     textShadowRadius: 1,
     textShadowColor: "rgba(0, 0, 0, 0.75)",
-    padding: 3,
-    margin: -3,
+
     shadowOpacity: 0,
     overflow: "visible",
     textShadowOffset: { width: 0, height: 0 }
@@ -34,7 +32,7 @@ const styles = StyleSheet.create({
     color: "white"
   },
   textContainer: {
-    marginTop: SPACING.normal,
+    marginLeft: SPACING.normal,
     position: "relative"
   }
 });

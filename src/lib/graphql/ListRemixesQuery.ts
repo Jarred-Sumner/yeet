@@ -27,7 +27,10 @@ export interface ListRemixesQuery_profile_posts_data_media {
   width: number | null;
   height: number | null;
   pixelRatio: number | null;
+  mimeType: string | null;
+  duration: number;
   previewUrl: string;
+  url: string;
 }
 
 export interface ListRemixesQuery_profile_posts_data {

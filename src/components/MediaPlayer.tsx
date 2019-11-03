@@ -58,6 +58,9 @@ type ProgressEventData = StatusEventData & {
 type Props = {
   autoPlay: boolean;
   sources: Array<MediaSource>;
+  borderRadius?: number;
+  onError: ReactEventHandler<StatusEventData>;
+  isActive: boolean;
   style: StyleProp<any>;
   prefetch?: boolean;
   muted?: boolean;
@@ -203,7 +206,10 @@ export class MediaPlayerComponent extends React.Component<Props> {
       onChangeItem,
       onEnd,
       autoPlay,
-      prefetch
+      prefetch,
+      borderRadius,
+      onError,
+      isActive
     } = this.props;
 
     if (
@@ -212,7 +218,10 @@ export class MediaPlayerComponent extends React.Component<Props> {
       onProgress !== nextProps.onProgress ||
       onChangeItem !== nextProps.onChangeItem ||
       onEnd !== nextProps.onEnd ||
-      style != nextProps.style ||
+      style !== nextProps.style ||
+      borderRadius !== nextProps.borderRadius ||
+      onError !== nextProps.onError ||
+      isActive !== nextProps.isActive ||
       prefetch != nextProps.prefetch
     ) {
       return true;
@@ -224,16 +233,16 @@ export class MediaPlayerComponent extends React.Component<Props> {
     return currentSourceIDs !== newSourceIDs;
   }
 
-  componentDidUpdate(prevProps) {
-    const { paused } = this.props;
-    if (prevProps.paused !== paused) {
-      if (paused) {
-        this.pause();
-      } else {
-        this.play();
-      }
-    }
-  }
+  // componentDidUpdate(prevProps) {
+  //   const { paused } = this.props;
+  //   if (prevProps.paused !== paused) {
+  //     if (paused) {
+  //       this.pause();
+  //     } else {
+  //       this.play();
+  //     }
+  //   }
+  // }
 
   render() {
     const {
@@ -245,6 +254,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       borderRadius = 0,
       paused = false,
       onProgress,
+      isActive,
       onLoad,
       onError,
       onChangeItem
@@ -257,6 +267,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         onEnd={onEnd}
         id={id}
         borderRadius={borderRadius}
+        isActive={isActive}
         prefetch={prefetch}
         onProgress={onProgress}
         onLoad={onLoad}
@@ -271,22 +282,20 @@ export class MediaPlayerComponent extends React.Component<Props> {
 }
 
 const _MediaPlayer = (React.forwardRef((props: Props, ref) => {
-  const [autoPaused, setAutoPaused] = React.useState(false);
+  const [isAutoHidden, setAutoHidden] = React.useState(false);
   const _ref = React.useRef<MediaPlayerComponent>(null);
   useImperativeHandle(ref, () => _ref.current);
 
-  const pauseOnUnfocus = React.useCallback(() => {
-    if (autoPaused) {
-      _ref.current && _ref.current.play();
-    }
+  // const pauseOnUnfocus = React.useCallback(() => {
 
-    return () => {
-      _ref.current && _ref.current.pause();
-      setAutoPaused(true);
-    };
-  }, [_ref.current, setAutoPaused, autoPaused]);
+  //   return () => {
+  //     if (!autoPaused && !props.paused) {
+  //       _ref.current && _ref.current.pause();
+  //     }
+  //   };
+  // }, [_ref.current, setAutoPaused, autoPaused, props.paused]);
 
-  useFocusEffect(pauseOnUnfocus);
+  // useFocusEffect(pauseOnUnfocus);
 
   return <MediaPlayerComponent ref={_ref} {...props} />;
 }) as unknown) as MediaPlayerComponent;

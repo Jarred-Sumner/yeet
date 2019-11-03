@@ -10,18 +10,18 @@ import { ViewPost } from "../../lib/graphql/ViewPost";
 import { UserContext } from "../UserContext";
 import { QueryResult } from "react-apollo";
 
-const LikeCountButtonComponent = ({ count, onPress, isLiked }) => (
+const LikeCountButtonComponent = ({ count, onPress, isLiked, size = 32 }) => (
   <CountButton
     Icon={IconHeart}
     color={isLiked ? "rgb(246, 52, 104)" : "white"}
     type="shadow"
     onPress={onPress}
-    size={32}
+    size={size}
     count={count}
   />
 );
 
-export const LikeCountButton = ({ id, onPress }) => {
+export const LikeCountButton = ({ id, onPress, size = 32 }) => {
   const query: QueryResult<ViewPost> = useQuery(POST_QUERY, {
     variables: { id },
     fetchPolicy: "cache-only"
@@ -33,8 +33,9 @@ export const LikeCountButton = ({ id, onPress }) => {
   return (
     <LikeCountButtonComponent
       count={post ? post.likesCount : 0}
-      isLiked={userId ? post.likes.profileIDs.includes(userId) : false}
+      isLiked={userId ? post?.likes?.profileIDs?.includes(userId) : false}
       onPress={onPress}
+      size={size}
     />
   );
 };

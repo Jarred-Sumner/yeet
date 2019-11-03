@@ -2,32 +2,16 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { Query } from "react-apollo";
-import { StyleSheet, View, LayoutChangeEvent, StatusBar } from "react-native";
-import {
-  BaseButton,
-  FlatList as GestureFlatList
-} from "react-native-gesture-handler";
-import Animated, { Easing } from "react-native-reanimated";
-import { onScroll, runTiming } from "react-native-redash";
+import { LayoutChangeEvent, StatusBar, StyleSheet, View } from "react-native";
+import { FlatList as GestureFlatList } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import { onScroll } from "react-native-redash";
 import { SafeAreaView, withNavigation } from "react-navigation";
-import { SharedElement } from "react-navigation-shared-element";
 import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../config";
-import { ProgressAvatar } from "../components/Avatar";
+import { BottomTabBar, TAB_BAR_OFFSET } from "../components/BottomTabBar";
 import { IconButton } from "../components/Button";
-import {
-  IconHeart,
-  IconPlus,
-  IconProfile,
-  IconRemix,
-  IconComment
-} from "../components/Icon";
-import { OverlayGradient } from "../components/PostList/Post";
-import Media from "../components/PostList/ViewMedia";
-import { SemiBoldText } from "../components/Text";
-import {
-  VerticalIconButton,
-  VerticalIconButtonSize
-} from "../components/VerticalIconButton";
+import { IconPlus, IconProfile } from "../components/Icon";
+import { ViewThread } from "../components/ThreadList/ViewThread";
 import {
   ViewThreads,
   ViewThreads_postThreads
@@ -35,13 +19,6 @@ import {
 import { BoundsRect, pxBoundsToPoint, scaleToWidth } from "../lib/Rect";
 import { SPACING } from "../lib/styles";
 import VIEW_THREADS_QUERY from "../lib/ViewThreads.graphql";
-import LinearGradient from "react-native-linear-gradient";
-import { ViewThread } from "../components/ThreadList/ViewThread";
-import {
-  TAB_BAR_OFFSET,
-  BottomTabBar,
-  TAB_BAR_HEIGHT
-} from "../components/BottomTabBar";
 
 const LAYOUT_DIRECTION = "column-reverse";
 const LAYOUT_DIRECTION_OFFSET = {

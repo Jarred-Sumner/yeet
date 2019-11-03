@@ -45,7 +45,8 @@ export enum IconName {
   redact = "redact",
   profile = "profile",
   back = "back",
-  notification = "notification"
+  notification = "notification",
+  ellipsis = "ellipsis"
 }
 
 export const IconPlus = props => <Icon {...props} name={IconName.plus} />;
@@ -123,3 +124,6 @@ export const IconRedact = props => <Icon {...props} name={IconName.redact} />;
 export const IconProfile = props => <Icon {...props} name={IconName.profile} />;
 export const IconBack = props => <Icon {...props} name={IconName.back} />;
 export const IconRemix = props => <Icon {...props} name={IconName.remix} />;
+export const IconEllipsis = props => (
+  <Icon {...props} name={IconName.ellipsis} />
+);
