@@ -9,14 +9,9 @@ import {
 import React, { ReactEventHandler, useImperativeHandle } from "react";
 import { ImageMimeType, YeetImageRect } from "../lib/imageSearch";
 import { DimensionsRect, BoundsRect } from "../lib/Rect";
-import { useFocusEffect } from "react-navigation-hooks";
+import { useFocusEffect, useIsFocused } from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
-
-const VIEW_NAME = "MediaPlayerView";
-let NativeMediaPlayer;
-if (typeof NativeMediaPlayer === "undefined") {
-  NativeMediaPlayer = requireNativeComponent(VIEW_NAME);
-}
+import { NativeMediaPlayer } from "./NativeMediaPlayer";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
@@ -37,6 +32,7 @@ export type MediaSource = {
   mimeType: ImageMimeType;
   width: number;
   height: number;
+  cover?: string;
   pixelRatio: number;
   duration: number;
   bounds: DimensionsRect;
@@ -84,9 +80,11 @@ const clean = (
       return source.url && source.width && source.height;
     })
     .map(source => {
+      const cover = [source.cover, source.coverUrl].find(Boolean);
       return {
         ...source,
         playDuration: source.playDuration || 0,
+        cover: typeof cover === "string" ? cover : undefined,
         duration: source.duration || 0,
         pixelRatio: source.pixelRatio || 1.0,
         width: source.width || 0,
@@ -152,12 +150,6 @@ export class MediaPlayerComponent extends React.Component<Props> {
     this.callNativeMethod("play");
   };
 
-  componentDidMount() {
-    if (this.props.autoPlay) {
-      this.play();
-    }
-  }
-
   pause = () => {
     this.callNativeMethod("pause");
   };
@@ -197,51 +189,44 @@ export class MediaPlayerComponent extends React.Component<Props> {
     this.nativeRef.current.setNativeProps(nativeProps);
   };
 
-  shouldComponentUpdate(nextProps) {
-    const {
-      paused,
-      sources,
-      style,
-      onProgress,
-      onChangeItem,
-      onEnd,
-      autoPlay,
-      prefetch,
-      borderRadius,
-      onError,
-      isActive
-    } = this.props;
+  // shouldComponentUpdate(nextProps, nextState) {
+  //   const {
+  //     paused,
+  //     sources,
+  //     style,
+  //     onProgress,
+  //     onChangeItem,
+  //     onEnd,
+  //     autoPlay,
+  //     prefetch,
+  //     borderRadius,
+  //     onError,
+  //     isActive
+  //   } = this.props;
 
-    if (
-      paused !== nextProps.paused ||
-      autoPlay !== nextProps.autoPlay ||
-      onProgress !== nextProps.onProgress ||
-      onChangeItem !== nextProps.onChangeItem ||
-      onEnd !== nextProps.onEnd ||
-      style !== nextProps.style ||
-      borderRadius !== nextProps.borderRadius ||
-      onError !== nextProps.onError ||
-      isActive !== nextProps.isActive ||
-      prefetch != nextProps.prefetch
-    ) {
-      return true;
-    }
-
-    const currentSourceIDs = sources.map(({ id }) => id).join("-");
-    const newSourceIDs = nextProps.sources.map(({ id }) => id).join("-");
-
-    return currentSourceIDs !== newSourceIDs;
-  }
-
-  // componentDidUpdate(prevProps) {
-  //   const { paused } = this.props;
-  //   if (prevProps.paused !== paused) {
-  //     if (paused) {
-  //       this.pause();
-  //     } else {
-  //       this.play();
-  //     }
+  //   if (this.state !== nextState) {
+  //     return true;
   //   }
+
+  //   if (
+  //     paused !== nextProps.paused ||
+  //     autoPlay !== nextProps.autoPlay ||
+  //     onProgress !== nextProps.onProgress ||
+  //     onChangeItem !== nextProps.onChangeItem ||
+  //     onEnd !== nextProps.onEnd ||
+  //     style !== nextProps.style ||
+  //     borderRadius !== nextProps.borderRadius ||
+  //     onError !== nextProps.onError ||
+  //     isActive !== nextProps.isActive ||
+  //     prefetch != nextProps.prefetch
+  //   ) {
+  //     return true;
+  //   }
+
+  //   const currentSourceIDs = sources.map(({ id }) => id).join("-");
+  //   const newSourceIDs = nextProps.sources.map(({ id }) => id).join("-");
+
+  //   return currentSourceIDs !== newSourceIDs;
   // }
 
   render() {
@@ -255,6 +240,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       paused = false,
       onProgress,
       isActive,
+      autoPlay,
       onLoad,
       onError,
       onChangeItem
@@ -273,7 +259,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         onLoad={onLoad}
         onError={onError}
         onChangeItem={onChangeItem}
-        autoPlay={this.props.autoPlay}
+        autoPlay={autoPlay}
         paused={paused}
         ref={this.nativeRef}
       />
@@ -281,23 +267,12 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 }
 
-const _MediaPlayer = (React.forwardRef((props: Props, ref) => {
+const _MediaPlayer = (React.forwardRef(({ isActive, ...props }: Props, ref) => {
   const [isAutoHidden, setAutoHidden] = React.useState(false);
   const _ref = React.useRef<MediaPlayerComponent>(null);
   useImperativeHandle(ref, () => _ref.current);
 
-  // const pauseOnUnfocus = React.useCallback(() => {
-
-  //   return () => {
-  //     if (!autoPaused && !props.paused) {
-  //       _ref.current && _ref.current.pause();
-  //     }
-  //   };
-  // }, [_ref.current, setAutoPaused, autoPaused, props.paused]);
-
-  // useFocusEffect(pauseOnUnfocus);
-
-  return <MediaPlayerComponent ref={_ref} {...props} />;
+  return <MediaPlayerComponent isActive={isActive} ref={_ref} {...props} />;
 }) as unknown) as MediaPlayerComponent;
 
 export const MediaPlayer = hoistNonReactStatics(

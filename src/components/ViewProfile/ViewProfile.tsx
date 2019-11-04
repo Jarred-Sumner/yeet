@@ -197,7 +197,7 @@ class RawViewProfile extends React.Component<Props> {
 
   handleChangeSection = (section: ViewProfileSection) => {
     if (this.props.data.length > 0) {
-      this.flatListRef.current.getNode().scrollToIndex({
+      this.flatListRef.current.scrollToIndex({
         index: 0,
         animated: true,
         viewPosition: 0,

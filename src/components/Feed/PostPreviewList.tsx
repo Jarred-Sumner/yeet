@@ -63,7 +63,7 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
 
   const {
     profile,
-    media: { previewUrl: uri }
+    media: { coverUrl: uri }
   } = post;
 
   const source = {

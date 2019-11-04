@@ -19,6 +19,7 @@ import { RequestPhotoPermission } from "../RequestPhotoPermission";
 import { DurationLabel } from "./DurationLabel";
 import { FlatList, ScrollView } from "../../FlatList";
 import MediaPlayer from "../../MediaPlayer";
+import { throttle } from "lodash";
 
 export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
 
@@ -227,7 +228,7 @@ export class CameraRollList extends React.Component<Props, State> {
     this.checkPermissions();
 
     if (this.props.scrollEnabled) {
-      this.flatListRef.current.getNode().flashScrollIndicators();
+      this.flatListRef.current.flashScrollIndicators();
     }
   }
 
@@ -303,13 +304,13 @@ export class CameraRollList extends React.Component<Props, State> {
     index
   });
 
-  handleEndReached = () => {
+  handleEndReached = throttle(() => {
     if (this.state.loadState === CameraRollListLoadState.pending) {
       return;
     }
 
     this.loadPhotos(false);
-  };
+  }, 25);
 
   handlePickPhoto = (photo: CameraRoll.PhotoIdentifier) => {
     this.props.onChange(imageContainerFromCameraRoll(photo));

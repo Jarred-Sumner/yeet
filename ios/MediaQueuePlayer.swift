@@ -15,7 +15,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
   }
 
   var id: String? = nil
-  let player: SwappablePlayer
+
 
 
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
@@ -48,12 +48,6 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     }
   }
 
-  var videoPlayer: AVPlayer {
-    return player.currentPlayer
-  }
-  var nextPlayer: AVPlayer {
-    return player.nextPlayer
-  }
   var mediaSources: Array<MediaSource> = []
 
   var index: Int = 0
@@ -151,10 +145,9 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
   }
 
 
-  init(mediaSources: Array<MediaSource> = [], bounds: CGRect, id: String? = nil, allowPrefetching: Bool = false, player: SwappablePlayer, onChangeMedia: ChangeMediaEventBlock? = nil) {
+  init(mediaSources: Array<MediaSource> = [], bounds: CGRect, id: String? = nil, allowPrefetching: Bool = false,onChangeMedia: ChangeMediaEventBlock? = nil) {
     self.bounds = bounds
     self.mediaSources = mediaSources
-    self.player = player
     self.onChangeMedia = onChangeMedia
     self.id = id
     self.allowPrefetching = allowPrefetching
@@ -183,13 +176,13 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     return status == .playing
   }
 
-  private func trackable(mediaSource: MediaSource?, player: AVPlayer) -> TrackableMediaSource? {
+  private func trackable(mediaSource: MediaSource?) -> TrackableMediaSource? {
     guard let mediaSource = mediaSource else {
       return nil
     }
 
     if mediaSource.isVideo {
-      return TrackableVideoSource(mediaSource: mediaSource, player: player)
+      return TrackableVideoSource(mediaSource: mediaSource)
     } else if mediaSource.isImage {
       return TrackableImageSource(mediaSource: mediaSource, bounds: bounds)
     } else {
@@ -230,7 +223,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
       } else if newPreviousItem == nil {
         previous = nil
       } else {
-        previous = trackable(mediaSource: newPreviousItem, player: nextPlayer)
+        previous = trackable(mediaSource: newPreviousItem)
       }
     }
 
@@ -244,7 +237,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
       } else if newCurrentItem == nil {
         current = nil
       } else {
-        current = trackable(mediaSource: newCurrentItem, player: videoPlayer)
+        current = trackable(mediaSource: newCurrentItem)
       }
     }
 
@@ -256,7 +249,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
       } else if newNextItem == nil {
         next = nil
       } else {
-        next = trackable(mediaSource: newNextItem, player: nextPlayer)
+        next = trackable(mediaSource: newNextItem)
       }
     }
 
@@ -325,7 +318,6 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
           }
 
           next.start()
-          next.prepare()
         }
       }
   }
@@ -403,13 +395,11 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     var oldCurrent = current
 
 
-    var shouldSwap = (current as? TrackableVideoSource)?.player == nextPlayer
-
     if newIndex == index - 1 {
       self.index = newIndex
       next = oldCurrent
       current = previous
-      previous = trackable(mediaSource: previousItem, player: nextPlayer)
+      previous = trackable(mediaSource: previousItem)
     } else if newIndex == index + 1 {
       self.index = newIndex
       current = next
@@ -423,18 +413,18 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     }
 
     if current == nil {
-      current = trackable(mediaSource: currentItem, player: nextPlayer)
+      current = trackable(mediaSource: currentItem)
     }
 
 
     weak var currentPlayer = (current as? TrackableVideoSource)?.player
 
     if previous == nil {
-      previous = trackable(mediaSource: previousItem, player: player.other(player: currentPlayer ?? self.player.currentPlayer))
+      previous = trackable(mediaSource: previousItem)
     }
 
     if next == nil {
-      next = trackable(mediaSource: nextItem, player: player.other(player: currentPlayer ?? self.player.currentPlayer))
+      next = trackable(mediaSource: nextItem)
     }
 
 
@@ -447,14 +437,6 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
     current?.reset()
 
 
-
-
-    if (videoPlayer.currentItem != nil && currentItem?.isVideo == false) {
-      videoPlayer.cancelPendingPrerolls()
-      videoPlayer.replaceCurrentItem(with: nil)
-      videoPlayer.seek(to: .zero)
-    }
-
     guard let current = self.current else {
       return
     }
@@ -466,18 +448,6 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
 
     if current.hasLoaded {
       current.start()
-
-      if currentPlayer != nil {
-        player.currentPlayer = currentPlayer!
-
-         if let next = self.next as? TrackableVideoSource {
-          next.player = player.other(player: currentPlayer!)
-         }
-
-  //         if let previous = self.previous as? TrackableVideoSource {
-  //           previous.player = player.nextPlayer
-  //         }
-      }
 
 
       cb?(current)
@@ -493,27 +463,7 @@ class MediaQueuePlayer : TrackableMediaSourceDelegate {
 
         
         tracker.start()
-
-         if currentPlayer != nil {
-            if let player = self?.player {
-              player.currentPlayer = currentPlayer!
-
-                  if let next = self?.next as? TrackableVideoSource {
-                  next.player = player.other(player: currentPlayer!)
-                 }
-
-  //             if let previous = self?.previous as? TrackableVideoSource {
-  //               previous.player = player.nextPlayer
-  //             }
-            }
-          }
-
-
         cb?(tracker)
-
-
-
-
 
         if self?.allowPrefetching ?? false {
           self?.prefetchNext()

@@ -29,6 +29,7 @@ fragment PostFragment on Post {
     highQualityUrl
     mediumQualityUrl
     lowQualityUrl
+    coverUrl
     url
     __typename
   }

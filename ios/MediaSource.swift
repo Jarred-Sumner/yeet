@@ -23,6 +23,7 @@ class MediaSource : NSObject  {
   let height: NSNumber
   let pixelRatio: NSNumber
   let bounds: CGRect
+  let coverUri: URL?
 
   static let ENABLE_VIDE_CACHE = true
 
@@ -89,7 +90,6 @@ class MediaSource : NSObject  {
 
     return _asset
   }()
-
 
   enum AssetLoadStatus {
     case pending
@@ -216,29 +216,6 @@ class MediaSource : NSObject  {
   }
 
   var videoOutput: AVPlayerItemVideoOutput? = nil
-
-  private var _playerItem: AVPlayerItem? = nil
-
-  @objc var playerItem: AVPlayerItem? {
-    get {
-      return _playerItem
-    }
-
-    set (newValue) {
-      _playerItem = newValue
-
-      if let playerItem = _playerItem {
-        let videoOutput = AVPlayerItemVideoOutput(pixelBufferAttributes: [kCVPixelBufferPixelFormatTypeKey as String : kCVPixelFormatType_32BGRA] )
-        playerItem.add(videoOutput)
-        playerItem.preferredForwardBufferDuration = TimeInterval(1)
-        playerItem.canUseNetworkResourcesForLiveStreamingWhilePaused = false
-        self.videoOutput = videoOutput
-      } else {
-        self.videoOutput = nil
-      }
-
-    }
-  }
   
   var isVideo: Bool {
     return (self.mimeType == .mp4 || self.mimeType == .mov) && !isLivePhoto
@@ -272,7 +249,21 @@ class MediaSource : NSObject  {
     return bounds.applying(.init(scaleX: CGFloat(pixelRatio.doubleValue), y: CGFloat(pixelRatio.doubleValue)))
   }
 
-  init(_ uri: URL, _ mimeType: MimeType, _ duration: NSNumber, _ playDuration: NSNumber, _ id: String, _ width: NSNumber, _ height: NSNumber, _ bounds: CGRect, _ pixelRatio: NSNumber) {
+  lazy var coverMediaSource: MediaSource? = {
+    guard self.isVideo else {
+      return nil
+    }
+
+    guard let cover = self.coverUri else {
+      return nil
+    }
+
+    let mimeType = MimeType.url(cover)!
+
+    return MediaSource(cover, mimeType, NSNumber(value: Double.zero), NSNumber(value: Double.zero), self.id + "-cover", self.width, self.height, self.bounds, pixelRatio)
+  }()
+
+  init(_ uri: URL, _ mimeType: MimeType, _ duration: NSNumber, _ playDuration: NSNumber, _ id: String, _ width: NSNumber, _ height: NSNumber, _ bounds: CGRect, _ pixelRatio: NSNumber, _ cover: URL? = nil) {
     self.playDuration = playDuration
     self.mimeType = mimeType
     self.duration = duration
@@ -282,6 +273,7 @@ class MediaSource : NSObject  {
     self.height = height
     self.bounds = bounds
     self.pixelRatio = pixelRatio
+    self.coverUri = cover
     super.init()
   }
 
@@ -296,12 +288,14 @@ class MediaSource : NSObject  {
     return isVideo && uri.pathExtension == "mp4"
   }
 
-  static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber) -> MediaSource {
+  static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?) -> MediaSource {
     var mediaSource: MediaSource? = nil
     mediaSource = cached(uri: uri)
 
     if (mediaSource == nil) {
-      mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio)
+      let coverURL = cover != nil ? URL(string: cover!) : nil
+
+      mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL )
       cache.setObject(mediaSource!, forKey: uri as NSString)
     }
 
@@ -327,10 +321,11 @@ extension RCTConvert {
     let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
     let id = dictionary["id"] as? String ?? uri
     let width = dictionary["width"] as! NSNumber
+    let cover = dictionary["cover"] as? String
     let height = dictionary["height"] as! NSNumber
     let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
 
-    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio)
+    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover)
   }
 
   @objc(MediaSourceArray:)

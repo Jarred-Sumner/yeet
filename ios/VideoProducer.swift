@@ -11,6 +11,7 @@ import SwiftyJSON
 import SDWebImage
 import AVFoundation
 import CoreImage
+import MobileCoreServices
 
 extension CGRect {
   static func from(json: JSON) -> CGRect {
@@ -86,6 +87,24 @@ enum MimeType: String {
   case tiff = "image/tiff"
   case mov = "video/quicktime"
   case bmp = "image/bmp"
+
+  static func url(_ url: URL) -> MimeType? {
+    return fileExtension(url.pathExtension)
+  }
+
+  static func fileExtension(_ ext: String) -> MimeType? {
+      let fileExtension = ext as CFString
+
+     guard
+         let extUTI = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, fileExtension, nil)?.takeUnretainedValue()
+     else { return nil }
+
+     guard
+         let mimeUTI = UTTypeCopyPreferredTagWithClass(extUTI, kUTTagClassMIMEType)
+     else { return nil }
+
+    return MimeType(rawValue: mimeUTI.takeUnretainedValue() as String)
+  }
 }
 
 class YeetMedia {

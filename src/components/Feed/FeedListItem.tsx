@@ -92,20 +92,57 @@ export const getItemHeight = (
   }
 };
 
-class FeedListItemComponent extends React.Component<Props> {
+enum PlayState {
+  pausedInvisible = "pausedInvisible",
+  userPaused = "userPaused",
+  playing = "playing"
+}
+
+type State = {
+  autoPlay: boolean;
+  play: PlayState;
+};
+
+class FeedListItemComponent extends React.Component<Props, State> {
+  constructor(props: Props) {
+    super(props);
+
+    this.state = {
+      autoPlay: props.isVisible,
+      play: props.isVisible ? PlayState.playing : PlayState.pausedInvisible
+    };
+  }
+
+  componentDidUpdate(prevProps) {
+    const { isVisible } = this.props;
+
+    if (
+      prevProps.isVisible !== isVisible &&
+      this.state.play === PlayState.playing
+    ) {
+      this.setState({
+        play: isVisible ? PlayState.playing : PlayState.pausedInvisible
+      });
+    }
+  }
+
   handlePressElipsis = () => {};
   handlePressViewAll = () => {};
 
   mediaPlayerRef = React.createRef<MediaPlayerComponent>();
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.isVisible !== this.props.isVisible) {
-      // if (this.props.isVisible) {
-      //   this.mediaPlayerRef.current.play();
-      // } else {
-      //   this.mediaPlayerRef.current.pause();
-      // }
+  get paused() {
+    if (this.state.play === PlayState.playing) {
+      return false;
     }
+
+    if (this.state.play === PlayState.userPaused) {
+      return true;
+    }
+
+    return (
+      this.state.play === PlayState.pausedInvisible && !this.props.isVisible
+    );
   }
 
   render() {
@@ -129,11 +166,11 @@ class FeedListItemComponent extends React.Component<Props> {
         />
         <View style={styles.mediaPlayerWrapper}>
           <MediaPlayer
-            paused={!this.props.isVisible}
+            paused={this.paused}
             id={thread.id + "-preview"}
             isActive={isVisible}
             ref={this.mediaPlayerRef}
-            autoPlay={false}
+            autoPlay={this.state.autoPlay}
             style={[
               { width: postSize.width, height: postSize.height },
               styles.content
@@ -182,12 +219,49 @@ class FeedListItemComponent extends React.Component<Props> {
 }
 
 export const FeedListItem = ({
-  isVisible,
   thread,
   height,
+  firstVisibleItem,
+  secondVisibleItem,
   width,
+  hashId,
+  isVisible,
   ...otherProps
 }) => {
+  // const isVisibleNode = React.useRef(new Animated.Value(0));
+  // const [isVisible, setVisible] = React.useState(false);
+
+  // const updateIsVisible = React.useCallback(
+  //   ([isVisibleValue]) => {
+  //     setVisible(isVisibleValue === 0 ? false : true);
+  //   },
+  //   [setVisible]
+  // );
+
+  // Animated.useCode(
+  //   () =>
+  //     Animated.block([
+  //       Animated.set(
+  //         isVisibleNode.current,
+  //         Animated.or(
+  //           Animated.eq(firstVisibleItem, hashId),
+  //           Animated.eq(secondVisibleItem, hashId)
+  //         )
+  //       ),
+  //       Animated.onChange(
+  //         isVisibleNode.current,
+  //         Animated.call([isVisibleNode.current], updateIsVisible)
+  //       )
+  //     ]),
+  //   [
+  //     firstVisibleItem,
+  //     secondVisibleItem,
+  //     hashId,
+  //     isVisibleNode,
+  //     updateIsVisible
+  //   ]
+  // );
+
   return (
     <FeedListItemComponent
       {...otherProps}

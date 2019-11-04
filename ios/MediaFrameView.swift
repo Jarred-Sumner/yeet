@@ -45,9 +45,9 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
 
       if trackableMedia.mediaSource.isVideo {
         let _trackableMedia = trackableMedia as! TrackableVideoSource
-        if let playerItem = _trackableMedia.player.currentItem {
+        if let playerItem = _trackableMedia.player?.currentItem {
 
-          self?.image = self?.imageFrom(mediaId: _trackableMedia.mediaSource.id, playerItem: playerItem, output: _trackableMedia.player.currentItem?.outputs.first! as! AVPlayerItemVideoOutput)
+          self?.image = self?.imageFrom(mediaId: _trackableMedia.mediaSource.id, playerItem: playerItem, output: _trackableMedia.player?.currentItem?.outputs.first! as! AVPlayerItemVideoOutput)
         }
 
       }
@@ -90,9 +90,9 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
     }
 
     if source?.isVideo ?? false {
-      playerItemObserver = source?.observe(\MediaSource.playerItem) {[weak self]  _,_ in
-        self?.updateSource()
-      }
+//      playerItemObserver = source?.observe(\source.playerItem) {[weak self]  _,_ in
+//        self?.updateSource()
+//      }
     }
   }
 
@@ -111,7 +111,7 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
   var output: AVPlayerItemVideoOutput? = nil {
     willSet (newValue) {
       if let _output = self.output {
-        source?.playerItem?.remove(_output)
+//        source?.playerItem?.remove(_output)
       }
     }
   }

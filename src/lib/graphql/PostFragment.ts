@@ -31,6 +31,7 @@ export interface PostFragment_media {
   highQualityUrl: string;
   mediumQualityUrl: string;
   lowQualityUrl: string;
+  coverUrl: string;
   url: string;
 }
 

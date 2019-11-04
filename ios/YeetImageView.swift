@@ -319,6 +319,20 @@ class YeetImageView : PINAnimatedImageView {
     onLoadStartEvent?(["id": mediaSource.id])
   }
 
+  var isLoadingImage: Bool {
+    guard let mediaSource = mediaSource else {
+      return false
+    }
+
+    if mediaSource.isFromCameraRoll {
+      return imageRequestID != nil
+    } else if mediaSource.isHTTProtocol {
+      return pin_downloadImageOperationUUID() != nil
+    } else {
+      return false
+    }
+  }
+
   func _loadFileImage(async: Bool = true) throws {
     let data = try Data.init(contentsOf: mediaSource!.uri) as NSData
 

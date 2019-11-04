@@ -11,66 +11,65 @@ import AVFoundation
 import SwiftyBeaver
 
 class TrackableVideoSource : TrackableMediaSource {
-  var _player: AVPlayer
-  var player: AVPlayer {
-    get {
-      return _player
-    }
-
-    set(newValue) {
-      if (newValue == _player) {
+  var playerContainer: YeetPlayer? = nil {
+    didSet {
+      guard self.playerContainer != oldValue else {
         return
       }
 
-      let hadPlayerItemInside = self.playerItem != nil && _player.currentItem == self.playerItem!
+      if let playerContainer = playerContainer {
+        self.startObservers()
 
-      let restartObservers = newValue !== _player && isObserving
-      if restartObservers {
-        stopObservers()
+//        playerContainer.observe(\YeetPlayer.key, options: .new) { [weak self] _, _ in
+//          if self?.playerContainer?.key != self?.mediaSource.id {
+//            self?.playerContainer = nil
+//          }
+//        }
+      } else {
+        self.stopObservers()
       }
 
 
-
-      _player = player
-
-      if restartObservers {
-        startObservers()
-      }
-
-      if hadPlayerItemInside {
-        _player.replaceCurrentItem(with: nil)
-      }
-
-      if canPlay  {
-        self.start()
-      }
     }
   }
+  var player: AVPlayer? {
+    get {
+      return playerContainer?.player
+    }
+  }
+
   var boundaryObserverToken: Any? = nil
   var periodicObserverToken: Any? = nil
 
-  init(mediaSource: MediaSource, player: AVPlayer) {
-    _player = player
-
-
+  override init(mediaSource: MediaSource) {
     super.init(mediaSource: mediaSource)
   }
 
   func addBoundaryTimeObserver() {
+    guard let player = self.player else {
+      return
+    }
+
     let timeScale = CMTimeScale(NSEC_PER_SEC)
-    let times = [NSValue(time: CMTimeMakeWithSeconds(duration, preferredTimescale: timeScale))]
+    let times = [NSValue(time: mediaSource.asset!.duration)]
+
 
     boundaryObserverToken = player
       .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
-        guard self?.player.currentItem == self?.playerItem else {
+        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
           return
         }
 
         self?.handleEnd()
     }
+
   }
 
   private func addPeroidicObserver() {
+    guard let player = self.player else {
+      return
+    }
+
     let timeScale = CMTimeScale(NSEC_PER_SEC)
     let time = CMTime(seconds: TrackableVideoSource.periodicInterval, preferredTimescale: timeScale)
 
@@ -78,25 +77,15 @@ class TrackableVideoSource : TrackableMediaSource {
       .addPeriodicTimeObserver(
         forInterval: time,
         queue: .main) { [weak self] progress in
-          guard self?.player.currentItem == self?.playerItem else {
+
+          guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
             return
           }
           self?.onProgress(elapsed: progress)
     }
   }
 
-  var playerItem : AVPlayerItem? {
-    get {
-      return mediaSource.playerItem
-    }
-
-    set (newValue) {
-      mediaSource.playerItem = newValue
-    }
-  }
-
-
-  
+  var playerItem : AVPlayerItem? = nil
 
   var isAlreadyLoading = false
   override func load(onLoad callback: onLoadCallback? = nil) {
@@ -139,36 +128,30 @@ class TrackableVideoSource : TrackableMediaSource {
 
   func handleLoad(asset: AVURLAsset) {
     self.isAlreadyLoading = false
-    let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["duration", "tracks", "playable"])
+    let playerItem = AVPlayerItem(asset: asset)
     self.playerItem = playerItem
     self.hasLoaded = true
     self.onLoad()
   }
 
-  override func prepare() {
-    super.prepare()
-    if playerItem == player.currentItem && playerItem != nil && player.status == .readyToPlay && mediaSource.isMP4 {
-      player.preroll(atRate: 1.0, completionHandler: nil)
-    }
-  }
-
+  
   var isObserving: Bool {
     return self.periodicObserverToken != nil || self.boundaryObserverToken != nil
   }
 
   override var canPlay: Bool {
-    return super.canPlay && self.playerItem != nil && self.playerItem == player.currentItem
+    return super.canPlay && self.playerItem != nil && self.playerItem == player?.currentItem
   }
 
   func startObservers() {
     stopObservers()
 
+    self.addPeroidicObserver()
+    self.addBoundaryTimeObserver()
+
     guard let playerItem = self.playerItem else {
       return
     }
-
-    self.addPeroidicObserver()
-    self.addBoundaryTimeObserver()
 
     NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
     NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemStalled(notification:)), name:NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
@@ -178,12 +161,12 @@ class TrackableVideoSource : TrackableMediaSource {
      NotificationCenter.default.removeObserver(self)
 
     if let periodicObserver = self.periodicObserverToken {
-      player.removeTimeObserver(periodicObserver)
+      player?.removeTimeObserver(periodicObserver)
       self.periodicObserverToken = nil
     }
 
     if let boundaryObserver = self.boundaryObserverToken {
-      player.removeTimeObserver(boundaryObserver)
+      player?.removeTimeObserver(boundaryObserver)
       self.boundaryObserverToken = nil
     }
   }
@@ -214,36 +197,56 @@ class TrackableVideoSource : TrackableMediaSource {
       startObservers()
     }
 
-    if player.currentItem != playerItem {
-      player.replaceCurrentItem(with: playerItem)
-      player.seek(to: .zero)
-
-//      player.seek(to: .zero)
-      
-      self.status = .ready
-    }
-
+    self.status = .ready
   }
 
   override func play() {
+    if player == nil && self.playerItem != nil {
+      self.playerContainer = VideoPool.shared().use(key: mediaSource.id)
+    }
+
+    guard let player = player else {
+      return
+    }
+
+    let isNewAsset = player.currentItem != playerItem
+
+    if player.currentItem != playerItem {
+      player.replaceCurrentItem(with: playerItem)
+    }
+
+    if player.currentItem?.duration == player.currentItem?.currentTime() || isNewAsset {
+      player.seek(to: .zero)
+    }
+
+    if !self.isObserving && playerItem != nil {
+      self.startObservers()
+    }
+
+
+
+    if !isNewAsset && player.timeControlStatus != .paused {
+      return
+    }
+
+
+
+
     guard canPlay else {
       SwiftyBeaver.warning("[TrackableVideoSource] \(mediaSource.id) Tried to play before being ready")
       return
     }
 
-    if !self.isObserving {
-      self.startObservers()
-    }
+
 
     player.play()
     super.play()
   }
 
   override func pause() {
-    guard canPlay else {
-       SwiftyBeaver.warning("[TrackableVideoSource] \(mediaSource.id) Tried to pause before being ready")
-       return
-     }
+    guard let player = self.player else {
+      return
+    }
 
     if !self.isObserving {
       self.startObservers()
@@ -261,7 +264,7 @@ class TrackableVideoSource : TrackableMediaSource {
   @objc(handlePlayerItemStalled:)
   func handlePlayerItemStalled(notification: NSNotification) {
     if status == .playing {
-      self.player.play()
+      self.player?.play()
     }
   }
 
@@ -269,8 +272,17 @@ class TrackableVideoSource : TrackableMediaSource {
     super.reset()
 
 
-    if self.playerItem == self.player.currentItem && playerItem != nil {
-      self.player.seek(to: .zero)
+    guard let player = self.player else {
+      return
+    }
+
+    if self.playerItem == player.currentItem && playerItem != nil {
+      let wasPlaying = player.timeControlStatus != .paused
+      player.seek(to: .zero)
+
+      if wasPlaying {
+        player.play()
+      }
     }
   }
 
@@ -284,10 +296,12 @@ class TrackableVideoSource : TrackableMediaSource {
     if isObserving {
       stopObservers()
     }
+
   }
 
   deinit {
     stopObservers()
+    VideoPool.shared().release(key: mediaSource.id)
     print("DEINIT \(mediaSource.id)")
   }
 }

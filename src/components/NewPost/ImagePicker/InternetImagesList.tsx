@@ -265,7 +265,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
   };
 
   _handleSearch = () => {
-    this.flatListRef.current.getNode().scrollToIndex({
+    this.flatListRef.current.scrollToIndex({
       index: 0,
       viewOffset: 0,
       viewPosition: 0,

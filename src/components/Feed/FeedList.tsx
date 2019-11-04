@@ -3,10 +3,16 @@ import {
   FetchMoreQueryOptions,
   FetchMoreOptions
 } from "apollo-client";
-import { sum, uniqBy } from "lodash";
+import { sum, uniqBy, fromPairs } from "lodash";
 import * as React from "react";
 import { useQuery } from "react-apollo";
-import { StyleSheet, FlatListProps } from "react-native";
+import {
+  StyleSheet,
+  FlatListProps,
+  FlatList as RNFlatList,
+  ListRenderItem,
+  ViewabilityConfig
+} from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import {
   ViewThreads,
@@ -18,6 +24,9 @@ import {
 import FlatList from "../FlatList";
 import VIEW_THREADS_QUERY from "../../lib/ViewThreads.graphql";
 import { FeedListItem, getItemHeight } from "./FeedListItem";
+import { useIsFocused } from "react-navigation-hooks";
+import memoizee from "memoizee";
+import Animated from "react-native-reanimated";
 
 type Props = {
   threads: Array<ViewThreads_postThreads_data>;
@@ -39,51 +48,94 @@ const styles = StyleSheet.create({
   }
 });
 
-class FeedListComponent extends React.Component<Props, State> {
-  state = {
-    visibleIndex: 0
+type SectionedThread = {
+  isVisible: Boolean;
+  index: number;
+  thread: ViewThreads_postThreads_data;
+};
+
+const _sectionThreads = (
+  thread: ViewThreads_postThreads_data,
+  index: number,
+  isVisible: Boolean
+): SectionedThread => {
+  return {
+    thread,
+    index,
+    isVisible
   };
-  viewabilityConfig = {
+};
+
+const sectionedThread = memoizee(_sectionThreads);
+
+const sectionThreads = (
+  threads: Array<ViewThreads_postThreads_data>,
+  visibleIDs: Object
+) => {
+  return threads.map((thread, index) => {
+    return _sectionThreads(
+      thread,
+      index,
+      visibleIDs ? !!visibleIDs[thread.id] : false
+    );
+    // return sectionedThread(thread, index, !!visibleIDs[thread.id]);
+  });
+};
+
+class FeedListComponent extends React.Component<Props, State> {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      isFocused: props.isFocused,
+      visibleIDs: {}
+    };
+  }
+
+  viewabilityConfig: ViewabilityConfig = {
     waitForInteraction: false,
-    viewAreaCoveragePercentThreshold: 10
+    minimumViewTime: 100,
+    itemVisiblePercentThreshold: 33
   };
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {
-    if (viewableItems.length > 0) {
-      const [{ index: visibleIndex = -1 }] = viewableItems;
-      this.setState({ visibleIndex });
-    } else {
-      this.setState({ visibleIndex: -1 });
-    }
+    this.setVisibleIDs(viewableItems.map(entry => entry.item));
+  };
+
+  setVisibleIDs = (items: Array<ViewThreads_postThreads_data>) => {
+    const pairs = items.map(item => [item.id, true]);
+    const visibleIDs = fromPairs(pairs);
+    this.setState({ visibleIDs });
+
+    // const [firstItem, secondItem] = items;
+    // this.firstVisibleItem.setValue(firstItem ? firstItem.id.hashCode() : -1);
+    // this.secondVisibleItem.setValue(secondItem ? secondItem.id.hashCode() : -1);
   };
 
   handlePressPost = (post: ViewThreads_postThreads_posts) => {};
+  firstVisibleItem = new Animated.Value(-1);
+  secondVisibleItem = new Animated.Value(-1);
 
-  renderItem = ({
-    item,
+  renderItem: ListRenderItem<ViewThreads_postThreads_data> = ({
+    item: thread,
     index
-  }: {
-    item: ViewThreads_postThreads;
-    index: number;
   }) => {
-    const height = getItemHeight(item, ITEM_WIDTH);
-
-    const isVisible = this.state.visibleIndex === index;
-
+    const height = getItemHeight(thread, ITEM_WIDTH);
     return (
       <FeedListItem
-        thread={item}
+        thread={thread}
+        hashId={thread.id.hashCode()}
+        isVisible={!!this.state.visibleIDs[thread.id]}
         height={height}
         width={ITEM_WIDTH}
         onPressPost={this.handlePressPost}
-        isVisible={isVisible}
       />
     );
   };
 
   getItemLayout = (_data, index) => {
     const offset = sum(
-      _data.slice(0, index).map(thread => getItemHeight(thread, ITEM_WIDTH))
+      _data.slice(0, index).map(row => getItemHeight(row, ITEM_WIDTH))
     );
 
     const thread = _data[index];
@@ -100,6 +152,10 @@ class FeedListComponent extends React.Component<Props, State> {
   keyExtractor = item => item.id;
 
   handleEndReached = () => {
+    if (this.props.loading) {
+      return;
+    }
+
     this.props.fetchMore({
       variables: {
         offset: this.props.offset
@@ -127,6 +183,21 @@ class FeedListComponent extends React.Component<Props, State> {
     });
   };
 
+  flatListRef = React.createRef<RNFlatList>();
+
+  componentDidMount() {
+    this.flatListRef.current.flashScrollIndicators();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (
+      prevProps.initialLoad !== this.props.initialLoad &&
+      Object.keys(this.state.visibleIDs).length === 0
+    ) {
+      this.setVisibleIDs(this.props.threads.slice(0, 2));
+    }
+  }
+
   render() {
     const {
       threads,
@@ -134,6 +205,7 @@ class FeedListComponent extends React.Component<Props, State> {
       fetchMore,
       loading,
       error,
+      initialLoad,
       ...otherProps
     } = this.props;
 
@@ -142,17 +214,19 @@ class FeedListComponent extends React.Component<Props, State> {
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="automatic"
-        removeClippedSubviews
+        removeClippedSubviews={false}
         directionalLockEnabled
         viewabilityConfig={this.viewabilityConfig}
         {...otherProps}
         data={threads}
+        extraData={this.state.visibleIDs}
         renderItem={this.renderItem}
         keyExtractor={this.keyExtractor}
+        initialNumToRender={3}
         onViewableItemsChanged={this.onViewableItemsChanged}
         style={styles.list}
-        extraData={this.state}
         refreshing={refreshing}
+        ref={this.flatListRef}
         getItemLayout={this.getItemLayout}
         onEndReached={this.handleEndReached}
       />
@@ -166,6 +240,7 @@ export const FeedList = (props: FlatListProps) => {
     {
       notifyOnNetworkStatusChange: true,
       fetchPolicy: "cache-and-network",
+      partialRefetch: true,
       variables: {
         limit: 20,
         postsCount: 4
@@ -175,17 +250,22 @@ export const FeedList = (props: FlatListProps) => {
 
   const _threads = uniqBy(threadsQuery?.data?.postThreads.data ?? [], "id");
   const threads = _threads.filter(thread => thread.posts.data.length > 0);
+  const isFocused = useIsFocused();
 
   return (
     <FeedListComponent
       {...props}
-      threads={threads}
+      threads={[...threads]}
+      isFocused={isFocused}
       offset={threadsQuery?.data?.postThreads.offset}
+      initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
       refreshing={threadsQuery.networkStatus === NetworkStatus.refetch}
-      loading={[NetworkStatus.loading, NetworkStatus.setVariables].includes(
-        threadsQuery.networkStatus
-      )}
+      loading={[
+        NetworkStatus.loading,
+        NetworkStatus.setVariables,
+        NetworkStatus.fetchMore
+      ].includes(threadsQuery.networkStatus)}
       error={threadsQuery.error}
       fetchMore={threadsQuery.fetchMore}
     />

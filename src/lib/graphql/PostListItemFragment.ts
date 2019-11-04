@@ -29,6 +29,7 @@ export interface PostListItemFragment_media {
   pixelRatio: number | null;
   mimeType: string | null;
   duration: number;
+  coverUrl: string;
   previewUrl: string;
   url: string;
 }

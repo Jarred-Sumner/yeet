@@ -136,7 +136,7 @@ class ExportableImageSource : ExportableMediaSource {
     animatedImage = nil
 
 
-    super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: screenshot.size.width), height: NSNumber(nonretainedObject: screenshot.size.height), bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: NSNumber(nonretainedObject: screenshot.scale)))
+    super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: screenshot.size.width), height: NSNumber(nonretainedObject: screenshot.size.height), bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: NSNumber(nonretainedObject: screenshot.scale), cover: nil))
 
     self.view = view
     self.nodeView = nodeView
@@ -148,7 +148,7 @@ class ExportableImageSource : ExportableMediaSource {
     staticImage = thumbnail
     animatedImage = nil
 
-    super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale)))
+    super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale), cover: nil))
 
     self.view = view
     self.nodeView = nodeView

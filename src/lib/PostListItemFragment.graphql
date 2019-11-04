@@ -24,6 +24,8 @@ fragment PostListItemFragment on Post {
     mimeType
     duration
 
+    coverUrl
+
     previewUrl
     url
   }
