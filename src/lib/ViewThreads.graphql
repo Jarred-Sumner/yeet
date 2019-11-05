@@ -10,6 +10,7 @@ query ViewThreads($after: ID, $limit: Int, $postsCount: Int, $offset: Int) {
     data {
       id
       postsCount
+      body
       posts(offset: 0, limit: $postsCount) {
         offset
         limit

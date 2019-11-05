@@ -2,6 +2,7 @@ fragment PostListItemFragment on Post {
   id
   likesCount
   threadId
+  createdAt
 
   bounds {
     x

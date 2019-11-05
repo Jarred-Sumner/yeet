@@ -11,7 +11,8 @@ import {
   FlatListProps,
   FlatList as RNFlatList,
   ListRenderItem,
-  ViewabilityConfig
+  ViewabilityConfig,
+  View
 } from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import {
@@ -27,6 +28,9 @@ import { FeedListItem, getItemHeight } from "./FeedListItem";
 import { useIsFocused } from "react-navigation-hooks";
 import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
+import { SPACING } from "../../lib/styles";
+
+const ITEM_SEPARATOR_HEIGHT = SPACING.double;
 
 type Props = {
   threads: Array<ViewThreads_postThreads_data>;
@@ -45,8 +49,14 @@ const ITEM_WIDTH = SCREEN_DIMENSIONS.width;
 const styles = StyleSheet.create({
   list: {
     flex: 1
+  },
+  separator: {
+    height: ITEM_SEPARATOR_HEIGHT,
+    width: 1
   }
 });
+
+const ItemSeparatorComponent = () => <View style={styles.separator} />;
 
 type SectionedThread = {
   isVisible: Boolean;
@@ -144,7 +154,7 @@ class FeedListComponent extends React.Component<Props, State> {
 
     return {
       length,
-      offset,
+      offset: offset + ITEM_SEPARATOR_HEIGHT * index,
       index
     };
   };
@@ -221,6 +231,7 @@ class FeedListComponent extends React.Component<Props, State> {
         data={threads}
         extraData={this.state.visibleIDs}
         renderItem={this.renderItem}
+        ItemSeparatorComponent={ItemSeparatorComponent}
         keyExtractor={this.keyExtractor}
         initialNumToRender={3}
         onViewableItemsChanged={this.onViewableItemsChanged}

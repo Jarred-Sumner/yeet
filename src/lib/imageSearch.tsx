@@ -472,13 +472,13 @@ export const mediaSourceFromSource = (
   dimensions: BoundsRect,
   duration: number = 0
 ): MediaSource => {
-  const { width = 0, uri: _url, height = 0 } = source;
+  const { width = 0, uri: _url, height = 0, mimeType: _mimeType } = source;
 
   if (!_url) {
     throw Error(`Invalid url for asset ${JSON.stringify(source)}`);
   }
 
-  const mimeType = mimeTypeFromFilename(_url.split("?")[0]);
+  const mimeType = _mimeType || mimeTypeFromFilename(_url.split("?")[0]);
 
   if (!mimeType) {
     throw Error(`Invalid mimetype for asset ${JSON.stringify(source)}`);

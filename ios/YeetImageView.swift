@@ -468,7 +468,7 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     if let host = source.uri.host {
-      if host.contains("giphy") {
+      if host.contains("giphy") || host.contains("mux") || host.contains("webthing") {
         return source.uri
       }
     }

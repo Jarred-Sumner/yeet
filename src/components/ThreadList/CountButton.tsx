@@ -8,7 +8,7 @@ import Animated from "react-native-reanimated";
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
     overflow: "visible"
@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
     color: "white"
   },
   textContainer: {
-    marginLeft: SPACING.normal,
+    marginTop: SPACING.normal,
     position: "relative"
   }
 });

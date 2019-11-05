@@ -39,6 +39,7 @@ export interface PostListItemFragment {
   id: string;
   likesCount: number;
   threadId: string;
+  createdAt: DateTime;
   bounds: PostListItemFragment_bounds;
   profile: PostListItemFragment_profile;
   media: PostListItemFragment_media;

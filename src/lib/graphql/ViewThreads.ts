@@ -39,6 +39,7 @@ export interface ViewThreads_postThreads_data_posts_data {
   id: string;
   likesCount: number;
   threadId: string;
+  createdAt: DateTime;
   bounds: ViewThreads_postThreads_data_posts_data_bounds;
   profile: ViewThreads_postThreads_data_posts_data_profile;
   media: ViewThreads_postThreads_data_posts_data_media;
@@ -57,6 +58,7 @@ export interface ViewThreads_postThreads_data {
   __typename: "PostThread";
   id: string;
   postsCount: number;
+  body: string | null;
   posts: ViewThreads_postThreads_data_posts;
 }
 

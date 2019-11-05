@@ -39,6 +39,7 @@ export interface ListRemixesQuery_profile_posts_data {
   id: string;
   likesCount: number;
   threadId: string;
+  createdAt: DateTime;
   bounds: ListRemixesQuery_profile_posts_data_bounds;
   profile: ListRemixesQuery_profile_posts_data_profile;
   media: ListRemixesQuery_profile_posts_data_media;

@@ -39,6 +39,7 @@ export interface ListProfilePosts_profile_posts_data {
   id: string;
   likesCount: number;
   threadId: string;
+  createdAt: DateTime;
   bounds: ListProfilePosts_profile_posts_data_bounds;
   profile: ListProfilePosts_profile_posts_data_profile;
   media: ListProfilePosts_profile_posts_data_media;

@@ -96,9 +96,10 @@ const clean = (
 export class MediaPlayerComponent extends React.Component<Props> {
   static defaultProps = {
     autoPlay: false,
-    paused: true,
+    paused: false,
     prefetch: false,
     muted: false,
+    isActive: true,
     sources: []
   };
 

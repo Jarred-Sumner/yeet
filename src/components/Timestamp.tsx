@@ -42,7 +42,7 @@ export const shortFormat = (time: TimestampType): string => {
   } else if (isSameMonth(date, now)) {
     return `${Math.abs(differenceInWeeks(date, now))}d`;
   } else {
-    return format(date, "MMM Do");
+    return format(date, "MMM d");
   }
 };
 

@@ -34,12 +34,12 @@ const styles = StyleSheet.create({
     right: 0
   },
   wrapper: {
-    backgroundColor: "#000",
+    backgroundColor: "#111",
     flex: 1
   },
   page: {
     flex: 1,
-    backgroundColor: "#000"
+    backgroundColor: "#111"
   }
 });
 

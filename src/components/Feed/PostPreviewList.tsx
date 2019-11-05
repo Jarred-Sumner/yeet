@@ -2,15 +2,25 @@ import * as React from "react";
 import { ScrollView } from "../ScrollView";
 import { View, StyleSheet, ScrollViewProps } from "react-native";
 import { PostFragment } from "../../lib/graphql/PostFragment";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import Image from "../Image";
 import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
 import { BaseButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { Avatar } from "../Avatar";
+import { Avatar, CurrentUserAvatar } from "../Avatar";
 import { AVATAR_SIZE } from "./ProfileFeed";
+import { buildImgSrc } from "../../lib/imgUri";
+import { scaleToWidth } from "../../lib/Rect";
+import { LikeCountButton } from "../ThreadList/LikeCountButton";
+import LinearGradient from "react-native-linear-gradient";
+import { IconButton } from "../Button";
+import { IconPlus } from "../Icon";
+import { MediumText } from "../Text";
 
-const ASPECT_RATIO = 2 / 3;
+export const POST_LIST_HEIGHT = 320;
+const POST_LIST_WIDTH = 204;
+
+const ASPECT_RATIO = POST_LIST_WIDTH / POST_LIST_HEIGHT;
 
 export type PressPostFunction = (post: PostListItemFragment) => Void;
 
@@ -22,31 +32,75 @@ type Props = Partial<ScrollViewProps> & {
 
 const styles = StyleSheet.create({
   scrollView: {
-    overflow: "visible"
+    overflow: "visible",
+    height: POST_LIST_HEIGHT
   },
   listItem: {
-    position: "relative",
-    borderRadius: 8,
-    borderColor: "#111",
-    borderWidth: StyleSheet.hairlineWidth
+    position: "relative"
   },
   spacer: {
-    width: SPACING.normal,
+    width: 4,
     height: 1
   },
-  image: {},
-  avatarWrapper: {
+  imageContainer: {
+    position: "relative",
+    overflow: "hidden",
+    borderRadius: 4
+  },
+  imageBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 4,
+    zIndex: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255, 255, 255, 0.15)"
+  },
+  overlay: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between"
+  },
+
+  avatar: {
     borderRadius: AVATAR_SIZE / 2,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: "hidden",
     borderColor: "rgba(255, 255, 255, 0.2)"
   },
-  avatarContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(25, 25, 25, 0.25)"
+  avatarFaded: {
+    opacity: 0.55
   },
-  avatar: {}
+  newPostText: {
+    marginTop: SPACING.normal,
+    fontSize: 16
+  },
+  overlayContainer: {
+    justifyContent: "flex-end",
+    alignItems: "flex-start",
+    paddingBottom: SPACING.half,
+    borderRadius: 4,
+    paddingHorizontal: SPACING.half
+  },
+  overlaySide: {
+    flex: 1,
+    alignItems: "center",
+    flexDirection: "row"
+  },
+  newPostBackground: {
+    position: "absolute",
+    zIndex: 0
+  },
+  newPost: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  overlayRightSide: {
+    justifyContent: "flex-end"
+  }
 });
 
 type ListItemProps = {
@@ -56,6 +110,30 @@ type ListItemProps = {
   onPress: PressPostFunction;
 };
 
+/* image 26 */
+
+// position: absolute;
+// width: 163.88px;
+// height: 255px;
+// left: 16px;
+// top: 0px;
+
+// background: linear-gradient(360deg, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 31.46%), url(image.png);
+// border: 1px solid rgba(204, 204, 204, 0.1);
+// box-sizing: border-box;
+// border-radius: 4px;
+
+const GradientOverlay = ({ width, height }) => (
+  <LinearGradient
+    width={width}
+    height={height}
+    colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.5)"]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 0, y: 1 }}
+    locations={[1.0 - 0.3146, 1.0]}
+  ></LinearGradient>
+);
+
 const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
   const handlePress = React.useCallback(() => {
     onPress(post);
@@ -63,39 +141,61 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
 
   const {
     profile,
-    media: { coverUrl: uri }
+    media: { previewUrl: uri, width: rawWidth, height: rawHeight }
   } = post;
 
+  const imageSize = scaleToWidth(width, post.media);
+
   const source = {
-    height,
-    width,
-    uri
+    height: imageSize.height,
+    width: imageSize.width,
+    uri: buildImgSrc(uri, imageSize.width, imageSize.height),
+    mimeType: uri.includes(".gif") ? "image/gif" : post.media.mimeType
   };
 
   return (
     <BaseButton onPress={handlePress}>
       <Animated.View style={[styles.listItem, { width, height }]}>
-        <Image
-          source={source}
-          style={[styles.image, { width, height }]}
-          borderRadius={8}
-          paused
-        />
+        <View style={[styles.imageContainer, { width, height }]}>
+          <Image
+            source={source}
+            borderRadius={4}
+            style={[
+              styles.image,
+              { width: imageSize.width, height: imageSize.height }
+            ]}
+          />
+
+          <View style={[styles.imageBorder, { width: imageSize.width }]}>
+            <GradientOverlay
+              width={imageSize.width}
+              height={imageSize.height}
+            />
+          </View>
+        </View>
 
         <View
           shouldRasterizeIOS
           style={[
             StyleSheet.absoluteFill,
-            styles.avatarContainer,
+            styles.overlayContainer,
             { width, height }
           ]}
         >
-          <View style={styles.avatarWrapper}>
-            <Avatar
-              url={profile.photoURL}
-              label={profile.username}
-              size={AVATAR_SIZE}
-            />
+          <View style={styles.overlay}>
+            <View style={styles.overlaySide}>
+              <View style={styles.avatar}>
+                <Avatar
+                  url={profile.photoURL}
+                  label={profile.username}
+                  size={AVATAR_SIZE}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.overlaySide, styles.overlayRightSide]}>
+              <LikeCountButton id={post.id} size={22} />
+            </View>
           </View>
         </View>
       </Animated.View>
@@ -104,6 +204,59 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
 };
 
 const ListItem = React.memo(_ListItem);
+
+const AddNewPostButton = ({ height, width, onPress }) => {
+  return (
+    <BaseButton onPress={onPress}>
+      <Animated.View style={[styles.listItem, { width, height }]}>
+        <View style={[styles.imageContainer, { width, height }]}>
+          <View style={[styles.newPostBackground, { width, height }]}>
+            <LinearGradient
+              width={width}
+              height={height}
+              colors={["rgba(25, 25, 25, 1.0)", "rgba(15, 15, 15, 1.0)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              locations={[0.35, 0.65]}
+            />
+          </View>
+
+          <View style={[styles.newPost, { width, height }]}>
+            <IconButton
+              type="fill"
+              containerSize={48}
+              size={24}
+              color="#fff"
+              backgroundColor={COLORS.secondary}
+              Icon={IconPlus}
+            />
+
+            <MediumText style={styles.newPostText}>new post</MediumText>
+          </View>
+
+          <View style={[styles.imageBorder, { width, height }]}></View>
+        </View>
+
+        <View
+          shouldRasterizeIOS
+          style={[
+            StyleSheet.absoluteFill,
+            styles.overlayContainer,
+            { width, height }
+          ]}
+        >
+          <View style={styles.overlay}>
+            <View style={styles.overlaySide}>
+              <View style={[styles.avatar, styles.avatarFaded]}>
+                <CurrentUserAvatar size={AVATAR_SIZE} />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Animated.View>
+    </BaseButton>
+  );
+};
 
 export const PostPreviewList = React.forwardRef(
   (
@@ -118,8 +271,6 @@ export const PostPreviewList = React.forwardRef(
     }: Props,
     ref
   ) => {
-    const width = height * ASPECT_RATIO;
-
     const renderPost = React.useCallback(
       (post: PostListItemFragment, index: number) => {
         const isLast = index === posts.length - 1;
@@ -127,10 +278,10 @@ export const PostPreviewList = React.forwardRef(
         if (isLast) {
           return (
             <ListItem
-              height={height}
+              height={POST_LIST_HEIGHT}
+              width={POST_LIST_WIDTH}
               onPress={onPressPost}
               post={post}
-              width={width}
               key={post.id}
             />
           );
@@ -138,17 +289,17 @@ export const PostPreviewList = React.forwardRef(
           return (
             <React.Fragment key={post.id}>
               <ListItem
-                height={height}
                 onPress={onPressPost}
                 post={post}
-                width={width}
+                height={POST_LIST_HEIGHT}
+                width={POST_LIST_WIDTH}
               />
               <View style={styles.spacer} collapsable={false} />
             </React.Fragment>
           );
         }
       },
-      [onPressPost, height, width]
+      [onPressPost]
     );
 
     return (
@@ -162,6 +313,11 @@ export const PostPreviewList = React.forwardRef(
       >
         {children}
         {posts.map(renderPost)}
+        <View style={styles.spacer} collapsable={false} />
+        <AddNewPostButton
+          width={POST_LIST_WIDTH}
+          height={POST_LIST_HEIGHT}
+        ></AddNewPostButton>
       </ScrollView>
     );
   }

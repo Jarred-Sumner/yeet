@@ -14,14 +14,16 @@ import { SPACING, COLORS } from "../../lib/styles";
 import MediaPlayer, { MediaPlayerComponent } from "../MediaPlayer";
 import { MediumText } from "../Text";
 import { ACTION_BAR_HEIGHT, ContentActionBar } from "./ContentActionBar";
-import { PostPreviewList } from "./PostPreviewList";
+import { PostPreviewList, POST_LIST_HEIGHT } from "./PostPreviewList";
 import { ProfileFeedComponent, PROFILE_FEED_HEIGHT } from "./ProfileFeed";
 import { SCREEN_DIMENSIONS } from "../../../config";
 
 const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
 
 const styles = StyleSheet.create({
-  container: {},
+  container: {
+    backgroundColor: "#000"
+  },
   mediaPlayerWrapper: {
     maxHeight: MAX_CONTENT_HEIGHT,
     overflow: "hidden"
@@ -63,7 +65,6 @@ const getContentSize = (
   };
 };
 
-const POST_LIST_HEIGHT = 112; // disibiel by 16
 const POST_SECTION_SPACING = SPACING.normal;
 const VIEW_ALL_TEXT_HEIGHT = 20;
 
@@ -73,23 +74,7 @@ export const getItemHeight = (
 ) => {
   const post = thread.posts.data[0];
 
-  if (thread.postsCount < 2) {
-    return sum([
-      PROFILE_FEED_HEIGHT,
-      getContentSize(post, width).height,
-      ACTION_BAR_HEIGHT
-    ]);
-  } else {
-    return sum([
-      PROFILE_FEED_HEIGHT,
-      getContentSize(post, width).height,
-      ACTION_BAR_HEIGHT,
-      POST_SECTION_SPACING,
-      POST_LIST_HEIGHT,
-      POST_SECTION_SPACING,
-      VIEW_ALL_TEXT_HEIGHT
-    ]);
-  }
+  return sum([PROFILE_FEED_HEIGHT, POST_LIST_HEIGHT, SPACING.normal]);
 };
 
 enum PlayState {
@@ -154,65 +139,33 @@ class FeedListItemComponent extends React.Component<Props, State> {
 
     const post = posts[0];
     const op = post.profile;
-    const postSize = getContentSize(post, width, 0);
-
-    const showPostPreviews = posts.length > 1;
 
     return (
       <View style={[{ height, width }, styles.container]}>
         <ProfileFeedComponent
           profile={op}
+          createdAt={post.createdAt}
+          body="u can't post something better"
           onPressEllipsis={this.handlePressElipsis}
         />
-        <View style={styles.mediaPlayerWrapper}>
-          <MediaPlayer
-            paused={this.paused}
-            id={thread.id + "-preview"}
-            isActive={isVisible}
-            ref={this.mediaPlayerRef}
-            autoPlay={this.state.autoPlay}
-            style={[
-              { width: postSize.width, height: postSize.height },
-              styles.content
-            ]}
-            sources={[post.media]}
-          />
+        <View style={styles.postPreviewContainer}>
+          <PostPreviewList
+            posts={posts}
+            onPressPost={this.handlePressPost}
+            style={styles.postPreviewList}
+            directionalLockEnabled
+            contentOffset={{
+              y: 0,
+              x: SPACING.normal * -1
+            }}
+            contentInset={{
+              left: SPACING.normal,
+              top: 0,
+              bottom: 0,
+              right: SPACING.normal
+            }}
+          ></PostPreviewList>
         </View>
-
-        <ContentActionBar postId={post.id} remixCount={postsCount} />
-
-        {showPostPreviews && (
-          <View style={styles.postPreviewContainer}>
-            <PostPreviewList
-              posts={posts.slice(1)}
-              height={POST_LIST_HEIGHT}
-              width={width}
-              onPressPost={this.handlePressPost}
-              style={styles.postPreviewList}
-              directionalLockEnabled
-              contentOffset={{
-                y: 0,
-                x: SPACING.double * -1
-              }}
-              contentInset={{
-                left: SPACING.double,
-                top: 0,
-                bottom: 0,
-                right: SPACING.normal
-              }}
-            >
-              <View style={styles.previewBar} />
-            </PostPreviewList>
-
-            <BaseButton onPress={this.handlePressViewAll}>
-              <Animated.View style={styles.viewAllTextContainer}>
-                <MediumText numberOfLines={1} style={styles.viewAllText}>
-                  View all {postsCount} posts
-                </MediumText>
-              </Animated.View>
-            </BaseButton>
-          </View>
-        )}
       </View>
     );
   }
