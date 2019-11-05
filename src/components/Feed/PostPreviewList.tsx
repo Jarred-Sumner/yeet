@@ -237,6 +237,7 @@ const AddNewPostButton = ({ height, width, onPress }) => {
               color="#fff"
               backgroundColor={COLORS.secondary}
               Icon={IconPlus}
+              onPress={onPress}
             />
 
             <MediumText style={styles.newPostText}>new post</MediumText>

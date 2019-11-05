@@ -17,8 +17,10 @@ import { ACTION_BAR_HEIGHT, ContentActionBar } from "./ContentActionBar";
 import { PostPreviewList, POST_LIST_HEIGHT } from "./PostPreviewList";
 import { ProfileFeedComponent, PROFILE_FEED_HEIGHT } from "./ProfileFeed";
 import { SCREEN_DIMENSIONS } from "../../../config";
+import { IconChevronRight } from "../Icon";
 
 const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
+const POST_COUNT_BAR = 20 + SPACING.normal * 2;
 
 const styles = StyleSheet.create({
   container: {
@@ -41,6 +43,24 @@ const styles = StyleSheet.create({
   viewAllTextContainer: {
     marginTop: SPACING.normal,
     marginLeft: SPACING.double + 4
+  },
+  postCountBar: {
+    flexDirection: "row",
+    paddingVertical: SPACING.normal,
+    paddingHorizontal: SPACING.normal,
+    alignItems: "center",
+    justifyContent: "flex-end"
+  },
+  postCountText: {
+    fontSize: 16,
+    color: "#ccc",
+    alignItems: "center"
+  },
+  rightChevron: {
+    marginLeft: SPACING.half,
+    alignItems: "center",
+    alignSelf: "center",
+    lineHeight: 14
   }
 });
 
@@ -74,7 +94,7 @@ export const getItemHeight = (
 ) => {
   const post = thread.posts.data[0];
 
-  return sum([PROFILE_FEED_HEIGHT, POST_LIST_HEIGHT, SPACING.normal]);
+  return sum([PROFILE_FEED_HEIGHT, POST_LIST_HEIGHT, POST_COUNT_BAR]);
 };
 
 enum PlayState {
@@ -166,6 +186,19 @@ class FeedListItemComponent extends React.Component<Props, State> {
               right: SPACING.normal
             }}
           ></PostPreviewList>
+        </View>
+
+        <View style={styles.bar}>
+          <View style={styles.postCountBar}>
+            <MediumText style={styles.postCountText}>
+              {postsCount > 1 ? `View ${postsCount} posts` : "View all posts"}
+            </MediumText>
+            <IconChevronRight
+              style={styles.rightChevron}
+              size={14}
+              color="#666"
+            />
+          </View>
         </View>
       </View>
     );
