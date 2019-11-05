@@ -1,8 +1,13 @@
 // @flow
 import { sum } from "lodash";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
-import { BaseButton } from "react-native-gesture-handler";
+import { StyleSheet, View, TouchableHighlight } from "react-native";
+import {
+  BaseButton,
+  ScrollView,
+  LongPressGestureHandler,
+  TouchableWithoutFeedback
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
 import {
@@ -150,6 +155,12 @@ class FeedListItemComponent extends React.Component<Props, State> {
     );
   }
 
+  scrollRef = React.createRef<ScrollView>();
+  handleLongPress = () => this.props.onLongPressThread(this.props.thread);
+  handlePress = () => this.props.onPressThread(this.props.thread);
+  handlePressPost = (post: ViewThreads_postThreads_data) =>
+    this.props.onPressPost(this.props.thread, post);
+
   render() {
     const { height, width, paused, thread, isVisible } = this.props;
     const {
@@ -161,46 +172,62 @@ class FeedListItemComponent extends React.Component<Props, State> {
     const post = posts[0];
     const op = post.profile;
 
-    return (
-      <View style={[{ height, width }, styles.container]}>
-        <ProfileFeedComponent
-          profile={op}
-          createdAt={post.createdAt}
-          body={body}
-          onPressEllipsis={this.handlePressElipsis}
-        />
-        <View style={styles.postPreviewContainer}>
-          <PostPreviewList
-            posts={posts}
-            onPressPost={this.handlePressPost}
-            style={styles.postPreviewList}
-            directionalLockEnabled
-            contentOffset={{
-              y: 0,
-              x: SPACING.normal * -1
-            }}
-            contentInset={{
-              left: SPACING.normal,
-              top: 0,
-              bottom: 0,
-              right: SPACING.normal
-            }}
-          ></PostPreviewList>
-        </View>
+    const waitFor = [...this.props.waitFor, this.scrollRef];
 
-        <View style={styles.bar}>
-          <View style={styles.postCountBar}>
-            <MediumText style={styles.postCountText}>
-              {postsCount > 1 ? `View ${postsCount} posts` : "View all posts"}
-            </MediumText>
-            <IconChevronRight
-              style={styles.rightChevron}
-              size={14}
-              color="#666"
-            />
+    return (
+      <TouchableWithoutFeedback
+        waitFor={waitFor}
+        onLongPress={this.handleLongPress}
+      >
+        <Animated.View style={[{ height, width }, styles.container]}>
+          <ProfileFeedComponent
+            profile={op}
+            createdAt={post.createdAt}
+            body={body}
+            onPressEllipsis={this.handlePressElipsis}
+          />
+          <View style={styles.postPreviewContainer}>
+            <PostPreviewList
+              posts={posts}
+              onPressPost={this.handlePressPost}
+              style={styles.postPreviewList}
+              ref={this.scrollRef}
+              isVisible={isVisible}
+              onPressNewPost={this.props.onPressNewPost}
+              directionalLockEnabled
+              waitFor={this.props.waitFor}
+              contentOffset={{
+                y: 0,
+                x: SPACING.normal * -1
+              }}
+              contentInset={{
+                left: SPACING.normal,
+                top: 0,
+                bottom: 0,
+                right: SPACING.normal
+              }}
+            ></PostPreviewList>
           </View>
-        </View>
-      </View>
+
+          <View style={styles.bar}>
+            <TouchableHighlight waitFor={waitFor} onPress={this.handlePress}>
+              <Animated.View style={styles.postCountBar}>
+                <MediumText style={styles.postCountText}>
+                  {postsCount > 1
+                    ? `View ${postsCount} posts`
+                    : "View all posts"}
+                </MediumText>
+                <IconChevronRight
+                  style={styles.rightChevron}
+                  size={14}
+                  onPress={this.handleLongPress}
+                  color="#666"
+                />
+              </Animated.View>
+            </TouchableHighlight>
+          </View>
+        </Animated.View>
+      </TouchableWithoutFeedback>
     );
   }
 }

@@ -1,0 +1,18 @@
+#import "./PostListItemFragment.graphql"
+
+query ViewThread($threadId: ID!, $postOffset: Int!, $postsCount: Int!) {
+  postThread(id: $threadId) {
+    id
+    postsCount
+    body
+    posts(offset: $postOffset, limit: $postsCount) {
+      offset
+      limit
+      hasMore
+      id
+      data {
+        ...PostListItemFragment
+      }
+    }
+  }
+}

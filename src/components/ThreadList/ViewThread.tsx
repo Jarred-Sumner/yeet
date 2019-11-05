@@ -1,7 +1,7 @@
 // @flow
 import { memoize, uniq, uniqBy } from "lodash";
 import * as React from "react";
-import { Mutation, Query } from "react-apollo";
+import { Mutation, Query, useMutation } from "react-apollo";
 import {
   findNodeHandle,
   StyleSheet,
@@ -37,6 +37,9 @@ import { AuthState, UserContext } from "../UserContext";
 import { CountButton } from "./CountButton";
 import { LikeCountButton } from "./LikeCountButton";
 import { BAR_HEIGHT, Seekbar } from "./Seekbar";
+import { postElementId } from "../../lib/graphql/ElementTransition";
+import { scaleToWidth } from "../../lib/Rect";
+import { LikePost, LikePostVariables } from "../../lib/graphql/LikePost";
 
 const AVATAR_SIZE = 36;
 
@@ -591,7 +594,7 @@ class ThreadContainer extends React.Component<Props, State> {
   }
 
   get post() {
-    return this.props.posts[this.state.postIndex];
+    return this.props.posts[this.state.postIndex] || this.props.post;
   }
 
   play = () => {
@@ -818,8 +821,6 @@ class ThreadContainer extends React.Component<Props, State> {
     const {
       thread,
       posts,
-      scrollVelocity,
-      scrollYOffset,
       offset,
       height,
       isVisible,
@@ -832,6 +833,7 @@ class ThreadContainer extends React.Component<Props, State> {
 
     const post = this.post;
     const nextPost = posts[this.state.nextPostIndex];
+    const postSize = scaleToWidth(width, post.media);
 
     const sources = this.props.posts.map(
       ({
@@ -851,7 +853,7 @@ class ThreadContainer extends React.Component<Props, State> {
         autoplaySeconds
       }) => ({
         // url: lowQualityUrl,
-        url: isSlowConnection ? mediumQualityUrl : highQualityUrl,
+        url: isSlowConnection ? mediumQualityUrl ?? url : highQualityUrl ?? url,
         id,
         mimeType,
         width,
@@ -928,7 +930,7 @@ class ThreadContainer extends React.Component<Props, State> {
                   ]
                 }}
               >
-                <MediaFrame
+                {/* <MediaFrame
                   source={sources[this.state.postIndex]}
                   ref={this.mediaFrameRef}
                   id={thread.id}
@@ -936,7 +938,7 @@ class ThreadContainer extends React.Component<Props, State> {
                     width,
                     height
                   }}
-                />
+                /> */}
 
                 <Animated.View
                   style={[
@@ -1006,16 +1008,18 @@ class ThreadContainer extends React.Component<Props, State> {
                 <MediaPlayer
                   sources={sources}
                   id={thread.id}
+                  sharedId={postElementId(post)}
                   autoPlay={this.state.autoPlay && this.props.isVisible}
                   paused={!this.state.isPlaying}
                   prefetch={isVisible}
+                  isVisible={isVisible}
                   ref={this.mediaPlayerRef}
                   onProgress={this.handleProgress}
                   onEnd={this.handlePostEnded}
                   onError={this.handleError}
                   style={{
-                    width,
-                    height
+                    width: postSize.width,
+                    height: postSize.height
                   }}
                 />
               </Animated.View>
@@ -1231,11 +1235,18 @@ class ThreadContainer extends React.Component<Props, State> {
   }
 }
 
-export const ViewThread = ({ isVisible, thread, ...otherProps }) => {
+export const ViewThread = ({
+  isVisible,
+  thread,
+  posts,
+  fetchMore,
+  ...otherProps
+}) => {
   const { isFocused, isFocusing, isBlurred, isBlurring } = useFocusState();
   const { currentUser, requireAuthentication, authState } = React.useContext(
     UserContext
   );
+
   const netInfo = useNetInfo();
 
   let isSlowConnection =
@@ -1245,38 +1256,25 @@ export const ViewThread = ({ isVisible, thread, ...otherProps }) => {
       netInfo.details.cellularGeneration !== NetInfoCellularGeneration["4g"];
   }
 
+  const [likePost] = useMutation<LikePost, LikePostVariables>(
+    LIKE_POST_MUTATION
+  );
+
   return (
-    <Mutation mutation={LIKE_POST_MUTATION}>
-      {likePost => (
-        <Query
-          query={VIEW_POSTS_QUERY}
-          delay={!isVisible || isBlurred}
-          notifyOnNetworkStatusChange
-          variables={{
-            threadId: thread.id,
-            limit: 10,
-            offset: 0
-          }}
-        >
-          {({ data: { posts = [] } = {}, fetchMore, ...apollo }: ViewPosts) => (
-            <ThreadContainer
-              isVisible={isVisible}
-              thread={thread}
-              likePost={likePost}
-              isScreenFocused={isFocused}
-              isScreenFocusing={isFocusing}
-              isScreenBlurred={isBlurred}
-              fetchMore={fetchMore}
-              currentUser={currentUser}
-              requireAuthentication={requireAuthentication}
-              isSlowConnection={isSlowConnection}
-              authState={authState}
-              posts={uniqBy([thread.firstPost, ...posts], "id")}
-              {...otherProps}
-            />
-          )}
-        </Query>
-      )}
-    </Mutation>
+    <ThreadContainer
+      isVisible={isVisible}
+      thread={thread}
+      likePost={likePost}
+      isScreenFocused={isFocused}
+      isScreenFocusing={isFocusing}
+      isScreenBlurred={isBlurred}
+      fetchMore={fetchMore}
+      currentUser={currentUser}
+      requireAuthentication={requireAuthentication}
+      isSlowConnection={isSlowConnection}
+      authState={authState}
+      posts={uniqBy(posts, "id")}
+      {...otherProps}
+    />
   );
 };

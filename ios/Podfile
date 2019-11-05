@@ -91,7 +91,7 @@ target 'yeet' do
 
     pod 'RNFS', :path => '../node_modules/react-native-fs', modular_headers: false
 
-    pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element', modular_headers: false
+
 
     # pod 'react-native-photos-framework', :path => '../node_modules//react-native-photos-framework'
 
@@ -106,6 +106,8 @@ target 'yeet' do
     pod 'RNFastImage', :path => '../node_modules/react-native-fast-image', modular_headers: false
 
 
+
+    pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element'
 
     target "yeetTests" do
       inherit! :search_paths

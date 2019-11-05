@@ -3,6 +3,7 @@ fragment PostListItemFragment on Post {
   likesCount
   threadId
   createdAt
+  autoplaySeconds
 
   bounds {
     x
@@ -26,6 +27,7 @@ fragment PostListItemFragment on Post {
     duration
 
     coverUrl
+    __typename
 
     previewUrl
     url

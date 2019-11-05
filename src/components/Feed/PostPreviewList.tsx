@@ -5,7 +5,7 @@ import { PostFragment } from "../../lib/graphql/PostFragment";
 import { SPACING, COLORS } from "../../lib/styles";
 import Image from "../Image";
 import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
-import { BaseButton } from "react-native-gesture-handler";
+import { BaseButton, TouchableHighlight } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { Avatar, CurrentUserAvatar } from "../Avatar";
 import { AVATAR_SIZE } from "./ProfileFeed";
@@ -17,6 +17,7 @@ import { IconButton } from "../Button";
 import { IconPlus } from "../Icon";
 import { MediumText } from "../Text";
 import { isVideo } from "../../lib/imageSearch";
+import { postElementId } from "../../lib/graphql/ElementTransition";
 
 export const POST_LIST_HEIGHT = 320;
 const POST_LIST_WIDTH = 204;
@@ -135,7 +136,13 @@ const GradientOverlay = ({ width, height }) => (
   ></LinearGradient>
 );
 
-const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
+const _ListItem = ({
+  post,
+  onPress,
+  width,
+  height,
+  isVisible
+}: ListItemProps) => {
   const handlePress = React.useCallback(() => {
     onPress(post);
   }, [post, onPress]);
@@ -162,11 +169,13 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
   };
 
   return (
-    <BaseButton onPress={handlePress}>
+    <TouchableHighlight onPress={handlePress}>
       <Animated.View style={[styles.listItem, { width, height }]}>
         <View style={[styles.imageContainer, { width, height }]}>
           <Image
             source={source}
+            isVisible={isVisible}
+            sharedId={postElementId(post)}
             borderRadius={4}
             style={[
               styles.image,
@@ -207,7 +216,7 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
           </View>
         </View>
       </Animated.View>
-    </BaseButton>
+    </TouchableHighlight>
   );
 };
 
@@ -276,6 +285,9 @@ export const PostPreviewList = React.forwardRef(
       children,
       contentOffset,
       contentInset,
+      waitFor,
+      isVisible,
+      onPressNewPost,
       ...otherProps
     }: Props,
     ref
@@ -290,6 +302,7 @@ export const PostPreviewList = React.forwardRef(
               height={POST_LIST_HEIGHT}
               width={POST_LIST_WIDTH}
               onPress={onPressPost}
+              isVisible={isVisible}
               post={post}
               key={post.id}
             />
@@ -302,6 +315,7 @@ export const PostPreviewList = React.forwardRef(
                 post={post}
                 height={POST_LIST_HEIGHT}
                 width={POST_LIST_WIDTH}
+                isVisible={isVisible}
               />
               <View style={styles.spacer} collapsable={false} />
             </React.Fragment>
@@ -318,6 +332,7 @@ export const PostPreviewList = React.forwardRef(
         contentOffset={contentOffset}
         ref={ref}
         horizontal
+        simultaneousHandlers={waitFor}
         style={styles.scrollView}
       >
         {children}
@@ -326,6 +341,7 @@ export const PostPreviewList = React.forwardRef(
         <AddNewPostButton
           width={POST_LIST_WIDTH}
           height={POST_LIST_HEIGHT}
+          onPress={onPressNewPost}
         ></AddNewPostButton>
       </ScrollView>
     );

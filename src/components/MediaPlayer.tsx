@@ -12,6 +12,7 @@ import { DimensionsRect, BoundsRect } from "../lib/Rect";
 import { useFocusEffect, useIsFocused } from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import { NativeMediaPlayer } from "./NativeMediaPlayer";
+import { SharedElement } from "react-navigation-shared-element";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
@@ -268,13 +269,27 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 }
 
-const _MediaPlayer = (React.forwardRef(({ isActive, ...props }: Props, ref) => {
-  const [isAutoHidden, setAutoHidden] = React.useState(false);
-  const _ref = React.useRef<MediaPlayerComponent>(null);
-  useImperativeHandle(ref, () => _ref.current);
+const _MediaPlayer = (React.forwardRef(
+  ({ isActive, sharedId, ...props }: Props, ref) => {
+    const [isAutoHidden, setAutoHidden] = React.useState(false);
+    const _ref = React.useRef<MediaPlayerComponent>(null);
+    useImperativeHandle(ref, () => _ref.current);
 
-  return <MediaPlayerComponent isActive={isActive} ref={_ref} {...props} />;
-}) as unknown) as MediaPlayerComponent;
+    const player = (
+      <MediaPlayerComponent isActive={isActive} ref={_ref} {...props} />
+    );
+
+    if (sharedId) {
+      return (
+        <SharedElement id={sharedId}>
+          <View>{player}</View>
+        </SharedElement>
+      );
+    } else {
+      return player;
+    }
+  }
+) as unknown) as MediaPlayerComponent;
 
 export const MediaPlayer = hoistNonReactStatics(
   _MediaPlayer,

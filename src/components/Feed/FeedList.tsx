@@ -97,7 +97,6 @@ class FeedListComponent extends React.Component<Props, State> {
     super(props);
 
     this.state = {
-      isFocused: props.isFocused,
       visibleIDs: {}
     };
   }
@@ -122,7 +121,6 @@ class FeedListComponent extends React.Component<Props, State> {
     // this.secondVisibleItem.setValue(secondItem ? secondItem.id.hashCode() : -1);
   };
 
-  handlePressPost = (post: ViewThreads_postThreads_posts) => {};
   firstVisibleItem = new Animated.Value(-1);
   secondVisibleItem = new Animated.Value(-1);
 
@@ -138,7 +136,11 @@ class FeedListComponent extends React.Component<Props, State> {
         isVisible={!!this.state.visibleIDs[thread.id]}
         height={height}
         width={ITEM_WIDTH}
-        onPressPost={this.handlePressPost}
+        onPressPost={this.props.onPressPost}
+        onPressThread={this.props.onPressThread}
+        waitFor={[this.flatListRef]}
+        onPressNewPost={this.props.onPressNewPost}
+        onLongPressThread={this.props.onLongPressThread}
       />
     );
   };
@@ -226,6 +228,7 @@ class FeedListComponent extends React.Component<Props, State> {
         contentInsetAdjustmentBehavior="automatic"
         removeClippedSubviews={false}
         directionalLockEnabled
+        vertical
         viewabilityConfig={this.viewabilityConfig}
         {...otherProps}
         data={threads}
@@ -233,7 +236,7 @@ class FeedListComponent extends React.Component<Props, State> {
         renderItem={this.renderItem}
         ItemSeparatorComponent={ItemSeparatorComponent}
         keyExtractor={this.keyExtractor}
-        initialNumToRender={3}
+        initialNumToRender={6}
         onViewableItemsChanged={this.onViewableItemsChanged}
         style={styles.list}
         refreshing={refreshing}
@@ -267,7 +270,6 @@ export const FeedList = (props: FlatListProps) => {
     <FeedListComponent
       {...props}
       threads={[...threads]}
-      isFocused={isFocused}
       offset={threadsQuery?.data?.postThreads.offset}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}

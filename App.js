@@ -39,6 +39,7 @@ import ViewProfilePage from "./src/screens/ViewProfilePage";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import { IS_SIMULATOR } from "./config";
 import { FeedPage } from "./src/screens/Feed";
+import ThreadPage from "./src/screens/ViewThreadPage";
 
 const TAB_ICON_SIZE = 18;
 
@@ -55,7 +56,8 @@ const SHARED_GLOBAL_SCREENS = {
 const Routes = createAppContainer(
   createStackNavigator(
     {
-      Home: createStackNavigator(
+      Home: createSharedElementStackNavigator(
+        createStackNavigator,
         {
           RootScreens: createBottomTabNavigator(
             {
@@ -63,6 +65,7 @@ const Routes = createAppContainer(
                 createStackNavigator,
                 {
                   ThreadList: FeedPage,
+
                   ReplyToPost: ReplyPage,
                   EditBlockPhotoInReply: ImagePickerPage,
                   ...SHARED_GLOBAL_SCREENS
@@ -71,22 +74,22 @@ const Routes = createAppContainer(
                   cardStyle: {
                     backgroundColor: "#000"
                   },
-                  headerMode: "none",
-                  defaultNavigationOptions: ({ navigation }) => ({
-                    header: () => null
-                  })
+                  headerMode: "none"
+                  // defaultNavigationOptions: ({ navigation }) => ({
+                  //   header: () => null
+                  // })
                 },
                 {
                   cardStyle: {
                     backgroundColor: "#000"
                   },
-                  headerMode: "none",
-                  defaultNavigationOptions: ({ navigation }) => ({
-                    header: () => null,
-                    mode: "modal",
-                    headerMode: "none",
-                    headerTransparent: true
-                  })
+
+                  headerMode: "none"
+                  // defaultNavigationOptions: ({ navigation }) => ({
+                  //   header: () => null,
+                  //   headerMode: "none",
+                  //   headerTransparent: true
+                  // })
                 }
               ),
               NotificationsTab: createStackNavigator(
@@ -156,14 +159,14 @@ const Routes = createAppContainer(
                 gesturesEnabled: false
               }
             }
-          )
+          ),
+          ViewThread: ThreadPage
         },
         {
           cardStyle: {
             backgroundColor: "#000"
           },
           headerMode: "none",
-          mode: "modal",
           // initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
           defaultNavigationOptions: {
             header: () => null,

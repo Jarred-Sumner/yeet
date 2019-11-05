@@ -23,7 +23,17 @@ type AssetSourceImageProps = BaseProps & {
 type Props = MediaSourceImageProps | AssetSourceImageProps;
 
 const CustomFastImage = React.forwardRef(
-  ({ source, mediaSource, style, borderRadius = 0, ...props }: Props, ref) => {
+  (
+    {
+      source,
+      mediaSource,
+      isVisible = true,
+      style,
+      borderRadius = 0,
+      ...props
+    }: Props,
+    ref
+  ) => {
     let sources = [];
     if (typeof mediaSource !== "undefined") {
       sources = [mediaSource];
@@ -43,9 +53,9 @@ const CustomFastImage = React.forwardRef(
         ref={ref}
         sources={sources}
         borderRadius={borderRadius}
-        isVisible
-        paused={false}
+        isVisible={isVisible}
         autoPlay
+        paused={!isVisible}
         style={style}
         {...props}
       />
@@ -54,6 +64,8 @@ const CustomFastImage = React.forwardRef(
 );
 
 export const Image = hoistNonReactStatics(CustomFastImage, MediaPlayer);
+
+Image.displayName = "MediaPlayerImage";
 export default Image;
 
 export const AvatarImage = React.forwardRef(
