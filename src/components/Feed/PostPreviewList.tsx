@@ -16,6 +16,7 @@ import LinearGradient from "react-native-linear-gradient";
 import { IconButton } from "../Button";
 import { IconPlus } from "../Icon";
 import { MediumText } from "../Text";
+import { isVideo } from "../../lib/imageSearch";
 
 export const POST_LIST_HEIGHT = 320;
 const POST_LIST_WIDTH = 204;
@@ -141,16 +142,23 @@ const _ListItem = ({ post, onPress, width, height }: ListItemProps) => {
 
   const {
     profile,
-    media: { previewUrl: uri, width: rawWidth, height: rawHeight }
+    media: { previewUrl, width: rawWidth, height: rawHeight, coverUrl }
   } = post;
 
   const imageSize = scaleToWidth(width, post.media);
 
+  let isVideoPost = isVideo(post.media.mimeType);
+
+  const mimeType = isVideoPost ? "image/gif" : post.media.mimeType;
+  const uri = isVideoPost
+    ? buildImgSrc(previewUrl, imageSize.width, imageSize.height)
+    : coverUrl;
+
   const source = {
     height: imageSize.height,
     width: imageSize.width,
-    uri: buildImgSrc(uri, imageSize.width, imageSize.height),
-    mimeType: uri.includes(".gif") ? "image/gif" : post.media.mimeType
+    uri,
+    mimeType
   };
 
   return (

@@ -134,7 +134,8 @@ class FeedListItemComponent extends React.Component<Props, State> {
     const { height, width, paused, thread, isVisible } = this.props;
     const {
       posts: { data: posts },
-      postsCount
+      postsCount,
+      body
     } = thread;
 
     const post = posts[0];
@@ -145,7 +146,7 @@ class FeedListItemComponent extends React.Component<Props, State> {
         <ProfileFeedComponent
           profile={op}
           createdAt={post.createdAt}
-          body="u can't post something better"
+          body={body}
           onPressEllipsis={this.handlePressElipsis}
         />
         <View style={styles.postPreviewContainer}>
