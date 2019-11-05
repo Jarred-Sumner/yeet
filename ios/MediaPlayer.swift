@@ -51,6 +51,12 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   }
 
   func handleChangePaused() {
+    DispatchQueue.main.debounce(interval: 50) {
+      self._handleChangePaused()
+    }
+  }
+
+  func _handleChangePaused() {
     guard let mediaQueue = self.mediaQueue else {
       return
     }

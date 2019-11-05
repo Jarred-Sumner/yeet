@@ -50,19 +50,30 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    let timeScale = CMTimeScale(NSEC_PER_SEC)
-    let times = [NSValue(time: mediaSource.asset!.duration)]
+//    let times = [NSValue(time: player.currentItem!.duration - player.currentItem!.currentTime() )]
 
+//    boundaryObserverToken = player
+//      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
+//        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
+//          return
+//        }
+//
+//        if player.
+//        self?.handleEnd()
+//    }
 
-    boundaryObserverToken = player
-      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
-        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
-          return
-        }
+  }
 
-        self?.handleEnd()
+  var timeScale: CMTimeScale {
+    guard let asset = player?.currentItem?.asset else {
+      return CMTimeScale(NSEC_PER_SEC)
     }
 
+    guard let videoTrack = asset.tracks(withMediaType: .video).first else {
+      return CMTimeScale(NSEC_PER_SEC)
+    }
+
+    return videoTrack.naturalTimeScale
   }
 
   private func addPeroidicObserver() {
@@ -70,7 +81,6 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    let timeScale = CMTimeScale(NSEC_PER_SEC)
     let time = CMTime(seconds: TrackableVideoSource.periodicInterval, preferredTimescale: timeScale)
 
      periodicObserverToken = player
@@ -107,8 +117,6 @@ class TrackableVideoSource : TrackableMediaSource {
     if self.playerItem == nil {
       self.status = .loading
 
-
-
       mediaSource.loadAsset { [weak self] asset in
         guard let asset = asset else {
           self?.status = .error
@@ -134,7 +142,7 @@ class TrackableVideoSource : TrackableMediaSource {
     self.onLoad()
   }
 
-  
+
   var isObserving: Bool {
     return self.periodicObserverToken != nil || self.boundaryObserverToken != nil
   }
@@ -147,7 +155,7 @@ class TrackableVideoSource : TrackableMediaSource {
     stopObservers()
 
     self.addPeroidicObserver()
-    self.addBoundaryTimeObserver()
+//    self.addBoundaryTimeObserver()
 
     guard let playerItem = self.playerItem else {
       return

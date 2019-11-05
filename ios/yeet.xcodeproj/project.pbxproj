@@ -38,6 +38,7 @@
 		8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8349A29C2357A87D00795FAA /* CombinedAsset.swift */; };
 		834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834B3D0F2322FDCA00377BE6 /* AnimatedImageResource.swift */; };
 		834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834CDE69236A324E006D5A74 /* YeetError.swift */; };
+		83532FB623701B9400BA0F1A /* DispatchQueue+throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
 		836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836B71C823566EF1003BF812 /* AVAsset+resize.swift */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
@@ -128,6 +129,7 @@
 		834B3D11232307AD00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = ../../../../Downloads/blank_1080p.mp4; sourceTree = "<group>"; };
 		834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = blank_1080p.mp4; path = /Users/jarred/Code/yeet/yeet/ios/blank_1080p.mp4; sourceTree = "<absolute>"; };
 		834CDE69236A324E006D5A74 /* YeetError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetError.swift; sourceTree = "<group>"; };
+		83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+throttle.swift"; sourceTree = "<group>"; };
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMediaSource.swift; sourceTree = "<group>"; };
 		836B71C823566EF1003BF812 /* AVAsset+resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+resize.swift"; sourceTree = "<group>"; };
@@ -194,6 +196,7 @@
 			isa = PBXGroup;
 			children = (
 				83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */,
+				83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */,
 				830418642345AAEE007C9E5A /* EnableWebpDecoder.h */,
 				831C520C233F2FC300F364A3 /* MediaPlayer */,
 				83470517232AF9BA004B2FF7 /* TextInput */,
@@ -684,6 +687,7 @@
 				83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */,
 				833C158C2362F0B70054A183 /* CALayerContentsGravity.swift in Sources */,
 				833048942322000D00E816E8 /* YeetExporter.swift in Sources */,
+				83532FB623701B9400BA0F1A /* DispatchQueue+throttle.swift in Sources */,
 				83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */,
 				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,

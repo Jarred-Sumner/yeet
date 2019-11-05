@@ -93,7 +93,11 @@ import Foundation
             self.coverView.loadImage(async: true)
           }
 
-          self.coverView.isHidden = !self.showCover
+          let hideCover = !self.showCover
+          if hideCover != self.coverView.isHidden {
+            self.coverView.isHidden = hideCover
+          }
+
         }
       }
     }
