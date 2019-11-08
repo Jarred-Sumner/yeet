@@ -17,7 +17,14 @@ import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import tinycolor from "tinycolor2";
 import { useNavigation } from "react-navigation-hooks";
-import { IconBack, IconClose } from "./Icon";
+import {
+  IconBack,
+  IconClose,
+  IconArrowleft,
+  IconChevronLeft,
+  IconEllipsis,
+  IconEllipsisAlt
+} from "./Icon";
 
 const styles = StyleSheet.create({
   color_primaryColor: {
@@ -315,7 +322,7 @@ export const BackButton = ({
   }
 
   const IconComponent =
-    behavior === BackButtonBehavior.back ? IconBack : IconClose;
+    behavior === BackButtonBehavior.back ? IconChevronLeft : IconClose;
 
   return (
     <IconButton
@@ -325,6 +332,26 @@ export const BackButton = ({
       type="shadow"
       onPress={handlePress}
       // iconStyle={style}
+    />
+  );
+};
+
+export const IconButtonEllipsis = ({
+  size = 4,
+  color = "white",
+  containerSize,
+  onPress,
+  vertical,
+  ...otherProps
+}) => {
+  return (
+    <IconButton
+      {...otherProps}
+      Icon={vertical ? IconEllipsisAlt : IconEllipsis}
+      size={size}
+      containerSize={containerSize}
+      color={color}
+      type="shadow"
     />
   );
 };

@@ -18,17 +18,21 @@ enum MediaPlayerContentType {
 }
 
 @objc(MediaPlayer)
-class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
+final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
     guard mediaSource == current && current != nil else {
       return
+    }
+
+    if let id = self.id {
+      SwiftyBeaver.debug("\(id): \(oldStatus.stringValue) -> \(status.stringValue)")
     }
 
     let item = mediaSource.mediaSource
 
     self.sendStatusUpdate(status: status, mediaSource: mediaSource)
 
-    imageView?.animated = status == .playing
+
   }
 
   @objc(prefetch) var prefetch: Bool = false {
@@ -51,9 +55,9 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   }
 
   func handleChangePaused() {
-    DispatchQueue.main.debounce(interval: 50) {
+//    DispatchQueue.main.throttle(deadline: DispatchTime.now() + 0.05) {
       self._handleChangePaused()
-    }
+//    }
   }
 
   func _handleChangePaused() {
@@ -66,16 +70,12 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
 
     if !paused && current.status != .playing {
-      current.load() { media in
-        if media.status != .paused {
-          media.start()
-          media.play()
-        }
-
-      }
+      mediaQueue.play()
     } else if paused && current.status != .paused {
       mediaQueue.pause()
     }
+
+    imageView?.isPlaybackPaused = paused
   }
 
   func handleChangeIsActive() {
@@ -141,8 +141,16 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     ])
   }
 
-  var imageView: YeetImageView? = nil
-  var videoView: YeetVideoView? = nil
+  var imageView: YeetImageView? = nil {
+    didSet {
+      self.imageView?.tag = self.imageViewTag
+    }
+  }
+  var videoView: YeetVideoView? = nil {
+    didSet {
+      self.videoView?.tag = self.videoViewTag
+    }
+  }
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
@@ -264,12 +272,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
 
     self.backgroundColor = .clear
 
-    if (self.sources.count > 0) {
-      DispatchQueue.main.async { [weak self] in
-        self?.layoutContentView()
-      }
 
-    }
 
     bridgeObserver = bridge?.observe(\RCTBridge.isValid) { [weak self] bridge, changes in
       if !bridge.isValid {
@@ -284,16 +287,14 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
   override init(frame: CGRect) {
     super.init(frame: frame)
 
-    if (self.sources.count > 0) {
-      DispatchQueue.main.async { [weak self] in
-        self?.layoutContentView()
-      }
-     }
-
   }
 
   var contentView: UIView? {
-    return subviews.first
+    if subviews.isEmpty {
+      return nil
+    }
+
+    return subviews[0]
   }
 
   var contentType = MediaPlayerContentType.none
@@ -347,8 +348,11 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     self.layer.masksToBounds = borderRadius > .zero
   }
 
-  var isContentViewImage: Bool { return type(of: contentView) == YeetImageView.self }
-  var isContentViewVideo: Bool { return type(of: contentView) == YeetVideoView.self }
+  let imageViewTag = Int(arc4random())
+  let videoViewTag = Int(arc4random())
+
+  var isContentViewImage: Bool { return contentView?.tag == imageViewTag }
+  var isContentViewVideo: Bool { return contentView?.tag == videoViewTag }
   var mediaQueueObserver: NSKeyValueObservation? = nil
   var bridgeObserver: NSKeyValueObservation? = nil
 
@@ -488,12 +492,12 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
   }
 
-  @objc(uiManagerDidPerformLayout:)
-  func uiManagerDidPerformLayout(_ manager: RCTUIManager!) {
-    DispatchQueue.main.async { [weak self] in
-      self?.layoutContentView()
-    }
-  }
+//  @objc(uiManagerDidPerformLayout:)
+//  func uiManagerDidPerformLayout(_ manager: RCTUIManager!) {
+//    DispatchQueue.main.async { [weak self] in
+//      self?.layoutContentView()
+//    }
+//  }
 
   var hasAutoPlayed = false
 
@@ -504,7 +508,7 @@ class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMedi
     }
 
 
-    self.videoView?.showCover = true
+//    self.videoView?.showCover = true
 
     self.current?.load() { source in
       RCTExecuteOnUIManagerQueue { [weak self] in

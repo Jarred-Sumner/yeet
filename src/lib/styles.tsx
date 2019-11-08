@@ -6,7 +6,7 @@ export const COLORS = {
   error: "#FF7575",
   secondaryOpacity: "rgba(26, 145, 255, 0.9)",
   secondary: "#1A91FF",
-  muted: "#999"
+  muted: "#A4A4A4"
 };
 
 export const SPACING = {

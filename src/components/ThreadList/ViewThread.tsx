@@ -1,1280 +1,793 @@
-// @flow
-import { memoize, uniq, uniqBy } from "lodash";
+import { fromPairs, sum, Cancelable } from "lodash";
 import * as React from "react";
-import { Mutation, Query, useMutation } from "react-apollo";
 import {
-  findNodeHandle,
+  FlatList as RNFlatList,
   StyleSheet,
-  UIManager,
   View,
+  ViewabilityConfig,
   InteractionManager
 } from "react-native";
-import {
-  useNetInfo,
-  NetInfoStateType,
-  NetInfoCellularGeneration
-} from "@react-native-community/netinfo";
-
-import { BaseButton } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated, { Easing } from "react-native-reanimated";
-import { useFocusState, useNavigation } from "react-navigation-hooks";
-import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
-import { ViewPosts } from "../../lib/graphql/ViewPosts";
-import { ViewThreads_postThreads } from "../../lib/graphql/ViewThreads";
-import LIKE_POST_MUTATION from "../../lib/LikePost.graphql";
+import { scaleToWidth, isTapInside } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
-import { sendLightFeedback } from "../../lib/Vibration";
-import VIEW_POSTS_QUERY from "../../lib/ViewPosts.graphql";
 import { Avatar } from "../Avatar";
-import { BitmapIconNewPost } from "../BitmapIcon";
-import { IconPlay } from "../Icon";
-import MediaFrame from "../MediaFrame";
-import MediaPlayer, { MediaPlayerComponent } from "../MediaPlayer";
-import { SemiBoldText, LETTER_SPACING_MAPPING } from "../Text";
-import { AuthState, UserContext } from "../UserContext";
-import { CountButton } from "./CountButton";
+import FlatList, { ScrollView } from "../FlatList";
+import MediaPlayer from "../MediaPlayer";
+import { SemiBoldText } from "../Text";
 import { LikeCountButton } from "./LikeCountButton";
-import { BAR_HEIGHT, Seekbar } from "./Seekbar";
-import { postElementId } from "../../lib/graphql/ElementTransition";
-import { scaleToWidth } from "../../lib/Rect";
-import { LikePost, LikePostVariables } from "../../lib/graphql/LikePost";
+import { runTiming } from "../../lib/animations";
+import {
+  debounce,
+  invert,
+  orderBy,
+  sortBy,
+  toPairs,
+  first,
+  chain,
+  filter
+} from "lodash";
+import {
+  BaseButton,
+  PanGestureHandler,
+  TouchableHighlight,
+  State
+} from "react-native-gesture-handler";
+import { boxBox as intersects } from "intersects";
+import { Rectangle } from "../../lib/Rectangle";
+import { IconButtonEllipsis } from "../Button";
 
-const AVATAR_SIZE = 36;
+const BORDER_RADIUS = 24;
+const AVATAR_SIZE = 24;
 
-export const OverlayGradient = ({
-  width,
-  height,
-  layoutDirection,
-  topEndLocation = 0.1,
-  bottomStartLocation = 0.7879
-}) => {
-  return (
-    <LinearGradient
-      width={width}
-      height={height}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      locations={[0, topEndLocation, bottomStartLocation, 1.0]}
-      colors={[
-        "rgba(0,0,0,0.15)",
-        "rgba(0,0,0,0)",
-        "rgba(0,0,0,0.0)",
-        "rgba(0,0,0,0.25)"
-      ]}
-    />
-  );
-};
+enum LayerZ {
+  player = 0,
+  gradient = 1,
+  metadata = 2,
+  paused = 3
+}
 
-const threadStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
-    position: "relative",
-    overflow: "visible"
+    borderRadius: BORDER_RADIUS,
+    overflow: "hidden",
+    position: "relative"
   },
-  sidebar: {
-    alignItems: "flex-end",
-    flex: 0,
-    width: SCREEN_DIMENSIONS.width,
+  player: {
+    borderRadius: BORDER_RADIUS,
+    zIndex: 0
+  },
+  gradient: {
+    position: "absolute",
+    zIndex: LayerZ.gradient
+  },
+  top: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
     flexDirection: "row",
-    justifyContent: "space-between",
-    paddingBottom: SPACING.normal
-  },
-  counts: {
     alignItems: "center",
-    overflow: "visible",
-    flexDirection: "row",
-    marginBottom: SPACING.half
-  },
-  layer: {
-    ...StyleSheet.absoluteFillObject
-  },
-  touchableLayer: {
-    zIndex: 6,
-    position: "relative",
-    justifyContent: "flex-end"
-  },
-  overlayLayer: {
-    zIndex: 5,
-    alignSelf: "flex-end",
-    justifyContent: "flex-end"
+    justifyContent: "space-between",
+
+    zIndex: LayerZ.metadata
   },
   profile: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: SPACING.normal
+    padding: SPACING.normal
   },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-
-  progressBars: {
-    opacity: 1.0,
-    position: "absolute",
-    justifyContent: "flex-end",
-    height: 4,
+  topGradient: {
+    top: 0,
     left: 0,
     right: 0
   },
+  bottomGradient: {
+    bottom: 0,
+    left: 0,
+    right: 0
+  },
+  topRight: {
+    justifyContent: "flex-end",
+
+    flexDirection: "row"
+  },
   username: {
-    fontSize: 18,
-    letterSpacing: LETTER_SPACING_MAPPING["18"],
-    marginLeft: SPACING.normal
-  },
-  likesCount: {
+    marginLeft: SPACING.half,
+    alignSelf: "center",
     color: "white",
-    flexDirection: "row",
-    alignItems: "center"
+    // opacity: 0.7,
+    textShadowColor: "rgba(0, 0, 0, 0.2)",
+    textShadowRadius: 3,
+    textShadowOffset: {
+      width: 0,
+      height: 2
+    }
   },
-  mediaLayer: {
-    zIndex: 0,
+
+  avatarContainer: {
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    shadowRadius: 18,
+    shadowColor: "black",
+    shadowOpacity: 0.25,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE
+  },
+  count: {
+    position: "absolute",
+    bottom: 24,
+    zIndex: LayerZ.metadata,
+    right: 0,
+    paddingHorizontal: 20,
+    justifyContent: "flex-end",
+    alignItems: "flex-end"
+  },
+  ellipsis: {
+    width: AVATAR_SIZE + SPACING.normal * 2,
+    height: AVATAR_SIZE + SPACING.normal * 2,
     alignItems: "center",
     justifyContent: "center"
   },
-  gradientLayer: {
-    zIndex: 4
-  },
-  remixCount: {
-    color: "white",
-    flexDirection: "row",
-    justifyContent: "center",
-
-    alignItems: "center",
-    marginLeft: SPACING.normal
-  },
-  remixCountText: {
-    marginLeft: SPACING.normal,
-
-    fontSize: 18,
-    letterSpacing: LETTER_SPACING_MAPPING["18"]
-  },
-  likesCountText: {
-    marginLeft: SPACING.normal,
-    fontSize: 18,
-    letterSpacing: LETTER_SPACING_MAPPING["18"]
-  },
-  header: {
-    // marginTop: TOP_Y,
-    alignItems: "flex-start",
-    justifyContent: "center"
+  pausedOverlay: {
+    position: "absolute",
+    zIndex: LayerZ.paused,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#1F1F1F"
   }
 });
 
-const ProfileComponent = React.forwardRef(
-  ({ profile, onLayout, hideText, onPress }, ref) => (
-    <View style={threadStyles.footer}>
-      <BaseButton onPress={onPress}>
-        <View style={threadStyles.profile}>
-          <View ref={ref} onLayout={onLayout}>
-            <Avatar
-              label={profile.username}
-              size={AVATAR_SIZE}
-              url={profile.photoURL}
-            />
-          </View>
-          <SemiBoldText
-            style={[threadStyles.username, hideText && { display: "none" }]}
-          >
-            {profile.username}
-          </SemiBoldText>
-        </View>
-      </BaseButton>
-    </View>
-  )
-);
+const ITEM_SEPARATOR_HEIGHT = 8;
 
-const Profile = React.forwardRef(({ profile, onLayout, hideText }, ref) => {
-  const navigation = useNavigation();
-
-  const handlePress = React.useCallback(() => {
-    navigation.navigate("ViewProfile", { profileId: profile.id });
-  }, [profile.id, navigation]);
-
+const OverlayGradient = ({ width, height = 84, style, flipped }) => {
+  const COLORS = ["rgba(31, 31, 31, 0.65)", "rgba(35, 35, 35, 0)"];
+  const colors = flipped ? COLORS.reverse() : COLORS;
   return (
-    <ProfileComponent
-      profile={profile}
-      onLayout={onLayout}
-      ref={ref}
-      hideText={hideText}
-      onPress={handlePress}
+    <LinearGradient
+      style={style}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      locations={[0.2, 1.0]}
+      pointerEvents="none"
+      width={width}
+      height={height}
+      colors={colors}
     />
   );
-});
+};
 
-const AnimatedProfile = React.forwardRef(
+const FADE_OVERLAY = 0.6;
+
+const scrollOpacityAnimation = Animated.proc(
   (
-    {
-      profile,
-      progressValue,
-      x,
-      y,
-      width,
-      height,
-      endX,
-      endY,
-      animated = false,
-      isAnimatingNextPost,
-      parentHeight
-    },
-    ref
-  ) => {
-    if (animated) {
-      const animationProgress = Animated.cond(
-        Animated.eq(isAnimatingNextPost, 0),
-        0,
-        progressValue
-      );
-
-      const top = Animated.interpolate(animationProgress, {
-        inputRange: [0, 1],
-        outputRange: [endY, Animated.sub(y, BAR_HEIGHT + 2)],
+    prevOffset,
+    snapOffset,
+    height,
+    scrollY,
+    isScrolling,
+    visiblePostIDValue,
+    visibleID
+  ) =>
+    Animated.cond(
+      Animated.eq(isScrolling, 1),
+      Animated.interpolate(scrollY, {
+        inputRange: [prevOffset, snapOffset, Animated.add(snapOffset, height)],
+        outputRange: [
+          Animated.cond(Animated.greaterThan(prevOffset, 0), FADE_OVERLAY, 0),
+          0,
+          FADE_OVERLAY
+        ],
         extrapolate: Animated.Extrapolate.CLAMP
-      });
-
-      const left = Animated.interpolate(animationProgress, {
-        inputRange: [0, 1],
-        outputRange: [endX, Animated.sub(x, BAR_HEIGHT)],
-        extrapolate: Animated.Extrapolate.CLAMP
-      });
-
-      return (
-        <Animated.View
-          style={{
-            position: "absolute",
-            opacity: isAnimatingNextPost,
-            overflow: "visible",
-            top: top,
-            left: left,
-            width,
-            height,
-            transform: [
-              {
-                scale: Animated.interpolate(animationProgress, {
-                  inputRange: [0, 1],
-                  outputRange: [1, Animated.divide(width, AVATAR_SIZE)]
-                })
-              }
-            ]
-          }}
-        >
-          <Avatar
-            label={profile.username}
-            size={AVATAR_SIZE}
-            url={profile.photoURL}
-          />
-        </Animated.View>
-      );
-    } else {
-      const animationProgress = Animated.cond(
-        Animated.eq(isAnimatingNextPost, 0),
-        1,
-        progressValue
-      );
-
-      return (
-        <Animated.View
-          style={{
-            opacity: 1,
-            transform: [
-              {
-                translateX: Animated.interpolate(animationProgress, {
-                  inputRange: [0, 1],
-                  outputRange: [SCREEN_DIMENSIONS.width * -1, 0],
-                  extrapolate: Animated.Extrapolate.CLAMP
-                })
-              }
-            ]
-          }}
-        >
-          <Profile ref={ref} profile={profile} />
-        </Animated.View>
-      );
-    }
-  }
+      }),
+      Animated.cond(Animated.eq(visiblePostIDValue, visibleID), 0, FADE_OVERLAY)
+    )
 );
 
-type State = {
-  postIndex: number;
-  nextPostIndex: number;
-  isPlaying: boolean;
-  autoAdvance: boolean;
-  autoPlay: boolean;
-};
+const calculatePostHeight = (post: PostFragment) =>
+  scaleToWidth(SCREEN_DIMENSIONS.width, post.media).height;
 
-type Props = {
-  posts: Array<PostFragment>;
-  isVisible: boolean;
-  isNextVisible: boolean;
-  isPreviousVisible: boolean;
-  thread: ViewThreads_postThreads;
-  threadId: string;
-  fetchMore: Function;
+const PostCard = ({
+  post,
+  paused,
+  snapOffset,
+  snapOffsetValue,
+  height,
+  topInset,
+  prevOffset,
+  index,
+  onPress,
+  scrollY,
+  contentHeight,
+  width,
+  onPressLike,
+  visiblePostIDValue,
+  onPressProfile,
+  isScrolling,
+  onPressEllipsis
+}: {
+  post: PostFragment;
+  paused: boolean;
   width: number;
   height: number;
+}) => {
+  const [manuallyPaused, setManuallyPased] = React.useState(false);
+  const mediaPlayerRef = React.useRef();
+  const handlePress = React.useCallback(() => {
+    onPress(post, index);
+  }, [onPress, post, index]);
+
+  const handlePressProfile = React.useCallback(() => {
+    onPressProfile(post.profile);
+  }, [post.profile]);
+
+  const handlePressLike = React.useCallback(() => {
+    onPressLike(post.id);
+  }, [post.id]);
+
+  const handlePressEllipsis = React.useCallback(() => {
+    onPressEllipsis(post, mediaPlayerRef);
+  }, [post.id, mediaPlayerRef]);
+
+  return (
+    <TouchableHighlight disabled={!paused} onPress={handlePress}>
+      <Animated.View style={[styles.container, { width, height }]}>
+        <MediaPlayer
+          sources={[post.media]}
+          paused={manuallyPaused || paused}
+          id={`${post.id}-player`}
+          autoPlay={false}
+          ref={mediaPlayerRef}
+          // sharedId={postElementId(post)}
+          borderRadius={BORDER_RADIUS}
+          style={[StyleSheet.absoluteFill, styles.player, { width, height }]}
+        />
+
+        <OverlayGradient
+          width={width}
+          height={84}
+          style={[
+            styles.gradient,
+            styles.topGradient,
+            {
+              width,
+              height: 84
+            }
+          ]}
+        />
+
+        <OverlayGradient
+          width={width}
+          height={84}
+          flipped
+          style={[
+            styles.gradient,
+            styles.bottomGradient,
+            {
+              width,
+              height: 84
+            }
+          ]}
+        />
+
+        <View style={styles.top}>
+          <TouchableHighlight disabled={paused} onPress={handlePressProfile}>
+            <View style={styles.profile}>
+              <View style={styles.avatarContainer}>
+                <Avatar
+                  url={post.profile.photoURL}
+                  label={post.profile.username}
+                  size={AVATAR_SIZE}
+                />
+              </View>
+
+              <SemiBoldText style={styles.username}>
+                {post.profile.username}
+              </SemiBoldText>
+            </View>
+          </TouchableHighlight>
+
+          <View style={styles.topRight}>
+            <IconButtonEllipsis
+              onPress={handlePressEllipsis}
+              style={styles.ellipsis}
+              vertical
+              size={18}
+            />
+          </View>
+        </View>
+
+        <Animated.View
+          style={[
+            styles.count
+            // {
+            //   transform: [
+            //     {
+            //       translateY: scrollY.interpolate({
+            //         inputRange: [offset - topInset, offset + height - topInset],
+            //         outputRange: [, -10],
+            //         extrapolate: Animated.Extrapolate.CLAMP
+            //       })
+            //     }
+            //   ]
+            // }
+          ]}
+        >
+          <LikeCountButton size={28} id={post.id} onPress={handlePressLike} />
+        </Animated.View>
+
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.pausedOverlay,
+            { width, height },
+            {
+              opacity: scrollOpacityAnimation(
+                prevOffset,
+                snapOffset,
+                height,
+                scrollY,
+                isScrolling,
+                visiblePostIDValue,
+                post.id.hashCode()
+              )
+            }
+          ]}
+        ></Animated.View>
+      </Animated.View>
+    </TouchableHighlight>
+  );
 };
 
-class ThreadContainer extends React.Component<Props, State> {
-  isAnimatingNextPost: Animated.Value<number>;
-  forwardProgressValue: Animated.Value<number>;
-  backwardProgressValue: Animated.Value<number>;
-  progressValue: Animated.Node<number>;
-  showMediaFrame: Animated.Value<number>;
+const listStyles = StyleSheet.create({
+  list: {
+    flex: 1,
+    backgroundColor: "#0A0A0A"
+  },
+  separator: {
+    height: ITEM_SEPARATOR_HEIGHT,
+    width: 1
+  }
+});
+
+const ItemSeparatorComponent = () => <View style={listStyles.separator} />;
+
+export class PostFlatList extends React.Component {
+  static defaultProps = {
+    initialPostIndex: 0
+  };
 
   constructor(props) {
     super(props);
+    this.state = { visibleIDs: {} };
 
-    const isPlaying = props.isVisible;
+    this.topInset = TOP_Y + props.topInset;
+    this.bottomInset = SPACING.double + BOTTOM_Y;
 
-    this.isAnimatingNextPost = new Animated.Value<number>(0);
-    this.forwardProgressValue = new Animated.Value<number>(0.0);
-    this.backwardProgressValue = new Animated.Value<number>(1.0);
-    this.showMediaFrame = new Animated.Value<number>(0);
-
-    this.progressValue = Animated.cond(
-      Animated.eq(this.isAnimatingNextPost, 1),
-      this.backwardProgressValue,
-      this.forwardProgressValue
-    );
-
-    this.state = {
-      postIndex: 0,
-      nextPostIndex: -1,
-      autoPlay: isPlaying,
-      isPlaying,
-      autoAdvance: isPlaying
+    this.contentOffset = {
+      x: 0,
+      y: 0
     };
 
-    this.segmentRefs = {};
-    props.posts.forEach(
-      post => (this.segmentRefs[post.id] = React.createRef())
+    this.contentInset = {
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: this.bottomInset
+    };
+
+    this.updateSnapOffsets();
+
+    if (props.posts.length > 0) {
+      const initialPost = props.posts[props.initialPostIndex];
+      if (initialPost) {
+        this.visiblePostIDValue = new Animated.Value(initialPost.id.hashCode());
+
+        this.state = {
+          visibleIDs: { [initialPost.id]: true }
+        };
+      }
+    }
+  }
+
+  flatListRef = React.createRef<RNFlatList<PostFragment>>();
+
+  snapOffset = new Animated.Value(0);
+
+  getItemLayout = (_data, index) => {
+    const offset = sum(
+      _data.slice(0, index).map(row => calculatePostHeight(row))
     );
-  }
 
-  segmentRefs: { [key: string]: React.MutableRefObject<View> } = {};
+    const post = _data[index];
 
-  componentDidUpdate(prevProps, prevState) {
-    const visibilityChange =
-      this.props.isVisible !== prevProps.isVisible ||
-      this.props.isNextVisible !== prevProps.isNextVisible ||
-      this.props.isPreviousVisible !== prevProps.isPreviousVisible ||
-      prevProps.thread.id !== this.props.thread.id;
+    const length = calculatePostHeight(post);
 
-    if (
-      this.props.posts !== prevProps.posts ||
-      this.props.posts.length !== prevProps.posts.length
-    ) {
-      this.props.posts.forEach(post => {
-        if (!this.segmentRefs[post.id]) {
-          this.segmentRefs[post.id] = React.createRef();
-        }
-      });
-    }
-
-    if (visibilityChange && this.props.isVisible) {
-      this.play();
-    } else if (visibilityChange && !this.props.isVisible) {
-      this.stop();
-    }
-
-    if (
-      (this.state.postIndex !== prevState.postIndex &&
-        this.state.postIndex === this.props.posts.length - 1) ||
-      (this.props.isFocusing && !prevProps.isFocusing)
-    ) {
-      this.props.fetchMore({
-        variables: {
-          offset: this.state.postIndex,
-          threadId: this.props.thread.id,
-          limit: 10
-        },
-        updateQuery: (
-          previousResult: ViewPosts,
-          { fetchMoreResult, queryVariables }: { fetchMoreResult: ViewPosts }
-        ) => {
-          return {
-            posts: [
-              ...previousResult.posts,
-              // Add the new matches data to the end of the old matches data.
-              ...fetchMoreResult.posts
-            ]
-          };
-        }
-      });
-    }
-  }
-
-  handlePostEnded = async () => {
-    console.log("END");
-    this.goNext();
-  };
-
-  skip = () => {
-    this.goNext();
-  };
-
-  goNext = async (fast: boolean = false) => {
-    const postIndex = this.state.postIndex + 1;
-    const hasNextPost = postIndex < this.props.posts.length;
-
-    if (hasNextPost) {
-      await this.loadNextPost(postIndex, fast);
-    }
-  };
-
-  goBack = async (fast: boolean = false) => {
-    const postIndex = Math.max(this.state.postIndex - 1, 0);
-    const prevPost = this.props.posts[postIndex];
-
-    if (!!prevPost && this.state.autoAdvance) {
-      await this.loadNextPost(postIndex, fast);
-    }
-  };
-
-  postIndexValue = new Animated.Value<number>(0);
-  isRunningProgressAnimation = false;
-
-  forwardProgressAnimation: Animated.BackwardCompatibleWrapper = null;
-  postIndexAnimation: Animated.BackwardCompatibleWrapper = null;
-  backwardsProgressAnimation: Animated.BackwardCompatibleWrapper = null;
-
-  loadNextPost = async (_postIndex: number, animateFaster: boolean = false) => {
-    this.isAnimatingToNextPost = true;
-
-    const postIndex =
-      typeof _postIndex === "number" ? _postIndex : this.state.postIndex;
-
-    if (this.state.postIndex === 0 && _postIndex === 0) {
-      this.isAnimatingToNextPost = false;
-      this.cancelAnimations();
-
-      this.forwardProgressValue.setValue(0);
-
-      if (this.mediaPlayerRef.current) {
-        await this.mediaPlayerRef.current.advance(0);
-        this.mediaPlayerRef.current.play();
-      }
-
-      return Promise.resolve();
-    }
-
-    if (animateFaster) {
-      this.isAnimatingToNextPost = true;
-
-      this.cancelAnimations();
-      this.forwardProgressValue.setValue(0);
-
-      if (this.mediaPlayerRef.current) {
-        await this.mediaPlayerRef.current.advance(postIndex, true);
-      }
-
-      this.setState({ postIndex, nextPostIndex: postIndex + 1 });
-
-      this.postIndexValue.setValue(postIndex);
-
-      this.isAnimatingToNextPost = false;
-      return;
-    }
-
-    this.cancelAnimations();
-
-    this.backwardProgressValue.setValue(1.0);
-    this.forwardProgressValue.setValue(1.0);
-
-    this.isRunningProgressAnimation = true;
-    this.isAnimatingToNextPost = true;
-
-    if (postIndex !== this.state.nextPostIndex) {
-      this.setState({ nextPostIndex: postIndex });
-    }
-
-    const post = this.props.posts[postIndex];
-    const segmentRef = this.segmentRefs[post.id];
-
-    const [{ width, height, y, x }, { x: endX, y: endY }] = await Promise.all([
-      new Promise((resolve, reject) => {
-        const segmentHandle = findNodeHandle(segmentRef.current);
-        const overlayHandle = findNodeHandle(this.overlayRef.current);
-        if (!segmentHandle || !overlayHandle) {
-          reject();
-        }
-
-        UIManager.measureLayout(
-          segmentHandle,
-          overlayHandle,
-          reject,
-          (x, y, width, height) => {
-            resolve({ x, y, width, height });
-          }
-        );
-      }),
-      new Promise((resolve, reject) => {
-        this.profileRef.current.measureInWindow((x, y, width, height) => {
-          resolve({ x, y, width, height });
-        });
-      })
-    ]);
-
-    // const x = this.seekbarRef.current.segmentByPostID(this.post.id);
-    this.profileAnimationStartHeight.setValue(height);
-    this.profileAnimationStartWidth.setValue(width);
-    this.profileAnimationStartX.setValue(x);
-    this.profileAnimationStartY.setValue(y);
-    this.profileAnimationEndX.setValue(endX);
-    this.profileAnimationEndY.setValue(endY);
-
-    this.mediaFrameRef.current.captureFrame(this.mediaPlayerRef);
-    if (this.mediaPlayerRef.current) {
-      await this.mediaPlayerRef.current.advance(postIndex);
-    }
-
-    this.isAnimatingNextPost.setValue(1);
-
-    await new Promise((resolve, reject) => {
-      const backwardsProgressAnimation = Animated.timing(
-        this.backwardProgressValue,
-        {
-          toValue: 0.0,
-          duration: 500,
-          easing: Easing.ease
-        }
-      );
-
-      backwardsProgressAnimation.start(() => {
-        if (backwardsProgressAnimation === this.backwardsProgressAnimation) {
-          this.backwardsProgressAnimation = null;
-        }
-      });
-
-      this.backwardsProgressAnimation = backwardsProgressAnimation;
-
-      const postIndexAnimation = Animated.timing(this.postIndexValue, {
-        toValue: postIndex,
-        duration: 500,
-        easing: Easing.ease
-      });
-
-      this.postIndexAnimation = postIndexAnimation;
-
-      postIndexAnimation.start(({ finished }) => {
-        if (postIndexAnimation === this.postIndexAnimation) {
-          this.postIndexAnimation = null;
-        }
-
-        if (finished) {
-          this.forwardProgressValue.setValue(0.0);
-
-          this.setState({ postIndex, nextPostIndex: postIndex + 1 }, () => {
-            window.requestAnimationFrame(() => {
-              this.backwardProgressValue.setValue(1.0);
-            });
-            resolve();
-          });
-        } else {
-          reject();
-        }
-      });
-    });
-
-    this.isAnimatingNextPost.setValue(0);
-    this.isAnimatingToNextPost = false;
-  };
-
-  cancelAnimations = () =>
-    [
-      this.postIndexAnimation,
-      this.backwardsProgressAnimation,
-      this.forwardProgressAnimation
-    ]
-      .filter(Boolean)
-      .forEach(animation => animation.stop());
-
-  componentWillUnmount() {
-    this.cancelAnimations();
-  }
-
-  get post() {
-    return this.props.posts[this.state.postIndex] || this.props.post;
-  }
-
-  play = () => {
-    this.setState({
-      isPlaying: true,
-      autoAdvance: true
-    });
-  };
-
-  progressAnimation: Animated.BackwardCompatibleWrapper | null = null;
-  profileAnimationStartX = new Animated.Value(0);
-  profileAnimationStartY = new Animated.Value(0);
-  profileAnimationStartWidth = new Animated.Value(0);
-  profileAnimationStartHeight = new Animated.Value(0);
-  profileAnimationEndX = new Animated.Value(0);
-  profileAnimationEndY = new Animated.Value(0);
-  progressAnimationCallbackKey = Math.random();
-
-  onMediaPlay = () => {};
-
-  onMediaPause = () => {};
-
-  pause = () => {
-    this.setState({
-      isPlaying: false,
-      autoPlay: false,
-      autoAdvance: false
-    });
-
-    this.cancelAnimations();
-  };
-
-  stop = () => {
-    this.setState({
-      isPlaying: false,
-      autoAdvance: false,
-      autoPlay: false
-    });
-
-    this.cancelAnimations();
-    if (this.mediaPlayerRef.current) {
-      this.mediaPlayerRef.current.advance(this.state.postIndex);
-    }
-  };
-
-  get hasLikedPost() {
-    if (
-      this.props.authState !== AuthState.loggedIn ||
-      !this.props.currentUser
-    ) {
-      return false;
-    }
-
-    return this.post.likes.profileIDs.includes(this.props.currentUser.id);
-  }
-
-  handlePressLike = () => {
-    const { authState, currentUser, requireAuthentication } = this.props;
-    if (authState !== AuthState.loggedIn) {
-      requireAuthentication();
-      return;
-    }
-
-    const {
-      id: postId,
-      likes: { profileIDs = [] }
-    } = this.post;
-    const { id: userId } = currentUser;
-
-    let _profileIDs = [...profileIDs];
-
-    if (_profileIDs.includes(userId)) {
-      _profileIDs.splice(_profileIDs.indexOf(userId), 1);
-    } else {
-      _profileIDs.push(userId);
-    }
-
-    _profileIDs = uniq(_profileIDs);
-
-    this.props.likePost({
-      variables: { postId },
-      optimisticResponse: {
-        __typename: "Mutation",
-        likePost: {
-          ...this.post,
-          likesCount: _profileIDs.length,
-          likes: {
-            ...this.post.likes,
-            profileIDs: _profileIDs
-          }
-        }
-      }
-    });
-
-    sendLightFeedback();
-  };
-
-  handlePressReply = () => {
-    this.props.onPressReply({
-      threadId: this.props.thread.id,
-      thread: this.props.thread.id,
-      post: this.post
-    });
-  };
-
-  seekbarRef = React.createRef<Seekbar>();
-
-  getItemLayout = (data: Array<PostFragment>, index: number) => {
     return {
-      // length: data[index].height + SPACING.normal,
-      length: this.props.width,
-      offset: this.props.width * index,
+      length,
+      offset: offset + ITEM_SEPARATOR_HEIGHT * index,
       index
     };
   };
 
-  static _extraData = memoize(
-    (postIndex: number, isPlaying: boolean, isVisible: boolean) => {
-      return {
-        postIndex: postIndex,
-        isPlaying: isPlaying,
-        isVisible: isVisible
-      };
-    }
-  );
+  snapOffsets: { [id: string]: number } = {};
+  isScrollingValue = new Animated.Value(0);
+  snapToOffsets: Array<number> = [];
+  contentHeight = new Animated.Value(0);
+  snapBounds: { [key: string]: Rectangle };
 
-  getExtraData = () => {
-    return ThreadContainer._extraData(
-      this.state.postIndex,
-      this.state.isPlaying,
-      this.props.isVisible
-    );
-  };
+  updateSnapOffsets = () => {
+    let pairs = this.props.posts.map((post, index) => [
+      post.id,
+      this.getItemLayout(this.props.posts, index).offset
+    ]);
 
-  togglePlayPause = () => {
-    if (this.state.isPlaying) {
-      this.pause();
-    } else {
-      this.play();
-    }
-  };
-
-  handleTapBack = () => {
-    this.goBack(true);
-  };
-
-  handleTapNext = () => {
-    this.goNext(true);
-  };
-
-  overlayRef = React.createRef<View>();
-  profileRef = React.createRef<View>();
-  mediaPlayerRef = React.createRef<MediaPlayerComponent>();
-  isAnimatingToNextPost = false;
-  lastProgress: number | null = null;
-
-  handleProgress = ({
-    nativeEvent: { index, id, url, elapsed, interval: animationDuration }
-  }) => {
-    const post = this.props.posts.find(({ media }) => media.id === id);
-
-    if (!post || this.isAnimatingToNextPost || id !== this.post.media.id) {
-      return;
-    }
-
-    let progress = (elapsed + animationDuration) / post.autoplaySeconds;
-    if (progress > 1) {
-      progress = progress - Math.floor(progress);
-    }
-
-    const isAboutToAdvance =
-      this.state.postIndex < this.props.posts.length - 1 &&
-      (elapsed + animationDuration) / post.autoplaySeconds >= 1.0;
-
-    if (isAboutToAdvance) {
-      const forwardProgressAnimation = Animated.timing(
-        this.forwardProgressValue,
-        {
-          toValue: 1.0,
-          duration: animationDuration * 1000,
-          easing: Easing.linear
-        }
-      );
-
-      this.forwardProgressAnimation = forwardProgressAnimation;
-
-      this.forwardProgressAnimation.start(() => {
-        if (forwardProgressAnimation === this.forwardProgressAnimation) {
-          this.forwardProgressAnimation = null;
-        }
-      });
-
-      this.mediaFrameRef.current.captureFrame(this.mediaPlayerRef);
-
-      return;
-    }
-
-    // if (isRestarting) {
-    //   this.forwardProgressValue.setValue(0.0);
-    // }
-
-    const forwardProgressAnimation = Animated.timing(
-      this.forwardProgressValue,
-      {
-        toValue: progress,
-        duration: animationDuration * 1000,
-        easing: Easing.linear
-      }
-    );
-    this.forwardProgressAnimation = forwardProgressAnimation;
-
-    this.forwardProgressAnimation.start(() => {
-      if (this.forwardProgressAnimation === forwardProgressAnimation) {
-        this.forwardProgressAnimation = null;
-      }
-    });
-
-    this.lastProgress = progress;
-  };
-
-  mediaFrameRef = React.createRef();
-
-  render() {
-    const {
-      thread,
-      posts,
-      offset,
-      height,
-      isVisible,
-      isNextVisible,
-      isPreviousVisible,
-      width,
-      paused,
-      isSlowConnection
-    } = this.props;
-
-    const post = this.post;
-    const nextPost = posts[this.state.nextPostIndex];
-    const postSize = scaleToWidth(width, post.media);
-
-    const sources = this.props.posts.map(
-      ({
-        media: {
-          id,
-          url,
-          highQualityUrl,
-          mediumQualityUrl,
-          lowQualityUrl,
-          mimeType,
-          width,
-          height,
-          duration,
-          pixelRatio
-        },
-        bounds,
-        autoplaySeconds
-      }) => ({
-        // url: lowQualityUrl,
-        url: isSlowConnection ? mediumQualityUrl ?? url : highQualityUrl ?? url,
-        id,
-        mimeType,
-        width,
-        pixelRatio,
-        height,
-        duration,
-        bounds,
-        playDuration: autoplaySeconds
+    this.snapBounds = fromPairs(
+      this.props.posts.map((post, index) => {
+        const { length: height, offset } = this.getItemLayout(
+          this.props.posts,
+          index
+        );
+        return [
+          post.id,
+          new Rectangle(0, offset, SCREEN_DIMENSIONS.width, height)
+        ];
       })
     );
 
+    this.snapOffsets = fromPairs(pairs);
+    this.snapToOffsets = Object.values(this.snapOffsets);
+  };
+
+  componentDidUpdate(prevProps) {
+    if (
+      prevProps.posts !== this.props.posts ||
+      this.props.posts.length !== prevProps.posts.length
+    ) {
+      this.updateSnapOffsets();
+
+      if (
+        Object.keys(this.state.visibleIDs).length === 0 &&
+        this.props.posts.length > 0
+      ) {
+        this.snapToInitialPost();
+      }
+    }
+  }
+
+  snapToInitialPost = () => {
+    const { initialPostIndex: index = 0 } = this.props;
+    const post = this.props.posts[index];
+    this.snapToIndex(post, index);
+  };
+
+  renderItem = ({ item, index }) => {
+    const height = calculatePostHeight(item);
+
+    const paused = !this.state.visibleIDs[item.id];
+    const prevOffset =
+      this.snapOffsets[this.props.posts[Math.max(index - 1, 0)]?.id] ?? 0;
     return (
-      <Animated.View
-        style={[
-          threadStyles.container,
-          {
-            width: width,
-            height,
-            overflow: "hidden",
-            backgroundColor: "black"
-          }
-        ]}
+      <PostCard
+        width={SCREEN_DIMENSIONS.width}
+        paused={paused}
+        height={height}
+        contentHeight={this.contentHeight}
+        index={index}
+        isScrolling={this.isScrollingValue}
+        snapOffset={this.snapOffsets[item.id]}
+        prevOffset={prevOffset}
+        snapOffsetValue={this.snapOffset}
+        scrollY={this.scrollY}
+        onPress={this.snapToIndex}
+        visiblePostID={item.id.hashCode()}
+        visiblePostIDValue={this.visiblePostIDValue}
+        post={item}
+      />
+    );
+  };
+
+  viewabilityConfig: ViewabilityConfig = {
+    itemVisiblePercentThreshold: 65,
+    waitForInteraction: false
+  };
+
+  handleSnap = ([snapY, scrollY]) => {
+    const visibleRect = new Rectangle(
+      0,
+      snapY,
+      SCREEN_DIMENSIONS.width,
+      this.height
+    );
+
+    const shouldScrollToCompletion = snapY === scrollY;
+
+    const viewableItems = orderBy(
+      Object.entries(this.snapBounds)
+        .filter(([id, rectangle]) => visibleRect.intersects(rectangle))
+        .map(([id, rectangle]) => {
+          return [
+            id,
+            rectangle,
+            visibleRect.intersect(rectangle).height / rectangle.height
+          ];
+        }),
+      ["[2]"],
+      ["desc"]
+    );
+
+    let [id, rect] = viewableItems[0] ?? [null];
+
+    if (id) {
+      this.setVisibleID(id);
+    }
+  };
+
+  autoSnapToOffset = ([offset]) => {
+    const [id] =
+      Object.entries(this.snapOffsets).find(
+        ([id, _offset]) => offset === _offset
+      ) ?? [];
+
+    if (id) {
+      this.flatListRef.current.scrollToOffset({
+        animated: true,
+        offset: offset + this.topInset
+      });
+
+      this.setVisibleID(id);
+    }
+  };
+
+  contentOffset = {
+    x: 0,
+    y: 0
+  };
+  scrollY = new Animated.Value(0);
+
+  onScroll = Animated.event(
+    [
+      {
+        nativeEvent: ({
+          contentOffset: { y: scrollY },
+          layoutMeasurement: { height: contentHeight }
+        }) =>
+          Animated.block([
+            Animated.set(this.isScrollingValue, 1),
+            Animated.set(this.scrollY, scrollY),
+            Animated.set(this.contentHeight, contentHeight)
+          ])
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
+  onScrollEndDrag = Animated.event(
+    [
+      {
+        nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
+          Animated.block([
+            Animated.set(this.snapOffset, snapOffset),
+            Animated.call([this.snapOffset, this.scrollY], this.handleSnap)
+          ])
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
+  onMomentumScrollEnd = ({
+    nativeEvent: {
+      contentOffset: { y }
+    }
+  }) =>
+    Animated.block([
+      Animated.set(this.scrollY, y),
+      Animated.set(this.snapOffset, y),
+      Animated.set(this.isScrollingValue, 0),
+      Animated.call([this.snapOffset, this.scrollY], this.handleSnap)
+    ]);
+
+  onMomentumScrollBegin = ({
+    nativeEvent: {
+      contentOffset: { y }
+    }
+  }) => Animated.block([Animated.set(this.isScrollingValue, 1)]);
+
+  visiblePostIDValue = new Animated.Value(-1);
+
+  keyExtractor = item => item.id;
+
+  handleEndReached = () => {
+    if (this.props.loading) {
+      return;
+    }
+
+    // this.props.fetchMore({
+    //   variables: {
+    //     offset: this.props.offset
+    //   },
+    //   updateQuery: (
+    //     previousResult: ViewThreads,
+    //     { fetchMoreResult }: { fetchMoreResult: ViewThreads }
+    //   ) => {
+    //     const data = uniqBy(
+    //       [
+    //         ...previousResult.postThreads.data,
+    //         ...fetchMoreResult.postThreads.data
+    //       ],
+    //       "id"
+    //     );
+
+    //     return {
+    //       ...fetchMoreResult,
+    //       postThreads: {
+    //         ...fetchMoreResult.postThreads,
+    //         data
+    //       }
+    //     };
+    //   }
+    // });
+  };
+
+  setVisibleID = (id: string) => {
+    const entry = this.snapOffsets[id];
+    this.visiblePostIDValue.setValue(id.hashCode());
+
+    this.setState({
+      visibleIDs: {
+        [id]: true
+      }
+    });
+  };
+
+  topInset = TOP_Y;
+  bottomInset = SPACING.double;
+
+  contentInset = {
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: BOTTOM_Y + this.bottomInset
+  };
+
+  interactionTask: Cancelable | null = null;
+
+  snapToIndex = (post: PostFragment, index: number) => {
+    this.flatListRef.current.scrollToOffset({
+      animated: true,
+      offset: this.snapOffsets[post.id]
+      // viewPosition: 0,
+      // viewOffset: 0
+    });
+
+    this.setVisibleID(post.id);
+
+    this.scrollY.setValue(this.snapOffsets[post.id]);
+    this.snapOffset.setValue(this.snapOffsets[post.id]);
+    this.isScrollingValue.setValue(0);
+  };
+
+  componentWillUnmount() {
+    if (this.interactionTask) {
+      this.interactionTask.cancel();
+    }
+  }
+
+  // snapToNextItem = ([visiblePostIDValue, scrollY]) => {
+  //   const entries = Object.entries(this.snapOffsets);
+
+  //   let id = Object.keys(this.state.visibleIDs)[0];
+
+  //   if (nextSnapOffset) {
+  //     this.setVisibleID(nextSnapOffset[0]);
+  //   }
+  // };
+
+  // snapToPreviousItem = ([visiblePostIDValue, scrollY]) => {
+  //   const previousSnapOffset = Object.entries(this.snapOffsets)
+  //     .reverse()
+  //     .find(([id, offset]) => id.hashCode() === visiblePostIDValue);
+
+  //   if (previousSnapOffset) {
+  //     this.setVisibleID(previousSnapOffset[0]);
+  //   }
+  // };
+
+  scrollDirectionValue = new Animated.Value(1);
+
+  handleScrollToTop = () => {
+    const post = this.props.posts[0];
+    if (post) {
+      this.snapToIndex(post, 0);
+    } else {
+      this.flatListRef.current.scrollToOffset({
+        offset: this.topInset * -1,
+        animated: true
+      });
+    }
+  };
+
+  viewableIDs = [];
+
+  get height() {
+    return SCREEN_DIMENSIONS.height - this.bottomInset - this.topInset;
+  }
+
+  panRef = React.createRef<PanGestureHandler>();
+
+  handlePan = Animated.event(
+    [
+      {
+        nativeEvent: {
+          state: state =>
+            Animated.set(this.isScrollingValue, state === State.ACTIVE ? 1 : 0)
+        }
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
+  render() {
+    const { posts, refreshing, topInset = 0, renderHeader } = this.props;
+
+    return (
+      <PanGestureHandler
+        onHandlerStateChange={this.handlePan}
+        ref={this.panRef}
+        simultaneousHandlers={[this.flatListRef]}
       >
-        <Animated.View
-          style={{
-            width,
-            height
-          }}
-        >
-          <Animated.View
-            style={{
-              position: "absolute",
-              width,
-
-              height
-            }}
-          >
-            <Animated.View
-              style={{
-                position: "relative",
-                width,
-                height
-              }}
-            >
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  zIndex: 3,
-                  width,
-                  height,
-                  opacity: this.isAnimatingNextPost,
-                  transform: [
-                    {
-                      scale: Animated.interpolate(this.progressValue, {
-                        inputRange: [0, 1],
-                        outputRange: [0.75, 1],
-                        extrapolate: Animated.Extrapolate.CLAMP
-                      })
-                    },
-                    {
-                      translateX: Animated.interpolate(this.progressValue, {
-                        inputRange: [0, 1],
-                        outputRange: [-1.25 * width, 0],
-                        extrapolate: Animated.Extrapolate.CLAMP
-                      })
-                    },
-                    {
-                      translateY: Animated.interpolate(this.progressValue, {
-                        inputRange: [0, 1],
-                        outputRange: [height * -0.05, 0],
-                        extrapolate: Animated.Extrapolate.CLAMP
-                      })
-                    }
-                  ]
-                }}
-              >
-                {/* <MediaFrame
-                  source={sources[this.state.postIndex]}
-                  ref={this.mediaFrameRef}
-                  id={thread.id}
-                  style={{
-                    width,
-                    height
-                  }}
-                /> */}
-
-                <Animated.View
-                  style={[
-                    StyleSheet.absoluteFill,
-                    {
-                      backgroundColor: "black",
-                      zIndex: 10,
-                      opacity: Animated.interpolate(this.progressValue, {
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [1, 0.05, 0],
-                        extrapolate: Animated.Extrapolate.CLAMP
-                      })
-                    }
-                  ]}
-                />
-              </Animated.View>
-
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  zIndex: 3,
-                  width,
-                  height,
-                  transform: [
-                    {
-                      scale: Animated.block([
-                        Animated.cond(
-                          Animated.eq(this.isAnimatingNextPost, 1),
-                          Animated.interpolate(this.progressValue, {
-                            inputRange: [0, 1],
-                            outputRange: [1, 0.75],
-                            extrapolate: Animated.Extrapolate.CLAMP
-                          }),
-                          1
-                        )
-                      ])
-                    },
-                    {
-                      translateX: Animated.block([
-                        Animated.cond(
-                          Animated.eq(this.isAnimatingNextPost, 1),
-                          Animated.interpolate(this.progressValue, {
-                            inputRange: [0, 1],
-                            outputRange: [0, 1.25 * width],
-                            extrapolate: Animated.Extrapolate.CLAMP
-                          }),
-                          0
-                        )
-                      ])
-                    },
-                    {
-                      translateY: Animated.block([
-                        Animated.cond(
-                          Animated.eq(this.isAnimatingNextPost, 1),
-                          Animated.interpolate(this.progressValue, {
-                            inputRange: [0, 1],
-                            outputRange: [0, height * -0.05],
-                            extrapolate: Animated.Extrapolate.CLAMP
-                          }),
-                          0
-                        )
-                      ])
-                    }
-                  ]
-                }}
-              >
-                <MediaPlayer
-                  sources={sources}
-                  id={thread.id}
-                  sharedId={postElementId(post)}
-                  autoPlay={this.state.autoPlay && this.props.isVisible}
-                  paused={!this.state.isPlaying}
-                  prefetch={isVisible}
-                  isVisible={isVisible}
-                  ref={this.mediaPlayerRef}
-                  onProgress={this.handleProgress}
-                  onEnd={this.handlePostEnded}
-                  onError={this.handleError}
-                  style={{
-                    width: postSize.width,
-                    height: postSize.height
-                  }}
-                />
-              </Animated.View>
-            </Animated.View>
-          </Animated.View>
-
-          <View
-            pointerEvents="none"
+        <Animated.View style={{ flex: 1 }}>
+          <FlatList
+            renderItem={this.renderItem}
+            data={posts}
+            refreshing={refreshing}
+            ref={this.flatListRef}
+            contentOffset={this.contentOffset}
+            contentInset={this.contentInset}
+            simultaneousHandlers={[this.panRef]}
+            contentInsetAdjustmentBehavior="never"
+            initialScrollIndex={this.props.initialPostIndex || 0}
+            viewabilityConfig={this.viewabilityConfig}
+            removeClippedSubviews={false}
+            scrollEventThrottle={1}
+            onScroll={this.onScroll}
+            onScrollEndDrag={this.onScrollEndDrag}
+            onScrollBeginDrag={this.onScrollBeginDrag}
+            onMomentumScrollEnd={this.onMomentumScrollEnd}
+            onMomentumScrollBegin={this.onMomentumScrollBegin}
+            // snapToOffsets={this.snapToOffsets}
+            // decelerationRate="fast"
+            onScrollToTop={this.handleScrollToTop}
+            scrollToOverflowEnabled
+            // disableScrollViewPanResponder
+            directionalLockEnabled
+            // pagingEnabled
+            // snapToAlignment="start"
             style={[
-              threadStyles.layer,
-              threadStyles.gradientLayer,
+              listStyles.list,
               {
-                backgroundColor:
-                  !this.state.isPlaying && isVisible
-                    ? "rgba(0, 0, 0, 0.65)"
-                    : undefined
+                overflow: "visible",
+                marginTop: this.topInset,
+                paddingBottom: this.bottomInset,
+                height: this.height
               }
             ]}
-          >
-            <OverlayGradient
-              width={width}
-              bottomStartLocation={
-                (SCREEN_DIMENSIONS.height - BOTTOM_Y - 60 - SPACING.double) /
-                SCREEN_DIMENSIONS.height
-              }
-              height={height}
-              layoutDirection="column-reverse"
-            />
-          </View>
-
-          <View
-            pointerEvents="box-none"
-            style={[
-              threadStyles.layer,
-              threadStyles.touchableLayer,
-              {
-                width,
-                height: height - 120
-              }
-            ]}
-          >
-            <BaseButton
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                bottom: 0,
-                height: height - 120,
-                width: width * 0.33
-              }}
-              onPress={this.handleTapBack}
-            >
-              <Animated.View
-                collapsable={false}
-                style={{
-                  flex: 1
-                }}
-              />
-            </BaseButton>
-
-            <BaseButton
-              style={{
-                position: "absolute",
-                right: 0,
-                top: 0,
-                left: width * 0.33,
-                bottom: 0,
-                height: height - 120,
-                width: width * 0.33,
-                alignSelf: "center"
-              }}
-              onPress={this.togglePlayPause}
-            >
-              <Animated.View
-                collapsable={false}
-                style={{
-                  flex: 1,
-                  alignItems: "center",
-                  justifyContent: "center"
-                }}
-              >
-                <View
-                  style={{
-                    display:
-                      this.state.isPlaying || !isVisible ? "none" : "flex"
-                  }}
-                >
-                  <IconPlay
-                    color="white"
-                    size={64}
-                    style={{
-                      textShadowColor: "black",
-                      textShadowRadius: 5,
-                      overflow: "visible",
-                      textShadowOffset: {
-                        width: 1,
-                        height: 1
-                      }
-                    }}
-                  />
-                </View>
-              </Animated.View>
-            </BaseButton>
-
-            <BaseButton
-              style={{
-                position: "absolute",
-                right: 0,
-                top: 0,
-                bottom: 0,
-                height: height - 100,
-                width: width * 0.33
-              }}
-              onPress={this.handleTapNext}
-            >
-              <View
-                collapsable={false}
-                style={{
-                  flex: 1
-                }}
-              />
-            </BaseButton>
-          </View>
-
-          <View
-            ref={this.overlayRef}
-            style={[threadStyles.layer, threadStyles.overlayLayer]}
-          >
-            <View style={threadStyles.sidebar}>
-              <AnimatedProfile
-                profile={post.profile}
-                progressValue={this.progressValue}
-                ref={this.profileRef}
-                postIndexValue={this.postIndexValue}
-                isAnimatingNextPost={this.isAnimatingNextPost}
-              />
-
-              <View style={threadStyles.counts}>
-                <CountButton
-                  iconNode={
-                    <View
-                      style={{
-                        width: 39,
-                        height: 29,
-                        overflow: "visible"
-                      }}
-                    >
-                      <BitmapIconNewPost
-                        style={{
-                          height: 39,
-                          width: 39,
-                          position: "absolute",
-                          top: 0,
-                          overflow: "visible"
-                        }}
-                      />
-                    </View>
-                  }
-                  size={42}
-                  count={thread.postsCount}
-                  type="shadow"
-                  onPress={this.handlePressReply}
-                />
-
-                <View style={{ width: SPACING.half, height: 1 }} />
-
-                <LikeCountButton
-                  id={this.post.id}
-                  onPress={this.handlePressLike}
-                />
-              </View>
-            </View>
-
-            <View style={{ height: BAR_HEIGHT }}>
-              {posts.length > 1 && isVisible && (
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center"
-                  }}
-                >
-                  <Seekbar
-                    posts={posts}
-                    segmentRefs={this.segmentRefs}
-                    postId={this.post.id}
-                    ref={this.seekbarRef}
-                    indexValue={this.postIndexValue}
-                    percentage={this.progressValue}
-                  />
-                </View>
-              )}
-            </View>
-
-            {nextPost && (
-              <AnimatedProfile
-                profile={nextPost.profile}
-                progressValue={this.progressValue}
-                x={this.profileAnimationStartX}
-                y={this.profileAnimationStartY}
-                endX={this.profileAnimationEndX}
-                endY={this.profileAnimationEndY}
-                width={this.profileAnimationStartWidth}
-                height={this.profileAnimationStartHeight}
-                isAnimatingNextPost={this.isAnimatingNextPost}
-                animated
-                parentHeight={height}
-              />
-            )}
-          </View>
+            extraData={this.state}
+            vertical
+            keyboardDismissMode="interactive"
+            keyExtractor={this.keyExtractor}
+            keyboardShouldPersistTaps="always"
+            getItemLayout={this.getItemLayout}
+            ItemSeparatorComponent={ItemSeparatorComponent}
+            onEndReached={this.handleEndReached}
+          />
         </Animated.View>
-      </Animated.View>
+      </PanGestureHandler>
     );
   }
 }
-
-export const ViewThread = ({
-  isVisible,
-  thread,
-  posts,
-  fetchMore,
-  ...otherProps
-}) => {
-  const { isFocused, isFocusing, isBlurred, isBlurring } = useFocusState();
-  const { currentUser, requireAuthentication, authState } = React.useContext(
-    UserContext
-  );
-
-  const netInfo = useNetInfo();
-
-  let isSlowConnection =
-    !netInfo.isInternetReachable || netInfo.type === NetInfoStateType.vpn;
-  if (netInfo.type === NetInfoStateType.cellular) {
-    isSlowConnection =
-      netInfo.details.cellularGeneration !== NetInfoCellularGeneration["4g"];
-  }
-
-  const [likePost] = useMutation<LikePost, LikePostVariables>(
-    LIKE_POST_MUTATION
-  );
-
-  return (
-    <ThreadContainer
-      isVisible={isVisible}
-      thread={thread}
-      likePost={likePost}
-      isScreenFocused={isFocused}
-      isScreenFocusing={isFocusing}
-      isScreenBlurred={isBlurred}
-      fetchMore={fetchMore}
-      currentUser={currentUser}
-      requireAuthentication={requireAuthentication}
-      isSlowConnection={isSlowConnection}
-      authState={authState}
-      posts={uniqBy(posts, "id")}
-      {...otherProps}
-    />
-  );
-};

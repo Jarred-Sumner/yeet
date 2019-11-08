@@ -199,7 +199,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
     this.loadImages(false);
 
     if (this.props.scrollEnabled) {
-      this.flatListRef.current.getNode().flashScrollIndicators();
+      this.flatListRef.current.flashScrollIndicators();
     }
   }
 
@@ -343,7 +343,7 @@ export class InternetImagesList extends React.PureComponent<Props, State> {
           style={{
             width,
             height: height - IMAGE_SEARCH_HEIGHT,
-            flex: 0
+            flex: 1
           }}
           contentInsetAdjustmentBehavior="never"
           removeClippedSubviews={scrollEnabled}

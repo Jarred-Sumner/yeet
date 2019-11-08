@@ -405,13 +405,13 @@ class ThreadList extends React.PureComponent<Props, State> {
           directionalLockEnabled
           renderScrollView={this.renderScrollView}
           // ItemSeparatorComponent={SeparatorComponent}
-          // contentInset={{
-          //   top: TOP_Y
-          // }}
-          // contentOffset={{
-          //   y: TOP_Y * -1,
-          //   x: 0
-          // }}
+          contentInset={{
+            top: TOP_Y
+          }}
+          contentOffset={{
+            y: TOP_Y * -1,
+            x: 0
+          }}
           contentInsetAdjustmentBehavior="never"
           removeClippedSubviews
           viewabilityConfig={this.viewabilityConfig}

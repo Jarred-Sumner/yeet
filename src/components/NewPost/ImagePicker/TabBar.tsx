@@ -8,18 +8,15 @@ import { SemiBoldText } from "../../Text";
 import { RectButton } from "react-native-gesture-handler";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
-export const LIST_HEADER_HEIGHT = 50 + TOP_Y;
+export const LIST_HEADER_HEIGHT = 50;
 
 const count = 2;
 
 const styles = StyleSheet.create({
-  listHeaderHeight: {
-    height: LIST_HEADER_HEIGHT
-  },
   container: {
-    backgroundColor: "rgba(0, 0, 0, 0.75)",
-    height: LIST_HEADER_HEIGHT - TOP_Y,
     alignItems: "center",
+    height: LIST_HEADER_HEIGHT,
+    borderRadius: 12,
     flexDirection: "row",
     justifyContent: "center",
     position: "relative"
@@ -36,8 +33,6 @@ const styles = StyleSheet.create({
   },
   row: {
     height: LIST_HEADER_HEIGHT,
-    paddingTop: TOP_Y,
-    marginTop: TOP_Y * -1,
     width: SCREEN_DIMENSIONS.width / count,
     flexDirection: "row",
     justifyContent: "center",
@@ -98,15 +93,7 @@ export const TabBar = ({
   indicatorStyles.push({ opacity: opacityValue || 0 });
 
   return (
-    <SafeAreaView
-      forceInset={{
-        top: "always",
-        left: "never",
-        right: "never",
-        bottom: "never"
-      }}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <ListHeaderRow
         route={routes[0].key}
         jumpTo={jumpTo}
@@ -123,7 +110,7 @@ export const TabBar = ({
       </ListHeaderRow>
 
       <Animated.View style={indicatorStyles} />
-    </SafeAreaView>
+    </View>
   );
 };
 

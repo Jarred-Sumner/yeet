@@ -496,7 +496,7 @@ export const mediaSourceFromSource = (
     mimeType,
     duration,
     playDuration: duration,
-    id: url,
+    id: [url, width, height].join("-"),
     bounds: dimensions,
     pixelRatio: 1.0
   };

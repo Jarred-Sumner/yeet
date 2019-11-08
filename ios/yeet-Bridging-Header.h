@@ -70,6 +70,8 @@ RCT_EXPORT_VIEW_PROPERTY(onEnd, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);
 
+RCT_EXTERN_METHOD(batchPlay:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids);
+RCT_EXTERN_METHOD(batchPause:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids);
 RCT_EXTERN_METHOD(crop:(nonnull NSNumber*)tag bounds:(CGRect)bounds originalSize:(CGSize)originalSize resolver:(RCTPromiseResolveBlock)resolver rejecter:( RCTPromiseRejectBlock)rejecter);
 
 RCT_EXTERN_METHOD(startCachingMediaSources:(nonnull NSArray*)mediaSources bounds:(CGRect)bounds contentMode:(UIViewContentMode)contentMode);

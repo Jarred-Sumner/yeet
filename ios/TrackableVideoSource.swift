@@ -50,17 +50,20 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-//    let times = [NSValue(time: player.currentItem!.duration - player.currentItem!.currentTime() )]
+    guard let playerItem = self.playerItem else {
+      return
+    }
 
-//    boundaryObserverToken = player
-//      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
-//        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
-//          return
-//        }
-//
-//        if player.
-//        self?.handleEnd()
-//    }
+    let times = [NSValue(time: playerItem.duration)]
+
+    boundaryObserverToken = player
+      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
+        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
+          return
+        }
+
+        self?.handleEnd()
+    }
 
   }
 
@@ -95,7 +98,22 @@ class TrackableVideoSource : TrackableMediaSource {
     }
   }
 
-  var playerItem : AVPlayerItem? = nil
+  var playerItem : AVPlayerItem? = nil {
+    didSet {
+      if oldValue != playerItem {
+        if let playerItem = playerItem {
+          let pixBuffAttributes: [String : AnyObject] = [kCVPixelBufferPixelFormatTypeKey as String :  Int(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) as AnyObject]
+
+          let output = AVPlayerItemVideoOutput(pixelBufferAttributes: pixBuffAttributes)
+          playerItem.add(output)
+
+          mediaSource.videoOutput = output
+        } else {
+          mediaSource.videoOutput = nil
+        }
+      }
+    }
+  }
 
   var isAlreadyLoading = false
   override func load(onLoad callback: onLoadCallback? = nil) {
@@ -107,31 +125,33 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    self.hasLoaded = self.playerItem != nil
+    guard playerItem == nil else {
+      callback?(self)
+      return
+    }
+
     super.load(onLoad: callback)
 
     guard !isAlreadyLoading else {
       return
     }
 
-    if self.playerItem == nil {
-      self.status = .loading
+    self.status = .loading
 
-      mediaSource.loadAsset { [weak self] asset in
-        guard let asset = asset else {
-          self?.status = .error
-          return
-        }
-
-        guard let this = self else {
-          return
-        }
-
-        this.handleLoad(asset: asset)
+    mediaSource.loadAsset { [weak self] asset in
+      guard let asset = asset else {
+        self?.status = .error
+        return
       }
 
-      self.isAlreadyLoading = true
+      guard let this = self else {
+        return
+      }
+
+      this.handleLoad(asset: asset)
     }
+
+    self.isAlreadyLoading = true
   }
 
   func handleLoad(asset: AVURLAsset) {
@@ -148,14 +168,14 @@ class TrackableVideoSource : TrackableMediaSource {
   }
 
   override var canPlay: Bool {
-    return super.canPlay && self.playerItem != nil && self.playerItem == player?.currentItem
+    return super.canPlay && self.playerItem != nil 
   }
 
   func startObservers() {
     stopObservers()
 
     self.addPeroidicObserver()
-//    self.addBoundaryTimeObserver()
+    self.addBoundaryTimeObserver()
 
     guard let playerItem = self.playerItem else {
       return
@@ -205,6 +225,10 @@ class TrackableVideoSource : TrackableMediaSource {
       startObservers()
     }
 
+    if self.status == .playing || self.status == .paused {
+      return
+    }
+
     self.status = .ready
   }
 
@@ -246,8 +270,7 @@ class TrackableVideoSource : TrackableMediaSource {
     }
 
 
-
-    player.play()
+    player.playImmediately(atRate: 1.0)
     super.play()
   }
 
@@ -261,6 +284,8 @@ class TrackableVideoSource : TrackableMediaSource {
     }
 
     player.pause()
+
+    _onLoadCallbacks = []
     super.pause()
   }
 

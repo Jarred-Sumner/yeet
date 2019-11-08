@@ -1,28 +1,33 @@
 // @flow
 import {
   ActionSheetOptions,
-  connectActionSheet,
   useActionSheet
 } from "@expo/react-native-action-sheet";
-import * as React from "react";
-import { StyleSheet, View } from "react-native";
-import { NavigationState, withNavigation } from "react-navigation";
-import { BottomTabBar, TAB_BAR_HEIGHT } from "../components/BottomTabBar";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
-import { NavigationProp } from "react-navigation";
-import { NavigationStackProp } from "react-navigation-stack";
-import { useQuery } from "react-apollo";
-import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
-import {
-  ViewThreadVariables,
-  ViewThread as ViewThreadQuery
-} from "../lib/graphql/ViewThread";
-import { ViewThread } from "../components/ThreadList/ViewThread";
-import { SCREEN_DIMENSIONS } from "../../config";
 import hoistNonReactStatics from "hoist-non-react-statics";
-import { postElementId } from "../lib/graphql/ElementTransition";
-import { uniqBy } from "lodash";
+import * as React from "react";
+import { useQuery } from "react-apollo";
+import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
+import { NavigationProp } from "react-navigation";
+import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import { NavigationStackProp } from "react-navigation-stack";
+import { postElementId } from "../lib/graphql/ElementTransition";
+import {
+  ViewThread as ViewThreadQuery,
+  ViewThreadVariables
+} from "../lib/graphql/ViewThread";
+import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
+import { PostFlatList } from "../components/ThreadList/ViewThread";
+import { SCREEN_DIMENSIONS, BOTTOM_Y } from "../../config";
+import {
+  ThreadHeader,
+  THREAD_HEADER_HEIGHT
+} from "../components/ThreadList/ThreadHeader";
+import { RectButton } from "react-native-gesture-handler";
+import { IconCamera } from "../components/Icon";
+import { SemiBoldText } from "../components/Text";
+import { SPACING } from "../lib/styles";
+import { BlurView, VibrancyView } from "@react-native-community/blur";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -33,13 +38,97 @@ const styles = StyleSheet.create({
     right: 0
   },
   wrapper: {
-    backgroundColor: "#111",
+    backgroundColor: "#0A0A0A",
     flex: 1
   },
   page: {
     flex: 1,
-    backgroundColor: "#111"
-  }
+    height: SCREEN_DIMENSIONS.height,
+    width: SCREEN_DIMENSIONS.width,
+    backgroundColor: "#0A0A0A"
+  },
+  footer: {
+    position: "absolute",
+    bottom: BOTTOM_Y,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center"
+  },
+  buttonLabel: {
+    fontSize: 17,
+    color: "white",
+    marginLeft: SPACING.half
+  },
+  buttonShadow: {
+    height: 48,
+    width: 180,
+    borderRadius: 100,
+    shadowOffset: {
+      width: 0,
+      height: 7
+    },
+    shadowRadius: 18,
+    shadowColor: "black",
+    shadowOpacity: 0.15
+  },
+
+  buttonBorder: {
+    height: 48,
+    // backgroundColor: "rgba(0,0,0,0.4)",
+    width: 180,
+    borderRadius: 206 / 2,
+    overflow: "hidden",
+    position: "relative"
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    height: 48,
+    paddingHorizontal: SPACING.normal,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    width: 180,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(0, 0, 0, 0.2)",
+    // backgroundColor: "rgba(0, 0, 0, 0.4)",
+
+    borderRadius: 100,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "space-between"
+    // position: "absolute",
+    // zIndex: 1
+  },
+
+  buttonWrapper: {}
+});
+
+const ThreadReplyButton = React.memo(({ onPress }) => {
+  const buttonContainerRef = React.useRef();
+
+  return (
+    <View shouldRasterizeIOS style={styles.buttonShadow}>
+      <RectButton underlayColor="transparent" borderless onPress={onPress}>
+        <View style={styles.buttonBorder}>
+          <BlurView
+            viewRef={buttonContainerRef}
+            blurType="dark"
+            blurAmount={100}
+          >
+            <View
+              needsOffscreenAlphaCompositing
+              ref={buttonContainerRef}
+              style={styles.buttonContainer}
+            >
+              <IconCamera size={18} color="white" />
+              <SemiBoldText style={styles.buttonLabel}>
+                Post in thread
+              </SemiBoldText>
+            </View>
+          </BlurView>
+        </View>
+      </RectButton>
+    </View>
+  );
 });
 
 type Props = {
@@ -48,19 +137,19 @@ type Props = {
 };
 
 class ThreadPageComponent extends React.Component<Props> {
-  static sharedElements = (navigation, otherNavigation, showing) => {
-    // Transition element `item.${item.id}.photo` when either
-    // showing or hiding this screen (coming from any route)
-    const post = navigation.getParam("post");
+  // static sharedElements = (navigation, otherNavigation, showing) => {
+  //   // Transition element `item.${item.id}.photo` when either
+  //   // showing or hiding this screen (coming from any route)
+  //   const post = navigation.getParam("post");
 
-    const sharedElements = [];
-    if (post) {
-      sharedElements.push(postElementId(post));
-    }
+  //   const sharedElements = [];
+  //   if (post) {
+  //     sharedElements.push(postElementId(post));
+  //   }
 
-    console.log("SHARED ELEMENTS", sharedElements);
-    return sharedElements;
-  };
+  //   console.log("SHARED ELEMENTS", sharedElements);
+  //   return sharedElements;
+  // };
 
   handlePressPost = (
     thread: ViewThreads_postThreads_data,
@@ -74,23 +163,20 @@ class ThreadPageComponent extends React.Component<Props> {
   handlePressReply = () => {};
 
   render() {
-    const { thread, defaultPost } = this.props;
-
+    const { thread, defaultPost, refreshing } = this.props;
     return (
       <Animated.View style={styles.page}>
-        <ViewThread
-          thread={thread}
-          posts={uniqBy(
-            [defaultPost, ...thread.posts.data].filter(Boolean),
-            "id"
-          )}
-          isVisible
-          width={SCREEN_DIMENSIONS.width}
-          height={SCREEN_DIMENSIONS.height}
-          maxHeight={SCREEN_DIMENSIONS.height}
-          isNextVisible={false}
-          isPreviousVisible={false}
+        <PostFlatList
+          posts={thread?.posts?.data ?? []}
+          topInset={THREAD_HEADER_HEIGHT + 4}
+          refreshing={refreshing}
         />
+
+        <ThreadHeader thread={thread} />
+
+        <View style={styles.footer}>
+          <ThreadReplyButton onPress={this.handlePressReply} />
+        </View>
       </Animated.View>
     );
   }

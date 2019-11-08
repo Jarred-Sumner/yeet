@@ -102,8 +102,6 @@ class FeedListComponent extends React.Component<Props, State> {
   }
 
   viewabilityConfig: ViewabilityConfig = {
-    waitForInteraction: false,
-    minimumViewTime: 100,
     itemVisiblePercentThreshold: 33
   };
 
@@ -164,7 +162,7 @@ class FeedListComponent extends React.Component<Props, State> {
   keyExtractor = item => item.id;
 
   handleEndReached = () => {
-    if (this.props.loading) {
+    if (this.props.loading || this.props.threads.length === 0) {
       return;
     }
 

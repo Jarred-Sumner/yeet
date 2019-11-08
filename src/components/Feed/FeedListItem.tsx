@@ -113,7 +113,7 @@ type State = {
   play: PlayState;
 };
 
-class FeedListItemComponent extends React.Component<Props, State> {
+class FeedListItemComponent extends React.PureComponent<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -160,29 +160,26 @@ class FeedListItemComponent extends React.Component<Props, State> {
   handlePress = () => this.props.onPressThread(this.props.thread);
   handlePressPost = (post: ViewThreads_postThreads_data) =>
     this.props.onPressPost(this.props.thread, post);
+  handlePressNewPost = () => this.props.onPressNewPost(this.props.thread);
 
   render() {
     const { height, width, paused, thread, isVisible } = this.props;
     const {
       posts: { data: posts },
       postsCount,
-      body
+      body,
+      createdAt,
+      profile: op
     } = thread;
-
-    const post = posts[0];
-    const op = post.profile;
 
     const waitFor = [...this.props.waitFor, this.scrollRef];
 
     return (
-      <TouchableWithoutFeedback
-        waitFor={waitFor}
-        onLongPress={this.handleLongPress}
-      >
+      <TouchableWithoutFeedback onLongPress={this.handleLongPress}>
         <Animated.View style={[{ height, width }, styles.container]}>
           <ProfileFeedComponent
             profile={op}
-            createdAt={post.createdAt}
+            createdAt={thread.createdAt}
             body={body}
             onPressEllipsis={this.handlePressElipsis}
           />
@@ -193,7 +190,7 @@ class FeedListItemComponent extends React.Component<Props, State> {
               style={styles.postPreviewList}
               ref={this.scrollRef}
               isVisible={isVisible}
-              onPressNewPost={this.props.onPressNewPost}
+              onPressNewPost={this.handlePressNewPost}
               directionalLockEnabled
               waitFor={this.props.waitFor}
               contentOffset={{
@@ -210,7 +207,7 @@ class FeedListItemComponent extends React.Component<Props, State> {
           </View>
 
           <View style={styles.bar}>
-            <TouchableHighlight waitFor={waitFor} onPress={this.handlePress}>
+            <TouchableHighlight onPress={this.handlePress}>
               <Animated.View style={styles.postCountBar}>
                 <MediumText style={styles.postCountText}>
                   {postsCount > 1

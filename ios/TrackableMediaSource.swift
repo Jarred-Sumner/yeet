@@ -156,16 +156,25 @@ class TrackableMediaSource : NSObject {
   }
 
   public func onLoad() {
+
     self.hasLoaded = true
 
     _onLoadCallbacks.forEach { [weak self] cb in
       guard let this = self else {
         return
       }
-      cb?(this)
+
+      guard let cb = cb else {
+        return
+      }
+
+      cb(this)
     }
 
     _onLoadCallbacks = []
+    if self.status == .ready || self.status == .playing || self.status == .ended {
+      return;
+    }
     self.status = .loaded
   }
 

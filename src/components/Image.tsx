@@ -28,7 +28,10 @@ const CustomFastImage = React.forwardRef(
       source,
       mediaSource,
       isVisible = true,
+      paused,
+      autoPlay,
       style,
+      id,
       borderRadius = 0,
       ...props
     }: Props,
@@ -54,8 +57,9 @@ const CustomFastImage = React.forwardRef(
         sources={sources}
         borderRadius={borderRadius}
         isVisible={isVisible}
-        autoPlay
-        paused={!isVisible}
+        id={id}
+        autoPlay={false}
+        paused={paused || !isVisible}
         style={style}
         {...props}
       />

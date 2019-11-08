@@ -213,7 +213,6 @@ class YeetImageView : PINAnimatedImageView {
     fatalError("not implemented")
   }
 
-  var isAnimatedImage: Bool = false
 
   @objc (animated) var animated: Bool {
     get {
@@ -221,7 +220,7 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     set (newValue) {
-      if (newValue == self.isAnimatedImage) {
+      if (newValue == self.isAnimating) {
         return
       }
 
@@ -338,10 +337,8 @@ class YeetImageView : PINAnimatedImageView {
 
     var image: UIImage? = nil
     if data.pin_isAnimatedGIF() || data.pin_isAnimatedWebP() {
-      self.isAnimatedImage = true
       image = PINCachedAnimatedImage.init(animatedImageData: data as Data) as! UIImage?
     } else {
-      self.isAnimatedImage = false
       image = UIImage.pin_decodedImage(with: data as Data)
     }
 
@@ -370,14 +367,17 @@ class YeetImageView : PINAnimatedImageView {
 
   func _handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
     if let image = image {
-      if image.scale != scale {
-        self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
-      } else {
-        self.image = image
+      if image != self.image {
+        if image.scale != scale {
+          self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
+        } else {
+          self.image = image
+        }
       }
     } else {
       self.image = nil
     }
+
 
     self.handleLoad(success: image != nil, error: error)
   }

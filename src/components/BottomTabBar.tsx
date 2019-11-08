@@ -1,45 +1,70 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { RectButton } from "react-native-gesture-handler";
+import { RectButton, TouchableOpacity } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { useNavigation } from "react-navigation-hooks";
-import { BOTTOM_Y } from "../../config";
+import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
 import { SPACING, COLORS } from "../lib/styles";
-import { IconHome, IconNotification, IconPlus, IconProfile } from "./Icon";
+import {
+  IconHome,
+  IconNotification,
+  IconPlus,
+  IconProfile,
+  IconHomeAlt,
+  IconNotificationAlt,
+  IconProfileAlt,
+  IconCircleAdd
+} from "./Icon";
 import { BAR_HEIGHT } from "./ThreadList/Seekbar";
 import { AuthState, UserContext } from "./UserContext";
-import { SemiBoldText, BoldText } from "./Text";
+import { SemiBoldText, BoldText, MediumText, Text } from "./Text";
 import tinyColor from "tinycolor2";
+import { BlurView } from "@react-native-community/blur";
 
 export const TAB_BAR_HEIGHT = 56.5;
 export const TAB_BAR_OFFSET = TAB_BAR_HEIGHT + BOTTOM_Y;
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: BAR_HEIGHT,
     flexDirection: "row",
     justifyContent: "space-evenly",
     alignItems: "center",
     position: "absolute",
-    backgroundColor: "rgba(0,0,0,0.95)",
+    backgroundColor: "rgba(0, 0, 0, 0.95)",
     left: 0,
     bottom: 0,
     right: 0,
     zIndex: 1
   },
+  blur: {
+    position: "absolute",
+    left: 0,
+    height: TAB_BAR_OFFSET,
+    width: "100%",
+    opacity: 0.95,
+    backgroundColor: "black",
+    bottom: 0,
+    right: 0,
+    zIndex: 0
+  },
   wrapper: {
     position: "relative"
   },
   buttonContainer: {
+    width: SCREEN_DIMENSIONS.width / 4,
     paddingHorizontal: SPACING.double,
     marginBottom: BOTTOM_Y,
+    paddingTop: 8,
     height: TAB_BAR_HEIGHT,
     justifyContent: "center",
     alignItems: "center"
   },
   iconWrapper: {
-    position: "relative"
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center"
   },
+
   badgeContainer: {
     width: 18,
     height: 18,
@@ -53,6 +78,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center"
     // transform: [{ scale: 0.9 }]
+  },
+  icon: {
+    alignItems: "center",
+    justifyContent: "center",
+
+    height: 28,
+    textAlign: "center",
+    alignSelf: "center"
   },
   bigBadgeContainer: {
     width: 22,
@@ -74,17 +107,31 @@ const styles = StyleSheet.create({
   }
 });
 
-const TabBarIcon = ({ Icon, focused, onPress, route, badgeCount = 0 }) => {
+const TabBarIcon = ({
+  Icon,
+  focused,
+  label,
+  FocusedIcon,
+  onPress,
+  route,
+  badgeCount = 0
+}) => {
   const handlePress = React.useCallback(() => {
     onPress(route);
   }, [route, onPress]);
 
+  const IconComponent = focused ? FocusedIcon : Icon;
+
   return (
-    <RectButton onPress={handlePress}>
+    <TouchableOpacity onPressIn={handlePress}>
       <Animated.View style={styles.buttonContainer}>
         <View style={styles.iconWrapper}>
-          <Icon size={24} color={focused ? "#fff" : "#999"} />
-          {badgeCount > 0 && (
+          <IconComponent
+            style={styles.icon}
+            size={26}
+            color={focused ? "#fff" : "#999"}
+          />
+          {/* {badgeCount > 0 && (
             <View
               style={[
                 styles.badgeContainer,
@@ -99,18 +146,25 @@ const TabBarIcon = ({ Icon, focused, onPress, route, badgeCount = 0 }) => {
                 {Math.min(badgeCount, 99)}
               </BoldText>
             </View>
-          )}
+          )} */}
         </View>
       </Animated.View>
-    </RectButton>
+    </TouchableOpacity>
   );
 };
 
+const ROUTE_LABELS = {
+  FeedTab: "Home",
+  NewPostStack: "Thread",
+  NotificationsTab: "Notifications",
+  ProfileTab: "Profile"
+};
+
 const ROUTES_ICONS_MAPPING = {
-  FeedTab: IconHome,
-  NewPostStack: IconPlus,
-  NotificationsTab: IconNotification,
-  ProfileTab: IconProfile
+  FeedTab: [IconHomeAlt, IconHome],
+  NewPostStack: [IconCircleAdd, IconCircleAdd],
+  NotificationsTab: [IconNotificationAlt, IconNotification],
+  ProfileTab: [IconProfileAlt, IconProfile]
 };
 
 const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab"];
@@ -144,6 +198,8 @@ export const BottomTabBar = ({ style, currentRoute }) => {
     [navigation, authState, requireAuthentication]
   );
 
+  const ref = React.useRef();
+
   return (
     <Animated.View style={style}>
       <Animated.View style={styles.wrapper}>
@@ -161,22 +217,32 @@ export const BottomTabBar = ({ style, currentRoute }) => {
           colors={["rgba(0, 0, 0, 0.85)", "rgba(0, 0, 0, 0.45)"]}
         /> */}
 
-        <Animated.View style={[styles.container]}>
-          {Object.entries(ROUTES_ICONS_MAPPING).map(([route, Icon]) => (
-            <TabBarIcon
-              key={route}
-              Icon={Icon}
-              route={route}
-              badgeCount={route === "NotificationsTab" ? badgeCount : 0}
-              focused={
-                currentRoute
-                  ? route === currentRoute
-                  : navigation.state.routeName === route
-              }
-              onPress={openRoute}
-            />
-          ))}
-        </Animated.View>
+        {/* <BlurView
+          viewRef={ref}
+          blurType="dark"
+          blurAmount={100}
+          style={[styles.blur]}
+        /> */}
+        <View ref={ref} style={styles.container}>
+          {Object.entries(ROUTES_ICONS_MAPPING).map(
+            ([route, [Icon, FocusedIcon]]) => (
+              <TabBarIcon
+                key={route}
+                Icon={Icon}
+                FocusedIcon={FocusedIcon}
+                route={route}
+                label={ROUTE_LABELS[route]}
+                badgeCount={route === "NotificationsTab" ? badgeCount : 0}
+                focused={
+                  currentRoute
+                    ? route === currentRoute
+                    : navigation.state.routeName === route
+                }
+                onPress={openRoute}
+              />
+            )
+          )}
+        </View>
       </Animated.View>
     </Animated.View>
   );

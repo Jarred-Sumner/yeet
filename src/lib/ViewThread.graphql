@@ -5,6 +5,13 @@ query ViewThread($threadId: ID!, $postOffset: Int!, $postsCount: Int!) {
     id
     postsCount
     body
+
+    profile {
+      username
+      id
+      photoURL
+    }
+
     posts(offset: $postOffset, limit: $postsCount) {
       offset
       limit

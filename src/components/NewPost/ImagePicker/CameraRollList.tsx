@@ -424,10 +424,7 @@ export class CameraRollList extends React.Component<Props, State> {
           onScroll={this.handleScroll}
           ref={this.flatListRef}
           style={{
-            width,
-            height,
-            flexGrow: 0,
-            flexShrink: 0
+            flex: 1
           }}
           contentInsetAdjustmentBehavior="never"
           removeClippedSubviews={false}

@@ -1,7 +1,7 @@
 import { filter } from "graphql-anywhere";
 import * as React from "react";
 import { View, StyleSheet } from "react-native";
-import { IconHeart } from "../Icon";
+import { IconHeart, IconLike, IconLikeAlt } from "../Icon";
 import CountButton from "./CountButton";
 import PostFragment from "../../lib/PostFragment.graphql";
 import { useQuery } from "@apollo/react-hooks";
@@ -9,19 +9,27 @@ import POST_QUERY from "../../lib/ViewPostQuery.graphql";
 import { ViewPost } from "../../lib/graphql/ViewPost";
 import { UserContext } from "../UserContext";
 import { QueryResult } from "react-apollo";
+import { COLORS } from "../../lib/styles";
 
-const LikeCountButtonComponent = ({ count, onPress, isLiked, size = 32 }) => (
+const LikeCountButtonComponent = ({
+  count,
+  onPress,
+  isLiked,
+  size = 32,
+  disabled
+}) => (
   <CountButton
-    Icon={IconHeart}
+    Icon={isLiked ? IconLike : IconLikeAlt}
     color={isLiked ? "rgb(246, 52, 104)" : "white"}
     type="shadow"
     onPress={onPress}
     size={size}
+    disabled={disabled}
     count={count}
   />
 );
 
-export const LikeCountButton = ({ id, onPress, size = 32 }) => {
+export const LikeCountButton = ({ id, onPress, size = 32, disabled }) => {
   const query: QueryResult<ViewPost> = useQuery(POST_QUERY, {
     variables: { id },
     fetchPolicy: "cache-only"
@@ -36,6 +44,7 @@ export const LikeCountButton = ({ id, onPress, size = 32 }) => {
       isLiked={userId ? post?.likes?.profileIDs?.includes(userId) : false}
       onPress={onPress}
       size={size}
+      disabled={disabled}
     />
   );
 };

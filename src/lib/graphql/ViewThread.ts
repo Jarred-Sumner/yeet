@@ -6,6 +6,13 @@
 // GraphQL query operation: ViewThread
 // ====================================================
 
+export interface ViewThread_postThread_profile {
+  __typename: "Profile";
+  username: string;
+  id: string;
+  photoURL: string | null;
+}
+
 export interface ViewThread_postThread_posts_data_bounds {
   __typename: "Rectangle";
   x: number | null;
@@ -40,6 +47,7 @@ export interface ViewThread_postThread_posts_data {
   likesCount: number;
   threadId: string;
   createdAt: DateTime;
+  autoplaySeconds: number;
   bounds: ViewThread_postThread_posts_data_bounds;
   profile: ViewThread_postThread_posts_data_profile;
   media: ViewThread_postThread_posts_data_media;
@@ -59,6 +67,7 @@ export interface ViewThread_postThread {
   id: string;
   postsCount: number;
   body: string | null;
+  profile: ViewThread_postThread_profile;
   posts: ViewThread_postThread_posts;
 }
 

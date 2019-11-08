@@ -9,9 +9,9 @@
 import React from "react";
 import { StatusBar } from "react-native";
 import { PortalProvider, WhitePortal } from "react-native-portal";
-import { useScreens } from "react-native-screens";
+import { enableScreens } from "react-native-screens";
 import { createAppContainer } from "react-navigation";
-import { createStackNavigator } from "react-navigation-stack";
+import { createStackNavigator as _createStackNavigator } from "react-navigation-stack";
 import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 import { UserContextProvider } from "./src/components/UserContext";
 import { ApolloProvider } from "./src/containers/ApolloProvider";
@@ -40,6 +40,7 @@ import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import { IS_SIMULATOR } from "./config";
 import { FeedPage } from "./src/screens/Feed";
 import ThreadPage from "./src/screens/ViewThreadPage";
+import createStackNavigator from "react-native-screens/createNativeStackNavigator";
 
 const TAB_ICON_SIZE = 18;
 
@@ -56,16 +57,14 @@ const SHARED_GLOBAL_SCREENS = {
 const Routes = createAppContainer(
   createStackNavigator(
     {
-      Home: createSharedElementStackNavigator(
-        createStackNavigator,
+      Home: createStackNavigator(
         {
           RootScreens: createBottomTabNavigator(
             {
-              FeedTab: createSharedElementStackNavigator(
-                createStackNavigator,
+              FeedTab: createStackNavigator(
                 {
                   ThreadList: FeedPage,
-
+                  ViewThread: ThreadPage,
                   ReplyToPost: ReplyPage,
                   EditBlockPhotoInReply: ImagePickerPage,
                   ...SHARED_GLOBAL_SCREENS
@@ -74,24 +73,55 @@ const Routes = createAppContainer(
                   cardStyle: {
                     backgroundColor: "#000"
                   },
-                  headerMode: "none"
-                  // defaultNavigationOptions: ({ navigation }) => ({
-                  //   header: () => null
-                  // })
+                  headerMode: "none",
+                  defaultNavigationOptions: ({ navigation }) => ({
+                    header: () => null
+                  })
                 },
                 {
                   cardStyle: {
                     backgroundColor: "#000"
                   },
 
-                  headerMode: "none"
-                  // defaultNavigationOptions: ({ navigation }) => ({
-                  //   header: () => null,
-                  //   headerMode: "none",
-                  //   headerTransparent: true
-                  // })
+                  headerMode: "none",
+                  defaultNavigationOptions: ({ navigation }) => ({
+                    header: () => null,
+                    headerMode: "none",
+                    headerTransparent: true
+                  })
                 }
               ),
+              // FeedTab: createSharedElementStackNavigator(
+              //   _createStackNavigator,
+              //   {
+              //     ThreadList: FeedPage,
+              //     ViewThread: ThreadPage,
+              //     ReplyToPost: ReplyPage,
+              //     EditBlockPhotoInReply: ImagePickerPage,
+              //     ...SHARED_GLOBAL_SCREENS
+              //   },
+              //   {
+              //     cardStyle: {
+              //       backgroundColor: "#000"
+              //     },
+              //     headerMode: "none"
+              //     // defaultNavigationOptions: ({ navigation }) => ({
+              //     //   header: () => null
+              //     // })
+              //   },
+              //   {
+              //     cardStyle: {
+              //       backgroundColor: "#000"
+              //     },
+
+              //     headerMode: "none"
+              //     // defaultNavigationOptions: ({ navigation }) => ({
+              //     //   header: () => null,
+              //     //   headerMode: "none",
+              //     //   headerTransparent: true
+              //     // })
+              //   }
+              // ),
               NotificationsTab: createStackNavigator(
                 {
                   NotificationsPage: {
@@ -139,8 +169,7 @@ const Routes = createAppContainer(
               }
             }
           ),
-          NewPostStack: createSharedElementStackNavigator(
-            createStackNavigator,
+          NewPostStack: createStackNavigator(
             {
               NewPost: NewPostPage,
               EditBlockPhoto: ImagePickerPage,
@@ -148,7 +177,7 @@ const Routes = createAppContainer(
             },
             {
               cardStyle: {
-                backgroundColor: "#000"
+                backgroundColor: "transparent"
               },
               headerMode: "none",
               // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
@@ -159,8 +188,7 @@ const Routes = createAppContainer(
                 gesturesEnabled: false
               }
             }
-          ),
-          ViewThread: ThreadPage
+          )
         },
         {
           cardStyle: {
@@ -212,7 +240,7 @@ export class App extends React.Component {
   constructor(props) {
     super(props);
 
-    useScreens();
+    enableScreens();
   }
 
   setNavRef = navigatorRef => {

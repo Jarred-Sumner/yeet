@@ -9,13 +9,12 @@
 import Foundation
 import SwiftyBeaver
 
-class MediaQueuePlayer : TrackableMediaSourceDelegate {
+final class MediaQueuePlayer : TrackableMediaSourceDelegate {
   enum Notification: String {
     case willChangeCurrentItem = "willChangeCurrentItem"
   }
 
   var id: String? = nil
-
 
 
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {

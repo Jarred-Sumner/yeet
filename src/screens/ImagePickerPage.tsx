@@ -22,7 +22,12 @@ const styles = StyleSheet.create({
     bottom: SPACING.normal,
     left: 0,
     right: 0,
-    paddingHorizontal: SPACING.normal
+    paddingHorizontal: SPACING.normal,
+    width: 60 + SPACING.normal * 2
+  },
+  button: {
+    width: 60,
+    flex: 0
   }
 });
 
@@ -144,7 +149,7 @@ export class ImagePickerPage extends React.Component {
   updateFlatListRef = scrollRef => flatListRef => {
     this.flatListRef = flatListRef;
 
-    this.scrollRef = flatListRef.getNode().getScrollableNode();
+    this.scrollRef = flatListRef.getScrollableNode();
   };
 
   render() {
@@ -155,6 +160,7 @@ export class ImagePickerPage extends React.Component {
       <View
         style={{
           width: SCREEN_DIMENSIONS.width,
+          height: SCREEN_DIMENSIONS.height,
           flex: 1,
           backgroundColor: "black"
         }}
@@ -220,6 +226,7 @@ export class ImagePickerPage extends React.Component {
               backgroundColor={COLORS.primaryDark}
               type="fill"
               size={22}
+              style={styles.button}
             />
           </Animated.View>
         </SafeAreaView>

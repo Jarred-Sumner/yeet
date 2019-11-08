@@ -11,6 +11,14 @@ query ViewThreads($after: ID, $limit: Int, $postsCount: Int, $offset: Int) {
       id
       postsCount
       body
+      createdAt
+
+      profile {
+        id
+        username
+        photoURL
+      }
+
       posts(offset: 0, limit: $postsCount) {
         offset
         limit

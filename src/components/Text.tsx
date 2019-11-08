@@ -120,65 +120,67 @@ const combinedStyles = styles => {
   return styles.filter(Boolean);
 };
 
-export const Text = ({ children, style, ...otherProps }) => (
+export const Text = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.regularFont, style])}
   >
     {children}
   </RNText>
-);
+));
 
-export const ThinText = ({ children, style, ...otherProps }) => (
+export const ThinText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.thinFont, style])}
   >
     {children}
   </RNText>
-);
+));
 
-export const SemiBoldText = ({ children, style, ...otherProps }) => (
+export const SemiBoldText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.semiBoldFont, style])}
   >
     {children}
   </RNText>
-);
+));
 
-export const MediumText = ({ children, style, ...otherProps }) => (
+export const MediumText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.mediumFont, style])}
   >
     {children}
   </RNText>
-);
+));
 
-export const BoldText = ({ children, style, ...otherProps }) => (
+export const BoldText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.boldFont, style])}
   >
     {children}
   </RNText>
+));
+
+export const ExtraBoldText = React.memo(
+  ({ children, style, ...otherProps }) => (
+    <RNText
+      {...otherProps}
+      style={combinedStyles([fontStyleSheets.extraBoldFont, style])}
+    >
+      {children}
+    </RNText>
+  )
 );
 
-export const ExtraBoldText = ({ children, style, ...otherProps }) => (
-  <RNText
-    {...otherProps}
-    style={combinedStyles([fontStyleSheets.extraBoldFont, style])}
-  >
-    {children}
-  </RNText>
-);
-
-export const BlackText = ({ children, style, ...otherProps }) => (
+export const BlackText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
     {...otherProps}
     style={combinedStyles([fontStyleSheets.blackFont, style])}
   >
     {children}
   </RNText>
-);
+));

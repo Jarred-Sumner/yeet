@@ -4,16 +4,21 @@ import {
   View,
   UIManager,
   findNodeHandle,
-  StyleProp
+  StyleProp,
+  InteractionManager
 } from "react-native";
 import React, { ReactEventHandler, useImperativeHandle } from "react";
 import { ImageMimeType, YeetImageRect } from "../lib/imageSearch";
 import { DimensionsRect, BoundsRect } from "../lib/Rect";
-import { useFocusEffect, useIsFocused } from "react-navigation-hooks";
+import {
+  useFocusEffect,
+  useIsFocused,
+  useNavigationState
+} from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import { NativeMediaPlayer } from "./NativeMediaPlayer";
 import { SharedElement } from "react-navigation-shared-element";
-
+import { uniq } from "lodash";
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
 export enum MediaPlayerStatus {
@@ -27,6 +32,84 @@ export enum MediaPlayerStatus {
   error = "error"
 }
 
+type MediaPlayerContextValue = {
+  registerID: (id: string) => void;
+  unregisterID: (id: string) => void;
+};
+
+export const MediaPlayerPauser = ({ children, nodeRef }) => {
+  const players = React.useRef([]);
+  const pausedPlayers = React.useRef([]);
+  const ref = React.useRef();
+  const registerID = React.useCallback(
+    (id: string) => {
+      players.current = uniq([...players.current, id]);
+    },
+    [uniq, players]
+  );
+
+  const unregisterID = React.useCallback(
+    (id: string) => {
+      let _players = [...players.current].splice(
+        players.current.indexOf(id),
+        1
+      );
+      players.current = uniq(_players);
+
+      if (pausedPlayers.current.includes(id)) {
+        pausedPlayers.current.splice(pausedPlayers.current.indexOf(id), 1);
+      }
+    },
+    [uniq, players]
+  );
+
+  const pausePlayers = () => {
+    if (players.current.length === 0) {
+      return;
+    }
+
+    const handle = findNodeHandle(nodeRef.current);
+    MediaPlayer.batchPause(handle, players.current);
+    pausedPlayers.current = uniq([
+      ...pausedPlayers.current,
+      ...players.current
+    ]);
+    players.current = [];
+  };
+
+  const unpausePlayers = () => {
+    const handle = findNodeHandle(nodeRef.current);
+    if (pausedPlayers.current.length > 0) {
+      const _players = uniq([...pausedPlayers.current, ...players.current]);
+      MediaPlayer.batchPlay(handle, pausedPlayers.current);
+      pausedPlayers.current = [];
+      players.current = _players;
+    }
+  };
+
+  const contextValue = React.useMemo(() => {
+    return {
+      registerID,
+      unregisterID,
+      pausePlayers,
+      unpausePlayers
+    };
+  }, [registerID, unregisterID]);
+
+  // useFocusEffect(() => {
+
+  // });
+
+  return (
+    <MediaPlayerContext.Provider value={contextValue}>
+      {children}
+    </MediaPlayerContext.Provider>
+  );
+};
+
+export const MediaPlayerContext = React.createContext<MediaPlayerContextValue | null>(
+  null
+);
 export type MediaSource = {
   id: string;
   url: string;
@@ -107,6 +190,14 @@ export class MediaPlayerComponent extends React.Component<Props> {
   nativeRef = React.createRef();
 
   static NativeModule = NativeModules["MediaPlayerViewManager"];
+
+  static batchPlay(tag: number, ids: Array<string>) {
+    return MediaPlayerComponent.NativeModule.batchPlay(tag, ids);
+  }
+
+  static batchPause(tag: number, ids: Array<string>) {
+    return MediaPlayerComponent.NativeModule.batchPlay(tag, ids);
+  }
 
   static startCaching(
     mediaSources: Array<Partial<MediaSource | null>>,
@@ -191,45 +282,45 @@ export class MediaPlayerComponent extends React.Component<Props> {
     this.nativeRef.current.setNativeProps(nativeProps);
   };
 
-  // shouldComponentUpdate(nextProps, nextState) {
-  //   const {
-  //     paused,
-  //     sources,
-  //     style,
-  //     onProgress,
-  //     onChangeItem,
-  //     onEnd,
-  //     autoPlay,
-  //     prefetch,
-  //     borderRadius,
-  //     onError,
-  //     isActive
-  //   } = this.props;
+  shouldComponentUpdate(nextProps) {
+    const {
+      paused,
+      sources,
+      style,
+      onProgress,
+      onChangeItem,
+      onEnd,
+      autoPlay,
+      prefetch,
+      borderRadius,
+      onError,
+      isActive
+    } = this.props;
 
-  //   if (this.state !== nextState) {
-  //     return true;
-  //   }
+    if (
+      paused !== nextProps.paused ||
+      autoPlay !== nextProps.autoPlay ||
+      onProgress !== nextProps.onProgress ||
+      onChangeItem !== nextProps.onChangeItem ||
+      onEnd !== nextProps.onEnd ||
+      style !== nextProps.style ||
+      borderRadius !== nextProps.borderRadius ||
+      onError !== nextProps.onError ||
+      isActive !== nextProps.isActive ||
+      prefetch != nextProps.prefetch
+    ) {
+      return true;
+    }
 
-  //   if (
-  //     paused !== nextProps.paused ||
-  //     autoPlay !== nextProps.autoPlay ||
-  //     onProgress !== nextProps.onProgress ||
-  //     onChangeItem !== nextProps.onChangeItem ||
-  //     onEnd !== nextProps.onEnd ||
-  //     style !== nextProps.style ||
-  //     borderRadius !== nextProps.borderRadius ||
-  //     onError !== nextProps.onError ||
-  //     isActive !== nextProps.isActive ||
-  //     prefetch != nextProps.prefetch
-  //   ) {
-  //     return true;
-  //   }
+    const currentSourceIDs = sources
+      .map(({ id, url }) => [id, url].join(""))
+      .join("-");
+    const newSourceIDs = nextProps.sources
+      .map(({ id, url }) => [id, url].join(""))
+      .join("-");
 
-  //   const currentSourceIDs = sources.map(({ id }) => id).join("-");
-  //   const newSourceIDs = nextProps.sources.map(({ id }) => id).join("-");
-
-  //   return currentSourceIDs !== newSourceIDs;
-  // }
+    return currentSourceIDs !== newSourceIDs;
+  }
 
   render() {
     const {
@@ -254,6 +345,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         sources={clean(sources)}
         onEnd={onEnd}
         id={id}
+        nativeID={id}
         borderRadius={borderRadius}
         isActive={isActive}
         prefetch={prefetch}
@@ -270,13 +362,28 @@ export class MediaPlayerComponent extends React.Component<Props> {
 }
 
 const _MediaPlayer = (React.forwardRef(
-  ({ isActive, sharedId, ...props }: Props, ref) => {
+  ({ isActive, id, sharedId, ...props }: Props, ref) => {
     const [isAutoHidden, setAutoHidden] = React.useState(false);
     const _ref = React.useRef<MediaPlayerComponent>(null);
     useImperativeHandle(ref, () => _ref.current);
+    const mediaPlayerContext = React.useContext(MediaPlayerContext);
+
+    React.useEffect(() => {
+      if (mediaPlayerContext === null || !id) {
+        return;
+      }
+
+      if (id) {
+        mediaPlayerContext.registerID(id);
+      }
+
+      return () => {
+        mediaPlayerContext.unregisterID(id);
+      };
+    }, [mediaPlayerContext, id]);
 
     const player = (
-      <MediaPlayerComponent isActive={isActive} ref={_ref} {...props} />
+      <MediaPlayerComponent id={id} isActive={isActive} ref={_ref} {...props} />
     );
 
     if (sharedId) {

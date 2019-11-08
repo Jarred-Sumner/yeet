@@ -176,6 +176,7 @@ const _ListItem = ({
             source={source}
             isVisible={isVisible}
             sharedId={postElementId(post)}
+            id={`preview-${post.id}`}
             borderRadius={4}
             style={[
               styles.image,

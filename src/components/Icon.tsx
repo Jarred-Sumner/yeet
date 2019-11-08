@@ -3,127 +3,163 @@ import { createIconSetFromFontello } from "react-native-vector-icons";
 import fontelloConfig from "./Icon/config.json";
 import Animated from "react-native-reanimated";
 
-export const Icon = createIconSetFromFontello(fontelloConfig);
+export const Icon = React.memo(createIconSetFromFontello(fontelloConfig));
 
 export const AnimatedIcon = Animated.createAnimatedComponent(Icon);
 
 // ➜ cat src/components/icon/config.json | jq .glyphs[].search[0]
 export enum IconName {
-  plus = "plus",
-  view = "view",
-  play = "play",
-  photo = "photo",
-  pencil = "pencil",
-  panels = "panels",
-  list = "list",
-  link = "link",
-  uploadPhoto = "upload-photo",
-  undo = "undo",
+  add = "add",
+  arrowLeft = "arrow-left",
+  back = "back",
+  background = "background",
+  camera = "camera",
+  cameraroll = "cameraroll",
+  checkmark = "checkmark",
+  chevronLeft = "chevron-left",
+  chevronRight = "chevron-right",
+  circleaddAlt = "plus-circle-alt",
+  circleadd = "plus-circle",
+  clip = "clip",
+  close = "close",
+  crop = "crop",
+  homeAlt = "home-alt",
   home = "home",
-  heart = "heart",
-  trophy = "trophy",
-  triangle = "triangle",
+  like = "like",
+  likeAlt = "like-alt",
+  link = "link",
+  lock = "lock",
+  notificationAlt = "notification-copy",
+  notification = "notification",
+  pause = "pause",
+  pencil = "pencil",
+  play = "play",
+  profileAlt = "profile-alt",
+  searchPhoto = "search-photo",
+  search = "search",
+  sticker = "sticker",
+  text = "text",
+  trash = "trash",
+  repost = "repost",
   draw = "draw",
   download = "download",
-  trash = "trash",
-  text = "text",
-  crown = "crown",
-  comment = "comment",
-  sticker = "sticker",
-  skip = "skip",
-  close = "close",
-  chevronRight = "chevron-right",
-  settings = "settings",
-  send = "send",
-  chevronLeft = "chevron-left",
-  check = "check",
-  search = "search",
-  remix = "remix",
-  searchPhoto = "search-photo",
-  camera = "camera",
-  background = "background",
-  redact = "redact",
   profile = "profile",
-  back = "back",
-  notification = "notification",
-  ellipsis = "ellipsis"
+  redact = "redact",
+  remix = "remix",
+  searchAlt = "search-alt",
+  save = "save",
+  ellipsis = "more",
+  ellipsisAlt = "more-alt",
+  heart = "heart",
+  check = "check",
+  comment = "comment",
+  crown = "crown",
+  list = "list",
+  panels = "panels",
+  photo = "photo",
+  plus = "plus",
+  send = "send",
+  settings = "settings",
+  skip = "skip",
+  triangle = "triangle",
+  trophy = "trophy",
+  undo = "undo",
+  uploadPhoto = "upload-photo",
+  view = "view"
 }
 
-export const IconPlus = props => <Icon {...props} name={IconName.plus} />;
-export const IconView = props => <Icon {...props} name={IconName.view} />;
-export const IconPlay = props => <Icon {...props} name={IconName.play} />;
-export const IconPhoto = props => <Icon {...props} name={IconName.photo} />;
-export const IconNotification = props => (
-  <Icon {...props} name={IconName.notification} />
+export const IconAdd = props => <Icon name={IconName.add} {...props} />;
+export const IconArrowleft = props => (
+  <Icon name={IconName.arrowLeft} {...props} />
 );
-export const IconPencil = props => <Icon {...props} name={IconName.pencil} />;
-export const IconPanels = props => <Icon {...props} name={IconName.panels} />;
-export const IconList = props => <Icon {...props} name={IconName.list} />;
-export const IconLink = props => <Icon {...props} name={IconName.link} />;
-export const IconUploadPhoto = props => (
-  <Icon {...props} name={IconName.uploadPhoto} />
-);
-export const IconUndo = props => <Icon {...props} name={IconName.undo} />;
-export const IconHome = props => <Icon {...props} name={IconName.home} />;
-export const IconHeart = props => <Icon {...props} name={IconName.heart} />;
-export const IconTrophy = props => <Icon {...props} name={IconName.trophy} />;
-export const IconTriangle = props => (
-  <Icon {...props} name={IconName.triangle} />
-);
-export const IconDraw = props => <Icon {...props} name={IconName.draw} />;
-export const IconDownload = props => (
-  <Icon {...props} name={IconName.download} />
-);
-export const IconTrash = props => <Icon {...props} name={IconName.trash} />;
-export const IconText = props => <Icon {...props} name={IconName.text} />;
-export const IconCrown = props => <Icon {...props} name={IconName.crown} />;
-export const IconComment = props => <Icon {...props} name={IconName.comment} />;
-export const IconSticker = props => <Icon {...props} name={IconName.sticker} />;
-export const IconSkip = props => <Icon {...props} name={IconName.skip} />;
-export const IconClose = props => <Icon {...props} name={IconName.close} />;
-export const IconChevronRight = props => (
-  <Icon {...props} name={IconName.chevronRight} />
-);
-
-export const IconChevronUp = ({ style = null, ...props }) => (
-  <Icon
-    {...props}
-    name={IconName.chevronRight}
-    style={[
-      style,
-      {
-        transform: [
-          {
-            translateY: -1
-          },
-          {
-            rotate: "-90deg"
-          }
-        ]
-      }
-    ].filter(Boolean)}
-  />
-);
-export const IconSettings = props => (
-  <Icon {...props} name={IconName.settings} />
-);
-export const IconSend = props => <Icon {...props} name={IconName.send} />;
-export const IconChevronLeft = props => (
-  <Icon {...props} name={IconName.chevronLeft} />
-);
-export const IconCheck = props => <Icon {...props} name={IconName.check} />;
-export const IconSearch = props => <Icon {...props} name={IconName.search} />;
-export const IconSearchPhoto = props => (
-  <Icon {...props} name={IconName.searchPhoto} />
-);
-export const IconCamera = props => <Icon {...props} name={IconName.camera} />;
+export const IconBack = props => <Icon name={IconName.back} {...props} />;
 export const IconBackground = props => (
-  <Icon {...props} name={IconName.background} />
+  <Icon name={IconName.background} {...props} />
 );
-export const IconRedact = props => <Icon {...props} name={IconName.redact} />;
-export const IconProfile = props => <Icon {...props} name={IconName.profile} />;
-export const IconBack = props => <Icon {...props} name={IconName.back} />;
-export const IconRemix = props => <Icon {...props} name={IconName.remix} />;
+export const IconCamera = props => <Icon name={IconName.camera} {...props} />;
+export const IconCameraRoll = props => (
+  <Icon name={IconName.cameraroll} {...props} />
+);
+export const IconCheckmark = props => (
+  <Icon name={IconName.checkmark} {...props} />
+);
+export const IconChevronLeft = props => (
+  <Icon name={IconName.chevronLeft} {...props} />
+);
+export const IconChevronRight = props => (
+  <Icon name={IconName.chevronRight} {...props} />
+);
+export const IconCircleAddAlt = props => (
+  <Icon name={IconName.circleaddAlt} {...props} />
+);
+export const IconCircleAdd = props => (
+  <Icon name={IconName.circleadd} {...props} />
+);
+export const IconClip = props => <Icon name={IconName.clip} {...props} />;
+export const IconClose = props => <Icon name={IconName.close} {...props} />;
+export const IconCrop = props => <Icon name={IconName.crop} {...props} />;
+export const IconHomeAlt = props => <Icon name={IconName.homeAlt} {...props} />;
+export const IconHome = props => <Icon name={IconName.home} {...props} />;
+export const IconLike = props => <Icon name={IconName.like} {...props} />;
+export const IconLikeAlt = props => <Icon name={IconName.likeAlt} {...props} />;
+export const IconLink = props => <Icon name={IconName.link} {...props} />;
+export const IconLock = props => <Icon name={IconName.lock} {...props} />;
+export const IconNotificationAlt = props => (
+  <Icon name={IconName.notificationAlt} {...props} />
+);
+export const IconNotification = props => (
+  <Icon name={IconName.notification} {...props} />
+);
+export const IconPause = props => <Icon name={IconName.pause} {...props} />;
+export const IconPencil = props => <Icon name={IconName.pencil} {...props} />;
+export const IconPlay = props => <Icon name={IconName.play} {...props} />;
+export const IconProfileAlt = props => (
+  <Icon name={IconName.profileAlt} {...props} />
+);
+export const IconSearchphoto = props => (
+  <Icon name={IconName.searchPhoto} {...props} />
+);
+export const IconSearch = props => <Icon name={IconName.search} {...props} />;
+export const IconSticker = props => <Icon name={IconName.sticker} {...props} />;
+export const IconText = props => <Icon name={IconName.text} {...props} />;
+export const IconTrash = props => <Icon name={IconName.trash} {...props} />;
+export const IconRepost = props => <Icon name={IconName.repost} {...props} />;
+export const IconEllipsisAlt = props => (
+  <Icon name={IconName.ellipsisAlt} {...props} />
+);
+export const IconDraw = props => <Icon name={IconName.draw} {...props} />;
+export const IconDownload = props => (
+  <Icon name={IconName.download} {...props} />
+);
+export const IconProfile = props => <Icon name={IconName.profile} {...props} />;
+export const IconRedact = props => <Icon name={IconName.redact} {...props} />;
+export const IconRemix = props => <Icon name={IconName.remix} {...props} />;
+export const IconSearchAlt = props => (
+  <Icon name={IconName.searchAlt} {...props} />
+);
+export const IconSave = props => <Icon name={IconName.save} {...props} />;
 export const IconEllipsis = props => (
-  <Icon {...props} name={IconName.ellipsis} />
+  <Icon name={IconName.ellipsis} {...props} />
 );
+export const IconHeart = props => <Icon name={IconName.heart} {...props} />;
+export const IconCheck = props => <Icon name={IconName.check} {...props} />;
+export const IconComment = props => <Icon name={IconName.comment} {...props} />;
+export const IconCrown = props => <Icon name={IconName.crown} {...props} />;
+export const IconList = props => <Icon name={IconName.list} {...props} />;
+export const IconPanels = props => <Icon name={IconName.panels} {...props} />;
+export const IconPhoto = props => <Icon name={IconName.photo} {...props} />;
+export const IconPlus = props => <Icon name={IconName.plus} {...props} />;
+export const IconSend = props => <Icon name={IconName.send} {...props} />;
+export const IconSettings = props => (
+  <Icon name={IconName.settings} {...props} />
+);
+export const IconSkip = props => <Icon name={IconName.skip} {...props} />;
+export const IconTriangle = props => (
+  <Icon name={IconName.triangle} {...props} />
+);
+export const IconTrophy = props => <Icon name={IconName.trophy} {...props} />;
+export const IconUndo = props => <Icon name={IconName.undo} {...props} />;
+export const IconUploadphoto = props => (
+  <Icon name={IconName.uploadPhoto} {...props} />
+);
+export const IconView = props => <Icon name={IconName.view} {...props} />;
