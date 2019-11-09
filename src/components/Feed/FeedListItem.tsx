@@ -162,6 +162,18 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
     this.props.onPressPost(this.props.thread, post);
   handlePressNewPost = () => this.props.onPressNewPost(this.props.thread);
 
+  contentInset = {
+    left: SPACING.normal,
+    top: 0,
+    bottom: 0,
+    right: SPACING.normal
+  };
+
+  contentOffset = {
+    y: 0,
+    x: SPACING.normal * -1
+  };
+
   render() {
     const { height, width, paused, thread, isVisible } = this.props;
     const {
@@ -193,16 +205,8 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
               onPressNewPost={this.handlePressNewPost}
               directionalLockEnabled
               waitFor={this.props.waitFor}
-              contentOffset={{
-                y: 0,
-                x: SPACING.normal * -1
-              }}
-              contentInset={{
-                left: SPACING.normal,
-                top: 0,
-                bottom: 0,
-                right: SPACING.normal
-              }}
+              contentOffset={this.contentOffset}
+              contentInset={this.contentInset}
             ></PostPreviewList>
           </View>
 

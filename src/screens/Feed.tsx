@@ -7,7 +7,11 @@ import {
 import * as React from "react";
 import { StyleSheet, View, InteractionManager } from "react-native";
 import { NavigationState, withNavigation } from "react-navigation";
-import { BottomTabBar, TAB_BAR_HEIGHT } from "../components/BottomTabBar";
+import {
+  BottomTabBar,
+  TAB_BAR_HEIGHT,
+  TAB_BAR_OFFSET
+} from "../components/BottomTabBar";
 import { FeedList } from "../components/Feed/FeedList";
 import {
   ViewThreads_postThreads_data,
@@ -77,6 +81,18 @@ class FeedPageComponent extends React.Component<Props> {
   };
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
 
+  contentOffset = {
+    y: TOP_Y * -1,
+    x: 0
+  };
+
+  contentInset = {
+    bottom: TAB_BAR_OFFSET,
+    top: TOP_Y,
+    left: 0,
+    right: 0
+  };
+
   render() {
     return (
       <View ref={this.props.pageRef} style={styles.page}>
@@ -85,16 +101,8 @@ class FeedPageComponent extends React.Component<Props> {
           onPressThread={this.handlePressThread}
           onPressNewPost={this.handleNewPost}
           onLongPressThread={this.handleLongPressThread}
-          contentOffset={{
-            y: TOP_Y * -1,
-            x: 0
-          }}
-          contentInset={{
-            bottom: TAB_BAR_HEIGHT,
-            top: TOP_Y,
-            left: 0,
-            right: 0
-          }}
+          contentOffset={this.contentOffset}
+          contentInset={this.contentInset}
         />
         <BottomTabBar currentRoute="FeedTab" style={styles.tabBar} />
       </View>

@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative"
   },
+  wrapper: { flex: 1 },
   player: {
     borderRadius: BORDER_RADIUS,
     zIndex: 0
@@ -234,18 +235,51 @@ const PostCard = ({
     onPressEllipsis(post, mediaPlayerRef);
   }, [post.id, mediaPlayerRef]);
 
+  const mediaPlayerStyles = React.useMemo(
+    () => [StyleSheet.absoluteFill, styles.player, { width, height }],
+    [width, height, styles]
+  );
+
+  const sheetStyles = React.useMemo(() => {
+    return [
+      styles.pausedOverlay,
+      { width, height },
+      {
+        opacity: scrollOpacityAnimation(
+          prevOffset,
+          snapOffset,
+          height,
+          scrollY,
+          isScrolling,
+          visiblePostIDValue,
+          post.id.hashCode()
+        )
+      }
+    ];
+  }, [
+    prevOffset,
+    snapOffset,
+    height,
+    scrollY,
+    isScrolling,
+    visiblePostIDValue,
+    post.id
+  ]);
+
+  const sources = React.useMemo(() => [post.media], [post.media]);
+
   return (
     <TouchableHighlight disabled={!paused} onPress={handlePress}>
       <Animated.View style={[styles.container, { width, height }]}>
         <MediaPlayer
-          sources={[post.media]}
+          sources={sources}
           paused={manuallyPaused || paused}
           id={`${post.id}-player`}
           autoPlay={false}
           ref={mediaPlayerRef}
           // sharedId={postElementId(post)}
           borderRadius={BORDER_RADIUS}
-          style={[StyleSheet.absoluteFill, styles.player, { width, height }]}
+          style={mediaPlayerStyles}
         />
 
         <OverlayGradient
@@ -321,24 +355,7 @@ const PostCard = ({
           <LikeCountButton size={28} id={post.id} onPress={handlePressLike} />
         </Animated.View>
 
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            styles.pausedOverlay,
-            { width, height },
-            {
-              opacity: scrollOpacityAnimation(
-                prevOffset,
-                snapOffset,
-                height,
-                scrollY,
-                isScrolling,
-                visiblePostIDValue,
-                post.id.hashCode()
-              )
-            }
-          ]}
-        ></Animated.View>
+        <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>
       </Animated.View>
     </TouchableHighlight>
   );
@@ -347,7 +364,8 @@ const PostCard = ({
 const listStyles = StyleSheet.create({
   list: {
     flex: 1,
-    backgroundColor: "#0A0A0A"
+    backgroundColor: "#0A0A0A",
+    overflow: "visible"
   },
   separator: {
     height: ITEM_SEPARATOR_HEIGHT,
@@ -359,7 +377,9 @@ const ItemSeparatorComponent = () => <View style={listStyles.separator} />;
 
 export class PostFlatList extends React.Component {
   static defaultProps = {
-    initialPostIndex: 0
+    initialPostIndex: 0,
+    topInset: 0,
+    bottomInset: 0
   };
 
   constructor(props) {
@@ -367,18 +387,18 @@ export class PostFlatList extends React.Component {
     this.state = { visibleIDs: {} };
 
     this.topInset = TOP_Y + props.topInset;
-    this.bottomInset = SPACING.double + BOTTOM_Y;
-
-    this.contentOffset = {
-      x: 0,
-      y: 0
-    };
+    this.bottomInset = BOTTOM_Y + props.bottomInset;
 
     this.contentInset = {
-      top: 0,
+      top: props.topInset,
       left: 0,
       right: 0,
-      bottom: this.bottomInset
+      bottom: props.bottomInset
+    };
+
+    this.contentOffset = {
+      y: props.topInset * -1,
+      x: 0
     };
 
     this.updateSnapOffsets();
@@ -652,7 +672,7 @@ export class PostFlatList extends React.Component {
     top: 0,
     left: 0,
     right: 0,
-    bottom: BOTTOM_Y + this.bottomInset
+    bottom: 0
   };
 
   interactionTask: Cancelable | null = null;
@@ -677,26 +697,6 @@ export class PostFlatList extends React.Component {
       this.interactionTask.cancel();
     }
   }
-
-  // snapToNextItem = ([visiblePostIDValue, scrollY]) => {
-  //   const entries = Object.entries(this.snapOffsets);
-
-  //   let id = Object.keys(this.state.visibleIDs)[0];
-
-  //   if (nextSnapOffset) {
-  //     this.setVisibleID(nextSnapOffset[0]);
-  //   }
-  // };
-
-  // snapToPreviousItem = ([visiblePostIDValue, scrollY]) => {
-  //   const previousSnapOffset = Object.entries(this.snapOffsets)
-  //     .reverse()
-  //     .find(([id, offset]) => id.hashCode() === visiblePostIDValue);
-
-  //   if (previousSnapOffset) {
-  //     this.setVisibleID(previousSnapOffset[0]);
-  //   }
-  // };
 
   scrollDirectionValue = new Animated.Value(1);
 
@@ -732,6 +732,17 @@ export class PostFlatList extends React.Component {
     { useNativeDriver: true }
   );
 
+  listStyle = [
+    listStyles.list,
+    {
+      marginTop: this.topInset,
+      paddingBottom: this.bottomInset,
+      height: this.height
+    }
+  ];
+
+  simultaneousListHandlers = [this.panRef];
+
   render() {
     const { posts, refreshing, topInset = 0, renderHeader } = this.props;
 
@@ -741,7 +752,7 @@ export class PostFlatList extends React.Component {
         ref={this.panRef}
         simultaneousHandlers={[this.flatListRef]}
       >
-        <Animated.View style={{ flex: 1 }}>
+        <Animated.View style={styles.wrapper}>
           <FlatList
             renderItem={this.renderItem}
             data={posts}
@@ -749,7 +760,7 @@ export class PostFlatList extends React.Component {
             ref={this.flatListRef}
             contentOffset={this.contentOffset}
             contentInset={this.contentInset}
-            simultaneousHandlers={[this.panRef]}
+            simultaneousHandlers={this.simultaneousListHandlers}
             contentInsetAdjustmentBehavior="never"
             initialScrollIndex={this.props.initialPostIndex || 0}
             viewabilityConfig={this.viewabilityConfig}
@@ -760,23 +771,10 @@ export class PostFlatList extends React.Component {
             onScrollBeginDrag={this.onScrollBeginDrag}
             onMomentumScrollEnd={this.onMomentumScrollEnd}
             onMomentumScrollBegin={this.onMomentumScrollBegin}
-            // snapToOffsets={this.snapToOffsets}
-            // decelerationRate="fast"
             onScrollToTop={this.handleScrollToTop}
             scrollToOverflowEnabled
-            // disableScrollViewPanResponder
             directionalLockEnabled
-            // pagingEnabled
-            // snapToAlignment="start"
-            style={[
-              listStyles.list,
-              {
-                overflow: "visible",
-                marginTop: this.topInset,
-                paddingBottom: this.bottomInset,
-                height: this.height
-              }
-            ]}
+            style={this.listStyle}
             extraData={this.state}
             vertical
             keyboardDismissMode="interactive"

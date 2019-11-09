@@ -27,7 +27,6 @@ import { createSharedElementStackNavigator } from "react-navigation-shared-eleme
 import { Toast } from "./src/components/Toast";
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import { createMaterialTopTabNavigator } from "react-navigation-tabs";
-import ThreadListPage from "./src/screens/ThreadList";
 import ReplyPage from "./src/screens/ReplyPage";
 import { createBottomTabNavigator } from "react-navigation-tabs";
 import CurrentProfilePage from "./src/screens/CurrentProfile";

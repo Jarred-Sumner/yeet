@@ -37,19 +37,29 @@ const CustomFastImage = React.forwardRef(
     }: Props,
     ref
   ) => {
-    let sources = [];
-    if (typeof mediaSource !== "undefined") {
-      sources = [mediaSource];
-    } else if (typeof source !== "undefined") {
-      sources = [
-        mediaSourceFromSource(source, {
-          width: source.width,
-          height: source.height,
-          x: 0,
-          y: 0
-        })
-      ];
-    }
+    const sources = React.useMemo(() => {
+      if (typeof mediaSource !== "undefined") {
+        return [mediaSource];
+      } else if (typeof source !== "undefined") {
+        return [
+          mediaSourceFromSource(source, {
+            width: source.width,
+            height: source.height,
+            x: 0,
+            y: 0
+          })
+        ];
+      } else {
+        return [];
+      }
+    }, [
+      mediaSource,
+      source,
+      mediaSource?.width,
+      mediaSource?.height,
+      source?.width,
+      source?.height
+    ]);
 
     return (
       <MediaPlayer
