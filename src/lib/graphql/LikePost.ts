@@ -55,6 +55,7 @@ export interface LikePost_likePost {
   id: string;
   likesCount: number;
   format: string;
+  commentsCount: number;
   likes: LikePost_likePost_likes;
   blocks: JSON;
   nodes: JSON;

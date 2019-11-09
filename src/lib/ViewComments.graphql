@@ -1,0 +1,14 @@
+#import "./CommentFragment.graphql"
+
+query ViewComments($postId: ID!, $offset: Int, $limit: Int) {
+  comments(postId: $postId, offset: $offset, limit: $limit) {
+    data {
+      ...CommentFragment
+    }
+
+    hasMore
+    limit
+    offset
+    id
+  }
+}

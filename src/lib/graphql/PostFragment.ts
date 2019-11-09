@@ -55,6 +55,7 @@ export interface PostFragment {
   id: string;
   likesCount: number;
   format: string;
+  commentsCount: number;
   likes: PostFragment_likes;
   blocks: JSON;
   nodes: JSON;

@@ -57,6 +57,7 @@ export interface CreatePost_createPost {
   id: string;
   likesCount: number;
   format: string;
+  commentsCount: number;
   likes: CreatePost_createPost_likes;
   blocks: JSON;
   nodes: JSON;

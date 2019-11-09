@@ -5,6 +5,7 @@ fragment PostFragment on Post {
   likesCount
   format
   __typename
+  commentsCount
 
   likes {
     ...LikeCountFragment

@@ -20,7 +20,7 @@ import {
 import { useNavigation } from "react-navigation-hooks";
 import { NavigationProp } from "react-navigation";
 import { NavigationStackProp } from "react-navigation-stack";
-import { postElementId } from "../lib/graphql/ElementTransition";
+import { postElementId } from "../lib/ElementTransition";
 import {
   MediaPlayerPauser,
   MediaPlayerContext

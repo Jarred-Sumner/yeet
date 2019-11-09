@@ -255,14 +255,9 @@ class TrackableVideoSource : TrackableMediaSource {
       self.startObservers()
     }
 
-
-
     if !isNewAsset && player.timeControlStatus != .paused {
       return
     }
-
-
-
 
     guard canPlay else {
       SwiftyBeaver.warning("[TrackableVideoSource] \(mediaSource.id) Tried to play before being ready")

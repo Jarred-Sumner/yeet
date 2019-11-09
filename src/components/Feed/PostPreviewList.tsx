@@ -17,7 +17,7 @@ import { IconButton } from "../Button";
 import { IconPlus } from "../Icon";
 import { MediumText } from "../Text";
 import { isVideo } from "../../lib/imageSearch";
-import { postElementId } from "../../lib/graphql/ElementTransition";
+import { postElementId } from "../../lib/ElementTransition";
 
 export const POST_LIST_HEIGHT = 320;
 const POST_LIST_WIDTH = 204;

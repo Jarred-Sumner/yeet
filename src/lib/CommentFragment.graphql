@@ -1,0 +1,34 @@
+fragment CommentFragment on Comment {
+  id
+  __typename
+
+  media {
+    id
+    width
+    height
+    mimeType
+    duration
+    pixelRatio
+    highQualityUrl
+    mediumQualityUrl
+    lowQualityUrl
+    coverUrl
+    url
+    __typename
+  }
+
+  profile {
+    id
+    username
+    photoURL
+  }
+
+  textColor
+  backgroundColor
+  body
+
+  x
+  y
+  timeOffset
+  autoplaySeconds
+}

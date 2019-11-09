@@ -55,6 +55,7 @@ export interface ViewPosts_posts {
   id: string;
   likesCount: number;
   format: string;
+  commentsCount: number;
   likes: ViewPosts_posts_likes;
   blocks: JSON;
   nodes: JSON;
