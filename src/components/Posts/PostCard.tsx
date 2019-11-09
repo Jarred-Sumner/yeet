@@ -12,6 +12,15 @@ import { IconButtonEllipsis } from "../Button";
 import MediaPlayer from "../MediaPlayer";
 import { SemiBoldText } from "../Text";
 import { LikeCountButton } from "../ThreadList/LikeCountButton";
+import VIEW_COMMENTS_QUERY from "../../lib/ViewComments.graphql";
+import { useLazyQuery } from "react-apollo";
+import {
+  ViewComments,
+  ViewCommentsVariables
+} from "../../lib/graphql/ViewComments";
+import { CommentFragment } from "../../lib/graphql/CommentFragment";
+import { CommentsViewer } from "./CommentsViewer";
+import { isVideo } from "../../lib/imageSearch";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -182,12 +191,14 @@ const PostCardComponent = ({
   visiblePostIDValue,
   onPressProfile,
   isScrolling,
-  onPressEllipsis
+  onPressEllipsis,
+  comments = []
 }: {
   post: PostFragment;
   paused: boolean;
   width: number;
   height: number;
+  comments: Array<CommentFragment>;
 }) => {
   const [manuallyPaused, setManuallyPased] = React.useState(false);
   const mediaPlayerRef = React.useRef();
@@ -238,6 +249,58 @@ const PostCardComponent = ({
     post.id
   ]);
 
+  const [playbackTime, setPlaybackTime] = React.useState(0);
+
+  const imageTimer = React.createRef(-1);
+  const lastProgressTimer = React.useRef<Date | null>(null);
+  const lastElapsedTime = React.useRef<number | null>(0);
+
+  React.useEffect(() => {
+    const shouldStartTimer = !(
+      paused ||
+      manuallyPaused ||
+      isVideo(post.media.mimeType)
+    );
+
+    if (shouldStartTimer) {
+      if (imageTimer.current > -1) {
+        window.clearInterval(imageTimer.current);
+        imageTimer.current = -1;
+      }
+
+      lastProgressTimer.current = new Date();
+      imageTimer.current = window.setInterval(() => {
+        const now = new Date();
+        const offsetDate = lastProgressTimer.current ?? now;
+        let elapsed =
+          (now.getTime() - offsetDate.getTime()) / 1000 +
+          lastElapsedTime.current;
+
+        lastProgressTimer.current = now;
+        setPlaybackTime(elapsed);
+        lastElapsedTime.current = elapsed;
+      }, 100);
+    } else if (!shouldStartTimer && imageTimer.current > -1) {
+      window.clearInterval(imageTimer.current);
+      imageTimer.current = -1;
+    }
+
+    return () => {
+      if (imageTimer.current > -1) {
+        window.clearInterval(imageTimer.current);
+      }
+    };
+  }, [post.id, post.media.mimeType, paused, manuallyPaused]);
+
+  const handleProgress = React.useCallback(
+    ({ nativeEvent: { id, index, status, url, elapsed, interval } }) => {
+      if (elapsed) {
+        setPlaybackTime(elapsed);
+      }
+    },
+    [setPlaybackTime]
+  );
+
   const sources = React.useMemo(() => [post.media], [post.media]);
 
   return (
@@ -249,6 +312,7 @@ const PostCardComponent = ({
           id={`${post.id}-player`}
           autoPlay={false}
           ref={mediaPlayerRef}
+          onProgress={handleProgress}
           // sharedId={postElementId(post)}
           borderRadius={BORDER_RADIUS}
           style={mediaPlayerStyles}
@@ -327,10 +391,52 @@ const PostCardComponent = ({
           <LikeCountButton size={28} id={post.id} onPress={handlePressLike} />
         </Animated.View>
 
+        {!paused && (
+          <CommentsViewer
+            width={width}
+            height={height}
+            comments={comments}
+            timeOffset={playbackTime}
+          />
+        )}
+
         <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>
       </Animated.View>
     </TouchableHighlight>
   );
 };
 
-export const PostCard = PostCardComponent;
+export const PostCard = ({ post, paused, ...props }) => {
+  const [loadComments, commentsQuery] = useLazyQuery<
+    ViewComments,
+    ViewCommentsVariables
+  >(VIEW_COMMENTS_QUERY, {
+    variables: {
+      postId: post.id,
+      limit: 20,
+      offset: 0
+    }
+  });
+
+  React.useEffect(() => {
+    if (!paused) {
+      loadComments({
+        variables: {
+          postId: post.id,
+          limit: 20,
+          offset: 0
+        }
+      });
+    }
+  }, [paused, post.id, loadComments]);
+
+  const comments = commentsQuery?.data?.comments?.data ?? [];
+  return (
+    <PostCardComponent
+      {...props}
+      post={post}
+      paused={paused}
+      comments={comments}
+    />
+  );
+};

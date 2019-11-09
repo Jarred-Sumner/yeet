@@ -1,44 +1,19 @@
-import { fromPairs, sum, Cancelable } from "lodash";
+import { Cancelable, fromPairs, orderBy, sum } from "lodash";
 import * as React from "react";
 import {
   FlatList as RNFlatList,
   StyleSheet,
   View,
-  ViewabilityConfig,
-  InteractionManager
+  ViewabilityConfig
 } from "react-native";
-import LinearGradient from "react-native-linear-gradient";
-import Animated, { Easing } from "react-native-reanimated";
-import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
+import { PanGestureHandler, State } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
-import { scaleToWidth, isTapInside } from "../../lib/Rect";
-import { SPACING } from "../../lib/styles";
-import { Avatar } from "../Avatar";
-import FlatList, { ScrollView } from "../FlatList";
-import MediaPlayer from "../MediaPlayer";
-import { SemiBoldText } from "../Text";
-import { LikeCountButton } from "./LikeCountButton";
-import { runTiming } from "../../lib/animations";
-import {
-  debounce,
-  invert,
-  orderBy,
-  sortBy,
-  toPairs,
-  first,
-  chain,
-  filter
-} from "lodash";
-import {
-  BaseButton,
-  PanGestureHandler,
-  TouchableHighlight,
-  State
-} from "react-native-gesture-handler";
-import { boxBox as intersects } from "intersects";
 import { Rectangle } from "../../lib/Rectangle";
-import { IconButtonEllipsis } from "../Button";
-import { PostCard, calculatePostHeight } from "../Posts/PostCard";
+import { SPACING } from "../../lib/styles";
+import FlatList from "../FlatList";
+import { calculatePostHeight, PostCard } from "../Posts/PostCard";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 

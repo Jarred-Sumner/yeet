@@ -31,7 +31,7 @@ export interface CommentFragment_profile {
 export interface CommentFragment {
   __typename: "Comment";
   id: string;
-  media: CommentFragment_media;
+  media: CommentFragment_media | null;
   profile: CommentFragment_profile;
   textColor: string;
   backgroundColor: string;

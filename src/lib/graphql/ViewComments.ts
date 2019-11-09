@@ -31,7 +31,7 @@ export interface ViewComments_comments_data_profile {
 export interface ViewComments_comments_data {
   __typename: "Comment";
   id: string;
-  media: ViewComments_comments_data_media;
+  media: ViewComments_comments_data_media | null;
   profile: ViewComments_comments_data_profile;
   textColor: string;
   backgroundColor: string;
