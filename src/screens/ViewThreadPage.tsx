@@ -11,7 +11,7 @@ import Animated from "react-native-reanimated";
 import { NavigationProp } from "react-navigation";
 import { useNavigation, useNavigationParam } from "react-navigation-hooks";
 import { NavigationStackProp } from "react-navigation-stack";
-import { postElementId } from "../lib/graphql/ElementTransition";
+import { postElementId } from "../lib/ElementTransition";
 import {
   ViewThread as ViewThreadQuery,
   ViewThreadVariables

@@ -14,6 +14,7 @@ import { Rectangle } from "../../lib/Rectangle";
 import { SPACING } from "../../lib/styles";
 import FlatList from "../FlatList";
 import { calculatePostHeight, PostCard } from "../Posts/PostCard";
+import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -155,6 +156,7 @@ export class PostFlatList extends React.Component {
         paused={paused}
         height={height}
         contentHeight={this.contentHeight}
+        keyboardVisibleValue={this.keyboardVisibleValue}
         index={index}
         isScrolling={this.isScrollingValue}
         snapOffset={this.snapOffsets[item.id]}
@@ -400,6 +402,8 @@ export class PostFlatList extends React.Component {
 
   simultaneousListHandlers = [this.panRef];
 
+  keyboardVisibleValue = new Animated.Value(0);
+
   render() {
     const { posts, refreshing, topInset = 0, renderHeader } = this.props;
 
@@ -410,6 +414,9 @@ export class PostFlatList extends React.Component {
         simultaneousHandlers={[this.flatListRef]}
       >
         <Animated.View style={listStyles.wrapper}>
+          <AnimatedKeyboardTracker
+            keyboardVisibleValue={this.keyboardVisibleValue}
+          />
           <FlatList
             renderItem={this.renderItem}
             data={posts}

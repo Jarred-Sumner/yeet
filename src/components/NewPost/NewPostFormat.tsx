@@ -12,6 +12,7 @@ export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y;
 
 export enum PostFormat {
   screenshot = "screenshot",
+  comment = "comment",
   caption = "caption",
   canvas = "canvas",
   sticker = "sticker",

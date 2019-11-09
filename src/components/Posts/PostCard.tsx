@@ -29,7 +29,8 @@ enum LayerZ {
   player = 0,
   gradient = 1,
   metadata = 2,
-  paused = 3
+  comments = 3,
+  paused = 4
 }
 
 const styles = StyleSheet.create({
@@ -38,7 +39,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative"
   },
-
+  commentsLayer: {
+    position: "relative",
+    zIndex: LayerZ.comments
+  },
+  layerWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0
+  },
   player: {
     borderRadius: BORDER_RADIUS,
     zIndex: 0
@@ -188,6 +197,7 @@ const PostCardComponent = ({
   contentHeight,
   width,
   onPressLike,
+  keyboardVisibleValue,
   visiblePostIDValue,
   onPressProfile,
   isScrolling,
@@ -392,12 +402,17 @@ const PostCardComponent = ({
         </Animated.View>
 
         {!paused && (
-          <CommentsViewer
-            width={width}
-            height={height}
-            comments={comments}
-            timeOffset={playbackTime}
-          />
+          <View style={styles.layerWrapper}>
+            <View style={styles.commentsLayer}>
+              <CommentsViewer
+                width={width}
+                height={height}
+                comments={comments}
+                timeOffset={playbackTime}
+                keyboardVisibleValue={keyboardVisibleValue}
+              />
+            </View>
+          </View>
         )}
 
         <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>

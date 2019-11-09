@@ -12,6 +12,56 @@ import {
   preserveOffset
 } from "react-native-redash";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
+import { StyleSheet } from "react-native";
+
+const transformableStyles = StyleSheet.create({
+  container: {
+    position: "absolute",
+    left: 0,
+    top: 0
+  }
+});
+
+export const TransformableView = React.forwardRef((props, ref) => {
+  const {
+    translateX = 0,
+    translateY = 0,
+    onLayout,
+    rotate = 0,
+    scale = 1.0,
+    opacity = 1.0,
+    children
+  } = props;
+
+  return (
+    <Animated.View
+      ref={ref}
+      onLayout={onLayout}
+      style={[
+        transformableStyles.container,
+        {
+          opacity,
+          transform: [
+            {
+              translateY
+            },
+            {
+              translateX
+            },
+            {
+              rotate
+            },
+            {
+              scale
+            }
+          ]
+        }
+      ]}
+    >
+      {children}
+    </Animated.View>
+  );
+});
 
 const {
   set,
@@ -433,32 +483,17 @@ export class MovableNode extends Component<Props> {
                       onGestureEvent={this.handleRotate}
                       onHandlerStateChange={this.handleRotate}
                     >
-                      <Animated.View
+                      <TransformableView
                         ref={this.props.containerRef}
                         onLayout={this.handleLayout}
-                        style={{
-                          position: "absolute",
-                          left: 0,
-                          top: 0,
-                          opacity: isHidden ? 0 : 1,
-                          transform: [
-                            {
-                              translateY: this.translateY
-                            },
-                            {
-                              translateX: this.translateX
-                            },
-                            {
-                              rotate: this.rotate
-                            },
-                            {
-                              scale: this.scale
-                            }
-                          ]
-                        }}
+                        opacity={isHidden ? 0 : 1}
+                        translateY={this.translateY}
+                        translateX={this.translateX}
+                        rotate={this.rotate}
+                        scale={this.scale}
                       >
                         {this.props.children}
-                      </Animated.View>
+                      </TransformableView>
                     </RotationGestureHandler>
                   </Animated.View>
                 </PinchGestureHandler>

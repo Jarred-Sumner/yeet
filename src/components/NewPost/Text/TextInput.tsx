@@ -44,6 +44,18 @@ const AnimatedTextInput = React.forwardRef((props, ref) => {
 const TextInputComponent = AnimatedTextInput;
 
 const textInputStyles = {
+  [PostFormat.comment]: {
+    fontSizes: {
+      "0": 14,
+      "8": 14,
+      "12": 14,
+      "24": 14
+    },
+    presets: {
+      backgroundColor: "green",
+      color: "white"
+    }
+  },
   [PostFormat.screenshot]: {
     fontSizes: {
       "0": 48,
@@ -81,6 +93,14 @@ const textInputStyles = {
 };
 
 const textInputTypeStylesheets = {
+  [PostFormat.comment]: StyleSheet.create({
+    input: {
+      borderRadius: 4,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      overflow: "hidden"
+    }
+  }),
   [PostFormat.screenshot]: StyleSheet.create({
     container: {
       backgroundColor: "transparent"

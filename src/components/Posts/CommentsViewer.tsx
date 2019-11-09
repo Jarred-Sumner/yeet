@@ -21,6 +21,7 @@ import { useLazyQuery } from "react-apollo";
 import { CommentFragment } from "../../lib/graphql/CommentFragment";
 import tinycolor from "tinycolor2";
 import { memoize } from "lodash";
+import { MovableNode, TransformableView } from "../NewPost/Node/MovableNode";
 
 const AVATAR_SIZE = 22;
 
@@ -29,6 +30,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0
+  },
+  newCommentWrapper: {
+    ...StyleSheet.absoluteFillObject
   }
 });
 
@@ -55,9 +59,6 @@ const textCommentStyles = StyleSheet.create({
     top: AVATAR_SIZE / -2,
     left: AVATAR_SIZE / -2
   },
-  positioner: {
-    position: "absolute"
-  },
   text: {
     fontSize: 14,
     maxWidth: 200,
@@ -79,15 +80,15 @@ const TextComment = ({
   x,
   y,
   profile,
+  id,
+  maxY,
   backgroundColor,
+  keyboardVisibleValue,
   textColor: color
 }) => {
   return (
-    <Animated.View
-      pointerEvents="box-none"
-      style={[textCommentStyles.positioner, { top: y, left: x }]}
-    >
-      <Animated.View style={textCommentStyles.container}>
+    <TransformableView translateX={x} translateY={y}>
+      <View style={textCommentStyles.container}>
         <View style={textCommentStyles.textShadow}>
           <View
             style={[
@@ -107,19 +108,34 @@ const TextComment = ({
           size={AVATAR_SIZE}
           style={textCommentStyles.avatar}
         />
-      </Animated.View>
-    </Animated.View>
+      </View>
+    </TransformableView>
   );
 };
 
-const Comment = ({ comment }: { comment: CommentFragment }) => {
+const Comment = ({
+  comment,
+  keyboardVisibleValue,
+  onTap,
+  maxY
+}: {
+  comment: CommentFragment;
+}) => {
+  const handleTapComment = React.useCallback(() => {
+    onTap(comment);
+  }, [onTap, comment]);
+
   if (comment.body) {
     const { body, x, y, profile, backgroundColor, textColor } = comment;
     return (
       <TextComment
         body={body}
         x={x}
+        onTap={handleTapComment}
         y={y}
+        id={comment.id}
+        maxY={maxY}
+        keyboardVisibleValue={keyboardVisibleValue}
         profile={profile}
         backgroundColor={backgroundColor}
         textColor={textColor}
@@ -130,10 +146,26 @@ const Comment = ({ comment }: { comment: CommentFragment }) => {
   }
 };
 
-export const CommentsViewer = ({ comments, width, height, timeOffset }) => {
-  const renderComment = React.useCallback(comment => {
-    return <Comment key={comment.id} comment={comment} />;
-  }, []);
+export const CommentsViewer = ({
+  comments,
+  width,
+  height,
+  timeOffset,
+  keyboardVisibleValue
+}) => {
+  const renderComment = React.useCallback(
+    comment => {
+      return (
+        <Comment
+          key={comment.id}
+          keyboardVisibleValue={keyboardVisibleValue}
+          comment={comment}
+          maxY={height}
+        />
+      );
+    },
+    [keyboardVisibleValue, height]
+  );
 
   const filteredComents = React.useMemo(() => {
     return comments.filter(comment => {
