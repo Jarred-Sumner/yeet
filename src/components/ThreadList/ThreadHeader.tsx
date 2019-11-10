@@ -10,7 +10,7 @@ import {
   IconButtonEllipsis
 } from "../Button";
 import { Text, MediumText } from "../Text";
-import { IconEllipsis } from "../Icon";
+import { IconEllipsis, IconClose } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { BlurView } from "@react-native-community/blur";
@@ -111,6 +111,50 @@ export const ThreadHeader = ({ thread }) => {
 
         <View style={[styles.side, styles.rightSide]}>
           <IconButtonEllipsis onPress={handlePressEllipsis} />
+        </View>
+      </View>
+    </>
+  );
+};
+
+export const CommentEditorHeader = ({ onCancel }) => {
+  const ref = React.useRef();
+
+  const handlePressCancel = React.useCallback(() => {
+    onCancel();
+  }, [onCancel]);
+
+  return (
+    <>
+      <BlurView
+        style={[styles.bar, styles.blur]}
+        blurType="dark"
+        blurAmount={12}
+        viewRef={ref}
+      />
+
+      <View ref={ref} style={[styles.bar, styles.container]}>
+        <View style={[styles.side, styles.leftSide]}>
+          {/* <IconButton
+            type="shadow"
+            Icon={IconClose}
+            size={16}
+            color="white"
+            onPress={handlePressCancel}
+          /> */}
+        </View>
+
+        <View style={[styles.side, styles.titleSide]}>
+          <Text style={styles.username} numberOfLines={1}>
+            Post a comment
+          </Text>
+          <MediumText numberOfLines={1} style={styles.title}>
+            Write your comment
+          </MediumText>
+        </View>
+
+        <View style={[styles.side, styles.rightSide]}>
+          {/* <IconButtonEllipsis onPress={handlePressEllipsis} /> */}
         </View>
       </View>
     </>

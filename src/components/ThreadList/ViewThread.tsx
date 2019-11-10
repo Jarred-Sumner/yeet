@@ -102,7 +102,7 @@ export class PostFlatList extends React.Component {
   updateSnapOffsets = () => {
     let pairs = this.props.posts.map((post, index) => [
       post.id,
-      this.getItemLayout(this.props.posts, index).offset
+      this.getItemLayout(this.props.posts, index).offset - this.contentInset.top
     ]);
 
     this.snapBounds = fromPairs(
@@ -156,8 +156,9 @@ export class PostFlatList extends React.Component {
         paused={paused}
         height={height}
         contentHeight={this.contentHeight}
-        keyboardVisibleValue={this.keyboardVisibleValue}
+        keyboardVisibleValue={this.props.keyboardVisibleValue}
         index={index}
+        openComposer={this.props.openComposer}
         isScrolling={this.isScrollingValue}
         snapOffset={this.snapOffsets[item.id]}
         prevOffset={prevOffset}
@@ -336,6 +337,11 @@ export class PostFlatList extends React.Component {
 
   interactionTask: Cancelable | null = null;
 
+  scrollToId = (id: string) => {
+    const index = this.props.posts.findIndex(post => post.id === id);
+    this.snapToIndex(this.props.posts[index], index);
+  };
+
   snapToIndex = (post: PostFragment, index: number) => {
     this.flatListRef.current.scrollToOffset({
       animated: true,
@@ -402,10 +408,14 @@ export class PostFlatList extends React.Component {
 
   simultaneousListHandlers = [this.panRef];
 
-  keyboardVisibleValue = new Animated.Value(0);
-
   render() {
-    const { posts, refreshing, topInset = 0, renderHeader } = this.props;
+    const {
+      posts,
+      refreshing,
+      topInset = 0,
+      renderHeader,
+      scrollEnabled = true
+    } = this.props;
 
     return (
       <PanGestureHandler
@@ -414,9 +424,6 @@ export class PostFlatList extends React.Component {
         simultaneousHandlers={[this.flatListRef]}
       >
         <Animated.View style={listStyles.wrapper}>
-          <AnimatedKeyboardTracker
-            keyboardVisibleValue={this.keyboardVisibleValue}
-          />
           <FlatList
             renderItem={this.renderItem}
             data={posts}
@@ -430,6 +437,7 @@ export class PostFlatList extends React.Component {
             viewabilityConfig={this.viewabilityConfig}
             removeClippedSubviews={false}
             scrollEventThrottle={1}
+            scrollEnabled={scrollEnabled}
             onScroll={this.onScroll}
             onScrollEndDrag={this.onScrollEndDrag}
             onScrollBeginDrag={this.onScrollBeginDrag}

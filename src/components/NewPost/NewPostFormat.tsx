@@ -76,11 +76,13 @@ export const buildTextBlock = ({
   format,
   autoInserted,
   placeholder,
+  overrides = {},
+  id = null,
   required = true
 }): TextPostBlock => {
   return {
     type: "text",
-    id: generateBlockId(),
+    id: id ?? generateBlockId(),
     format,
     value,
     autoInserted,
@@ -88,7 +90,7 @@ export const buildTextBlock = ({
     config: {
       placeholder,
 
-      overrides: {}
+      overrides
     }
   };
 };
@@ -154,6 +156,12 @@ export const isPlaceholderImageBlock = (block: ImagePostBlock) => {
 };
 
 export const presetsByFormat = {
+  [PostFormat.comment]: {
+    textTop: 0,
+    paddingTop: 0,
+    padding: 0,
+    borderRadius: 4
+  },
   [PostFormat.caption]: {
     borderRadius: 8,
     paddingTop: 0,

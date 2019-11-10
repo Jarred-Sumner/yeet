@@ -21,6 +21,7 @@ import {
 import { CommentFragment } from "../../lib/graphql/CommentFragment";
 import { CommentsViewer } from "./CommentsViewer";
 import { isVideo } from "../../lib/imageSearch";
+import { CommentComposer } from "./CommentComposer";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -47,6 +48,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     left: 0
+  },
+  composerLayer: {
+    position: "relative",
+    zIndex: LayerZ.comments
   },
   player: {
     borderRadius: BORDER_RADIUS,
@@ -183,6 +188,11 @@ const scrollOpacityAnimation = Animated.proc(
 export const calculatePostHeight = (post: PostFragment) =>
   scaleToWidth(SCREEN_DIMENSIONS.width, post.media).height;
 
+enum PostCardState {
+  shown = "shown",
+  newComment = "newComment"
+}
+
 const PostCardComponent = ({
   post,
   paused,
@@ -202,6 +212,7 @@ const PostCardComponent = ({
   onPressProfile,
   isScrolling,
   onPressEllipsis,
+  openComposer,
   comments = []
 }: {
   post: PostFragment;
@@ -211,6 +222,10 @@ const PostCardComponent = ({
   comments: Array<CommentFragment>;
 }) => {
   const [manuallyPaused, setManuallyPased] = React.useState(false);
+  const [cardState, setCardState] = React.useState<PostCardState>(
+    PostCardState.shown
+  );
+
   const mediaPlayerRef = React.useRef();
   const handlePress = React.useCallback(() => {
     onPress(post, index);
@@ -269,6 +284,7 @@ const PostCardComponent = ({
     const shouldStartTimer = !(
       paused ||
       manuallyPaused ||
+      cardState !== PostCardState.shown ||
       isVideo(post.media.mimeType)
     );
 
@@ -300,7 +316,7 @@ const PostCardComponent = ({
         window.clearInterval(imageTimer.current);
       }
     };
-  }, [post.id, post.media.mimeType, paused, manuallyPaused]);
+  }, [post.id, post.media.mimeType, paused, manuallyPaused, cardState]);
 
   const handleProgress = React.useCallback(
     ({ nativeEvent: { id, index, status, url, elapsed, interval } }) => {
@@ -310,6 +326,24 @@ const PostCardComponent = ({
     },
     [setPlaybackTime]
   );
+
+  const onOpenComposer = React.useCallback(
+    composerProps => {
+      setCardState(PostCardState.newComment);
+      openComposer(composerProps);
+    },
+    [setCardState, openComposer, width, height, post.id]
+  );
+
+  const onCloseComposer = React.useCallback(() => {
+    setCardState(PostCardState.shown);
+  }, [setCardState]);
+
+  React.useEffect(() => {
+    if (cardState !== PostCardState.shown && paused) {
+      setCardState(PostCardState.shown);
+    }
+  }, [paused, setCardState, cardState]);
 
   const sources = React.useMemo(() => [post.media], [post.media]);
 
@@ -355,7 +389,7 @@ const PostCardComponent = ({
           ]}
         />
 
-        <View style={styles.top}>
+        <Animated.View style={styles.top}>
           <TouchableHighlight disabled={paused} onPress={handlePressProfile}>
             <View style={styles.profile}>
               <View style={styles.avatarContainer}>
@@ -380,7 +414,7 @@ const PostCardComponent = ({
               size={18}
             />
           </View>
-        </View>
+        </Animated.View>
 
         <Animated.View
           style={[
@@ -402,17 +436,35 @@ const PostCardComponent = ({
         </Animated.View>
 
         {!paused && (
-          <View style={styles.layerWrapper}>
-            <View style={styles.commentsLayer}>
-              <CommentsViewer
-                width={width}
-                height={height}
-                comments={comments}
+          <>
+            {cardState === PostCardState.shown && (
+              <View style={styles.layerWrapper}>
+                <View style={styles.commentsLayer}>
+                  <CommentsViewer
+                    width={width}
+                    height={height}
+                    comments={comments}
+                    hidden={cardState !== PostCardState.shown}
+                    timeOffset={playbackTime}
+                    keyboardVisibleValue={keyboardVisibleValue}
+                  />
+                </View>
+              </View>
+            )}
+
+            <View style={[styles.composerLayer]}>
+              <CommentComposer
+                postId={post.id}
                 timeOffset={playbackTime}
                 keyboardVisibleValue={keyboardVisibleValue}
+                width={width}
+                height={height}
+                onOpen={onOpenComposer}
+                onClose={onCloseComposer}
+                showComposer={cardState === PostCardState.newComment}
               />
             </View>
-          </View>
+          </>
         )}
 
         <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>

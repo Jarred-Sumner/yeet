@@ -18,6 +18,12 @@ export class TextPostBlock extends React.Component<Props> {
     };
   }
 
+  componentDidMount() {
+    if (this.props.autoFocus) {
+      this.focus();
+    }
+  }
+
   handleChange = text => {
     this.setState({ text });
   };

@@ -1,0 +1,27 @@
+#import "./CommentFragment.graphql"
+
+mutation createCommentMutation(
+  $mediaId: ID
+  $body: String
+  $backgroundColor: String
+  $textColor: String
+  $x: Int!
+  $y: Int!
+  $postId: ID!
+  $autoplaySeconds: Int!
+  $timeOffset: Int!
+) {
+  createComment(
+    mediaId: $mediaId
+    body: $body
+    backgroundColor: $backgroundColor
+    textColor: $textColor
+    x: $x
+    y: $y
+    postId: $postId
+    autoplaySeconds: $autoplaySeconds
+    timeOffset: $timeOffset
+  ) {
+    ...CommentFragment
+  }
+}

@@ -16,6 +16,9 @@ export enum IconName {
   camera = "camera",
   cameraroll = "cameraroll",
   checkmark = "checkmark",
+  hourglass = "hourglass",
+  circleCheckmark = "circlecheckmark",
+  stopwatch = "stopwatch",
   chevronLeft = "chevron-left",
   chevronRight = "chevron-right",
   circleaddAlt = "plus-circle-alt",
@@ -163,3 +166,13 @@ export const IconUploadphoto = props => (
   <Icon name={IconName.uploadPhoto} {...props} />
 );
 export const IconView = props => <Icon name={IconName.view} {...props} />;
+
+export const IconHourglass = props => (
+  <Icon name={IconName.hourglass} {...props} />
+);
+export const IconCircleCheckmark = props => (
+  <Icon name={IconName.circleCheckmark} {...props} />
+);
+export const IconStopwatch = props => (
+  <Icon name={IconName.stopwatch} {...props} />
+);

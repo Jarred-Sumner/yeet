@@ -165,14 +165,18 @@ export class BaseNode extends React.Component<Props> {
       keyboardVisibleValue,
       onFocus,
       inputRef,
-      waitFor,
+      waitFor = [],
       absoluteX,
+      autoFocus,
       absoluteY,
       focusType,
       focusedBlockId,
       focusTypeValue,
       onLayout,
-      format
+      format,
+      maxScale,
+      inputAccessoryView,
+      keyboardHeightValue
     } = this.props;
 
     const isDragEnabled =
@@ -193,23 +197,27 @@ export class BaseNode extends React.Component<Props> {
         blockId={block.id}
         x={position.animatedX}
         y={position.animatedY}
-        xLiteral={position.x}
+        r={position.animatedRotate}
+        scaleLiteral={position.scale}
         isHidden={!!isHidden}
+        maxScale={maxScale}
         absoluteX={absoluteX}
         absoluteY={absoluteY}
         containerRef={containerRef}
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}
+        xLiteral={position.x}
         rLiteral={position.rotate}
         keyboardVisibleValue={keyboardVisibleValue}
+        keyboardHeightValue={keyboardHeightValue}
         waitFor={[...waitFor, this.gestureRef]}
         isFocused={isFocused}
-        scaleLiteral={position.scale}
         scale={position.animatedScale}
-        r={position.animatedRotate}
         minX={minX}
         maxX={maxX}
-        paddingTop={Number(presetsByFormat[format].textTop || 0)}
+        paddingTop={Number(
+          this.props.paddingTop || presetsByFormat[format].textTop
+        )}
         minY={minY}
         maxY={maxY}
         onTap={this.handleTap}
@@ -230,6 +238,7 @@ export class BaseNode extends React.Component<Props> {
             focusTypeValue={focusTypeValue}
             focusType={FocusType.absolute}
             gestureRef={this.gestureRef}
+            autoFocus={autoFocus}
             focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}
             onBlur={this.handleBlur}

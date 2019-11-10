@@ -7,7 +7,11 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { useQuery } from "react-apollo";
 import { StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
+import Animated, {
+  Transitioning,
+  Transition,
+  TransitioningView
+} from "react-native-reanimated";
 import { NavigationProp } from "react-navigation";
 import { useNavigation, useNavigationParam } from "react-navigation-hooks";
 import { NavigationStackProp } from "react-navigation-stack";
@@ -18,16 +22,21 @@ import {
 } from "../lib/graphql/ViewThread";
 import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
 import { PostFlatList } from "../components/ThreadList/ViewThread";
-import { SCREEN_DIMENSIONS, BOTTOM_Y } from "../../config";
+import { SCREEN_DIMENSIONS, BOTTOM_Y, TOP_Y } from "../../config";
 import {
   ThreadHeader,
-  THREAD_HEADER_HEIGHT
+  THREAD_HEADER_HEIGHT,
+  CommentEditorHeader
 } from "../components/ThreadList/ThreadHeader";
 import { RectButton } from "react-native-gesture-handler";
 import { IconCamera } from "../components/Icon";
 import { SemiBoldText } from "../components/Text";
 import { SPACING } from "../lib/styles";
 import { BlurView, VibrancyView } from "@react-native-community/blur";
+import { CommentComposer } from "../components/Posts/CommentComposer";
+import { CommentEditor } from "../components/Posts/CommentEditor";
+import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
+import { number } from "yup";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -80,6 +89,12 @@ const styles = StyleSheet.create({
     borderRadius: 206 / 2,
     overflow: "hidden",
     position: "relative"
+  },
+  top: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0
   },
   buttonContainer: {
     flexDirection: "row",
@@ -136,7 +151,11 @@ type Props = {
   showActionSheetWithOptions: (opts: ActionSheetOptions) => void;
 };
 
-class ThreadPageComponent extends React.Component<Props> {
+class ThreadPageComponent extends React.Component<Props, State> {
+  state = {
+    showComposer: false,
+    composerProps: {}
+  };
   // static sharedElements = (navigation, otherNavigation, showing) => {
   //   // Transition element `item.${item.id}.photo` when either
   //   // showing or hiding this screen (coming from any route)
@@ -161,22 +180,96 @@ class ThreadPageComponent extends React.Component<Props> {
   };
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
   handlePressReply = () => {};
+  handleShowComposer = composerProps => {
+    this.postListRef.current.scrollToId(composerProps.postId);
+    this.setState({ showComposer: true, composerProps });
+    this.transitionFooterRef.current.animateNextTransition();
+    this.transitionHeaderRef.current.animateNextTransition();
+  };
+
+  handleCloseComposer = () => {
+    this.setState({ showComposer: false, composerProps: {} });
+    this.transitionFooterRef.current.animateNextTransition();
+    this.transitionHeaderRef.current.animateNextTransition();
+  };
+
+  transitionHeaderRef = React.createRef<TransitioningView>();
+  transitionFooterRef = React.createRef<TransitioningView>();
+  postListRef = React.createRef<PostFlatList>();
+  keyboardHeightValue = new Animated.Value<number>(0);
+  keyboardVisibleValue = new Animated.Value<number>(0);
 
   render() {
     const { thread, defaultPost, refreshing } = this.props;
+    const { showComposer, composerProps } = this.state;
+
     return (
       <Animated.View style={styles.page}>
+        <AnimatedKeyboardTracker
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
+        />
+
         <PostFlatList
           posts={thread?.posts?.data ?? []}
           topInset={THREAD_HEADER_HEIGHT + 4}
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          scrollEnabled={this.state.showComposer === false}
+          openComposer={this.handleShowComposer}
+          ref={this.postListRef}
           refreshing={refreshing}
         />
 
-        <ThreadHeader thread={thread} />
+        <Transitioning.View
+          ref={this.transitionHeaderRef}
+          style={styles.top}
+          transition={
+            <Transition.Together>
+              <Transition.In interpolation="easeIn" type="fade"></Transition.In>
+              <Transition.Out
+                interpolation="easeOut"
+                type="fade"
+              ></Transition.Out>
+            </Transition.Together>
+          }
+        >
+          {showComposer === false && (
+            <ThreadHeader thread={thread} key={thread.id} />
+          )}
 
-        <View style={styles.footer}>
-          <ThreadReplyButton onPress={this.handlePressReply} />
-        </View>
+          {showComposer && <CommentEditorHeader />}
+        </Transitioning.View>
+
+        <Transitioning.View
+          ref={this.transitionFooterRef}
+          pointerEvents="box-none"
+          transition={
+            <Transition.Sequence>
+              <Transition.In interpolation="easeIn" type="fade"></Transition.In>
+              <Transition.Out
+                interpolation="easeOut"
+                type="fade"
+              ></Transition.Out>
+            </Transition.Sequence>
+          }
+        >
+          {showComposer === false && (
+            <Animated.View key="default-footer" style={styles.footer}>
+              <ThreadReplyButton onPress={this.handlePressReply} />
+            </Animated.View>
+          )}
+
+          {showComposer && composerProps && (
+            <CommentEditor
+              topInset={THREAD_HEADER_HEIGHT + 4}
+              key="comment-editor"
+              keyboardHeightValue={this.keyboardHeightValue}
+              keyboardVisibleValue={this.keyboardVisibleValue}
+              onClose={this.handleCloseComposer}
+              {...composerProps}
+            />
+          )}
+        </Transitioning.View>
       </Animated.View>
     );
   }

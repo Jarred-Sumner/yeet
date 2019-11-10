@@ -1,4 +1,5 @@
 import Animated, { Easing } from "react-native-reanimated";
+import { State } from "react-native-gesture-handler";
 
 const {
   Clock,
@@ -11,7 +12,12 @@ const {
   debug,
   proc,
   stopClock,
-  block
+  add,
+  eq,
+  sub,
+  block,
+  multiply,
+  divide
 } = Animated;
 
 export function runTiming(clock, value, dest, duration = 300) {
@@ -59,3 +65,61 @@ export function runTiming(clock, value, dest, duration = 300) {
     )
   ]);
 }
+
+const _preserveOffset = Animated.proc(
+  (
+    value: Animated.Adaptable<number>,
+    state: Animated.Adaptable<State>,
+    offset: Animated.Value<number>,
+    previous: Animated.Value<number>
+  ) => {
+    return block([
+      cond(
+        eq(state, State.ACTIVE),
+        [set(offset, add(offset, sub(value, previous))), set(previous, value)],
+        [set(previous, 0)]
+      ),
+      offset
+    ]);
+  }
+);
+
+export const preserveOffset = (
+  value: Animated.Adaptable<number>,
+  state: Animated.Adaptable<State>,
+  offset: Animated.Value<number> = new Value(0),
+  previous: Animated.Value<number> = new Value(0)
+) => {
+  return _preserveOffset(value, state, offset, previous);
+};
+
+const _preserveMultiplicativeOffset = Animated.proc(
+  (
+    value: Animated.Adaptable<number>,
+    state: Animated.Adaptable<number>,
+    previous: Animated.Value<number>,
+    offset: Animated.Value<number>
+  ) => {
+    return block([
+      cond(
+        eq(state, State.BEGAN),
+        [set(previous, 1)],
+        [
+          set(offset, multiply(offset, divide(value, previous))),
+          set(previous, value)
+        ]
+      ),
+      offset
+    ]);
+  }
+);
+
+export const preserveMultiplicativeOffset = (
+  value: Animated.Adaptable<number>,
+  state: Animated.Adaptable<number>
+) => {
+  const previous = new Animated.Value(1);
+  const offset = new Animated.Value(1);
+
+  return _preserveMultiplicativeOffset(value, state, previous, offset);
+};

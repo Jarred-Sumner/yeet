@@ -24,7 +24,10 @@ import {
 } from "../NewPostFormat";
 import { COLORS } from "../../../lib/styles";
 import tinycolor from "tinycolor2";
-
+import {
+  normalizeBackgroundColor,
+  CurrentUserCommentAvatar
+} from "../../Posts/CommentsViewer";
 import { TextInput as RNTextInput } from "./CustomTextInputComponent";
 
 const ZERO_WIDTH_SPACE = "​";
@@ -52,7 +55,7 @@ const textInputStyles = {
       "24": 14
     },
     presets: {
-      backgroundColor: "green",
+      backgroundColor: normalizeBackgroundColor("#7367FC"),
       color: "white"
     }
   },
@@ -94,11 +97,18 @@ const textInputStyles = {
 
 const textInputTypeStylesheets = {
   [PostFormat.comment]: StyleSheet.create({
+    container: {
+      borderRadius: 4
+    },
     input: {
       borderRadius: 4,
-      paddingVertical: 6,
-      paddingHorizontal: 12,
-      overflow: "hidden"
+      overflow: "hidden",
+      fontFamily: "Inter",
+      paddingLeft: 6,
+      paddingRight: 6,
+      fontWeight: "600",
+      paddingTop: 10,
+      paddingBottom: 10
     }
   }),
   [PostFormat.screenshot]: StyleSheet.create({
@@ -190,7 +200,7 @@ const getClosestNumber = (goal, counts) =>
   }) || counts[counts.length - 1];
 
 type Props = {
-  block: TextPostBlocfk;
+  block: TextPostBlock;
   onChangeValue: (value: string) => void;
 };
 
@@ -202,7 +212,7 @@ export class TextInput extends React.Component<Props> {
     isFocused: false
   };
 
-  fontSizeValue = new Animated.Value(48);
+  fontSizeValue: Animated.Value<number>;
   constructor(props) {
     super(props);
 
@@ -272,7 +282,13 @@ export class TextInput extends React.Component<Props> {
 
   render() {
     const {
-      config: { placeholder = " " },
+      config: {
+        placeholder = " ",
+        overrides = {
+          color: undefined,
+          backgroundColor: undefined
+        }
+      },
       value,
       format,
       id,
@@ -292,6 +308,9 @@ export class TextInput extends React.Component<Props> {
       styles.container,
       textInputTypeStylesheets[format].container,
       {
+        backgroundColor:
+          overrides.backgroundColor ??
+          textInputStyles[format].presets.backgroundColor,
         height:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         width:
@@ -303,6 +322,9 @@ export class TextInput extends React.Component<Props> {
       styles.input,
       textInputTypeStylesheets[format].input,
       {
+        backgroundColor:
+          format == PostFormat.comment ? "transparent" : undefined,
+        color: overrides.color ?? textInputStyles[format].presets.color,
         flex: focusType === FocusType.absolute && isFocused ? 1 : 0,
         height:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
@@ -333,6 +355,7 @@ export class TextInput extends React.Component<Props> {
             autoCorrect
             spellCheck={false}
             adjustsFontSizeToFit
+            inputAccessoryViewID={`${id}-input`}
             minimumFontScale={0.4}
             selectionColor="white"
             highlightInset={-4}
@@ -358,6 +381,7 @@ export class TextInput extends React.Component<Props> {
             autoFocus={false}
           />
           {editable && <View style={StyleSheet.absoluteFill}></View>}
+          {format === PostFormat.comment && <CurrentUserCommentAvatar />}
         </View>
       </TapGestureHandler>
     );

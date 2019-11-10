@@ -11,7 +11,7 @@ import { SCREEN_DIMENSIONS } from "../../../config";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import { scaleToWidth } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
-import { Avatar } from "../Avatar";
+import { Avatar, CurrentUserAvatar } from "../Avatar";
 import { IconButtonEllipsis } from "../Button";
 import MediaPlayer from "../MediaPlayer";
 import { SemiBoldText, MediumText } from "../Text";
@@ -22,6 +22,7 @@ import { CommentFragment } from "../../lib/graphql/CommentFragment";
 import tinycolor from "tinycolor2";
 import { memoize } from "lodash";
 import { MovableNode, TransformableView } from "../NewPost/Node/MovableNode";
+import { CommentComposer } from "./CommentComposer";
 
 const AVATAR_SIZE = 22;
 
@@ -41,9 +42,9 @@ const _normalizedBackgroundColor = (color: string) =>
     .setAlpha(0.35)
     .toString();
 
-const normalizedBackgroundCor = memoize(_normalizedBackgroundColor);
+export const normalizeBackgroundColor = memoize(_normalizedBackgroundColor);
 
-const textCommentStyles = StyleSheet.create({
+export const textCommentStyles = StyleSheet.create({
   textContainer: {
     borderRadius: 4,
     paddingVertical: 6,
@@ -75,6 +76,19 @@ const textCommentStyles = StyleSheet.create({
   }
 });
 
+export const TextCommentAvatar = ({ username, photoURL }) => (
+  <Avatar
+    label={username}
+    url={photoURL}
+    size={AVATAR_SIZE}
+    style={textCommentStyles.avatar}
+  />
+);
+
+export const CurrentUserCommentAvatar = () => (
+  <CurrentUserAvatar size={AVATAR_SIZE} style={textCommentStyles.avatar} />
+);
+
 const TextComment = ({
   body,
   x,
@@ -93,7 +107,7 @@ const TextComment = ({
           <View
             style={[
               textCommentStyles.textContainer,
-              { backgroundColor: normalizedBackgroundCor(backgroundColor) }
+              { backgroundColor: normalizeBackgroundColor(backgroundColor) }
             ]}
           >
             <MediumText style={[textCommentStyles.text, { color }]}>
@@ -102,11 +116,9 @@ const TextComment = ({
           </View>
         </View>
 
-        <Avatar
-          label={profile.username}
-          url={profile.photoURL}
-          size={AVATAR_SIZE}
-          style={textCommentStyles.avatar}
+        <TextCommentAvatar
+          username={profile.username}
+          photoURL={profile.photoURL}
         />
       </View>
     </TransformableView>
@@ -150,6 +162,7 @@ export const CommentsViewer = ({
   comments,
   width,
   height,
+  postId,
   timeOffset,
   keyboardVisibleValue
 }) => {
@@ -170,7 +183,6 @@ export const CommentsViewer = ({
   const filteredComents = React.useMemo(() => {
     return comments.filter(comment => {
       const { timeOffset: startTime, autoplaySeconds: duration } = comment;
-      console.log({ duration, startTime, timeOffset });
       return timeOffset >= startTime && startTime + duration > timeOffset;
     });
   }, [timeOffset, comments, comments.length]);

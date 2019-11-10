@@ -17,7 +17,9 @@ export const Block = React.forwardRef(
       focusType,
       focusTypeValue,
       onChangePhoto,
+      autoFocus,
       annotations,
+      inputAccessoryView,
       focusedBlockValue,
       scrollRef,
       gestureRef,
@@ -41,8 +43,10 @@ export const Block = React.forwardRef(
           focusType={focusType}
           block={block}
           onTap={onTap}
+          autoFocus={autoFocus}
           onOpenImagePicker={onOpenImagePicker}
           focusTypeValue={focusTypeValue}
+          inputAccessoryView={inputAccessoryView}
           focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
           onChange={onChange}
