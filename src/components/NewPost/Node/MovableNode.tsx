@@ -197,7 +197,6 @@ export class MovableNode extends Component<Props> {
     );
 
     this.X = preserveOffset(this._X, this.panGestureState, props.x);
-
     this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
 
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
@@ -284,6 +283,9 @@ export class MovableNode extends Component<Props> {
 
   static defaultProps = {
     minY: 0,
+    minX: -20,
+    maxX: SCREEN_DIMENSIONS.width,
+    maxY: 9999,
     maxScale: 99
   };
 

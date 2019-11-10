@@ -29,6 +29,8 @@ fragment CommentFragment on Comment {
 
   x
   y
+  rotate
+  scale
   timeOffset
   autoplaySeconds
 }

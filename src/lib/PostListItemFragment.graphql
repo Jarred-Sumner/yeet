@@ -3,6 +3,7 @@ fragment PostListItemFragment on Post {
   likesCount
   threadId
   createdAt
+  commentscount
   autoplaySeconds
 
   bounds {

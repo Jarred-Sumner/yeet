@@ -86,10 +86,15 @@ class TrackableVideoSource : TrackableMediaSource {
 
     let time = CMTime(seconds: TrackableVideoSource.periodicInterval, preferredTimescale: timeScale)
 
+    if periodicObserverToken != nil {
+      player.removeTimeObserver(periodicObserverToken!)
+      periodicObserverToken = nil
+    }
+
      periodicObserverToken = player
       .addPeriodicTimeObserver(
         forInterval: time,
-        queue: .main) { [weak self] progress in
+        queue: .global(qos: .background)) { [weak self] progress in
 
           guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
             return
@@ -156,8 +161,22 @@ class TrackableVideoSource : TrackableMediaSource {
 
   func handleLoad(asset: AVURLAsset) {
     self.isAlreadyLoading = false
+    if self.playerItem != nil {
+      return
+    }
+
+    if let playerItem = self.playerItem {
+      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
+      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
+    }
+
     let playerItem = AVPlayerItem(asset: asset)
     self.playerItem = playerItem
+
+    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
+    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemStalled(notification:)), name:NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
+
+
     self.hasLoaded = true
     self.onLoad()
   }
@@ -175,19 +194,10 @@ class TrackableVideoSource : TrackableMediaSource {
     stopObservers()
 
     self.addPeroidicObserver()
-    self.addBoundaryTimeObserver()
-
-    guard let playerItem = self.playerItem else {
-      return
-    }
-
-    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemStalled(notification:)), name:NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
+//    self.addBoundaryTimeObserver()
   }
 
   func stopObservers() {
-     NotificationCenter.default.removeObserver(self)
-
     if let periodicObserver = self.periodicObserverToken {
       player?.removeTimeObserver(periodicObserver)
       self.periodicObserverToken = nil
@@ -304,9 +314,12 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
+    self.elapsed = 0.0
+
     if self.playerItem == player.currentItem && playerItem != nil {
       let wasPlaying = player.timeControlStatus != .paused
       player.seek(to: .zero)
+
 
       if wasPlaying {
         player.play()
@@ -328,8 +341,14 @@ class TrackableVideoSource : TrackableMediaSource {
   }
 
   deinit {
+    if let playerItem = self.playerItem {
+      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
+      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
+    }
+
     stopObservers()
     VideoPool.shared().release(key: mediaSource.id)
     print("DEINIT \(mediaSource.id)")
+
   }
 }

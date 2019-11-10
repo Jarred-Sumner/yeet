@@ -5,7 +5,7 @@ import {
 } from "@expo/react-native-action-sheet";
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
-import { useQuery } from "react-apollo";
+import { useQuery, useMutation } from "react-apollo";
 import { StyleSheet, View } from "react-native";
 import Animated, {
   Transitioning,
@@ -37,6 +37,8 @@ import { CommentComposer } from "../components/Posts/CommentComposer";
 import { CommentEditor } from "../components/Posts/CommentEditor";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import { number } from "yup";
+import { LikePost, LikePostVariables } from "../lib/graphql/LikePost";
+import LIME_POST_QUERY from "../lib/LikePost.graphql";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -179,7 +181,9 @@ class ThreadPageComponent extends React.Component<Props, State> {
     this.props.navigation.navigate("ReplyToPost", thread);
   };
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
-  handlePressReply = () => {};
+  handlePressReply = thread => {
+    this.props.navigation.navigate("ReplyToPost", this.props.thread);
+  };
   handleShowComposer = composerProps => {
     this.postListRef.current.scrollToId(composerProps.postId);
     this.setState({ showComposer: true, composerProps });
@@ -199,6 +203,9 @@ class ThreadPageComponent extends React.Component<Props, State> {
   keyboardHeightValue = new Animated.Value<number>(0);
   keyboardVisibleValue = new Animated.Value<number>(0);
 
+  handlePressLike = (postId: string) =>
+    this.props.onLikePost({ variables: { postId } });
+
   render() {
     const { thread, defaultPost, refreshing } = this.props;
     const { showComposer, composerProps } = this.state;
@@ -213,6 +220,9 @@ class ThreadPageComponent extends React.Component<Props, State> {
         <PostFlatList
           posts={thread?.posts?.data ?? []}
           topInset={THREAD_HEADER_HEIGHT + 4}
+          composingPostId={this.state.composerProps?.postId}
+          onPressLike={this.handlePressLike}
+          extraData={this.state}
           keyboardVisibleValue={this.keyboardVisibleValue}
           scrollEnabled={this.state.showComposer === false}
           openComposer={this.handleShowComposer}
@@ -285,6 +295,7 @@ const _ThreadPage = () => {
     {
       notifyOnNetworkStatusChange: true,
       returnPartialData: true,
+      fetchPolicy: "cache-and-network",
       variables: {
         threadId,
         postOffset: 0,
@@ -292,10 +303,14 @@ const _ThreadPage = () => {
       }
     }
   );
+  const [onLikePost] = useMutation<LikePost, LikePostVariables>(
+    LIME_POST_QUERY
+  );
 
   return (
     <ThreadPageComponent
       navigation={navigation}
+      onLikePost={onLikePost}
       thread={viewThreadQuery?.data?.postThread ?? defaultThread}
       defaultPost={useNavigationParam("post")}
       loading={viewThreadQuery.loading}

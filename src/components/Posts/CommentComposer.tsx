@@ -13,12 +13,7 @@ import {
   preserveOffset
 } from "react-native-redash";
 import { StyleSheet } from "react-native";
-import CREATE_COMMENT_MUTATION from "../../lib/createCommentMutation.graphql";
-import { useMutation } from "react-apollo";
-import {
-  createCommentMutation as CreateCommentMutation,
-  createCommentMutationVariables as CreateCommentMutationVariables
-} from "../../lib/graphql/createCommentMutation";
+
 import { CommentEditor } from "./CommentEditor";
 
 type CommentComposerContextType = {
@@ -36,11 +31,6 @@ export const CommentComposer = ({
   onOpen,
   onClose
 }) => {
-  const createComment = useMutation<
-    CreateCommentMutation,
-    CreateCommentMutationVariables
-  >(CREATE_COMMENT_MUTATION);
-
   const onLongPress = React.useCallback(
     ({ nativeEvent: { x, y } }) => {
       onOpen({ x, y, width, height, keyboardVisibleValue, postId });

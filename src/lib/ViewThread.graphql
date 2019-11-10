@@ -1,4 +1,4 @@
-#import "./PostListItemFragment.graphql"
+#import "./PostFragment.graphql"
 
 query ViewThread($threadId: ID!, $postOffset: Int!, $postsCount: Int!) {
   postThread(id: $threadId) {
@@ -18,7 +18,7 @@ query ViewThread($threadId: ID!, $postOffset: Int!, $postsCount: Int!) {
       hasMore
       id
       data {
-        ...PostListItemFragment
+        ...PostFragment
       }
     }
   }

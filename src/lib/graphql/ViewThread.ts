@@ -13,6 +13,12 @@ export interface ViewThread_postThread_profile {
   photoURL: string | null;
 }
 
+export interface ViewThread_postThread_posts_data_likes {
+  __typename: "LikeList";
+  id: string;
+  profileIDs: string[];
+}
+
 export interface ViewThread_postThread_posts_data_bounds {
   __typename: "Rectangle";
   x: number | null;
@@ -21,36 +27,51 @@ export interface ViewThread_postThread_posts_data_bounds {
   height: number | null;
 }
 
-export interface ViewThread_postThread_posts_data_profile {
-  __typename: "Profile";
-  id: string;
-  photoURL: string | null;
-  username: string;
-}
-
 export interface ViewThread_postThread_posts_data_media {
   __typename: "Media";
   id: string;
   width: number | null;
   height: number | null;
-  pixelRatio: number | null;
   mimeType: string | null;
   duration: number;
+  pixelRatio: number | null;
+  highQualityUrl: string;
+  mediumQualityUrl: string;
+  lowQualityUrl: string;
   coverUrl: string;
-  previewUrl: string;
   url: string;
+}
+
+export interface ViewThread_postThread_posts_data_profile {
+  __typename: "Profile";
+  id: string;
+  username: string;
+  photoURL: string | null;
+}
+
+export interface ViewThread_postThread_posts_data_colors {
+  __typename: "ColorGroup";
+  background: string | null;
+  primary: string | null;
+  detail: string | null;
+  secondary: string | null;
 }
 
 export interface ViewThread_postThread_posts_data {
   __typename: "Post";
   id: string;
   likesCount: number;
-  threadId: string;
-  createdAt: DateTime;
-  autoplaySeconds: number;
+  format: string;
+  commentsCount: number;
+  likes: ViewThread_postThread_posts_data_likes;
+  blocks: JSON;
+  nodes: JSON;
   bounds: ViewThread_postThread_posts_data_bounds;
-  profile: ViewThread_postThread_posts_data_profile;
   media: ViewThread_postThread_posts_data_media;
+  profile: ViewThread_postThread_posts_data_profile;
+  colors: ViewThread_postThread_posts_data_colors;
+  autoplaySeconds: number;
+  attachments: JSON;
 }
 
 export interface ViewThread_postThread_posts {

@@ -6,7 +6,7 @@ import { SCREEN_DIMENSIONS } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import { buildImgSrc } from "../../lib/imgUri";
-import { IconHeart } from "../Icon";
+import { IconHeart, IconComment } from "../Icon";
 import { MediumText } from "../Text";
 import { Avatar } from "../Avatar";
 import LinearGradient from "react-native-linear-gradient";
@@ -168,8 +168,10 @@ export const PostListItem = ({
         )}
 
         <View style={styles.likeCountContainer}>
-          <IconHeart size={16} color="#f1f1f1" />
-          <MediumText style={styles.likeCount}>{post.likesCount}</MediumText>
+          <IconComment size={16} color="#f1f1f1" />
+          <MediumText style={styles.likeCount}>
+            {post.commentsCount || 0}
+          </MediumText>
         </View>
       </View>
     </TouchableHighlight>

@@ -96,12 +96,19 @@ const TextComment = ({
   profile,
   id,
   maxY,
+  scale,
+  rotate,
   backgroundColor,
   keyboardVisibleValue,
   textColor: color
 }) => {
   return (
-    <TransformableView translateX={x} translateY={y}>
+    <TransformableView
+      scale={scale}
+      rotate={rotate}
+      translateX={x}
+      translateY={y}
+    >
       <View style={textCommentStyles.container}>
         <View style={textCommentStyles.textShadow}>
           <View
@@ -138,13 +145,24 @@ const Comment = ({
   }, [onTap, comment]);
 
   if (comment.body) {
-    const { body, x, y, profile, backgroundColor, textColor } = comment;
+    const {
+      body,
+      x,
+      y,
+      profile,
+      backgroundColor,
+      textColor,
+      scale,
+      rotate
+    } = comment;
     return (
       <TextComment
         body={body}
         x={x}
         onTap={handleTapComment}
         y={y}
+        scale={scale}
+        rotate={rotate}
         id={comment.id}
         maxY={maxY}
         keyboardVisibleValue={keyboardVisibleValue}
@@ -164,6 +182,7 @@ export const CommentsViewer = ({
   height,
   postId,
   timeOffset,
+  showAll = false,
   keyboardVisibleValue
 }) => {
   const renderComment = React.useCallback(
@@ -181,11 +200,15 @@ export const CommentsViewer = ({
   );
 
   const filteredComents = React.useMemo(() => {
+    if (showAll) {
+      return comments;
+    }
+
     return comments.filter(comment => {
       const { timeOffset: startTime, autoplaySeconds: duration } = comment;
       return timeOffset >= startTime && startTime + duration > timeOffset;
     });
-  }, [timeOffset, comments, comments.length]);
+  }, [timeOffset, comments, comments.length, showAll]);
 
   const commentsRef = React.useRef<TransitioningView>();
 

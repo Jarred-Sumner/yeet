@@ -16,6 +16,7 @@ import Foundation
       }
       self.mediaSource = mediaSource.mediaSource
 
+      
       DispatchQueue.main.async {
         if self.playerContainer != nil && trackableVideo.playerContainer != self.playerContainer {
           self.playerContainer?.reset()

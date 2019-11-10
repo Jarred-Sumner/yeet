@@ -38,6 +38,8 @@ export interface ViewComments_comments_data {
   body: string | null;
   x: number;
   y: number;
+  rotate: number;
+  scale: number;
   timeOffset: number;
   autoplaySeconds: number;
 }

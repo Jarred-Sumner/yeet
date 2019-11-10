@@ -243,15 +243,7 @@ export class TextInput extends React.Component<Props> {
       cancelAnimationFrame(this.lastAnimationFrame);
     }
 
-    this.lastAnimationFrame = window.requestAnimationFrame(() => {
-      this.fontSizeClock = Animated.timing(this.fontSizeValue, {
-        toValue: this.getFontSizeValue(this.props, text),
-        duration: 50,
-        easing: Easing.linear
-      }).start();
-
-      this.props.onChangeValue(text);
-    });
+    this.props.onChangeValue(text);
 
     return true;
   };

@@ -3,7 +3,10 @@ import { View, StyleSheet } from "react-native";
 import { IconHeart } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { Text, MediumText, LETTER_SPACING_MAPPING } from "../Text";
-import { BaseButton } from "react-native-gesture-handler";
+import {
+  BaseButton,
+  TouchableWithoutFeedback
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 
 const styles = StyleSheet.create({
@@ -38,9 +41,9 @@ const styles = StyleSheet.create({
 });
 
 export const CountButton = React.memo(
-  ({ count, Icon, color, iconNode, onPress, iconSize }) => {
+  ({ count, Icon, color, iconNode, onPress, onLongPress, iconSize }) => {
     return (
-      <BaseButton disallowInterruption onPress={onPress}>
+      <TouchableWithoutFeedback onLongPress={onLongPress} onPress={onPress}>
         <View style={styles.container}>
           {iconNode ? (
             iconNode
@@ -60,7 +63,7 @@ export const CountButton = React.memo(
             </View>
           ) : null}
         </View>
-      </BaseButton>
+      </TouchableWithoutFeedback>
     );
   }
 );

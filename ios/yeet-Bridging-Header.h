@@ -66,6 +66,8 @@ RCT_EXPORT_VIEW_PROPERTY(id, NSString);
 RCT_EXPORT_VIEW_PROPERTY(sources, MediaSourceArray);
 RCT_EXPORT_VIEW_PROPERTY(onLoad, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onPlay, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onPause, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onEnd, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);

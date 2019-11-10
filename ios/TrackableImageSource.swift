@@ -42,10 +42,10 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   func handleEnd() {
-    self.onEnd()
-
     self.timer?.invalidate()
     self.progressTimer?.invalidate()
+
+    self.onEnd()
   }
 
   override func load(onLoad callback: onLoadCallback? = nil) {
@@ -59,12 +59,6 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   override func onLoad() {
-    if needsTimers {
-      if self.progressTimer == nil || self.timer == nil {
-        self.setupTimers()
-      }
-    }
-
     super.onLoad()
   }
 
@@ -73,9 +67,10 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   override func play() {
-    guard let timer = self.timer else {
-      self.status = .error
-      return
+    if needsTimers {
+      if self.progressTimer == nil || self.timer == nil {
+        self.setupTimers()
+      }
     }
 
     guard canPlay else {
@@ -83,7 +78,7 @@ class TrackableImageSource: TrackableMediaSource {
     }
 
     if needsTimers {
-      timer.start()
+      timer?.start()
       progressTimer?.start()
     }
 
@@ -114,12 +109,14 @@ class TrackableImageSource: TrackableMediaSource {
     timerElapsed = 0.0
     timer?.invalidate()
     progressTimer?.invalidate()
+    self.elapsed = .zero
     self.progressTime = .zero
   }
 
   override func reset() {
     super.reset()
 
+    self.elapsed = .zero
     timerElapsed = 0.0
     self.progressTime = .zero
     timer?.invalidate()

@@ -32,6 +32,9 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
     self.sendStatusUpdate(status: status, mediaSource: mediaSource)
 
+    DispatchQueue.main.async { [weak self] in
+      self?.imageView?.isPlaybackPaused = (self?.paused ?? false) || status != .playing
+    }
 
   }
 
@@ -131,14 +134,17 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
-    self.onProgress?([
-      "index": index,
-      "id": item.id,
-      "status": mediaSource.status.stringValue,
-      "url": item.uri.absoluteString,
-      "elapsed": elapsed,
-      "interval": TrackableMediaSource.periodicInterval,
-    ])
+    if let onProgress = onProgress {
+      onProgress([
+        "index": index,
+        "id": item.id,
+        "status": mediaSource.status.stringValue,
+        "url": item.uri.absoluteString,
+        "elapsed": elapsed,
+        "duration": mediaSource.mediaSource.playDuration.doubleValue * 1000,
+        "interval": TrackableMediaSource.periodicInterval * 1000,
+      ])
+    }
   }
 
   var imageView: YeetImageView? = nil {
@@ -254,6 +260,12 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
   @objc(onLoad)
   var onLoad: RCTDirectEventBlock? = nil
+
+  @objc(onPlay)
+  var onPlay: RCTDirectEventBlock? = nil
+
+  @objc(onPause)
+  var onPause: RCTDirectEventBlock? = nil
 
   @objc(onEnd)
   var onEnd: RCTDirectEventBlock? = nil
@@ -582,29 +594,31 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
+    var eventBlock: RCTDirectEventBlock? = nil
+
     if status == .loaded || status == .ready {
-      self.onLoad?([
-        "index": index,
-        "id": mediaSource.mediaSource.id,
-        "status": mediaSource.status.rawValue,
-        "url": mediaSource.mediaSource.uri.absoluteString,
-      ])
+      eventBlock = onLoad
+    } else if status == .playing {
+      eventBlock = onPlay
+    } else if status == .paused {
+      eventBlock = onPause
     } else if status == .ended {
-      self.onEnd?([
-        "index": index,
-        "id": mediaSource.mediaSource.id,
-        "status": mediaSource.status.rawValue,
-        "url": mediaSource.mediaSource.uri.absoluteString,
-      ])
+      eventBlock = onEnd
     } else if status == .error {
-      self.onError?([
-        "index": index,
-        "id": mediaSource.mediaSource.id,
-        "status": mediaSource.status.rawValue,
-        "url": mediaSource.mediaSource.uri.absoluteString,
-      ])
+      eventBlock = onError
     }
 
+    if eventBlock != nil {
+      eventBlock!([
+        "index": index,
+        "id": mediaSource.mediaSource.id,
+        "status": mediaSource.status.rawValue,
+        "url": mediaSource.mediaSource.uri.absoluteString,
+        "duration": mediaSource.mediaSource.playDuration.doubleValue * 1000,
+        "interval": TrackableMediaSource.periodicInterval * 1000,
+        "elapsed": mediaSource.elapsed,
+      ])
+    }
   }
 
   func handleLoad() {

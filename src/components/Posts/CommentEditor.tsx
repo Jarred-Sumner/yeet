@@ -14,7 +14,13 @@ import {
   FocusType
 } from "../NewPost/NewPostFormat";
 import TextInput from "../NewPost/Text/TextInput";
-import { View, InputAccessoryView, StyleSheet, Keyboard } from "react-native";
+import {
+  View,
+  InputAccessoryView,
+  StyleSheet,
+  Keyboard,
+  SegmentedControlIOSComponent
+} from "react-native";
 import { THREAD_HEADER_HEIGHT } from "../ThreadList/ThreadHeader";
 import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
 import {
@@ -45,6 +51,15 @@ import { sample } from "lodash";
 import tinycolor from "tinycolor2";
 import { BoldText, Text } from "../Text";
 import { DurationPicker } from "../DurationPicker";
+import CREATE_COMMENT_MUTATION from "../../lib/createCommentMutation.graphql";
+import { useMutation } from "react-apollo";
+import {
+  createCommentMutation as CreateCommentMutation,
+  createCommentMutationVariables as CreateCommentMutationVariables
+} from "../../lib/graphql/createCommentMutation";
+import { sendSuccessNotification } from "../../lib/Vibration";
+import Alert from "../../lib/Alert";
+import { sendToast, ToastType } from "../Toast";
 
 const NEXT_BUTTON_WIDTH = 60;
 const TOOLBAR_HEIGHT = 64;
@@ -219,11 +234,12 @@ type State = {
   node: EditableNode;
   focusType: FocusType;
   duration: number;
+  isSaving: boolean;
   control: FocusControlType;
   timeOffset: number;
 };
 
-export class CommentEditor extends React.Component<Props, State> {
+class CommentEditorContainer extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -250,6 +266,7 @@ export class CommentEditor extends React.Component<Props, State> {
 
     this.state = {
       node,
+      isSaving: false,
       control: FocusControlType.none,
       duration: 5,
       timeOffset: props.timeOffset || 0,
@@ -298,12 +315,18 @@ export class CommentEditor extends React.Component<Props, State> {
     });
   };
 
-  handleBlur = () => {
+  handleBlur = _node => {
+    let node = this.state.node;
+    if (_node && typeof _node === "object" && typeof _node.block === "object") {
+      node = _node;
+    }
+
     this.focusTypeValue.setValue(-1);
     this.focusedBlockValue.setValue(-1);
     this.setState({
       focusType: null,
-      control: FocusControlType.none
+      control: FocusControlType.none,
+      node
     });
     this.focusTypeValue.setValue(-1);
   };
@@ -399,6 +422,46 @@ export class CommentEditor extends React.Component<Props, State> {
       {...color}
     />
   );
+
+  handleSubmit = () => {
+    if (this.state.isSaving) {
+      return;
+    }
+
+    this.setState({ isSaving: true });
+    const { x, y, rotate, scale } = this.state.node.position;
+    const {
+      color: textColor,
+      backgroundColor
+    } = this.state.node.block.config.overrides;
+    const { timeOffset, duration } = this.state;
+    const body = this.state.node.block.value;
+
+    return this.props
+      .onSave({
+        x,
+        y,
+        body,
+        rotate,
+        color: textColor,
+        backgroundColor,
+        timeOffset,
+        duration,
+        scale
+      })
+      .then(
+        success => {
+          if (success) {
+            this.props.onClose();
+          } else {
+            this.setState({ isSaving: false });
+          }
+        },
+        err => {
+          this.setState({ isSaving: false });
+        }
+      );
+  };
 
   render() {
     const {
@@ -591,6 +654,7 @@ export class CommentEditor extends React.Component<Props, State> {
                     type="fill"
                     backgroundColor="white"
                     size={32}
+                    onPress={this.handleSubmit}
                     containerSize={64}
                   />
                 </View>
@@ -602,3 +666,71 @@ export class CommentEditor extends React.Component<Props, State> {
     );
   }
 }
+
+export const CommentEditor = ({ postId, onClose, ...otherProps }) => {
+  const [createComment] = useMutation<
+    CreateCommentMutation,
+    CreateCommentMutationVariables
+  >(CREATE_COMMENT_MUTATION);
+
+  const onCreateComment = React.useCallback(
+    ({
+      x,
+      y,
+      body,
+      rotate,
+      color: textColor,
+      backgroundColor,
+      timeOffset,
+      duration: autoplaySeconds,
+      scale
+    }) => {
+      return createComment({
+        variables: {
+          postId,
+          x,
+          y,
+          rotate,
+          mediaId: null,
+          scale,
+          body,
+          backgroundColor,
+          textColor,
+          timeOffset,
+          autoplaySeconds
+        }
+      }).then(
+        resp => {
+          const isSuccessful = resp?.data?.createComment;
+
+          if (isSuccessful) {
+            sendSuccessNotification();
+            sendToast("Posted comment successfully", ToastType.success);
+          } else {
+            sendToast(
+              "Something went wrong. Please try again.",
+              ToastType.error
+            );
+            return null;
+          }
+
+          return resp;
+        },
+        err => {
+          sendToast("Something went wrong. Please try again.", ToastType.error);
+          console.error(err);
+        }
+      );
+    },
+    [createComment, onClose, postId, sendSuccessNotification, sendToast]
+  );
+
+  return (
+    <CommentEditorContainer
+      {...otherProps}
+      postId={postId}
+      onClose={onClose}
+      onSave={onCreateComment}
+    />
+  );
+};

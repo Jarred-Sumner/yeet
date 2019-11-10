@@ -16,7 +16,7 @@ import {
   useNavigationState
 } from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
-import { NativeMediaPlayer } from "./NativeMediaPlayer";
+import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
 import { SharedElement } from "react-navigation-shared-element";
 import { uniq } from "lodash";
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
@@ -146,6 +146,8 @@ type Props = {
   muted?: boolean;
   onEnd?: ReactEventHandler<StatusEventData>;
   onLoad?: ReactEventHandler<StatusEventData>;
+  onPlay?: ReactEventHandler<StatusEventData>;
+  onPause?: ReactEventHandler<StatusEventData>;
   id: string;
   paused?: boolean;
   onProgress?: ReactEventHandler<ProgressEventData>;
@@ -294,13 +296,17 @@ export class MediaPlayerComponent extends React.Component<Props> {
       prefetch,
       borderRadius,
       onError,
-      isActive
+      isActive,
+      onPlay,
+      onPause
     } = this.props;
 
     if (
       paused !== nextProps.paused ||
       autoPlay !== nextProps.autoPlay ||
       onProgress !== nextProps.onProgress ||
+      onPlay !== nextProps.onPause ||
+      onPause !== nextProps.onPlay ||
       onChangeItem !== nextProps.onChangeItem ||
       onEnd !== nextProps.onEnd ||
       style !== nextProps.style ||
@@ -335,6 +341,8 @@ export class MediaPlayerComponent extends React.Component<Props> {
       isActive,
       autoPlay,
       onLoad,
+      onPlay,
+      onPause,
       onError,
       onChangeItem
     } = this.props;
@@ -350,6 +358,8 @@ export class MediaPlayerComponent extends React.Component<Props> {
         isActive={isActive}
         prefetch={prefetch}
         onProgress={onProgress}
+        onPlay={onPlay}
+        onPause={onPause}
         onLoad={onLoad}
         onError={onError}
         onChangeItem={onChangeItem}
@@ -404,3 +414,144 @@ export const MediaPlayer = hoistNonReactStatics(
 );
 
 export default MediaPlayer;
+
+class _TrackableMediaPlayer extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+
+    this.duration = props.duration || 0.0;
+  }
+
+  duration = 0.0;
+  elapsed = 0.0;
+  updateInterval = 500;
+  progressTimer: number = -1;
+  useNativeTimer = false;
+
+  get isTimerRunning() {
+    return this.progressTimer > -1;
+  }
+
+  clearProgressTimer = () => {
+    window.clearInterval(this.progressTimer);
+    this.progressTimer = -1;
+  };
+
+  componentWillUnmount() {
+    this.clearProgressTimer();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.paused !== this.props.paused) {
+      if (this.isTimerRunning && this.props.paused) {
+        this.clearProgressTimer();
+      } else if (!this.props.paused && !this.isTimerRunning) {
+        this.startProgressTimer();
+      }
+    }
+  }
+
+  incrementProgress = () => {
+    const elapsed = this.elapsed + this.updateInterval;
+
+    if (elapsed > this.duration) {
+      this.elapsed = 0.0;
+    } else {
+      this.elapsed = elapsed;
+    }
+
+    console.log({
+      duration: this.duration,
+      interval: this.updateInterval,
+      elapsed
+    });
+
+    if (this.props.onProgress) {
+      this.props.onProgress({
+        elapsed: this.elapsed / 1000,
+        interval: this.updateInterval
+      });
+    }
+  };
+
+  startProgressTimer = () => {
+    this.progressTimer = window.setInterval(
+      this.incrementProgress,
+      this.updateInterval
+    );
+  };
+
+  handlePlay = ({
+    nativeEvent: { duration, interval, elapsed, ...eventData }
+  }) => {
+    if (this.isTimerRunning) {
+      this.clearProgressTimer();
+    }
+
+    console.log({ duration, interval, elapsed });
+
+    // this.duration = duration;
+    this.updateInterval = interval;
+    this.elapsed = elapsed;
+    this.startProgressTimer();
+
+    if (this.props.onPlay) {
+      this.props.onPlay({ duration, interval, elapsed, ...eventData });
+    }
+  };
+
+  handlePause = ({
+    nativeEvent: { elapsed, duration, interval, ...eventData }
+  }) => {
+    if (this.isTimerRunning) {
+      this.clearProgressTimer();
+    }
+
+    // this.duration = duration;
+    this.updateInterval = interval;
+    this.elapsed = elapsed;
+
+    if (this.props.onPause) {
+      this.props.onPause({ duration, interval, elapsed, ...eventData });
+    }
+  };
+
+  handleProgress = ({
+    nativeEvent: { elapsed, duration, interval, ...eventData }
+  }) => {
+    if (this.isTimerRunning) {
+      this.clearProgressTimer();
+    }
+
+    this.duration = duration / 1000;
+    this.updateInterval = interval;
+    this.elapsed = elapsed / 1000;
+
+    console.log({ duration, interval, elapsed });
+
+    this.props.onProgress &&
+      this.props.onProgress({
+        duration: this.duration,
+        interval: this.updateInterval,
+        elapsed: this.elapsed,
+        ...eventData
+      });
+  };
+
+  render() {
+    const { onProgress, onPlay, onPause, ...otherProps } = this.props;
+    return (
+      <MediaPlayer
+        onPlay={this.handlePlay}
+        onPause={this.handlePause}
+        onProgress={this.handleProgress}
+        {...otherProps}
+      />
+    );
+  }
+}
+
+export const TrackableMediaPlayer = hoistNonReactStatics(
+  _TrackableMediaPlayer,
+  MediaPlayer
+);

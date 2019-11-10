@@ -15,6 +15,7 @@ import { SPACING } from "../../lib/styles";
 import FlatList from "../FlatList";
 import { calculatePostHeight, PostCard } from "../Posts/PostCard";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import { MediaPlayerPauser } from "../MediaPlayer";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -153,12 +154,14 @@ export class PostFlatList extends React.Component {
     return (
       <PostCard
         width={SCREEN_DIMENSIONS.width}
-        paused={paused}
+        paused={paused || this.props.showComposer}
         height={height}
+        isComposing={this.props.composingPostId === item.id}
         contentHeight={this.contentHeight}
         keyboardVisibleValue={this.props.keyboardVisibleValue}
         index={index}
         openComposer={this.props.openComposer}
+        onPressLike={this.props.onPressLike}
         isScrolling={this.isScrollingValue}
         snapOffset={this.snapOffsets[item.id]}
         prevOffset={prevOffset}
@@ -421,41 +424,44 @@ export class PostFlatList extends React.Component {
       <PanGestureHandler
         onHandlerStateChange={this.handlePan}
         ref={this.panRef}
+        enabled={scrollEnabled}
         simultaneousHandlers={[this.flatListRef]}
       >
         <Animated.View style={listStyles.wrapper}>
-          <FlatList
-            renderItem={this.renderItem}
-            data={posts}
-            refreshing={refreshing}
-            ref={this.flatListRef}
-            contentOffset={this.contentOffset}
-            contentInset={this.contentInset}
-            simultaneousHandlers={this.simultaneousListHandlers}
-            contentInsetAdjustmentBehavior="never"
-            initialScrollIndex={this.props.initialPostIndex || 0}
-            viewabilityConfig={this.viewabilityConfig}
-            removeClippedSubviews={false}
-            scrollEventThrottle={1}
-            scrollEnabled={scrollEnabled}
-            onScroll={this.onScroll}
-            onScrollEndDrag={this.onScrollEndDrag}
-            onScrollBeginDrag={this.onScrollBeginDrag}
-            onMomentumScrollEnd={this.onMomentumScrollEnd}
-            onMomentumScrollBegin={this.onMomentumScrollBegin}
-            onScrollToTop={this.handleScrollToTop}
-            scrollToOverflowEnabled
-            directionalLockEnabled
-            style={this.listStyle}
-            extraData={this.state}
-            vertical
-            keyboardDismissMode="interactive"
-            keyExtractor={this.keyExtractor}
-            keyboardShouldPersistTaps="always"
-            getItemLayout={this.getItemLayout}
-            ItemSeparatorComponent={ItemSeparatorComponent}
-            onEndReached={this.handleEndReached}
-          />
+          <MediaPlayerPauser nodeRef={this.flatListRef}>
+            <FlatList
+              renderItem={this.renderItem}
+              data={posts}
+              refreshing={refreshing}
+              ref={this.flatListRef}
+              contentOffset={this.contentOffset}
+              contentInset={this.contentInset}
+              simultaneousHandlers={this.simultaneousListHandlers}
+              contentInsetAdjustmentBehavior="never"
+              initialScrollIndex={this.props.initialPostIndex || 0}
+              viewabilityConfig={this.viewabilityConfig}
+              removeClippedSubviews={false}
+              scrollEventThrottle={1}
+              scrollEnabled={scrollEnabled}
+              onScroll={this.onScroll}
+              onScrollEndDrag={this.onScrollEndDrag}
+              onScrollBeginDrag={this.onScrollBeginDrag}
+              onMomentumScrollEnd={this.onMomentumScrollEnd}
+              onMomentumScrollBegin={this.onMomentumScrollBegin}
+              onScrollToTop={this.handleScrollToTop}
+              scrollToOverflowEnabled
+              directionalLockEnabled
+              style={this.listStyle}
+              extraData={this.props.extraData}
+              vertical
+              keyboardDismissMode="interactive"
+              keyExtractor={this.keyExtractor}
+              keyboardShouldPersistTaps="always"
+              getItemLayout={this.getItemLayout}
+              ItemSeparatorComponent={ItemSeparatorComponent}
+              onEndReached={this.handleEndReached}
+            />
+          </MediaPlayerPauser>
         </Animated.View>
       </PanGestureHandler>
     );

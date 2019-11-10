@@ -9,7 +9,7 @@ import { scaleToWidth } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
 import { Avatar } from "../Avatar";
 import { IconButtonEllipsis } from "../Button";
-import MediaPlayer from "../MediaPlayer";
+import MediaPlayer, { TrackableMediaPlayer } from "../MediaPlayer";
 import { SemiBoldText } from "../Text";
 import { LikeCountButton } from "../ThreadList/LikeCountButton";
 import VIEW_COMMENTS_QUERY from "../../lib/ViewComments.graphql";
@@ -22,6 +22,8 @@ import { CommentFragment } from "../../lib/graphql/CommentFragment";
 import { CommentsViewer } from "./CommentsViewer";
 import { isVideo } from "../../lib/imageSearch";
 import { CommentComposer } from "./CommentComposer";
+import CountButton from "../ThreadList/CountButton";
+import { IconComment } from "../Icon";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -29,7 +31,7 @@ const AVATAR_SIZE = 24;
 enum LayerZ {
   player = 0,
   gradient = 1,
-  metadata = 2,
+  metadata = 4,
   comments = 3,
   paused = 4
 }
@@ -52,6 +54,10 @@ const styles = StyleSheet.create({
   composerLayer: {
     position: "relative",
     zIndex: LayerZ.comments
+  },
+  countButtonSeparator: {
+    height: SPACING.normal,
+    width: 1
   },
   player: {
     borderRadius: BORDER_RADIUS,
@@ -119,10 +125,10 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 24,
     zIndex: LayerZ.metadata,
+    justifyContent: "center",
+    alignItems: "center",
     right: 0,
-    paddingHorizontal: 20,
-    justifyContent: "flex-end",
-    alignItems: "flex-end"
+    paddingHorizontal: 20
   },
   ellipsis: {
     width: AVATAR_SIZE + SPACING.normal * 2,
@@ -210,6 +216,7 @@ const PostCardComponent = ({
   keyboardVisibleValue,
   visiblePostIDValue,
   onPressProfile,
+  isComposing,
   isScrolling,
   onPressEllipsis,
   openComposer,
@@ -221,9 +228,15 @@ const PostCardComponent = ({
   height: number;
   comments: Array<CommentFragment>;
 }) => {
-  const [manuallyPaused, setManuallyPased] = React.useState(false);
-  const [cardState, setCardState] = React.useState<PostCardState>(
-    PostCardState.shown
+  const [manuallyPaused, setManuallyPaused] = React.useState(false);
+  const [showAllComments, setShowAllComments] = React.useState(false);
+  const [playbackTime, setPlaybackTime] = React.useState(0.0);
+
+  const handleProgress = React.useCallback(
+    ({ elapsed: playbackTime }) => {
+      setPlaybackTime(playbackTime);
+    },
+    [setPlaybackTime]
   );
 
   const mediaPlayerRef = React.useRef();
@@ -274,88 +287,49 @@ const PostCardComponent = ({
     post.id
   ]);
 
-  const [playbackTime, setPlaybackTime] = React.useState(0);
-
-  const imageTimer = React.createRef(-1);
-  const lastProgressTimer = React.useRef<Date | null>(null);
-  const lastElapsedTime = React.useRef<number | null>(0);
-
-  React.useEffect(() => {
-    const shouldStartTimer = !(
-      paused ||
-      manuallyPaused ||
-      cardState !== PostCardState.shown ||
-      isVideo(post.media.mimeType)
-    );
-
-    if (shouldStartTimer) {
-      if (imageTimer.current > -1) {
-        window.clearInterval(imageTimer.current);
-        imageTimer.current = -1;
-      }
-
-      lastProgressTimer.current = new Date();
-      imageTimer.current = window.setInterval(() => {
-        const now = new Date();
-        const offsetDate = lastProgressTimer.current ?? now;
-        let elapsed =
-          (now.getTime() - offsetDate.getTime()) / 1000 +
-          lastElapsedTime.current;
-
-        lastProgressTimer.current = now;
-        setPlaybackTime(elapsed);
-        lastElapsedTime.current = elapsed;
-      }, 100);
-    } else if (!shouldStartTimer && imageTimer.current > -1) {
-      window.clearInterval(imageTimer.current);
-      imageTimer.current = -1;
-    }
-
-    return () => {
-      if (imageTimer.current > -1) {
-        window.clearInterval(imageTimer.current);
-      }
-    };
-  }, [post.id, post.media.mimeType, paused, manuallyPaused, cardState]);
-
-  const handleProgress = React.useCallback(
-    ({ nativeEvent: { id, index, status, url, elapsed, interval } }) => {
-      if (elapsed) {
-        setPlaybackTime(elapsed);
-      }
-    },
-    [setPlaybackTime]
-  );
-
   const onOpenComposer = React.useCallback(
     composerProps => {
-      setCardState(PostCardState.newComment);
-      openComposer(composerProps);
+      openComposer({ ...composerProps, timeOffset: playbackTime });
     },
-    [setCardState, openComposer, width, height, post.id]
+    [openComposer, width, height, post.id, playbackTime]
   );
 
-  const onCloseComposer = React.useCallback(() => {
-    setCardState(PostCardState.shown);
-  }, [setCardState]);
+  const onPressCommentButton = React.useCallback(() => {
+    const y = Math.max(height - 48, 10);
+    const x = 16;
 
-  React.useEffect(() => {
-    if (cardState !== PostCardState.shown && paused) {
-      setCardState(PostCardState.shown);
-    }
-  }, [paused, setCardState, cardState]);
+    onOpenComposer({
+      postId: post.id,
+      width,
+      height,
+      x,
+      y
+    });
+  }, [onOpenComposer, width, height, post.id]);
+
+  const toggleShowComments = React.useCallback(
+    () => setShowAllComments(!showAllComments),
+    []
+  );
+
+  const onLongPressCommentButton = React.useCallback(() => {
+    toggleShowComments();
+  }, [toggleShowComments]);
 
   const sources = React.useMemo(() => [post.media], [post.media]);
+
+  const isNotPlaying = isComposing || paused || manuallyPaused;
 
   return (
     <TouchableHighlight disabled={!paused} onPress={handlePress}>
       <Animated.View style={[styles.container, { width, height }]}>
-        <MediaPlayer
+        <TrackableMediaPlayer
           sources={sources}
-          paused={manuallyPaused || paused}
+          paused={isNotPlaying}
           id={`${post.id}-player`}
           autoPlay={false}
           ref={mediaPlayerRef}
+          duration={post.autoplaySeconds * 1000.0}
           onProgress={handleProgress}
           // sharedId={postElementId(post)}
           borderRadius={BORDER_RADIUS}
@@ -416,6 +390,34 @@ const PostCardComponent = ({
           </View>
         </Animated.View>
 
+        {!isNotPlaying && (
+          <>
+            <View style={styles.layerWrapper}>
+              <View style={styles.commentsLayer}>
+                <CommentsViewer
+                  width={width}
+                  height={height}
+                  comments={comments}
+                  showAll={showAllComments}
+                  timeOffset={playbackTime}
+                  keyboardVisibleValue={keyboardVisibleValue}
+                />
+              </View>
+            </View>
+
+            <View style={[styles.composerLayer]}>
+              <CommentComposer
+                postId={post.id}
+                timeOffset={playbackTime}
+                keyboardVisibleValue={keyboardVisibleValue}
+                width={width}
+                height={height}
+                onOpen={onOpenComposer}
+              />
+            </View>
+          </>
+        )}
+
         <Animated.View
           style={[
             styles.count
@@ -432,40 +434,19 @@ const PostCardComponent = ({
             // }
           ]}
         >
+          <CountButton
+            iconSize={28}
+            Icon={IconComment}
+            color="white"
+            count={post.commentsCount || 0}
+            onPress={onPressCommentButton}
+            onLongPress={onLongPressCommentButton}
+          />
+
+          <View style={styles.countButtonSeparator} />
+
           <LikeCountButton size={28} id={post.id} onPress={handlePressLike} />
         </Animated.View>
-
-        {!paused && (
-          <>
-            {cardState === PostCardState.shown && (
-              <View style={styles.layerWrapper}>
-                <View style={styles.commentsLayer}>
-                  <CommentsViewer
-                    width={width}
-                    height={height}
-                    comments={comments}
-                    hidden={cardState !== PostCardState.shown}
-                    timeOffset={playbackTime}
-                    keyboardVisibleValue={keyboardVisibleValue}
-                  />
-                </View>
-              </View>
-            )}
-
-            <View style={[styles.composerLayer]}>
-              <CommentComposer
-                postId={post.id}
-                timeOffset={playbackTime}
-                keyboardVisibleValue={keyboardVisibleValue}
-                width={width}
-                height={height}
-                onOpen={onOpenComposer}
-                onClose={onCloseComposer}
-                showComposer={cardState === PostCardState.newComment}
-              />
-            </View>
-          </>
-        )}
 
         <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>
       </Animated.View>
@@ -473,7 +454,7 @@ const PostCardComponent = ({
   );
 };
 
-export const PostCard = ({ post, paused, ...props }) => {
+export const PostCard = ({ post, paused, isComposing, ...props }) => {
   const [loadComments, commentsQuery] = useLazyQuery<
     ViewComments,
     ViewCommentsVariables
@@ -482,7 +463,8 @@ export const PostCard = ({ post, paused, ...props }) => {
       postId: post.id,
       limit: 20,
       offset: 0
-    }
+    },
+    fetchPolicy: "cache-and-network"
   });
 
   React.useEffect(() => {
@@ -490,18 +472,19 @@ export const PostCard = ({ post, paused, ...props }) => {
       loadComments({
         variables: {
           postId: post.id,
-          limit: 20,
+          limit: 100,
           offset: 0
         }
       });
     }
-  }, [paused, post.id, loadComments]);
+  }, [paused, post.id, loadComments, isComposing]);
 
   const comments = commentsQuery?.data?.comments?.data ?? [];
   return (
     <PostCardComponent
       {...props}
       post={post}
+      isComposing={isComposing}
       paused={paused}
       comments={comments}
     />

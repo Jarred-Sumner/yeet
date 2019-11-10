@@ -38,6 +38,8 @@ export interface createCommentMutation_createComment {
   body: string | null;
   x: number;
   y: number;
+  rotate: number;
+  scale: number;
   timeOffset: number;
   autoplaySeconds: number;
 }
@@ -53,6 +55,8 @@ export interface createCommentMutationVariables {
   textColor?: string | null;
   x: number;
   y: number;
+  scale: number;
+  rotate: number;
   postId: string;
   autoplaySeconds: number;
   timeOffset: number;

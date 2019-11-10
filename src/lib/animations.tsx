@@ -84,13 +84,37 @@ const _preserveOffset = Animated.proc(
   }
 );
 
+const _preserveMinMaxOffset = Animated.proc(
+  (
+    value: Animated.Adaptable<number>,
+    state: Animated.Adaptable<State>,
+    offset: Animated.Value<number>,
+    previous: Animated.Value<number>,
+    _min: Animated.Value<number>,
+    _max: Animated.Value<number>
+  ) => {
+    return Animated.block([
+      Animated.min(
+        Animated.max(_preserveOffset(value, state, offset, previous), _min),
+        _max
+      )
+    ]);
+  }
+);
+
 export const preserveOffset = (
   value: Animated.Adaptable<number>,
   state: Animated.Adaptable<State>,
   offset: Animated.Value<number> = new Value(0),
-  previous: Animated.Value<number> = new Value(0)
+  previous: Animated.Value<number> = new Value(0),
+  min?: Animated.Value<number>,
+  max?: Animated.Value<number>
 ) => {
+  // if (min && max) {
+  //   return _preserveMinMaxOffset(value, state, offset, previous, min, max);
+  // } else {
   return _preserveOffset(value, state, offset, previous);
+  // }
 };
 
 const _preserveMultiplicativeOffset = Animated.proc(

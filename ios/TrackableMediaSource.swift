@@ -16,7 +16,7 @@ protocol TrackableMediaSourceDelegate {
 }
 
 class TrackableMediaSource : NSObject {
-  static let periodicInterval = 0.15
+  static let periodicInterval = 0.5
   var delegate = MulticastDelegate<TrackableMediaSourceDelegate>()
   typealias onLoadCallback = (_ tracker: TrackableMediaSource) -> Void
   var isActive = false
@@ -125,7 +125,7 @@ class TrackableMediaSource : NSObject {
   }
 
   open func reset() {
-
+    
   }
 
   open func prepare() {}
@@ -142,7 +142,10 @@ class TrackableMediaSource : NSObject {
   }
 
   func stop() {
+
   }
+
+  var elapsed: Double = 0.0
 
   
   public func onProgress(elapsed: CMTime) {
@@ -150,6 +153,7 @@ class TrackableMediaSource : NSObject {
       guard let this = self else {
         return
       }
+      self?.elapsed = CMTimeGetSeconds(elapsed)
 
       delegate.onMediaProgress(elapsed: CMTimeGetSeconds(elapsed), mediaSource: this)
     }
@@ -187,6 +191,7 @@ class TrackableMediaSource : NSObject {
       self.reset()
       self.play()
     } else {
+      self.elapsed = mediaSource.playDuration.doubleValue
       self.status = .ended
     }
   }
