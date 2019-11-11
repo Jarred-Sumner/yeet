@@ -461,7 +461,7 @@ export const PostCard = ({ post, paused, isComposing, ...props }) => {
   >(VIEW_COMMENTS_QUERY, {
     variables: {
       postId: post.id,
-      limit: 20,
+      limit: 100,
       offset: 0
     },
     fetchPolicy: "cache-and-network"

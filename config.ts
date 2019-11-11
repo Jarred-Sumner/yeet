@@ -2,7 +2,7 @@ import Config from "react-native-config";
 import DeviceInfo from "react-native-device-info";
 import { getInset } from "react-native-safe-area-view";
 import { Dimensions } from "react-native";
-// const BASE_HOSTNAME = "http://192.168.0.101:3000";
+// export const BASE_HOSTNAME = "https://yeet-backend.herokuapp.com";
 
 export let BASE_HOSTNAME = Config.BASE_HOSTNAME;
 export const IS_SIMULATOR = DeviceInfo.isEmulator();
