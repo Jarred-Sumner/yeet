@@ -26,6 +26,17 @@ import {
   MediaPlayerContext
 } from "../components/MediaPlayer";
 import { TOP_Y } from "../../config";
+import { UserContext } from "../components/UserContext";
+import { ModalContext } from "../components/ModalContext";
+import Alert from "../lib/Alert";
+import { sendToast, ToastType } from "../components/Toast";
+import DELETE_POST_THREAD_MUTATION from "../lib/DeletePostThreadMutation.graphql";
+import { useMutation } from "react-apollo";
+import {
+  DeletePostThreadMutation,
+  DeletePostThreadMutationVariables
+} from "../lib/graphql/DeletePostThreadMutation";
+import * as Sentry from "@sentry/react-native";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -47,7 +58,10 @@ const styles = StyleSheet.create({
 
 type Props = {
   navigation: NavigationProp<NavigationStackProp>;
-  showActionSheetWithOptions: (opts: ActionSheetOptions) => void;
+  showActionSheetWithOptions: (
+    opts: ActionSheetOptions,
+    cb: (i: number) => void
+  ) => void;
 };
 
 class FeedPageComponent extends React.Component<Props> {
@@ -79,7 +93,58 @@ class FeedPageComponent extends React.Component<Props> {
       threadId: thread.id
     });
   };
-  handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
+  handleLongPressThread = (thread: ViewThreads_postThreads_data) => {
+    const options = ["Cancel"];
+    let destructiveButtonIndex = -1;
+
+    const { userId } = this.props;
+
+    if (thread.profile.id === userId) {
+      options.push("Delete");
+      destructiveButtonIndex = options.length - 1;
+    } else {
+      options.push("Report");
+    }
+
+    let cancelButtonIndex = options.indexOf("Cancel");
+
+    this.props.showActionSheetWithOptions(
+      {
+        options,
+        destructiveButtonIndex,
+        cancelButtonIndex
+      },
+      index => {
+        if (options[index] === "Report") {
+          if (!userId) {
+            sendToast("Please sign in first.", ToastType.error);
+            return;
+          }
+
+          this.props.openReportModal(thread.id, "PostThread");
+        } else if (options[index] === "Delete") {
+          this.props
+            .deletePostThread({
+              variables: {
+                threadId: thread.id
+              }
+            })
+            .then(
+              () => {
+                sendToast("Queued for deletion", ToastType.success);
+              },
+              err => {
+                Sentry.captureException(err);
+                sendToast(
+                  "Something broke – try again please.",
+                  ToastType.error
+                );
+              }
+            );
+        }
+      }
+    );
+  };
 
   contentOffset = {
     y: TOP_Y * -1,
@@ -114,13 +179,22 @@ const FeedPageWrapper = React.forwardRef((props, ref) => {
   const navigation = useNavigation();
   const actionSheet = useActionSheet();
   const { pausePlayers, unpausePlayers } = React.useContext(MediaPlayerContext);
+  const { userId } = React.useContext(UserContext);
+  const { openReportModal } = React.useContext(ModalContext);
+  const [deletePostThread] = useMutation<
+    DeletePostThreadMutation,
+    DeletePostThreadMutationVariables
+  >(DELETE_POST_THREAD_MUTATION);
 
   return (
     <FeedPageComponent
       pageRef={ref}
       pausePlayers={pausePlayers}
       unpausePlayers={unpausePlayers}
+      userId={userId}
       navigation={navigation}
+      deletePostThread={deletePostThread}
+      openReportModal={openReportModal}
       showActionSheetWithOptions={actionSheet.showActionSheetWithOptions}
     />
   );

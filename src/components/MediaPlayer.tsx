@@ -249,6 +249,22 @@ export class MediaPlayerComponent extends React.Component<Props> {
     this.callNativeMethod("pause");
   };
 
+  save = () => {
+    return new Promise((resolve, reject) => {
+      MediaPlayerComponent.NativeModule.save(
+        findNodeHandle(this),
+        (err, success) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          resolve(success);
+        }
+      );
+    });
+  };
+
   crop = (bounds: BoundsRect, size: DimensionsRect) => {
     return MediaPlayer.NativeModule.crop(findNodeHandle(this), bounds, size);
   };
@@ -527,8 +543,6 @@ class _TrackableMediaPlayer extends React.Component<Props> {
     this.updateInterval = interval;
     this.elapsed = elapsed / 1000;
 
-    console.log({ duration, interval, elapsed });
-
     this.props.onProgress &&
       this.props.onProgress({
         duration: this.duration,
@@ -538,10 +552,23 @@ class _TrackableMediaPlayer extends React.Component<Props> {
       });
   };
 
+  mediaPlayerRef = React.createRef<MediaPlayerComponent>();
+  play = () => this.mediaPlayerRef.current.play();
+  pause = () => this.mediaPlayerRef.current.pause();
+  advance = (...props) =>
+    this.mediaPlayerRef.current.advance.call(
+      this.mediaPlayerRef.current,
+      props
+    );
+
+  save = (...props) =>
+    this.mediaPlayerRef.current.save.call(this.mediaPlayerRef.current, props);
+
   render() {
     const { onProgress, onPlay, onPause, ...otherProps } = this.props;
     return (
       <MediaPlayer
+        ref={this.mediaPlayerRef}
         onPlay={this.handlePlay}
         onPause={this.handlePause}
         onProgress={this.handleProgress}

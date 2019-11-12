@@ -40,6 +40,7 @@ export interface PostListItemFragment {
   likesCount: number;
   threadId: string;
   createdAt: DateTime;
+  commentsCount: number;
   autoplaySeconds: number;
   bounds: PostListItemFragment_bounds;
   profile: PostListItemFragment_profile;

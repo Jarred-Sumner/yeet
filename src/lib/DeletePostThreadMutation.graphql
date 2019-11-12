@@ -1,0 +1,3 @@
+mutation DeletePostThreadMutation($threadId: ID!) {
+  deletePostThread(threadId: $threadId)
+}

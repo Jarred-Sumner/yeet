@@ -84,9 +84,7 @@ target 'yeet' do
     pod 'RNSecureKeyStore', :path => '../node_modules/react-native-secure-key-store/ios', modular_headers: false
 
 
-
-
-    pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
+    # pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
     pod 'RNSketchCanvas', :path => '../node_modules/@terrylinla/react-native-sketch-canvas', modular_headers: false
 
     pod 'RNFS', :path => '../node_modules/react-native-fs', modular_headers: false
@@ -109,12 +107,27 @@ target 'yeet' do
 
     pod 'RNSharedElement', :path => '../node_modules/react-native-shared-element'
 
+    pod 'RNFBAnalytics', :path => '../node_modules/@react-native-firebase/analytics'
+    pod 'GoogleIDFASupport', '~> 3.14.0'
+
+    pod 'ModernAVPlayer'
+
+
+    # pod 'appcenter', :path => '../node_modules/appcenter'
+    # pod 'appcenter-analytics', :path => '../node_modules/appcenter-analytics'
+
+    pod 'CodePush', :path => '../node_modules/react-native-code-push'
+
     target "yeetTests" do
       inherit! :search_paths
 
       pod 'Quick', modular_headers: false
       pod 'Nimble', modular_headers: true, git: "https://github.com/Quick/Nimble.git"
     end
+end
+
+target 'OneSignalNotificationServiceExtension' do
+  pod 'OneSignal', '>= 2.9.3', '< 3.0'
 end
 
 

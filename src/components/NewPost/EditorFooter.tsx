@@ -200,7 +200,11 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
         pointerEvents="none"
         style={[
           styles.footerSide,
-          { alignItems: "center", justifyContent: "center" }
+          {
+            alignItems: "center",
+            justifyContent: "center",
+            alignSelf: "center"
+          }
         ]}
       >
         <IconButton

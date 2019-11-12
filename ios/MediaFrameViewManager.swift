@@ -36,7 +36,7 @@ class MediaFrameViewManager: RCTViewManager {
           return
         }
 
-         guard let current = queuePlayerView.current as? TrackableVideoSource else {
+         guard let current = queuePlayerView.source as? TrackableVideoSource else {
            return
          }
 
@@ -64,7 +64,7 @@ class MediaFrameViewManager: RCTViewManager {
           return
         }
 
-         guard let current = queuePlayerView.current as? TrackableVideoSource else {
+         guard let current = queuePlayerView.source as? TrackableVideoSource else {
            return
          }
 

@@ -81,6 +81,23 @@ const DEFAULT_POST_FIXTURE = {
       }
     ]
   },
+  [PostFormat.library]: {
+    format: PostFormat.library,
+    backgroundColor: "#000",
+    blocks: [
+      {
+        type: "image",
+        id: "1231232",
+        format: "screenshot",
+        required: true,
+        autoInserted: true,
+        value: null,
+        config: {
+          dimensions: {}
+        }
+      }
+    ]
+  },
   [PostFormat.caption]: {
     format: PostFormat.canvas,
     backgroundColor: "#000",

@@ -48,6 +48,7 @@ export class AnimatedKeyboardTracker extends React.Component {
 
   handleKeyboardWillChangeFrame = evt => {
     this.props.onKeyboardWillChangeFrame &&
+      evt &&
       this.props.onKeyboardWillChangeFrame(evt);
   };
 

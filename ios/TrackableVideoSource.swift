@@ -9,62 +9,15 @@
 import Foundation
 import AVFoundation
 import SwiftyBeaver
+import ModernAVPlayer
 
 class TrackableVideoSource : TrackableMediaSource {
-  var playerContainer: YeetPlayer? = nil {
-    didSet {
-      guard self.playerContainer != oldValue else {
-        return
-      }
+  var playerObserver: NSKeyValueObservation? = nil
+  var player: AVPlayer? = nil
+  var playerItem
 
-      if let playerContainer = playerContainer {
-        self.startObservers()
-
-//        playerContainer.observe(\YeetPlayer.key, options: .new) { [weak self] _, _ in
-//          if self?.playerContainer?.key != self?.mediaSource.id {
-//            self?.playerContainer = nil
-//          }
-//        }
-      } else {
-        self.stopObservers()
-      }
-
-
-    }
-  }
-  var player: AVPlayer? {
-    get {
-      return playerContainer?.player
-    }
-  }
-
-  var boundaryObserverToken: Any? = nil
-  var periodicObserverToken: Any? = nil
-
-  override init(mediaSource: MediaSource) {
+  init(mediaSource: MediaSource, player: AVPlayer? = nil) {
     super.init(mediaSource: mediaSource)
-  }
-
-  func addBoundaryTimeObserver() {
-    guard let player = self.player else {
-      return
-    }
-
-    guard let playerItem = self.playerItem else {
-      return
-    }
-
-    let times = [NSValue(time: playerItem.duration)]
-
-    boundaryObserverToken = player
-      .addBoundaryTimeObserver(forTimes: times, queue: .main) { [weak self] in
-        guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
-          return
-        }
-
-        self?.handleEnd()
-    }
-
   }
 
   var timeScale: CMTimeScale {
@@ -79,44 +32,21 @@ class TrackableVideoSource : TrackableMediaSource {
     return videoTrack.naturalTimeScale
   }
 
-  private func addPeroidicObserver() {
-    guard let player = self.player else {
-      return
-    }
-
-    let time = CMTime(seconds: TrackableVideoSource.periodicInterval, preferredTimescale: timeScale)
-
-    if periodicObserverToken != nil {
-      player.removeTimeObserver(periodicObserverToken!)
-      periodicObserverToken = nil
-    }
-
-     periodicObserverToken = player
-      .addPeriodicTimeObserver(
-        forInterval: time,
-        queue: .global(qos: .background)) { [weak self] progress in
-
-          guard self?.player?.currentItem?.asset == self?.mediaSource.asset else {
-            return
-          }
-          self?.onProgress(elapsed: progress)
-    }
-  }
 
   var playerItem : AVPlayerItem? = nil {
     didSet {
-      if oldValue != playerItem {
-        if let playerItem = playerItem {
-          let pixBuffAttributes: [String : AnyObject] = [kCVPixelBufferPixelFormatTypeKey as String :  Int(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) as AnyObject]
-
-          let output = AVPlayerItemVideoOutput(pixelBufferAttributes: pixBuffAttributes)
-          playerItem.add(output)
-
-          mediaSource.videoOutput = output
-        } else {
-          mediaSource.videoOutput = nil
-        }
-      }
+//      if oldValue != playerItem {
+//        if let playerItem = playerItem {
+//          let pixBuffAttributes: [String : AnyObject] = [kCVPixelBufferPixelFormatTypeKey as String :  Int(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) as AnyObject]
+//
+//          let output = AVPlayerItemVideoOutput(pixelBufferAttributes: pixBuffAttributes)
+//          playerItem.add(output)
+//
+//          mediaSource.videoOutput = output
+//        } else {
+//          mediaSource.videoOutput = nil
+//        }
+//      }
     }
   }
 
@@ -130,10 +60,6 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    guard playerItem == nil else {
-      callback?(self)
-      return
-    }
 
     super.load(onLoad: callback)
 
@@ -159,11 +85,12 @@ class TrackableVideoSource : TrackableMediaSource {
     self.isAlreadyLoading = true
   }
 
+  func loadPlayer(playerContainer: YeetPlayer) {
+    
+  }
+
   func handleLoad(asset: AVURLAsset) {
     self.isAlreadyLoading = false
-    if self.playerItem != nil {
-      return
-    }
 
     if let playerItem = self.playerItem {
       NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
@@ -171,7 +98,7 @@ class TrackableVideoSource : TrackableMediaSource {
     }
 
     let playerItem = AVPlayerItem(asset: asset)
-    self.playerItem = playerItem
+
 
     NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
     NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemStalled(notification:)), name:NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
@@ -182,32 +109,10 @@ class TrackableVideoSource : TrackableMediaSource {
   }
 
 
-  var isObserving: Bool {
-    return self.periodicObserverToken != nil || self.boundaryObserverToken != nil
-  }
-
   override var canPlay: Bool {
-    return super.canPlay && self.playerItem != nil 
+    return super.canPlay
   }
 
-  func startObservers() {
-    stopObservers()
-
-    self.addPeroidicObserver()
-//    self.addBoundaryTimeObserver()
-  }
-
-  func stopObservers() {
-    if let periodicObserver = self.periodicObserverToken {
-      player?.removeTimeObserver(periodicObserver)
-      self.periodicObserverToken = nil
-    }
-
-    if let boundaryObserver = self.boundaryObserverToken {
-      player?.removeTimeObserver(boundaryObserver)
-      self.boundaryObserverToken = nil
-    }
-  }
 
   override func onLoad() {
     guard self.playerItem != nil else {
@@ -215,7 +120,6 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    startObservers()
 
     super.onLoad()
   }
@@ -231,10 +135,6 @@ class TrackableVideoSource : TrackableMediaSource {
        return
      }
 
-    if !isObserving {
-      startObservers()
-    }
-
     if self.status == .playing || self.status == .paused {
       return
     }
@@ -243,39 +143,17 @@ class TrackableVideoSource : TrackableMediaSource {
   }
 
   override func play() {
-    if player == nil && self.playerItem != nil {
-      self.playerContainer = VideoPool.shared().use(key: mediaSource.id)
-    }
+//    if self.playerContainer == nil {
+//      self.playerContainer = VideoPool.shared().use(key: mediaSource.id)
+//    }
 
-    guard let player = player else {
-      return
-    }
-
-    let isNewAsset = player.currentItem != playerItem
-
-    if player.currentItem != playerItem {
-      player.replaceCurrentItem(with: playerItem)
-    }
-
-    if player.currentItem?.duration == player.currentItem?.currentTime() || isNewAsset {
-      player.seek(to: .zero)
-    }
-
-    if !self.isObserving && playerItem != nil {
-      self.startObservers()
-    }
-
-    if !isNewAsset && player.timeControlStatus != .paused {
-      return
-    }
-
-    guard canPlay else {
-      SwiftyBeaver.warning("[TrackableVideoSource] \(mediaSource.id) Tried to play before being ready")
+    guard let player = self.player else {
+      self.status = .error
       return
     }
 
 
-    player.playImmediately(atRate: 1.0)
+    player.play()
     super.play()
   }
 
@@ -284,13 +162,9 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    if !self.isObserving {
-      self.startObservers()
-    }
-
     player.pause()
 
-    _onLoadCallbacks = []
+
     super.pause()
   }
 
@@ -333,11 +207,7 @@ class TrackableVideoSource : TrackableMediaSource {
 
   override func stop() {
     super.stop()
-
-    if isObserving {
-      stopObservers()
-    }
-
+    _onLoadCallbacks = []
   }
 
   deinit {
@@ -346,8 +216,11 @@ class TrackableVideoSource : TrackableMediaSource {
       NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
     }
 
-    stopObservers()
-    VideoPool.shared().release(key: mediaSource.id)
+    _onLoadCallbacks = []
+
+    playerObserver?.invalidate()
+
+
     print("DEINIT \(mediaSource.id)")
 
   }

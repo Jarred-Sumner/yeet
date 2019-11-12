@@ -15,17 +15,6 @@ import Foundation
         return
       }
       self.mediaSource = mediaSource.mediaSource
-
-      
-      DispatchQueue.main.async {
-        if self.playerContainer != nil && trackableVideo.playerContainer != self.playerContainer {
-          self.playerContainer?.reset()
-        }
-
-        self.playerContainer = trackableVideo.playerContainer
-
-        self.configurePlayer()
-      }
     } else {
 
     }
@@ -46,44 +35,7 @@ import Foundation
   func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
   }
 
-  dynamic var playerContainer: YeetPlayer? = nil {
-    didSet {
-      self.showCover = playerContainer == nil
-
-      if oldValue != playerContainer {
-        observer?.invalidate()
-
-        if let playerLayer = playerLayer {
-          observer = playerLayer.observe(\AVPlayerLayer.isReadyForDisplay, options: [.new, .initial] ) { [weak self] playerLayer, _ in
-            guard playerLayer == self?.playerLayer else {
-              self?.observer?.invalidate()
-              return
-            }
-
-            if playerLayer.isReadyForDisplay && self?.showCover ?? false {
-              self?.showCover = false
-            }
-
-          }
-        } else {
-          observer = nil
-        }
-      }
-
-
-    }
-  }
-
-  var player: AVPlayer? {
-    get {
-      return playerContainer?.player
-    }
-  }
-  var playerLayer: AVPlayerLayer? {
-    get {
-      return playerContainer?.videoLayer
-    }
-  }
+  weak var playerLayer: AVPlayerLayer? = nil
 
 
   var showCover: Bool = false {
@@ -108,34 +60,27 @@ import Foundation
 
   var observer: NSKeyValueObservation? = nil
 
-  func configurePlayer() {
-    if let playerLayer = self.playerLayer {
-      if playerLayer.superlayer != playerView.layer {
-
-        let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
-         playerLayer.edgeAntialiasingMask = shouldAntiAlias ? [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge] : []
-         playerLayer.frame = frame
-        playerLayer.isOpaque = false
-          playerView.frame = frame
-         playerLayer.needsDisplayOnBoundsChange = true
-         playerLayer.bounds = bounds
-        playerLayer.backgroundColor = UIColor.clear.cgColor
-        playerView.bounds = bounds
-         playerLayer.videoGravity = .resizeAspectFill
-
-        if playerLayer.superlayer != nil {
-          playerLayer.removeFromSuperlayer()
-        }
-
-        playerView.layer.addSublayer(playerLayer)
-
-
-      }
-
-      if playerLayer.isReadyForDisplay && showCover  {
-        showCover = false
-      }
+  func configurePlayer(playerLayer: AVPlayerLayer) {
+    guard playerLayer.superlayer != playerView.layer else {
+      return
     }
+
+    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+     playerLayer.edgeAntialiasingMask = shouldAntiAlias ? [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge] : []
+     playerLayer.frame = frame
+    playerLayer.isOpaque = false
+      playerView.frame = frame
+     playerLayer.needsDisplayOnBoundsChange = true
+     playerLayer.bounds = bounds
+    playerLayer.backgroundColor = UIColor.clear.cgColor
+    playerView.bounds = bounds
+     playerLayer.videoGravity = .resizeAspectFill
+
+    if playerLayer.superlayer != nil {
+      playerLayer.removeFromSuperlayer()
+    }
+
+    playerView.layer.addSublayer(playerLayer)
   }
 
   override init(frame: CGRect) {
@@ -182,7 +127,6 @@ import Foundation
 
   deinit {
     observer?.invalidate()
-    player?.pause()
 
     if playerLayer?.superlayer != nil {
       playerLayer?.removeFromSuperlayer()

@@ -8,6 +8,8 @@ import { NetworkStatus } from "apollo-client";
 import { Storage } from "../lib/Storage";
 import { memoize } from "lodash";
 import { navigateWithParent } from "../lib/NavigationService";
+import PushNotificationModal from "./PushNotificationModal";
+import { handleSignIn } from "./Analytics";
 
 export enum AuthState {
   checking = "checking",
@@ -16,15 +18,25 @@ export enum AuthState {
   error = "error"
 }
 
+type RequireAuthenticationFunctionCB = (
+  cb: (success: boolean) => void
+) => boolean;
+
+type RequireAuthenticationFunctionPromise = () => Promise<boolean>;
+
+export type RequireAuthenticationFunction =
+  | RequireAuthenticationFunctionCB
+  | RequireAuthenticationFunctionPromise;
+
 export type UserContextType = {
   currentUser: CurrentUserQuery_currentUser;
   userId: string | null;
   authState: AuthState;
   badgeCount: number;
-  requireAuthentication: (cb) => boolean;
+  requireAuthentication: RequireAuthenticationFunction;
 };
 
-const DEFAULT_USER_CONTEXT = {
+const DEFAULT_USER_CONTEXT: UserContext = {
   currentUser: null,
   userId: null,
   badgeCount: 0,
@@ -124,6 +136,7 @@ class RawUserContextProvider extends React.Component<Props, State> {
         newState.authState = AuthState.error;
       } else if (this.props.currentUser) {
         newState.authState = AuthState.loggedIn;
+        handleSignIn(this.props.currentUser);
       } else if (!this.props.currentUser) {
         newState.authState = AuthState.guest;
       }
@@ -149,18 +162,32 @@ class RawUserContextProvider extends React.Component<Props, State> {
     }
   }
 
-  handleRequireAuthentication = authCallback => {
-    if (this.state.authState === AuthState.guest) {
-      this.setState({ showAuthCard: true });
-      this.authCallback = authCallback;
-    }
+  handleRequireAuthentication: RequireAuthenticationFunction = authCallback => {
+    if (typeof authCallback === "function") {
+      if (this.state.authState === AuthState.guest) {
+        this.setState({ showAuthCard: true });
+        this.authCallback = authCallback;
+      }
 
-    return this.state.authState === AuthState.guest;
+      return this.state.authState === AuthState.guest;
+    } else {
+      if (this.state.authState === AuthState.guest) {
+        return Promise.resolve(false);
+      } else if (this.state.authState === AuthState.loggedIn) {
+        return Promise.resolve(true);
+      } else {
+        return new Promise(resolve => {
+          this.setState({ showAuthCard: true });
+          this.authCallback = resolve;
+        });
+      }
+    }
   };
 
   doAuthCallback = () => {
     try {
-      this.authCallback && this.authCallback();
+      this.authCallback &&
+        this.authCallback(this.state.authState === AuthState.loggedIn);
     } catch (exception) {
       console.warn(exception);
     } finally {

@@ -13,6 +13,6 @@ export interface CreateReportMutation {
 export interface CreateReportMutationVariables {
   id: string;
   type: string;
-  kind: string;
+  kinds?: string[] | null;
   body?: string | null;
 }

@@ -136,7 +136,9 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
     }
   }
 
-  handlePressElipsis = () => {};
+  handlePressElipsis = () => {
+    this.handleLongPress();
+  };
   handlePressViewAll = () => {};
 
   mediaPlayerRef = React.createRef<MediaPlayerComponent>();

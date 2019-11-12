@@ -47,6 +47,7 @@ export interface ViewThreads_postThreads_data_posts_data {
   likesCount: number;
   threadId: string;
   createdAt: DateTime;
+  commentsCount: number;
   autoplaySeconds: number;
   bounds: ViewThreads_postThreads_data_posts_data_bounds;
   profile: ViewThreads_postThreads_data_posts_data_profile;

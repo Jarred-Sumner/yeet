@@ -49,7 +49,10 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   override func load(onLoad callback: onLoadCallback? = nil) {
-    _onLoadCallbacks.append(callback)
+    if let callback = callback {
+      _onLoadCallbacks.append(callback)
+    }
+
     if canPlay {
       onLoad()
       return

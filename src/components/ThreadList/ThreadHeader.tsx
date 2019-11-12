@@ -110,7 +110,7 @@ export const ThreadHeader = ({ thread }) => {
         </View>
 
         <View style={[styles.side, styles.rightSide]}>
-          <IconButtonEllipsis onPress={handlePressEllipsis} />
+          {/* <IconButtonEllipsis onPress={handlePressEllipsis} /> */}
         </View>
       </View>
     </>

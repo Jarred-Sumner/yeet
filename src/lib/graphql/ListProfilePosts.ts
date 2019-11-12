@@ -40,6 +40,7 @@ export interface ListProfilePosts_profile_posts_data {
   likesCount: number;
   threadId: string;
   createdAt: DateTime;
+  commentsCount: number;
   autoplaySeconds: number;
   bounds: ListProfilePosts_profile_posts_data_bounds;
   profile: ListProfilePosts_profile_posts_data_profile;

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, StyleSheetProperties } from "react-native";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
@@ -24,6 +24,7 @@ import { isVideo } from "../../lib/imageSearch";
 import { CommentComposer } from "./CommentComposer";
 import CountButton from "../ThreadList/CountButton";
 import { IconComment } from "../Icon";
+import { PostFormat } from "../NewPost/NewPostFormat";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -86,6 +87,9 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0
+  },
+  captionMedia: {
+    // paddingTop: SPACING.normal
   },
   bottomGradient: {
     bottom: 0,
@@ -216,6 +220,7 @@ const PostCardComponent = ({
   keyboardVisibleValue,
   visiblePostIDValue,
   onPressProfile,
+  autoPlay = false,
   isComposing,
   isScrolling,
   onPressEllipsis,
@@ -253,13 +258,21 @@ const PostCardComponent = ({
   }, [post.id]);
 
   const handlePressEllipsis = React.useCallback(() => {
-    onPressEllipsis(post, mediaPlayerRef);
-  }, [post.id, mediaPlayerRef]);
+    onPressEllipsis(post, mediaPlayerRef.current, comments);
+  }, [post.id, onPressEllipsis, mediaPlayerRef, comments]);
 
-  const mediaPlayerStyles = React.useMemo(
-    () => [StyleSheet.absoluteFill, styles.player, { width, height }],
-    [width, height, styles]
-  );
+  const mediaPlayerStyles = React.useMemo(() => {
+    if (post.format === PostFormat.caption) {
+      return [
+        StyleSheet.absoluteFill,
+        styles.player,
+        { width, height },
+        styles.captionMedia
+      ];
+    } else {
+      return [StyleSheet.absoluteFill, styles.player, { width, height }];
+    }
+  }, [width, height, post.format, styles]);
 
   const sheetStyles = React.useMemo(() => {
     return [
@@ -327,7 +340,7 @@ const PostCardComponent = ({
           sources={sources}
           paused={isNotPlaying}
           id={`${post.id}-player`}
-          autoPlay={false}
+          autoPlay={autoPlay}
           ref={mediaPlayerRef}
           duration={post.autoplaySeconds * 1000.0}
           onProgress={handleProgress}
@@ -419,6 +432,7 @@ const PostCardComponent = ({
         )}
 
         <Animated.View
+          pointerEvents="box-none"
           style={[
             styles.count
             // {

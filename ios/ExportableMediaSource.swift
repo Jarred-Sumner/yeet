@@ -157,11 +157,7 @@ class ExportableImageSource : ExportableMediaSource {
 
 extension ExportableMediaSource {
   static func from(mediaPlayer: MediaPlayer, nodeView: UIView?) -> ExportableMediaSource? {
-    guard let current = mediaPlayer.current else {
-      return nil
-    }
-
-    guard let mediaQueue = mediaPlayer.mediaQueue else {
+    guard let current = mediaPlayer.source else {
       return nil
     }
 

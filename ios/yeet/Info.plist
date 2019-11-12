@@ -20,6 +20,21 @@
 	<string>1.0</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CodePushDeploymentKey</key>
+	<string>$(CODEPUSH_KEY)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>yeet</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>yeet</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -37,6 +52,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Some description</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
 	<string>Some description</string>
 	<key>NSCalendarsUsageDescription</key>
@@ -44,17 +61,15 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Some description</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string/>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Some description</string>
-	<key>NSAppleMusicUsageDescription</key>
-	<string>Some description</string>
+	<string></string>
 	<key>NSMotionUsageDescription</key>
 	<string>Some description</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Share photos/videos with the community on yeet and participate in challenges</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Share photos/videos with the community on yeet and participate in challenges</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Share photos/videos with the community on yeet and participate in challenges</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Some description</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>iconfont.ttf</string>
@@ -75,6 +90,11 @@
 		<string>SimpleLineIcons.ttf</string>
 		<string>Zocial.ttf</string>
 		<string>Inter.var.ttf</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>

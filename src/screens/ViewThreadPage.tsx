@@ -18,7 +18,9 @@ import { NavigationStackProp } from "react-navigation-stack";
 import { postElementId } from "../lib/ElementTransition";
 import {
   ViewThread as ViewThreadQuery,
-  ViewThreadVariables
+  ViewThreadVariables,
+  ViewThread_postThread_posts_data_profile,
+  ViewThread_postThread_posts_data
 } from "../lib/graphql/ViewThread";
 import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
 import { PostFlatList } from "../components/ThreadList/ViewThread";
@@ -39,6 +41,31 @@ import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import { number } from "yup";
 import { LikePost, LikePostVariables } from "../lib/graphql/LikePost";
 import LIME_POST_QUERY from "../lib/LikePost.graphql";
+import * as Sentry from "@sentry/react-native";
+import { MediaPlayerComponent } from "../components/MediaPlayer";
+import DELETE_POST_MUTATION from "../lib/DeletePostMutation.graphql";
+import {
+  DeletePostMutation,
+  DeletePostMutationVariables
+} from "../lib/graphql/DeletePostMutation";
+import DELETE_COMMENT_MUTATION from "../lib/DeleteCommentMutation.graphql";
+import {
+  DeleteCommentMutation,
+  DeleteCommentMutationVariables
+} from "../lib/graphql/DeleteCommentMutation";
+import { CommentFragment } from "../lib/graphql/CommentFragment";
+import { partition } from "lodash";
+import {
+  UserContext,
+  RequireAuthenticationFunction
+} from "../components/UserContext";
+import ActionSheet from "@expo/react-native-action-sheet/lib/typescript/ActionSheet";
+import { Context } from "@expo/react-native-action-sheet/lib/typescript/context";
+import { ToastType, sendToast } from "../components/Toast";
+import { ModalContext } from "../components/ModalContext";
+import { shouldShowPushNotificationModal } from "../components/PushNotificationModal";
+
+const THREAD_REPLY_BUTTON_HEIGHT = 48;
 
 const styles = StyleSheet.create({
   postList: {},
@@ -61,6 +88,7 @@ const styles = StyleSheet.create({
   footer: {
     position: "absolute",
     bottom: BOTTOM_Y,
+
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -72,7 +100,7 @@ const styles = StyleSheet.create({
     marginLeft: SPACING.half
   },
   buttonShadow: {
-    height: 48,
+    height: THREAD_REPLY_BUTTON_HEIGHT,
     width: 180,
     borderRadius: 100,
     shadowOffset: {
@@ -148,9 +176,9 @@ const ThreadReplyButton = React.memo(({ onPress }) => {
   );
 });
 
-type Props = {
+type Props = Pick<Context, "showActionSheetWithOptions"> & {
   navigation: NavigationProp<NavigationStackProp>;
-  showActionSheetWithOptions: (opts: ActionSheetOptions) => void;
+  requireAuthentication: RequireAuthenticationFunction;
 };
 
 class ThreadPageComponent extends React.Component<Props, State> {
@@ -177,14 +205,29 @@ class ThreadPageComponent extends React.Component<Props, State> {
     post: ViewThreads_postThreads_data_posts_data
   ) => {};
   handlePressThread = (thread: ViewThreads_postThreads_data) => {};
-  handleNewPost = (thread: ViewThreads_postThreads_data) => {
+  handleNewPost = async (thread: ViewThreads_postThreads_data) => {
+    const authed = await this.props.requireAuthentication();
+    if (!authed) {
+      return;
+    }
+
     this.props.navigation.navigate("ReplyToPost", thread);
   };
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
-  handlePressReply = thread => {
+  handlePressReply = async thread => {
+    const authed = await this.props.requireAuthentication();
+    if (!authed) {
+      return;
+    }
+
     this.props.navigation.navigate("ReplyToPost", this.props.thread);
   };
-  handleShowComposer = composerProps => {
+  handleShowComposer = async composerProps => {
+    const authed = await this.props.requireAuthentication();
+    if (!authed) {
+      return;
+    }
+
     this.postListRef.current.scrollToId(composerProps.postId);
     this.setState({ showComposer: true, composerProps });
     this.transitionFooterRef.current.animateNextTransition();
@@ -195,6 +238,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
     this.setState({ showComposer: false, composerProps: {} });
     this.transitionFooterRef.current.animateNextTransition();
     this.transitionHeaderRef.current.animateNextTransition();
+
+    return this.autoRequestPush();
   };
 
   transitionHeaderRef = React.createRef<TransitioningView>();
@@ -203,8 +248,177 @@ class ThreadPageComponent extends React.Component<Props, State> {
   keyboardHeightValue = new Animated.Value<number>(0);
   keyboardVisibleValue = new Animated.Value<number>(0);
 
-  handlePressLike = (postId: string) =>
-    this.props.onLikePost({ variables: { postId } });
+  handlePressLike = async (postId: string) => {
+    const authed = await this.props.requireAuthentication();
+    if (!authed) {
+      return;
+    }
+
+    await this.props.onLikePost({ variables: { postId } });
+    return this.autoRequestPush();
+  };
+
+  autoRequestPush = async () => {
+    const shouldRequestPush = await shouldShowPushNotificationModal();
+    if (shouldRequestPush) {
+      this.props.openPushNotificationModal();
+    }
+  };
+
+  handlePressProfile = (profile: ViewThread_postThread_posts_data_profile) => {
+    this.props.navigation.navigate("ViewProfile", {
+      profile,
+      profileId: profile.id
+    });
+  };
+  handlePressPostEllipsis = async (
+    post: ViewThread_postThread_posts_data,
+    mediaPlayer: MediaPlayerComponent,
+    comments: Array<CommentFragment> = []
+  ) => {
+    const authed = await this.props.requireAuthentication();
+    if (!authed) {
+      return;
+    }
+
+    const options = ["Save", "Remix"];
+    const {
+      userId,
+      showActionSheetWithOptions,
+      deletePost,
+      deleteComment,
+      deleteComent
+    } = this.props;
+    let destructiveButtonIndex = -1;
+
+    if (userId === post.profile.id) {
+      options.push("Delete post");
+      destructiveButtonIndex = options.length - 1;
+    } else {
+      options.push("Report post");
+    }
+
+    const [userSubmittedComments, nonUserSubmittedComments] = partition(
+      comments,
+      comment => comment.profile.id === userId
+    );
+
+    if (nonUserSubmittedComments.length > 0) {
+      options.push("Report comment");
+    }
+
+    if (userSubmittedComments.length > 1) {
+      options.push("Delete comment");
+      if (destructiveButtonIndex === -1) {
+        destructiveButtonIndex = options.length - 1;
+      }
+    }
+
+    options.push("Cancel");
+    const cancelButtonIndex = options.length - 1;
+
+    this.props.showActionSheetWithOptions(
+      {
+        destructiveButtonIndex,
+        cancelButtonIndex,
+        options
+      },
+      (index: number) => {
+        const option = options[index];
+        if (option === "Save") {
+          return mediaPlayer.save().catch(err => {
+            Sentry.captureException(err);
+          });
+        } else if (option === "Delete post") {
+          return deletePost({
+            variables: {
+              postId: post.id
+            }
+          }).then(
+            () => {
+              sendToast("Queued for deletion", ToastType.success);
+            },
+            err => {
+              Sentry.captureException(err);
+              sendToast("Something broke – try again please.", ToastType.error);
+            }
+          );
+        } else if (option === "Report comment") {
+          if (!this.props.userId) {
+            sendToast("Please sign in first.", ToastType.error);
+            return;
+          }
+
+          this.showCommentPicker(nonUserSubmittedComments).then(comment => {
+            if (!comment) {
+              return;
+            }
+
+            this.props.openReportModal(comment.id, "Comment");
+          });
+        } else if (option === "Report post") {
+          if (!this.props.userId) {
+            sendToast("Please sign in first.", ToastType.error);
+            return;
+          }
+
+          this.props.openReportModal(post.id, "Post");
+        } else if (option === "Delete comment") {
+          if (!this.props.userId) {
+            sendToast("Please sign in first.", ToastType.error);
+            return;
+          }
+
+          this.showCommentPicker(userSubmittedComments).then(comment => {
+            if (!comment) {
+              return;
+            }
+
+            return deleteComment({
+              variables: {
+                commentId: comment.id
+              }
+            }).then(
+              () => {
+                sendToast("Queued for deletion", ToastType.success);
+              },
+              err => {
+                Sentry.captureException(err);
+                sendToast(
+                  "Something broke – try again please.",
+                  ToastType.error
+                );
+              }
+            );
+          });
+        }
+      }
+    );
+  };
+
+  showCommentPicker = (
+    comments: Array<CommentFragment>
+  ): Promise<CommentFragment | null> => {
+    return new Promise((resolve, reject) => {
+      const options = comments.map(comment => {
+        return `${comment.profile.username}: ${comment.body}`;
+      });
+
+      options.push("Cancel");
+
+      this.props.showActionSheetWithOptions(
+        {
+          options,
+          title: "Which comment?",
+          cancelButtonIndex: options.length - 1
+        },
+        (index: number) => {
+          const comment = index < comments.length ? comments[index] : null;
+          resolve(comment);
+        }
+      );
+    });
+  };
 
   render() {
     const { thread, defaultPost, refreshing } = this.props;
@@ -220,8 +434,11 @@ class ThreadPageComponent extends React.Component<Props, State> {
         <PostFlatList
           posts={thread?.posts?.data ?? []}
           topInset={THREAD_HEADER_HEIGHT + 4}
+          bottomInset={THREAD_REPLY_BUTTON_HEIGHT}
           composingPostId={this.state.composerProps?.postId}
           onPressLike={this.handlePressLike}
+          onPressProfile={this.handlePressProfile}
+          onPressPostEllipsis={this.handlePressPostEllipsis}
           extraData={this.state}
           keyboardVisibleValue={this.keyboardVisibleValue}
           scrollEnabled={this.state.showComposer === false}
@@ -306,11 +523,30 @@ const _ThreadPage = () => {
   const [onLikePost] = useMutation<LikePost, LikePostVariables>(
     LIME_POST_QUERY
   );
+  const { userId, requireAuthentication } = React.useContext(UserContext);
+  const { openReportModal, openPushNotificationModal } = React.useContext(
+    ModalContext
+  );
+
+  const [deletePost] = useMutation<
+    DeletePostMutation,
+    DeletePostMutationVariables
+  >(DELETE_POST_MUTATION);
+  const [deleteComment] = useMutation<
+    DeleteCommentMutation,
+    DeleteCommentMutationVariables
+  >(DELETE_COMMENT_MUTATION);
 
   return (
     <ThreadPageComponent
       navigation={navigation}
       onLikePost={onLikePost}
+      openReportModal={openReportModal}
+      openPushNotificationModal={openPushNotificationModal}
+      userId={userId}
+      deletePost={deletePost}
+      requireAuthentication={requireAuthentication}
+      deleteComment={deleteComment}
       thread={viewThreadQuery?.data?.postThread ?? defaultThread}
       defaultPost={useNavigationParam("post")}
       loading={viewThreadQuery.loading}

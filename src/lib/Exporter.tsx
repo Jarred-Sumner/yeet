@@ -11,7 +11,8 @@ import {
   YeetImageRect,
   ImageSourceType,
   YeetImageContainer,
-  ImageMimeType
+  ImageMimeType,
+  isVideo
 } from "./imageSearch";
 import {
   PostBlockType,
@@ -28,6 +29,8 @@ import {
 import Bluebird from "bluebird";
 import { BoundsRect } from "./Rect";
 import { fromPairs } from "lodash";
+import perf from "@react-native-firebase/perf";
+import * as Sentry from "@sentry/react-native";
 
 const { YeetExporter } = NativeModules;
 
@@ -169,11 +172,15 @@ export const startExport = async (
   nodeRefs: Map<string, React.RefObject<View>>,
   isServerOnly: boolean
 ): Promise<[ContentExport, ExportData]> => {
+  const trace = await perf().startTrace("YeetExporter_startExport");
+  let videoCount = 0;
+  let imageCount = 0;
+  let textCount = 0;
+
   const blockBoundsMap = new Map<string, BoundsRect>();
   const inlinesBoundsMap = new Map<string, BoundsRect>();
 
-  console.time("Start Measure");
-
+  const measureTime = new Date().getTime();
   await Bluebird.map(
     [...refs.entries()],
     ([id, ref]) =>
@@ -199,12 +206,24 @@ export const startExport = async (
       concurrency: 3
     }
   );
+  const measureDuration = new Date().getTime() - measureTime;
+  trace.putMetric("measure", measureDuration);
 
   const blocks = _blocks.map(block => {
     const blockRef = refs.get(block.id).current;
 
     if (!blockRef) {
       return null;
+    }
+
+    if (block.type === "image") {
+      if (isVideo(block.value.image.mimeType)) {
+        videoCount = videoCount + 1;
+      } else {
+        imageCount = imageCount + 1;
+      }
+    } else {
+      textCount = textCount + 1;
     }
 
     return createExportableBlock(
@@ -222,6 +241,18 @@ export const startExport = async (
       return null;
     }
 
+    const { block } = node;
+
+    if (block.type === "image") {
+      if (isVideo(block.value.image.mimeType)) {
+        videoCount = videoCount + 1;
+      } else {
+        imageCount = imageCount + 1;
+      }
+    } else {
+      textCount = textCount + 1;
+    }
+
     return createExportableNode(
       node,
       findNodeHandle(blockRef),
@@ -230,6 +261,10 @@ export const startExport = async (
       findNodeHandle(nodeRef)
     );
   });
+
+  trace.putMetric("imageCount", imageCount);
+  trace.putMetric("videoCount", videoCount);
+  trace.putMetric("textCount", textCount);
 
   const data: ExportData = {
     blocks: blocks.filter(Boolean),
@@ -241,17 +276,44 @@ export const startExport = async (
     console.log(JSON.stringify(data));
   }
 
-  console.timeEnd("Start Measure");
-
   return new Promise((resolve, reject) => {
+    Sentry.addBreadcrumb({
+      category: "action",
+      message: "Start content export",
+      level: Sentry.Severity.Info,
+      data: {
+        imageCount,
+        videoCount,
+        textCount,
+        measureDuration
+      }
+    });
+
+    const startTime = new Date().getTime();
     YeetExporter.startExport(
       JSON.stringify(data),
       isServerOnly,
       (err, result) => {
+        trace.stop();
+
         if (err) {
+          Sentry.captureException(err);
           reject(err);
           return;
         }
+
+        Sentry.addBreadcrumb({
+          category: "action",
+          message: "Finish content export",
+          level: Sentry.Severity.Info,
+          data: {
+            imageCount,
+            videoCount,
+            textCount,
+            measureDuration,
+            duration: new Date().getTime() - startTime
+          }
+        });
 
         resolve([result, data]);
       }

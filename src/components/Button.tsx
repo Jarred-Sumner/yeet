@@ -347,6 +347,7 @@ export const IconButtonEllipsis = ({
   return (
     <IconButton
       {...otherProps}
+      onPress={onPress}
       Icon={vertical ? IconEllipsisAlt : IconEllipsis}
       size={size}
       containerSize={containerSize}

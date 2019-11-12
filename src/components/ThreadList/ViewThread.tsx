@@ -16,6 +16,12 @@ import FlatList from "../FlatList";
 import { calculatePostHeight, PostCard } from "../Posts/PostCard";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 import { MediaPlayerPauser } from "../MediaPlayer";
+import {
+  ViewThread_postThread_posts_data_profile,
+  ViewThread_postThread_posts_data
+} from "../../lib/graphql/ViewThread";
+import { runDelay } from "react-native-redash";
+import { throttle, debounce } from "lodash";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -43,6 +49,7 @@ export class PostFlatList extends React.Component {
 
   constructor(props) {
     super(props);
+
     this.state = { visibleIDs: {} };
 
     this.topInset = TOP_Y + props.topInset;
@@ -52,7 +59,7 @@ export class PostFlatList extends React.Component {
       top: props.topInset,
       left: 0,
       right: 0,
-      bottom: props.bottomInset
+      bottom: this.bottomInset
     };
 
     this.contentOffset = {
@@ -148,15 +155,18 @@ export class PostFlatList extends React.Component {
   renderItem = ({ item, index }) => {
     const height = calculatePostHeight(item);
 
-    const paused = !this.state.visibleIDs[item.id];
+    const paused =
+      this.props.posts.length === 1 ? false : !this.state.visibleIDs[item.id];
     const prevOffset =
       this.snapOffsets[this.props.posts[Math.max(index - 1, 0)]?.id] ?? 0;
+
     return (
       <PostCard
         width={SCREEN_DIMENSIONS.width}
         paused={paused || this.props.showComposer}
         height={height}
         isComposing={this.props.composingPostId === item.id}
+        autoPlay={this.props.initialPostIndex === index}
         contentHeight={this.contentHeight}
         keyboardVisibleValue={this.props.keyboardVisibleValue}
         index={index}
@@ -170,6 +180,8 @@ export class PostFlatList extends React.Component {
         onPress={this.snapToIndex}
         visiblePostID={item.id.hashCode()}
         visiblePostIDValue={this.visiblePostIDValue}
+        onPressProfile={this.props.onPressProfile}
+        onPressEllipsis={this.props.onPressPostEllipsis}
         post={item}
       />
     );
@@ -209,7 +221,15 @@ export class PostFlatList extends React.Component {
     if (id) {
       this.setVisibleID(id);
     }
+
+    this._scrollEnded();
   };
+
+  _scrollEnded = debounce(() => {
+    window.requestAnimationFrame(() => {
+      this.isScrollingValue.setValue(0);
+    });
+  }, 100);
 
   autoSnapToOffset = ([offset]) => {
     const [id] =
@@ -241,8 +261,8 @@ export class PostFlatList extends React.Component {
           layoutMeasurement: { height: contentHeight }
         }) =>
           Animated.block([
-            Animated.set(this.isScrollingValue, 1),
             Animated.set(this.scrollY, scrollY),
+            Animated.set(this.isScrollingValue, 1),
             Animated.set(this.contentHeight, contentHeight)
           ])
       }
@@ -364,6 +384,8 @@ export class PostFlatList extends React.Component {
     if (this.interactionTask) {
       this.interactionTask.cancel();
     }
+
+    this._scrollEnded.cancel();
   }
 
   scrollDirectionValue = new Animated.Value(1);
@@ -388,17 +410,17 @@ export class PostFlatList extends React.Component {
 
   panRef = React.createRef<PanGestureHandler>();
 
-  handlePan = Animated.event(
-    [
-      {
-        nativeEvent: {
-          state: state =>
-            Animated.set(this.isScrollingValue, state === State.ACTIVE ? 1 : 0)
-        }
-      }
-    ],
-    { useNativeDriver: true }
-  );
+  // handlePan = Animated.event(
+  //   [
+  //     {
+  //       nativeEvent: {
+  //         state: state =>
+  //           Animated.set(this.isScrollingValue, state === State.ACTIVE ? 1 : 0)
+  //       }
+  //     }
+  //   ],
+  //   { useNativeDriver: true }
+  // );
 
   listStyle = [
     listStyles.list,
@@ -445,7 +467,7 @@ export class PostFlatList extends React.Component {
               scrollEnabled={scrollEnabled}
               onScroll={this.onScroll}
               onScrollEndDrag={this.onScrollEndDrag}
-              onScrollBeginDrag={this.onScrollBeginDrag}
+              onScrollBeginDrag={this.onMomentumScrollBegin}
               onMomentumScrollEnd={this.onMomentumScrollEnd}
               onMomentumScrollBegin={this.onMomentumScrollBegin}
               onScrollToTop={this.handleScrollToTop}

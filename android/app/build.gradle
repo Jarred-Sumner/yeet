@@ -81,6 +81,8 @@ project.ext.react = [
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
+apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
+apply from: "../../node_modules/@sentry/react-native/sentry.gradle"
 
 /**
  * Set this to true to create two separate APKs instead of one:
@@ -188,6 +190,11 @@ android {
 }
 
 dependencies {
+    implementation project(':react-native-code-push')
+    implementation project(':appcenter-analytics')
+    implementation project(':appcenter')
+    implementation project(':@react-native-firebase_analytics')
+    implementation project(':react-native-firebase')
     implementation project(':react-native-fast-image')
     implementation project(':react-native-cronet')
     implementation project(':react-native-config')

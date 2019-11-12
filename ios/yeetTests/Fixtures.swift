@@ -106,17 +106,14 @@ class Fixtures {
           mediaPlayer.bounds = CGRect(origin: .zero, size: bounds.size)
           mediaPlayer.frame = bounds
           mediaPlayer.autoPlay = true
-          mediaPlayer.sources = [mediaSource]
-
-          mediaPlayer.createMediaQueue(sources: mediaPlayer.sources)
-          let mediaQueue = mediaPlayer.mediaQueue!
-          mediaQueue.update(mediaSources: mediaPlayer.sources)
+          let source = TrackableMediaSource.source(mediaSource, bounds: bounds)
+          mediaPlayer.source = source!
 
           mediaPlayer.layoutContentView()
-          mediaQueue.current?.load()
-//          mediaQueue.play()
+          source?.load()
 
-          let item = mediaQueue.current!
+
+
 
           if mediaSource.isImage {
             let imageView = mediaPlayer.imageView!
@@ -124,9 +121,9 @@ class Fixtures {
             try! imageView.loadImage(async: false)
           } else if mediaSource.isVideo {
             mediaSource.assetStatus = .loaded
-            mediaQueue.current!.start()
-            let _item = item as! TrackableVideoSource
-            _item.handleLoad(asset: mediaSource.asset!)
+            source? .start()
+            let _item = source as! TrackableVideoSource
+//            _item.handleLoad(asset: mediaSource.asset!)
           }
 
           let exportableMedia = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: nodeView)!

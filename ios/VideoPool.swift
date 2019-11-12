@@ -11,10 +11,10 @@ import Foundation
 class YeetPlayer : NSObject {
   let player: AVPlayer
   let videoLayer: AVPlayerLayer
-  dynamic var key: String
+  dynamic var key: NSString
 
   init(player: AVPlayer, key: String) {
-    self.key = key
+    self.key = key as NSString
     self.player = player
     self.videoLayer = AVPlayerLayer.init(player: player)
     super.init()
@@ -74,7 +74,7 @@ class VideoPool {
       }
     }
     keys.insert(key, at: keys.count)
-    player.key = key
+    player.key = key as NSString
   }
 
   func release(key: String) {

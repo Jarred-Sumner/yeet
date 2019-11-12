@@ -357,7 +357,7 @@ final class MediaQueuePlayer : TrackableMediaSourceDelegate {
     guard let _current = current else {
       return
     }
-    if !_current.canPlay {
+    if !_current.hasLoaded {
       _current.load() { [weak self] tracker in
         guard self?.current?.mediaSource.id == tracker.mediaSource.id else {
           return
@@ -367,6 +367,10 @@ final class MediaQueuePlayer : TrackableMediaSourceDelegate {
         _current.play()
       }
     } else {
+      if !_current.canPlay {
+        _current.start()
+      }
+
       _current.play()
     }
 

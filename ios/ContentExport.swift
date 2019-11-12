@@ -227,6 +227,7 @@ class ContentExport {
       var xOffset = CGFloat.zero
       var cropWidth = CGFloat.zero
       var cropHeight = CGFloat.zero
+      var maxDuration = duration
 
       let maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
 
@@ -256,6 +257,8 @@ class ContentExport {
             max(renderedFrame.origin.x + renderedFrame.width, cropWidth),
             maxRenderBounds.width
           )
+
+          maxDuration = max(maxDuration, block.totalDuration)
 
           let _cropHeight = min(
             max(renderedFrame.origin.y + renderedFrame.height, cropHeight),
@@ -346,7 +349,7 @@ class ContentExport {
       if (type == ExportType.mp4) {
         let startPrepTime = CACurrentMediaTime()
 
-        let seconds = [duration, 3.0].max()!
+        let seconds = [maxDuration, duration, 3.0].max()!
         let vid_timerange = CMTimeRangeMake(start: CMTime.zero, duration: CMTime(seconds: seconds))
         let composition = AVMutableComposition()
 

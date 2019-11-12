@@ -65,7 +65,7 @@ export const textCommentStyles = StyleSheet.create({
     maxWidth: 200,
     maxHeight: 66
   },
-  textShadow: {
+  shadowContainer: {
     shadowRadius: 1,
     shadowOffset: {
       width: 1,
@@ -103,23 +103,25 @@ const TextComment = ({
   textColor: color
 }) => {
   return (
-    <TransformableView
-      scale={scale}
-      rotate={rotate}
-      translateX={x}
-      translateY={y}
-    >
-      <View style={textCommentStyles.container}>
-        <View style={textCommentStyles.textShadow}>
-          <View
-            style={[
-              textCommentStyles.textContainer,
-              { backgroundColor: normalizeBackgroundColor(backgroundColor) }
-            ]}
-          >
-            <MediumText style={[textCommentStyles.text, { color }]}>
-              {body}
-            </MediumText>
+    <Animated.View>
+      <TransformableView
+        scale={scale}
+        rotate={rotate}
+        translateX={x}
+        translateY={y}
+      >
+        <View style={textCommentStyles.container}>
+          <View style={textCommentStyles.shadowContainer}>
+            <View
+              style={[
+                textCommentStyles.textContainer,
+                { backgroundColor: normalizeBackgroundColor(backgroundColor) }
+              ]}
+            >
+              <MediumText style={[textCommentStyles.text, { color }]}>
+                {body}
+              </MediumText>
+            </View>
           </View>
         </View>
 
@@ -127,8 +129,8 @@ const TextComment = ({
           username={profile.username}
           photoURL={profile.photoURL}
         />
-      </View>
-    </TransformableView>
+      </TransformableView>
+    </Animated.View>
   );
 };
 

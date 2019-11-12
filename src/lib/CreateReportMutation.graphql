@@ -1,8 +1,8 @@
 mutation CreateReportMutation(
   $id: ID!
   $type: String!
-  $kind: String!
+  $kinds: [String!]
   $body: String
 ) {
-  createReport(id: $id, type: $type, kind: $kind, body: $body)
+  createReport(id: $id, type: $type, kinds: $kinds, body: $body)
 }

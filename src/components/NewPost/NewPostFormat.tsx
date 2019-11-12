@@ -14,6 +14,7 @@ export enum PostFormat {
   screenshot = "screenshot",
   comment = "comment",
   caption = "caption",
+  library = "library",
   canvas = "canvas",
   sticker = "sticker",
   vent = "vent",
@@ -67,7 +68,7 @@ export type NewPostType = {
 export const DEFAULT_TEXT_COLOR = "#f1f1f1";
 export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
-export const DEFAULT_FORMAT = PostFormat.caption;
+export const DEFAULT_FORMAT = PostFormat.library;
 
 export type ChangeBlockFunction = (change: PostBlockType) => void;
 
@@ -162,6 +163,15 @@ export const presetsByFormat = {
     padding: 0,
     borderRadius: 4
   },
+  [PostFormat.library]: {
+    borderRadius: 8,
+    paddingTop: 0,
+    textTop: 0,
+    paddingHorizontal: SPACING.normal,
+    paddingVertical: SPACING.normal,
+    backgroundColor: "#000",
+    color: "white"
+  },
   [PostFormat.caption]: {
     borderRadius: 8,
     paddingTop: 0,
@@ -214,13 +224,19 @@ const blocksForFormat = (
       blocks.unshift(
         buildTextBlock({
           value: "",
-          placeholder: "Enter a title",
+          placeholder: "Enter a caption",
           autoInserted: true,
-          format
+          format,
+          overrides: {
+            backgroundColor: "#fff",
+            color: "#000"
+          }
         })
       );
     }
 
+    return blocks;
+  } else if (format === PostFormat.library) {
     return blocks;
   } else if (format === PostFormat.canvas) {
     return blocks.filter(({ autoInserted }) => !autoInserted);
@@ -257,6 +273,12 @@ export const buildPost = ({
       backgroundColor: presets.backgroundColor,
       blocks
     };
+  } else if (format === PostFormat.library) {
+    return {
+      format,
+      backgroundColor: presets.backgroundColor,
+      blocks
+    };
   } else if (format === PostFormat.canvas) {
     return {
       format,
@@ -270,7 +292,7 @@ export const buildPost = ({
 
 export const generateBlockId = nanoid;
 
-export const DEFAULT_POST_FORMAT = PostFormat.screenshot;
+export const DEFAULT_POST_FORMAT = PostFormat.library;
 
 // const DEVELOPMENT_POST_FIXTURE = {
 //   format: "screenshot",

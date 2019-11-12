@@ -160,8 +160,12 @@ class TrackableMediaSource : NSObject {
   }
 
   public func onLoad() {
-
     self.hasLoaded = true
+
+    if self.status == .ready || self.status == .playing || self.status == .ended {
+    } else {
+      self.status = .loaded
+    }
 
     _onLoadCallbacks.forEach { [weak self] cb in
       guard let this = self else {
@@ -176,10 +180,6 @@ class TrackableMediaSource : NSObject {
     }
 
     _onLoadCallbacks = []
-    if self.status == .ready || self.status == .playing || self.status == .ended {
-      return;
-    }
-    self.status = .loaded
   }
 
   public func onError(error: Error?) {
@@ -198,5 +198,19 @@ class TrackableMediaSource : NSObject {
 
   deinit {
     stop()
+  }
+
+  static func source(_ source: MediaSource?, bounds: CGRect = .zero) -> TrackableMediaSource? {
+    guard let mediaSource = source else {
+      return nil
+    }
+
+    if mediaSource.isVideo {
+      return TrackableVideoSource(mediaSource: mediaSource)
+    } else if mediaSource.isImage {
+      return TrackableImageSource(mediaSource: mediaSource, bounds: bounds)
+    } else {
+      return nil
+    }
   }
 }

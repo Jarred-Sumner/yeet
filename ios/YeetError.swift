@@ -19,6 +19,9 @@ class YeetError : NSError {
     case imageCropFailure = "imageCropFailure"
     case loadAVAssetFailure = "loadAVAssetFailure"
     case localImageFailedToLoad = "localImageFailedToLoad"
+    case saveFailed = "saveFailed"
+    case invalidSourceType = "invalidSourceType"
+    case waitForDownload = "waitForDownload"
   }
 
   static let ERROR_CODE_MAP: Dictionary<ErrorCode, Int> = [

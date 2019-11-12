@@ -54,6 +54,11 @@ const FORMATS: Array<PostFormatData> = [
     label: "Screenshot"
   },
   {
+    value: PostFormat.library,
+    width: 100,
+    label: "Library"
+  },
+  {
     value: PostFormat.caption,
     width: 100,
     label: "Caption"

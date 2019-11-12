@@ -56,7 +56,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
         }
 
         players.forEach { player in
-          guard let current = player.current else {
+          guard let current = player.source else {
             return
           }
 
@@ -89,7 +89,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
         }
 
         players.forEach { player in
-          guard let current = player.current else {
+          guard let current = player.source else {
             return
           }
 
@@ -240,6 +240,17 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
   @objc (stopCachingAll)
   func stopCachingAll() {
     YeetImageView.stopCaching()
+  }
+
+  @objc(save: cb:)
+  func save(_ tag: NSNumber, _ cb: @escaping RCTResponseSenderBlock) {
+    withView(tag: tag) { view in
+      view.saveToCameraRoll().then { result in
+        cb([nil, result])
+      }.catch { error in
+        cb([error, nil])
+      }
+    }
   }
     
 

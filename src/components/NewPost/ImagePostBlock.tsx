@@ -62,6 +62,13 @@ const stylesByFormat = {
       backgroundColor: presetsByFormat[PostFormat.screenshot].backgroundColor
     }
   }),
+  [PostFormat.library]: StyleSheet.create({
+    image: {},
+    container: {
+      width: "100%",
+      backgroundColor: presetsByFormat[PostFormat.screenshot].backgroundColor
+    }
+  }),
   [PostFormat.sticker]: StyleSheet.create({
     image: {
       backgroundColor: "transparent"
@@ -94,8 +101,6 @@ const MediaComponent = React.forwardRef(
       [mediaSourcesFromImage, source, playDuration, dimensions]
     );
 
-    console.log(sources);
-
     return (
       <MediaPlayer
         {...otherProps}
@@ -111,6 +116,26 @@ const MediaComponent = React.forwardRef(
 );
 
 const ScreenshotImage = React.forwardRef(
+  ({ block }: { block: ImagePostBlockType }, ref) => {
+    return (
+      <MediaComponent
+        ref={ref}
+        source={block.value}
+        dimensions={block.config.dimensions}
+        style={[
+          stylesByFormat[block.format].image,
+          {
+            transform: block.value.image.transform,
+            width: block.config.dimensions.width,
+            height: block.config.dimensions.height
+          }
+        ]}
+      />
+    );
+  }
+);
+
+const LibraryImage = React.forwardRef(
   ({ block }: { block: ImagePostBlockType }, ref) => {
     return (
       <MediaComponent
@@ -227,7 +252,8 @@ class RawImagePostBlock extends React.Component<Props> {
     const ImageComponent = {
       [PostFormat.caption]: CaptionImage,
       [PostFormat.screenshot]: ScreenshotImage,
-      [PostFormat.sticker]: StickerImage
+      [PostFormat.sticker]: StickerImage,
+      [PostFormat.library]: LibraryImage
     }[block.format];
 
     if (!ImageComponent) {

@@ -10,6 +10,9 @@ import Foundation
 import AVFoundation
 import UIKit
 import SwiftyBeaver
+import Promise
+import Photos
+
 
 enum MediaPlayerContentType {
   case video
@@ -18,17 +21,24 @@ enum MediaPlayerContentType {
 }
 
 @objc(MediaPlayer)
-final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
+final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
-    guard mediaSource == current && current != nil else {
+    guard mediaSource == source && source != nil else {
       return
     }
 
     if let id = self.id {
-      SwiftyBeaver.debug("\(id): \(oldStatus.stringValue) -> \(status.stringValue)")
+      SwiftyBeaver.debug("[\(mediaSource.mediaSource.mimeType.rawValue)] \(id): \(oldStatus.stringValue) -> \(status.stringValue)")
     }
 
     let item = mediaSource.mediaSource
+
+
+    if self.autoPlay && !self.hasAutoPlayed && status == .playing {
+      self.hasAutoPlayed = true
+    }
+
+
 
     self.sendStatusUpdate(status: status, mediaSource: mediaSource)
 
@@ -40,7 +50,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
   @objc(prefetch) var prefetch: Bool = false {
     didSet(newValue) {
-      self.mediaQueue?.allowPrefetching = newValue
+//      self.mediaQueue?.allowPrefetching = newValue
     }
   }
 
@@ -48,13 +58,17 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
-    if changedProps.contains("paused") {
+    if isInitialMount && autoPlay && !hasAutoPlayed {
+      self.play()
+    } else if changedProps.contains("paused") {
       self.handleChangePaused()
     }
 
     if changedProps.contains("isActive") {
       self.handleChangeIsActive()
     }
+
+    isInitialMount = false
   }
 
   func handleChangePaused() {
@@ -64,18 +78,16 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
   }
 
   func _handleChangePaused() {
-    guard let mediaQueue = self.mediaQueue else {
-      return
-    }
+    let paused = self.paused ?? true
 
-    guard let current = self.current else {
+    guard let current = self.source else {
       return
     }
 
     if !paused && current.status != .playing {
-      mediaQueue.play()
+      self.play()
     } else if paused && current.status != .paused {
-      mediaQueue.pause()
+      self.pause()
     }
 
     imageView?.isPlaybackPaused = paused
@@ -126,17 +138,13 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
-    guard let index = mediaQueue?.index else {
-      return
-    }
-
     guard self.canSendEvents else {
       return
     }
 
     if let onProgress = onProgress {
       onProgress([
-        "index": index,
+        "index": 0,
         "id": item.id,
         "status": mediaSource.status.stringValue,
         "url": item.uri.absoluteString,
@@ -160,93 +168,74 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
-  
-
 
   @objc(id) var id: NSString? {
     didSet(newValue) {
-      mediaQueue?.id = newValue as String?
+
     }
   }
 
   @objc(sources)
-  var sources: Array<MediaSource> {
+  var sources: Array<MediaSource>? {
     get {
-      return mediaQueue?.mediaSources ?? []
+      if source == nil {
+        return nil
+      } else {
+        return [source!.mediaSource]
+      }
     }
 
     set (newValue) {
-      if mediaQueue == nil && newValue.count == 0 {
-        return
-      } else if (mediaQueue != nil && newValue.count == 0) {
-        mediaQueue = nil
-        return
-      }
-
-      if mediaQueue == nil {
-        self.createMediaQueue(sources: newValue)
-        self.setNeedsLayout()
+      if let first = newValue?.first {
+        source = TrackableMediaSource.source(first, bounds: bounds)
+        source?.alwaysLoop = true
+        if videoView == nil && source?.mediaSource.isVideo ?? false {
+          self.setNeedsLayout()
+          self.layoutIfNeeded()
+        }
       } else {
-        mediaQueue?.update(mediaSources: newValue)
+        source = nil
+      }
+
+    }
+  }
+
+  @objc(source)
+  var source: TrackableMediaSource? {
+    willSet (newValue) {
+      guard let source = self.source else {
+        return
+      }
+
+      if source.delegate.containsDelegate(self) {
+        source.delegate.removeDelegate(self)
+      }
+
+      if let videoView = self.videoView {
+        if source.delegate.containsDelegate(videoView) {
+          source.delegate.removeDelegate(videoView)
+        }
+      }
+
+    }
+    didSet {
+      if source != oldValue {
         self.setNeedsLayout()
       }
-    }
-  }
-  var mediaQueue: MediaQueuePlayer? = nil
 
-  func createMediaQueue(sources: Array<MediaSource>) {
-    mediaQueue = MediaQueuePlayer(
-      mediaSources: sources,
-      bounds: bounds,
-      id: id as String?,
-      allowPrefetching: prefetch
-    )  { [weak self] newMedia, oldMedia, index in
-      guard let this = self else {
+      guard let source = self.source else {
         return
       }
 
-      if let old = oldMedia {
-        if old.delegate.containsDelegate(this) {
-          old.delegate.removeDelegate(this)
-        }
-        if old.delegate.containsDelegate(this) {
-          old.delegate.removeDelegate(this)
-        }
-
-        if let videoView = this.videoView {
-          if old.delegate.containsDelegate(videoView) {
-            old.delegate.removeDelegate(videoView)
-          }
-        }
+      source.delegate.addDelegate(self)
+      if let videoView = videoView {
+        source.delegate.addDelegate(videoView)
       }
-
-      if let new = newMedia {
-        if !new.delegate.containsDelegate(this) {
-          new.delegate.addDelegate(this)
-        }
-
-        if let videoView = this.videoView {
-           if !new.delegate.containsDelegate(videoView) {
-             new.delegate.addDelegate(videoView)
-           }
-         }
-      }
-
-      guard let index = this.mediaQueue?.index else {
-        return
-      }
-
-      this.handleChange(index: index, mediaSource: newMedia?.mediaSource)
     }
   }
-
 
   var currentItem: MediaSource? {
-    return mediaQueue?.currentItem
-  }
-
-  var current: TrackableMediaSource? {
-    return mediaQueue?.current
+    return source?.mediaSource
   }
 
   @objc(paused)
@@ -284,8 +273,6 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
     self.backgroundColor = .clear
 
-
-
     bridgeObserver = bridge?.observe(\RCTBridge.isValid) { [weak self] bridge, changes in
       if !bridge.isValid {
         self?.invalidate()
@@ -296,6 +283,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
     bridge?.uiManager.observerCoordinator.add(self)
   }
 
+  
   override init(frame: CGRect) {
     super.init(frame: frame)
 
@@ -347,10 +335,6 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
     layoutContentView()
 
-    if bounds != mediaQueue?.bounds {
-      mediaQueue?.bounds = bounds
-    }
-
     self.adjustCornerRadius()
   }
 
@@ -392,16 +376,20 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
         self.videoView = videoView
         self.addSubview(videoView)
       } else {
-        self.videoView?.frame = self.bounds
+        self.videoView!.frame = self.bounds
       }
 
-      if let current = self.current {
+      if let current = self.source as? TrackableVideoSource {
         if !current.delegate.containsDelegate(videoView!) {
           current.delegate.addDelegate(videoView!)
         }
-        videoView?.mediaSource = current.mediaSource
 
-        videoView!.configurePlayer()
+
+        self.videoView?.mediaSource = current.mediaSource
+
+        if self.paused ?? false {
+           self.videoView?.showCover = true
+        }
       }
 
       self.contentType = MediaPlayerContentType.video
@@ -414,7 +402,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       }
       self.imageView?.frame = bounds
 
-      self.imageView?.source = current as! TrackableImageSource?
+      self.imageView?.source = source as! TrackableImageSource?
       self.contentType = MediaPlayerContentType.image
     }
   }
@@ -426,6 +414,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
   var canSendEvents: Bool {
     return bridge?.isValid ?? false
   }
+
 
   func handleChange(index: Int?, mediaSource: MediaSource?) {
     guard let _mediaSource = mediaSource else {
@@ -442,9 +431,9 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       }
       let contentViewShouldChange = (this.isContentViewImage && !this.shouldShowImageView)  || (this.isContentViewVideo  && !this.shouldShowVideoView)
       if contentViewShouldChange {
-        this.setNeedsDisplay()
+        this.setNeedsLayout()
       } else if this.shouldShowImageView {
-        this.imageView?.source = this.current as! TrackableImageSource?
+        this.imageView?.source = this.source as! TrackableImageSource?
       }
     }
 
@@ -453,7 +442,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       onChangeItem?([
         "index": _index,
         "id": _mediaSource.id,
-        "status": mediaQueue!.current!.status.rawValue,
+        "status": source!.status.rawValue,
         "url": _mediaSource.uri.absoluteString,
       ])
     }
@@ -461,89 +450,183 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
   @objc(pause)
   func pause() {
-    mediaQueue?.pause()
+    source?.pause()
+  }
+
+  func saveToCameraRoll() -> Promise<Bool> {
+    return Promise(queue: .global(qos: .background)) { [weak self] resolve, reject in
+      guard let current = self?.source else {
+        reject(YeetError.init(code: .saveFailed))
+        return
+      }
+
+
+      if let videoSource = current as? TrackableVideoSource {
+        let uri = videoSource.mediaSource.getAssetURI()
+        guard uri.scheme == "file" else {
+          DispatchQueue.main.async { [weak self] in
+            let alertController = UIAlertController(title: "Video is still downloading, please wait a little and try again.", message: nil, preferredStyle: .alert)
+            let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+            alertController.addAction(defaultAction)
+            self?.reactViewController().present(alertController, animated: true, completion: nil)
+          }
+          reject(YeetError.init(code: .saveFailed))
+          return
+        }
+
+        PHPhotoLibrary.shared().performChanges({
+          PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: uri)
+          }) { [weak self] saved, error in
+            if (error != nil || !saved) {
+              reject(error ?? YeetError.init(code: .saveFailed))
+              return
+            }
+
+            DispatchQueue.main.async { [weak self] in
+              let alertController = UIAlertController(title: "Video was successfully saved", message: nil, preferredStyle: .alert)
+              let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+              alertController.addAction(defaultAction)
+              self?.reactViewController().present(alertController, animated: true, completion: nil)
+            }
+            resolve(true)
+        }
+      } else if let imageSource = current as? TrackableImageSource {
+        DispatchQueue.main.async { [weak self] in
+          guard let image = self?.imageView?.image else {
+            let alertController = UIAlertController(title: "Image is still downloading, please wait a little and try again.", message: nil, preferredStyle: .alert)
+            let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+            alertController.addAction(defaultAction)
+            self?.reactViewController().present(alertController, animated: true, completion: nil)
+            reject(YeetError.init(code: .saveFailed))
+            return
+          }
+
+          PHPhotoLibrary.shared().performChanges({
+            PHAssetChangeRequest.creationRequestForAsset(from: image)
+            }) { [weak self] saved, error in
+
+              if saved {
+                DispatchQueue.main.async {
+                  let alertController = UIAlertController(title: "Image was successfully saved", message: nil, preferredStyle: .alert)
+                  let defaultAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+                  alertController.addAction(defaultAction)
+                  self?.reactViewController().present(alertController, animated: true, completion: nil)
+                }
+
+                resolve(true)
+              } else {
+                reject(error ?? YeetError.init(code: .saveFailed))
+            }
+
+          }
+        }
+      } else {
+        reject(YeetError.init(code: .saveFailed))
+      }
+
+    }
+  }
+
+  var player: AVPlayer? = nil
+  var playerLayer: AVPlayerLayer? {
+    get {
+      return videoView?.playerLayer
+    }
+
+    set (newValue) {
+      videoView?.playerLayer = newValue
+    }
   }
 
   @objc(play)
   func play() {
-    mediaQueue?.play()
+    guard let source = source else {
+      return
+    }
+
+    if let videoSource = source as? TrackableVideoSource {
+      let _playerItem = videoSource.playerItem
+
+      if self.player != nil && self.player?.currentItem == _playerItem && _playerItem != nil && self.player!.rate > .zero {
+        return
+      }
+
+      source.load { [weak self] _source in
+        guard let source = _source as? TrackableVideoSource else {
+          return
+        }
+
+        guard source.mediaSource.asset != nil else {
+          return
+        }
+
+
+        guard let this = self else {
+          return
+        }
+
+        guard source.mediaSource.id == this.currentItem?.id else {
+          return
+        }
+
+        guard let videoView = this.videoView else {
+          return
+        }
+
+        let player = AVPlayer(playerItem: source.playerItem!)
+        
+        if this.player == nil {
+          if this.playerObservation != nil {
+            this.playerObservation?.invalidate()
+          }
+
+          this.player = player
+          let playerLayer = AVPlayerLayer(player: player)
+          this.playerLayer = playerLayer
+          videoView.configurePlayer(playerLayer: playerLayer)
+        }
+
+        source.player = player
+        source.playerItem = player.currentItem!
+
+        if player.status == .readyToPlay {
+          source.play()
+        } else {
+          if this.playerObservation != nil {
+            this.playerObservation?.invalidate()
+          }
+
+          this.playerObservation = player.observe(\AVPlayer.status, options: .new) { [weak self] player, _ in
+            if player.status == .readyToPlay {
+              source.play()
+              self?.playerObservation?.invalidate()
+            }
+          }
+        }
+//        }
+
+      }
+    } else {
+      source.play()
+    }
   }
 
+  var playerObservation: NSKeyValueObservation? = nil
+
   func goNext(cb: TrackableMediaSource.onLoadCallback? = nil) {
-    mediaQueue?.advanceToNextItem(cb: cb)
+//    mediaQueue?.advanceToNextItem(cb: cb)
   }
 
   func goBack(cb: TrackableMediaSource.onLoadCallback? = nil) {
-    mediaQueue?.advanceToPreviousItem(cb: cb)
+//    mediaQueue?.advanceToPreviousItem(cb: cb)
   }
 
   @objc(advance:::)
   func advance(to: Int, withFrame: Bool = false, cb: TrackableMediaSource.onLoadCallback? = nil) {
-    var didPause = true
 
-
-    let wasPlaying = mediaQueue?.playing == true
-
-    let nextTrack = mediaQueue?.mediaSources[to]
-
-    if withFrame {
-
-
-    }
-
-    if wasPlaying {
-      mediaQueue?.pause()
-    }
-    mediaQueue?.advance(to: to) { [weak self] tracker in
-      cb?(tracker)
-
-      if wasPlaying {
-        self?.mediaQueue?.play()
-
-      }
-    }
   }
-
-//  @objc(uiManagerDidPerformLayout:)
-//  func uiManagerDidPerformLayout(_ manager: RCTUIManager!) {
-//    DispatchQueue.main.async { [weak self] in
-//      self?.layoutContentView()
-//    }
-//  }
 
   var hasAutoPlayed = false
-
-  @objc(uiManagerDidPerformMounting:)
-  func uiManagerDidPerformMounting(_ manager: RCTUIManager!) {
-    guard self.isActive else {
-      return
-    }
-
-
-//    self.videoView?.showCover = true
-
-    self.current?.load() { source in
-      RCTExecuteOnUIManagerQueue { [weak self] in
-        manager.addUIBlock { [weak self] _, _ in
-          guard let this = self else {
-            return
-          }
-
-          let shouldAutoplay = (!this.paused || this.autoPlay) && !this.hasAutoPlayed && this.isActive && source.status != .paused
-          source.start()
-
-          if (shouldAutoplay) {
-            source.play()
-            this.hasAutoPlayed = true
-          }
-        }
-
-      }
-    }
-
-
-
-  }
 
   func handleReady() {
     guard self.canSendEvents else {
@@ -554,11 +637,9 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
-    let index = mediaQueue!.index
-
 
     self.onLoad?([
-      "index": index,
+      "index": 0,
       "id": item.id,
       "status": "ready",
       "url": item.uri.absoluteString,
@@ -574,11 +655,9 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
-    let index = mediaQueue!.index
-
 
     self.onError?([
-      "index": index,
+      "index": 0,
       "id": item.id,
       "status": "error",
       "url": item.uri.absoluteString,
@@ -590,7 +669,7 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
       return
     }
 
-    guard mediaSource.mediaSource.id == current?.mediaSource.id else {
+    guard mediaSource.mediaSource.id == source?.mediaSource.id else {
       return
     }
 
@@ -631,11 +710,23 @@ final   class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Track
 
   @objc(invalidate)
   func invalidate() {
-    mediaQueue?.stop()
+    source?.stop()
     bridge?.uiManager.observerCoordinator.remove(self)
   }
 
   deinit {
-    mediaQueue?.stop()
+    player?.replaceCurrentItem(with: nil)
+    
+    source?.stop()
+
+    if let videoSource = source as? TrackableVideoSource {
+      videoSource.player?.pause()
+      videoSource.player = nil
+      videoSource.playerItem = nil
+      player = nil
+      videoView?.playerLayer = nil
+    }
+
+
   }
 }
