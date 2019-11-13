@@ -11,7 +11,6 @@ import {
   View
 } from "react-native";
 import HapticFeedback from "react-native-haptic-feedback";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as Yup from "yup";
 import { EditableAvatar } from "../components/EditableAvatar";
 import { FormField } from "../components/FormField";
@@ -22,6 +21,8 @@ import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
 import { Storage } from "../lib/Storage";
 import { SPACING } from "../lib/styles";
+import { TOP_Y, BOTTOM_Y } from "../../config";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 
 const styles = StyleSheet.create({
   form: {
@@ -180,7 +181,10 @@ class RawSignUpPage extends React.Component {
         <KeyboardAwareScrollView
           innerRef={this.setScrollRef}
           keyboardShouldPersistTaps
-          contentContainerStyle={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: "pink" }}
+          paddingTop={0}
+          paddingBottom={0}
+          contentInsetAdjustmentBehavior="automatic"
         >
           <Formik
             ref={this.setFormRef}

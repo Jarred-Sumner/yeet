@@ -7,7 +7,8 @@ import {
   Platform,
   UIManager,
   TextInput,
-  findNodeHandle
+  findNodeHandle,
+  ScrollViewProps
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
@@ -80,7 +81,7 @@ const ScrollIntoViewDefaultOptions = {
   }
 };
 
-export class KeyboardAwareScrollView extends React.Component {
+export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
   // HOC options are used to init default props, so that these options can be overriden with component props
   static defaultProps = {
     enableAutomaticScroll: ScrollIntoViewDefaultOptions.enableAutomaticScroll,

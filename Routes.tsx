@@ -218,6 +218,7 @@ export const Routes = createAppContainer(
       mode: "modal",
       headerMode: "none",
       path: "",
+      initialRouteName: "Auth",
       cardStyle: {
         backgroundColor: "#000"
       }

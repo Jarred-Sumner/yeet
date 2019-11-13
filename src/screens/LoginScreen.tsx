@@ -144,6 +144,43 @@ class RawLoginPage extends React.Component {
     });
   }
 
+  renderForm = props => (
+    <View style={styles.form}>
+      <FormField
+        label="Username"
+        required
+        autoCompleteType="username"
+        autoCapitalize="none"
+        keyboardType="ascii-capable"
+        inputRef={this.usernameInputRef}
+        autoFocus
+        onSubmitEditing={this.selectPasswordInput}
+        returnKeyType="next"
+        value={props.values.username}
+        error={props.touched.username && props.errors.username}
+        onChangeText={props.handleChange("username")}
+        onBlur={props.handleBlur("username")}
+        placeholder="ylukem"
+      />
+
+      <FormField
+        label="Password"
+        required
+        secureTextEntry
+        error={props.touched.password && props.errors.password}
+        autoCompleteType="password"
+        onSubmitEditing={props.handleSubmit}
+        autoCapitalize="none"
+        inputRef={this.passwordInputRef}
+        returnKeyType="next"
+        value={props.values.password}
+        onChangeText={props.handleChange("password")}
+        onBlur={props.handleBlur("password")}
+        placeholder="******"
+      />
+    </View>
+  );
+
   setFormRef = formRef => (this.formRef = formRef);
 
   setScrollRef = (scrollRef: ScrollView) => (this.scrollRef = scrollRef);
@@ -162,42 +199,7 @@ class RawLoginPage extends React.Component {
             initialValues={DEFAULT_VALUES}
             onSubmit={this.handleSubmit}
           >
-            {props => (
-              <View style={styles.form}>
-                <FormField
-                  label="Username"
-                  required
-                  autoCompleteType="username"
-                  autoCapitalize="none"
-                  keyboardType="ascii-capable"
-                  inputRef={this.usernameInputRef}
-                  autoFocus
-                  onSubmitEditing={this.selectPasswordInput}
-                  returnKeyType="next"
-                  value={props.values.username}
-                  error={props.touched.username && props.errors.username}
-                  onChangeText={props.handleChange("username")}
-                  onBlur={props.handleBlur("username")}
-                  placeholder="LilNasX"
-                />
-
-                <FormField
-                  label="Password"
-                  required
-                  secureTextEntry
-                  error={props.touched.password && props.errors.password}
-                  autoCompleteType="password"
-                  onSubmitEditing={props.handleSubmit}
-                  autoCapitalize="none"
-                  inputRef={this.passwordInputRef}
-                  returnKeyType="next"
-                  value={props.values.password}
-                  onChangeText={props.handleChange("password")}
-                  onBlur={props.handleBlur("password")}
-                  placeholder="******"
-                />
-              </View>
-            )}
+            {this.renderForm}
           </Formik>
         </KeyboardAwareScrollView>
         {this.state.isLoading && (

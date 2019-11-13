@@ -52,6 +52,18 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSRemindersUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your reminders</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to use your location</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to use your location</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to use your location</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Allow $(PRODUCT_NAME) to access your contacts</string>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>Some description</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>
@@ -59,15 +71,15 @@
 	<key>NSCalendarsUsageDescription</key>
 	<string>Some description</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Some description</string>
+	<string>Allow $(PRODUCT_NAME) to use the camera</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string></string>
 	<key>NSMotionUsageDescription</key>
 	<string>Some description</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Share photos/videos with the community on yeet and participate in challenges</string>
+	<string>Post photos/videos on yeet</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Share photos/videos with the community on yeet and participate in challenges</string>
+	<string>Post photos/videos on yeet</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Some description</string>
 	<key>UIAppFonts</key>
