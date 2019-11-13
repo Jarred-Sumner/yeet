@@ -7,37 +7,69 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
-  TouchableOpacity,
   View
 } from "react-native";
 import HapticFeedback from "react-native-haptic-feedback";
+import LinearGradient from "react-native-linear-gradient";
+import { StackNavigatorConfig } from "react-navigation";
 import * as Yup from "yup";
-import { EditableAvatar } from "../components/EditableAvatar";
+import { BASE_HOSTNAME, SCREEN_DIMENSIONS } from "../../config";
+import {
+  BackButton,
+  Button,
+  useBackButtonBehavior
+} from "../components/Button";
 import { FormField } from "../components/FormField";
-import { IconCheck, IconClose } from "../components/Icon";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { Link } from "../components/Link";
 import { LoadingModal } from "../components/LoadingModal";
+import { MediumText } from "../components/Text";
 import { Alert } from "../lib/Alert";
 import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
 import { Storage } from "../lib/Storage";
-import { SPACING } from "../lib/styles";
-import { TOP_Y, BOTTOM_Y } from "../../config";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { COLORS, SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   form: {
-    paddingHorizontal: SPACING.normal
+    paddingHorizontal: SPACING.normal,
+    paddingTop: SPACING.double
   },
   avatar: {
     marginTop: SPACING.normal,
-    marginBottom: SPACING.normal
+    marginBottom: SPACING.normal,
+    height: 60
+  },
+  caption: {
+    color: "#ccc",
+    marginTop: SPACING.normal,
+    flexDirection: "row",
+    flexWrap: "wrap"
   },
   signUpButton: {
     paddingHorizontal: SPACING.normal,
     justifyContent: "center",
-    height: "100%"
+    flex: 1,
+    maxWidth: "100%"
   }
 });
+
+export const Background = React.memo(
+  ({ width = SCREEN_DIMENSIONS.width, height = SCREEN_DIMENSIONS.height }) => (
+    <LinearGradient
+      width={width}
+      height={height}
+      useAngle
+      pointerEvents="none"
+      angle={141.38}
+      angleCenter={{ x: 0.5, y: 0.5 }}
+      colors={[COLORS.primaryDark, "#AE57FF"].reverse()}
+      start={{ x: 0, y: 0 }}
+      locations={[0.2527, 0.7016]}
+      style={[StyleSheet.absoluteFill, styles.background]}
+    />
+  )
+);
 
 const DEFAULT_VALUES = {
   mediaId: null,
@@ -70,23 +102,19 @@ const SignupSchema = Yup.object().shape({
   )
 });
 
+const HeaderLeftButton = () => {
+  const behavior = useBackButtonBehavior();
+
+  return <BackButton behavior={behavior} size={18} />;
+};
+
 class RawSignUpPage extends React.Component {
-  static navigationOptions = ({ navigation }) => ({
+  static navigationOptions = ({ navigation }): StackNavigatorConfig => ({
     title: "Sign up",
-    headerRight: () => (
-      <TouchableOpacity onPress={navigation.getParam("onSubmit")}>
-        <View style={styles.signUpButton}>
-          <IconCheck size={14} color="white" />
-        </View>
-      </TouchableOpacity>
-    ),
-    headerLeft: () => (
-      <TouchableOpacity onPress={navigation.dismiss}>
-        <View style={styles.signUpButton}>
-          <IconClose size={14} color="white" />
-        </View>
-      </TouchableOpacity>
-    )
+    mode: "stack",
+    headerLeft: () => {
+      return <HeaderLeftButton />;
+    }
   });
   state = { isLoading: false };
 
@@ -128,15 +156,10 @@ class RawSignUpPage extends React.Component {
       });
       this.setState({ isLoading: false });
 
-      const onFinish = this.props.navigation.getParam("onFinish");
-      HapticFeedback.trigger("notificationSuccess");
-
-      this.props.navigation.dismiss();
-      if (onFinish) {
-        InteractionManager.runAfterInteractions(() => {
-          onFinish();
-        });
-      }
+      this.props.navigation.push("Birthday", {
+        onFinish: this.props.navigation.getParam("onFinish"),
+        isOnboarding: true
+      });
     } catch (exception) {
       const [firstError = null] = exception.graphQLErrors;
 
@@ -178,10 +201,11 @@ class RawSignUpPage extends React.Component {
   render() {
     return (
       <View style={{ flex: 1 }}>
+        <Background />
         <KeyboardAwareScrollView
           innerRef={this.setScrollRef}
           keyboardShouldPersistTaps
-          style={{ flex: 1, backgroundColor: "pink" }}
+          style={{ flex: 1, backgroundColor: "transparent" }}
           paddingTop={0}
           paddingBottom={0}
           contentInsetAdjustmentBehavior="automatic"
@@ -194,17 +218,6 @@ class RawSignUpPage extends React.Component {
           >
             {props => (
               <View style={styles.form}>
-                <View style={styles.avatar}>
-                  <EditableAvatar
-                    value={props.values.mediaId}
-                    size={75}
-                    onChange={this.handleChangeAvatar(
-                      props.handleChange("mediaId")
-                    )}
-                    onBlur={props.handleBlur("mediaId")}
-                  />
-                </View>
-
                 <FormField
                   label="Username"
                   required
@@ -212,6 +225,8 @@ class RawSignUpPage extends React.Component {
                   autoCapitalize="none"
                   keyboardType="ascii-capable"
                   inputRef={this.usernameInputRef}
+                  importantForAutofill
+                  textContentType="username"
                   autoFocus
                   onSubmitEditing={this.selectEmailInput}
                   returnKeyType="next"
@@ -228,6 +243,8 @@ class RawSignUpPage extends React.Component {
                   autoCompleteType="email"
                   autoCapitalize="none"
                   keyboardType="email-address"
+                  textContentType="emailAddress"
+                  importantForAutofill
                   returnKeyType="next"
                   inputRef={this.emailInputRef}
                   onSubmitEditing={this.selectPasswordInput}
@@ -242,24 +259,30 @@ class RawSignUpPage extends React.Component {
                   label="Password"
                   required
                   secureTextEntry
+                  name="password"
+                  textContentType=""
+                  importantForAutofill
+                  blurOnSubmit
                   error={props.touched.password && props.errors.password}
                   autoCompleteType="password"
                   onSubmitEditing={this.selectPasswordConfirmationInput}
                   autoCapitalize="none"
                   inputRef={this.passwordInputRef}
                   returnKeyType="next"
-                  value={props.values.password}
+                  defaultValue={props.values.password}
                   onChangeText={props.handleChange("password")}
                   onBlur={props.handleBlur("password")}
-                  placeholder="******"
+                  placeholder="Password"
                 />
 
                 <FormField
-                  label="Password confirmation"
                   required
                   secureTextEntry
-                  onSubmitEditing={props.handleSubmit}
                   blurOnSubmit
+                  name="confirmPassword"
+                  textContentType=""
+                  onSubmitEditing={props.handleSubmit}
+                  importantForAutofill
                   inputRef={this.passwordConfirmationInputRef}
                   returnKeyType="go"
                   error={
@@ -268,11 +291,40 @@ class RawSignUpPage extends React.Component {
                   }
                   autoCompleteType="password"
                   autoCapitalize="none"
-                  value={props.values.passwordConfirmation}
+                  defaultValue={props.values.passwordConfirmation}
                   onChangeText={props.handleChange("passwordConfirmation")}
                   onBlur={props.handleBlur("passwordConfirmation")}
-                  placeholder="******"
+                  placeholder="Password confirmation"
                 />
+
+                <Button
+                  color={COLORS.secondary}
+                  style={styles.signUpButton}
+                  onPress={props.handleSubmit}
+                >
+                  Create account
+                </Button>
+                <View style={styles.caption}>
+                  <MediumText>
+                    By creating an account, you agree to the{" "}
+                  </MediumText>
+                  <Link
+                    TextComponent={MediumText}
+                    style={{ color: "#ccc" }}
+                    href={BASE_HOSTNAME + "/terms-of-service.html"}
+                  >
+                    terms & conditions
+                  </Link>
+                  <MediumText> and </MediumText>
+                  <Link
+                    TextComponent={MediumText}
+                    style={{ color: "#ccc" }}
+                    href={BASE_HOSTNAME + "/privacy-policy.html"}
+                  >
+                    privacy policy
+                  </Link>
+                  <MediumText>.</MediumText>
+                </View>
               </View>
             )}
           </Formik>

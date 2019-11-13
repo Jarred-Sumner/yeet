@@ -11,7 +11,8 @@ import { SemiBoldText, LETTER_SPACING_MAPPING } from "./Text";
 import { SPACING, COLORS } from "../lib/styles";
 import {
   BorderlessButton,
-  TouchableHighlight
+  TouchableHighlight,
+  RectButton
 } from "react-native-gesture-handler";
 import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
@@ -92,7 +93,7 @@ export const Button = ({
   }, [scaleTransformValue.current]);
 
   return (
-    <TouchableHighlight
+    <RectButton
       disabled={disabled}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -128,7 +129,7 @@ export const Button = ({
       >
         <SemiBoldText style={styles.buttonText}>{children}</SemiBoldText>
       </Animated.View>
-    </TouchableHighlight>
+    </RectButton>
   );
 };
 

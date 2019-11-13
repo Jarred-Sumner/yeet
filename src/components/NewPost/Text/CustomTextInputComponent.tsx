@@ -25,14 +25,14 @@ import {
 } from "react-native";
 
 let AndroidTextInput;
-let RCTMultilineTextInputView;
+let _RCTMultilineTextInputView;
 let RCTSinglelineTextInputView;
 
 if (Platform.OS === "android") {
   AndroidTextInput = require("react-native/Libraries/Components/TextInput/AndroidTextInputNativeComponent")
     .default;
 } else if (Platform.OS === "ios") {
-  RCTMultilineTextInputView = requireNativeComponent("YeetTextInputView");
+  _RCTMultilineTextInputView = requireNativeComponent("YeetTextInputView");
   RCTSinglelineTextInputView = () => null;
 }
 
@@ -167,6 +167,7 @@ const TextInput = createReactClass({
   getDefaultProps() {
     return {
       allowFontScaling: true,
+      RCTMultilineTextInputView: _RCTMultilineTextInputView,
       rejectResponderTermination: true,
       multiline: true,
       underlineColorAndroid: "transparent"
@@ -258,6 +259,7 @@ const TextInput = createReactClass({
     let textContainer;
 
     const props = Object.assign({}, this.props);
+
     props.style = [this.props.style];
 
     if (props.selection && props.selection.end == null) {
@@ -313,6 +315,8 @@ const TextInput = createReactClass({
         children = [children, props.inputView];
       }
       props.style.unshift(styles.multilineInput);
+      const { RCTMultilineTextInputView } = props;
+
       textContainer = (
         <RCTMultilineTextInputView
           ref={this._setNativeRef}
@@ -352,6 +356,7 @@ const TextInput = createReactClass({
   _renderIOS() {
     const props = Object.assign({}, this.props);
     props.style = [this.props.style];
+    const { RCTMultilineTextInputView } = props;
 
     if (props.selection && props.selection.end == null) {
       props.selection = {

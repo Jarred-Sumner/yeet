@@ -12,6 +12,7 @@
 #import <React/RCTMultilineTextInputViewManager.h>
 #import <React/RCTScrollView.h>
 #import <React/UIView+React.h>
+#import <React/RCTUITextView.h>
 
 #import <React/RCTInputAccessoryView.h>
 #import <React/RCTInputAccessoryViewContent.h>
@@ -34,6 +35,17 @@ RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly ca
 @end
 
 @interface RCT_EXTERN_MODULE(YeetTextInputViewManager, RCTMultilineTextInputViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
+RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
+RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
+
+
+@end
+
+@interface RCT_EXTERN_MODULE(EmojiTextInputViewManager, RCTMultilineTextInputViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
 RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);

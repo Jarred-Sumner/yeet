@@ -4,17 +4,17 @@ import { FontFamily } from "./Text";
 import { COLORS } from "../lib/styles";
 
 const theme = {
-  ...DefaultTheme,
-  dark: false,
+  dark: true,
+  mode: "exact",
+  roundness: 8,
   colors: {
-    ...DefaultTheme.colors,
-    primary: "white",
+    primary: "#000",
     accent: COLORS.secondary,
-    text: "#fcfcfc",
+    text: "#000",
     error: COLORS.error,
-    placeholder: "#aaa",
+    placeholder: "#AAA",
     disabled: "#999",
-    background: COLORS.primaryDark
+    background: "#CCC"
   },
   fonts: {
     regular: FontFamily.regular,

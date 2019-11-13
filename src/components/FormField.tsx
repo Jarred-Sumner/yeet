@@ -3,18 +3,27 @@ import { View, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
 import { SPACING } from "../lib/styles";
 import { HelperText } from "react-native-paper";
+import { TextInput as RawTextInput } from "react-native-gesture-handler";
+import { FontFamily } from "./Text";
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 0,
-    paddingBottom: 0,
+    paddingBottom: SPACING.half,
     position: "relative"
   },
+  input: {
+    borderRadius: 2,
+    overflow: "hidden"
+  },
+  passwordInput: {
+    paddingVertical: SPACING.normal,
+    paddingHorizontal: SPACING.normal,
+    backgroundColor: "white",
+    fontFamily: FontFamily.regular,
+    fontSize: 16
+  },
   helperText: {
-    position: "absolute",
-    bottom: SPACING.half * -1,
-    flexShrink: 0,
-    left: 0
+    flexShrink: 0
   }
 });
 
@@ -40,13 +49,18 @@ export const FormField = React.memo(
     enablesReturnKeyAutomatically,
     ...props
   }) => {
+    const renderTextInput = React.useCallback(props => {
+      return <RawTextInput {...props} />;
+    }, []);
     const hasError = !!error && error.length > 0;
+    const TextInputComponent = secureTextEntry ? RawTextInput : TextInput;
     return (
       <View style={styles.container}>
-        <TextInput
+        <TextInputComponent
           disabled={disabled}
           value={value}
           label={label}
+          keyboardAppearance="dark"
           ref={inputRef}
           required={required}
           blurOnSubmit={blurOnSubmit}
@@ -62,6 +76,8 @@ export const FormField = React.memo(
           placeholder={placeholder}
           error={hasError}
           {...props}
+          render={renderTextInput}
+          style={[styles.input, secureTextEntry && styles.passwordInput]}
         />
         <View style={styles.helperText}>
           <HelperText visible={hasError} type="error">

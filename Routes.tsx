@@ -21,6 +21,32 @@ import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import ThreadPage from "./src/screens/ViewThreadPage";
+import { BirthdayScreen } from "./src/screens/BirthdayScreen";
+import AvatarScreen from "./src/screens/UploadAvatarScreen";
+import { createSwitchNavigator } from "react-navigation";
+
+const AuthStack = createStackNavigator(
+  {
+    Signup: SignUpScreen,
+    Login: LoginScreen,
+    Birthday: BirthdayScreen,
+    UploadAvatar: AvatarScreen
+  },
+  {
+    initialRouteName: "Login",
+    initialRouteParams: { isOnboarding: true },
+    defaultNavigationOptions: ({ navigation }) => ({
+      headerStyle: {
+        backgroundColor: COLORS.primary,
+        borderBottomWidth: 0
+      },
+      headerTintColor: "white"
+    }),
+    cardStyle: {
+      backgroundColor: COLORS.primary
+    }
+  }
+);
 
 GlobalViewProfilePage.navigationOptions = {
   header: null
@@ -36,192 +62,182 @@ const SHARED_GLOBAL_SCREENS = {
 };
 
 export const Routes = createAppContainer(
-  createStackNavigator(
+  createSwitchNavigator(
     {
-      Home: createStackNavigator(
+      Root: createStackNavigator(
         {
-          RootScreens: createBottomTabNavigator(
+          Home: createStackNavigator(
             {
-              FeedTab: createStackNavigator(
+              RootScreens: createBottomTabNavigator(
                 {
-                  ThreadList: FeedPage,
-                  ViewThread: ThreadPage,
-                  ReplyToPost: ReplyPage,
-                  EditBlockPhotoInReply: ImagePickerPage,
-                  ...SHARED_GLOBAL_SCREENS
-                },
-                {
-                  cardStyle: {
-                    backgroundColor: "#000"
-                  },
-                  headerMode: "none",
-                  defaultNavigationOptions: ({ navigation }) => ({
-                    header: () => null
-                  })
-                },
-                {
-                  cardStyle: {
-                    backgroundColor: "#000"
-                  },
-
-                  headerMode: "none",
-                  defaultNavigationOptions: ({ navigation }) => ({
-                    header: () => null,
-                    headerMode: "none",
-                    headerTransparent: true
-                  })
-                }
-              ),
-              // FeedTab: createSharedElementStackNavigator(
-              //   _createStackNavigator,
-              //   {
-              //     ThreadList: FeedPage,
-              //     ViewThread: ThreadPage,
-              //     ReplyToPost: ReplyPage,
-              //     EditBlockPhotoInReply: ImagePickerPage,
-              //     ...SHARED_GLOBAL_SCREENS
-              //   },
-              //   {
-              //     cardStyle: {
-              //       backgroundColor: "#000"
-              //     },
-              //     headerMode: "none"
-              //     // defaultNavigationOptions: ({ navigation }) => ({
-              //     //   header: () => null
-              //     // })
-              //   },
-              //   {
-              //     cardStyle: {
-              //       backgroundColor: "#000"
-              //     },
-
-              //     headerMode: "none"
-              //     // defaultNavigationOptions: ({ navigation }) => ({
-              //     //   header: () => null,
-              //     //   headerMode: "none",
-              //     //   headerTransparent: true
-              //     // })
-              //   }
-              // ),
-              NotificationsTab: createStackNavigator(
-                {
-                  NotificationsPage: {
-                    screen: NotificationsPage,
-                    navigationOptions: navigation => ({
-                      title: "Activity",
-                      headerTintColor: "#f1f1f1",
-                      headerStyle: {
+                  FeedTab: createStackNavigator(
+                    {
+                      ThreadList: FeedPage,
+                      ViewThread: ThreadPage,
+                      ReplyToPost: ReplyPage,
+                      EditBlockPhotoInReply: ImagePickerPage,
+                      ...SHARED_GLOBAL_SCREENS
+                    },
+                    {
+                      cardStyle: {
                         backgroundColor: "#000"
-                      }
-                    })
-                  },
-                  ...SHARED_GLOBAL_SCREENS
+                      },
+                      headerMode: "none",
+                      defaultNavigationOptions: ({ navigation }) => ({
+                        header: () => null
+                      })
+                    },
+                    {
+                      cardStyle: {
+                        backgroundColor: "#000"
+                      },
+
+                      headerMode: "none",
+                      defaultNavigationOptions: ({ navigation }) => ({
+                        header: () => null,
+                        headerMode: "none",
+                        headerTransparent: true
+                      })
+                    }
+                  ),
+                  // FeedTab: createSharedElementStackNavigator(
+                  //   _createStackNavigator,
+                  //   {
+                  //     ThreadList: FeedPage,
+                  //     ViewThread: ThreadPage,
+                  //     ReplyToPost: ReplyPage,
+                  //     EditBlockPhotoInReply: ImagePickerPage,
+                  //     ...SHARED_GLOBAL_SCREENS
+                  //   },
+                  //   {
+                  //     cardStyle: {
+                  //       backgroundColor: "#000"
+                  //     },
+                  //     headerMode: "none"
+                  //     // defaultNavigationOptions: ({ navigation }) => ({
+                  //     //   header: () => null
+                  //     // })
+                  //   },
+                  //   {
+                  //     cardStyle: {
+                  //       backgroundColor: "#000"
+                  //     },
+
+                  //     headerMode: "none"
+                  //     // defaultNavigationOptions: ({ navigation }) => ({
+                  //     //   header: () => null,
+                  //     //   headerMode: "none",
+                  //     //   headerTransparent: true
+                  //     // })
+                  //   }
+                  // ),
+                  NotificationsTab: createStackNavigator(
+                    {
+                      NotificationsPage: {
+                        screen: NotificationsPage,
+                        navigationOptions: navigation => ({
+                          title: "Activity",
+                          headerTintColor: "#f1f1f1",
+                          headerStyle: {
+                            backgroundColor: "#000"
+                          }
+                        })
+                      },
+                      ...SHARED_GLOBAL_SCREENS
+                    },
+                    {
+                      headerMode: "float"
+                    }
+                  ),
+                  ProfileTab: createStackNavigator(
+                    {
+                      CurrentProfilePage: CurrentProfilePage,
+                      ...SHARED_GLOBAL_SCREENS
+                    },
+                    {
+                      headerMode: "none"
+                    }
+                  )
                 },
                 {
-                  headerMode: "float"
+                  headerMode: "none",
+                  tabBarComponent: () => null,
+                  // initialRouteName: "ProfileTab",
+
+                  safeAreaInset: {
+                    bottom: "never",
+                    top: "never",
+                    left: "never",
+                    right: "never"
+                  },
+                  tabBarOptions: {
+                    keyboardHidesTabBar: true
+                  },
+                  cardStyle: {
+                    backgroundColor: "#000"
+                  }
                 }
               ),
-              ProfileTab: createStackNavigator(
+              NewPostStack: createStackNavigator(
                 {
-                  CurrentProfilePage: CurrentProfilePage,
+                  NewPost: NewPostPage,
+                  EditBlockPhoto: ImagePickerPage,
                   ...SHARED_GLOBAL_SCREENS
                 },
                 {
-                  headerMode: "none"
+                  cardStyle: {
+                    backgroundColor: "transparent"
+                  },
+                  headerMode: "none",
+                  // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
+                  defaultNavigationOptions: {
+                    header: () => null,
+                    mode: "modal",
+                    headerTransparent: true,
+                    gesturesEnabled: false
+                  }
                 }
               )
             },
             {
-              headerMode: "none",
-              tabBarComponent: () => null,
-              // initialRouteName: "ProfileTab",
-
-              safeAreaInset: {
-                bottom: "never",
-                top: "never",
-                left: "never",
-                right: "never"
-              },
-              tabBarOptions: {
-                keyboardHidesTabBar: true
-              },
               cardStyle: {
                 backgroundColor: "#000"
+              },
+
+              headerMode: "none",
+              // initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
+              defaultNavigationOptions: {
+                header: () => null,
+                headerMode: "none"
               }
             }
           ),
-          NewPostStack: createStackNavigator(
-            {
-              NewPost: NewPostPage,
-              EditBlockPhoto: ImagePickerPage,
-              ...SHARED_GLOBAL_SCREENS
-            },
-            {
-              cardStyle: {
-                backgroundColor: "transparent"
-              },
-              headerMode: "none",
-              // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
-              defaultNavigationOptions: {
-                header: () => null,
-                mode: "modal",
-                headerTransparent: true,
-                gesturesEnabled: false
-              }
-            }
-          )
+          ViewProfile: {
+            screen: GlobalViewProfilePage,
+            path: "profiles/:profileId"
+          },
+          ViewThread: {
+            screen: ThreadPage,
+            path: "threads/:threadId"
+          },
+          UploadPost: UploadPostPage,
+          InsertSticker: ImagePickerPage,
+
+          Auth: AuthStack
         },
         {
+          mode: "modal",
+          headerMode: "none",
+          path: "",
           cardStyle: {
             backgroundColor: "#000"
-          },
-
-          headerMode: "none",
-          // initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
-          defaultNavigationOptions: {
-            header: () => null,
-            headerMode: "none"
           }
         }
       ),
-      ViewProfile: {
-        screen: GlobalViewProfilePage,
-        path: "profiles/:profileId"
-      },
-      ViewThread: {
-        screen: ThreadPage,
-        path: "threads/:threadId"
-      },
-      UploadPost: UploadPostPage,
-      InsertSticker: ImagePickerPage,
-
-      Auth: createStackNavigator(
-        {
-          Signup: SignUpScreen,
-          Login: LoginScreen
-        },
-        {
-          defaultNavigationOptions: ({ navigation }) => ({
-            headerStyle: {
-              backgroundColor: COLORS.secondary,
-              borderBottomWidth: 0
-            },
-            headerTintColor: "white"
-          }),
-          cardStyle: {
-            backgroundColor: COLORS.primary
-          }
-        }
-      )
+      RootAuth: AuthStack
     },
     {
-      mode: "modal",
-      headerMode: "none",
-      path: "",
-      initialRouteName: "Auth",
-      cardStyle: {
-        backgroundColor: "#000"
-      }
+      initialRouteName: "RootAuth"
     }
   )
 );

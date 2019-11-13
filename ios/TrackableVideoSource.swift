@@ -14,7 +14,7 @@ import ModernAVPlayer
 class TrackableVideoSource : TrackableMediaSource {
   var playerObserver: NSKeyValueObservation? = nil
   var player: AVPlayer? = nil
-  var playerItem
+  
 
   init(mediaSource: MediaSource, player: AVPlayer? = nil) {
     super.init(mediaSource: mediaSource)

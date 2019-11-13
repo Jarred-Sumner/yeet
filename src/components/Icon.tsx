@@ -68,7 +68,19 @@ export enum IconName {
   trophy = "trophy",
   undo = "undo",
   uploadPhoto = "upload-photo",
-  view = "view"
+  view = "view",
+  cancer = "cancer",
+  capricorn = "capricorn",
+  sagittarius = "sagittarius",
+  aries = "aries",
+  taurus = "taurus",
+  gemini = "gemini",
+  leo = "leo",
+  aquarius = "aquarius",
+  pisces = "pisces",
+  virgo = "virgo",
+  libra = "libra",
+  scorpio = "scorpio"
 }
 
 export const IconAdd = props => <Icon name={IconName.add} {...props} />;
@@ -176,3 +188,22 @@ export const IconCircleCheckmark = props => (
 export const IconStopwatch = props => (
   <Icon name={IconName.stopwatch} {...props} />
 );
+
+export const IconCancer = props => <Icon name={IconName.cancer} {...props} />;
+export const IconCapricorn = props => (
+  <Icon name={IconName.capricorn} {...props} />
+);
+export const IconSagittarius = props => (
+  <Icon name={IconName.sagittarius} {...props} />
+);
+export const IconAries = props => <Icon name={IconName.aries} {...props} />;
+export const IconTaurus = props => <Icon name={IconName.taurus} {...props} />;
+export const IconGemini = props => <Icon name={IconName.gemini} {...props} />;
+export const IconLeo = props => <Icon name={IconName.leo} {...props} />;
+export const IconAquarius = props => (
+  <Icon name={IconName.aquarius} {...props} />
+);
+export const IconPisces = props => <Icon name={IconName.pisces} {...props} />;
+export const IconVirgo = props => <Icon name={IconName.virgo} {...props} />;
+export const IconLibra = props => <Icon name={IconName.libra} {...props} />;
+export const IconScorpio = props => <Icon name={IconName.scorpio} {...props} />;

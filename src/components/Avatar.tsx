@@ -4,6 +4,7 @@ import { buildImgSrc, normalizeFormat as getSize } from "../lib/imgUri";
 import { View, StyleSheet, StyleProp } from "react-native";
 import CircularProgressBar from "./PostList/CircularProgressBar";
 import { UserContext } from "./UserContext";
+import tinycolor from "tinycolor2";
 
 import { Avatar as PlaceholderAvatar } from "react-native-paper";
 
@@ -28,8 +29,8 @@ type AvatarProps = CommonAvatarProps & {
 export const Avatar = React.forwardRef(
   (
     {
-      PlaceholderComponent = PlaceholderAvatar,
-      label,
+      PlaceholderComponent = PlaceholderAvatar.Text,
+      label = "",
       size,
       url,
       srcWidth,
@@ -39,16 +40,27 @@ export const Avatar = React.forwardRef(
     }: AvatarProps,
     ref
   ) => {
-    const showPlaceholder = !url;
+    const showPlaceholder = typeof url !== "string" || !url;
 
     if (showPlaceholder) {
-      return null;
+      const color =
+        "#" + label
+          ? (Math.abs(label.hashCode()).toString() * 100000)
+              .toString(16)
+              .substr(0, 6)
+          : "333";
       return (
         <PlaceholderComponent
           ref={ref}
           size={size}
-          label={label}
-          style={style}
+          label={
+            label
+              ? (
+                  label.substr(0, 1) + label.substr(label.length - 1)
+                ).toUpperCase()
+              : "HI"
+          }
+          style={[style, { backgroundColor: tinycolor(color).toString() }]}
         />
       );
     } else {

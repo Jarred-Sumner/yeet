@@ -10,37 +10,62 @@ import { startFileUpload } from "../lib/fileUpload";
 import { ImagePickerContext } from "../lib/ImagePickerContext";
 import { COLORS, SPACING } from "../lib/styles";
 import { Avatar } from "./Avatar";
-import { IconUploadPhoto } from "./Icon";
+import {
+  IconUploadPhoto,
+  IconPhoto,
+  IconCameraRoll,
+  IconProfile,
+  IconPlus
+} from "./Icon";
+import { BitmapIconPlus } from "./BitmapIcon";
 
 const avatarPlaceholderStyles = StyleSheet.create({
   container: {
-    padding: SPACING.normal,
     justifyContent: "center",
     alignItems: "center",
-    position: "relative",
-    shadowOpacity: 0.5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 1,
-      height: 1
-    }
+    position: "relative"
+  },
+  plus: {
+    position: "absolute",
+    bottom: 8,
+    right: 0,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: COLORS.secondary,
+    shadowRadius: 1,
+    shadowColor: "white",
+    shadowOpacity: 0.1
+  },
+  icon: {
+    width: 24,
+    height: 24
   }
 });
-const AvatarPlaceholder = ({ size, color = COLORS.secondaryOpacity }) => {
+const AvatarPlaceholder = ({ size, color = "#000" }) => {
   return (
     <>
       <View
         style={[
           avatarPlaceholderStyles.container,
           {
-            backgroundColor: color,
             width: size,
             height: size,
             borderRadius: size / 2
           }
         ]}
       >
-        <IconUploadPhoto size={size * 0.45} color="#fff" />
+        <IconProfile size={size * 0.92} color="#fff" />
+
+        <View style={avatarPlaceholderStyles.plus}>
+          <IconPlus
+            size={24}
+            color="white"
+            style={avatarPlaceholderStyles.icon}
+          />
+        </View>
       </View>
     </>
   );
@@ -73,9 +98,7 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     alignSelf: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "white"
+    alignItems: "center"
   }
 });
 
@@ -227,7 +250,7 @@ export class RawEditableAvatar extends React.Component<Props> {
 }
 
 export const EditableAvatar = React.forwardRef(
-  ({ src, value, onChange, size, onBlur }, ref) => {
+  ({ src, value, onChange, size, onBlur = () => {} }, ref) => {
     const imagePicker = React.useContext(ImagePickerContext);
 
     const _openImagePicker = React.useCallback(() => {

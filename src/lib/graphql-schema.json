@@ -3393,6 +3393,16 @@
                   "ofType": null
                 },
                 "defaultValue": null
+              },
+              {
+                "name": "birthday",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "DateTime",
+                  "ofType": null
+                },
+                "defaultValue": null
               }
             ],
             "type": {

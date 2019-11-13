@@ -44,8 +44,6 @@ const AnimatedTextInput = React.forwardRef((props, ref) => {
   return <RawAnimatedTextInput ref={inputRef} {...props} />;
 });
 
-const TextInputComponent = AnimatedTextInput;
-
 const textInputStyles = {
   [PostFormat.comment]: {
     fontSizes: {
@@ -206,7 +204,8 @@ type Props = {
 
 export class TextInput extends React.Component<Props> {
   static defaultProps = {
-    type: PostFormat.screenshot
+    type: PostFormat.screenshot,
+    TextInputComponent: AnimatedTextInput
   };
   state = {
     isFocused: false
@@ -292,7 +291,8 @@ export class TextInput extends React.Component<Props> {
       onBlur,
       onLayout,
       focusType,
-      onFocus
+      onFocus,
+      TextInputComponent
     } = this.props;
     const { isFocused } = this.state;
 

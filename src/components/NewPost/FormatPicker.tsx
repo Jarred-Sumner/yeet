@@ -44,11 +44,6 @@ type PostFormatData = {
 
 const FORMATS: Array<PostFormatData> = [
   {
-    value: PostFormat.canvas,
-    width: 100,
-    label: "Canvas"
-  },
-  {
     value: PostFormat.screenshot,
     width: 100,
     label: "Screenshot"

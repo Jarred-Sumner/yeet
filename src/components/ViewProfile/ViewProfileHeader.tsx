@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   }
 });
 
-const Background = ({
+export const Background = ({
   width = SCREEN_DIMENSIONS.width,
   height = HEADER_HEIGHT
 }) => (
@@ -94,6 +94,7 @@ const Background = ({
     width={width}
     height={height}
     useAngle
+    pointerEvents="none"
     angle={141.38}
     angleCenter={{ x: 0.5, y: 0.5 }}
     colors={["#000", "#141414"].reverse()}

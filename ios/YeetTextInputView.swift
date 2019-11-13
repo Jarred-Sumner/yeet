@@ -162,6 +162,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
     self.highlightLayer = CAShapeLayer()
     self.highlightLayer.masksToBounds = false
     self.highlightLayer.isOpaque = true
+    
     self.highlightLayer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15)
     self.highlightLayer.allowsEdgeAntialiasing = true
     self.highlightLayer.cornerRadius = YeetTextInputView.DEFAULT_HIGHLIGHT_CORNER_RADIUS

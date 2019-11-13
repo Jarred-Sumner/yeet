@@ -1,0 +1,5 @@
+mutation UpdateBirthday($birthday: DateTime!) {
+  updateUser(birthday: $birthday) {
+    id
+  }
+}

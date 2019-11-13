@@ -10,7 +10,6 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as Yup from "yup";
 import { FormField } from "../components/FormField";
 import { IconCheck, IconClose } from "../components/Icon";
@@ -21,10 +20,14 @@ import LOGIN_MUTATION from "../lib/loginMutation.graphql";
 import { Storage } from "../lib/Storage";
 import { SPACING } from "../lib/styles";
 import HapticFeedback from "react-native-haptic-feedback";
+import { Background } from "./SignUpScreen";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { useBackButtonBehavior, BackButton } from "../components/Button";
+import { resetTo } from "../lib/NavigationService";
 
 const styles = StyleSheet.create({
   form: {
-    paddingHorizontal: SPACING.normal
+    padding: SPACING.normal
   },
   avatar: {
     marginTop: SPACING.normal,
@@ -47,6 +50,12 @@ const SignupSchema = Yup.object().shape({
   password: Yup.string().required("Required")
 });
 
+const HeaderLeftButton = () => {
+  const behavior = useBackButtonBehavior();
+
+  return <BackButton behavior={behavior} size={18} />;
+};
+
 class RawLoginPage extends React.Component {
   static navigationOptions = ({ navigation }) => ({
     title: "Login",
@@ -57,13 +66,7 @@ class RawLoginPage extends React.Component {
         </View>
       </TouchableOpacity>
     ),
-    headerLeft: () => (
-      <TouchableOpacity onPress={navigation.dismiss}>
-        <View style={styles.loginButton}>
-          <IconClose size={14} color="white" />
-        </View>
-      </TouchableOpacity>
-    )
+    headerLeft: () => <HeaderLeftButton />
   });
   state = { isLoading: false };
 
@@ -102,12 +105,14 @@ class RawLoginPage extends React.Component {
         if (login) {
           const onFinish = this.props.navigation.getParam("onFinish");
 
-          this.props.navigation.dismiss();
           HapticFeedback.trigger("notificationSuccess");
           if (onFinish) {
+            this.props.navigation.dismiss();
             InteractionManager.runAfterInteractions(() => {
               onFinish();
             });
+          } else {
+            resetTo("ThreadList", {});
           }
         } else {
           HapticFeedback.trigger("notificationError");
@@ -187,11 +192,16 @@ class RawLoginPage extends React.Component {
 
   render() {
     return (
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, position: "relative" }}>
+        <Background />
+
         <KeyboardAwareScrollView
           innerRef={this.setScrollRef}
+          paddingTop={0}
+          paddingBottom={0}
+          contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps
-          contentContainerStyle={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: "transparent" }}
         >
           <Formik
             ref={this.setFormRef}

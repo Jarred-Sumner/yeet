@@ -58,6 +58,8 @@
 		83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC5234197D80091D443 /* YeetImageView.swift */; };
 		83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC72341A6F60091D443 /* YeetVideoView.swift */; };
 		83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */; };
+		83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */; };
+		83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */; };
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
 		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
 		E89FAC1D34B2BB6AE4FD5D29 /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */; };
@@ -189,9 +191,11 @@
 		83E45AC5234197D80091D443 /* YeetImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetImageView.swift; sourceTree = "<group>"; };
 		83E45AC72341A6F60091D443 /* YeetVideoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetVideoView.swift; sourceTree = "<group>"; };
 		83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayerViewManager.swift; sourceTree = "<group>"; };
+		83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiTextInput.swift; sourceTree = "<group>"; };
+		83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiTextInputViewManager.swift; sourceTree = "<group>"; };
 		8C160B6697D042629D1797A5 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Fontisto.ttf"; sourceTree = "<group>"; };
 		90C026A7B5982C8F5D65835D /* Pods-OneSignalNotificationServiceExtension.staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.staging.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.staging.xcconfig"; sourceTree = "<group>"; };
-		91F298074E284CF6B08FFFBF /* libz.tbd */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		91F298074E284CF6B08FFFBF /* libz.tbd */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		9A5A9068C3B94F099E9F2DF5 /* Proxima Nova Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Proxima Nova Medium.ttf"; path = "../assets/fonts/Proxima Nova Medium.ttf"; sourceTree = "<group>"; };
 		9E75BF8917DECDA8BFCF861D /* Pods-yeet.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet.release.xcconfig"; path = "Target Support Files/Pods-yeet/Pods-yeet.release.xcconfig"; sourceTree = "<group>"; };
 		AF4CA8C1A60F66FB76D46049 /* Pods-yeet-Tests-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-Tests-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-yeet-Tests-yeetTests/Pods-yeet-Tests-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -397,6 +401,8 @@
 				83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */,
 				8347051D232B0912004B2FF7 /* YeetTextInputView.swift */,
 				8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */,
+				83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */,
+				83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */,
 			);
 			name = TextInput;
 			sourceTree = "<group>";
@@ -824,6 +830,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,
@@ -858,6 +865,7 @@
 				83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */,
 				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,
+				83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */,
 				83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

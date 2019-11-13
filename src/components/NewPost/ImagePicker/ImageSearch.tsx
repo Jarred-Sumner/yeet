@@ -1,16 +1,15 @@
 import * as React from "react";
-import { View, StyleSheet, Keyboard } from "react-native";
-import { FormField } from "../../FormField";
+import { Keyboard, StyleSheet, View } from "react-native";
 import {
-  TextInput as GestureTextInput,
-  BorderlessButton
+  BorderlessButton,
+  TextInput as GestureTextInput
 } from "react-native-gesture-handler";
-import { COLORS, SPACING } from "../../../lib/styles";
-import Animated, { Transition, Transitioning } from "react-native-reanimated";
+import Animated from "react-native-reanimated";
 import { interpolateColor } from "react-native-redash";
 import tinycolor from "tinycolor2";
-import { SemiBoldText } from "../../Text";
+import { COLORS, SPACING } from "../../../lib/styles";
 import { IconSearch } from "../../Icon";
+import { SemiBoldText } from "../../Text";
 
 const TextInput = Animated.createAnimatedComponent(GestureTextInput);
 
