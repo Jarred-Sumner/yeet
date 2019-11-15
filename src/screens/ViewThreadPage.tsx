@@ -13,7 +13,12 @@ import Animated, {
   TransitioningView
 } from "react-native-reanimated";
 import { NavigationProp } from "react-navigation";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import {
+  useNavigation,
+  useNavigationParam,
+  useFocusEffect,
+  useIsFocused
+} from "react-navigation-hooks";
 import { NavigationStackProp } from "react-navigation-stack";
 import { postElementId } from "../lib/ElementTransition";
 import {
@@ -64,6 +69,7 @@ import { Context } from "@expo/react-native-action-sheet/lib/typescript/context"
 import { ToastType, sendToast } from "../components/Toast";
 import { ModalContext } from "../components/ModalContext";
 import { shouldShowPushNotificationModal } from "../components/PushNotificationModal";
+import { NetworkStatus } from "apollo-client";
 
 const THREAD_REPLY_BUTTON_HEIGHT = 48;
 
@@ -206,21 +212,26 @@ class ThreadPageComponent extends React.Component<Props, State> {
   ) => {};
   handlePressThread = (thread: ViewThreads_postThreads_data) => {};
   handleNewPost = async (thread: ViewThreads_postThreads_data) => {
-    const authed = await this.props.requireAuthentication();
-    if (!authed) {
-      return;
-    }
-
-    this.props.navigation.navigate("ReplyToPost", thread);
+    this.navigateToReplyPage();
   };
-  handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
-  handlePressReply = async thread => {
+
+  navigateToReplyPage = async () => {
     const authed = await this.props.requireAuthentication();
     if (!authed) {
       return;
     }
 
-    this.props.navigation.navigate("ReplyToPost", this.props.thread);
+    const { thread, threadId } = this.props;
+
+    this.props.navigation.navigate("ReplyToPost", {
+      thread,
+      threadId
+    });
+  };
+
+  handleLongPressThread = (thread: ViewThreads_postThreads_data) => {};
+  handlePressReply = async () => {
+    this.navigateToReplyPage();
   };
   handleShowComposer = async composerProps => {
     const authed = await this.props.requireAuthentication();
@@ -424,6 +435,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
     const { thread, defaultPost, refreshing } = this.props;
     const { showComposer, composerProps } = this.state;
 
+    const posts = thread?.posts?.data ?? [];
+
     return (
       <Animated.View style={styles.page}>
         <AnimatedKeyboardTracker
@@ -432,7 +445,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
         />
 
         <PostFlatList
-          posts={thread?.posts?.data ?? []}
+          posts={posts}
           topInset={THREAD_HEADER_HEIGHT + 4}
           bottomInset={THREAD_REPLY_BUTTON_HEIGHT}
           composingPostId={this.state.composerProps?.postId}
@@ -461,7 +474,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
           }
         >
           {showComposer === false && (
-            <ThreadHeader thread={thread} key={thread.id} />
+            <ThreadHeader thread={thread} key="thread-header" />
           )}
 
           {showComposer && <CommentEditorHeader />}
@@ -528,6 +541,23 @@ const _ThreadPage = () => {
     ModalContext
   );
 
+  const isInitialFocus = React.useRef(true);
+  const isFocused = useIsFocused();
+
+  React.useEffect(() => {
+    const _isInitialFocus = isInitialFocus.current;
+    if (
+      isFocused &&
+      !_isInitialFocus &&
+      viewThreadQuery.networkStatus === NetworkStatus.ready
+    ) {
+      typeof viewThreadQuery.refetch === "function" &&
+        viewThreadQuery.refetch();
+    }
+
+    isInitialFocus.current = false;
+  }, [viewThreadQuery.networkStatus, isFocused]);
+
   const [deletePost] = useMutation<
     DeletePostMutation,
     DeletePostMutationVariables
@@ -548,6 +578,7 @@ const _ThreadPage = () => {
       requireAuthentication={requireAuthentication}
       deleteComment={deleteComment}
       thread={viewThreadQuery?.data?.postThread ?? defaultThread}
+      threadId={threadId}
       defaultPost={useNavigationParam("post")}
       loading={viewThreadQuery.loading}
       showActionSheetWithOptions={actionSheet.showActionSheetWithOptions}

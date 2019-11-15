@@ -157,301 +157,6 @@ type State = {
   bottomInset: number;
 };
 
-// https://media.giphy.com/media/jQS9YkJXofyeI/giphy.gif
-const IMAGE_NODE_FIXTUER = {
-  block: {
-    type: "image",
-    id: "rxGYrJd5XMCfJCPkdVgb0",
-    format: "sticker",
-    autoInserted: false,
-    required: true,
-    value: {
-      id: "65OP280inML06GeRnJ",
-      source: {
-        type: "gif",
-        id: "65OP280inML06GeRnJ",
-        slug: "65OP280inML06GeRnJ",
-        url: "https://giphy.com/gifs/65OP280inML06GeRnJ",
-        bitly_gif_url: "https://gph.is/g/aQNmg5x",
-        bitly_url: "https://gph.is/g/aQNmg5x",
-        embed_url: "https://giphy.com/embed/65OP280inML06GeRnJ",
-        username: "",
-        source: "https://www.reddit.com/r/gifs/comments/ccpzd8/mesmerized/",
-        rating: "g",
-        content_url: "",
-        source_tld: "www.reddit.com",
-        source_post_url:
-          "https://www.reddit.com/r/gifs/comments/ccpzd8/mesmerized/",
-        is_sticker: 0,
-        import_datetime: "2019-07-14 06:18:00",
-        trending_datetime: "2019-09-08 04:30:06",
-        images: {
-          fixed_height_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200_s.gif",
-            width: "161",
-            height: "200",
-            size: "14243"
-          },
-          original_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy_s.gif",
-            width: "320",
-            height: "398",
-            size: "63951"
-          },
-          fixed_width: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w.gif",
-            width: "200",
-            height: "249",
-            size: "1979118",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w.mp4",
-            mp4_size: "522842",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w.webp",
-            webp_size: "967118"
-          },
-          fixed_height_small_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100_s.gif",
-            width: "81",
-            height: "100",
-            size: "5076"
-          },
-          fixed_height_downsampled: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200_d.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200_d.gif",
-            width: "161",
-            height: "200",
-            size: "92533",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200_d.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200_d.webp",
-            webp_size: "56638"
-          },
-          preview: {
-            width: "225",
-            height: "280",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-preview.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-preview.mp4",
-            mp4_size: "33078"
-          },
-          fixed_height_small: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100.gif",
-            width: "81",
-            height: "100",
-            size: "440386",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100.mp4",
-            mp4_size: "116001",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100.webp",
-            webp_size: "249056"
-          },
-          downsized_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-downsized_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-downsized_s.gif",
-            width: "320",
-            height: "398",
-            size: "47679"
-          },
-          downsized: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-downsized.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-downsized.gif",
-            width: "320",
-            height: "398",
-            size: "1891360"
-          },
-          downsized_large: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.gif",
-            width: "320",
-            height: "398",
-            size: "6319733"
-          },
-          fixed_width_small_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100w_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100w_s.gif",
-            width: "100",
-            height: "125",
-            size: "7379"
-          },
-          preview_webp: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-preview.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-preview.webp",
-            width: "104",
-            height: "130",
-            size: "36250"
-          },
-          fixed_width_still: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w_s.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w_s.gif",
-            width: "200",
-            height: "249",
-            size: "20498"
-          },
-          fixed_width_small: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100w.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100w.gif",
-            width: "100",
-            height: "125",
-            size: "638419",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100w.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100w.mp4",
-            mp4_size: "45547",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/100w.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100w.webp",
-            webp_size: "345986"
-          },
-          downsized_small: {
-            width: "141",
-            height: "176",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-downsized-small.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-downsized-small.mp4",
-            mp4_size: "137032"
-          },
-          fixed_width_downsampled: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w_d.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w_d.gif",
-            width: "200",
-            height: "249",
-            size: "135514",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200w_d.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200w_d.webp",
-            webp_size: "83762"
-          },
-          downsized_medium: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-downsized-medium.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-downsized-medium.gif",
-            width: "320",
-            height: "398",
-            size: "4107337"
-          },
-          original: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.gif",
-            width: "320",
-            height: "398",
-            size: "6319733",
-            frames: "99",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.mp4",
-            mp4_size: "1005430",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
-            webp_size: "1858058",
-            hash: "dfb8892959e75a4950b48c407cc8c770"
-          },
-          fixed_height: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200.gif",
-            width: "161",
-            height: "200",
-            size: "1375517",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200.mp4",
-            mp4_size: "359036",
-            webp:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/200.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=200.webp",
-            webp_size: "709256"
-          },
-          looping: {
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-loop.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-loop.mp4",
-            mp4_size: "2054256"
-          },
-          original_mp4: {
-            width: "320",
-            height: "398",
-            mp4:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy.mp4?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.mp4",
-            mp4_size: "1005430"
-          },
-          preview_gif: {
-            url:
-              "https://media3.giphy.com/media/65OP280inML06GeRnJ/giphy-preview.gif?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy-preview.gif",
-            width: "61",
-            height: "76",
-            size: "47496"
-          },
-          "480w_still": {
-            url:
-              "https://media2.giphy.com/media/65OP280inML06GeRnJ/480w_s.jpg?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=480w_s.jpg",
-            width: "480",
-            height: "597"
-          }
-        },
-        title: "cat face GIF",
-        analytics: {
-          onload: {
-            url:
-              "https://giphy-analytics.giphy.com/simple_analytics?response_id=463f08155a3bf7c971e49ba7b36d47926e4874fb&event_type=GIF_TRENDING&gif_id=65OP280inML06GeRnJ&action_type=SEEN"
-          },
-          onclick: {
-            url:
-              "https://giphy-analytics.giphy.com/simple_analytics?response_id=463f08155a3bf7c971e49ba7b36d47926e4874fb&event_type=GIF_TRENDING&gif_id=65OP280inML06GeRnJ&action_type=CLICK"
-          },
-          onsent: {
-            url:
-              "https://giphy-analytics.giphy.com/simple_analytics?response_id=463f08155a3bf7c971e49ba7b36d47926e4874fb&event_type=GIF_TRENDING&gif_id=65OP280inML06GeRnJ&action_type=SENT"
-          }
-        }
-      },
-      preview: {
-        uri:
-          "https://media3.giphy.com/media/65OP280inML06GeRnJ/100.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100.webp",
-        width: 81,
-        height: 100,
-        duration: 0,
-        mimeType: "image/webp",
-        source: "giphy",
-        asset: {
-          uri:
-            "https://media3.giphy.com/media/65OP280inML06GeRnJ/100.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=100.webp",
-          width: 81,
-          height: 100
-        },
-        transform: []
-      },
-      image: {
-        uri:
-          "https://media3.giphy.com/media/l1J9IzyMGr7lAniLK/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
-        width: 320,
-        height: 398,
-        duration: 1,
-        mimeType: "image/webp",
-        source: "giphy",
-        asset: {
-          uri:
-            "https://media3.giphy.com/media/l1J9IzyMGr7lAniLK/giphy.webp?cid=f94a7808463f08155a3bf7c971e49ba7b36d47926e4874fb&rid=giphy.webp",
-          width: 320,
-          height: 398
-        },
-        transform: []
-      },
-      sourceType: "giphy"
-    },
-    config: {
-      dimensions: {
-        width: 100,
-        height: 124.375,
-        x: 0,
-        y: 0,
-        maxX: 100,
-        maxY: 124.375
-      }
-    }
-  },
-  position: {
-    x: 25,
-    y: 480.8125,
-    scale: 4.2,
-    rotate: 0.48
-  }
-};
-
 const DarkSheet = ({ opacity }) => (
   <Animated.View
     pointerEvents="none"
@@ -798,6 +503,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   scrollRef = React.createRef<ScrollView>();
   keyboardVisibleValue = new Animated.Value<number>(0);
+  keyboardHeightValue = new Animated.Value<number>(0);
   focusedBlockValue = new Animated.Value<number>(-1);
   focusTypeValue = new Animated.Value<FocusType | -1>(-1);
 
@@ -1047,6 +753,11 @@ class RawwPostEditor extends React.Component<Props, State> {
   panY = new Animated.Value(0);
   contentViewRef = React.createRef();
 
+  relativeKeyboardHeightValue = Animated.sub(
+    this.keyboardHeightValue,
+    this.props.scrollY
+  );
+
   scrollToTop = () =>
     this.scrollRef.current.getScrollResponder().scrollTo({
       y: presetsByFormat[this.props.post.format].paddingTop * -1,
@@ -1054,18 +765,17 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
   handleShowKeyboard = (event, hasHappened) => {
-    hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
-
-    if (this.state.focusType === FocusType.absolute) {
-      this.scrollToTop();
-    }
+    // hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
+    // if (this.state.focusType === FocusType.absolute) {
+    //   this.scrollToTop();
+    // }
   };
   handleHideKeyboard = (event, hasHappened) => {
     // this.scrollRef.current.handleKeyboardEvent(event);
-    hasHappened && this.scrollRef.current.resetKeyboardSpace();
+    // hasHappened && this.scrollRef.current.resetKeyboardSpace();
   };
   handleChangeFrame = event => {
-    this.scrollRef.current.handleKeyboardEvent(event);
+    // this.scrollRef.current.handleKeyboardEvent(event);
   };
 
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
@@ -1104,6 +814,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         <NavigationEvents onWillFocus={this.handleWillFocus} />
         <AnimatedKeyboardTracker
           keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
           onKeyboardShow={this.handleShowKeyboard}
           onKeyboardHide={this.handleHideKeyboard}
           onKeyboardWillChangeFrame={this.handleChangeFrame}
@@ -1223,6 +934,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 panY={this.panY}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
+                keyboardHeightValue={this.relativeKeyboardHeightValue}
                 waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
                 focusType={this.state.focusType}
                 minX={bounds.x}

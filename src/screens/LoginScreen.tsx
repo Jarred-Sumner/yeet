@@ -24,6 +24,7 @@ import { Background } from "./SignUpScreen";
 import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { useBackButtonBehavior, BackButton } from "../components/Button";
 import { resetTo } from "../lib/NavigationService";
+import { getPlaceholderUsername } from "../lib/usernames";
 
 const styles = StyleSheet.create({
   form: {
@@ -149,6 +150,8 @@ class RawLoginPage extends React.Component {
     });
   }
 
+  placeholder = getPlaceholderUsername();
+
   renderForm = props => (
     <View style={styles.form}>
       <FormField
@@ -165,7 +168,7 @@ class RawLoginPage extends React.Component {
         error={props.touched.username && props.errors.username}
         onChangeText={props.handleChange("username")}
         onBlur={props.handleBlur("username")}
-        placeholder="ylukem"
+        placeholder={this.placeholder}
       />
 
       <FormField
@@ -181,7 +184,7 @@ class RawLoginPage extends React.Component {
         value={props.values.password}
         onChangeText={props.handleChange("password")}
         onBlur={props.handleBlur("password")}
-        placeholder="******"
+        placeholder="Password"
       />
     </View>
   );
@@ -200,7 +203,7 @@ class RawLoginPage extends React.Component {
           paddingTop={0}
           paddingBottom={0}
           contentInsetAdjustmentBehavior="automatic"
-          keyboardShouldPersistTaps
+          keyboardShouldPersistTaps="always"
           style={{ flex: 1, backgroundColor: "transparent" }}
         >
           <Formik

@@ -119,7 +119,14 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
         imageView.loadFullSizeImage(contentMode: UIView.ContentMode.scaleToFill, size: originalSize, cropRect: bounds).then(on: DispatchQueue.global(qos: .userInitiated)) { image in
           autoreleasepool {
-            let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension("webp")
+            var outputMimeType = MimeType.jpg
+            if [MimeType.png, MimeType.tiff, MimeType.bmp].contains(mediaSource.mimeType) {
+              outputMimeType = .png
+            } else if [MimeType.gif, MimeType.webp].contains(mediaSource.mimeType) {
+              outputMimeType = .webp
+            }
+
+            let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension(outputMimeType.fileExtension())
 
              SwiftyBeaver.info("""
                Cropping image
@@ -144,10 +151,15 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
             }
 
             var data: Data? = nil
-            if [MimeType.webp, MimeType.png, MimeType.tiff, MimeType.bmp].contains(mediaSource.mimeType) {
+            if outputMimeType == .webp {
               data = croppedImage?.sd_imageData(as: .webP, compressionQuality: 1.0, firstFrameOnly: false)
+            } else if outputMimeType == .png {
+              data = croppedImage?.pngData()
             } else {
-              data = croppedImage?.sd_imageData(as: .webP, compressionQuality: 0.99, firstFrameOnly: false)
+              if (outputMimeType != .jpg) {
+                SwiftyBeaver.warning("Attempted to crop to unimplemented format, cropping to jpeg instead")
+              }
+              data = croppedImage?.jpegData(compressionQuality: CGFloat(0.99))
             }
 
             guard let _data = data else {

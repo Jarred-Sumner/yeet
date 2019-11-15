@@ -1,25 +1,27 @@
-#import "./PostFragment.graphql"
+#import "./ViewThreadFragment.graphql"
 
-mutation CreatePost(
+mutation CreatePostThread(
   $mediaId: ID!
   $blocks: JSON
+  $body: String!
   $nodes: JSON
   $format: String!
-  $bounds: RectangleInputObject!
   $autoplaySeconds: Int
+  $bounds: RectangleInputObject!
   $colors: ColorsInputObject!
-  $threadId: ID!
+  $postOffset: Int = 0
+  $postsCount: Int = 2
 ) {
-  createPost(
+  createPostThread(
     mediaId: $mediaId
     blocks: $blocks
     nodes: $nodes
+    body: $body
     format: $format
-    bounds: $bounds
     autoplaySeconds: $autoplaySeconds
-    threadId: $threadId
+    bounds: $bounds
     colors: $colors
   ) {
-    ...PostFragment
+    ...ViewThreadFragment
   }
 }

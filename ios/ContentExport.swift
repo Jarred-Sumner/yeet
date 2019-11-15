@@ -130,12 +130,13 @@ class ContentExport {
 
       layer.add(getFramesAnimation(frames: images, duration: duration), forKey: nil)
     } else if (image.mediaSource.mimeType == .png) {
-      if (ContentExport.CONVERT_PNG_TO_WEBP) {
-        let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image.staticImage!, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
-        layer.contents = newImage.cgImage!
-      } else {
-        layer.contents = UIImage.init(data: image.staticImage!.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
-      }
+      layer.contents = image.staticImage!.cgImage!
+//      if (ContentExport.CONVERT_PNG_TO_WEBP) {
+//        let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image.staticImage!, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
+//        layer.contents = newImage.cgImage!
+//      } else {
+//        layer.contents = UIImage.init(data: image.staticImage!.jpegData(compressionQuality: CGFloat(1.0))!)?.cgImage!
+//      }
     } else {
       layer.contents = image.firstFrame.cgImage!
     }
@@ -574,16 +575,16 @@ Cropping video...
                   var resolution = cropRect.size
                   var colors: UIImageColors? = nil
 
-                  do {
-                    let imageGenerator = AVAssetImageGenerator(asset: asset)
-                    imageGenerator.appliesPreferredTrackTransform = true
-                    let thumbnail = try UIImage(cgImage: imageGenerator.copyCGImage(at: CMTime(seconds: 0, preferredTimescale: 1), actualTime: nil))
-
-                    resolution = thumbnail.size
-                    colors = thumbnail.getColors()
-                  } catch {
-
-                  }
+//                  do {
+//                    let imageGenerator = AVAssetImageGenerator(asset: asset)
+//                    imageGenerator.appliesPreferredTrackTransform = true
+//                    let thumbnail = try UIImage(cgImage: imageGenerator.copyCGImage(at: CMTime(seconds: 0, preferredTimescale: 1), actualTime: nil))
+//
+//                    resolution = thumbnail.size
+//                    colors = thumbnail.getColors()
+//                  } catch {
+//
+//                  }
 
                   let timeSpentExporting = CACurrentMediaTime() - startExportTime
                   SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
@@ -624,8 +625,9 @@ Cropping video...
         imageData.write(to: url, atomically: true)
         let resolution = fullImage.size
 
+        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: nil))
 
-        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
+//        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
       }
     }
   }

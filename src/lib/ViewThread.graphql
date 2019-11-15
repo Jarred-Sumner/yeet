@@ -1,25 +1,7 @@
-#import "./PostFragment.graphql"
+#import "./ViewThreadFragment.graphql"
 
 query ViewThread($threadId: ID!, $postOffset: Int!, $postsCount: Int!) {
   postThread(id: $threadId) {
-    id
-    postsCount
-    body
-
-    profile {
-      username
-      id
-      photoURL
-    }
-
-    posts(offset: $postOffset, limit: $postsCount) {
-      offset
-      limit
-      hasMore
-      id
-      data {
-        ...PostFragment
-      }
-    }
+    ...ViewThreadFragment
   }
 }

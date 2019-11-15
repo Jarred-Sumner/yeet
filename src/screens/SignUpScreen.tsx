@@ -12,6 +12,7 @@ import {
 import HapticFeedback from "react-native-haptic-feedback";
 import LinearGradient from "react-native-linear-gradient";
 import { StackNavigatorConfig } from "react-navigation";
+import { sample } from "lodash";
 import * as Yup from "yup";
 import { BASE_HOSTNAME, SCREEN_DIMENSIONS } from "../../config";
 import {
@@ -29,6 +30,7 @@ import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
 import { Storage } from "../lib/Storage";
 import { COLORS, SPACING } from "../lib/styles";
+import { getPlaceholderUsername } from "../lib/usernames";
 
 const styles = StyleSheet.create({
   form: {
@@ -198,13 +200,15 @@ class RawSignUpPage extends React.Component {
     this.usernameInputRef.current.focus();
   };
 
+  placeholder = getPlaceholderUsername();
+
   render() {
     return (
       <View style={{ flex: 1 }}>
         <Background />
         <KeyboardAwareScrollView
           innerRef={this.setScrollRef}
-          keyboardShouldPersistTaps
+          keyboardShouldPersistTaps="always"
           style={{ flex: 1, backgroundColor: "transparent" }}
           paddingTop={0}
           paddingBottom={0}
@@ -234,7 +238,7 @@ class RawSignUpPage extends React.Component {
                   error={props.touched.username && props.errors.username}
                   onChangeText={props.handleChange("username")}
                   onBlur={props.handleBlur("username")}
-                  placeholder="LilNasX"
+                  placeholder={this.placeholder}
                 />
 
                 <FormField

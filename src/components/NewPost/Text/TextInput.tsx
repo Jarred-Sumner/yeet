@@ -14,7 +14,7 @@ import {
   BaseButton,
   createNativeWrapper
 } from "react-native-gesture-handler";
-
+import tinycolor from "tinycolor2";
 import Animated, { Easing } from "react-native-reanimated";
 import {
   TextPostBlock,
@@ -23,13 +23,12 @@ import {
   FocusType
 } from "../NewPostFormat";
 import { COLORS } from "../../../lib/styles";
-import tinycolor from "tinycolor2";
 import {
   normalizeBackgroundColor,
   CurrentUserCommentAvatar
 } from "../../Posts/CommentsViewer";
 import { TextInput as RNTextInput } from "./CustomTextInputComponent";
-
+import { memoize } from "lodash";
 const ZERO_WIDTH_SPACE = "​";
 
 const RawAnimatedTextInput = Animated.createAnimatedComponent(
@@ -42,6 +41,15 @@ const AnimatedTextInput = React.forwardRef((props, ref) => {
   React.useImperativeHandle(ref, () => inputRef.current.getNode());
 
   return <RawAnimatedTextInput ref={inputRef} {...props} />;
+});
+
+const contrastingColor = memoize((color: string) => {
+  const _color = tinycolor(color);
+  if (_color.isDark()) {
+    return "#fff";
+  } else {
+    return "#333";
+  }
 });
 
 const textInputStyles = {
@@ -59,9 +67,9 @@ const textInputStyles = {
   },
   [PostFormat.screenshot]: {
     fontSizes: {
-      "0": 48,
-      "8": 48,
-      "12": 36,
+      "0": 24,
+      "8": 24,
+      "12": 24,
       "24": 24
     },
     presets: {
@@ -300,9 +308,6 @@ export class TextInput extends React.Component<Props> {
       styles.container,
       textInputTypeStylesheets[format].container,
       {
-        backgroundColor:
-          overrides.backgroundColor ??
-          textInputStyles[format].presets.backgroundColor,
         height:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         width:
@@ -310,13 +315,23 @@ export class TextInput extends React.Component<Props> {
       }
     ];
 
+    const showHighlight =
+      format === PostFormat.screenshot ||
+      format === PostFormat.sticker ||
+      format === PostFormat.comment;
+
+    const backgroundColor =
+      overrides.backgroundColor ??
+      textInputStyles[format].presets.backgroundColor;
+
+    const color = overrides.color ?? textInputStyles[format].presets.color;
+
     const inputStyles = [
       styles.input,
       textInputTypeStylesheets[format].input,
       {
-        backgroundColor:
-          format == PostFormat.comment ? "transparent" : undefined,
-        color: overrides.color ?? textInputStyles[format].presets.color,
+        backgroundColor: showHighlight ? "transparent" : backgroundColor,
+        color,
         flex: focusType === FocusType.absolute && isFocused ? 1 : 0,
         height:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
@@ -349,13 +364,13 @@ export class TextInput extends React.Component<Props> {
             adjustsFontSizeToFit
             inputAccessoryViewID={`${id}-input`}
             minimumFontScale={0.4}
-            selectionColor="white"
+            selectionColor={contrastingColor(backgroundColor)}
             highlightInset={-4}
             highlightCornerRadius={8}
             lengthPerLine={50}
             blurOnSubmit={false}
             fontSizeRange={textInputStyles[format].fontSizes}
-            showHighlight={format === PostFormat.screenshot}
+            showHighlight={showHighlight}
             placeholderTextColor={
               textInputStyles[format].presets.placeholderColor || undefined
             }
@@ -364,9 +379,7 @@ export class TextInput extends React.Component<Props> {
             scrollEnabled={false}
             placeholder={placeholder}
             defaultValue={this.props.text}
-            highlightColor={
-              textInputStyles[PostFormat.screenshot].presets.backgroundColor
-            }
+            highlightColor={backgroundColor}
             onChangeText={this.handleChange}
             keyboardAppearance="dark"
             textContentType="none"

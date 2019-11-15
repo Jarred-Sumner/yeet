@@ -24,6 +24,7 @@ import ThreadPage from "./src/screens/ViewThreadPage";
 import { BirthdayScreen } from "./src/screens/BirthdayScreen";
 import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import { createSwitchNavigator } from "react-navigation";
+import NewThreadPage from "./src/screens/NewThreadPage";
 
 const AuthStack = createStackNavigator(
   {
@@ -100,37 +101,6 @@ export const Routes = createAppContainer(
                       })
                     }
                   ),
-                  // FeedTab: createSharedElementStackNavigator(
-                  //   _createStackNavigator,
-                  //   {
-                  //     ThreadList: FeedPage,
-                  //     ViewThread: ThreadPage,
-                  //     ReplyToPost: ReplyPage,
-                  //     EditBlockPhotoInReply: ImagePickerPage,
-                  //     ...SHARED_GLOBAL_SCREENS
-                  //   },
-                  //   {
-                  //     cardStyle: {
-                  //       backgroundColor: "#000"
-                  //     },
-                  //     headerMode: "none"
-                  //     // defaultNavigationOptions: ({ navigation }) => ({
-                  //     //   header: () => null
-                  //     // })
-                  //   },
-                  //   {
-                  //     cardStyle: {
-                  //       backgroundColor: "#000"
-                  //     },
-
-                  //     headerMode: "none"
-                  //     // defaultNavigationOptions: ({ navigation }) => ({
-                  //     //   header: () => null,
-                  //     //   headerMode: "none",
-                  //     //   headerTransparent: true
-                  //     // })
-                  //   }
-                  // ),
                   NotificationsTab: createStackNavigator(
                     {
                       NotificationsPage: {
@@ -182,11 +152,13 @@ export const Routes = createAppContainer(
                 {
                   NewPost: NewPostPage,
                   EditBlockPhoto: ImagePickerPage,
+                  NewThread: NewThreadPage,
                   ...SHARED_GLOBAL_SCREENS
                 },
                 {
+                  // initialRouteName: "NewThread",
                   cardStyle: {
-                    backgroundColor: "transparent"
+                    backgroundColor: "#000"
                   },
                   headerMode: "none",
                   // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
@@ -237,7 +209,7 @@ export const Routes = createAppContainer(
       RootAuth: AuthStack
     },
     {
-      initialRouteName: "RootAuth"
+      // initialRouteName: "RootAuth"
     }
   )
 );

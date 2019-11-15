@@ -20,7 +20,7 @@ import { isVideo } from "../../lib/imageSearch";
 import { postElementId } from "../../lib/ElementTransition";
 
 export const POST_LIST_HEIGHT = 320;
-const POST_LIST_WIDTH = 204;
+export const POST_LIST_WIDTH = 204;
 
 const ASPECT_RATIO = POST_LIST_WIDTH / POST_LIST_HEIGHT;
 
@@ -94,7 +94,12 @@ const styles = StyleSheet.create({
   },
   newPostBackground: {
     position: "absolute",
-    zIndex: 0
+    zIndex: 0,
+    borderWidth: 0.5,
+    borderStyle: "dashed",
+    borderColor: "rgba(255, 255, 255, 0.25)",
+    borderRadius: 4,
+    overflow: "hidden"
   },
   newPost: {
     justifyContent: "center",
@@ -125,7 +130,7 @@ type ListItemProps = {
 // box-sizing: border-box;
 // border-radius: 4px;
 
-const GradientOverlay = ({ width, height }) => (
+const GradientOverlay = React.memo(({ width, height }) => (
   <LinearGradient
     width={width}
     height={height}
@@ -134,9 +139,94 @@ const GradientOverlay = ({ width, height }) => (
     end={{ x: 0, y: 1 }}
     locations={[1.0 - 0.3146, 1.0]}
   ></LinearGradient>
+));
+
+export const PostPreviewListItem = React.memo(
+  ({
+    onPress,
+    width,
+    height,
+    source,
+    isVisible,
+    sharedId,
+    id,
+    imageSize,
+    photoURL,
+    username,
+    footerAction
+  }) => {
+    const sizeStyle = React.useMemo(() => ({ width, height }), [width, height]);
+    const listItemStyle = React.useMemo(() => [styles.listItem, sizeStyle], [
+      sizeStyle
+    ]);
+
+    const imageContainerStyle = React.useMemo(
+      () => [styles.imageContainer, sizeStyle],
+      [sizeStyle]
+    );
+
+    const imageStyle = React.useMemo(
+      () => [
+        styles.image,
+        { width: imageSize.width, height: imageSize.height }
+      ],
+      [imageSize]
+    );
+
+    const imageBorderStyle = React.useMemo(
+      () => [styles.imageBorder, { width: imageSize.width }],
+      [imageSize]
+    );
+
+    const overlayContainerStyle = React.useMemo(
+      () => [StyleSheet.absoluteFill, styles.overlayContainer, sizeStyle],
+      [StyleSheet.absoluteFill, sizeStyle]
+    );
+
+    const overlaySideStyle = React.useMemo(
+      () => [styles.overlaySide, styles.overlayRightSide],
+      []
+    );
+
+    return (
+      <TouchableHighlight onPress={onPress}>
+        <Animated.View style={listItemStyle}>
+          <View style={imageContainerStyle}>
+            <Image
+              source={source}
+              isVisible={isVisible}
+              sharedId={sharedId}
+              id={id}
+              borderRadius={4}
+              style={imageStyle}
+            />
+
+            <View style={imageBorderStyle}>
+              <GradientOverlay
+                width={imageSize.width}
+                height={imageSize.height}
+              />
+            </View>
+          </View>
+
+          <View style={overlayContainerStyle}>
+            <View style={styles.overlay}>
+              <View style={styles.overlaySide}>
+                <View style={styles.avatar}>
+                  <Avatar url={photoURL} label={username} size={AVATAR_SIZE} />
+                </View>
+              </View>
+
+              <View style={overlaySideStyle}>{footerAction}</View>
+            </View>
+          </View>
+        </Animated.View>
+      </TouchableHighlight>
+    );
+  }
 );
 
-const _ListItem = ({
+const ListItem = ({
   post,
   onPress,
   width,
@@ -161,69 +251,34 @@ const _ListItem = ({
     ? buildImgSrc(previewUrl, imageSize.width, imageSize.height)
     : coverUrl;
 
-  const source = {
-    height: imageSize.height,
-    width: imageSize.width,
-    uri,
-    mimeType
-  };
+  const source = React.useMemo(
+    () => ({
+      height: imageSize.height,
+      width: imageSize.width,
+      uri,
+      mimeType
+    }),
+    [post.media, uri, mimeType]
+  );
 
   return (
-    <TouchableHighlight onPress={handlePress}>
-      <Animated.View style={[styles.listItem, { width, height }]}>
-        <View style={[styles.imageContainer, { width, height }]}>
-          <Image
-            source={source}
-            isVisible={isVisible}
-            sharedId={postElementId(post)}
-            id={`preview-${post.id}`}
-            borderRadius={4}
-            style={[
-              styles.image,
-              { width: imageSize.width, height: imageSize.height }
-            ]}
-          />
-
-          <View style={[styles.imageBorder, { width: imageSize.width }]}>
-            <GradientOverlay
-              width={imageSize.width}
-              height={imageSize.height}
-            />
-          </View>
-        </View>
-
-        <View
-          shouldRasterizeIOS
-          style={[
-            StyleSheet.absoluteFill,
-            styles.overlayContainer,
-            { width, height }
-          ]}
-        >
-          <View style={styles.overlay}>
-            <View style={styles.overlaySide}>
-              <View style={styles.avatar}>
-                <Avatar
-                  url={profile.photoURL}
-                  label={profile.username}
-                  size={AVATAR_SIZE}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.overlaySide, styles.overlayRightSide]}>
-              <LikeCountButton id={post.id} size={22} />
-            </View>
-          </View>
-        </View>
-      </Animated.View>
-    </TouchableHighlight>
+    <PostPreviewListItem
+      sharedId={postElementId(post)}
+      onPress={handlePress}
+      source={source}
+      id={`preview-${post.id}`}
+      width={width}
+      isVisible={isVisible}
+      height={height}
+      imageSize={imageSize}
+      footerAction={<LikeCountButton id={post.id} size={22} />}
+      photoURL={profile.photoURL}
+      username={profile.username}
+    />
   );
 };
 
-const ListItem = React.memo(_ListItem);
-
-const AddNewPostButton = ({ height, width, onPress }) => {
+export const PlaceholderPost = ({ height, width, onPress, children }) => {
   return (
     <BaseButton onPress={onPress}>
       <Animated.View style={[styles.listItem, { width, height }]}>
@@ -232,10 +287,10 @@ const AddNewPostButton = ({ height, width, onPress }) => {
             <LinearGradient
               width={width}
               height={height}
-              colors={["rgba(25, 25, 25, 1.0)", "rgba(15, 15, 15, 1.0)"]}
+              colors={["rgba(173, 85, 255, 0.5)", "rgba(194, 129, 255, 0.43)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
-              locations={[0.35, 0.65]}
+              locations={[0, 0.3146]}
             />
           </View>
 
@@ -250,14 +305,13 @@ const AddNewPostButton = ({ height, width, onPress }) => {
               onPress={onPress}
             />
 
-            <MediumText style={styles.newPostText}>new post</MediumText>
+            <MediumText style={styles.newPostText}>{children}</MediumText>
           </View>
 
           <View style={[styles.imageBorder, { width, height }]}></View>
         </View>
 
         <View
-          shouldRasterizeIOS
           style={[
             StyleSheet.absoluteFill,
             styles.overlayContainer,
@@ -339,11 +393,13 @@ export const PostPreviewList = React.forwardRef(
         {children}
         {posts.map(renderPost)}
         <View style={styles.spacer} collapsable={false} />
-        <AddNewPostButton
+        <PlaceholderPost
           width={POST_LIST_WIDTH}
           height={POST_LIST_HEIGHT}
           onPress={onPressNewPost}
-        ></AddNewPostButton>
+        >
+          New post
+        </PlaceholderPost>
       </ScrollView>
     );
   }

@@ -87,7 +87,7 @@ export const EditorFooter = ({
 
 const DELETE_SIZE = 26;
 const MID_Y_DELETE_BUTTON =
-  MAX_POST_HEIGHT - BOTTOM_Y - (DELETE_SIZE * 1.25) / 2;
+  SCREEN_DIMENSIONS.height - BOTTOM_Y - (DELETE_SIZE * 1.25) / 2;
 const MID_X_DELETE_BUTTON = SCREEN_DIMENSIONS.width / 2;
 
 const DELETE_RANGE = [
@@ -203,7 +203,8 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
           {
             alignItems: "center",
             justifyContent: "center",
-            alignSelf: "center"
+            alignSelf: "center",
+            width: "100%"
           }
         ]}
       >

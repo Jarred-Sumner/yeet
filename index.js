@@ -13,6 +13,9 @@ import codePush from "react-native-code-push";
 import { IS_SIMULATOR } from "./config";
 
 YellowBox.ignoreWarnings([
+  "Module EmojiTextInputViewManager",
+  "RUTS",
+  "Unable to find module for UIManager",
   "Module YeetExporter requires main queue setup since it overrides",
   "Module YeetTextInputViewManager requires main queue setup since it o",
   "Warning: componentWillMount is deprecated",

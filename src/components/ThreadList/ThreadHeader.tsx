@@ -9,7 +9,12 @@ import {
   useBackButtonBehavior,
   IconButtonEllipsis
 } from "../Button";
-import { Text, MediumText } from "../Text";
+import {
+  Text,
+  MediumText,
+  SemiBoldText,
+  LETTER_SPACING_MAPPING
+} from "../Text";
 import { IconEllipsis, IconClose } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
@@ -49,6 +54,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 14,
     lineHeight: 14,
+    textAlign: "center"
+  },
+  bigTitle: {
+    marginTop: 0,
+    color: "white",
+    fontSize: 18,
+    letterSpacing: LETTER_SPACING_MAPPING["18"],
     textAlign: "center"
   },
   rightSide: {
@@ -102,11 +114,46 @@ export const ThreadHeader = ({ thread }) => {
 
         <View style={[styles.side, styles.titleSide]}>
           <Text style={styles.username} numberOfLines={1}>
-            @{thread.profile.username}
+            @{thread?.profile?.username}
           </Text>
           <MediumText numberOfLines={1} style={styles.title}>
-            {thread.body}
+            {thread?.body}
           </MediumText>
+        </View>
+
+        <View style={[styles.side, styles.rightSide]}>
+          {/* <IconButtonEllipsis onPress={handlePressEllipsis} /> */}
+        </View>
+      </View>
+    </>
+  );
+};
+
+export const NewThreadHeader = ({}) => {
+  const ref = React.useRef();
+
+  const behavior = useBackButtonBehavior();
+  return (
+    <>
+      <BlurView
+        style={[styles.bar, styles.blur]}
+        blurType="dark"
+        blurAmount={12}
+        viewRef={ref}
+      />
+
+      <View ref={ref} style={[styles.bar, styles.container]}>
+        <View style={[styles.side, styles.leftSide]}>
+          <BackButton behavior={behavior} size={16} />
+        </View>
+
+        <View style={[styles.side, styles.titleSide]}>
+          <SemiBoldText
+            numberOfLines={1}
+            style={(styles.title, styles.bigTitle)}
+          >
+            New thread
+          </SemiBoldText>
         </View>
 
         <View style={[styles.side, styles.rightSide]}>

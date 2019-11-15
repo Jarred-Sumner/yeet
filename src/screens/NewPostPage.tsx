@@ -6,8 +6,11 @@ import { useNavigation, useFocusState } from "react-navigation-hooks";
 import {
   buildImageBlock,
   minImageWidthByFormat,
-  DEFAULT_POST_FORMAT
+  DEFAULT_POST_FORMAT,
+  PostFormat
 } from "../components/NewPost/NewPostFormat";
+import { ContentExport, ExportData } from "../lib/Exporter";
+import { ToastType, sendToast } from "../components/Toast";
 
 const styles = StyleSheet.create({
   container: {
@@ -50,6 +53,18 @@ export class NewPostPage extends React.Component {
     }
   }
 
+  handleExport = (
+    contentExport: ContentExport,
+    exportData: ExportData,
+    format: PostFormat
+  ) => {
+    this.props.navigation.navigate("NewThread", {
+      contentExport,
+      exportData,
+      format
+    });
+  };
+
   componentDidMount() {
     if (this.props.isFocused || this.props.isFocusing) {
       this.props.requireAuthentication();
@@ -71,6 +86,7 @@ export class NewPostPage extends React.Component {
         <NewPost
           navigation={this.props.navigation}
           defaultBlocks={this.state.defaultBlocks}
+          onExport={this.handleExport}
         />
       </View>
     );

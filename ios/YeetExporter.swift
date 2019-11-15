@@ -8,9 +8,8 @@
 
 import UIKit
 import SwiftyJSON
-
-
-
+import SwiftyBeaver
+import Promise
 
 @objc(YeetExporter)
 class YeetExporter: NSObject, RCTBridgeModule  {
@@ -25,32 +24,31 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
   @objc(startExport:isServerOnly:callback:)
   func startExport(data: String, isServerOnly: Bool, callback: @escaping RCTResponseSenderBlock) -> Void {
-    if let dataObject = data.data(using: .utf8) {
-      if let exportData = try? JSON(data: dataObject) {
-
-        self.getImages(data: exportData) { images in
-          DispatchQueue.global(qos: .default).async { [weak self] in
-            autoreleasepool { [weak self] in
-              self?.producer = VideoProducer(data: exportData, images: images)
-
-              let boundsDict = exportData["bounds"].dictionaryValue
-
-              let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-              self?.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, callback: callback)
-            }
-          }
-
-        }
+    autoreleasepool {
+      guard let dataObject = data.data(using: .utf8) else {
+        callback([YeetError.init(code: .genericError, userInfo: nil)])
+        return
       }
+
+      guard let exportData = try? JSON(data: dataObject) else {
+        callback([YeetError.init(code: .genericError, userInfo: nil)])
+        return
+      }
+
+      self.getImages(data: exportData).then { images in
+        self.producer = VideoProducer(data: exportData, images: images)
+
+        let boundsDict = exportData["bounds"].dictionaryValue
+
+        let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
+        self.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, callback: callback)
+      }
+
     }
 
   }
 
-  func captureTextScreenshot(viewTag: NSNumber, registry: [NSNumber: UIView]) -> UIImage? {
-    guard let view = registry[viewTag] else {
-      return nil
-    }
-
+  func captureTextScreenshot(view: UIView) -> UIImage? {
     let size = view.bounds.size
 
     UIGraphicsBeginImageContextWithOptions(size, false, 0);
@@ -70,69 +68,65 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     return true
   }
 
-  func getImages(data: JSON, block: @escaping (_ images: Dictionary<String, ExportableMediaSource>) -> Void) -> Void {
-    var dict = Dictionary<String, ExportableMediaSource>();
+  func getImages(data: JSON) -> Promise<Dictionary<String, ExportableMediaSource>> {
+    let nodeBlocks = data["nodes"].arrayValue.map { node in
+      return node["block"]
+    }
 
+    var allBlocks = data["blocks"].arrayValue
+    allBlocks.append(contentsOf: nodeBlocks)
 
-    RCTExecuteOnUIManagerQueue {
-      self.bridge.uiManager.addUIBlock({ (manager, _registry) in
-        let nodeBlocks = data["nodes"].arrayValue.map { node in
-          return node["block"]
+    return Promise<Dictionary<String, UIView>>.init(queue: .main) { resolve, reject in
+      var views: Dictionary<String, UIView> = [:]
+      allBlocks.forEach { block in
+        let node = data["nodes"].arrayValue.first { node in
+          if let blockId = node["block"].dictionaryValue["id"]?.stringValue {
+            return blockId == block["id"].stringValue
+          } else {
+            return false
+          }
 
         }
 
-        guard let registry = _registry else {
+        var viewTag: NSNumber
+        if let _node = node {
+           viewTag = _node["viewTag"].numberValue
+         } else {
+           viewTag = block["viewTag"].numberValue
+         }
+
+        guard let view = self.bridge.uiManager.view(forReactTag: viewTag) else {
+          return;
+        }
+
+        views[block["id"].stringValue] = view
+      }
+
+      resolve(views)
+    }.then { views in
+      var dict = Dictionary<String, ExportableMediaSource>();
+      allBlocks.forEach { block in
+        guard let view = views[block["id"].stringValue] else {
           return
         }
 
-         var allBlocks = data["blocks"].arrayValue
-        allBlocks.append(contentsOf: nodeBlocks)
-        allBlocks.forEach { block in
-          let node = data["nodes"].arrayValue.first { node in
-            if let blockId = node["block"].dictionaryValue["id"]?.stringValue {
-              return blockId == block["id"].stringValue
-            } else {
-              return false
-            }
-
+        if block["type"].stringValue == "text" {
+          guard let screenshot = self.captureTextScreenshot(view: view) else {
+            return
           }
 
-          if block["type"].stringValue == "text" {
-            var viewTag: NSNumber
+          dict[block["id"].stringValue] = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
+        } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
+           guard let mediaPlayer = self.findMediaPlayer(view) else {
+             return
+           }
 
-            if let _node = node {
-              viewTag = _node["viewTag"].numberValue
-            } else {
-              viewTag = block["viewTag"].numberValue
-            }
-
-            guard let screenshot = self.captureTextScreenshot(viewTag: viewTag, registry: registry) else {
-              return
-            }
-
-            dict[block["id"].stringValue] = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
-          } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
-            guard let view = registry[block["viewTag"].numberValue] else {
-              return;
-            }
-
-            let nodeViewTag = node?["viewTag"].numberValue
-            let nodeView = nodeViewTag != nil ? registry[nodeViewTag!] : nil
-
-            if let mediaPlayer = self.findMediaPlayer(view) {
-
-              dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: nodeView)
-            }
-
-          }
+           dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
         }
+      }
 
-  
-
-        block(dict)
-      })
+      return Promise.init(value: dict)
     }
-
   }
 
   func findMediaPlayer(_ view: UIView) -> MediaPlayer? {

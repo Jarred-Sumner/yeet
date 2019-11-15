@@ -12,6 +12,7 @@ import SDWebImage
 import AVFoundation
 import CoreImage
 import MobileCoreServices
+import SwiftyBeaver
 
 extension CGRect {
   static func from(json: JSON) -> CGRect {
@@ -87,6 +88,33 @@ enum MimeType: String {
   case tiff = "image/tiff"
   case mov = "video/quicktime"
   case bmp = "image/bmp"
+
+  func fileExtension() -> String {
+    switch self {
+    case .png:
+      return "png"
+    case .gif:
+      return "gif"
+    case .webp:
+      return "webp"
+    case .jpg:
+      return "jpg"
+    case .mp4:
+      return "mp4"
+
+    case .heic:
+      return "heic"
+
+    case .heif:
+      return "heif"
+    case .tiff:
+      return "tiff"
+    case .mov:
+      return "mov"
+    case .bmp:
+      return "bmp"
+    }
+  }
 
   static func url(_ url: URL) -> MimeType? {
     return fileExtension(url.pathExtension)
@@ -398,33 +426,37 @@ class VideoProducer {
      return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString.appending(".\(type.fileExtension())"))
   }
 
-  static let contentExportQueue = DispatchQueue.init(label: "com.codeblogcorp.ContentExportQueue", qos: .utility, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+  lazy var resources: Array<ExportableBlock> = self.blocks.map { block in
+    return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
+  }
+
+  static let contentExportQueue = DispatchQueue.init(label: "com.codeblogcorp.ContentExportQueue", qos: .background, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
 
   func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil, callback: @escaping RCTResponseSenderBlock) {
-    let resources = self.blocks.map { block in
-      return ExportableBlock(block: block, duration: CMTime(seconds: block.totalDuration))
-    }
-
     let isDigital = self.isDigitalOnly
 
 
-    var exportType: ExportType
-
-
-    if (self.hasAnyAnimations || self.hasAnyVideos) {
-      exportType = .mp4
-    } else if (isServerOnly) {
-      exportType = .webp
-    } else if (isDigital) {
-      exportType = .png
-    } else {
-      exportType = .jpg
+    var exportType: ExportType = .jpg
+    measure(name: "determine export type") {
+      if (self.hasAnyAnimations || self.hasAnyVideos) {
+        exportType = .mp4
+      }
+  //    else if (isServerOnly) {
+  //      exportType = .webp
+  //    }
+      else if (isDigital) {
+        exportType = .png
+      } else {
+        exportType = .jpg
+      }
     }
 
     let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
 
-    ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: resources, isDigitalOnly: isDigital, scale: scale).then { export in
+    let start = CACurrentMediaTime()
+    ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale).then { export in
+      SwiftyBeaver.info("Completed ContentExport in \(CACurrentMediaTime() - start) [\(self.resources.count)]")
         callback([nil, export.dictionaryValue()])
     }.catch { error in
       callback([error, nil])

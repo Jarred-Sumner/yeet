@@ -7,7 +7,7 @@
  */
 
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import React from "react";
+import React, { Suspense } from "react";
 import { StatusBar } from "react-native";
 import OneSignal from "react-native-onesignal";
 import { PortalProvider, WhitePortal } from "react-native-portal";

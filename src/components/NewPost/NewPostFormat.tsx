@@ -8,7 +8,7 @@ export const CAROUSEL_HEIGHT = 40 + getInset("top") + SPACING.half;
 
 export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 
-export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y;
+export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y - 100;
 
 export enum PostFormat {
   screenshot = "screenshot",

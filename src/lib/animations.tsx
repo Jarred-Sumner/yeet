@@ -147,3 +147,52 @@ export const preserveMultiplicativeOffset = (
 
   return _preserveMultiplicativeOffset(value, state, previous, offset);
 };
+
+export function runLoopAnimation({
+  toValue = 1,
+  easing = Easing.inOut(Easing.linear),
+  duration = 1000
+}) {
+  const clock = new Clock();
+
+  const state = {
+    finished: new Value(0),
+    position: new Value(0),
+    time: new Value(0),
+    frameTime: new Value(0)
+  };
+
+  const config = {
+    duration: new Value(duration),
+    toValue: new Value(toValue),
+    easing
+  };
+
+  return block([
+    // start right away
+    startClock(clock),
+
+    // process your state
+    timing(clock, state, config),
+
+    // when over (processed by timing at the end)
+    cond(state.finished, [
+      // we stop
+      stopClock(clock),
+
+      // set flag ready to be restarted
+      set(state.finished, 0),
+      // same value as the initial defined in the state creation
+      set(state.position, 0),
+
+      // very important to reset this ones !!! as mentioned in the doc about timing is saying
+      set(state.time, 0),
+      set(state.frameTime, 0),
+
+      // and we restart
+      startClock(clock)
+    ]),
+
+    state.position
+  ]);
+}

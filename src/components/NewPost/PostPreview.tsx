@@ -85,6 +85,7 @@ export const EditableNodeList = ({
   onChangeNode,
   onTapNode,
   maxX,
+  keyboardHeightValue,
   focusType,
   keyboardVisibleValue,
   onFocus,
@@ -140,6 +141,7 @@ export const EditableNodeList = ({
         absoluteY={panY}
         focusTypeValue={focusTypeValue}
         keyboardVisibleValue={keyboardVisibleValue}
+        keyboardHeightValue={keyboardHeightValue}
         focusType={focusType}
         key={id}
         isFocused={focusedBlockId === id}
@@ -203,8 +205,54 @@ export const PostPreview = React.forwardRef(
     const scrollRef = React.useRef();
 
     React.useImperativeHandle(ref, () => scrollRef.current);
-    const { isBlurred, isBlurring } = useFocusState();
     const { onLayout, ...layout } = useLayout();
+
+    const initialOffset = React.useMemo(
+      () => ({
+        x: 0,
+        y: 0
+      }),
+      []
+    );
+
+    const contentInset = React.useMemo(
+      () => ({
+        top: paddingTop,
+        bottom: paddingBottom
+      }),
+      []
+    );
+
+    const scrollViewStyle = React.useMemo(
+      () => ({
+        maxHeight,
+        width: bounds.width,
+        flex: 1,
+        // overflow: "visible",
+        backgroundColor
+      }),
+      [maxHeight, bounds.width, backgroundColor]
+    );
+
+    const contentContainerStyle = React.useMemo(
+      () => [
+        {
+          position: "relative",
+          backgroundColor
+        }
+      ],
+      [backgroundColor]
+    );
+
+    const contenViewStyle = React.useMemo(
+      () => ({
+        minHeight:
+          layout && typeof layout.height === "number"
+            ? layout.height - paddingTop
+            : undefined
+      }),
+      [layout, paddingTop]
+    );
 
     // React.useLayoutEffect(() => {
     //   scrollRef.current.getScrollResponder().scrollTo({
@@ -222,14 +270,8 @@ export const PostPreview = React.forwardRef(
         bounces={bounces}
         alwaysBounceVertical={bounces}
         overScrollMode="always"
-        defaultPosition={{
-          x: 0,
-          y: 0
-        }}
-        contentOffset={{
-          x: 0,
-          y: 0
-        }}
+        defaultPosition={initialOffset}
+        contentOffset={initialOffset}
         scrollEnabled={!swipeOnly}
         onScroll={onScroll}
         onLayout={onLayout}
@@ -240,29 +282,12 @@ export const PostPreview = React.forwardRef(
         extraScrollHeight={0}
         ref={scrollRef}
         paddingTop={paddingTop}
-        enableResetScrollToCoords
-        resetScrollToCoords={{
-          x: 0,
-          y: 0
-        }}
-        contentInset={{
-          top: paddingTop,
-          bottom: paddingBottom
-        }}
+        enableResetScrollToCoords={false}
+        resetScrollToCoords={initialOffset}
+        contentInset={contentInset}
         paddingBottom={paddingBottom}
-        style={{
-          maxHeight,
-          width: bounds.width,
-          flex: 1,
-          // overflow: "visible",
-          backgroundColor
-        }}
-        contentContainerStyle={[
-          {
-            position: "relative",
-            backgroundColor
-          }
-        ]}
+        style={scrollViewStyle}
+        contentContainerStyle={contentContainerStyle}
       >
         <TapGestureHandler
           onHandlerStateChange={onTapBackground}
@@ -271,15 +296,7 @@ export const PostPreview = React.forwardRef(
           minDurationMs={swipeOnly ? 150 : undefined}
           maxDist={9999}
         >
-          <Animated.View
-            ref={contentViewRef}
-            style={{
-              minHeight:
-                layout && typeof layout.height === "number"
-                  ? layout.height - paddingTop
-                  : undefined
-            }}
-          >
+          <Animated.View ref={contentViewRef} style={contenViewStyle}>
             <BlockList
               setBlockInputRef={setBlockInputRef}
               blocks={blocks}

@@ -1,23 +1,48 @@
 import * as React from "react";
 import S3Upload, { startFileUpload } from "../lib/fileUpload";
 import { fromPairs, get } from "lodash";
-import Animated from "react-native-reanimated";
+import Animated, { Easing } from "react-native-reanimated";
 import HapticFeedback from "react-native-haptic-feedback";
-import { ActivityIndicator, View, PixelRatio } from "react-native";
-import { SemiBoldText } from "./Text";
+import {
+  ActivityIndicator,
+  View,
+  StyleSheet,
+  PixelRatio,
+  KeyboardAvoidingView
+} from "react-native";
+import { SemiBoldText, MediumText, Text } from "./Text";
 import {
   ContentExport,
   ExportData,
   getMediaToUpload,
   ExportableYeetImage
 } from "../lib/Exporter";
-import { Mutation } from "react-apollo";
+import { Mutation, useMutation, MutationFunction } from "react-apollo";
 import SUBMIT_POST_MUTATION from "../lib/createPostMutation.graphql";
+import CREATE_POST_THREAD_MUTATION from "../lib/createPostThreadMutation.graphql";
 import ADD_ATTACHMENT_MUTATION from "../lib/addAttachmentMutation.graphql";
 import path from "path";
 import Bluebird from "bluebird";
-import { CreatePost, CreatePost_createPost } from "../lib/graphql/CreatePost";
-import { AddAttachmentMutation } from "../lib/graphql/AddAttachmentMutation";
+import {
+  CreatePost,
+  CreatePost_createPost,
+  CreatePostVariables
+} from "../lib/graphql/CreatePost";
+import {
+  AddAttachmentMutation,
+  AddAttachmentMutationVariables
+} from "../lib/graphql/AddAttachmentMutation";
+import { SPACING } from "../lib/styles";
+import Modal from "./Modal";
+import { runLoopAnimation } from "../lib/animations";
+import { DimensionsRect } from "../lib/Rect";
+import { PostFormat } from "./NewPost/NewPostFormat";
+import {
+  CreatePostThread,
+  CreatePostThreadVariables,
+  CreatePostThread_createPostThread
+} from "../lib/graphql/CreatePostThread";
+import { PostFragment } from "../lib/graphql/PostFragment";
 
 enum UploadStatus {
   pending = "pending",
@@ -32,6 +57,16 @@ enum UploadStatus {
 type Props = {
   file: ContentExport;
   data: ExportData;
+  submitPostThread: MutationFunction<
+    CreatePostThread,
+    CreatePostThreadVariables
+  >;
+  submitPost: MutationFunction<CreatePost, CreatePostVariables>;
+  addAttachment: MutationFunction<
+    AddAttachmentMutation,
+    AddAttachmentMutationVariables
+  >;
+
   width: number;
   height: number;
 };
@@ -40,7 +75,53 @@ type State = {
   uploadStatus: UploadStatus;
   mediaId: string | null;
 };
-export class RawPostUploader extends React.Component<Props> {
+
+const styles = StyleSheet.create({
+  content: {
+    flex: 1,
+    paddingHorizontal: SPACING.double,
+    alignContent: "center",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  spinner: {
+    marginBottom: 0
+  },
+  spinnerText: {
+    fontSize: 72
+  },
+  spinnerTextTiny: {
+    fontSize: 32,
+    position: "relative",
+    top: -8
+  },
+  words: {
+    fontSize: 18,
+    color: "white",
+    flexDirection: "row"
+  },
+  small: {
+    fontSize: 12
+  },
+  xdSoRandom: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  },
+  breadRow: {
+    flexDirection: "row",
+    width: "100%",
+    justifyContent: "space-evenly"
+  },
+  bread: {
+    fontSize: 48,
+    width: "100%"
+  }
+});
+
+export class RawPostUploader extends React.Component<Props, State> {
   uploadProgressValue = new Animated.Value(this.props.width * -1);
 
   constructor(props: Props) {
@@ -111,60 +192,143 @@ export class RawPostUploader extends React.Component<Props> {
     });
   };
 
-  createPost = (
-    mediaId: string,
+  createPost = ({
+    mediaId,
+    autoplaySeconds,
     blocks,
     nodes,
     format,
     bounds,
     colors,
     threadId
-  ): Promise<CreatePost_createPost> => {
+  }: {
+    mediaId: string;
+    blocks: Array<Object>;
+    nodes: Array<Object>;
+    format: PostFormat;
+    autoplaySeconds: number;
+    bounds: DimensionsRect;
+    colors: any;
+    threadId?: string;
+  }): Promise<CreatePost_createPost> => {
     this.setState({ uploadStatus: UploadStatus.submittingPost });
 
     return this.props
       .submitPost({
-        variables: { mediaId, blocks, nodes, format, bounds, colors, threadId }
+        variables: {
+          mediaId,
+          blocks,
+          nodes,
+          format,
+          autoplaySeconds,
+          bounds,
+          colors,
+          threadId
+        }
       })
       .then(
-        async (resp: { data: CreatePost }) => {
-          const {
-            data: { createPost: post },
-            error
-          } = resp;
-
-          if (error) {
-            console.error(error);
-            return;
+        ({ data: { createPost: post }, errors }) => {
+          if (errors) {
+            console.error(errors);
           }
 
-          if (!post) {
-            debugger;
-            return null;
-          }
-
-          const mediaMap = getMediaToUpload(this.props.data);
-
-          if (Object.keys(mediaMap).length > 0) {
-            try {
-              await Bluebird.map(
-                Object.entries(mediaMap),
-                ([id, image]) => this.uploadImage(id, image, post.id),
-                { concurrency: 2 }
-              );
-            } catch (exception) {
-              console.error(exception);
-            }
-          }
-
-          this.setState({ uploadStatus: UploadStatus.complete });
-          return post;
+          return Promise.resolve(
+            this.handleSubmission(post, errors ? errors[0] : null)
+          ).then(post => {
+            console.log("HERE");
+            return post;
+          });
         },
         err => {
-          console.error(err);
-          this.triggerUploadComplete = true;
+          console.log(err);
+          return Promise.resolve(this.handleSubmission(null, err));
         }
       );
+  };
+
+  createPostThread = ({
+    mediaId,
+    blocks,
+    nodes,
+    body,
+    format,
+    bounds,
+    autoplaySeconds,
+    colors
+  }: {
+    mediaId: string;
+    blocks: Array<Object>;
+    nodes: Array<Object>;
+    body: string;
+    format: PostFormat;
+    bounds: DimensionsRect;
+    colors: any;
+    autoplaySeconds: number;
+  }): Promise<CreatePostThread_createPostThread> => {
+    this.setState({ uploadStatus: UploadStatus.submittingPost });
+
+    return this.props
+      .submitPostThread({
+        variables: {
+          mediaId,
+          body,
+          blocks,
+          nodes,
+          format,
+          autoplaySeconds,
+          bounds,
+          colors
+        }
+      })
+      .then(
+        ({ data: { createPostThread: thread }, errors }) => {
+          const post = thread.posts.data[0];
+
+          return Promise.resolve(
+            this.handleSubmission(post, errors ? errors[0] : null)
+          ).then(post => {
+            console.log("HERE");
+            return thread;
+          });
+        },
+        err => {
+          return this.handleSubmission(null, err);
+        }
+      );
+  };
+
+  handleSubmission = async (post: PostFragment | null, error?: Error) => {
+    if (error) {
+      console.error(error);
+      this.setState({ uploadStatus: UploadStatus.uploadFileError });
+      return;
+    }
+
+    if (!post) {
+      debugger;
+      return null;
+    }
+
+    console.log("3");
+
+    const mediaMap = getMediaToUpload(this.props.data);
+
+    if (Object.keys(mediaMap).length > 0) {
+      try {
+        await Bluebird.map(
+          Object.entries(mediaMap),
+          ([id, image]) => this.uploadImage(id, image, post.id),
+          { concurrency: 2 }
+        );
+      } catch (exception) {
+        console.error(exception);
+      }
+    }
+
+    console.log("4");
+
+    this.setState({ uploadStatus: UploadStatus.complete });
+    return post;
   };
 
   triggerUploadComplete = true;
@@ -244,10 +408,6 @@ export class RawPostUploader extends React.Component<Props> {
       uploadStatus: UploadStatus.uploadingFile
     });
 
-    Animated.spring(this.uploadProgressValue, {
-      toValue: this.props.width * 1
-    }).start();
-
     this.s3Upload = await startFileUpload({
       file: {
         fileName: path.basename(file.uri),
@@ -267,6 +427,8 @@ export class RawPostUploader extends React.Component<Props> {
   };
   canceled = false;
 
+  breadSpinner = new Animated.Value(0);
+
   get isUploading() {
     return [
       UploadStatus.pending,
@@ -278,44 +440,79 @@ export class RawPostUploader extends React.Component<Props> {
 
   render() {
     return (
-      <Animated.View
-        style={{
-          width: "100%",
-          height: "100%",
-          position: "absolute",
-          top: 0,
-          justifyContent: "center",
-          alignItems: "center",
-          left: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.65)"
-        }}
+      <Modal
+        visible={this.props.visible}
+        onDismiss={this.props.onCancel}
+        onPressBackdrop={this.props.onCancel}
       >
-        {this.isUploading ? (
-          <ActivityIndicator size="large" />
-        ) : (
-          <SemiBoldText>{this.state.uploadStatus}</SemiBoldText>
-        )}
-      </Animated.View>
+        <KeyboardAvoidingView behavior="padding">
+          <Animated.Code
+            exec={Animated.block([
+              Animated.set(
+                this.breadSpinner,
+                runLoopAnimation({ easing: Easing.linear, duration: 100000 })
+              )
+            ])}
+          />
+
+          <View style={styles.content}>
+            <Animated.View
+              style={[
+                styles.spinner,
+                {
+                  transform: [
+                    {
+                      rotate: Animated.concat(
+                        Animated.interpolate(this.breadSpinner, {
+                          inputRange: [0, 1],
+                          outputRange: [0, 360],
+                          extrapolate: Animated.Extrapolate.CLAMP
+                        }),
+                        "rad"
+                      )
+                    }
+                  ]
+                }
+              ]}
+            >
+              <Text style={styles.spinnerText}>🍞</Text>
+            </Animated.View>
+            <Text style={[styles.spinnerText, styles.spinnerTextTiny]}>♨️</Text>
+            <View>
+              <MediumText style={styles.words}>
+                Your post is baking!!
+              </MediumText>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     );
   }
 }
 
 export const PostUploader = React.forwardRef((props, ref) => {
+  const [submitPost] = useMutation<CreatePost, CreatePostVariables>(
+    SUBMIT_POST_MUTATION
+  );
+
+  const [addAttachment] = useMutation<
+    AddAttachmentMutation,
+    AddAttachmentMutationVariables
+  >(ADD_ATTACHMENT_MUTATION);
+
+  const [submitPostThread] = useMutation<
+    CreatePostThread,
+    CreatePostThreadVariables
+  >(CREATE_POST_THREAD_MUTATION);
+
   return (
-    <Mutation mutation={SUBMIT_POST_MUTATION}>
-      {submitPost => (
-        <Mutation mutation={ADD_ATTACHMENT_MUTATION}>
-          {addAttachment => (
-            <RawPostUploader
-              {...props}
-              submitPost={submitPost}
-              ref={ref}
-              addAttachment={addAttachment}
-            />
-          )}
-        </Mutation>
-      )}
-    </Mutation>
+    <RawPostUploader
+      {...props}
+      submitPostThread={submitPostThread}
+      submitPost={submitPost}
+      ref={ref}
+      addAttachment={addAttachment}
+    />
   );
 });
 

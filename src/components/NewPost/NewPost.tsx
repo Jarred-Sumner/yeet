@@ -139,7 +139,12 @@ const styles = StyleSheet.create({
     textAlignVertical: "center",
     color: "#FFF"
   },
-
+  transitionContainer: {
+    width: POST_WIDTH,
+    height: SCREEN_DIMENSIONS.height,
+    backgroundColor: "black"
+  },
+  transitioningView: { width: POST_WIDTH, height: SCREEN_DIMENSIONS.height },
   page: {
     flex: 1
   },
@@ -277,7 +282,7 @@ class RawNewPost extends React.Component<{}, State> {
       SCREEN_DIMENSIONS.height
     );
 
-    const aspectFitCropRatio = height / SCREEN_DIMENSIONS.height;
+    const aspectFitCropRatio = height / MAX_POST_HEIGHT;
     const shouldCropPhoto = aspectFitCropRatio > cropThreshold;
 
     if (shouldCropPhoto) {
@@ -414,33 +419,20 @@ class RawNewPost extends React.Component<{}, State> {
               <Transitioning.View
                 ref={this.stepContainerRef}
                 transition={
-                  <Transition.Together>
+                  <Transition.Sequence>
                     {/* <Transition.In type="fade" /> */}
                     <Transition.Out type="fade" />
-                  </Transition.Together>
+                  </Transition.Sequence>
                 }
-                style={{ width: POST_WIDTH, height: SCREEN_DIMENSIONS.height }}
+                style={styles.transitioningView}
               >
                 <Animated.View
-                  style={{
-                    width: POST_WIDTH,
-                    height: SCREEN_DIMENSIONS.height
-                  }}
+                  style={styles.transitionContainer}
                   key={`${this.state.post.format}-${this.state.step}`}
                 >
                   {this.renderStep()}
                 </Animated.View>
               </Transitioning.View>
-
-              {showUploader && (
-                <PostUploader
-                  {...uploadData}
-                  ref={this.postUploaderRef}
-                  width={SCREEN_DIMENSIONS.width}
-                  height={SCREEN_DIMENSIONS.height}
-                  onUpload={this.handleUploadComplete}
-                />
-              )}
 
               <PostHeader
                 defaultFormat={this.state.post.format}
@@ -459,6 +451,9 @@ class RawNewPost extends React.Component<{}, State> {
   handleChangeNodes = (inlineNodes: EditableNodeMap) => {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
+
+  handleSubmit = (contentExport: ContentExport, data: ExportData) =>
+    this.props.onExport(contentExport, data, this.state.post.format);
 
   renderStep() {
     const { inlineNodes, step } = this.state;
@@ -481,7 +476,7 @@ class RawNewPost extends React.Component<{}, State> {
           inlineNodes={inlineNodes}
           yInset={CAROUSEL_HEIGHT}
           onChangeNodes={this.handleChangeNodes}
-          onSubmit={this.handleCreatePost}
+          onSubmit={this.handleSubmit}
         />
       );
     } else if (step === NewPostStep.resizePhoto) {
@@ -526,39 +521,6 @@ class RawNewPost extends React.Component<{}, State> {
       return null;
     }
   }
-
-  handleCreatePost = (_file: ContentExport, data: ExportData) => {
-    const { colors, ...file } = _file;
-    this.setState(
-      {
-        showUploader: true,
-        uploadData: {
-          file,
-          data,
-          colors
-        }
-      },
-      () => {
-        this.postUploaderRef.current.startUploading(true);
-      }
-    );
-  };
-
-  handleUploadComplete = async (mediaId: string) => {
-    const post = await this.postUploaderRef.current.createPost(
-      mediaId,
-      this.state.uploadData.data.blocks,
-      this.state.uploadData.data.nodes,
-      this.state.post.format,
-      this.state.uploadData.data.bounds,
-      this.state.uploadData.colors,
-      this.props.threadId
-    );
-
-    sendToast("Posted successfully", ToastType.success);
-    this.setState({ showUploader: false, uploadData: null });
-    this.props.onCreate && this.props.onCreate(post);
-  };
 }
 
 export const NewPost = hoistNonReactStatics(

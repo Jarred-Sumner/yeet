@@ -68,14 +68,16 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  profile: PostListItemFragment_profile;
+  profile: Pick<PostListItemFragment_profile, "photoURL" | "username">;
   onPressEllipsis: () => void;
 };
 
 export const ProfileFeedComponent = ({
   profile,
   onPressEllipsis,
+  showTimestamp = true,
   createdAt,
+  showEllipsis = true,
   body
 }: Props) => {
   return (
@@ -95,32 +97,40 @@ export const ProfileFeedComponent = ({
               {profile.username}
             </Text>
 
-            <View style={styles.circle} />
+            {showTimestamp && (
+              <>
+                <View style={styles.circle} />
 
-            <Timestamp time={createdAt} style={styles.timestamp} />
+                <Timestamp time={createdAt} style={styles.timestamp} />
+              </>
+            )}
           </View>
 
-          <View style={styles.bodyTextContainer}>
-            <MediumText
-              style={styles.bodyText}
-              adjustsSizeToFit
-              numberOfLines={1}
-            >
-              {body}
-            </MediumText>
-          </View>
+          {body && (
+            <View style={styles.bodyTextContainer}>
+              <MediumText
+                style={styles.bodyText}
+                adjustsSizeToFit
+                numberOfLines={1}
+              >
+                {body}
+              </MediumText>
+            </View>
+          )}
         </View>
       </View>
 
       <View style={[styles.side, styles.right]}>
-        <IconButton
-          Icon={IconEllipsis}
-          size={6}
-          containerSize={23}
-          type="shadow"
-          color={"#999"}
-          onPress={onPressEllipsis}
-        />
+        {showEllipsis && (
+          <IconButton
+            Icon={IconEllipsis}
+            size={6}
+            containerSize={23}
+            type="shadow"
+            color={"#999"}
+            onPress={onPressEllipsis}
+          />
+        )}
       </View>
     </Animated.View>
   );

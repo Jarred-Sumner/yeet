@@ -1,0 +1,23 @@
+#import "./PostFragment.graphql"
+
+fragment ViewThreadFragment on PostThread {
+  id
+  postsCount
+  body
+
+  profile {
+    username
+    id
+    photoURL
+  }
+
+  posts(offset: $postOffset, limit: $postsCount) {
+    offset
+    limit
+    hasMore
+    id
+    data {
+      ...PostFragment
+    }
+  }
+}

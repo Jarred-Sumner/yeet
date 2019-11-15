@@ -46,8 +46,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: 0,
-    height: CAROUSEL_HEIGHT
+    bottom: 0
   },
   backButtonGradientContainer: {
     zIndex: 0,
@@ -106,6 +105,7 @@ const BackButtonLayer = () => {
         <BackButton
           color="white"
           style={styles.backButton}
+          size={18}
           behavior={BackButtonBehavior.close}
         />
       </View>

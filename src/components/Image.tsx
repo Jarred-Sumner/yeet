@@ -65,6 +65,7 @@ const CustomFastImage = React.forwardRef(
       <MediaPlayer
         ref={ref}
         sources={sources}
+        muted
         borderRadius={borderRadius}
         isVisible={isVisible}
         id={id}

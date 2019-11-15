@@ -2792,12 +2792,125 @@
                 "defaultValue": null
               },
               {
-                "name": "threadId",
+                "name": "remixId",
                 "description": null,
                 "type": {
                   "kind": "SCALAR",
                   "name": "ID",
                   "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "blocks",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "JSON",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "nodes",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "JSON",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "threadId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "autoplaySeconds",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "format",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "bounds",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "RectangleInputObject",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "colors",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "ColorsInputObject",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              }
+            ],
+            "type": {
+              "kind": "OBJECT",
+              "name": "Post",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "createPostThread",
+            "description": null,
+            "args": [
+              {
+                "name": "mediaId",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
+                    "ofType": null
+                  }
                 },
                 "defaultValue": null
               },
@@ -2856,6 +2969,20 @@
                 "defaultValue": null
               },
               {
+                "name": "body",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null
+              },
+              {
                 "name": "bounds",
                 "description": null,
                 "type": {
@@ -2882,21 +3009,11 @@
                   }
                 },
                 "defaultValue": null
-              },
-              {
-                "name": "body",
-                "description": null,
-                "type": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                },
-                "defaultValue": null
               }
             ],
             "type": {
               "kind": "OBJECT",
-              "name": "Post",
+              "name": "PostThread",
               "ofType": null
             },
             "isDeprecated": false,

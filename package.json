@@ -40,6 +40,7 @@
     "date-fns": "^2.4.0",
     "euclidean-distance": "^1.0.0",
     "events": "^3.0.0",
+    "flubber": "^0.4.2",
     "formik": "^1.5.8",
     "giphy-api": "^2.0.1",
     "graphql": "^14.5.8",
@@ -55,6 +56,7 @@
     "numbro": "^2.1.2",
     "path": "^0.12.7",
     "point-in-polygon": "^1.0.1",
+    "popmotion": "^8.7.0",
     "qs": "^6.9.0",
     "react": "16.9.0",
     "react-apollo": "3.1.1",
@@ -68,7 +70,7 @@
     "react-native-firebase": "^5.5.6",
     "react-native-formik": "^1.7.7",
     "react-native-fs": "^2.14.1",
-    "react-native-gesture-handler": "^1.4.1",
+    "react-native-gesture-handler": "1.5.0",
     "react-native-haptic-feedback": "^1.8.2",
     "react-native-hooks": "^0.9.0",
     "react-native-image-picker": "https://github.com/Jarred-Sumner/react-native-image-picker.git",
@@ -84,7 +86,7 @@
     "react-native-reanimated": "^1.4.0",
     "react-native-redash": "^7.5.1",
     "react-native-safe-area-view": "^0.14.6",
-    "react-native-screens": "2.0.0-alpha.8",
+    "react-native-screens": "2.0.0-alpha.10",
     "react-native-section-list-get-item-layout": "^2.2.3",
     "react-native-secure-key-store": "^2.0.4",
     "react-native-shared-element": "^0.5.1",
@@ -103,6 +105,7 @@
     "react-navigation-stack": "^1.10.3",
     "react-navigation-tabs": "^2.5.2",
     "rn-fetch-blob": "^0.10.16",
+    "svg-path-properties": "^0.5.2",
     "svg-points": "^6.0.1",
     "tinycolor2": "^1.4.1",
     "yup": "^0.27.0"
@@ -135,10 +138,9 @@
     "eslint": "^6.1.0",
     "jest": "^24.8.0",
     "metro-react-native-babel-preset": "^0.56.0",
-    "prettier": "https://github.com/prettier/prettier.git#master",
     "react-native-typescript-transformer": "^1.2.13",
     "react-test-renderer": "16.8.6",
-    "typescript": "3.7.1-rc"
+    "typescript": "3.7.2"
   },
   "jest": {
     "preset": "react-native"

@@ -3,7 +3,7 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import { capitalize } from "lodash";
 import * as React from "react";
 import { useMutation } from "react-apollo";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Keyboard } from "react-native";
 import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
 import SafeAreaView from "react-native-safe-area-view";
 import { useNavigation, useNavigationParam } from "react-navigation-hooks";
@@ -27,8 +27,8 @@ import Animated from "react-native-reanimated";
 
 const styles = StyleSheet.create({
   sign: {
-    paddingTop: SPACING.double,
-    paddingBottom: SPACING.double,
+    paddingTop: SPACING.double * 2,
+    paddingBottom: SPACING.double * 2,
     justifyContent: "center",
     alignItems: "center",
     width: "100%"
@@ -40,8 +40,8 @@ const styles = StyleSheet.create({
     width: "100%"
   },
   title: {
-    marginTop: SPACING.normal,
-    fontSize: 24,
+    marginTop: SPACING.double,
+    fontSize: 48,
     textAlign: "center",
     color: "#fff"
   },
@@ -77,6 +77,10 @@ class RawBirthdayScreen extends React.Component {
     )
   });
 
+  componentDidMount() {
+    Keyboard.dismiss();
+  }
+
   maxDate = subYears(new Date(), 13);
   minDate = subYears(new Date(), 100);
 
@@ -84,14 +88,16 @@ class RawBirthdayScreen extends React.Component {
 
   handleChange = date => {
     this.props.onChange(date);
-    this.transitionRef.current.animateNextTransition();
+    if (!this.props.showZodiac) {
+      this.transitionRef.current.animateNextTransition();
+    }
   };
 
   render() {
     const { date, zodiac, showZodiac } = this.props;
 
     return (
-      <View
+      <Animated.View
         style={{
           flex: 1,
           backgroundColor: COLORS.primary,
@@ -115,10 +121,10 @@ class RawBirthdayScreen extends React.Component {
             ref={this.transitionRef}
           >
             {showZodiac ? (
-              <Animated.View key={zodiac} style={styles.sign}>
+              <Animated.View key="zodiac" style={styles.sign}>
                 <ZodiacIcon
                   sign={zodiac}
-                  size={48}
+                  size={120}
                   color="#fff"
                   style={styles.zodiac}
                 />
@@ -151,7 +157,7 @@ class RawBirthdayScreen extends React.Component {
             onChange={this.handleChange}
           />
         </SafeAreaView>
-      </View>
+      </Animated.View>
     );
   }
 }

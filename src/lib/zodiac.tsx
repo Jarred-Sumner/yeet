@@ -1,21 +1,7 @@
-import * as React from "react";
+import { getDay, getMonth } from "date-fns/esm";
 import * as horoscope from "horoscope";
-import { getMonth, getDay } from "date-fns/esm";
-import {
-  IconName,
-  IconCancer,
-  IconCapricorn,
-  IconSagittarius,
-  IconAries,
-  IconTaurus,
-  IconGemini,
-  IconLeo,
-  IconAquarius,
-  IconPisces,
-  IconVirgo,
-  IconLibra,
-  IconScorpio
-} from "../components/Icon";
+import * as React from "react";
+import { Icon, IconName } from "../components/Icon";
 
 export enum ZodiacSign {
   cancer = IconName.cancer,
@@ -43,23 +29,8 @@ export const getSign = (date: Date): ZodiacSign => {
   return ZodiacSign[sign.toLowerCase()];
 };
 
-export const ZodiacIcon = ({ sign, ...props }) => {
-  const IconComponent = {
-    [ZodiacSign.cancer]: IconCancer,
-    [ZodiacSign.capricorn]: IconCapricorn,
-    [ZodiacSign.sagittarius]: IconSagittarius,
-    [ZodiacSign.aries]: IconAries,
-    [ZodiacSign.taurus]: IconTaurus,
-    [ZodiacSign.gemini]: IconGemini,
-    [ZodiacSign.leo]: IconLeo,
-    [ZodiacSign.aquarius]: IconAquarius,
-    [ZodiacSign.pisces]: IconPisces,
-    [ZodiacSign.virgo]: IconVirgo,
-    [ZodiacSign.libra]: IconLibra,
-    [ZodiacSign.scorpio]: IconScorpio
-  }[sign];
-
-  return <IconComponent {...props} />;
+export const ZodiacIcon = ({ sign, color, size, ...props }) => {
+  return <Icon {...props} name={IconName[sign]} color={color} size={size} />;
 };
 
 export const COPY_BY_SIGN = {
