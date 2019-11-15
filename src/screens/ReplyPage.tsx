@@ -35,7 +35,18 @@ class ReplyPage extends React.Component<{}, State> {
   };
   postUploaderRef = React.createRef<RawPostUploader>();
   handleCreate = () => {
-    this.props.navigation.goBack();
+    const fromFeed = this.props.navigation.getParam("fromFeed") ?? false;
+
+    const threadId = this.props.navigation.getParam("threadId");
+
+    if (fromFeed) {
+      this.props.navigation.goBack();
+      this.props.navigation.navigate("ViewThread", {
+        threadId
+      });
+    } else {
+      this.props.navigation.goBack();
+    }
   };
 
   handleExport = (

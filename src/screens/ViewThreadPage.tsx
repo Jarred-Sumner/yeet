@@ -542,12 +542,10 @@ const _ThreadPage = () => {
   );
 
   const isInitialFocus = React.useRef(true);
-  const isFocused = useIsFocused();
 
-  React.useEffect(() => {
+  const focusEffect = React.useCallback(() => {
     const _isInitialFocus = isInitialFocus.current;
     if (
-      isFocused &&
       !_isInitialFocus &&
       viewThreadQuery.networkStatus === NetworkStatus.ready
     ) {
@@ -556,7 +554,9 @@ const _ThreadPage = () => {
     }
 
     isInitialFocus.current = false;
-  }, [viewThreadQuery.networkStatus, isFocused]);
+  }, []);
+
+  useFocusEffect(focusEffect);
 
   const [deletePost] = useMutation<
     DeletePostMutation,

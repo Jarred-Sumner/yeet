@@ -95,8 +95,6 @@ const styles = StyleSheet.create({
 export const ThreadHeader = ({ thread }) => {
   const ref = React.useRef();
 
-  const handlePressEllipsis = React.useCallback(() => {}, [thread.id]);
-
   const behavior = useBackButtonBehavior();
   return (
     <>

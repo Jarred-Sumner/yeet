@@ -90,7 +90,8 @@ class FeedPageComponent extends React.Component<Props> {
   handleNewPost = (thread: ViewThreads_postThreads_data) => {
     this.props.navigation.navigate("ReplyToPost", {
       thread,
-      threadId: thread.id
+      threadId: thread.id,
+      fromFeed: true
     });
   };
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {
@@ -169,6 +170,7 @@ class FeedPageComponent extends React.Component<Props> {
           contentOffset={this.contentOffset}
           contentInset={this.contentInset}
         />
+
         <BottomTabBar currentRoute="FeedTab" style={styles.tabBar} />
       </View>
     );
