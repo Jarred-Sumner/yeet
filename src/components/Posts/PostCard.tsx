@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     zIndex: LayerZ.comments
   },
   countButtonSeparator: {
-    height: SPACING.normal,
+    height: SPACING.double,
     width: 1
   },
   player: {

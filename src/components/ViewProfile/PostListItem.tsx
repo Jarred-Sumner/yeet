@@ -92,7 +92,7 @@ const Gradient = () => (
 );
 
 type Props = {
-  onPress: (id: string) => void;
+  onPress: (post: PostListItemFragment) => void;
   isVisible: Boolean;
   post: PostListItemFragment;
   showProfile: Boolean;
@@ -127,7 +127,7 @@ export const PostListItem = ({
     };
   }, [post.media]);
   const handlePress = React.useCallback(() => {
-    return onPress(post.id);
+    return onPress(post);
   }, [post.id, onPress]);
 
   return (

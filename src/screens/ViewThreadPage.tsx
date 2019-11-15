@@ -6,7 +6,7 @@ import {
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { useQuery, useMutation } from "react-apollo";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, InteractionManager } from "react-native";
 import Animated, {
   Transitioning,
   Transition,
@@ -185,11 +185,13 @@ const ThreadReplyButton = React.memo(({ onPress }) => {
 type Props = Pick<Context, "showActionSheetWithOptions"> & {
   navigation: NavigationProp<NavigationStackProp>;
   requireAuthentication: RequireAuthenticationFunction;
+  hasScrolledToInitialPost: boolean;
 };
 
 class ThreadPageComponent extends React.Component<Props, State> {
   state = {
     showComposer: false,
+    hasScrolledToInitialPost: false,
     composerProps: {}
   };
   // static sharedElements = (navigation, otherNavigation, showing) => {
@@ -432,10 +434,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
   };
 
   render() {
-    const { thread, defaultPost, refreshing } = this.props;
+    const { thread, defaultPost, refreshing, posts } = this.props;
     const { showComposer, composerProps } = this.state;
-
-    const posts = thread?.posts?.data ?? [];
 
     return (
       <Animated.View style={styles.page}>
@@ -452,6 +452,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
           onPressLike={this.handlePressLike}
           onPressProfile={this.handlePressProfile}
           onPressPostEllipsis={this.handlePressPostEllipsis}
+          initialPostId={defaultPost?.id}
           extraData={this.state}
           keyboardVisibleValue={this.keyboardVisibleValue}
           scrollEnabled={this.state.showComposer === false}
@@ -567,6 +568,9 @@ const _ThreadPage = () => {
     DeleteCommentMutationVariables
   >(DELETE_COMMENT_MUTATION);
 
+  const defaultPost = useNavigationParam("post");
+  const thread = viewThreadQuery?.data?.postThread ?? defaultThread;
+
   return (
     <ThreadPageComponent
       navigation={navigation}
@@ -577,9 +581,10 @@ const _ThreadPage = () => {
       deletePost={deletePost}
       requireAuthentication={requireAuthentication}
       deleteComment={deleteComment}
-      thread={viewThreadQuery?.data?.postThread ?? defaultThread}
+      posts={thread?.posts?.data ?? []}
+      thread={thread}
       threadId={threadId}
-      defaultPost={useNavigationParam("post")}
+      defaultPost={defaultPost}
       loading={viewThreadQuery.loading}
       showActionSheetWithOptions={actionSheet.showActionSheetWithOptions}
     />

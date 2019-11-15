@@ -4,7 +4,8 @@ import {
   FlatList as RNFlatList,
   StyleSheet,
   View,
-  ViewabilityConfig
+  ViewabilityConfig,
+  InteractionManager
 } from "react-native";
 import { PanGestureHandler, State } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -21,7 +22,7 @@ import {
   ViewThread_postThread_posts_data
 } from "../../lib/graphql/ViewThread";
 import { runDelay } from "react-native-redash";
-import { throttle, debounce } from "lodash";
+import { throttle, debounce, invert, memoize } from "lodash";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -40,50 +41,84 @@ const listStyles = StyleSheet.create({
 
 const ItemSeparatorComponent = () => <View style={listStyles.separator} />;
 
-export class PostFlatList extends React.Component {
+type State = {
+  hasScrolledToInitialPost: boolean;
+  visibleIDs: {
+    [key: string]: true;
+  };
+};
+
+type Props = {
+  initialPostId: string | null;
+  topInset: number;
+  bottomInset: number;
+  posts: Array<PostFragment>;
+  onPressLike: Function;
+  composingPostId: string | null;
+  keyboardVisibleValue: Animated.Node<number>;
+  onPressProfile: Function;
+  onPressPostEllipsis: Function;
+};
+
+export class PostFlatList extends React.Component<Props, State> {
   static defaultProps = {
-    initialPostIndex: 0,
+    initialPostId: null,
     topInset: 0,
     bottomInset: 0
   };
 
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
 
-    this.state = { visibleIDs: {} };
+    this.state = { visibleIDs: {}, hasScrolledToInitialPost: false };
 
     this.topInset = TOP_Y + props.topInset;
     this.bottomInset = BOTTOM_Y + props.bottomInset;
 
-    this.contentInset = {
-      top: props.topInset,
-      left: 0,
-      right: 0,
-      bottom: this.bottomInset
-    };
+    this.updateContentInset();
 
     this.contentOffset = {
       y: props.topInset * -1,
       x: 0
     };
 
-    this.updateSnapOffsets();
-
     if (props.posts.length > 0) {
-      const initialPost = props.posts[props.initialPostIndex];
+      const initialPostIndex = 0;
+
+      const initialPost = props.posts[initialPostIndex];
+
       if (initialPost) {
+        this.initialPostIndex = initialPostIndex;
         this.visiblePostIDValue = new Animated.Value(initialPost.id.hashCode());
 
         this.state = {
-          visibleIDs: { [initialPost.id]: true }
+          visibleIDs: { [initialPost.id]: true },
+          hasScrolledToInitialPost: false
         };
       }
     }
+
+    if (!this.visiblePostIDValue) {
+      this.visiblePostIDValue = new Animated.Value(-1);
+    }
+
+    this.updateSnapOffsets();
   }
+
+  updateContentInset = () => {
+    this.contentInset = {
+      top: this.props.topInset,
+      left: 0,
+      right: 0,
+      bottom: this.bottomInset
+    };
+  };
+
+  initialPostIndex = 0;
 
   flatListRef = React.createRef<RNFlatList<PostFragment>>();
 
-  snapOffset = new Animated.Value(0);
+  snapOffset = new Animated.Value<number>(0);
 
   getItemLayout = (_data, index) => {
     const offset = sum(
@@ -102,6 +137,7 @@ export class PostFlatList extends React.Component {
   };
 
   snapOffsets: { [id: string]: number } = {};
+  invertedSnapOffsets: { [id: number]: string } = {};
   isScrollingValue = new Animated.Value(0);
   snapToOffsets: Array<number> = [];
   contentHeight = new Animated.Value(0);
@@ -127,6 +163,7 @@ export class PostFlatList extends React.Component {
     );
 
     this.snapOffsets = fromPairs(pairs);
+    this.invertedSnapOffsets = invert(this.snapOffsets);
     this.snapToOffsets = Object.values(this.snapOffsets);
   };
 
@@ -137,20 +174,63 @@ export class PostFlatList extends React.Component {
     ) {
       this.updateSnapOffsets();
 
+      const lastIndex = this.props.posts.length - 1;
+
+      // if (lastIndex > -1) {
+      //   const post = this.props.posts[lastIndex];
+      //   const lastOffset = this.snapOffsets[post.id];
+      //   this.bottomInset =
+      //     BOTTOM_Y +
+      //     this.props.bottomInset +
+      //     (lastOffset % SCREEN_DIMENSIONS.height);
+      //   this.updateContentInset();
+      //   this.flatListRef.current.setNative ({
+      //     contentInset: this.contentInset
+      //   });
+      // }
+
       if (
-        Object.keys(this.state.visibleIDs).length === 0 &&
-        this.props.posts.length > 0
+        this.props.posts.length > 0 &&
+        !this.state.hasScrolledToInitialPost &&
+        this.props.initialPostId
       ) {
         this.snapToInitialPost();
       }
     }
   }
 
+  componentDidMount() {
+    if (
+      this.props.posts.length > 0 &&
+      !this.state.hasScrolledToInitialPost &&
+      this.props.initialPostId
+    ) {
+      this.snapToInitialPost();
+      this.interactionTask = null;
+    }
+  }
+
   snapToInitialPost = () => {
-    const { initialPostIndex: index = 0 } = this.props;
-    const post = this.props.posts[index];
-    this.snapToIndex(post, index);
+    const { initialPostId, posts } = this.props;
+    const { hasScrolledToInitialPost } = this.state;
+
+    if (hasScrolledToInitialPost) {
+      return;
+    }
+
+    if (initialPostId) {
+      const index = posts.findIndex(post => post.id === initialPostId);
+      const post = posts[index];
+
+      if (post) {
+        this.snapToIndex(post, index, false, {
+          hasScrolledToInitialPost: true
+        });
+      }
+    }
   };
+
+  onScrollEndCallback: Function | null = null;
 
   renderItem = ({ item, index }) => {
     const height = calculatePostHeight(item);
@@ -187,43 +267,55 @@ export class PostFlatList extends React.Component {
     );
   };
 
-  viewabilityConfig: ViewabilityConfig = {
-    itemVisiblePercentThreshold: 65,
-    waitForInteraction: false
-  };
+  // viewabilityConfig: ViewabilityConfig = {
+  //   itemVisiblePercentThreshold: 65,
+  //   waitForInteraction: false
+  // };
 
-  handleSnap = ([snapY, scrollY]) => {
-    const visibleRect = new Rectangle(
-      0,
-      snapY,
-      SCREEN_DIMENSIONS.width,
-      this.height
-    );
+  handleSnap = (snapY, scrollY) => {
+    // if (!this.isScrollTrackingEnabled) {
+    //   typeof this.onScrollEndCallback === "function" &&
+    //     this.onScrollEndCallback();
+    //   return;
+    // }
 
-    const shouldScrollToCompletion = snapY === scrollY;
+    let id = this.invertedSnapOffsets[scrollY];
 
-    const viewableItems = orderBy(
-      Object.entries(this.snapBounds)
-        .filter(([id, rectangle]) => visibleRect.intersects(rectangle))
-        .map(([id, rectangle]) => {
-          return [
-            id,
-            rectangle,
-            visibleRect.intersect(rectangle).height / rectangle.height
-          ];
-        }),
-      ["[2]"],
-      ["desc"]
-    );
+    if (!id) {
+      const visibleRect = new Rectangle(
+        0,
+        snapY,
+        SCREEN_DIMENSIONS.width,
+        this.height
+      );
 
-    let [id, rect] = viewableItems[0] ?? [null];
+      const viewableItems = orderBy(
+        Object.entries(this.snapBounds)
+          .filter(([id, rectangle]) => visibleRect.intersects(rectangle))
+          .map(([id, rectangle]) => {
+            return [
+              id,
+              rectangle,
+              visibleRect.intersect(rectangle).height / rectangle.height
+            ];
+          }),
+        ["[2]"],
+        ["desc"]
+      );
 
-    if (id) {
+      let [_id, rect] = viewableItems[0] ?? [null];
+      id = _id;
+    }
+
+    if (id && !this.state.visibleIDs[id]) {
       this.setVisibleID(id);
     }
 
     this._scrollEnded();
   };
+
+  // handleThrottledSnap = throttle(this.handleSnap, 12);
+  handleThrottledSnap = this.handleSnap;
 
   _scrollEnded = debounce(() => {
     window.requestAnimationFrame(() => {
@@ -247,11 +339,28 @@ export class PostFlatList extends React.Component {
     }
   };
 
+  handleEndDrag = ([snapOffset, scrollY]) => {
+    if (this.skipNextScrollEndDrag > -1) {
+      this.scrollY.setValue(this.skipNextScrollEndDrag);
+      this.snapOffset.setValue(this.skipNextScrollEndDrag);
+      this.skipNextScrollEndDrag = -1;
+      return;
+    }
+    this.handleThrottledSnap(snapOffset, scrollY);
+  };
+
+  handleMomentumScrollEnd = ([snapOffset, scrollY]) => {
+    console.log("SCROLL END", snapOffset, scrollY);
+    this.handleSnap(snapOffset, scrollY);
+    // this.handleThrottledSnap.cancel();
+  };
+
   contentOffset = {
     x: 0,
     y: 0
   };
-  scrollY = new Animated.Value(0);
+  scrollY = new Animated.Value<number>(0);
+  isScrollTrackingEnabled = true;
 
   onScroll = Animated.event(
     [
@@ -261,6 +370,7 @@ export class PostFlatList extends React.Component {
           layoutMeasurement: { height: contentHeight }
         }) =>
           Animated.block([
+            // Animated.set(this.snapOffset, scrollY),
             Animated.set(this.scrollY, scrollY),
             Animated.set(this.isScrollingValue, 1),
             Animated.set(this.contentHeight, contentHeight)
@@ -276,7 +386,8 @@ export class PostFlatList extends React.Component {
         nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
           Animated.block([
             Animated.set(this.snapOffset, snapOffset),
-            Animated.call([this.snapOffset, this.scrollY], this.handleSnap)
+            // Animated.set(this.isScrollingValue, 1),
+            Animated.call([this.snapOffset, this.scrollY], this.handleEndDrag)
           ])
       }
     ],
@@ -292,7 +403,10 @@ export class PostFlatList extends React.Component {
       Animated.set(this.scrollY, y),
       Animated.set(this.snapOffset, y),
       Animated.set(this.isScrollingValue, 0),
-      Animated.call([this.snapOffset, this.scrollY], this.handleSnap)
+      Animated.call(
+        [this.snapOffset, this.scrollY],
+        this.handleMomentumScrollEnd
+      )
     ]);
 
   onMomentumScrollBegin = ({
@@ -301,7 +415,7 @@ export class PostFlatList extends React.Component {
     }
   }) => Animated.block([Animated.set(this.isScrollingValue, 1)]);
 
-  visiblePostIDValue = new Animated.Value(-1);
+  visiblePostIDValue: Animated.Value<number>;
 
   keyExtractor = item => item.id;
 
@@ -337,11 +451,12 @@ export class PostFlatList extends React.Component {
     // });
   };
 
-  setVisibleID = (id: string) => {
-    const entry = this.snapOffsets[id];
+  setVisibleID = (id: string, additionalState: Partial<State> = {}) => {
+    console.log("SET", id);
     this.visiblePostIDValue.setValue(id.hashCode());
 
     this.setState({
+      ...additionalState,
       visibleIDs: {
         [id]: true
       }
@@ -358,26 +473,39 @@ export class PostFlatList extends React.Component {
     bottom: 0
   };
 
-  interactionTask: Cancelable | null = null;
+  interactionTask: Partial<Cancelable> | null = null;
 
   scrollToId = (id: string) => {
     const index = this.props.posts.findIndex(post => post.id === id);
-    this.snapToIndex(this.props.posts[index], index);
+    this.snapToIndex(this.props.posts[index], index, true);
   };
 
-  snapToIndex = (post: PostFragment, index: number) => {
+  skipNextScrollEndDrag: number = -1;
+
+  snapToIndex = (
+    post: PostFragment,
+    index: number,
+    animated: boolean = true,
+    additionalState: Partial<State> = {}
+  ) => {
+    const { id } = post;
+    const offset = this.snapOffsets[id];
+
+    this.skipNextScrollEndDrag = offset;
     this.flatListRef.current.scrollToOffset({
-      animated: true,
-      offset: this.snapOffsets[post.id]
-      // viewPosition: 0,
-      // viewOffset: 0
+      animated,
+      offset
     });
 
-    this.setVisibleID(post.id);
+    this.setVisibleID(id, additionalState);
 
-    this.scrollY.setValue(this.snapOffsets[post.id]);
-    this.snapOffset.setValue(this.snapOffsets[post.id]);
-    this.isScrollingValue.setValue(0);
+    // window.requestAnimationFrame(() => {
+    //   // this.isScrollingValue.setValue(1);
+
+    //   this.setVisibleID(id, additionalState);
+    //   this.scrollY.setValue(offset);
+    //   this.snapOffset.setValue(offset);
+    // });
   };
 
   componentWillUnmount() {
@@ -460,7 +588,6 @@ export class PostFlatList extends React.Component {
               contentInset={this.contentInset}
               simultaneousHandlers={this.simultaneousListHandlers}
               contentInsetAdjustmentBehavior="never"
-              initialScrollIndex={this.props.initialPostIndex || 0}
               viewabilityConfig={this.viewabilityConfig}
               removeClippedSubviews={false}
               scrollEventThrottle={1}

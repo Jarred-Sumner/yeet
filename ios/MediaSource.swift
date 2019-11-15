@@ -290,13 +290,15 @@ class MediaSource : NSObject  {
 
   static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?) -> MediaSource {
     var mediaSource: MediaSource? = nil
-    mediaSource = cached(uri: uri)
+
+    let cacheKey = "\(uri)-\(id)-\(width.intValue)-\(height.intValue)"
+    mediaSource = cached(uri: cacheKey)
 
     if (mediaSource == nil) {
       let coverURL = cover != nil ? URL(string: cover!) : nil
 
       mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL )
-      cache.setObject(mediaSource!, forKey: uri as NSString)
+      cache.setObject(mediaSource!, forKey: cacheKey as NSString)
     }
 
     return mediaSource!

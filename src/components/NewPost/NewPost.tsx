@@ -49,6 +49,7 @@ import {
   State as GestureState
 } from "react-native-gesture-handler";
 import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
+import { scaleToWidth } from "../../lib/Rect";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -243,15 +244,13 @@ class RawNewPost extends React.Component<{}, State> {
   transitionToEditPhoto = (photo: YeetImageContainer) => {
     const post = this.buildPostWithImage(photo, getSourceDimensions(photo));
 
-    this.animatedTranslateY.setValue(1);
-
     Animated.timing(this.animatedTranslateY, {
       toValue: CAROUSEL_HEIGHT * -1,
       duration: 400,
       easing: Easing.elastic()
     }).start(() => {
       window.requestAnimationFrame(() => {
-        this.scrollY.setValue(CAROUSEL_HEIGHT);
+        this.scrollY.setValue(0);
         this.animatedTranslateY.setValue(0);
       });
     });
@@ -296,12 +295,7 @@ class RawNewPost extends React.Component<{}, State> {
     image: YeetImageContainer,
     dimensions: YeetImageRect
   ) => {
-    const displaySize = calculateAspectRatioFit(
-      dimensions.width,
-      dimensions.height,
-      POST_WIDTH,
-      MAX_POST_HEIGHT
-    );
+    const displaySize = scaleToWidth(POST_WIDTH, dimensions);
 
     return buildPost({
       format: this.state.post.format,

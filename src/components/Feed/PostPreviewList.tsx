@@ -287,7 +287,7 @@ export const PlaceholderPost = ({ height, width, onPress, children }) => {
             <LinearGradient
               width={width}
               height={height}
-              colors={["rgba(173, 85, 255, 0.5)", "rgba(194, 129, 255, 0.43)"]}
+              colors={["rgba(173, 85, 255, 0.15)", "rgba(194, 129, 255, 0.08)"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               locations={[0, 0.3146]}

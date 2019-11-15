@@ -89,6 +89,7 @@ import {
   ListRemixesQueryVariables
 } from "../../lib/graphql/ListRemixesQuery";
 import FollowerSeparatorComponent from "../ItemSeparatorComponent";
+import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
 
 type ListItemType = ListFollowers | ListProfilePosts | ListRemixes;
 type ListItemVariables =
@@ -238,7 +239,12 @@ class RawViewProfile extends React.Component<Props> {
     );
   };
 
-  openPost = (id: string) => {};
+  openPost = (post: PostListItemFragment) => {
+    this.props.navigation.navigate("ViewThread", {
+      threadId: post.threadId,
+      post: post
+    });
+  };
 
   getItemLayout = (data, index) => {
     const { section } = this.props;
