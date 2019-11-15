@@ -452,7 +452,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
           onPressLike={this.handlePressLike}
           onPressProfile={this.handlePressProfile}
           onPressPostEllipsis={this.handlePressPostEllipsis}
-          initialPostId={defaultPost?.id}
+          initialPostId={defaultPost?.id ?? posts[0]?.id}
           extraData={this.state}
           keyboardVisibleValue={this.keyboardVisibleValue}
           scrollEnabled={this.state.showComposer === false}
