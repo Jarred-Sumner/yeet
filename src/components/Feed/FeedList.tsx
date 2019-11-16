@@ -29,8 +29,9 @@ import { useIsFocused } from "react-navigation-hooks";
 import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
 import { SPACING } from "../../lib/styles";
+import { scaleToWidth } from "../../lib/Rect";
 
-const ITEM_SEPARATOR_HEIGHT = SPACING.double;
+const ITEM_SEPARATOR_HEIGHT = SPACING.normal;
 
 type Props = {
   threads: Array<ViewThreads_postThreads_data>;

@@ -19,12 +19,17 @@ import { SPACING, COLORS } from "../../lib/styles";
 import MediaPlayer, { MediaPlayerComponent } from "../MediaPlayer";
 import { MediumText } from "../Text";
 import { ACTION_BAR_HEIGHT, ContentActionBar } from "./ContentActionBar";
-import { PostPreviewList, POST_LIST_HEIGHT } from "./PostPreviewList";
+import {
+  PostPreviewList,
+  POST_LIST_HEIGHT,
+  POST_LIST_WIDTH,
+  postPreviewListHeight
+} from "./PostPreviewList";
 import { ProfileFeedComponent, PROFILE_FEED_HEIGHT } from "./ProfileFeed";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { IconChevronRight } from "../Icon";
+import { getContentSize, MAX_CONTENT_HEIGHT } from "./FeedList";
 
-const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
 const POST_COUNT_BAR = 20 + SPACING.normal * 2;
 
 const styles = StyleSheet.create({
@@ -77,19 +82,6 @@ type Props = {
   onPressPost: PressPostFunction;
 };
 
-const getContentSize = (
-  post: PostListItemFragment,
-  width: number,
-  maxHeight = MAX_CONTENT_HEIGHT
-) => {
-  const size = scaleToWidth(width, post.media);
-
-  return {
-    ...size,
-    height: maxHeight > 0 ? Math.min(size.height, maxHeight) : size.height
-  };
-};
-
 const POST_SECTION_SPACING = SPACING.normal;
 const VIEW_ALL_TEXT_HEIGHT = 20;
 
@@ -97,9 +89,11 @@ export const getItemHeight = (
   thread: ViewThreads_postThreads_data,
   width: number
 ) => {
-  const post = thread.posts.data[0];
-
-  return sum([PROFILE_FEED_HEIGHT, POST_LIST_HEIGHT, POST_COUNT_BAR]);
+  return sum([
+    PROFILE_FEED_HEIGHT,
+    postPreviewListHeight(thread.posts.data),
+    POST_COUNT_BAR
+  ]);
 };
 
 enum PlayState {
@@ -111,6 +105,7 @@ enum PlayState {
 type State = {
   autoPlay: boolean;
   play: PlayState;
+  height: number;
 };
 
 class FeedListItemComponent extends React.PureComponent<Props, State> {
@@ -119,7 +114,8 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
 
     this.state = {
       autoPlay: props.isVisible,
-      play: props.isVisible ? PlayState.playing : PlayState.pausedInvisible
+      play: props.isVisible ? PlayState.playing : PlayState.pausedInvisible,
+      height: postPreviewListHeight(props.thread.posts.data)
     };
   }
 
@@ -204,6 +200,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
               style={styles.postPreviewList}
               ref={this.scrollRef}
               isVisible={isVisible}
+              height={this.state.height}
               onPressNewPost={this.handlePressNewPost}
               directionalLockEnabled
               waitFor={this.props.waitFor}

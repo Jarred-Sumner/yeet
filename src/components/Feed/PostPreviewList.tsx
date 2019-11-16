@@ -18,13 +18,50 @@ import { IconPlus } from "../Icon";
 import { MediumText } from "../Text";
 import { isVideo } from "../../lib/imageSearch";
 import { postElementId } from "../../lib/ElementTransition";
+import { SCREEN_DIMENSIONS } from "../../../config";
 
 export const POST_LIST_HEIGHT = 320;
-export const POST_LIST_WIDTH = 204;
+export const HORIZONTAL_POST_LIST_WIDTH =
+  SCREEN_DIMENSIONS.width - SPACING.double * 2;
+export const VERTICAL_POST_LIST_WIDTH = 204;
+export const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
 
-const ASPECT_RATIO = POST_LIST_WIDTH / POST_LIST_HEIGHT;
+export const getPostWidth = (post: PostListItemFragment) => {
+  const aspectRatio = post.media.width / post.media.height;
+
+  if (aspectRatio > 1.2 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
+    return HORIZONTAL_POST_LIST_WIDTH;
+  } else {
+    return VERTICAL_POST_LIST_WIDTH;
+  }
+};
 
 export type PressPostFunction = (post: PostListItemFragment) => Void;
+
+export const getContentSize = (
+  post: PostListItemFragment,
+  width: number,
+  maxHeight = MAX_CONTENT_HEIGHT
+) => {
+  const size = scaleToWidth(width, post.media);
+
+  return {
+    ...size,
+    height: maxHeight > 0 ? Math.min(size.height, maxHeight) : size.height
+  };
+};
+
+export const postPreviewListHeight = (posts: Array<PostListItemFragment>) => {
+  return Math.min(
+    Math.max(
+      Math.min(
+        ...posts.map(post => getContentSize(post, getPostWidth(post)).height)
+      ),
+      100
+    ),
+    POST_LIST_HEIGHT
+  );
+};
 
 type Props = Partial<ScrollViewProps> & {
   posts: Array<PostFragment>;
@@ -174,7 +211,10 @@ export const PostPreviewListItem = React.memo(
     );
 
     const imageBorderStyle = React.useMemo(
-      () => [styles.imageBorder, { width: imageSize.width }],
+      () => [
+        styles.imageBorder,
+        { width: sizeStyle.width, height: sizeStyle.height }
+      ],
       [imageSize]
     );
 
@@ -203,8 +243,8 @@ export const PostPreviewListItem = React.memo(
 
             <View style={imageBorderStyle}>
               <GradientOverlay
-                width={imageSize.width}
-                height={imageSize.height}
+                width={sizeStyle.width}
+                height={sizeStyle.height}
               />
             </View>
           </View>
@@ -311,21 +351,23 @@ export const PlaceholderPost = ({ height, width, onPress, children }) => {
           <View style={[styles.imageBorder, { width, height }]}></View>
         </View>
 
-        <View
-          style={[
-            StyleSheet.absoluteFill,
-            styles.overlayContainer,
-            { width, height }
-          ]}
-        >
-          <View style={styles.overlay}>
-            <View style={styles.overlaySide}>
-              <View style={[styles.avatar, styles.avatarFaded]}>
-                <CurrentUserAvatar size={AVATAR_SIZE} />
+        {height > 200 && (
+          <View
+            style={[
+              StyleSheet.absoluteFill,
+              styles.overlayContainer,
+              { width, height }
+            ]}
+          >
+            <View style={styles.overlay}>
+              <View style={styles.overlaySide}>
+                <View style={[styles.avatar, styles.avatarFaded]}>
+                  <CurrentUserAvatar size={AVATAR_SIZE} />
+                </View>
               </View>
             </View>
           </View>
-        </View>
+        )}
       </Animated.View>
     </BaseButton>
   );
@@ -351,11 +393,13 @@ export const PostPreviewList = React.forwardRef(
       (post: PostListItemFragment, index: number) => {
         const isLast = index === posts.length - 1;
 
+        const width = getPostWidth(post);
+
         if (isLast) {
           return (
             <ListItem
-              height={POST_LIST_HEIGHT}
-              width={POST_LIST_WIDTH}
+              height={height}
+              width={width}
               onPress={onPressPost}
               isVisible={isVisible}
               post={post}
@@ -368,8 +412,8 @@ export const PostPreviewList = React.forwardRef(
               <ListItem
                 onPress={onPressPost}
                 post={post}
-                height={POST_LIST_HEIGHT}
-                width={POST_LIST_WIDTH}
+                height={height}
+                width={width}
                 isVisible={isVisible}
               />
               <View style={styles.spacer} collapsable={false} />
@@ -377,7 +421,7 @@ export const PostPreviewList = React.forwardRef(
           );
         }
       },
-      [onPressPost]
+      [onPressPost, height]
     );
 
     return (
@@ -388,14 +432,14 @@ export const PostPreviewList = React.forwardRef(
         ref={ref}
         horizontal
         simultaneousHandlers={waitFor}
-        style={styles.scrollView}
+        style={[styles.scrollView, { height }]}
       >
         {children}
         {posts.map(renderPost)}
         <View style={styles.spacer} collapsable={false} />
         <PlaceholderPost
-          width={POST_LIST_WIDTH}
-          height={POST_LIST_HEIGHT}
+          width={VERTICAL_POST_LIST_WIDTH}
+          height={height}
           onPress={onPressNewPost}
         >
           New post

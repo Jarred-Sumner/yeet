@@ -106,12 +106,37 @@ export class PostFlatList extends React.Component<Props, State> {
   }
 
   updateContentInset = () => {
+    if (!this.flatListRef.current) {
+      this.contentInset = {
+        top: this.props.topInset,
+        left: 0,
+        right: 0,
+        bottom: this.bottomInset
+      };
+      return;
+    }
+    const flat = this.flatListRef.current;
+    const { contentLength } = flat._listRef._getScrollMetrics();
+    // flat
+
     this.contentInset = {
       top: this.props.topInset,
       left: 0,
       right: 0,
-      bottom: this.bottomInset
+      bottom:
+        SCREEN_DIMENSIONS.height -
+        (contentLength % SCREEN_DIMENSIONS.height) -
+        this.getItemLayout(this.props.posts, this.props.posts.length - 1)
+          .length -
+        this.bottomInset -
+        this.props.bottomInset
     };
+
+    this.flatListRef.current.getScrollResponder().setNativeProps({
+      contentInset: this.contentInset
+    });
+
+    console.log(this.contentInset.bottom);
   };
 
   initialPostIndex = 0;
@@ -188,6 +213,8 @@ export class PostFlatList extends React.Component<Props, State> {
       //     contentInset: this.contentInset
       //   });
       // }
+
+      this.updateContentInset();
 
       if (
         this.props.posts.length > 0 &&
@@ -314,14 +341,18 @@ export class PostFlatList extends React.Component<Props, State> {
     this._scrollEnded();
   };
 
-  // handleThrottledSnap = throttle(this.handleSnap, 12);
-  handleThrottledSnap = this.handleSnap;
+  handleThrottledSnap = throttle(this.handleSnap, 12);
+  // handleThrottledSnap = this.handleSnap;
 
-  _scrollEnded = debounce(() => {
-    window.requestAnimationFrame(() => {
-      this.isScrollingValue.setValue(0);
-    });
-  }, 100);
+  _scrollEnded = debounce(
+    () => {
+      window.requestAnimationFrame(() => {
+        this.isScrollingValue.setValue(0);
+      });
+    },
+    60,
+    { trailing: true }
+  );
 
   autoSnapToOffset = ([offset]) => {
     const [id] =
@@ -386,7 +417,7 @@ export class PostFlatList extends React.Component<Props, State> {
         nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
           Animated.block([
             Animated.set(this.snapOffset, snapOffset),
-            // Animated.set(this.isScrollingValue, 1),
+            Animated.set(this.isScrollingValue, 1),
             Animated.call([this.snapOffset, this.scrollY], this.handleEndDrag)
           ])
       }

@@ -224,7 +224,7 @@ class ContentBlock {
 
 
   init(value: JSON?, dimensions: JSON, viewTag: NSNumber, format: String, id: String, zIndex: NSNumber, image: ExportableMediaSource, position: JSON?, frame: CGRect, nodeFrame: CGRect?, text: String?, type: BlockType) {
-
+    self.totalDuration = 0
 
     self.frame = CGRect(origin: CGPoint(x: frame.origin.x.roundedToScreenScale(), y: frame.origin.y.roundedToScreenScale()), size: CGSize(width: frame.size.width.roundedToScreenScale(), height: frame.size.height.roundedToScreenScale()))
     if let nodeFrame = nodeFrame {
@@ -266,10 +266,12 @@ class ContentBlock {
       self.position = NodePosition(y: _position["y"].numberValue, scale: _position["scale"].numberValue, rotate: _position["rotate"].numberValue, x: _position["x"].numberValue)
     }
 
+    if self.value.image.isImage {
+      self.calculateRanges()
+    } else if self.value.image.isVideo {
+      self.totalDuration = CMTimeGetSeconds(self.value.image.video!.asset.duration)
+    }
 
-
-    self.totalDuration = 0
-    self.calculateRanges()
 
   }
 

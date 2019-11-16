@@ -11,135 +11,105 @@ import AVFoundation
 import SwiftyBeaver
 import ModernAVPlayer
 
-class TrackableVideoSource : TrackableMediaSource {
+public struct YeetAVPlayerConfiguration: PlayerConfiguration {
+
+    // Buffering State
+    public let rateObservingTimeout: TimeInterval = 1.0
+    public let rateObservingTickTime: TimeInterval = 0.33
+
+    // General Audio preferences
+    public let preferedTimeScale: CMTimeScale = CMTimeScale(NSEC_PER_SEC)
+    public let periodicPlayingTime: CMTime
+    public let audioSessionCategory = AVAudioSession.Category.playback
+
+    // Reachability Service
+    public let reachabilityURLSessionTimeout: TimeInterval = 3
+    //swiftlint:disable:next force_unwrapping
+    public let reachabilityNetworkTestingURL = URL(string: "https://www.google.com")!
+    public let reachabilityNetworkTestingTickTime: TimeInterval = 3
+    public let reachabilityNetworkTestingIteration: UInt = 10
+
+    public var useDefaultRemoteCommand = true
+
+    public let allowsExternalPlayback = false
+
+    public init() {
+        periodicPlayingTime = CMTime(seconds: 1, preferredTimescale: preferedTimeScale)
+    }
+}
+
+class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   var playerObserver: NSKeyValueObservation? = nil
-  var player: AVPlayer? = nil
-  
+  var player: ModernAVPlayer? = nil
 
   init(mediaSource: MediaSource, player: AVPlayer? = nil) {
+    self._duration = mediaSource.duration.doubleValue
     super.init(mediaSource: mediaSource)
-  }
 
-  var timeScale: CMTimeScale {
-    guard let asset = player?.currentItem?.asset else {
-      return CMTimeScale(NSEC_PER_SEC)
-    }
-
-    guard let videoTrack = asset.tracks(withMediaType: .video).first else {
-      return CMTimeScale(NSEC_PER_SEC)
-    }
-
-    return videoTrack.naturalTimeScale
-  }
-
-
-  var playerItem : AVPlayerItem? = nil {
-    didSet {
-//      if oldValue != playerItem {
-//        if let playerItem = playerItem {
-//          let pixBuffAttributes: [String : AnyObject] = [kCVPixelBufferPixelFormatTypeKey as String :  Int(kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange) as AnyObject]
-//
-//          let output = AVPlayerItemVideoOutput(pixelBufferAttributes: pixBuffAttributes)
-//          playerItem.add(output)
-//
-//          mediaSource.videoOutput = output
-//        } else {
-//          mediaSource.videoOutput = nil
-//        }
-//      }
-    }
   }
 
   var isAlreadyLoading = false
   override func load(onLoad callback: onLoadCallback? = nil) {
-    if mediaSource.assetStatus == .loaded {
-      self.hasLoaded = true
-      self.isAlreadyLoading = false
-      self.handleLoad(asset: mediaSource.asset!)
-      callback?(self)
-      return
-    }
-
-
     super.load(onLoad: callback)
-
-    guard !isAlreadyLoading else {
-      return
-    }
-
-    self.status = .loading
-
-    mediaSource.loadAsset { [weak self] asset in
-      guard let asset = asset else {
-        self?.status = .error
-        return
-      }
-
-      guard let this = self else {
-        return
-      }
-
-      this.handleLoad(asset: asset)
-    }
-
-    self.isAlreadyLoading = true
   }
-
-  func loadPlayer(playerContainer: YeetPlayer) {
-    
-  }
-
-  func handleLoad(asset: AVURLAsset) {
-    self.isAlreadyLoading = false
-
-    if let playerItem = self.playerItem {
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
-    }
-
-    let playerItem = AVPlayerItem(asset: asset)
-
-
-    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemReachedEnd(notification:)), name:NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-    NotificationCenter.default.addObserver(self, selector: #selector(handlePlayerItemStalled(notification:)), name:NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
-
-
-    self.hasLoaded = true
-    self.onLoad()
-  }
-
 
   override var canPlay: Bool {
-    return super.canPlay
+    return self.player != nil
   }
 
 
-  override func onLoad() {
-    guard self.playerItem != nil else {
-      self.status = .error
-      return
-    }
-
-
-    super.onLoad()
+  private var _duration: Double
+  override var duration: Double {
+    return self._duration
   }
 
-  override func start() {
-    super.start()
-    if !isActive {
-      return
-    }
+  func modernAVPlayer(_ player: ModernAVPlayer, didStateChange state: ModernAVPlayer.State) {
+    if [.waitingForNetwork, .buffering].contains(state) {
 
-    guard let playerItem = self.playerItem else {
+    } else if state == .failed {
       self.status = .error
-       return
-     }
+    } else if state == .loaded {
+      if let seconds = player.player.currentItem?.duration.seconds {
+        self._duration = seconds
+      }
 
-    if self.status == .playing || self.status == .paused {
-      return
+//      player.player.currentItem?.preferredForwardBufferDuration = 1.0
+
+      self.status = .ready
+    } else if state == .loading || state == .initialization {
+      self.status = .loading
+    } else if state == .playing {
+      self.status = .playing
+    }
+  }
+
+  func delayedPause() {
+
+  }
+
+
+  func modernAVPlayer(_ player: ModernAVPlayer, didCurrentTimeChange currentTime: Double) {
+    self.onProgress(elapsed: CMTime(seconds: currentTime))
+  }
+
+
+  func start(player: AVPlayer) {
+    let config = YeetAVPlayerConfiguration()
+
+    let _player = ModernAVPlayer(player: player, config: config, plugins: [], loggerDomains: [])
+    player.automaticallyWaitsToMinimizeStalling = false
+
+
+    _player.delegate = self
+    _player.loopMode = true
+    _player.load(media: ModernAVPlayerMedia(url: mediaSource.getAssetURI(), type: .clip), autostart: false, position: self.elapsed)
+    do {
+      try AVAudioSession.sharedInstance().setCategory(config.audioSessionCategory, options: [.mixWithOthers, .allowAirPlay])
+    } catch {
+
     }
 
-    self.status = .ready
+    self.player = _player
   }
 
   override func play() {
@@ -154,7 +124,6 @@ class TrackableVideoSource : TrackableMediaSource {
 
 
     player.play()
-    super.play()
   }
 
   override func pause() {
@@ -163,22 +132,8 @@ class TrackableVideoSource : TrackableMediaSource {
     }
 
     player.pause()
-
-
-    super.pause()
   }
 
-  @objc(handlePlayerItemReachedEnd:)
-  func handlePlayerItemReachedEnd(notification: NSNotification) {
-    self.handleEnd()
-  }
-
-  @objc(handlePlayerItemStalled:)
-  func handlePlayerItemStalled(notification: NSNotification) {
-    if status == .playing {
-      self.player?.play()
-    }
-  }
 
   override func reset() {
     super.reset()
@@ -188,17 +143,18 @@ class TrackableVideoSource : TrackableMediaSource {
       return
     }
 
-    self.elapsed = 0.0
+//    self.elapsed = 0.0
+//    player.seek(offset: .zero)
 
-    if self.playerItem == player.currentItem && playerItem != nil {
-      let wasPlaying = player.timeControlStatus != .paused
-      player.seek(to: .zero)
-
-
-      if wasPlaying {
-        player.play()
-      }
-    }
+//    if self.playerItem == player.currentItem && playerItem != nil {
+//      let wasPlaying = player.timeControlStatus != .paused
+//      player.seek(to: .zero)
+//
+//
+//      if wasPlaying {
+//        player.play()
+//      }
+//    }
   }
 
   func handleEnd() {
@@ -211,17 +167,6 @@ class TrackableVideoSource : TrackableMediaSource {
   }
 
   deinit {
-    if let playerItem = self.playerItem {
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: playerItem)
-      NotificationCenter.default.removeObserver(self, name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: playerItem)
-    }
-
-    _onLoadCallbacks = []
-
-    playerObserver?.invalidate()
-
-
-    print("DEINIT \(mediaSource.id)")
 
   }
 }

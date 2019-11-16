@@ -94,6 +94,7 @@ RCT_EXTERN_METHOD(stopCachingAll);
 
 RCT_EXTERN_METHOD(pause:);
 RCT_EXTERN_METHOD(play:);
+RCT_EXTERN_METHOD(reset:);
 RCT_EXTERN_METHOD(save:(nonnull NSNumber*)tag cb:(RCTResponseSenderBlock)callback);
 RCT_EXTERN_METHOD(goNext:::);
 RCT_EXTERN_METHOD(goBack:::);

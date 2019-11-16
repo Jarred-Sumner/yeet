@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
 
 const _normalizedBackgroundColor = (color: string) =>
   tinycolor(color)
-    .setAlpha(0.35)
+    .setAlpha(0.65)
     .toString();
 
 export const normalizeBackgroundColor = memoize(_normalizedBackgroundColor);

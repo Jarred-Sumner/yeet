@@ -121,9 +121,12 @@ class YeetExporter: NSObject, RCTBridgeModule  {
              return
            }
 
-           dict[block["id"].stringValue] = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
+            let mediaSource = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
+          SwiftyBeaver.info("HEre! \(block["id"].stringValue)")
+           dict[block["id"].stringValue] = mediaSource
         }
       }
+      SwiftyBeaver.info("FIN")
 
       return Promise.init(value: dict)
     }

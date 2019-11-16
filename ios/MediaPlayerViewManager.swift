@@ -280,6 +280,13 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     }
   }
 
+  @objc(reset:)
+  func reset(tag: NSNumber) {
+    withView(tag: tag) { [weak self] view in
+      view.reset()
+    }
+  }
+
   @objc(goNext::)
   func goNext(tag: NSNumber, cb: @escaping RCTResponseSenderBlock) {
     withView(tag: tag) { [weak self] view in

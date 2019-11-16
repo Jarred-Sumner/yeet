@@ -282,7 +282,7 @@ class RawNewPost extends React.Component<{}, State> {
     );
 
     const aspectFitCropRatio = height / MAX_POST_HEIGHT;
-    const shouldCropPhoto = aspectFitCropRatio > cropThreshold;
+    const shouldCropPhoto = aspectFitCropRatio > cropThreshold || height < 300;
 
     if (shouldCropPhoto) {
       this.transitionToCropPhoto(photo);

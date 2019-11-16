@@ -45,10 +45,10 @@ func measure<A>(name: String = "", _ block: () -> A) -> A {
 
       if trackableMedia.mediaSource.isVideo {
         let _trackableMedia = trackableMedia as! TrackableVideoSource
-        if let playerItem = _trackableMedia.player?.currentItem {
-
-          self?.image = self?.imageFrom(mediaId: _trackableMedia.mediaSource.id, playerItem: playerItem, output: _trackableMedia.player?.currentItem?.outputs.first! as! AVPlayerItemVideoOutput)
-        }
+//        if let playerItem = _trackableMedia.player?.currentItem {
+//
+//          self?.image = self?.imageFrom(mediaId: _trackableMedia.mediaSource.id, playerItem: playerItem, output: _trackableMedia.player?.currentItem?.outputs.first! as! AVPlayerItemVideoOutput)
+//        }
 
       }
     }

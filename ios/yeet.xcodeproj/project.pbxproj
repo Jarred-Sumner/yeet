@@ -45,6 +45,7 @@
 		83532FB623701B9400BA0F1A /* DispatchQueue+throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
 		836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836B71C823566EF1003BF812 /* AVAsset+resize.swift */; };
+		8371AB59237EB8A50034EF15 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
 		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
@@ -173,6 +174,7 @@
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMediaSource.swift; sourceTree = "<group>"; };
 		836B71C823566EF1003BF812 /* AVAsset+resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+resize.swift"; sourceTree = "<group>"; };
+		8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		838A18B52328528E00FC8C22 /* WebPMux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPMux.framework; sourceTree = "<group>"; };
 		838A18B62328528E00FC8C22 /* WebPDecoder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDecoder.framework; sourceTree = "<group>"; };
 		838A18B72328528E00FC8C22 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 				839219D22378EC3300DC3461 /* yeet.entitlements */,
 				83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */,
 				83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */,
+				8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */,
 				830418642345AAEE007C9E5A /* EnableWebpDecoder.h */,
 				831C520C233F2FC300F364A3 /* MediaPlayer */,
 				83470517232AF9BA004B2FF7 /* TextInput */,
@@ -831,6 +834,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */,
+				8371AB59237EB8A50034EF15 /* VideoPlayerView.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,

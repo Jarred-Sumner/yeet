@@ -168,7 +168,7 @@ const OverlayGradient = ({ width, height = 84, style, flipped }) => {
   );
 };
 
-const FADE_OVERLAY = 0.6;
+const FADE_OVERLAY = 0.25;
 
 const scrollOpacityAnimation = Animated.proc(
   (
@@ -342,7 +342,9 @@ const PostCardComponent = ({
           id={`${post.id}-player`}
           autoPlay={autoPlay}
           ref={mediaPlayerRef}
-          duration={post.autoplaySeconds * 1000.0}
+          duration={
+            (isVideo(post.media.mimeType) ? post.media.duration : 24) * 1000
+          }
           onProgress={handleProgress}
           // sharedId={postElementId(post)}
           borderRadius={BORDER_RADIUS}

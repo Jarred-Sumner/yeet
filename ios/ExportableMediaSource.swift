@@ -135,8 +135,12 @@ class ExportableImageSource : ExportableMediaSource {
     staticImage = screenshot
     animatedImage = nil
 
+    let size = screenshot.size
+    let width = NSNumber(value: size.width.native)
+    let height = NSNumber(value: size.height.native)
+    let pixelRatio = NSNumber(value: screenshot.scale.native)
 
-    super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: screenshot.size.width), height: NSNumber(nonretainedObject: screenshot.size.height), bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: NSNumber(nonretainedObject: screenshot.scale), cover: nil))
+    super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: width, height: height, bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: pixelRatio, cover: nil))
 
     self.view = view
     self.nodeView = nodeView
@@ -165,7 +169,7 @@ extension ExportableMediaSource {
 
     if isVideo {
       let trackableVideo = current as! TrackableVideoSource
-      guard let playerItem = trackableVideo.playerItem else {
+      guard let playerItem = trackableVideo.player?.player.currentItem else {
         return nil
       }
       let asset = playerItem.asset

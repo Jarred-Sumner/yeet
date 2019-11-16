@@ -39,20 +39,20 @@ class MediaFrameViewManager: RCTViewManager {
          guard let current = queuePlayerView.source as? TrackableVideoSource else {
            return
          }
-
-         guard let playerItem = current.playerItem else {
-           return
-         }
-
-          DispatchQueue.global(qos: .userInteractive).sync {
-            weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
-
-            DispatchQueue.main.async {
-              if frameView.image != image {
-                frameView.image = image
-              }
-            }
-          }
+//
+//         guard let playerItem = current.playerItem else {
+//           return
+//         }
+//
+//          DispatchQueue.global(qos: .userInteractive).sync {
+//            weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
+//
+//            DispatchQueue.main.async {
+//              if frameView.image != image {
+//                frameView.image = image
+//              }
+//            }
+//          }
 
       }
     } else {
@@ -67,17 +67,17 @@ class MediaFrameViewManager: RCTViewManager {
          guard let current = queuePlayerView.source as? TrackableVideoSource else {
            return
          }
-
-         guard let playerItem = current.playerItem else {
-           return
-         }
-
-
-          weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
-
-          if frameView.image != image {
-            frameView.image = image
-          }
+//
+//         guard let playerItem = current.playerItem else {
+//           return
+//         }
+//
+//
+//          weak var image = frameView.imageFrom(mediaId: current.mediaSource.id, playerItem: playerItem, output: current.mediaSource.videoOutput!)
+//
+//          if frameView.image != image {
+//            frameView.image = image
+//          }
 
 
       }

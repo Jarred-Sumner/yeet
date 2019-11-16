@@ -8,7 +8,7 @@ import {
   InteractionManager
 } from "react-native";
 import React, { ReactEventHandler, useImperativeHandle } from "react";
-import { ImageMimeType, YeetImageRect } from "../lib/imageSearch";
+import { ImageMimeType, YeetImageRect, isVideo } from "../lib/imageSearch";
 import { DimensionsRect, BoundsRect } from "../lib/Rect";
 import {
   useFocusEffect,
@@ -233,11 +233,26 @@ export class MediaPlayerComponent extends React.Component<Props> {
     MediaPlayerComponent.NativeModule.stopCachingAll();
   }
 
-  callNativeMethod = (name, args = null) => {
+  get isVideoPlayer() {
+    return !!this.props.sources.find(source => isVideo(source.mimeType));
+  }
+
+  componentWillUnmount() {
+    if (this.isVideoPlayer) {
+      this.reset();
+    }
+  }
+
+  reset = () => {
+    this.callNativeMethod("reset");
+  };
+
+  callNativeMethod = (name, args = null, nodeHandle?: number) => {
+    const _nodeHandle = nodeHandle ?? findNodeHandle(this);
     return UIManager.dispatchViewManagerCommand(
-      findNodeHandle(this),
+      _nodeHandle,
       UIManager.getViewManagerConfig(VIEW_NAME).Commands[name],
-      args
+      args || []
     );
   };
 
@@ -538,7 +553,6 @@ class _TrackableMediaPlayer extends React.Component<Props> {
     if (this.isTimerRunning) {
       this.clearProgressTimer();
     }
-
     this.duration = duration / 1000;
     this.updateInterval = interval;
     this.elapsed = elapsed / 1000;

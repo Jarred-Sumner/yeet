@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import ModernAVPlayer
 
 @objc class YeetVideoView: UIView, TrackableMediaSourceDelegate {
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
@@ -35,8 +36,6 @@ import Foundation
   func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
   }
 
-  weak var playerLayer: AVPlayerLayer? = nil
-
 
   var showCover: Bool = false {
     didSet {
@@ -55,39 +54,39 @@ import Foundation
       }
     }
   }
-  var coverView = YeetImageView()
-  var playerView = UIView()
+  var coverView: YeetImageView
+  var playerView: VideoPlayerView
+  var playerLayer: AVPlayerLayer {
+    get {
+      return playerView.playerLayer
+    }
+  }
 
   var observer: NSKeyValueObservation? = nil
 
-  func configurePlayer(playerLayer: AVPlayerLayer) {
-    guard playerLayer.superlayer != playerView.layer else {
-      return
+
+  func configurePlayer(player: AVPlayer) {
+    self.playerView.player = player
+
+    observer = self.playerView.playerLayer.observe(\AVPlayerLayer.isReadyForDisplay, options: [.new, .initial]) { [weak self] player, _ in
+      if self?.playerView.playerLayer.isReadyForDisplay ?? false  && (self?.showCover ?? false) {
+        self?.showCover = false
+      }
     }
-
-    let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
-     playerLayer.edgeAntialiasingMask = shouldAntiAlias ? [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge] : []
-     playerLayer.frame = frame
-    playerLayer.isOpaque = false
-      playerView.frame = frame
-     playerLayer.needsDisplayOnBoundsChange = true
-     playerLayer.bounds = bounds
-    playerLayer.backgroundColor = UIColor.clear.cgColor
-    playerView.bounds = bounds
-     playerLayer.videoGravity = .resizeAspectFill
-
-    if playerLayer.superlayer != nil {
-      playerLayer.removeFromSuperlayer()
-    }
-
-    playerView.layer.addSublayer(playerLayer)
   }
 
   override init(frame: CGRect) {
+    let playerView = VideoPlayerView(frame: frame)
+    let coverView = YeetImageView()
+
+    self.playerView = playerView
+    self.coverView = coverView
+
     super.init(frame: frame)
-    layer.needsDisplayOnBoundsChange = true
-    playerView.layer.needsDisplayOnBoundsChange = true
-    coverView.layer.needsDisplayOnBoundsChange = true
+
+//    layer.needsDisplayOnBoundsChange = true
+//    playerView.layer.needsDisplayOnBoundsChange = true
+//    coverView.layer.needsDisplayOnBoundsChange = true
     playerView.bounds = frame
     playerView.isOpaque = false
     playerView.backgroundColor = UIColor.clear
@@ -95,7 +94,6 @@ import Foundation
     playerView.frame = bounds
     coverView.frame = bounds
     coverView.isOpaque = false
-
 
     self.addSubview(playerView)
     self.addSubview(coverView)
@@ -109,12 +107,15 @@ import Foundation
   override func layoutSubviews() {
     super.layoutSubviews()
 
-    if let playerLayer = playerLayer {
+    if playerView.player != nil {
+      let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
+      playerView.layer.edgeAntialiasingMask = shouldAntiAlias ? [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge] : []
+
       if playerView.bounds != bounds {
         CATransaction.begin()
         CATransaction.setAnimationDuration(.zero)
+        playerView.frame = bounds
         playerView.bounds = bounds
-        playerLayer.bounds = bounds
         CATransaction.commit()
       }
     }
@@ -127,12 +128,11 @@ import Foundation
 
   deinit {
     observer?.invalidate()
+    print("DEINIT VIDEO")
 
-    if playerLayer?.superlayer != nil {
-      playerLayer?.removeFromSuperlayer()
-    }
-
-
+//    if playerLayer?.superlayer != nil {
+//      playerLayer?.removeFromSuperlayer()
+//    }
   }
 }
 
