@@ -54,8 +54,9 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
       let paused = this.paused
 
-      if status == .ready && mediaSource.mediaSource.isVideo && !paused && this.videoView?.isReadyForDisplay ?? false {
-        this.videoSource?.play()
+      if status == .ready && mediaSource.mediaSource.isVideo && (this.isWaitingToPlay || !paused) {
+        this.play()
+        this.isWaitingToPlay = false
       }
 
       if let imageView = this.imageView {
@@ -68,9 +69,9 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
          }
       }
 
-      if status == .playing && this.videoView?.showCover ?? false {
-        this.videoView?.showCover = false
-      }
+//      if status == .playing && this.videoView?.showCover ?? false {
+//        this.videoView?.showCover = false
+//      }
 
     }
 
@@ -482,7 +483,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   }
 
   var canSendEvents: Bool {
-    return bridge?.isValid ?? false
+    return bridge?.isValid ?? false && !batchPaused
   }
 
 
@@ -520,9 +521,12 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   @objc(pause)
   func pause() {
+    if imageView != nil {
+      imageView?.isPlaybackPaused = true
+    } 
     source?.pause()
     if let videoSource = self.videoSource {
-      videoSource.elapsed = videoSource.player?.currentTime ?? videoSource.elapsed
+      videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
     }
     self.playerLayerObserver?.invalidate()
     self.isWaitingToPlay = false
@@ -533,9 +537,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
       if self.videoSource != nil {
         DispatchQueue.global(qos: .background).async { [weak self, weak videoSource] in
           if let videoSource = videoSource {
-            videoSource.elapsed = videoSource.player?.currentTime ?? videoSource.elapsed
-            videoSource.player?.stop()
-            videoSource.player?.delegate = nil
+            videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
+            videoSource.player?.pause()
             videoSource.player = nil
           }
 
@@ -553,19 +556,20 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   }
 
   func haltContent() {
-    imageView?.isPlaybackPaused = true
+//    imageView?.isPlaybackPaused = true
 
     if let videoSource = self.videoSource {
       if videoSource.player != nil {
-        videoSource.player?.delegate = nil
+//        videoSource.player?.delegate = nil
         videoSource.player?.pause()
         videoSource.player = nil
+        videoSource.status = .pending
       }
 
       if let videoView = self.videoView {
-        DispatchQueue.main.async {
-          self.videoView?.playerView.removeFromSuperview()
-          self.videoView?.showCover = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+          self?.videoView?.showCover = true
+          self?.videoView?.playerView.player = nil
         }
       }
     }
@@ -661,60 +665,40 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 //        return
 //      }
 
-      let playerState = videoSource!.player?.state ?? ModernAVPlayer.State.initialization
-
-      guard playerState != .playing else {
-        return
-      }
-
-      if !videoSource!.canPlay || videoView?.playerLayer == nil {
-        isWaitingToPlay = true
+      if !videoSource!.canPlay || videoView?.playerView.superview == nil || videoSource?.player == nil {
 
         if videoSource?.mediaSource.coverUri != nil {
           self.videoView?.showCover = true
         }
 
         DispatchQueue.main.async {
-          let player = videoSource?.player?.player ?? AVPlayer()
-            if self.videoView?.playerLayer.player != player {
+          let player = videoSource?.player ?? AVQueuePlayer()
+          if self.videoView?.playerLayer.player != player {
              self.videoView!.configurePlayer(player: player)
            }
 
           DispatchQueue.global(qos: .background).async { [weak self] in
-            self?.videoSource?.start(player: player, autoPlay: self?.autoPlay ?? false)
-
-            if player.status == .readyToPlay {
-              player.play()
-            } else {
-              self?.isWaitingToPlay = true
-            }
+            self?.videoSource?.start(player: player, autoPlay: true)
+            self?.playWhenReady(player: player)
           }
         }
       } else {
-        isWaitingToPlay = true
-        if let player = videoSource?.player?.player {
-          self.playWhenReady(player: player)
-        }
+        self.playWhenReady(player: videoSource!.player!)
       }
     } else {
+      if imageView?.isPlaybackPaused ?? false {
+        imageView?.isPlaybackPaused = false
+      }
       source.play()
     }
   }
 
   func playWhenReady(player: AVPlayer) {
-    if player.status == .readyToPlay {
+    if player.currentItem?.status == .readyToPlay {
       source?.play()
       isWaitingToPlay = false
     } else {
-      self.playerLayerObserver = player.observe(\.status, options: [.initial, .new]) { [weak self] player, change in
-        if player.status == .readyToPlay && (self?.isWaitingToPlay ?? false) && self?.paused == false {
-          DispatchQueue.global(qos: .background).async { [weak self] in
-            self?.videoSource?.play()
-            self?.isWaitingToPlay = false
-            self?.playerLayerObserver = nil
-          }
-        }
-      }
+      isWaitingToPlay = true
     }
   }
 

@@ -6,7 +6,10 @@
  * @flow
  */
 
-import createStackNavigator from "react-native-screens/createNativeStackNavigator";
+// import createStackNavigator from "react-native-screens/createNativeStackNavigator";
+// import { createStackNavigator } from "react-native-screens";
+import { createStackNavigator } from "react-navigation-stack";
+
 import { createAppContainer } from "react-navigation";
 import { createBottomTabNavigator } from "react-navigation-tabs";
 import { COLORS } from "./src/lib/styles";
@@ -151,7 +154,6 @@ export const Routes = createAppContainer(
               NewPostStack: createStackNavigator(
                 {
                   NewPost: NewPostPage,
-                  EditBlockPhoto: ImagePickerPage,
                   NewThread: NewThreadPage,
                   ...SHARED_GLOBAL_SCREENS
                 },
@@ -177,7 +179,7 @@ export const Routes = createAppContainer(
               },
 
               headerMode: "none",
-              // initialRouteName: IS_SIMULATOR ? "NewPostStack" : undefined,
+              // initialRouteName: "NewPostStack",
               defaultNavigationOptions: {
                 header: () => null,
                 headerMode: "none"
@@ -194,10 +196,15 @@ export const Routes = createAppContainer(
           },
           UploadPost: UploadPostPage,
           InsertSticker: ImagePickerPage,
+          EditBlockPhoto: ImagePickerPage,
 
           Auth: AuthStack
         },
         {
+          // initialRouteName: "NewPost",
+          // initialRouteParams: {
+          //   threadId: "mYkCBX"
+          // },
           mode: "modal",
           headerMode: "none",
           path: "",

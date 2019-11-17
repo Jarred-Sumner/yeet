@@ -39,8 +39,20 @@ public struct YeetAVPlayerConfiguration: PlayerConfiguration {
 }
 
 class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
-  var playerObserver: NSKeyValueObservation? = nil
-  var player: ModernAVPlayer? = nil
+  var playerStatusObserver: NSKeyValueObservation? = nil
+  var timeControlObserver: NSKeyValueObservation? = nil
+  var player: AVQueuePlayer? = nil {
+    willSet(newValue) {
+      if newValue != self.player && self.player != nil {
+        player?.removeTimeObserver(periodicObserver)
+        itemObserver?.invalidate()
+        looper?.disableLooping()
+        playerStatusObserver?.invalidate()
+        timeControlObserver?.invalidate()
+      }
+    }
+  }
+  var periodicObserver: AnyObject? = nil
 
   init(mediaSource: MediaSource, player: AVPlayer? = nil) {
     self._duration = mediaSource.duration.doubleValue
@@ -92,26 +104,94 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
     self.onProgress(elapsed: CMTime(seconds: currentTime))
   }
 
+  var looper: AVPlayerLooper? = nil
 
-  func start(player: AVPlayer, autoPlay: Bool = false) {
+  var hasAutoPlayed = false
+  var itemObserver: NSKeyValueObservation? = nil
+
+  func start(player: AVQueuePlayer, autoPlay: Bool = false) {
     let config = YeetAVPlayerConfiguration()
 
-    let _player = ModernAVPlayer(player: player, config: config, plugins: [], loggerDomains: [])
-    player.automaticallyWaitsToMinimizeStalling = false
+    self.player = player
 
+    mediaSource.loadAsset { [unowned self] asset in
+      guard self != nil else {
+        return
+      }
 
-    _player.delegate = self
-    _player.loopMode = true
+      guard let asset = asset else {
+        self.status = .error
+        return
+      }
 
-    _player.load(media: ModernAVPlayerMedia(url: mediaSource.getAssetURI(), type: .clip), autostart: autoPlay, position: self.elapsed)
+      let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["playable", "duration", "tracks"])
 
-    do {
-      try AVAudioSession.sharedInstance().setCategory(config.audioSessionCategory, options: [.mixWithOthers, .allowAirPlay])
-    } catch {
+      if asset.tracks(withMediaType: .audio).count > 0 {
+        do {
+          try AVAudioSession.sharedInstance().setCategory(config.audioSessionCategory, options: [.mixWithOthers, .allowAirPlay])
+        } catch {
+
+        }
+      }
+
+      let looper = AVPlayerLooper(player: self.player!, templateItem: playerItem)
+
+      self.looper = looper
+
+      self.periodicObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: TrackableMediaSource.periodicInterval), queue: .main) {  [weak self] time in
+        self?.onProgress(elapsed: time)
+        } as AnyObject
+
+      self.timeControlObserver = player.observe(\AVQueuePlayer.timeControlStatus, options: [.new]) { [unowned self] player, changes in
+        if player.status != .readyToPlay {
+          return
+        }
+
+        if player.timeControlStatus == .playing || player.timeControlStatus == .waitingToPlayAtSpecifiedRate {
+          self.status = .playing
+        } else if player.timeControlStatus == .paused {
+          self.status = .paused
+        }
+      }
+
+      self.itemObserver = player.observe(\.currentItem) { [weak self] player, _ in
+        guard let playerItem = player.currentItem else {
+          self?.playerStatusObserver = nil
+          return
+        }
+
+        self?.playerStatusObserver?.invalidate()
+
+        self?.playerStatusObserver = playerItem.observe(\AVPlayerItem.status, options: [.new, .initial]) { [unowned self] playerItem, changes in
+          if playerItem.status == .readyToPlay {
+            if playerItem.currentTime() != .zero {
+              playerItem.seek(to: .zero)
+            }
+
+           self?._duration = playerItem.duration.seconds
+           self?.elapsed = 0
+            if self?.status != .playing {
+
+              self?.status = .ready
+            }
+
+           self?.playerStatusObserver?.invalidate()
+          } else if playerItem.status == .failed {
+            self?.status = .error
+           self?.playerStatusObserver?.invalidate()
+          }
+        }
+      }
+
+      if autoPlay {
+        player.play()
+      }
 
     }
 
-    self.player = _player
+
+
+
   }
 
   override func play() {
@@ -169,6 +249,9 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   }
 
   deinit {
-
+    player?.removeTimeObserver(periodicObserver)
+    looper?.disableLooping()
+    playerStatusObserver?.invalidate()
+    timeControlObserver?.invalidate()
   }
 }

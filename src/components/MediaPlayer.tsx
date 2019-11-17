@@ -35,28 +35,29 @@ export enum MediaPlayerStatus {
 }
 
 type MediaPlayerContextValue = {
-  registerID: (id: string) => void;
+  registerID: (id: string, nodeHandle: number) => void;
   unregisterID: (id: string) => void;
 };
 
 export const MediaPlayerPauser = ({ children, nodeRef }) => {
-  const players = React.useRef([]);
+  const players = React.useRef({});
   const pausedPlayers = React.useRef([]);
   const ref = React.useRef();
   const registerID = React.useCallback(
-    (id: string) => {
-      players.current = uniq([...players.current, id]);
+    (id: string, instance: Object) => {
+      players.current = {
+        ...players.current,
+        [id]: instance
+      };
     },
     [uniq, players]
   );
 
   const unregisterID = React.useCallback(
     (id: string) => {
-      let _players = [...players.current].splice(
-        players.current.indexOf(id),
-        1
-      );
-      players.current = uniq(_players);
+      let _players = { ...players.current };
+      _players[id] = null;
+      players.current = _players;
 
       if (pausedPlayers.current.includes(id)) {
         pausedPlayers.current.splice(pausedPlayers.current.indexOf(id), 1);
@@ -66,29 +67,31 @@ export const MediaPlayerPauser = ({ children, nodeRef }) => {
   );
 
   const pausePlayers = React.useCallback(() => {
-    if (players.current.length === 0) {
+    if (Object.keys(players.current).length === 0) {
       return;
     }
 
     console.log("PLAYERS", players.current);
 
-    const handle = findNodeHandle(nodeRef.current);
-    MediaPlayer.batchPause(handle, players.current);
+    // const handle = findNodeHandle(nodeRef.current) ?? -1;
+    MediaPlayerComponent.batchPause(
+      -1,
+      Object.values(players.current)
+        .map(findNodeHandle)
+        .filter(Boolean)
+    );
     pausedPlayers.current = uniq([
       ...pausedPlayers.current,
-      ...players.current
+      ...Object.values(players.current)
     ]);
-    players.current = [];
   }, [players, pausedPlayers, nodeRef]);
 
   const unpausePlayers = React.useCallback(() => {
-    const handle = findNodeHandle(nodeRef.current);
+    // const handle = findNodeHandle(nodeRef.current);
     if (pausedPlayers.current.length > 0) {
       console.log("PLAYERS", pausedPlayers.current);
-      const _players = uniq([...pausedPlayers.current, ...players.current]);
-      MediaPlayer.batchPlay(handle, pausedPlayers.current);
+      MediaPlayerComponent.batchPlay(-1, pausedPlayers.current);
       pausedPlayers.current = [];
-      players.current = _players;
     }
   }, [players, pausedPlayers, nodeRef]);
 
@@ -211,7 +214,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 
   static batchPause(tag: number, ids: Array<string>) {
-    return MediaPlayerComponent.NativeModule.batchPlay(tag, ids);
+    return MediaPlayerComponent.NativeModule.batchPause(tag, ids);
   }
 
   static startCaching(
@@ -426,7 +429,7 @@ const _MediaPlayer = (React.forwardRef(
       }
 
       if (id) {
-        mediaPlayerContext.registerID(id);
+        mediaPlayerContext.registerID(id, findNodeHandle(_ref.current));
       }
 
       return () => {
@@ -554,6 +557,10 @@ class _TrackableMediaPlayer extends React.Component<
         elapsed: this.elapsed / 1000,
         interval: this.updateInterval
       });
+    }
+
+    if (!this.props.isFocused) {
+      this.clearProgressTimer();
     }
   };
 

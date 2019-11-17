@@ -187,6 +187,7 @@ export const PostPreviewListItem = React.memo(
     isVisible,
     sharedId,
     id,
+    paused,
     imageSize,
     photoURL,
     username,
@@ -236,6 +237,7 @@ export const PostPreviewListItem = React.memo(
               source={source}
               isVisible={isVisible}
               sharedId={sharedId}
+              paused={paused}
               id={id}
               borderRadius={4}
               style={imageStyle}
@@ -271,6 +273,7 @@ const ListItem = ({
   onPress,
   width,
   height,
+  paused,
   isVisible
 }: ListItemProps) => {
   const handlePress = React.useCallback(() => {
@@ -307,6 +310,7 @@ const ListItem = ({
       onPress={handlePress}
       source={source}
       id={`preview-${post.id}`}
+      paused={paused}
       width={width}
       isVisible={isVisible}
       height={height}
@@ -385,6 +389,7 @@ export const PostPreviewList = React.forwardRef(
       waitFor,
       isVisible,
       onPressNewPost,
+      paused,
       ...otherProps
     }: Props,
     ref
@@ -404,6 +409,7 @@ export const PostPreviewList = React.forwardRef(
               isVisible={isVisible}
               post={post}
               key={post.id}
+              paused={paused}
             />
           );
         } else {
@@ -415,13 +421,14 @@ export const PostPreviewList = React.forwardRef(
                 height={height}
                 width={width}
                 isVisible={isVisible}
+                paused={paused}
               />
               <View style={styles.spacer} collapsable={false} />
             </React.Fragment>
           );
         }
       },
-      [onPressPost, height]
+      [onPressPost, height, paused]
     );
 
     return (

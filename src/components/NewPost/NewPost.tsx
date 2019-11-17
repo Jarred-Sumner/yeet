@@ -50,6 +50,7 @@ import {
 } from "react-native-gesture-handler";
 import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
 import { scaleToWidth } from "../../lib/Rect";
+import { MediaPlayerPauser } from "../MediaPlayer";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -424,7 +425,7 @@ class RawNewPost extends React.Component<{}, State> {
                   style={styles.transitionContainer}
                   key={`${this.state.post.format}-${this.state.step}`}
                 >
-                  {this.renderStep()}
+                  <MediaPlayerPauser>{this.renderStep()}</MediaPlayerPauser>
                 </Animated.View>
               </Transitioning.View>
 

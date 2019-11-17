@@ -4,6 +4,7 @@ import { TabView, SceneMap } from "react-native-tab-view";
 import { LIST_HEADER_HEIGHT, TabBar } from "./ImagePicker/TabBar";
 import { CameraRollList } from "./ImagePicker/CameraRollList";
 import { InternetImagesList } from "./ImagePicker/InternetImagesList";
+import { MediaPlayerPauser } from "../MediaPlayer";
 
 const CameraRollRoute = props => <CameraRollList {...props} />;
 
@@ -42,25 +43,29 @@ export class ImagePicker extends React.Component {
     switch (route.key) {
       case ImagePickerRoute.camera:
         return (
-          <CameraRollRoute
-            jumpTo={jumpTo}
-            position={position}
-            width={width}
-            height={height - LIST_HEADER_HEIGHT}
-            tabBarHeight={LIST_HEADER_HEIGHT}
-            {...otherProps}
-          />
+          <MediaPlayerPauser>
+            <CameraRollRoute
+              jumpTo={jumpTo}
+              position={position}
+              width={width}
+              height={height - LIST_HEADER_HEIGHT}
+              tabBarHeight={LIST_HEADER_HEIGHT}
+              {...otherProps}
+            />
+          </MediaPlayerPauser>
         );
       case ImagePickerRoute.internet:
         return (
-          <InternetImagesRoute
-            jumpTo={jumpTo}
-            position={position}
-            width={width}
-            height={height - LIST_HEADER_HEIGHT}
-            tabBarHeight={LIST_HEADER_HEIGHT}
-            {...otherProps}
-          />
+          <MediaPlayerPauser>
+            <InternetImagesRoute
+              jumpTo={jumpTo}
+              position={position}
+              width={width}
+              height={height - LIST_HEADER_HEIGHT}
+              tabBarHeight={LIST_HEADER_HEIGHT}
+              {...otherProps}
+            />
+          </MediaPlayerPauser>
         );
       default: {
         throw Error(`Invalid route: ${route}`);

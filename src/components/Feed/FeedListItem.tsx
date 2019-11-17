@@ -200,6 +200,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
               style={styles.postPreviewList}
               ref={this.scrollRef}
               isVisible={isVisible}
+              paused={!isVisible}
               height={this.state.height}
               onPressNewPost={this.handlePressNewPost}
               directionalLockEnabled

@@ -39,69 +39,56 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
   }
 
   @objc(batchPause:IDs:)
-  func batchPause(_ tag: NSNumber, _ IDs: Array<String>) {
+  func batchPause(_ tag: NSNumber, _ IDs: Array<NSNumber>) {
     DispatchQueue.main.async {
-      self.bridge.uiManager.rootView(forReactTag: tag) {rootView in
-        guard let rootView = rootView as? RCTRootView else {
+
+      let players = IDs.compactMap { id -> MediaPlayer? in
+        if let player = self.bridge.uiManager.view(forReactTag: id) {
+          return YeetExporter.findMediaPlayer(player)
+        } else {
+          return nil
+        }
+      }
+
+      players.forEach { player in
+        guard let current = player.source else {
           return
         }
 
-        let players = IDs.compactMap { id -> MediaPlayer? in
-          let player = self.bridge.uiManager.view(forNativeID: id, withRootTag: rootView.reactTag)
-
-          if type(of: player) == MediaPlayer.self {
-            return player as? MediaPlayer
-          } else {
-            return nil
-          }
-        }
-
-        players.forEach { player in
-          guard let current = player.source else {
-            return
-          }
-
-          if current.status == .playing {
-            player.pause()
-            player.batchPaused = true
-            player.haltContent()
-          }
-        }
+        player.batchPaused = true
+        player.haltContent()
       }
     }
+
 
 
   }
 
   @objc(batchPlay:IDs:)
-  func batchPlay(_ tag: NSNumber, _ IDs: Array<String>) {
+  func batchPlay(_ tag: NSNumber, _ IDs: Array<NSNumber>) {
     DispatchQueue.main.async {
-      self.bridge.uiManager.rootView(forReactTag: tag) {rootView in
-        guard let rootView = rootView as? RCTRootView else {
+       let players = IDs.compactMap { id -> MediaPlayer? in
+         if let player = self.bridge.uiManager.view(forReactTag: id) {
+           return YeetExporter.findMediaPlayer(player)
+         } else {
+           return nil
+         }
+       }
+
+      players.forEach { player in
+        guard let current = player.source else {
           return
         }
 
-        let players = IDs.compactMap { id -> MediaPlayer? in
-          let player = self.bridge.uiManager.view(forNativeID: id, withRootTag: rootView.reactTag)
+        if player.batchPaused {
+          player.batchPaused = false
 
-          if type(of: player) == MediaPlayer.self {
-            return player as? MediaPlayer
-          } else {
-            return nil
-          }
-        }
-
-        players.forEach { player in
-          guard let current = player.source else {
-            return
-          }
-
-          if player.batchPaused {
-            player.batchPaused = false
+          if !player.paused {
             player.play()
           }
 
         }
+
       }
     }
   }

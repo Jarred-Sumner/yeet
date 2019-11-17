@@ -103,7 +103,8 @@ class FeedListComponent extends React.Component<Props, State> {
   }
 
   viewabilityConfig: ViewabilityConfig = {
-    itemVisiblePercentThreshold: 33
+    itemVisiblePercentThreshold: 33,
+    waitForInteraction: false
   };
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {

@@ -86,6 +86,7 @@ const MediaComponent = React.forwardRef(
       dimensions,
       playDuration,
       borderRadius,
+      id,
       style,
       ...otherProps
     }: {
@@ -106,6 +107,7 @@ const MediaComponent = React.forwardRef(
         {...otherProps}
         paused={false}
         autoPlay
+        id={id}
         borderRadius={borderRadius}
         ref={ref}
         sources={sources}
@@ -121,6 +123,7 @@ const ScreenshotImage = React.forwardRef(
       <MediaComponent
         ref={ref}
         source={block.value}
+        id={block.id}
         dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
@@ -141,6 +144,7 @@ const LibraryImage = React.forwardRef(
       <MediaComponent
         ref={ref}
         source={block.value}
+        id={block.id}
         dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
@@ -161,6 +165,7 @@ const CaptionImage = React.forwardRef(
       <MediaComponent
         ref={ref}
         source={block.value}
+        id={block.id}
         dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
@@ -181,6 +186,7 @@ const StickerImage = React.forwardRef(
       <MediaComponent
         ref={ref}
         source={block.value}
+        id={block.id}
         dimensions={block.config.dimensions}
         borderRadius={2}
         style={[

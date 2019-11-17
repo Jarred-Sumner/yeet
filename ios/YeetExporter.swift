@@ -117,7 +117,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
           dict[block["id"].stringValue] = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
         } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
-           guard let mediaPlayer = self.findMediaPlayer(view) else {
+            guard let mediaPlayer = YeetExporter.findMediaPlayer(view) else {
              return
            }
 
@@ -132,7 +132,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     }
   }
 
-  func findMediaPlayer(_ view: UIView) -> MediaPlayer? {
+  static func findMediaPlayer(_ view: UIView) -> MediaPlayer? {
     if type(of: view) == MediaPlayer.self {
       return view as! MediaPlayer;
     } else if (view.subviews.count > 0) {

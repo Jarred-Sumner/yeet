@@ -71,20 +71,20 @@ class TrackableImageSource: TrackableMediaSource {
   }
 
   override func play() {
-    if needsTimers {
-      if self.progressTimer == nil || self.timer == nil {
-        self.setupTimers()
-      }
-    }
+//    if needsTimers {
+//      if self.progressTimer == nil || self.timer == nil {
+//        self.setupTimers()
+//      }
+//    }
 
     guard canPlay else {
       return
     }
 
-    if needsTimers {
-      timer?.start()
-      progressTimer?.start()
-    }
+//    if needsTimers {
+//      timer?.start()
+//      progressTimer?.start()
+//    }
 
     super.play()
   }
@@ -99,11 +99,11 @@ class TrackableImageSource: TrackableMediaSource {
       return
     }
 
-    if needsTimers {
-      timerElapsed = timer.timeInterval
-      timer.invalidate()
-      progressTimer?.invalidate()
-    }
+//    if needsTimers {
+//      timerElapsed = timer.timeInterval
+//      timer.invalidate()
+//      progressTimer?.invalidate()
+//    }
 
 
     super.pause()

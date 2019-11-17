@@ -411,6 +411,9 @@ class YeetImageView : PINAnimatedImageView {
   func handleLoad(success: Bool, error: Error? = nil) {
     if (success) {
       self._source?.onLoad()
+      if self.animatedImage != nil {
+        self._source?.play()
+      }
 
       guard let mediaSource = self.mediaSource else {
         onLoadEvent?([:])

@@ -12,7 +12,8 @@ import {
   PostPreviewListItem,
   POST_LIST_WIDTH,
   POST_LIST_HEIGHT,
-  PlaceholderPost
+  PlaceholderPost,
+  getContentSize
 } from "../components/Feed/PostPreviewList";
 import { scaleToWidth } from "../lib/Rect";
 import { buildImgSrc } from "../lib/imgUri";
@@ -118,7 +119,7 @@ const PostPreviewItem = ({
       id={`preview-new-post`}
       width={width}
       isVisible={isVisible}
-      height={height}
+      height={imageSize.height}
       imageSize={imageSize}
       isVisible
       photoURL={currentUser?.photoURL}
@@ -238,13 +239,12 @@ class RawNewThreadPage extends React.Component<Props> {
               <PostPreviewItem
                 onPress={this.handlePressPost}
                 width={POST_LIST_WIDTH}
-                height={height}
                 contentExport={contentExport}
               />
             ) : (
               <PlaceholderPost
                 width={POST_LIST_WIDTH}
-                height={height}
+                height={200}
                 onPress={this.handlePressNewPost}
               >
                 First post
