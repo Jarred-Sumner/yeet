@@ -533,6 +533,7 @@ PODS:
   - Sentry (4.4.1):
     - Sentry/Core (= 4.4.1)
   - Sentry/Core (4.4.1)
+  - SkeletonView (1.8.2)
   - SSZipArchive (2.2.2)
   - SwiftyBeaver (1.7.1)
   - SwiftyJSON (4.3.0)
@@ -626,6 +627,7 @@ DEPENDENCIES:
   - SDWebImage (= 5.1.1)
   - SDWebImagePhotosPlugin
   - SDWebImageWebPCoder
+  - SkeletonView
   - SwiftyBeaver
   - SwiftyJSON (~> 4.0)
   - SwiftyTimer
@@ -682,6 +684,7 @@ SPEC REPOS:
     - SDWebImagePhotosPlugin
     - SDWebImageWebPCoder
     - Sentry
+    - SkeletonView
     - SSZipArchive
     - SwiftyBeaver
     - SwiftyJSON
@@ -954,6 +957,7 @@ SPEC CHECKSUMS:
   SDWebImagePhotosPlugin: 7577bd9f01f16c2f3b35fd81109b0612c739c81a
   SDWebImageWebPCoder: 947093edd1349d820c40afbd9f42acb6cdecd987
   Sentry: 5d312a04e369154aeac616214f4dfc3cbcc8b296
+  SkeletonView: bb27c39857e5492136f02ee8a3aa78de55d12ecd
   SSZipArchive: fa16b8cc4cdeceb698e5e5d9f67e9558532fbf23
   SwiftyBeaver: da5e573ad583586c18236324c36900990afe1733
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
@@ -963,6 +967,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: d5545fd1379708b1970ba5a10a3e1bc712b123ac
+PODFILE CHECKSUM: 89abe232d00c6c76df373524e221024394f88a42
 
 COCOAPODS: 1.8.4

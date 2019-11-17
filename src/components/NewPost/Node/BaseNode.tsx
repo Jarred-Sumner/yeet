@@ -204,6 +204,7 @@ export class BaseNode extends React.Component<Props> {
         absoluteX={absoluteX}
         absoluteY={absoluteY}
         containerRef={containerRef}
+        isTextBlock={block.type === "text"}
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}
         xLiteral={position.x}

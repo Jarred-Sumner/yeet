@@ -66,6 +66,7 @@ _RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueN
 
 @end
 
+
 @interface RCT_EXTERN_MODULE(MediaPlayerViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
@@ -75,6 +76,7 @@ RCT_EXPORT_VIEW_PROPERTY(isVisible, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(borderRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(muted, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(id, NSString);
+RCT_EXPORT_VIEW_PROPERTY(allowSkeleton, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(sources, MediaSourceArray);
 RCT_EXPORT_VIEW_PROPERTY(onLoad, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onProgress, RCTDirectEventBlock);

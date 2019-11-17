@@ -49,6 +49,9 @@ const styles = StyleSheet.create({
     marginTop: SPACING.normal,
     left: SPACING.normal
   },
+  avatarWrapper: {
+    alignItems: "center"
+  },
   background: {
     zIndex: 0,
     width: "100%",
@@ -284,15 +287,17 @@ const ViewProfileHeaderComponent = ({
         </View>
 
         <View style={styles.top}>
-          <AvatarComponent
-            size={AVATAR_SIZE}
-            url={photoURL}
-            src={photoURL}
-            ref={avatarRef}
-            onChange={onChangeAvatar}
-            onBlur={onBlurAvatar}
-            label={username}
-          />
+          <View style={styles.avatarWrapper}>
+            <AvatarComponent
+              size={AVATAR_SIZE}
+              url={photoURL}
+              src={photoURL}
+              ref={avatarRef}
+              onChange={onChangeAvatar}
+              onBlur={onBlurAvatar}
+              label={username}
+            />
+          </View>
           <SemiBoldText style={styles.username}>
             <Text style={styles.muted}>@</Text>
             {username}

@@ -64,13 +64,24 @@ import ModernAVPlayer
 
   var observer: NSKeyValueObservation? = nil
 
+  var isReadyForDisplay: Bool {
+    return self.playerView.playerLayer.isReadyForDisplay
+  }
+
 
   func configurePlayer(player: AVPlayer) {
+    if playerView.superview != self {
+      self.insertSubview(playerView, at: max(subviews.firstIndex(of: coverView) ?? 1 - 1, 0))
+    }
+
     self.playerView.player = player
 
+    observer?.invalidate()
     observer = self.playerView.playerLayer.observe(\AVPlayerLayer.isReadyForDisplay, options: [.new, .initial]) { [weak self] player, _ in
-      if self?.playerView.playerLayer.isReadyForDisplay ?? false  && (self?.showCover ?? false) {
+      if player.isReadyForDisplay ?? false  && (self?.showCover ?? false) {
         self?.showCover = false
+        self?.observer?.invalidate()
+        self?.observer = nil
       }
     }
   }

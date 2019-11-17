@@ -8,6 +8,7 @@
 #import "AppDelegate.h"
 #import "yeet-Bridging-Header.h"
 
+#import <PINRemoteImage/PINRemoteImageManagerResult.h>
 
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>

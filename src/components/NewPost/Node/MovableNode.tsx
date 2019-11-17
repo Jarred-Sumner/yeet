@@ -133,6 +133,7 @@ type Props = {
   yLiteral: number;
   rLiteral: number;
   scaleLiteral: number;
+  isTextBlock: boolean;
   blockId: string;
   x: Animated.Value<number>;
   y: Animated.Value<number>;
@@ -148,7 +149,6 @@ export class MovableNode extends Component<Props> {
   constructor(props) {
     super(props);
 
-    console.log({ r: props.rLiteral });
 
     this._X = new Animated.Value(props.xLiteral);
     this._Y = new Animated.Value(props.yLiteral);
@@ -229,7 +229,7 @@ export class MovableNode extends Component<Props> {
       15
     );
 
-    this.bottomValue = props.keyboardHeightValue
+    this.bottomValue = props.keyboardHeightValue && props.isTextBlock
       ? keyboardVisibleInterpolater(
           props.keyboardVisibleValue,
           0,

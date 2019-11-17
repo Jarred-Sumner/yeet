@@ -73,7 +73,7 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
         self._duration = seconds
       }
 
-//      player.player.currentItem?.preferredForwardBufferDuration = 1.0
+      player.player.currentItem?.preferredForwardBufferDuration = 1.0
 
       self.status = .ready
     } else if state == .loading || state == .initialization {
@@ -93,7 +93,7 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   }
 
 
-  func start(player: AVPlayer) {
+  func start(player: AVPlayer, autoPlay: Bool = false) {
     let config = YeetAVPlayerConfiguration()
 
     let _player = ModernAVPlayer(player: player, config: config, plugins: [], loggerDomains: [])
@@ -102,7 +102,9 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
 
     _player.delegate = self
     _player.loopMode = true
-    _player.load(media: ModernAVPlayerMedia(url: mediaSource.getAssetURI(), type: .clip), autostart: false, position: self.elapsed)
+
+    _player.load(media: ModernAVPlayerMedia(url: mediaSource.getAssetURI(), type: .clip), autostart: autoPlay, position: self.elapsed)
+
     do {
       try AVAudioSession.sharedInstance().setCategory(config.audioSessionCategory, options: [.mixWithOthers, .allowAirPlay])
     } catch {

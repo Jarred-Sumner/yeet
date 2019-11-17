@@ -36,17 +36,13 @@ class YeetImageView : PINAnimatedImageView {
       self._source = newValue
       self.mediaSource = newValue?.mediaSource
 
-      if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri)  || self.image == nil) {
+      if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) ) {
         old?.hasLoaded = false
         old?.stop()
 
         if let imageRequestID = imageRequestID {
           YeetImageView.phImageManager.cancelImageRequest(imageRequestID)
           self.imageRequestID = nil
-        }
-
-        if self.pin_downloadImageOperationUUID() != nil {
-          self.pin_cancelImageDownload()
         }
 
         self.loadImage()
@@ -197,6 +193,8 @@ class YeetImageView : PINAnimatedImageView {
     layer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
     self.backgroundColor = .clear
 
+
+
     self.clipsToBounds = true
     self.pin_updateWithProgress = true
   }
@@ -283,16 +281,33 @@ class YeetImageView : PINAnimatedImageView {
 
   }
 
+  func handleImageResult(result: PINRemoteImageManagerResult, scale: CGFloat) {
+//    DispatchQueue.main.async {
+//      if let image = result.image {
+//        if image.scale != scale {
+//          self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
+//        } else {
+//          self.image = result.image
+//        }
+//      } else {
+//        self.image = nil
+//      }
+//    }
+
+    let success = self.image != nil || self.animatedImage != nil
+    self.handleLoad(success: success, error: result.error)
+  }
+
   func loadImage(async: Bool = true) {
     guard let mediaSource = self.mediaSource else {
-      self.image = nil
+//      self.image = nil
       return
     }
 
     if mediaSource.isHTTProtocol {
       let (url, scale) = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
-      self.pin_setImage(from: url, processorKey: nil, processor: nil) { [weak self] result in
-        self?.handleImageLoad(image: result.image, scale: scale, error: result.error)
+      self.pin_setImage(from: url, placeholderImage: nil) { [weak self] result in
+        self?.handleImageResult(result: result, scale: scale)
       }
     } else if mediaSource.isFromCameraRoll {
       let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: self.contentMode) { [weak self] image in
@@ -366,6 +381,11 @@ class YeetImageView : PINAnimatedImageView {
   }
 
   func _handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
+    if animatedImage != nil && image == nil {
+      self.handleLoad(success: true, error: error)
+      return
+    }
+
     if let image = image {
       if image != self.image {
         if image.scale != scale {
@@ -379,12 +399,8 @@ class YeetImageView : PINAnimatedImageView {
     }
 
 
-    self.handleLoad(success: image != nil, error: error)
+    self.handleLoad(success: image != nil || animatedImage != nil, error: error)
   }
-
-
-
-
 
 
 
@@ -394,9 +410,7 @@ class YeetImageView : PINAnimatedImageView {
 
   func handleLoad(success: Bool, error: Error? = nil) {
     if (success) {
-      DispatchQueue.main.async { [weak self] in
-        self?._source?.onLoad()
-      }
+      self._source?.onLoad()
 
       guard let mediaSource = self.mediaSource else {
         onLoadEvent?([:])

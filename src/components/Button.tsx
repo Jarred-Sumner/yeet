@@ -314,7 +314,7 @@ export const BackButton = ({
     if (behavior === BackButtonBehavior.back) {
       navigation.goBack(routeName);
     } else if (behavior === BackButtonBehavior.close) {
-      navigation.goBack(routeName);
+      navigation.dismiss();
     }
   }, [behavior, navigation]);
 

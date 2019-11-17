@@ -120,6 +120,10 @@ enum MimeType: String {
     return fileExtension(url.pathExtension)
   }
 
+  func isAnimatable() -> Bool {
+    return [.gif, .webp].contains(self)
+  }
+
   static func fileExtension(_ ext: String) -> MimeType? {
       let fileExtension = ext as CFString
 

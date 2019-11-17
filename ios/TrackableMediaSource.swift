@@ -183,7 +183,7 @@ class TrackableMediaSource : NSObject {
   }
 
   public func onError(error: Error?) {
-
+    self.status = .error
   }
 
   public func onEnd() {

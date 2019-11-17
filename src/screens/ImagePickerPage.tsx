@@ -1,7 +1,10 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import * as React from "react";
 import { InteractionManager, StyleSheet, View } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
+import {
+  FlatList,
+  NativeViewGestureHandler
+} from "react-native-gesture-handler";
 import Animated, { Easing } from "react-native-reanimated";
 import { SafeAreaView, withNavigationFocus } from "react-navigation";
 import { SharedElement } from "react-navigation-shared-element";
@@ -55,7 +58,7 @@ export class ImagePickerPage extends React.Component {
   };
   static navigationOptions = ({ navigation }) => ({
     header: null,
-    gestureEnabled: false,
+    gestureEnabled: true,
     gestureDirection: "vertical",
     cardTransparent: false
   });
@@ -157,23 +160,22 @@ export class ImagePickerPage extends React.Component {
     const sharedElementId = `block.imagePicker.${blockId}`;
 
     return (
-      <View
-        style={{
-          width: SCREEN_DIMENSIONS.width,
-          height: SCREEN_DIMENSIONS.height,
-          flex: 1,
-          backgroundColor: "black"
-        }}
-      >
-        <AnimatedKeyboardTracker
-          keyboardVisibleValue={this.keyboardVisibleValue}
-          keyboardHeightValue={this.keyboardHeightValue}
-          onKeyboardHide={this.enablePullToDismiss}
-          onKeyboardShow={this.disablePullToDismiss}
-          enabled={this.props.isFocused}
-        />
+      <NativeViewGestureHandler>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "black"
+          }}
+        >
+          <AnimatedKeyboardTracker
+            keyboardVisibleValue={this.keyboardVisibleValue}
+            keyboardHeightValue={this.keyboardHeightValue}
+            onKeyboardHide={this.enablePullToDismiss}
+            onKeyboardShow={this.disablePullToDismiss}
+            enabled={this.props.isFocused}
+          />
 
-        {/* <Animated.Code
+          {/* <Animated.Code
           exec={Animated.block([
             Animated.cond(
               Animated.and(
@@ -185,52 +187,53 @@ export class ImagePickerPage extends React.Component {
             )
           ])}
         /> */}
-        <SharedElement
-          id={sharedElementId}
-          style={{
-            width: SCREEN_DIMENSIONS.width,
-            flex: 1
-          }}
-        >
-          <ImagePicker
-            width={SCREEN_DIMENSIONS.width}
-            scrollEnabled
-            animatedYOffset={this.animatedYOffset}
-            keyboardVisibleValue={this.keyboardVisibleValue}
-            keyboardHeightValue={this.keyboardHeightValue}
-            initialRoute={
-              this.props.navigation.getParam("initialRoute") ||
-              ImagePickerRoute.camera
-            }
-            height={SCREEN_DIMENSIONS.height}
-            onScrollBeginDrag={this.handleScrollBeginDrag}
-            onChange={this.handlePickPhoto}
-            onPressBack={this.pressBack}
-            controlsOpacityValue={this.controlsOpacityValue}
-          />
-        </SharedElement>
-        <SafeAreaView
-          forceInset={{
-            bottom: "always",
-            top: "never",
-            left: "never",
-            right: "never"
-          }}
-          style={styles.footer}
-        >
-          <Animated.View style={{ opacity: this.controlsOpacityValue }}>
-            <IconButton
-              Icon={IconClose}
-              onPress={this.goBack}
-              color="#fff"
-              backgroundColor={COLORS.primaryDark}
-              type="fill"
-              size={22}
-              style={styles.button}
+          <SharedElement
+            id={sharedElementId}
+            style={{
+              width: SCREEN_DIMENSIONS.width,
+              flex: 1
+            }}
+          >
+            <ImagePicker
+              width={SCREEN_DIMENSIONS.width}
+              scrollEnabled
+              animatedYOffset={this.animatedYOffset}
+              keyboardVisibleValue={this.keyboardVisibleValue}
+              keyboardHeightValue={this.keyboardHeightValue}
+              initialRoute={
+                this.props.navigation.getParam("initialRoute") ||
+                ImagePickerRoute.camera
+              }
+              height={SCREEN_DIMENSIONS.height}
+              onScrollBeginDrag={this.handleScrollBeginDrag}
+              onChange={this.handlePickPhoto}
+              onPressBack={this.pressBack}
+              controlsOpacityValue={this.controlsOpacityValue}
             />
-          </Animated.View>
-        </SafeAreaView>
-      </View>
+          </SharedElement>
+          <SafeAreaView
+            forceInset={{
+              bottom: "always",
+              top: "never",
+              left: "never",
+              right: "never"
+            }}
+            style={styles.footer}
+          >
+            <Animated.View style={{ opacity: this.controlsOpacityValue }}>
+              <IconButton
+                Icon={IconClose}
+                onPress={this.goBack}
+                color="#fff"
+                backgroundColor={COLORS.primaryDark}
+                type="fill"
+                size={22}
+                style={styles.button}
+              />
+            </Animated.View>
+          </SafeAreaView>
+        </View>
+      </NativeViewGestureHandler>
     );
   }
 }

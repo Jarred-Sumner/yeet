@@ -63,6 +63,7 @@ class TrackableImageSource: TrackableMediaSource {
 
   override func onLoad() {
     super.onLoad()
+    self.start()
   }
 
   var needsTimers : Bool {

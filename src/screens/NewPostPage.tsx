@@ -58,7 +58,6 @@ export class NewPostPage extends React.Component {
     exportData: ExportData,
     format: PostFormat
   ) => {
-    debugger;
     this.props.navigation.navigate("NewThread", {
       contentExport,
       exportData,

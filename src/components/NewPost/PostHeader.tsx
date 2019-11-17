@@ -106,7 +106,7 @@ const BackButtonLayer = () => {
           color="white"
           style={styles.backButton}
           size={18}
-          behavior={BackButtonBehavior.close}
+          behavior={backButtonBehavior}
         />
       </View>
     </View>

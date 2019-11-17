@@ -389,6 +389,25 @@ export class ResizableImage extends React.Component<Props> {
       ...size
     };
 
+    console.log({
+      cropArea,
+      top,
+      bottom,
+      scale
+    });
+
+    if (
+      cropArea.x === 0 &&
+      cropArea.y === 0 &&
+      top === 0 &&
+      bottom === 0 &&
+      scale === 1.0
+    ) {
+      return Promise.resolve(
+        mediaSourceFromImage(this.props.source, this.state.crop, false)
+      );
+    }
+
     return this.imageRef.current.crop(cropArea, {
       width: _width * initialScale,
       height: _height * initialScale
@@ -409,6 +428,7 @@ export class ResizableImage extends React.Component<Props> {
     } = this.props;
     const { crop } = this.state;
 
+    const mediaSource = mediaSourceFromImage(source, crop, false);
     return (
       <Animated.View
         style={[
@@ -506,10 +526,14 @@ export class ResizableImage extends React.Component<Props> {
                 }}
               >
                 <Image
-                  mediaSource={mediaSourceFromImage(source)}
+                  mediaSource={mediaSource}
                   pointerEvents="none"
                   onLoad={this.handleImageLoad}
                   onError={this.handleImageError}
+                  autoPlay
+                  id={`resizable-${mediaSource.id}`}
+                  paused={false}
+                  isVisible
                   ref={this.imageRef}
                   resizeMode="cover"
                   style={{

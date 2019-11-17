@@ -187,6 +187,8 @@ export class CameraRollList extends React.Component<Props, State> {
     mediaType: null,
     aspectRatio: 16 / 9,
     scrollEnabled: true,
+    paddingTop: 0,
+    paddingBottom: 0,
     columnCount: 3
   };
 
@@ -380,11 +382,19 @@ export class CameraRollList extends React.Component<Props, State> {
     />
   );
 
-  renderScrollView = props => <ScrollView {...props} />;
-
   get pageLength() {
     return this.props.columnCount * this.props.columnCount;
   }
+
+  contentInset = {
+    top: this.props.paddingTop,
+    bottom: this.props.paddingBottom
+  };
+
+  contentOffset = {
+    y: this.props.paddingTop * -1,
+    x: 0
+  };
 
   render() {
     const { loadState, photos } = this.state;
@@ -410,14 +420,8 @@ export class CameraRollList extends React.Component<Props, State> {
           data={photos}
           pointerEvents={pointerEvents}
           getItemLayout={this.getItemLayout}
-          contentInset={{
-            top: paddingTop,
-            bottom: paddingBottom
-          }}
-          contentOffset={{
-            y: paddingTop * -1,
-            x: 0
-          }}
+          contentInset={this.contentInset}
+          contentOffset={this.contentOffset}
           initialNumToRender={Math.floor(this.pageLength * 1.5)}
           renderItem={this.handleRenderItem}
           numColumns={columnCount}
@@ -432,7 +436,6 @@ export class CameraRollList extends React.Component<Props, State> {
           scrollEventThrottle={1}
           overScrollMode="always"
           scrollEnabled={scrollEnabled}
-          renderScrollComponent={this.renderScrollView}
           columnWrapperStyle={styles.row}
           keyExtractor={this.keyExtractor}
           onEndReached={this.handleEndReached}

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+//import SkeletonView
 import SwiftyBeaver
 
 @objc(MediaPlayerViewManager)
@@ -62,6 +63,8 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
           if current.status == .playing {
             player.pause()
+            player.batchPaused = true
+            player.haltContent()
           }
         }
       }
@@ -93,7 +96,8 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
             return
           }
 
-          if current.status == .paused {
+          if player.batchPaused {
+            player.batchPaused = false
             player.play()
           }
 

@@ -234,6 +234,7 @@ export const imageContainerFromCameraRoll = (
   const image = {
     ...assetData,
     duration: duration,
+    playDuration: duration,
     mimeType,
     source: ImageSourceType.cameraRoll,
     asset: Image.resolveAssetSource(assetData),
@@ -435,7 +436,7 @@ export const imageContainerFromMediaSource = (
 export const mediaSourceFromImage = (
   container: YeetImageContainer,
   dimensions: BoundsRect,
-  playDuration?: number
+  forceImage: Boolean = false
 ): MediaSource => {
   const { image } = container;
 
@@ -454,14 +455,16 @@ export const mediaSourceFromImage = (
       ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
       : _url;
 
+  const _mimeType =
+    forceImage && isVideo(mimeType) ? ImageMimeType.jpeg : mimeType;
   return {
     url,
     width,
     height,
-    mimeType,
+    mimeType: _mimeType,
     duration,
-    playDuration: playDuration || duration,
-    id: container.id,
+    playDuration: duration,
+    id: `${container.id}-${dimensions.width}-${dimensions.height}-${_mimeType}`,
     bounds: dimensions,
     pixelRatio: 1.0
   };
@@ -507,5 +510,5 @@ export const mediaSourcesFromImage = (
   dimensions: BoundsRect,
   playDuration?: number
 ): Array<MediaSource> => {
-  return [mediaSourceFromImage(container, dimensions, playDuration)];
+  return [mediaSourceFromImage(container, dimensions)];
 };

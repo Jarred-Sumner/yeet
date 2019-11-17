@@ -19,6 +19,8 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
 import { SharedElement } from "react-navigation-shared-element";
 import { uniq } from "lodash";
+import { withNavigationFocus } from "react-navigation";
+
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
 export enum MediaPlayerStatus {
@@ -63,10 +65,12 @@ export const MediaPlayerPauser = ({ children, nodeRef }) => {
     [uniq, players]
   );
 
-  const pausePlayers = () => {
+  const pausePlayers = React.useCallback(() => {
     if (players.current.length === 0) {
       return;
     }
+
+    console.log("PLAYERS", players.current);
 
     const handle = findNodeHandle(nodeRef.current);
     MediaPlayer.batchPause(handle, players.current);
@@ -75,17 +79,18 @@ export const MediaPlayerPauser = ({ children, nodeRef }) => {
       ...players.current
     ]);
     players.current = [];
-  };
+  }, [players, pausedPlayers, nodeRef]);
 
-  const unpausePlayers = () => {
+  const unpausePlayers = React.useCallback(() => {
     const handle = findNodeHandle(nodeRef.current);
     if (pausedPlayers.current.length > 0) {
+      console.log("PLAYERS", pausedPlayers.current);
       const _players = uniq([...pausedPlayers.current, ...players.current]);
       MediaPlayer.batchPlay(handle, pausedPlayers.current);
       pausedPlayers.current = [];
       players.current = _players;
     }
-  };
+  }, [players, pausedPlayers, nodeRef]);
 
   const contextValue = React.useMemo(() => {
     return {
@@ -96,9 +101,17 @@ export const MediaPlayerPauser = ({ children, nodeRef }) => {
     };
   }, [registerID, unregisterID]);
 
-  // useFocusEffect(() => {
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("UNPAUSE");
+      unpausePlayers();
 
-  // });
+      return () => {
+        console.log("PAUSE");
+        pausePlayers();
+      };
+    }, [pausePlayers, unpausePlayers])
+  );
 
   return (
     <MediaPlayerContext.Provider value={contextValue}>
@@ -238,9 +251,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 
   componentWillUnmount() {
-    if (this.isVideoPlayer) {
-      this.reset();
-    }
+    this.reset();
   }
 
   reset = () => {
@@ -387,6 +398,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         nativeID={id}
         borderRadius={borderRadius}
         isActive={isActive}
+        allowSkeleton
         prefetch={prefetch}
         onProgress={onProgress}
         onPlay={onPlay}
@@ -403,8 +415,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
 }
 
 const _MediaPlayer = (React.forwardRef(
-  ({ isActive, id, sharedId, ...props }: Props, ref) => {
-    const [isAutoHidden, setAutoHidden] = React.useState(false);
+  ({ onLoad, isActive, id, sharedId, borderRadius, ...props }: Props, ref) => {
     const _ref = React.useRef<MediaPlayerComponent>(null);
     useImperativeHandle(ref, () => _ref.current);
     const mediaPlayerContext = React.useContext(MediaPlayerContext);
@@ -424,7 +435,14 @@ const _MediaPlayer = (React.forwardRef(
     }, [mediaPlayerContext, id]);
 
     const player = (
-      <MediaPlayerComponent id={id} isActive={isActive} ref={_ref} {...props} />
+      <MediaPlayerComponent
+        onLoad={onLoad}
+        id={id}
+        isActive={isActive}
+        borderRadius={borderRadius}
+        ref={_ref}
+        {...props}
+      />
     );
 
     if (sharedId) {
@@ -446,11 +464,21 @@ export const MediaPlayer = hoistNonReactStatics(
 
 export default MediaPlayer;
 
-class _TrackableMediaPlayer extends React.Component<Props> {
+type TrackableMediaPlayerState = {
+  hasLoaded: boolean;
+};
+
+class _TrackableMediaPlayer extends React.Component<
+  Props,
+  TrackableMediaPlayerState
+> {
   constructor(props) {
     super(props);
 
     this.duration = props.duration || 0.0;
+    this.state = {
+      hasLoaded: false
+    };
   }
 
   duration = 0.0;
@@ -472,11 +500,41 @@ class _TrackableMediaPlayer extends React.Component<Props> {
     this.clearProgressTimer();
   }
 
+  get shouldTrackProgressNatively() {
+    return isVideo(this.props.sources[0]?.mimeType);
+  }
+
+  get shouldTrackProgress() {
+    return !this.shouldTrackProgressNatively && this.props.isFocused;
+  }
+
   componentDidUpdate(prevProps) {
+    if (this.shouldTrackProgressNatively) {
+      return;
+    }
+
     if (prevProps.paused !== this.props.paused) {
       if (this.isTimerRunning && this.props.paused) {
         this.clearProgressTimer();
-      } else if (!this.props.paused && !this.isTimerRunning) {
+      } else if (
+        !this.props.paused &&
+        !this.isTimerRunning &&
+        this.state.hasLoaded &&
+        this.props.isFocused
+      ) {
+        this.startProgressTimer();
+      }
+    }
+
+    if (prevProps.isFocused !== this.props.isFocused) {
+      if (this.isTimerRunning && !this.props.isFocused) {
+        this.clearProgressTimer();
+      } else if (
+        !this.isTimerRunning &&
+        this.props.isFocused &&
+        this.state.hasLoaded &&
+        !this.props.paused
+      ) {
         this.startProgressTimer();
       }
     }
@@ -490,12 +548,6 @@ class _TrackableMediaPlayer extends React.Component<Props> {
     } else {
       this.elapsed = elapsed;
     }
-
-    console.log({
-      duration: this.duration,
-      interval: this.updateInterval,
-      elapsed
-    });
 
     if (this.props.onProgress) {
       this.props.onProgress({
@@ -519,12 +571,17 @@ class _TrackableMediaPlayer extends React.Component<Props> {
       this.clearProgressTimer();
     }
 
-    console.log({ duration, interval, elapsed });
+    if (!this.state.hasLoaded) {
+      this.setState({ hasLoaded: true });
+    }
 
     // this.duration = duration;
     this.updateInterval = interval;
     this.elapsed = elapsed;
-    this.startProgressTimer();
+
+    if (this.shouldTrackProgress) {
+      this.startProgressTimer();
+    }
 
     if (this.props.onPlay) {
       this.props.onPlay({ duration, interval, elapsed, ...eventData });
@@ -575,17 +632,24 @@ class _TrackableMediaPlayer extends React.Component<Props> {
       props
     );
 
+  onLoad = event => {
+    this.setState({ hasLoaded: true });
+
+    this.props.onLoad && this.props.onLoad(event);
+  };
+
   save = (...props) =>
     this.mediaPlayerRef.current.save.call(this.mediaPlayerRef.current, props);
 
   render() {
-    const { onProgress, onPlay, onPause, ...otherProps } = this.props;
+    const { onProgress, onPlay, onPause, onLoad, ...otherProps } = this.props;
     return (
       <MediaPlayer
         ref={this.mediaPlayerRef}
         onPlay={this.handlePlay}
         onPause={this.handlePause}
         onProgress={this.handleProgress}
+        onLoad={this.handleLoad}
         {...otherProps}
       />
     );
@@ -593,6 +657,6 @@ class _TrackableMediaPlayer extends React.Component<Props> {
 }
 
 export const TrackableMediaPlayer = hoistNonReactStatics(
-  _TrackableMediaPlayer,
+  withNavigationFocus(_TrackableMediaPlayer),
   MediaPlayer
 );

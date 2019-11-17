@@ -33,6 +33,7 @@ export const Avatar = React.forwardRef(
       label = "",
       size,
       url,
+      id,
       srcWidth,
       srcHeight,
       isLocal = false,
@@ -72,6 +73,7 @@ export const Avatar = React.forwardRef(
           ref={ref}
           url={src}
           srcWidth={_size}
+          id={id}
           style={style}
           srcHeight={_size}
           size={size}

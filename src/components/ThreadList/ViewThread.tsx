@@ -23,6 +23,7 @@ import {
 } from "../../lib/graphql/ViewThread";
 import { runDelay } from "react-native-redash";
 import { throttle, debounce, invert, memoize } from "lodash";
+import { runTiming } from "../../lib/animations";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -72,10 +73,15 @@ export class PostFlatList extends React.Component<Props, State> {
 
     this.state = { visibleIDs: {}, hasScrolledToInitialPost: false };
 
-    this.topInset = TOP_Y + props.topInset;
+    this.topInset = props.topInset;
     this.bottomInset = BOTTOM_Y + props.bottomInset;
 
-    this.updateContentInset();
+    this.contentInset = {
+      top: this.topInset,
+      left: 0,
+      right: 0,
+      bottom: this.bottomInset
+    };
 
     this.contentOffset = {
       y: props.topInset * -1,
@@ -104,40 +110,6 @@ export class PostFlatList extends React.Component<Props, State> {
 
     this.updateSnapOffsets();
   }
-
-  updateContentInset = () => {
-    if (!this.flatListRef.current) {
-      this.contentInset = {
-        top: this.props.topInset,
-        left: 0,
-        right: 0,
-        bottom: this.bottomInset
-      };
-      return;
-    }
-    const flat = this.flatListRef.current;
-    const { contentLength } = flat._listRef._getScrollMetrics();
-    // flat
-
-    this.contentInset = {
-      top: this.props.topInset,
-      left: 0,
-      right: 0,
-      bottom:
-        SCREEN_DIMENSIONS.height -
-        (contentLength % SCREEN_DIMENSIONS.height) -
-        this.getItemLayout(this.props.posts, this.props.posts.length - 1)
-          .length -
-        this.bottomInset -
-        this.props.bottomInset
-    };
-
-    this.flatListRef.current.getScrollResponder().setNativeProps({
-      contentInset: this.contentInset
-    });
-
-    console.log(this.contentInset.bottom);
-  };
 
   initialPostIndex = 0;
 
@@ -213,8 +185,6 @@ export class PostFlatList extends React.Component<Props, State> {
       //     contentInset: this.contentInset
       //   });
       // }
-
-      this.updateContentInset();
 
       if (
         this.props.posts.length > 0 &&
@@ -383,7 +353,10 @@ export class PostFlatList extends React.Component<Props, State> {
   handleMomentumScrollEnd = ([snapOffset, scrollY]) => {
     console.log("SCROLL END", snapOffset, scrollY);
     this.handleSnap(snapOffset, scrollY);
-    // this.handleThrottledSnap.cancel();
+
+    if (typeof this.handleThrottledSnap.cancel === "function") {
+      this.handleThrottledSnap.cancel();
+    }
   };
 
   contentOffset = {
@@ -433,7 +406,7 @@ export class PostFlatList extends React.Component<Props, State> {
     Animated.block([
       Animated.set(this.scrollY, y),
       Animated.set(this.snapOffset, y),
-      Animated.set(this.isScrollingValue, 0),
+      // Animated.set(this.isScrollingValue, 0),
       Animated.call(
         [this.snapOffset, this.scrollY],
         this.handleMomentumScrollEnd
@@ -482,7 +455,9 @@ export class PostFlatList extends React.Component<Props, State> {
     // });
   };
 
-  setVisibleID = (id: string, additionalState: Partial<State> = {}) => {
+  visiblePostClock = new Animated.Clock();
+
+  _setVisibleID = (id: string, additionalState: Partial<State> = {}) => {
     console.log("SET", id);
     this.visiblePostIDValue.setValue(id.hashCode());
 
@@ -493,6 +468,7 @@ export class PostFlatList extends React.Component<Props, State> {
       }
     });
   };
+  setVisibleID = debounce(this._setVisibleID, 16);
 
   topInset = TOP_Y;
   bottomInset = SPACING.double;
@@ -592,6 +568,67 @@ export class PostFlatList extends React.Component<Props, State> {
 
   simultaneousListHandlers = [this.panRef];
 
+  renderFooterComponent = () => {
+    if (this.props.posts.length < 2) {
+      return null;
+    }
+
+    const { offset, length } = this.getItemLayout(
+      this.props.posts,
+      this.props.posts.length - 1
+    );
+
+    const bottom = offset + length;
+
+    let height;
+
+    if (bottom > SCREEN_DIMENSIONS.height) {
+      height = Math.abs(
+        (bottom % SCREEN_DIMENSIONS.height) -
+          length -
+          this.contentInset.top +
+          ITEM_SEPARATOR_HEIGHT
+      );
+    } else {
+      height = Math.abs(
+        SCREEN_DIMENSIONS.height +
+          bottom -
+          length -
+          this.contentInset.top +
+          ITEM_SEPARATOR_HEIGHT
+      );
+    }
+
+    // if (offset > SCREEN_DIMENSIONS.height) {
+    //   height = Math.abs(
+    //     SCREEN_DIMENSIONS.height -
+    //       length -
+    //       (offset % SCREEN_DIMENSIONS.height) -
+    //       this.contentInset.bottom -
+    //       this.contentInset.top
+    //   );
+    // } else {
+    //   height = Math.abs(
+    //     SCREEN_DIMENSIONS.height -
+    //       length -
+    //       this.contentInset.top -
+    //       this.contentInset.bottom -
+    //       ITEM_SEPARATOR_HEIGHT -
+    //       (offset + length - SCREEN_DIMENSIONS.height)
+    //   );
+    // }
+
+    console.log({ height });
+    return (
+      <View
+        style={{
+          height,
+          width: 1
+        }}
+      />
+    );
+  };
+
   render() {
     const {
       posts,
@@ -636,6 +673,7 @@ export class PostFlatList extends React.Component<Props, State> {
               vertical
               keyboardDismissMode="interactive"
               keyExtractor={this.keyExtractor}
+              ListFooterComponent={this.renderFooterComponent}
               keyboardShouldPersistTaps="always"
               getItemLayout={this.getItemLayout}
               ItemSeparatorComponent={ItemSeparatorComponent}
