@@ -16,6 +16,7 @@ const {
   eq,
   sub,
   block,
+  not,
   multiply,
   divide
 } = Animated;

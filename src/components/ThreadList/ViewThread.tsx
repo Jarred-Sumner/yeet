@@ -1,29 +1,28 @@
-import { Cancelable, fromPairs, orderBy, sum } from "lodash";
-import * as React from "react";
 import {
-  FlatList as RNFlatList,
-  StyleSheet,
-  View,
-  ViewabilityConfig,
-  InteractionManager
-} from "react-native";
-import { PanGestureHandler, State } from "react-native-gesture-handler";
+  Cancelable,
+  debounce,
+  fromPairs,
+  invert,
+  orderBy,
+  sum,
+  throttle
+} from "lodash";
+import * as React from "react";
+import { FlatList as RNFlatList, StyleSheet, View } from "react-native";
+import {
+  PanGestureHandler,
+  State as GestureState
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import { runTiming } from "../../lib/animations";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import { Rectangle } from "../../lib/Rectangle";
 import { SPACING } from "../../lib/styles";
 import FlatList from "../FlatList";
-import { calculatePostHeight, PostCard } from "../Posts/PostCard";
-import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 import { MediaPlayerPauser } from "../MediaPlayer";
-import {
-  ViewThread_postThread_posts_data_profile,
-  ViewThread_postThread_posts_data
-} from "../../lib/graphql/ViewThread";
-import { runDelay } from "react-native-redash";
-import { throttle, debounce, invert, memoize } from "lodash";
-import { runTiming } from "../../lib/animations";
+import { calculatePostHeight, PostCard } from "../Posts/PostCard";
+import { runDecay, decay } from "react-native-redash";
 
 const ITEM_SEPARATOR_HEIGHT = 8;
 
@@ -71,7 +70,14 @@ export class PostFlatList extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = { visibleIDs: {}, hasScrolledToInitialPost: false };
+    this.state = {
+      visibleIDs: props.initialPostId
+        ? {
+            [props.initialPostId]: true
+          }
+        : {},
+      hasScrolledToInitialPost: false
+    };
 
     this.topInset = props.topInset;
     this.bottomInset = BOTTOM_Y + props.bottomInset;
@@ -89,9 +95,10 @@ export class PostFlatList extends React.Component<Props, State> {
     };
 
     if (props.posts.length > 0) {
+      const { initialPostId } = props;
       const initialPostIndex = 0;
 
-      const initialPost = props.posts[initialPostIndex];
+      const initialPost = props.posts.find(post => post.id === initialPostId);
 
       if (initialPost) {
         this.initialPostIndex = initialPostIndex;
@@ -104,18 +111,126 @@ export class PostFlatList extends React.Component<Props, State> {
       }
     }
 
+    const { initialPostId } = props;
+
     if (!this.visiblePostIDValue) {
-      this.visiblePostIDValue = new Animated.Value(-1);
+      this.visiblePostIDValue = new Animated.Value(
+        initialPostId ? initialPostId.hashCode() : -1
+      );
     }
 
     this.updateSnapOffsets();
+
+    if (initialPostId) {
+      this.snapOffset = new Animated.Value(this.snapOffsets[initialPostId]);
+      this.scrollY = new Animated.Value(this.snapOffsets[initialPostId]);
+    } else {
+      this.snapOffset = new Animated.Value<number>(
+        Object.values(this.snapOffsets)[0]
+      );
+      this.scrollY = new Animated.Value<number>(0);
+    }
+
+    this.isScrollingValue = new Animated.Value(0);
+
+    this.callbackClock = new Animated.Clock();
+    this.scrollFadeValue = new Animated.Value<number>(0);
+
+    this.onScroll = Animated.event(
+      [
+        {
+          nativeEvent: ({
+            contentOffset: { y: scrollY },
+            layoutMeasurement: { height: contentHeight }
+          }) =>
+            Animated.block([
+              // Animated.set(this.snapOffset, scrollY),
+              Animated.set(this.scrollY, scrollY),
+              Animated.set(this.isScrollingValue, 1),
+
+              Animated.set(this.contentHeight, contentHeight),
+              Animated.cond(
+                Animated.clockRunning(this.callbackClock),
+                [
+                  Animated.stopClock(this.callbackClock),
+                  Animated.set(this.scrollFadeValue, 1)
+                ],
+                Animated.set(this.scrollFadeValue, 1)
+              )
+            ])
+        }
+      ],
+      { useNativeDriver: true }
+    );
+
+    this.onScrollEndDrag = Animated.event(
+      [
+        {
+          nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
+            Animated.block([
+              Animated.set(this.snapOffset, snapOffset),
+              Animated.set(this.isScrollingValue, 1),
+
+              Animated.cond(
+                Animated.clockRunning(this.callbackClock),
+                [
+                  Animated.stopClock(this.callbackClock),
+                  Animated.set(this.scrollFadeValue, 1)
+                ],
+                Animated.set(this.scrollFadeValue, 1)
+              )
+            ])
+        }
+      ],
+      { useNativeDriver: true }
+    );
+
+    this.onMomentumScrollEnd = ({
+      nativeEvent: {
+        contentOffset: { y }
+      }
+    }) =>
+      Animated.block([
+        Animated.set(this.snapOffset, y),
+        Animated.set(this.isScrollingValue, 1),
+        Animated.cond(
+          Animated.clockRunning(this.callbackClock),
+          [
+            Animated.stopClock(this.callbackClock),
+            Animated.set(this.scrollFadeValue, 1)
+          ],
+          Animated.set(this.scrollFadeValue, 1)
+        )
+      ]);
+
+    this.onMomentumScrollBegin = ({
+      nativeEvent: {
+        contentOffset: { y }
+      }
+    }) =>
+      Animated.block([
+        Animated.cond(
+          Animated.clockRunning(this.callbackClock),
+          [
+            Animated.stopClock(this.callbackClock),
+            Animated.set(this.scrollFadeValue, 1)
+          ],
+          Animated.set(this.scrollFadeValue, 1)
+        )
+      ]);
   }
 
+  onScroll: Function;
+  onScrollEndDrag: Function;
+  onMomentumScrollEnd: Function;
+  onMomentumScrollBegin: Function;
   initialPostIndex = 0;
 
   flatListRef = React.createRef<RNFlatList<PostFragment>>();
-
-  snapOffset = new Animated.Value<number>(0);
+  snapOffset: Animated.Value<number>;
+  scrollY: Animated.Value<number>;
+  scrollFadeValue: Animated.Value<number>;
+  callbackClock: Animated.Clock;
 
   getItemLayout = (_data, index) => {
     const offset = sum(
@@ -135,7 +250,7 @@ export class PostFlatList extends React.Component<Props, State> {
 
   snapOffsets: { [id: string]: number } = {};
   invertedSnapOffsets: { [id: number]: string } = {};
-  isScrollingValue = new Animated.Value(0);
+  isScrollingValue: Animated.Value<number>;
   snapToOffsets: Array<number> = [];
   contentHeight = new Animated.Value(0);
   snapBounds: { [key: string]: Rectangle };
@@ -251,8 +366,10 @@ export class PostFlatList extends React.Component<Props, State> {
         onPressLike={this.props.onPressLike}
         isScrolling={this.isScrollingValue}
         snapOffset={this.snapOffsets[item.id]}
+        scrollFadeValue={this.scrollFadeValue}
         prevOffset={prevOffset}
         snapOffsetValue={this.snapOffset}
+        scrolGestureState={this.scrollGestureState}
         scrollY={this.scrollY}
         onPress={this.snapToIndex}
         visiblePostID={item.id.hashCode()}
@@ -270,12 +387,6 @@ export class PostFlatList extends React.Component<Props, State> {
   // };
 
   handleSnap = (snapY, scrollY) => {
-    // if (!this.isScrollTrackingEnabled) {
-    //   typeof this.onScrollEndCallback === "function" &&
-    //     this.onScrollEndCallback();
-    //   return;
-    // }
-
     let id = this.invertedSnapOffsets[scrollY];
 
     if (!id) {
@@ -308,10 +419,10 @@ export class PostFlatList extends React.Component<Props, State> {
       this.setVisibleID(id);
     }
 
-    this._scrollEnded();
+    // this._scrollEnded();
   };
 
-  handleThrottledSnap = throttle(this.handleSnap, 12);
+  handleThrottledSnap = throttle(this.handleSnap, 48);
   // handleThrottledSnap = this.handleSnap;
 
   _scrollEnded = debounce(
@@ -363,61 +474,6 @@ export class PostFlatList extends React.Component<Props, State> {
     x: 0,
     y: 0
   };
-  scrollY = new Animated.Value<number>(0);
-  isScrollTrackingEnabled = true;
-
-  onScroll = Animated.event(
-    [
-      {
-        nativeEvent: ({
-          contentOffset: { y: scrollY },
-          layoutMeasurement: { height: contentHeight }
-        }) =>
-          Animated.block([
-            // Animated.set(this.snapOffset, scrollY),
-            Animated.set(this.scrollY, scrollY),
-            Animated.set(this.isScrollingValue, 1),
-            Animated.set(this.contentHeight, contentHeight)
-          ])
-      }
-    ],
-    { useNativeDriver: true }
-  );
-
-  onScrollEndDrag = Animated.event(
-    [
-      {
-        nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
-          Animated.block([
-            Animated.set(this.snapOffset, snapOffset),
-            Animated.set(this.isScrollingValue, 1),
-            Animated.call([this.snapOffset, this.scrollY], this.handleEndDrag)
-          ])
-      }
-    ],
-    { useNativeDriver: true }
-  );
-
-  onMomentumScrollEnd = ({
-    nativeEvent: {
-      contentOffset: { y }
-    }
-  }) =>
-    Animated.block([
-      Animated.set(this.scrollY, y),
-      Animated.set(this.snapOffset, y),
-      // Animated.set(this.isScrollingValue, 0),
-      Animated.call(
-        [this.snapOffset, this.scrollY],
-        this.handleMomentumScrollEnd
-      )
-    ]);
-
-  onMomentumScrollBegin = ({
-    nativeEvent: {
-      contentOffset: { y }
-    }
-  }) => Animated.block([Animated.set(this.isScrollingValue, 1)]);
 
   visiblePostIDValue: Animated.Value<number>;
 
@@ -460,6 +516,7 @@ export class PostFlatList extends React.Component<Props, State> {
   _setVisibleID = (id: string, additionalState: Partial<State> = {}) => {
     console.log("SET", id);
     this.visiblePostIDValue.setValue(id.hashCode());
+    this.isScrollingValue.setValue(0);
 
     this.setState({
       ...additionalState,
@@ -504,6 +561,9 @@ export class PostFlatList extends React.Component<Props, State> {
       offset
     });
 
+    window.requestAnimationFrame(() => {
+      this.snapOffset.setValue(offset);
+    });
     this.setVisibleID(id, additionalState);
 
     // window.requestAnimationFrame(() => {
@@ -544,18 +604,18 @@ export class PostFlatList extends React.Component<Props, State> {
   }
 
   panRef = React.createRef<PanGestureHandler>();
+  scrollGestureState = new Animated.Value<number>();
 
-  // handlePan = Animated.event(
-  //   [
-  //     {
-  //       nativeEvent: {
-  //         state: state =>
-  //           Animated.set(this.isScrollingValue, state === State.ACTIVE ? 1 : 0)
-  //       }
-  //     }
-  //   ],
-  //   { useNativeDriver: true }
-  // );
+  handlePan = Animated.event(
+    [
+      {
+        nativeEvent: {
+          state: this.scrollGestureState
+        }
+      }
+    ],
+    { useNativeDriver: true }
+  );
 
   listStyle = [
     listStyles.list,
@@ -646,6 +706,38 @@ export class PostFlatList extends React.Component<Props, State> {
         simultaneousHandlers={[this.flatListRef]}
       >
         <Animated.View style={listStyles.wrapper}>
+          <Animated.Code
+            exec={Animated.block([
+              Animated.set(
+                this.scrollFadeValue,
+                runTiming(
+                  this.callbackClock,
+                  1,
+                  0,
+                  100
+
+                  // Animated.cond(
+                  //   Animated.eq(this.scrollGestureState, GestureState.BEGAN),
+                  //   1,
+                  //   0
+                  // )
+                )
+              ),
+              Animated.cond(
+                Animated.and(
+                  Animated.eq(this.scrollFadeValue, 0),
+                  Animated.not(Animated.clockRunning(this.callbackClock))
+                ),
+                Animated.block([
+                  Animated.set(this.scrollFadeValue, 0),
+                  Animated.call(
+                    [this.snapOffset, this.scrollY],
+                    this.handleMomentumScrollEnd
+                  )
+                ])
+              )
+            ])}
+          />
           <MediaPlayerPauser nodeRef={this.flatListRef}>
             <FlatList
               renderItem={this.renderItem}

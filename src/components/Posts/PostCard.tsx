@@ -2,7 +2,8 @@ import * as React from "react";
 import { StyleSheet, View, StyleSheetProperties } from "react-native";
 import {
   TouchableHighlight,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  State as GestureState
 } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
@@ -29,6 +30,7 @@ import CountButton from "../ThreadList/CountButton";
 import { IconComment } from "../Icon";
 import { PostFormat } from "../NewPost/NewPostFormat";
 import { runTiming } from "../../lib/animations";
+import { runSpring, runDecay, decay } from "react-native-redash";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -172,7 +174,7 @@ const OverlayGradient = ({ width, height = 84, style, flipped }) => {
   );
 };
 
-const FADE_OVERLAY = 0.55;
+const FADE_OVERLAY = 0.65;
 
 const scrollOpacityAnimation = Animated.proc(
   (
@@ -187,12 +189,50 @@ const scrollOpacityAnimation = Animated.proc(
     Animated.interpolate(scrollY, {
       inputRange: [prevOffset, snapOffset, Animated.add(snapOffset, height)],
       outputRange: [
-        Animated.cond(Animated.greaterThan(prevOffset, 0), FADE_OVERLAY, 0),
+        Animated.cond(Animated.greaterThan(snapOffset, 0), FADE_OVERLAY, 0),
         0,
         FADE_OVERLAY
       ],
       extrapolate: Animated.Extrapolate.CLAMP
     })
+);
+
+const getPostOpacity = Animated.proc(
+  (
+    prevOffset,
+    snapOffset,
+    height,
+    scrollY,
+    isScrolling,
+    visiblePostIDValue,
+    visibleID
+  ) =>
+    Animated.cond(
+      Animated.eq(isScrolling, 0),
+      Animated.cond(
+        Animated.eq(visiblePostIDValue, visibleID),
+        0,
+        FADE_OVERLAY
+      ),
+      Animated.interpolate(scrollY, {
+        inputRange: [prevOffset, snapOffset, Animated.add(snapOffset, height)],
+        outputRange: [
+          Animated.cond(Animated.greaterThan(snapOffset, 0), FADE_OVERLAY, 0),
+          0,
+          FADE_OVERLAY
+        ],
+        extrapolate: Animated.Extrapolate.CLAMP
+      })
+      // scrollOpacityAnimation(
+      //   prevOffset,
+      //   snapOffset,
+      //   height,
+      //   scrollY,
+      //   isScrolling,
+      //   visiblePostIDValue,
+      //   visibleID
+      // )
+    )
 );
 
 export const calculatePostHeight = (post: PostFragment) =>
@@ -225,6 +265,8 @@ const PostCardComponent = ({
   isScrolling,
   onPressEllipsis,
   openComposer,
+  scrollFadeValue,
+  scrollGestureState,
   comments = []
 }: {
   post: PostFragment;
@@ -237,8 +279,9 @@ const PostCardComponent = ({
   const [showAllComments, setShowAllComments] = React.useState(false);
   const [playbackTime, setPlaybackTime] = React.useState(0.0);
 
-  const scrollOpacityValue = React.useRef(new Animated.Value(0));
-  const opacityValue = React.useRef(new Animated.Value(0));
+  const opacityValue = React.useRef(
+    new Animated.Value(paused ? FADE_OVERLAY : 0)
+  );
   const opacityClock = React.useRef(new Animated.Clock());
 
   const handleProgress = React.useCallback(
@@ -298,7 +341,7 @@ const PostCardComponent = ({
 
   const onOpenComposer = React.useCallback(
     composerProps => {
-      openComposer({ ...composerProps, timeOffset: playbackTime });
+      openComposer({ ...composerProps, timeOffset: Math.round(playbackTime) });
     },
     [openComposer, width, height, post.id, playbackTime]
   );
@@ -329,60 +372,35 @@ const PostCardComponent = ({
 
   const isNotPlaying = isComposing || paused || manuallyPaused;
 
-  Animated.useCode(
-    () =>
-      Animated.block([
-        Animated.onChange(
-          isScrolling,
-          Animated.block([
-            Animated.cond(
-              Animated.and(
-                Animated.eq(isScrolling, 1),
-                Animated.clockRunning(opacityClock.current)
-              ),
-              Animated.stopClock(opacityClock.current)
-            )
-          ])
-        ),
-        Animated.set(
-          opacityValue.current,
-          Animated.cond(
-            Animated.eq(isScrolling, 1),
-            scrollOpacityAnimation(
-              prevOffset,
-              snapOffset,
-              height,
-              scrollY,
-              isScrolling,
-              visiblePostIDValue,
-              post.id.hashCode()
-            ),
-            runTiming(
-              opacityClock.current,
-              opacityValue.current,
-              Animated.cond(
-                Animated.eq(visiblePostIDValue, post.id.hashCode()),
-                0,
-                FADE_OVERLAY
-              ),
-              200
-            )
-          )
-        )
-      ]),
-    [
-      post.id,
-      opacityClock.current,
-      opacityValue.current,
-      visiblePostIDValue,
-      isScrolling,
-      FADE_OVERLAY
-    ]
-  );
-
   return (
     <TouchableWithoutFeedback disabled={!paused} onPress={handlePress}>
       <Animated.View style={[styles.container, { width, height }]}>
+        <Animated.Code
+          exec={Animated.block([
+            // Animated.onChange(
+            //   isScrolling,
+            //   Animated.block([Animated.stopClock(opacityClock.current)])
+            // ),
+
+            Animated.set(
+              opacityValue.current,
+              runTiming(
+                opacityClock.current,
+                opacityValue.current,
+                getPostOpacity(
+                  prevOffset,
+                  snapOffset,
+                  height,
+                  scrollY,
+                  isScrolling,
+                  visiblePostIDValue,
+                  post.id.hashCode()
+                ),
+                Animated.cond(Animated.eq(isScrolling, 0), 100, 25)
+              )
+            )
+          ])}
+        />
         <TrackableMediaPlayer
           sources={sources}
           paused={isNotPlaying}

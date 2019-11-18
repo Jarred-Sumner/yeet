@@ -411,6 +411,8 @@ PODS:
     - React
     - SDWebImageWebPCoder
     - WCPhotoManipulator
+  - react-native-safe-area-context (0.6.0):
+    - React
   - react-native-video (5.0.1):
     - React
     - react-native-video/Video (= 5.0.1)
@@ -498,7 +500,7 @@ PODS:
     - React
   - RNReanimated (1.4.0):
     - React
-  - RNScreens (2.0.0-alpha.10):
+  - RNScreens (2.0.0-alpha.11):
     - React
   - RNSecureKeyStore (1.0.0):
     - React
@@ -586,6 +588,7 @@ DEPENDENCIES:
   - "react-native-netinfo (from `../node_modules/@react-native-community/netinfo`)"
   - react-native-onesignal (from `../node_modules/react-native-onesignal`)
   - react-native-photo-manipulator (from `../node_modules/react-native-photo-manipulator`)
+  - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - react-native-video (from `../node_modules/react-native-video`)
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
@@ -752,6 +755,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-onesignal"
   react-native-photo-manipulator:
     :path: "../node_modules/react-native-photo-manipulator"
+  react-native-safe-area-context:
+    :path: "../node_modules/react-native-safe-area-context"
   react-native-video:
     :path: "../node_modules/react-native-video"
   react-native-view-shot:
@@ -916,6 +921,7 @@ SPEC CHECKSUMS:
   react-native-netinfo: 6bb847e64f45a2d69c6173741111cfd95c669301
   react-native-onesignal: 663944f5290d758d138b65ab6e60cf7d9c8e8f8f
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3
+  react-native-safe-area-context: d288138da2c800caa111f9352e9333f186a06ead
   react-native-video: 331eaf96cb034fedcc27f4f6ada3ac3cf6c0a78a
   react-native-view-shot: 5f80b8f4f9003c3da8c0c0013488e5b2db17b1e2
   React-RCTActionSheet: 7369b7c85f99b6299491333affd9f01f5a130c22
@@ -943,7 +949,7 @@ SPEC CHECKSUMS:
   RNInAppBrowser: e63d225f1c45e0502edc755889f7a478eae7fbb4
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
   RNReanimated: b2ab0b693dddd2339bd2f300e770f6302d2e960c
-  RNScreens: 68e3330ad9bd8fdbff5d13ef2d4c1c5a47e6a2ba
+  RNScreens: ad3661f864ef18d952e9a4799b6791683e33c1fc
   RNSecureKeyStore: f1ad870e53806453039f650720d2845c678d89c8
   RNSentry: 2803ba8c8129dcf26b79e9b4d8c80168be6e4390
   RNSharedElement: a3ce1a9ac47351997b2ddc1e34682457c4da128d

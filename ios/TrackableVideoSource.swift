@@ -251,6 +251,9 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   deinit {
     player?.removeTimeObserver(periodicObserver)
     looper?.disableLooping()
+    itemObserver?.invalidate()
+    player?.removeAllItems()
+    player?.pause()
     playerStatusObserver?.invalidate()
     timeControlObserver?.invalidate()
   }
