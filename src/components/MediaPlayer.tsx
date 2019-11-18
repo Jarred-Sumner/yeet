@@ -71,8 +71,6 @@ export const MediaPlayerPauser = ({ children, nodeRef }) => {
       return;
     }
 
-    console.log("PLAYERS", players.current);
-
     // const handle = findNodeHandle(nodeRef.current) ?? -1;
     MediaPlayerComponent.batchPause(
       -1,
@@ -479,10 +477,16 @@ class _TrackableMediaPlayer extends React.Component<
     super(props);
 
     this.duration = props.duration || 0.0;
+
     this.state = {
       hasLoaded: false
     };
   }
+
+  static defaultProps = {
+    ...MediaPlayerComponent.defaultProps,
+    isFocused: true
+  };
 
   duration = 0.0;
   elapsed = 0.0;
@@ -569,6 +573,18 @@ class _TrackableMediaPlayer extends React.Component<
       this.incrementProgress,
       this.updateInterval
     );
+  };
+
+  handleLoad = ({
+    nativeEvent: { duration, interval, elapsed, ...eventData }
+  }) => {
+    const source = this.props.sources[0];
+
+    if (source && !isVideo(source.mimeType)) {
+      this.handlePlay({
+        nativeEvent: { duration, interval, elapsed, ...eventData }
+      });
+    }
   };
 
   handlePlay = ({
@@ -664,6 +680,6 @@ class _TrackableMediaPlayer extends React.Component<
 }
 
 export const TrackableMediaPlayer = hoistNonReactStatics(
-  withNavigationFocus(_TrackableMediaPlayer),
+  _TrackableMediaPlayer,
   MediaPlayer
 );

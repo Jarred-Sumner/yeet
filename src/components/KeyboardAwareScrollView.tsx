@@ -92,7 +92,8 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
     keyboardOpeningTime: ScrollIntoViewDefaultOptions.keyboardOpeningTime,
     viewIsInsideTabBar: ScrollIntoViewDefaultOptions.viewIsInsideTabBar,
-    enableOnAndroid: ScrollIntoViewDefaultOptions.enableOnAndroid
+    enableOnAndroid: ScrollIntoViewDefaultOptions.enableOnAndroid,
+    defaultPosition: { x: 0, y: 0 }
   };
 
   constructor(props) {
@@ -341,7 +342,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     );
   };
 
-  contentOffsetValue = new Animated.Value(0);
+  contentOffsetValue = new Animated.Value(this.props.defaultPosition.y);
   onScrollEvent = Animated.event(
     [{ nativeEvent: { contentOffset: { y: this.contentOffsetValue } } }],
     { useNativeDriver: true }

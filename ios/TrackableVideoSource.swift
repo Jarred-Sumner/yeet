@@ -44,7 +44,10 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   var player: AVQueuePlayer? = nil {
     willSet(newValue) {
       if newValue != self.player && self.player != nil {
-        player?.removeTimeObserver(periodicObserver)
+        if periodicObserver != nil {
+          player?.removeTimeObserver(periodicObserver)
+        }
+
         itemObserver?.invalidate()
         looper?.disableLooping()
         playerStatusObserver?.invalidate()
@@ -142,15 +145,20 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
         self?.onProgress(elapsed: time)
         } as AnyObject
 
-      self.timeControlObserver = player.observe(\AVQueuePlayer.timeControlStatus, options: [.new]) { [unowned self] player, changes in
+      self.timeControlObserver = player.observe(\AVQueuePlayer.timeControlStatus, options: [.new]) { [weak self] player, changes in
+        guard let this = self else {
+          self?.timeControlObserver?.invalidate()
+          return
+        }
+
         if player.status != .readyToPlay {
           return
         }
 
         if player.timeControlStatus == .playing || player.timeControlStatus == .waitingToPlayAtSpecifiedRate {
-          self.status = .playing
+          this.status = .playing
         } else if player.timeControlStatus == .paused {
-          self.status = .paused
+          this.status = .paused
         }
       }
 
@@ -162,23 +170,30 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
 
         self?.playerStatusObserver?.invalidate()
 
-        self?.playerStatusObserver = playerItem.observe(\AVPlayerItem.status, options: [.new, .initial]) { [unowned self] playerItem, changes in
+        self?.playerStatusObserver = playerItem.observe(\AVPlayerItem.status, options: [.new, .initial]) { [weak self] playerItem, changes in
+          guard let this = self else {
+            return
+          }
+
           if playerItem.status == .readyToPlay {
+
             if playerItem.currentTime() != .zero {
               playerItem.seek(to: .zero)
             }
 
-           self?._duration = playerItem.duration.seconds
-           self?.elapsed = 0
-            if self?.status != .playing {
+            playerItem.preferredForwardBufferDuration = 1.0
 
-              self?.status = .ready
+           this._duration = playerItem.duration.seconds
+           this.elapsed = 0
+            if this.status != .playing {
+
+              this.status = .ready
             }
 
-           self?.playerStatusObserver?.invalidate()
+           this.playerStatusObserver?.invalidate()
           } else if playerItem.status == .failed {
-            self?.status = .error
-           self?.playerStatusObserver?.invalidate()
+            this.status = .error
+           this.playerStatusObserver?.invalidate()
           }
         }
       }

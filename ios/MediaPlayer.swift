@@ -175,23 +175,31 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 //    }
   }
 
+  var isStaticMedia : Bool {
+    return videoSource == nil && imageView?.animatedImage == nil
+  }
+
   func _handleChangePaused() {
     guard hasContentView else {
       return
     }
 
+    guard !isStaticMedia else {
+      return
+    }
+
     let paused = self.paused ?? true
-    SwiftyBeaver.info("PAUSEWD? \(paused)")
+    SwiftyBeaver.debug("PAUSEWD? \(paused)")
 
     guard let current = self.source else {
       return
     }
 
     if !paused {
-      SwiftyBeaver.info("WILL PLAY \(id)")
+      SwiftyBeaver.debug("WILL PLAY \(id)")
       self.play()
     } else if paused {
-      SwiftyBeaver.info("WILL PAUSE \(id)")
+      SwiftyBeaver.debug("WILL PAUSE \(id)")
       self.pause()
 
     }
@@ -523,7 +531,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   func pause() {
     if imageView != nil {
       imageView?.isPlaybackPaused = true
-    } 
+    }
     source?.pause()
     if let videoSource = self.videoSource {
       videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
@@ -813,7 +821,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   deinit {
     source?.stop()
-    SwiftyBeaver.info("DEINIT \(source?.mediaSource.id)-\(id)")
+    SwiftyBeaver.debug("DEINIT \(source?.mediaSource.id)-\(id)")
 
     if let videoSource = self.videoSource {
       videoSource.player?.pause()

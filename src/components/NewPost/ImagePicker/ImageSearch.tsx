@@ -85,12 +85,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: PLACEHOLDER_COLOR,
     opacity: 0.75,
-    flex: 1,
-    transform: [
-      {
-        rotate: "270deg"
-      }
-    ]
+    flex: 1
   }
 });
 

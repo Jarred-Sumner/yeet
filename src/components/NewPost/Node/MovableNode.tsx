@@ -149,7 +149,6 @@ export class MovableNode extends Component<Props> {
   constructor(props) {
     super(props);
 
-
     this._X = new Animated.Value(props.xLiteral);
     this._Y = new Animated.Value(props.yLiteral);
     this._R = new Animated.Value(props.rLiteral);
@@ -229,19 +228,20 @@ export class MovableNode extends Component<Props> {
       15
     );
 
-    this.bottomValue = props.keyboardHeightValue && props.isTextBlock
-      ? keyboardVisibleInterpolater(
-          props.keyboardVisibleValue,
-          0,
-          Animated.multiply(
-            Animated.sub(
-              SCREEN_DIMENSIONS.height - props.minY,
-              props.keyboardHeightValue
-            ),
-            -1
+    this.bottomValue =
+      props.keyboardHeightValue && props.isTextBlock
+        ? keyboardVisibleInterpolater(
+            props.keyboardVisibleValue,
+            0,
+            Animated.multiply(
+              Animated.sub(
+                SCREEN_DIMENSIONS.height - props.minY,
+                props.keyboardHeightValue
+              ),
+              -1
+            )
           )
-        )
-      : null;
+        : null;
 
     this._translateY = keyboardVisibleInterpolater(
       props.keyboardVisibleValue,
@@ -365,7 +365,13 @@ export class MovableNode extends Component<Props> {
     // );
   }
 
+  _isMounted = true;
+
   updatePosition = coords => {
+    if (!this._isMounted) {
+      return;
+    }
+
     const [x, y, rotate, scale, panGestureState, absoluteX, absoluteY] = coords;
     // console.log({ x, y });
     this.props.onChangePosition({
@@ -399,6 +405,10 @@ export class MovableNode extends Component<Props> {
       // window.setTimeout(() => {
       //   this.visibilityValue.setValue(this.props.isHidden ? 0 : 1);
     }
+  }
+
+  componentWillUnmount() {
+    this._isMounted = false;
   }
 
   rotationRef = React.createRef();

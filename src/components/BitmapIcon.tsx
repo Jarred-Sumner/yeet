@@ -10,6 +10,7 @@ export enum BitmapIconName {
   newPost = "Icon__new-post",
   plus = "Icon__miniPlus",
   addPhoto = "Icon__addPhoto",
+  addGif = "Icon__addGif",
   addSticker = "Icon__addSticker",
   addText = "Icon__addText",
   next = "Icon__next"
@@ -27,6 +28,10 @@ const SIZES_BY_NAME = {
   [BitmapIconName.addSticker]: {
     width: 43,
     height: 43
+  },
+  [BitmapIconName.addGif]: {
+    width: 51,
+    height: 26
   },
   [BitmapIconName.addText]: {
     width: 47,
@@ -96,6 +101,13 @@ export const BitmapIconAddText = ({
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.addText} />
+);
+
+export const BitmapIconAddGif = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.addGif} />
 );
 
 export const BitmapIconNext = ({

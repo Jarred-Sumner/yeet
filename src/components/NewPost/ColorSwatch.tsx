@@ -25,9 +25,14 @@ export const colorSwatchKey = ({ backgroundColor, color }: ColorSwatch) =>
 
 export const COMMENT_COLORS: Array<ColorSwatch> = [
   {
+    backgroundColor: normalizeBackgroundColor("#000"),
+    color: "white"
+  },
+  {
     backgroundColor: normalizeBackgroundColor("#FC6767"),
     color: "white"
   },
+
   {
     backgroundColor: normalizeBackgroundColor("#FCC067"),
     color: "white"
@@ -51,6 +56,10 @@ export const COMMENT_COLORS: Array<ColorSwatch> = [
   },
   {
     backgroundColor: normalizeBackgroundColor("#F967FC"),
+    color: "white"
+  },
+  {
+    backgroundColor: normalizeBackgroundColor("rgb(212,18,15)"),
     color: "white"
   }
 ];

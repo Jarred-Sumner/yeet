@@ -233,7 +233,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handlePressToolbarButton = activeButton => {
     if (activeButton === ToolbarButtonType.photo) {
-      this.handleInsertPhoto();
+      this.handleInsertPhoto(undefined, ImagePickerRoute.camera);
+    } else if (activeButton === ToolbarButtonType.gif) {
+      this.handleInsertPhoto(undefined, ImagePickerRoute.internet);
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
         x: POST_WIDTH / 2,
@@ -570,11 +572,15 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
-  handleInsertPhoto = (block, shouldAnimate = false) => {
-    this.props.navigation.push("InsertSticker", {
+  handleInsertPhoto = (
+    block,
+    initialRoute = ImagePickerRoute.internet,
+    shouldAnimate = false
+  ) => {
+    this.props.navigation.navigate("EditBlockPhoto", {
       blockId: block && block.id,
       post: this.props.post,
-      initialRoute: ImagePickerRoute.internet,
+      initialRoute,
       shouldAnimate,
       onChange: this.handleInsertSticker
     });
@@ -938,7 +944,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
                 focusType={this.state.focusType}
                 minX={bounds.x}
-                minY={bounds.y}
+                minY={14}
                 maxX={sizeStyle.width}
                 onFocus={this.handleFocusBlock}
                 maxY={sizeStyle.height}

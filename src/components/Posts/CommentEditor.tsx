@@ -569,7 +569,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
 
           <InputAccessoryView
             style={styles.inputAccessoryView}
-            nativeID={`${blockID}-input`}
+            nativeID={`new-post-input`}
           >
             <LinearGradient
               colors={["rgba(0, 0, 0, 0.2)", "rgba(0, 0, 0, 0.4)"]}

@@ -19,6 +19,8 @@ extension UITextView {
     let textContainerInset = textView.textContainerInset
 
     var layout = textView.layoutManager
+
+    let minSize = " ".size(OfFont: textView.font ?? UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
   
 
     let range = NSMakeRange(0, layout.numberOfGlyphs)
@@ -27,6 +29,9 @@ extension UITextView {
     layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, _, _) in
       if usedRect.width > 0 && usedRect.height > 0 {
         var rect = usedRect
+        if rect.size == .zero {
+          rect.size = minSize
+        }
         rect.origin.x += textContainerInset.left
         rect.origin.y += textContainerInset.top
         rect = highlightLayer.convert(rect, from: textLayer)
@@ -34,7 +39,19 @@ extension UITextView {
         rects.append(rect)
       }
     }
+
     highlightLayer.path = CGPath.makeUnion(of: rects, cornerRadius: radius)
+
+    if highlightLayer.path?.isEmpty ?? true {
+      var rect = CGRect(origin: .zero, size: minSize)
+      rect.origin.x += textContainerInset.left
+      rect.origin.y += textContainerInset.top
+      rect = highlightLayer.convert(rect, from: textLayer)
+      rect = rect.insetBy(dx: inset - textContainerInset.right, dy: inset)
+
+      highlightLayer.path = CGPath(rect: rect, transform: nil)
+
+    }
   }
 }
 
@@ -323,3 +340,9 @@ fileprivate enum VerticalDirection: Int {
   case up = 1
 }
 
+
+extension String {
+    func size(OfFont font: UIFont) -> CGSize {
+      return (self as NSString).size(withAttributes: [NSAttributedString.Key.font: font])
+    }
+}

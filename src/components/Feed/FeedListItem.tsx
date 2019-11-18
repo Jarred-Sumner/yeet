@@ -1,7 +1,7 @@
 // @flow
 import { sum } from "lodash";
 import * as React from "react";
-import { StyleSheet, View, TouchableHighlight } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   BaseButton,
   ScrollView,
@@ -91,7 +91,7 @@ export const getItemHeight = (
 ) => {
   return sum([
     PROFILE_FEED_HEIGHT,
-    postPreviewListHeight(thread.posts.data),
+    postPreviewListHeight(thread.posts.data.slice(0, 4)),
     POST_COUNT_BAR
   ]);
 };
@@ -115,7 +115,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
     this.state = {
       autoPlay: props.isVisible,
       play: props.isVisible ? PlayState.playing : PlayState.pausedInvisible,
-      height: postPreviewListHeight(props.thread.posts.data)
+      height: postPreviewListHeight(props.thread.posts.data.slice(0, 4))
     };
   }
 
@@ -211,7 +211,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
           </View>
 
           <View style={styles.bar}>
-            <TouchableHighlight onPress={this.handlePress}>
+            <TouchableWithoutFeedback onPress={this.handlePress}>
               <Animated.View style={styles.postCountBar}>
                 <MediumText style={styles.postCountText}>
                   {postsCount > 1
@@ -225,7 +225,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
                   color="#666"
                 />
               </Animated.View>
-            </TouchableHighlight>
+            </TouchableWithoutFeedback>
           </View>
         </Animated.View>
       </TouchableWithoutFeedback>

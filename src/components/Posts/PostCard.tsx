@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
 });
 
 const OverlayGradient = ({ width, height = 84, style, flipped }) => {
-  const COLORS = ["rgba(31, 31, 31, 0.35)", "rgba(35, 35, 35, 0)"];
+  const COLORS = ["rgba(31, 31, 31, 0.45)", "rgba(35, 35, 35, 0)"];
   const colors = flipped ? COLORS.reverse() : COLORS;
   return (
     <LinearGradient
@@ -377,10 +377,10 @@ const PostCardComponent = ({
       <Animated.View style={[styles.container, { width, height }]}>
         <Animated.Code
           exec={Animated.block([
-            // Animated.onChange(
-            //   isScrolling,
-            //   Animated.block([Animated.stopClock(opacityClock.current)])
-            // ),
+            Animated.onChange(
+              isScrolling,
+              Animated.block([Animated.stopClock(opacityClock.current)])
+            ),
 
             Animated.set(
               opacityValue.current,

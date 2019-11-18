@@ -41,7 +41,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         let boundsDict = exportData["bounds"].dictionaryValue
 
         let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-        self.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, callback: callback)
+        self.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, scale: UIScreen.main.scale, callback: callback)
       }
 
     }

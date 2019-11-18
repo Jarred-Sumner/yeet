@@ -93,6 +93,7 @@ export const EditableNodeList = ({
   maxY,
   focusedBlockValue,
   focusTypeValue,
+  minY,
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
@@ -128,6 +129,7 @@ export const EditableNodeList = ({
     return (
       <BaseNode
         maxX={maxX}
+        minY={minY}
         maxY={maxY}
         containerRef={containerRef(id)}
         onBlur={onBlurNode}
@@ -210,9 +212,9 @@ export const PostPreview = React.forwardRef(
     const initialOffset = React.useMemo(
       () => ({
         x: 0,
-        y: 0
+        y: paddingTop * -1
       }),
-      []
+      [paddingTop]
     );
 
     const contentInset = React.useMemo(

@@ -17,6 +17,7 @@ import {
 import { TOP_Y } from "../../../config";
 import {
   BitmapIconPlus,
+  BitmapIconAddGif,
   BitmapIconAddText,
   BitmapIconAddPhoto,
   BitmapIconAddSticker
@@ -41,7 +42,10 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     position: "relative",
+    justifyContent: "center",
     flexShrink: 0,
+    flexGrow: 1,
+    height: 50,
     overflow: "visible"
   },
   plusIcon: {
@@ -82,6 +86,18 @@ const PhotoToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
+const GifToolbarButton = ({ isActive, onPress }) => {
+  return (
+    <ToolbarButton
+      icon={<BitmapIconAddGif />}
+      size={30}
+      isActive={isActive}
+      color="white"
+      onPress={onPress}
+    />
+  );
+};
+
 const StickerToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
@@ -97,6 +113,7 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
 export enum ToolbarButtonType {
   sticker = "sticker",
   text = "text",
+  gif = "gif",
   redact = "redact",
   draw = "draw",
   plus = "plus",
@@ -140,6 +157,10 @@ export const DefaultToolbar = ({
     [onPress]
   );
 
+  const onPressGif = React.useCallback(() => onPress(ToolbarButtonType.gif), [
+    onPress
+  ]);
+
   const _children = children || (
     <>
       <TextToolbarButton
@@ -150,9 +171,9 @@ export const DefaultToolbar = ({
         isActive={activeButton === ToolbarButtonType.photo}
         onPress={onPressPhoto}
       />
-      <StickerToolbarButton
-        isActive={activeButton === ToolbarButtonType.sticker}
-        onPress={onPressDraw}
+      <GifToolbarButton
+        isActive={activeButton === ToolbarButtonType.gif}
+        onPress={onPressGif}
       />
     </>
   );

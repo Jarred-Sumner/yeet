@@ -306,22 +306,20 @@ class ContentExport {
       let minRenderHeight = abs(yOffset) + cropHeight
 
       var renderSizeScale = CGFloat(1)
-//      if minRenderWidth > renderSize.width || minRenderHeight > renderSize.height {
-//        renderSizeScale = minRenderWidth / renderSize.width
-//
-//
-//
-//        let size = CGSize(
-//          width: renderSize.width * renderSizeScale,
-//          height: renderSize.height * renderSizeScale
-//        )
-//
-//        videoYPositions.forEach { key, value in
-//          videoYPositions[key] = value * renderSizeScale
-//        }
-//
-//        renderSize = size
-//      }
+      if minRenderWidth > renderSize.width || minRenderHeight > renderSize.height {
+        let size = CGSize(
+          width: max(minRenderWidth, renderSize.width),
+          height: max(minRenderHeight, renderSize.height)
+        )
+
+        renderSizeScale = AVMakeRect(aspectRatio: renderSize, insideRect: CGRect(origin: .zero, size: size)).height / renderSize.height
+
+        videoYPositions.forEach { key, value in
+          videoYPositions[key] = value * renderSizeScale
+        }
+
+        renderSize = size
+      }
 
 
       let videoContainerRect = CGRect(origin: .zero, size: renderSize)
@@ -402,9 +400,9 @@ class ContentExport {
 
 
             let _ptFrame = (block.nodeFrame ?? block.frame)
-            let ptFrame = _ptFrame.normalize()
-            let scaleX = (ptFrame.width / vidAsset.naturalSize.width) * renderSizeScale * contentsScale
-            let scaleY = (ptFrame.height / vidAsset.naturalSize.height) * renderSizeScale * contentsScale
+            let ptFrame = _ptFrame.normalize(scale: 1 / renderSizeScale)
+            let scaleX = (ptFrame.width / vidAsset.naturalSize.width) * contentsScale
+            let scaleY = (ptFrame.height / vidAsset.naturalSize.height) * contentsScale
 
             let rotationTransform = CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))
 
@@ -431,7 +429,7 @@ class ContentExport {
 
             let videoLayer = CALayer()
             let interRect = videoContainerRect.intersection(videoRect)
-           videoLayer.contentsScale = renderSizeScale * (videoContainerRect.height / interRect.height)
+           videoLayer.contentsScale = (videoContainerRect.height / interRect.height)
 
 
              let view = video.view

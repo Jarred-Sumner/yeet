@@ -10,10 +10,10 @@ import { ProfileFeedComponent } from "../components/Feed/ProfileFeed";
 import { UserContext } from "../components/UserContext";
 import {
   PostPreviewListItem,
-  POST_LIST_WIDTH,
   POST_LIST_HEIGHT,
   PlaceholderPost,
-  getContentSize
+  getContentSize,
+  getPostPreviewWidth
 } from "../components/Feed/PostPreviewList";
 import { scaleToWidth } from "../lib/Rect";
 import { buildImgSrc } from "../lib/imgUri";
@@ -99,14 +99,13 @@ const PostPreviewItem = ({
 }: PostPreviewItemProps) => {
   const { currentUser } = React.useContext(UserContext);
   const imageSize = scaleToWidth(width, contentExport);
-  const mimeType = ImageMimeType[contentExport.type];
 
   const source = React.useMemo(
     () => ({
       height: imageSize.height,
       width: imageSize.width,
       uri: contentExport.uri,
-      mimeType
+      mimeType: contentExport.type
     }),
     [contentExport]
   );
@@ -116,12 +115,12 @@ const PostPreviewItem = ({
       sharedId={sharedId}
       onPress={onPress}
       source={source}
-      id={`preview-new-post`}
+      id={`preview-new-post-${contentExport.uri}`}
       width={width}
       isVisible={isVisible}
-      height={imageSize.height}
+      paused
+      height={height}
       imageSize={imageSize}
-      isVisible
       photoURL={currentUser?.photoURL}
       username={currentUser?.username}
     />
@@ -196,11 +195,6 @@ class RawNewThreadPage extends React.Component<Props> {
     const { body, contentExport, exportData } = this.props;
 
     let height = POST_LIST_HEIGHT;
-    if (contentExport?.height) {
-      let dimensions = scaleToWidth(POST_LIST_WIDTH, contentExport);
-
-      height = Math.min(height, dimensions.height);
-    }
 
     return (
       <View style={styles.container}>
@@ -238,13 +232,19 @@ class RawNewThreadPage extends React.Component<Props> {
             {contentExport ? (
               <PostPreviewItem
                 onPress={this.handlePressPost}
-                width={POST_LIST_WIDTH}
+                width={getPostPreviewWidth(contentExport)}
+                height={
+                  scaleToWidth(
+                    getPostPreviewWidth(contentExport),
+                    contentExport
+                  ).height
+                }
                 contentExport={contentExport}
               />
             ) : (
               <PlaceholderPost
-                width={POST_LIST_WIDTH}
-                height={200}
+                width={getPostPreviewWidth(contentExport)}
+                height={POST_LIST_HEIGHT}
                 onPress={this.handlePressNewPost}
               >
                 First post

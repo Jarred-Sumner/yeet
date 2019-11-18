@@ -6,9 +6,9 @@
  * @flow
  */
 
-// import createStackNavigator from "react-native-screens/createNativeStackNavigator";
+import createStackNavigator from "react-native-screens/createNativeStackNavigator";
 // import { createStackNavigator } from "react-native-screens";
-import { createStackNavigator } from "react-navigation-stack";
+// import { createStackNavigator } from "react-navigation-stack";
 
 import { createAppContainer } from "react-navigation";
 import { createBottomTabNavigator } from "react-navigation-tabs";

@@ -149,14 +149,10 @@ export class PostFlatList extends React.Component<Props, State> {
               Animated.set(this.isScrollingValue, 1),
 
               Animated.set(this.contentHeight, contentHeight),
-              Animated.cond(
-                Animated.clockRunning(this.callbackClock),
-                [
-                  Animated.stopClock(this.callbackClock),
-                  Animated.set(this.scrollFadeValue, 1)
-                ],
+              Animated.cond(Animated.clockRunning(this.callbackClock), [
+                Animated.stopClock(this.callbackClock),
                 Animated.set(this.scrollFadeValue, 1)
-              )
+              ])
             ])
         }
       ],
@@ -171,14 +167,10 @@ export class PostFlatList extends React.Component<Props, State> {
               Animated.set(this.snapOffset, snapOffset),
               Animated.set(this.isScrollingValue, 1),
 
-              Animated.cond(
-                Animated.clockRunning(this.callbackClock),
-                [
-                  Animated.stopClock(this.callbackClock),
-                  Animated.set(this.scrollFadeValue, 1)
-                ],
+              Animated.cond(Animated.clockRunning(this.callbackClock), [
+                Animated.stopClock(this.callbackClock),
                 Animated.set(this.scrollFadeValue, 1)
-              )
+              ])
             ])
         }
       ],
@@ -193,14 +185,10 @@ export class PostFlatList extends React.Component<Props, State> {
       Animated.block([
         Animated.set(this.snapOffset, y),
         Animated.set(this.isScrollingValue, 1),
-        Animated.cond(
-          Animated.clockRunning(this.callbackClock),
-          [
-            Animated.stopClock(this.callbackClock),
-            Animated.set(this.scrollFadeValue, 1)
-          ],
+        Animated.cond(Animated.clockRunning(this.callbackClock), [
+          Animated.stopClock(this.callbackClock),
           Animated.set(this.scrollFadeValue, 1)
-        )
+        ])
       ]);
 
     this.onMomentumScrollBegin = ({
@@ -209,14 +197,10 @@ export class PostFlatList extends React.Component<Props, State> {
       }
     }) =>
       Animated.block([
-        Animated.cond(
-          Animated.clockRunning(this.callbackClock),
-          [
-            Animated.stopClock(this.callbackClock),
-            Animated.set(this.scrollFadeValue, 1)
-          ],
+        Animated.cond(Animated.clockRunning(this.callbackClock), [
+          Animated.stopClock(this.callbackClock),
           Animated.set(this.scrollFadeValue, 1)
-        )
+        ])
       ]);
   }
 
@@ -387,6 +371,10 @@ export class PostFlatList extends React.Component<Props, State> {
   // };
 
   handleSnap = (snapY, scrollY) => {
+    if (!this._isMounted) {
+      return;
+    }
+
     let id = this.invertedSnapOffsets[scrollY];
 
     if (!id) {
@@ -419,7 +407,7 @@ export class PostFlatList extends React.Component<Props, State> {
       this.setVisibleID(id);
     }
 
-    // this._scrollEnded();
+    this._scrollEnded();
   };
 
   handleThrottledSnap = throttle(this.handleSnap, 48);
@@ -460,6 +448,8 @@ export class PostFlatList extends React.Component<Props, State> {
     }
     this.handleThrottledSnap(snapOffset, scrollY);
   };
+
+  _isMounted = true;
 
   handleMomentumScrollEnd = ([snapOffset, scrollY]) => {
     console.log("SCROLL END", snapOffset, scrollY);
@@ -516,7 +506,6 @@ export class PostFlatList extends React.Component<Props, State> {
   _setVisibleID = (id: string, additionalState: Partial<State> = {}) => {
     console.log("SET", id);
     this.visiblePostIDValue.setValue(id.hashCode());
-    this.isScrollingValue.setValue(0);
 
     this.setState({
       ...additionalState,
@@ -576,6 +565,7 @@ export class PostFlatList extends React.Component<Props, State> {
   };
 
   componentWillUnmount() {
+    this._isMounted = false;
     if (this.interactionTask) {
       this.interactionTask.cancel();
     }
@@ -723,6 +713,10 @@ export class PostFlatList extends React.Component<Props, State> {
                   // )
                 )
               ),
+              // Animated.onChange(
+              //   this.visiblePostIDValue,
+              //   Animated.block([Animated.set(this.isScrollingValue, 0)])
+              // ),
               Animated.cond(
                 Animated.and(
                   Animated.eq(this.scrollFadeValue, 0),

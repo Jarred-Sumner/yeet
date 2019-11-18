@@ -362,7 +362,7 @@ export class TextInput extends React.Component<Props> {
             autoCorrect
             spellCheck={false}
             adjustsFontSizeToFit
-            inputAccessoryViewID={`${id}-input`}
+            inputAccessoryViewID={`new-post-input`}
             minimumFontScale={0.4}
             selectionColor={contrastingColor(backgroundColor)}
             highlightInset={-4}

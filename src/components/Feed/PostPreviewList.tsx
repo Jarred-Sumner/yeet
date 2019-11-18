@@ -10,7 +10,7 @@ import Animated from "react-native-reanimated";
 import { Avatar, CurrentUserAvatar } from "../Avatar";
 import { AVATAR_SIZE } from "./ProfileFeed";
 import { buildImgSrc } from "../../lib/imgUri";
-import { scaleToWidth } from "../../lib/Rect";
+import { scaleToWidth, DimensionsRect } from "../../lib/Rect";
 import { LikeCountButton } from "../ThreadList/LikeCountButton";
 import LinearGradient from "react-native-linear-gradient";
 import { IconButton } from "../Button";
@@ -26,14 +26,17 @@ export const HORIZONTAL_POST_LIST_WIDTH =
 export const VERTICAL_POST_LIST_WIDTH = 204;
 export const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
 
-export const getPostWidth = (post: PostListItemFragment) => {
-  const aspectRatio = post.media.width / post.media.height;
-
+export const getPostPreviewWidth = (dimensions: DimensionsRect) => {
+  const aspectRatio = dimensions.width / dimensions.height;
   if (aspectRatio > 1.2 || (aspectRatio > 0.95 && aspectRatio < 1.05)) {
     return HORIZONTAL_POST_LIST_WIDTH;
   } else {
     return VERTICAL_POST_LIST_WIDTH;
   }
+};
+
+export const getPostWidth = (post: PostListItemFragment) => {
+  return getPostPreviewWidth(post.media);
 };
 
 export type PressPostFunction = (post: PostListItemFragment) => Void;
@@ -442,7 +445,7 @@ export const PostPreviewList = React.forwardRef(
         style={[styles.scrollView, { height }]}
       >
         {children}
-        {posts.map(renderPost)}
+        {posts.slice(0, 4).map(renderPost)}
         <View style={styles.spacer} collapsable={false} />
         <PlaceholderPost
           width={VERTICAL_POST_LIST_WIDTH}

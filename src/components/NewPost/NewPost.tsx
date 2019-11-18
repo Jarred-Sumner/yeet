@@ -245,17 +245,6 @@ class RawNewPost extends React.Component<{}, State> {
   transitionToEditPhoto = (photo: YeetImageContainer) => {
     const post = this.buildPostWithImage(photo, getSourceDimensions(photo));
 
-    Animated.timing(this.animatedTranslateY, {
-      toValue: CAROUSEL_HEIGHT * -1,
-      duration: 400,
-      easing: Easing.elastic()
-    }).start(() => {
-      window.requestAnimationFrame(() => {
-        this.scrollY.setValue(0);
-        this.animatedTranslateY.setValue(0);
-      });
-    });
-
     this.setState({
       step: NewPostStep.editPhoto,
       defaultPhoto: photo,
@@ -363,9 +352,11 @@ class RawNewPost extends React.Component<{}, State> {
       });
     }
 
-    window.requestAnimationFrame(() => {
-      this.scrollY.setValue(0);
-    });
+    if (this.state.step === NewPostStep.choosePhoto) {
+      window.requestAnimationFrame(() => {
+        this.scrollY.setValue(0);
+      });
+    }
   };
 
   handleBackToChoosePhoto = () => {

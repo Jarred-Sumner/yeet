@@ -23,6 +23,8 @@ import tinycolor from "tinycolor2";
 import { memoize } from "lodash";
 import { MovableNode, TransformableView } from "../NewPost/Node/MovableNode";
 import { CommentComposer } from "./CommentComposer";
+import TextInput from "../NewPost/Text/TextInput";
+import { buildTextBlock, PostFormat } from "../NewPost/NewPostFormat";
 
 const AVATAR_SIZE = 22;
 
@@ -39,7 +41,7 @@ const styles = StyleSheet.create({
 
 const _normalizedBackgroundColor = (color: string) =>
   tinycolor(color)
-    .setAlpha(0.65)
+    .setAlpha(0.35)
     .toString();
 
 export const normalizeBackgroundColor = memoize(_normalizedBackgroundColor);
@@ -100,8 +102,19 @@ const TextComment = ({
   rotate,
   backgroundColor,
   keyboardVisibleValue,
-  textColor: color
+  textColor
 }) => {
+  const block = React.useMemo(() => {
+    return buildTextBlock({
+      value: body,
+      format: PostFormat.comment,
+      overrides: { backgroundColor, textColor },
+      placeholder: "",
+      autoInserted: false,
+      required: false
+    });
+  }, [body, backgroundColor, textColor]);
+
   return (
     <Animated.View>
       <TransformableView
@@ -110,24 +123,11 @@ const TextComment = ({
         translateX={x}
         translateY={y}
       >
-        <View style={textCommentStyles.container}>
-          <View style={textCommentStyles.shadowContainer}>
-            <View
-              style={[
-                textCommentStyles.textContainer,
-                { backgroundColor: normalizeBackgroundColor(backgroundColor) }
-              ]}
-            >
-              <MediumText style={[textCommentStyles.text, { color }]}>
-                {body}
-              </MediumText>
-            </View>
-          </View>
-        </View>
-
-        <TextCommentAvatar
-          username={profile.username}
-          photoURL={profile.photoURL}
+        <TextInput
+          block={block}
+          editable={false}
+          isFocused={false}
+          text={body}
         />
       </TransformableView>
     </Animated.View>
