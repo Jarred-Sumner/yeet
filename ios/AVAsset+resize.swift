@@ -88,6 +88,12 @@ extension AVURLAsset {
         }
         try! track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
 
+        asset.tracks(withMediaType: .audio).forEach { audioTrack in
+          if let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)  {
+            try! track.insertTimeRange(audioTrack.timeRange, of: audioTrack, at: .zero)
+          }
+        }
+
         let instruction = AVMutableVideoCompositionInstruction()
 
         track.preferredTransform = videoTrack.preferredTransform
@@ -161,7 +167,6 @@ extension AVURLAsset {
         var presetName = AVAssetExportPresetMediumQuality
         if duration < 60.0 {
           presetName = AVAssetExportPresetHighestQuality
-
 //          if videoComposition.renderSize.width <= 640 && videoComposition.renderSize.height <= 480 {
 //            presetName = AVAssetExportPreset640x480
 //          } else if videoComposition.renderSize.width <= 960 && videoComposition.renderSize.height <= 540 {
@@ -180,9 +185,12 @@ extension AVURLAsset {
           return
         }
 
+
+
         exportSession.videoComposition = videoComposition
         exportSession.outputURL = dest
         exportSession.outputFileType = .mp4
+
         exportSession.shouldOptimizeForNetworkUse = true
 
         exportSession.exportAsynchronously {
