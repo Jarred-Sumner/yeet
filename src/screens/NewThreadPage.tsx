@@ -118,7 +118,8 @@ const PostPreviewItem = ({
       id={`preview-new-post-${contentExport.uri}`}
       width={width}
       isVisible={isVisible}
-      paused
+      paused={false}
+      muted
       height={height}
       imageSize={imageSize}
       photoURL={currentUser?.photoURL}

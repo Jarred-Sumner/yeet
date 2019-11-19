@@ -340,12 +340,14 @@ export class MediaPlayerComponent extends React.Component<Props> {
       borderRadius,
       onError,
       isActive,
+      muted,
       onPlay,
       onPause
     } = this.props;
 
     if (
       paused !== nextProps.paused ||
+      muted !== nextProps.muted ||
       autoPlay !== nextProps.autoPlay ||
       onProgress !== nextProps.onProgress ||
       onPlay !== nextProps.onPause ||
@@ -386,6 +388,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       onLoad,
       onPlay,
       onPause,
+      muted,
       onError,
       onChangeItem
     } = this.props;
@@ -402,6 +405,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         allowSkeleton
         prefetch={prefetch}
         onProgress={onProgress}
+        muted={muted}
         onPlay={onPlay}
         onPause={onPause}
         onLoad={onLoad}

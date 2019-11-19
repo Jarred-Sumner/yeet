@@ -128,6 +128,12 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         self.handleChangePaused()
       }
 
+      if changedProps.contains("muted") {
+        DispatchQueue.main.async { [weak self] in
+          self?.videoSource?.player?.isMuted = (self?.muted ?? false)
+        }
+      }
+
 //      if changedProps.contains("allowSkeleton") {
 //        self.updateSkeletonView()
 //      }
@@ -682,6 +688,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
         DispatchQueue.main.async {
           let player = videoSource?.player ?? AVQueuePlayer()
+          player.isMuted = self.muted
+
           if self.videoView?.playerLayer.player != player {
              self.videoView!.configurePlayer(player: player)
            }
@@ -805,6 +813,9 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   var inactiveStatus: TrackableMediaSource.Status? = nil
   @objc(isActive)
   var isActive: Bool = true
+
+  @objc(muted)
+  var muted: Bool = false
 
   @objc(invalidate)
   func invalidate() {
