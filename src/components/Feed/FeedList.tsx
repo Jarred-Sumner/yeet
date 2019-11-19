@@ -6,6 +6,7 @@ import {
 import { sum, uniqBy, fromPairs } from "lodash";
 import * as React from "react";
 import { useQuery } from "react-apollo";
+import * as Sentry from "@sentry/react-native";
 import {
   StyleSheet,
   FlatListProps,
@@ -106,6 +107,19 @@ class FeedListComponent extends React.Component<Props, State> {
   viewabilityConfig: ViewabilityConfig = {
     itemVisiblePercentThreshold: 33,
     waitForInteraction: false
+  };
+
+  static defaultProps = {
+    contentInset: {
+      top: 0,
+      bottom: 0,
+      left: 0,
+      right: 0
+    },
+    contentOffset: {
+      x: 0,
+      y: 0
+    }
   };
 
   onViewableItemsChanged = ({ viewableItems = [], changed } = {}) => {
@@ -216,13 +230,22 @@ class FeedListComponent extends React.Component<Props, State> {
   }
 
   handleRefresh = () => {
-    console.log("REFETCH");
-    return this.props.refetch({
-      variables: {
-        limit: Math.max(this.props.threads.length, 20),
-        offset: 0
-      }
+    try {
+      this.props.refetch();
+    } catch (exception) {
+      Sentry.captureException(exception);
+      console.error(exception);
+    }
+  };
+
+  scrollToTop = () => {
+    this.flatListRef.current.scrollToIndex({
+      index: 0,
+      animated: true,
+      viewPosition: 0,
+      viewOffset: this.props.contentInset.top
     });
+    this.handleRefresh();
   };
 
   render() {
@@ -273,7 +296,7 @@ class FeedListComponent extends React.Component<Props, State> {
   }
 }
 
-export const FeedList = (props: FlatListProps) => {
+export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
   const threadsQuery = useQuery<ViewThreads, ViewThreadsVariables>(
     VIEW_THREADS_QUERY,
     {
@@ -295,6 +318,7 @@ export const FeedList = (props: FlatListProps) => {
     <FeedListComponent
       {...props}
       threads={[...threads]}
+      ref={ref}
       offset={threadsQuery?.data?.postThreads.offset}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
@@ -309,4 +333,4 @@ export const FeedList = (props: FlatListProps) => {
       fetchMore={threadsQuery.fetchMore}
     />
   );
-};
+});

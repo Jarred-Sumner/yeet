@@ -113,6 +113,7 @@ const TabBarIcon = ({
   label,
   FocusedIcon,
   onPress,
+  disabled,
   route,
   badgeCount = 0
 }) => {
@@ -123,7 +124,7 @@ const TabBarIcon = ({
   const IconComponent = focused ? FocusedIcon : Icon;
 
   return (
-    <TouchableOpacity onPressIn={handlePress}>
+    <TouchableOpacity disabled={disabled} onPressIn={handlePress}>
       <Animated.View style={styles.buttonContainer}>
         <View style={styles.iconWrapper}>
           <IconComponent
@@ -169,7 +170,7 @@ const ROUTES_ICONS_MAPPING = {
 
 const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab", "NewPostStack"];
 
-export const BottomTabBar = ({ style, currentRoute }) => {
+export const BottomTabBar = ({ style, currentRoute, onPressCurrentRoute }) => {
   const navigation = useNavigation();
 
   const {
@@ -200,6 +201,34 @@ export const BottomTabBar = ({ style, currentRoute }) => {
 
   const ref = React.useRef();
 
+  const renderTab = React.useCallback(
+    ([route, [Icon, FocusedIcon]]) => {
+      const isFocused = route === currentRoute;
+
+      const handlePress = React.useCallback(() => {
+        if (isFocused) {
+          typeof onPressCurrentRoute === "function" && onPressCurrentRoute();
+        } else {
+          openRoute(route);
+        }
+      }, [onPressCurrentRoute, isFocused, route, openRoute]);
+      return (
+        <TabBarIcon
+          key={route}
+          Icon={Icon}
+          FocusedIcon={FocusedIcon}
+          route={route}
+          label={ROUTE_LABELS[route]}
+          disabled={isFocused && !onPressCurrentRoute}
+          badgeCount={route === "NotificationsTab" ? badgeCount : 0}
+          focused={isFocused}
+          onPress={handlePress}
+        />
+      );
+    },
+    [openRoute, currentRoute, badgeCount, onPressCurrentRoute]
+  );
+
   return (
     <Animated.View style={style}>
       <Animated.View style={styles.wrapper}>
@@ -224,24 +253,7 @@ export const BottomTabBar = ({ style, currentRoute }) => {
           style={[styles.blur]}
         /> */}
         <View ref={ref} style={styles.container}>
-          {Object.entries(ROUTES_ICONS_MAPPING).map(
-            ([route, [Icon, FocusedIcon]]) => (
-              <TabBarIcon
-                key={route}
-                Icon={Icon}
-                FocusedIcon={FocusedIcon}
-                route={route}
-                label={ROUTE_LABELS[route]}
-                badgeCount={route === "NotificationsTab" ? badgeCount : 0}
-                focused={
-                  currentRoute
-                    ? route === currentRoute
-                    : navigation.state.routeName === route
-                }
-                onPress={openRoute}
-              />
-            )
-          )}
+          {Object.entries(ROUTES_ICONS_MAPPING).map(renderTab)}
         </View>
       </Animated.View>
     </Animated.View>

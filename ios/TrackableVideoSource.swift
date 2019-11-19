@@ -46,6 +46,7 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
       if newValue != self.player && self.player != nil {
         if periodicObserver != nil {
           player?.removeTimeObserver(periodicObserver)
+          periodicObserver = nil
         }
 
         itemObserver?.invalidate()

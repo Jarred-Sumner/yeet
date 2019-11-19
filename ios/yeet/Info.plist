@@ -80,6 +80,8 @@
 	<string>Post photos/videos on yeet</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Some description</string>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>iconfont.ttf</string>

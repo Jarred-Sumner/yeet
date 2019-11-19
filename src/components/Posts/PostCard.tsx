@@ -464,7 +464,10 @@ const PostCardComponent = ({
             </View>
           </TouchableHighlight>
 
-          <View style={styles.topRight}>
+          <View
+            pointerEvents={paused ? "none" : "auto"}
+            style={styles.topRight}
+          >
             <IconButtonEllipsis
               onPress={handlePressEllipsis}
               style={styles.ellipsis}
@@ -523,6 +526,7 @@ const PostCardComponent = ({
             iconSize={28}
             Icon={IconComment}
             color="white"
+            disabled={paused}
             count={post.commentsCount || 0}
             onPress={onPressCommentButton}
             onLongPress={onLongPressCommentButton}

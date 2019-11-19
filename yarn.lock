@@ -8570,9 +8570,9 @@ react-native-hooks@^0.9.0:
   resolved "https://registry.yarnpkg.com/react-native-hooks/-/react-native-hooks-0.9.0.tgz#589fc2390296d9afe03327298dabcf0a1f350910"
   integrity sha512-yqSAH0zxqjYHYPo6mPut3dEROoB5qMvsAbN3EK0MDQrWA5zdqmzgTEpS9/qwXaIyllk6hQbHxYnRTWq2uq4tJQ==
 
-"react-native-image-picker@https://github.com/Jarred-Sumner/react-native-image-picker.git":
-  version "1.0.2"
-  resolved "https://github.com/Jarred-Sumner/react-native-image-picker.git#cc2ceeef65710cf97cb48f9f3a026241c742495c"
+"react-native-image-picker@https://github.com/Jarred-Sumner/react-native-image-picker.git#master":
+  version "1.1.0"
+  resolved "https://github.com/Jarred-Sumner/react-native-image-picker.git#ef789507e60afb26ee9ba7fd8bc58f66e9d15271"
 
 react-native-inappbrowser-reborn@^3.3.0:
   version "3.3.0"

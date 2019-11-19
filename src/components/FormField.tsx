@@ -1,7 +1,7 @@
 import * as React from "react";
 import { View, StyleSheet } from "react-native";
 import { TextInput } from "react-native-paper";
-import { SPACING } from "../lib/styles";
+import { SPACING, COLORS } from "../lib/styles";
 import { HelperText } from "react-native-paper";
 import { TextInput as RawTextInput } from "react-native-gesture-handler";
 import { FontFamily } from "./Text";
@@ -13,7 +13,8 @@ const styles = StyleSheet.create({
   },
   input: {
     borderRadius: 2,
-    overflow: "hidden"
+    overflow: "hidden",
+    color: COLORS.black
   },
   passwordInput: {
     paddingVertical: SPACING.normal,
@@ -68,8 +69,12 @@ export const FormField = React.memo(
           autoCompleteType={autoCompleteType}
           secureTextEntry={secureTextEntry}
           underlineColor={underlineColor}
+          clearButtonMode="always"
+          multiline={false}
+          placeholderTextColor={COLORS.muted}
           onBlur={onBlur}
           autoCapitalize={autoCapitalize}
+          selectTextOnFocus={secureTextEntry}
           autoFocus={autoFocus}
           enablesReturnKeyAutomatically={enablesReturnKeyAutomatically}
           mode={mode}

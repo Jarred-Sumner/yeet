@@ -400,7 +400,7 @@ PODS:
   - react-native-cronet (0.4.0):
     - Cronet
     - React
-  - react-native-image-picker (1.0.2):
+  - react-native-image-picker (1.1.0):
     - React
   - react-native-netinfo (4.4.0):
     - React
@@ -922,7 +922,7 @@ SPEC CHECKSUMS:
   react-native-cameraroll: 266b33079a333d168c3ee1ad0a3a7aaeb380fa6d
   react-native-config: 55548054279d92e0e4566ea15a8b9b81028ec342
   react-native-cronet: a84212c9dac5ed5535dea1d8411a0b5cf0aebd50
-  react-native-image-picker: 5c15ac0251475ae0b9f21e17d08d7c28db847abc
+  react-native-image-picker: 7a85cf7b0a53845f03ae52fb4592a2748ded069b
   react-native-netinfo: 6bb847e64f45a2d69c6173741111cfd95c669301
   react-native-onesignal: 663944f5290d758d138b65ab6e60cf7d9c8e8f8f
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3

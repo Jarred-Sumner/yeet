@@ -157,6 +157,8 @@ class RawSignUpPage extends React.Component {
       return;
     }
 
+    Keyboard.dismiss();
+
     this.setState({ isLoading: true });
     HapticFeedback.trigger("impactLight");
 
@@ -235,9 +237,13 @@ class RawSignUpPage extends React.Component {
                   required
                   autoCompleteType="username"
                   autoCapitalize="none"
+                  maxLength={40}
+                  blurOnSubmit={false}
                   keyboardType="ascii-capable"
                   inputRef={this.usernameInputRef}
+                  spellcheck={false}
                   importantForAutofill
+                  enablesReturnKeyAutomatically={false}
                   textContentType="username"
                   autoFocus
                   onSubmitEditing={this.selectEmailInput}
@@ -254,9 +260,11 @@ class RawSignUpPage extends React.Component {
                   required
                   autoCompleteType="email"
                   autoCapitalize="none"
+                  blurOnSubmit={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
                   importantForAutofill
+                  enablesReturnKeyAutomatically={false}
                   returnKeyType="next"
                   inputRef={this.emailInputRef}
                   onSubmitEditing={this.selectPasswordInput}
@@ -272,9 +280,11 @@ class RawSignUpPage extends React.Component {
                   required
                   secureTextEntry
                   name="password"
-                  textContentType=""
+                  textContentType="none"
+                  autoCorrect={false}
                   importantForAutofill
-                  blurOnSubmit
+                  blurOnSubmit={false}
+                  enablesReturnKeyAutomatically={false}
                   error={props.touched.password && props.errors.password}
                   autoCompleteType="password"
                   onSubmitEditing={this.selectPasswordConfirmationInput}
@@ -290,10 +300,12 @@ class RawSignUpPage extends React.Component {
                 <FormField
                   required
                   secureTextEntry
-                  blurOnSubmit
                   name="confirmPassword"
-                  textContentType=""
-                  onSubmitEditing={props.handleSubmit}
+                  textContentType="none"
+                  blurOnSubmit={false}
+                  autoCorrect={false}
+                  enablesReturnKeyAutomatically={false}
+                  // onSubmitEditing={props.handleSubmit}
                   importantForAutofill
                   inputRef={this.passwordConfirmationInputRef}
                   returnKeyType="go"
@@ -301,7 +313,7 @@ class RawSignUpPage extends React.Component {
                     props.touched.passwordConfirmation &&
                     props.errors.passwordConfirmation
                   }
-                  autoCompleteType="password"
+                  autoCompleteType="off"
                   autoCapitalize="none"
                   defaultValue={props.values.passwordConfirmation}
                   onChangeText={props.handleChange("passwordConfirmation")}

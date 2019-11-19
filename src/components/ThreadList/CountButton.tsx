@@ -41,9 +41,22 @@ const styles = StyleSheet.create({
 });
 
 export const CountButton = React.memo(
-  ({ count, Icon, color, iconNode, onPress, onLongPress, iconSize }) => {
+  ({
+    count,
+    Icon,
+    color,
+    iconNode,
+    onPress,
+    onLongPress,
+    iconSize,
+    disabled = false
+  }) => {
     return (
-      <TouchableWithoutFeedback onLongPress={onLongPress} onPress={onPress}>
+      <TouchableWithoutFeedback
+        disabled={disabled}
+        onLongPress={onLongPress}
+        onPress={onPress}
+      >
         <View style={styles.container}>
           {iconNode ? (
             iconNode

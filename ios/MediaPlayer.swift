@@ -199,6 +199,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
       SwiftyBeaver.debug("WILL PLAY \(id)")
       self.play()
     } else if paused {
+      isWaitingToPlay = false
       SwiftyBeaver.debug("WILL PAUSE \(id)")
       self.pause()
 

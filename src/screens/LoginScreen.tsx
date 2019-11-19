@@ -40,6 +40,10 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     alignItems: "center",
     height: "100%"
+  },
+  headerButton: {
+    width: 40,
+    height: 45
   }
 });
 
@@ -62,6 +66,7 @@ const HeaderLeftButton = () => {
       behavior={behavior}
       size={18}
       onPress={userContext.hideAuthModal}
+      style={styles.headerButton}
     />
   );
 };
@@ -190,8 +195,9 @@ class RawLoginPage extends React.Component {
         autoCompleteType="password"
         onSubmitEditing={props.handleSubmit}
         autoCapitalize="none"
+        textContentType="password"
         inputRef={this.passwordInputRef}
-        returnKeyType="next"
+        returnKeyType="go"
         value={props.values.password}
         onChangeText={props.handleChange("password")}
         onBlur={props.handleBlur("password")}

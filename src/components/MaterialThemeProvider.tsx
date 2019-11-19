@@ -8,11 +8,11 @@ const theme = {
   mode: "exact",
   roundness: 8,
   colors: {
-    primary: "#000",
+    primary: COLORS.black,
     accent: COLORS.secondary,
-    text: "#000",
+    text: COLORS.black,
     error: COLORS.error,
-    placeholder: "#AAA",
+    placeholder: COLORS.muted,
     disabled: "#999",
     background: "#CCC"
   },

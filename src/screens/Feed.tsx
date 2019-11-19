@@ -159,6 +159,9 @@ class FeedPageComponent extends React.Component<Props> {
     right: 0
   };
 
+  feedListRef = React.createRef();
+  handleScrollTop = () => this.feedListRef.current.scrollToTop();
+
   render() {
     return (
       <View ref={this.props.pageRef} style={styles.page}>
@@ -169,9 +172,14 @@ class FeedPageComponent extends React.Component<Props> {
           onLongPressThread={this.handleLongPressThread}
           contentOffset={this.contentOffset}
           contentInset={this.contentInset}
+          ref={this.feedListRef}
         />
 
-        <BottomTabBar currentRoute="FeedTab" style={styles.tabBar} />
+        <BottomTabBar
+          onPressCurrentRoute={this.handleScrollTop}
+          currentRoute="FeedTab"
+          style={styles.tabBar}
+        />
       </View>
     );
   }
