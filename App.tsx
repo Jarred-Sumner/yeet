@@ -8,7 +8,7 @@
 
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import React, { Suspense } from "react";
-import { StatusBar } from "react-native";
+import { StatusBar, InteractionManager } from "react-native";
 import OneSignal from "react-native-onesignal";
 import { PortalProvider, WhitePortal } from "react-native-portal";
 import { enableScreens } from "react-native-screens";
@@ -25,6 +25,7 @@ import { NavigationState } from "react-navigation";
 import { trackScreenTransition } from "./src/components/Analytics";
 import { ReportModal } from "./src/components/ReportModal";
 import { ModalContextProvider } from "./src/components/ModalContext";
+import SplashScreen from "react-native-splash-screen";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -76,6 +77,8 @@ export class App extends React.Component {
   };
 
   componentDidMount() {
+    SplashScreen.hide();
+
     Sentry.addBreadcrumb({
       category: "lifecycle",
       message: "App booted",

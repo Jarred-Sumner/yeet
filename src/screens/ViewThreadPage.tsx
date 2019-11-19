@@ -1,75 +1,67 @@
 // @flow
-import {
-  ActionSheetOptions,
-  useActionSheet
-} from "@expo/react-native-action-sheet";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import { Context } from "@expo/react-native-action-sheet/lib/typescript/context";
+import { BlurView } from "@react-native-community/blur";
+import * as Sentry from "@sentry/react-native";
+import { NetworkStatus } from "apollo-client";
 import hoistNonReactStatics from "hoist-non-react-statics";
+import { partition, uniqBy } from "lodash";
 import * as React from "react";
-import { useQuery, useMutation } from "react-apollo";
-import { StyleSheet, View, InteractionManager } from "react-native";
+import { useMutation, useQuery } from "react-apollo";
+import { StyleSheet, View } from "react-native";
+import { RectButton } from "react-native-gesture-handler";
 import Animated, {
-  Transitioning,
   Transition,
+  Transitioning,
   TransitioningView
 } from "react-native-reanimated";
 import { NavigationProp } from "react-navigation";
 import {
-  useNavigation,
-  useNavigationParam,
   useFocusEffect,
-  useIsFocused
+  useNavigation,
+  useNavigationParam
 } from "react-navigation-hooks";
 import { NavigationStackProp } from "react-navigation-stack";
-import { postElementId } from "../lib/ElementTransition";
-import {
-  ViewThread as ViewThreadQuery,
-  ViewThreadVariables,
-  ViewThread_postThread_posts_data_profile,
-  ViewThread_postThread_posts_data
-} from "../lib/graphql/ViewThread";
-import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
-import { PostFlatList } from "../components/ThreadList/ViewThread";
-import { SCREEN_DIMENSIONS, BOTTOM_Y, TOP_Y } from "../../config";
-import {
-  ThreadHeader,
-  THREAD_HEADER_HEIGHT,
-  CommentEditorHeader
-} from "../components/ThreadList/ThreadHeader";
-import { RectButton } from "react-native-gesture-handler";
-import { IconCamera } from "../components/Icon";
-import { SemiBoldText } from "../components/Text";
-import { SPACING } from "../lib/styles";
-import { BlurView, VibrancyView } from "@react-native-community/blur";
-import { CommentComposer } from "../components/Posts/CommentComposer";
-import { CommentEditor } from "../components/Posts/CommentEditor";
+import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
-import { number } from "yup";
-import { LikePost, LikePostVariables } from "../lib/graphql/LikePost";
-import LIME_POST_QUERY from "../lib/LikePost.graphql";
-import * as Sentry from "@sentry/react-native";
+import { IconCamera } from "../components/Icon";
 import { MediaPlayerComponent } from "../components/MediaPlayer";
-import DELETE_POST_MUTATION from "../lib/DeletePostMutation.graphql";
+import { ModalContext } from "../components/ModalContext";
+import { CommentEditor } from "../components/Posts/CommentEditor";
+import { shouldShowPushNotificationModal } from "../components/PushNotificationModal";
+import { SemiBoldText } from "../components/Text";
 import {
-  DeletePostMutation,
-  DeletePostMutationVariables
-} from "../lib/graphql/DeletePostMutation";
+  CommentEditorHeader,
+  ThreadHeader,
+  THREAD_HEADER_HEIGHT
+} from "../components/ThreadList/ThreadHeader";
+import { PostFlatList } from "../components/ThreadList/ViewThread";
+import { sendToast, ToastType } from "../components/Toast";
+import {
+  RequireAuthenticationFunction,
+  UserContext
+} from "../components/UserContext";
 import DELETE_COMMENT_MUTATION from "../lib/DeleteCommentMutation.graphql";
+import DELETE_POST_MUTATION from "../lib/DeletePostMutation.graphql";
+import { CommentFragment } from "../lib/graphql/CommentFragment";
 import {
   DeleteCommentMutation,
   DeleteCommentMutationVariables
 } from "../lib/graphql/DeleteCommentMutation";
-import { CommentFragment } from "../lib/graphql/CommentFragment";
-import { partition } from "lodash";
 import {
-  UserContext,
-  RequireAuthenticationFunction
-} from "../components/UserContext";
-import ActionSheet from "@expo/react-native-action-sheet/lib/typescript/ActionSheet";
-import { Context } from "@expo/react-native-action-sheet/lib/typescript/context";
-import { ToastType, sendToast } from "../components/Toast";
-import { ModalContext } from "../components/ModalContext";
-import { shouldShowPushNotificationModal } from "../components/PushNotificationModal";
-import { NetworkStatus } from "apollo-client";
+  DeletePostMutation,
+  DeletePostMutationVariables
+} from "../lib/graphql/DeletePostMutation";
+import { LikePost, LikePostVariables } from "../lib/graphql/LikePost";
+import {
+  ViewThread as ViewThreadQuery,
+  ViewThreadVariables,
+  ViewThread_postThread_posts_data,
+  ViewThread_postThread_posts_data_profile
+} from "../lib/graphql/ViewThread";
+import LIME_POST_QUERY from "../lib/LikePost.graphql";
+import { SPACING } from "../lib/styles";
+import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
 
 const THREAD_REPLY_BUTTON_HEIGHT = 48;
 
@@ -294,7 +286,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
       return;
     }
 
-    const options = ["Save", "Remix"];
+    // const options = ["Save", "Remix"];
+    const options = ["Save"];
     const {
       userId,
       showActionSheetWithOptions,
@@ -433,6 +426,54 @@ class ThreadPageComponent extends React.Component<Props, State> {
     });
   };
 
+  handleRefresh = () => {
+    const { refetch, refreshing } = this.props;
+
+    if (typeof refetch !== "function" || refreshing) {
+      return;
+    }
+
+    return refetch();
+  };
+  handleFetchMore = () => {
+    const { fetchMore, loading, thread, posts } = this.props;
+
+    if (typeof fetchMore !== "function" || loading || posts.length === 0) {
+      return;
+    }
+
+    return fetchMore({
+      variables: {
+        threadId: thread?.id,
+        postOffset: posts.length,
+        postsCount: 10
+      },
+      updateQuery: (
+        previousResult: ViewThreadQuery,
+        { fetchMoreResult }: { fetchMoreResult: ViewThreadQuery }
+      ): ViewThreadQuery => {
+        const posts = uniqBy(
+          [
+            ...previousResult.postThread.posts.data,
+            ...fetchMoreResult.postThread.posts.data
+          ],
+          "id"
+        );
+
+        return {
+          ...fetchMoreResult,
+          postThread: {
+            ...fetchMoreResult.postThread,
+            posts: {
+              ...fetchMoreResult.postThread.posts,
+              data: posts
+            }
+          }
+        };
+      }
+    });
+  };
+
   render() {
     const { thread, defaultPost, refreshing, posts } = this.props;
     const { showComposer, composerProps } = this.state;
@@ -452,6 +493,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
           onPressLike={this.handlePressLike}
           onPressProfile={this.handlePressProfile}
           onPressPostEllipsis={this.handlePressPostEllipsis}
+          onEndReached={this.handleFetchMore}
+          onRefresh={this.handleRefresh}
           initialPostId={defaultPost?.id ?? posts[0]?.id}
           extraData={this.state}
           keyboardVisibleValue={this.keyboardVisibleValue}
@@ -586,6 +629,9 @@ const _ThreadPage = () => {
       threadId={threadId}
       defaultPost={defaultPost}
       loading={viewThreadQuery.loading}
+      refreshing={viewThreadQuery.networkStatus === NetworkStatus.refetch}
+      fetchMore={viewThreadQuery.fetchMore}
+      refetch={viewThreadQuery.refetch}
       showActionSheetWithOptions={actionSheet.showActionSheetWithOptions}
     />
   );

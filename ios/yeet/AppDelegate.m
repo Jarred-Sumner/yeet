@@ -31,6 +31,7 @@
 #import <AppCenterReactNativeAnalytics.h>
 #import <CodePush/CodePush.h>
 #import <AVFoundation/AVFoundation.h>
+#import "RNSplashScreen.h"  // here
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -50,6 +51,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+
+
 //  [[AVAudioSession sharedInstance] setMode:AVAudioSessionMode error:<#(NSError *__autoreleasing  _Nullable * _Nullable)#>]
   SDImageLoadersManager.sharedManager.loaders = @[SDWebImageDownloader.sharedDownloader, SDWebImagePhotosLoader.sharedLoader];
   // Replace default manager's loader implementation
@@ -115,7 +118,10 @@
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;
+  [RNSplashScreen showSplash:@"LaunchScreen" inRootView:rootView];
+
   [self.window makeKeyAndVisible];
+
   return YES;
 }
 

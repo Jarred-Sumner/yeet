@@ -128,6 +128,8 @@ const TextComment = ({
           editable={false}
           isFocused={false}
           text={body}
+          photoURL={profile.photoURL}
+          username={profile.username}
         />
       </TransformableView>
     </Animated.View>

@@ -12,7 +12,8 @@ import {
   FlatList as RNFlatList,
   ListRenderItem,
   ViewabilityConfig,
-  View
+  View,
+  RefreshControl
 } from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import {
@@ -28,7 +29,7 @@ import { FeedListItem, getItemHeight } from "./FeedListItem";
 import { useIsFocused } from "react-navigation-hooks";
 import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import { scaleToWidth } from "../../lib/Rect";
 
 const ITEM_SEPARATOR_HEIGHT = SPACING.normal;
@@ -210,12 +211,24 @@ class FeedListComponent extends React.Component<Props, State> {
     }
   }
 
+  handleRefresh = () => {
+    console.log("REFETCH");
+    return this.props.refetch({
+      variables: {
+        limit: Math.max(this.props.threads.length, 20),
+        offset: 0
+      }
+    });
+  };
+
   render() {
     const {
       threads,
       refreshing,
       fetchMore,
+      onRefresh,
       loading,
+      refetch,
       error,
       initialLoad,
       ...otherProps
@@ -233,10 +246,18 @@ class FeedListComponent extends React.Component<Props, State> {
         {...otherProps}
         data={threads}
         extraData={this.state.visibleIDs}
+        onRefresh={this.handleRefresh}
         renderItem={this.renderItem}
         ItemSeparatorComponent={ItemSeparatorComponent}
         keyExtractor={this.keyExtractor}
         initialNumToRender={6}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={this.handleRefresh}
+            tintColor="white"
+          />
+        }
         onViewableItemsChanged={this.onViewableItemsChanged}
         style={styles.list}
         refreshing={refreshing}
@@ -273,6 +294,7 @@ export const FeedList = (props: FlatListProps) => {
       offset={threadsQuery?.data?.postThreads.offset}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
+      refetch={threadsQuery.refetch}
       refreshing={threadsQuery.networkStatus === NetworkStatus.refetch}
       loading={[
         NetworkStatus.loading,

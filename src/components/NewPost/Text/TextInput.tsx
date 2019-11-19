@@ -25,7 +25,8 @@ import {
 import { COLORS } from "../../../lib/styles";
 import {
   normalizeBackgroundColor,
-  CurrentUserCommentAvatar
+  CurrentUserCommentAvatar,
+  TextCommentAvatar
 } from "../../Posts/CommentsViewer";
 import { TextInput as RNTextInput } from "./CustomTextInputComponent";
 import { memoize } from "lodash";
@@ -297,6 +298,8 @@ export class TextInput extends React.Component<Props> {
       editable,
       inputRef,
       onBlur,
+      photoURL,
+      username,
       onLayout,
       focusType,
       onFocus,
@@ -386,7 +389,13 @@ export class TextInput extends React.Component<Props> {
             autoFocus={false}
           />
           {editable && <View style={StyleSheet.absoluteFill}></View>}
-          {format === PostFormat.comment && <CurrentUserCommentAvatar />}
+          {format === PostFormat.comment ? (
+            photoURL || username ? (
+              <TextCommentAvatar photoURL={photoURL} username={username} />
+            ) : (
+              <CurrentUserCommentAvatar />
+            )
+          ) : null}
         </View>
       </TapGestureHandler>
     );

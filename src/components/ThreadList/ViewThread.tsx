@@ -8,7 +8,12 @@ import {
   throttle
 } from "lodash";
 import * as React from "react";
-import { FlatList as RNFlatList, StyleSheet, View } from "react-native";
+import {
+  FlatList as RNFlatList,
+  StyleSheet,
+  View,
+  RefreshControl
+} from "react-native";
 import {
   PanGestureHandler,
   State as GestureState
@@ -470,9 +475,7 @@ export class PostFlatList extends React.Component<Props, State> {
   keyExtractor = item => item.id;
 
   handleEndReached = () => {
-    if (this.props.loading) {
-      return;
-    }
+    this.props.onEndReached();
 
     // this.props.fetchMore({
     //   variables: {
@@ -668,7 +671,6 @@ export class PostFlatList extends React.Component<Props, State> {
     //   );
     // }
 
-    console.log({ height });
     return (
       <View
         style={{
@@ -683,6 +685,7 @@ export class PostFlatList extends React.Component<Props, State> {
     const {
       posts,
       refreshing,
+      onRefresh,
       topInset = 0,
       renderHeader,
       scrollEnabled = true
@@ -737,6 +740,14 @@ export class PostFlatList extends React.Component<Props, State> {
               renderItem={this.renderItem}
               data={posts}
               refreshing={refreshing}
+              onRefresh={onRefresh}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  tintColor="white"
+                />
+              }
               ref={this.flatListRef}
               contentOffset={this.contentOffset}
               contentInset={this.contentInset}

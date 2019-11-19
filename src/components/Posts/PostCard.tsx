@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   },
   layerWrapper: {
     position: "absolute",
+    zIndex: LayerZ.comments,
     top: 0,
     left: 0
   },
@@ -429,7 +430,7 @@ const PostCardComponent = ({
           ]}
         />
 
-        <OverlayGradient
+        {/* <OverlayGradient
           width={width}
           height={84}
           flipped
@@ -441,7 +442,7 @@ const PostCardComponent = ({
               height: 84
             }
           ]}
-        />
+        /> */}
 
         <Animated.View style={styles.top}>
           <TouchableHighlight
