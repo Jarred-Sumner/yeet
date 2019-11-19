@@ -71,32 +71,15 @@ const BUTTON_COLOR_STYLE = {
 export const Button = ({
   children,
   onPress,
-  disabled,
+  disabled = false,
   style,
   color = COLORS.primary
 }) => {
   const scaleTransformValue = React.useRef(new Animated.Value(1));
-  const handlePressIn = React.useCallback(() => {
-    Animated.timing(scaleTransformValue.current, {
-      duration: 100,
-      easing: Easing.ease,
-      toValue: 1.05
-    }).start();
-  }, [scaleTransformValue.current]);
-
-  const handlePressOut = React.useCallback(() => {
-    Animated.timing(scaleTransformValue.current, {
-      duration: 100,
-      easing: Easing.ease,
-      toValue: 1
-    }).start();
-  }, [scaleTransformValue.current]);
 
   return (
     <RectButton
       disabled={disabled}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
       onPress={onPress}
       underlayColor={color}
       style={{
@@ -109,23 +92,7 @@ export const Button = ({
       }}
     >
       <Animated.View
-        style={[
-          styles.buttonContainer,
-          BUTTON_COLOR_STYLE[color],
-          style,
-          {
-            opacity: scaleTransformValue.current.interpolate({
-              inputRange: [1.0, 1.05],
-              outputRange: [1.0, 0.8],
-              extrapolate: Animated.Extrapolate.CLAMP
-            }),
-            transform: [
-              {
-                scale: scaleTransformValue.current
-              }
-            ]
-          }
-        ]}
+        style={[styles.buttonContainer, BUTTON_COLOR_STYLE[color], style]}
       >
         <SemiBoldText style={styles.buttonText}>{children}</SemiBoldText>
       </Animated.View>
@@ -301,6 +268,7 @@ export const BackButton = ({
   style,
   routeName,
   size = 24,
+  onPress,
   ...otherProps
 }: {
   behavior: BackButtonBehavior;
@@ -311,12 +279,14 @@ export const BackButton = ({
   const navigation = useNavigation();
 
   const handlePress = React.useCallback(() => {
+    typeof onPress === "function" && onPress();
+
     if (behavior === BackButtonBehavior.back) {
       navigation.goBack(routeName);
     } else if (behavior === BackButtonBehavior.close) {
       navigation.dismiss();
     }
-  }, [behavior, navigation]);
+  }, [behavior, navigation, onPress]);
 
   if (behavior === BackButtonBehavior.none) {
     return null;

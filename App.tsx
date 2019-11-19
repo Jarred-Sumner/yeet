@@ -7,29 +7,32 @@
  */
 
 import { ActionSheetProvider } from "@expo/react-native-action-sheet";
-import React, { Suspense } from "react";
-import { StatusBar, InteractionManager } from "react-native";
+import * as Sentry from "@sentry/react-native";
+import React from "react";
+import { ApolloProvider } from "react-apollo";
+import { StatusBar, StyleSheet, View } from "react-native";
 import OneSignal from "react-native-onesignal";
-import { PortalProvider, WhitePortal } from "react-native-portal";
 import { enableScreens } from "react-native-screens";
+import SplashScreen from "react-native-splash-screen";
+import { NavigationState } from "react-navigation";
 import { ONESIGNAL_APP_ID } from "./config";
+import { Routes } from "./Routes";
+import { trackScreenTransition } from "./src/components/Analytics";
 import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
+import { ModalContextProvider } from "./src/components/ModalContext";
 import { Toast } from "./src/components/Toast";
 import { UserContextProvider } from "./src/components/UserContext";
-import { ApolloProvider } from "./src/containers/ApolloProvider";
+import APOLLO_CLIENT, { hasLoadedCache, waitForReady } from "./src/lib/graphql";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import NavigationService from "./src/lib/NavigationService";
-import { Routes } from "./Routes";
-import * as Sentry from "@sentry/react-native";
-import { NavigationState } from "react-navigation";
-import { trackScreenTransition } from "./src/components/Analytics";
-import { ReportModal } from "./src/components/ReportModal";
-import { ModalContextProvider } from "./src/components/ModalContext";
-import SplashScreen from "react-native-splash-screen";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
   environment: process.env.NODE_ENV
+});
+
+const styles = StyleSheet.create({
+  wrap: { flex: 1 }
 });
 
 function getActiveRouteName(navigationState: NavigationState): string | null {
@@ -46,6 +49,10 @@ function getActiveRouteName(navigationState: NavigationState): string | null {
 
 const APP_PREFIX = "yeet://";
 
+type State = {
+  ready: Boolean;
+};
+
 export class App extends React.Component {
   constructor(props) {
     super(props);
@@ -57,6 +64,22 @@ export class App extends React.Component {
     OneSignal.addEventListener("received", this.onReceived);
     OneSignal.addEventListener("opened", this.onOpened);
     OneSignal.addEventListener("ids", this.onIds);
+
+    this.state = {
+      ready: true,
+      client: APOLLO_CLIENT
+    };
+
+    if (!hasLoadedCache) {
+      SplashScreen.show();
+      waitForReady().then(client => {
+        if (this._hasMountedApp) {
+          this.setState({ ready: true, client }, () => SplashScreen.hide());
+        } else {
+          this.state = { ready: true, client };
+        }
+      });
+    }
   }
 
   handleNavigationStateChange = (
@@ -76,8 +99,12 @@ export class App extends React.Component {
     }
   };
 
+  _hasMountedApp = false;
   componentDidMount() {
-    SplashScreen.hide();
+    this._hasMountedApp = true;
+    if (this.state.ready) {
+      SplashScreen.hide();
+    }
 
     Sentry.addBreadcrumb({
       category: "lifecycle",
@@ -117,28 +144,26 @@ export class App extends React.Component {
 
   render() {
     return (
-      <>
+      <View style={styles.wrap}>
         <StatusBar barStyle="light-content" />
-        <PortalProvider>
-          <MaterialThemeProvider>
-            <ApolloProvider>
-              <UserContextProvider>
-                <ImagePickerProvider>
-                  <ActionSheetProvider>
-                    <ModalContextProvider>
-                      <>
-                        <Toast />
-                        <Routes ref={this.setNavRef} uriPrefix={APP_PREFIX} />
-                        <WhitePortal name="modal" />
-                      </>
-                    </ModalContextProvider>
-                  </ActionSheetProvider>
-                </ImagePickerProvider>
-              </UserContextProvider>
-            </ApolloProvider>
-          </MaterialThemeProvider>
-        </PortalProvider>
-      </>
+
+        <MaterialThemeProvider>
+          <ApolloProvider client={this.state.client}>
+            <UserContextProvider>
+              <ImagePickerProvider>
+                <ActionSheetProvider>
+                  <ModalContextProvider>
+                    <>
+                      <Toast />
+                      <Routes ref={this.setNavRef} uriPrefix={APP_PREFIX} />
+                    </>
+                  </ModalContextProvider>
+                </ActionSheetProvider>
+              </ImagePickerProvider>
+            </UserContextProvider>
+          </ApolloProvider>
+        </MaterialThemeProvider>
+      </View>
     );
   }
 }

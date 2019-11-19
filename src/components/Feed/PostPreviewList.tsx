@@ -19,6 +19,7 @@ import { MediumText } from "../Text";
 import { isVideo } from "../../lib/imageSearch";
 import { postElementId } from "../../lib/ElementTransition";
 import { SCREEN_DIMENSIONS } from "../../../config";
+import { CommentCountButton } from "../ThreadList/CommentCountButton";
 
 export const POST_LIST_HEIGHT = 320;
 export const HORIZONTAL_POST_LIST_WIDTH =
@@ -318,7 +319,7 @@ const ListItem = ({
       isVisible={isVisible}
       height={height}
       imageSize={imageSize}
-      footerAction={<LikeCountButton id={post.id} size={22} />}
+      footerAction={<CommentCountButton id={post.id} size={22} />}
       photoURL={profile.photoURL}
       username={profile.username}
     />

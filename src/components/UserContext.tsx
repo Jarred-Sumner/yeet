@@ -1,15 +1,17 @@
-import * as React from "react";
-import { AuthModal } from "./AuthModal";
-import { BlackPortal } from "react-native-portal";
-import { CurrentUserQuery_currentUser } from "../lib/graphql/CurrentUserQuery";
-import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
-import { Query } from "react-apollo";
 import { NetworkStatus } from "apollo-client";
-import { Storage } from "../lib/Storage";
 import { memoize } from "lodash";
-import { navigateWithParent } from "../lib/NavigationService";
-import PushNotificationModal from "./PushNotificationModal";
+import * as React from "react";
+import { useQuery } from "react-apollo";
+import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
+import {
+  CurrentUserQuery,
+  CurrentUserQueryVariables,
+  CurrentUserQuery_currentUser
+} from "../lib/graphql/CurrentUserQuery";
+import { navigate } from "../lib/NavigationService";
+import { Storage } from "../lib/Storage";
 import { handleSignIn } from "./Analytics";
+import { AuthModal } from "./AuthModal";
 
 export enum AuthState {
   checking = "checking",
@@ -34,14 +36,16 @@ export type UserContextType = {
   authState: AuthState;
   badgeCount: number;
   requireAuthentication: RequireAuthenticationFunction;
+  hideAuthModal: () => void;
 };
 
-const DEFAULT_USER_CONTEXT: UserContext = {
+const DEFAULT_USER_CONTEXT: UserContextType = {
   currentUser: null,
   userId: null,
   badgeCount: 0,
   authState: AuthState.checking,
-  requireAuthentication: cb => true
+  requireAuthentication: cb => true,
+  hideAuthModal: () => {}
 };
 
 export const UserContext = React.createContext<UserContextType>(
@@ -64,10 +68,12 @@ const buildContextValue = memoize(
     currentUser: CurrentUserQuery_currentUser,
     authState: AuthState,
     requireAuthentication: () => boolean,
-    badgeCount = 0
+    badgeCount = 0,
+    hideAuthModal
   ) => ({
     currentUser,
     authState,
+    hideAuthModal,
     requireAuthentication,
     badgeCount: currentUser ? currentUser.badgeCount : badgeCount,
     userId:
@@ -94,7 +100,8 @@ class RawUserContextProvider extends React.Component<Props, State> {
         props.currentUser,
         authState,
         this.handleRequireAuthentication,
-        props.currentUser ? props.currentUser.badgeCount : 0
+        props.currentUser ? props.currentUser.badgeCount : 0,
+        this.handleDismissAuth
       )
     };
 
@@ -103,6 +110,13 @@ class RawUserContextProvider extends React.Component<Props, State> {
 
   componentDidMount() {
     this.loadJWT();
+  }
+
+  componentWillUnmount() {
+    if (this.autModalDismissTimeout > -1) {
+      window.clearTimeout(this.autModalDismissTimeout);
+      this.autModalDismissTimeout = -1;
+    }
   }
 
   loadJWT = async () => {
@@ -116,10 +130,13 @@ class RawUserContextProvider extends React.Component<Props, State> {
     ) {
       this.setState({
         authState: AuthState.guest,
-        contextValue: {
-          ...this.state.contextValue,
-          authState: AuthState.guest
-        }
+        contextValue: buildContextValue(
+          this.props.currentUser,
+          AuthState.guest,
+          this.handleRequireAuthentication,
+          this.props.currentUser ? this.props.currentUser.badgeCount : 0,
+          this.handleDismissAuth
+        )
       });
     }
   };
@@ -146,7 +163,8 @@ class RawUserContextProvider extends React.Component<Props, State> {
       this.props.currentUser,
       newState.authState || this.state.authState,
       this.handleRequireAuthentication,
-      this.props.currentUser ? this.props.currentUser.badgeCount : 0
+      this.props.currentUser ? this.props.currentUser.badgeCount : 0,
+      this.handleDismissAuth
     );
 
     if (contextValue !== this.state.contextValue) {
@@ -197,17 +215,26 @@ class RawUserContextProvider extends React.Component<Props, State> {
 
   handleDismissAuth = () => this.setState({ showAuthCard: false });
   navigateLogin = () => {
-    navigateWithParent("Login", "Auth", {
-      onFinish: this.authCallback ? this.doAuthCallback : undefined
+    navigate("Login", {
+      onFinish: this.handleFinish(
+        this.authCallback ? this.doAuthCallback : undefined
+      )
     });
-    this.handleDismissAuth();
+  };
+  handleFinish = callback => {
+    if (this.state.showAuthCard) {
+      this.handleDismissAuth();
+    }
+
+    this.doAuthCallback();
   };
 
   navigateSignup = () => {
-    navigateWithParent("SignUp", "Auth", {
-      onFinish: this.authCallback ? this.doAuthCallback : undefined
+    navigate("Signup", {
+      onFinish: this.handleFinish(
+        this.authCallback ? this.doAuthCallback : undefined
+      )
     });
-    this.handleDismissAuth();
   };
 
   render() {
@@ -230,28 +257,27 @@ class RawUserContextProvider extends React.Component<Props, State> {
 }
 
 export const UserContextProvider = props => {
+  const userQuery = useQuery<CurrentUserQuery, CurrentUserQueryVariables>(
+    CURRENT_USER_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      notifyOnNetworkStatusChange: true
+    }
+  );
+
   return (
-    <Query
-      fetchPolicy="network-only"
-      notifyOnNetworkStatusChange
-      query={CURRENT_USER_QUERY}
+    <RawUserContextProvider
+      reload={userQuery.refetch}
+      error={userQuery.error}
+      currentUser={userQuery.data?.currentUser}
+      data={userQuery.data}
+      isLoading={
+        userQuery.networkStatus === NetworkStatus.loading ||
+        userQuery.networkStatus === NetworkStatus.refetch
+      }
+      isSignedIn={Storage.isSignedIn()}
     >
-      {({ data = {}, load, networkStatus, refetch, error, ...other }) => (
-        <RawUserContextProvider
-          reload={load || refetch}
-          error={error}
-          currentUser={data.currentUser}
-          data={data}
-          isLoading={
-            networkStatus === NetworkStatus.loading ||
-            networkStatus === NetworkStatus.refetch
-          }
-          other={other}
-          isSignedIn={Storage.isSignedIn()}
-        >
-          {props.children}
-        </RawUserContextProvider>
-      )}
-    </Query>
+      {props.children}
+    </RawUserContextProvider>
   );
 };

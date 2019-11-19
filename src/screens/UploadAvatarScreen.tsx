@@ -208,19 +208,18 @@ const _AvatarScreen = props => {
 
         if (typeof onFinish === "function") {
           navigation.dismiss();
-          InteractionManager.runAfterInteractions(() => {
-            onFinish();
-          });
+          typeof onFinish === "function" && onFinish();
         } else {
           resetTo("ThreadList", {});
         }
+        userContext.hideAuthModal();
       },
       err => {
         console.error(err);
         sendToast("Something broke – please try again.", ToastType.error);
       }
     );
-  }, [updateAvatar, mediaId, sendToast]);
+  }, [updateAvatar, mediaId, sendToast, userContext]);
 
   React.useEffect(() => {
     navigation.setParams({ onPressNext: handleNext });

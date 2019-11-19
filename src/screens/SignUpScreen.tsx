@@ -31,6 +31,7 @@ import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
 import { Storage } from "../lib/Storage";
 import { COLORS, SPACING } from "../lib/styles";
 import { getPlaceholderUsername } from "../lib/usernames";
+import { UserContext } from "../components/UserContext";
 
 const styles = StyleSheet.create({
   form: {
@@ -106,8 +107,15 @@ const SignupSchema = Yup.object().shape({
 
 const HeaderLeftButton = () => {
   const behavior = useBackButtonBehavior();
+  const userContext = React.useContext(UserContext);
 
-  return <BackButton behavior={behavior} size={18} />;
+  return (
+    <BackButton
+      behavior={behavior}
+      size={18}
+      onPress={userContext.hideAuthModal}
+    />
+  );
 };
 
 class RawSignUpPage extends React.Component {

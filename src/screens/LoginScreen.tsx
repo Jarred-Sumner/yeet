@@ -25,6 +25,7 @@ import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
 import { useBackButtonBehavior, BackButton } from "../components/Button";
 import { resetTo } from "../lib/NavigationService";
 import { getPlaceholderUsername } from "../lib/usernames";
+import { UserContext } from "../components/UserContext";
 
 const styles = StyleSheet.create({
   form: {
@@ -36,7 +37,8 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     paddingHorizontal: SPACING.normal,
-    justifyContent: "center",
+    justifyContent: "flex-end",
+    alignItems: "center",
     height: "100%"
   }
 });
@@ -53,8 +55,15 @@ const SignupSchema = Yup.object().shape({
 
 const HeaderLeftButton = () => {
   const behavior = useBackButtonBehavior();
+  const userContext = React.useContext(UserContext);
 
-  return <BackButton behavior={behavior} size={18} />;
+  return (
+    <BackButton
+      behavior={behavior}
+      size={18}
+      onPress={userContext.hideAuthModal}
+    />
+  );
 };
 
 class RawLoginPage extends React.Component {
@@ -111,9 +120,11 @@ class RawLoginPage extends React.Component {
             this.props.navigation.dismiss();
             InteractionManager.runAfterInteractions(() => {
               onFinish();
+              this.props.userContext.hideAuthModal();
             });
           } else {
             resetTo("ThreadList", {});
+            this.props.userContext.hideAuthModal();
           }
         } else {
           HapticFeedback.trigger("notificationError");
@@ -235,9 +246,12 @@ const updateStore = (store, { data: { login } }) => {
 };
 
 export const LoginPage = props => {
+  const userContext = React.useContext(UserContext);
   return (
     <Mutation mutation={LOGIN_MUTATION} update={updateStore}>
-      {login => <RawLoginPage {...props} login={login} />}
+      {login => (
+        <RawLoginPage {...props} userContext={userContext} login={login} />
+      )}
     </Mutation>
   );
 };

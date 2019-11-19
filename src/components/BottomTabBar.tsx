@@ -167,7 +167,7 @@ const ROUTES_ICONS_MAPPING = {
   ProfileTab: [IconProfileAlt, IconProfile]
 };
 
-const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab"];
+const REQUIRES_AUTH = ["NotificationsTab", "ProfileTab", "NewPostStack"];
 
 export const BottomTabBar = ({ style, currentRoute }) => {
   const navigation = useNavigation();

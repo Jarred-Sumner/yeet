@@ -165,7 +165,11 @@ class FeedListComponent extends React.Component<Props, State> {
   keyExtractor = item => item.id;
 
   handleEndReached = () => {
-    if (this.props.loading || this.props.threads.length === 0) {
+    if (
+      this.props.loading ||
+      this.props.threads.length === 0 ||
+      typeof this.props.fetchMore !== "function"
+    ) {
       return;
     }
 

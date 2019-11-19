@@ -1,10 +1,11 @@
 import AsyncStorage from "@react-native-community/async-storage";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import { CachePersistor } from "apollo-cache-persist";
+import { CachePersistor, persistCache } from "apollo-cache-persist";
 import { ApolloClient } from "apollo-client";
 import { BatchHttpLink } from "apollo-link-batch-http";
 import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
+
 import _ from "lodash";
 import { Platform, StatusBar } from "react-native";
 import DeviceInfo from "react-native-device-info";
@@ -93,16 +94,27 @@ const cache = new InMemoryCache({
   }
 });
 
-const persistor = new CachePersistor({
-  cache,
-  storage: AsyncStorage
-});
-
 const client = new ApolloClient({
   link: authLink.concat(httpLink).concat(errorLink),
   cache,
   resolvers: {}
 });
+
+export let hasLoadedCache = false;
+
+export const waitForReady = () => {
+  return persistCache({
+    cache,
+    key: `apollo-cache-persist-${BASE_HOSTNAME}`,
+    storage: AsyncStorage,
+    client
+  })
+    .finally(() => {
+      hasLoadedCache = true;
+      return client;
+    })
+    .then(() => client);
+};
 
 // persistor.purge().then(() => {
 //   console.log("Reset Apollo Cache");

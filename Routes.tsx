@@ -7,14 +7,16 @@
  */
 
 import createStackNavigator from "react-native-screens/createNativeStackNavigator";
+import { createSwitchNavigator } from "react-navigation";
 // import { createStackNavigator } from "react-native-screens";
 // import { createStackNavigator } from "react-navigation-stack";
 
 import { createAppContainer } from "react-navigation";
 import { createBottomTabNavigator } from "react-navigation-tabs";
 import { COLORS } from "./src/lib/styles";
+
 import CurrentProfilePage from "./src/screens/CurrentProfile";
-import { FeedPage } from "./src/screens/Feed";
+import FeedPage from "./src/screens/Feed";
 import ImagePickerPage from "./src/screens/ImagePickerPage";
 import LoginScreen from "./src/screens/LoginScreen";
 import NewPostPage from "./src/screens/NewPostPage";
@@ -24,9 +26,8 @@ import SignUpScreen from "./src/screens/SignUpScreen";
 import UploadPostPage from "./src/screens/UploadPostPage";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import ThreadPage from "./src/screens/ViewThreadPage";
-import { BirthdayScreen } from "./src/screens/BirthdayScreen";
+import BirthdayScreen from "./src/screens/BirthdayScreen";
 import AvatarScreen from "./src/screens/UploadAvatarScreen";
-import { createSwitchNavigator } from "react-navigation";
 import NewThreadPage from "./src/screens/NewThreadPage";
 
 const AuthStack = createStackNavigator(

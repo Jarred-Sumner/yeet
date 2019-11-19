@@ -763,6 +763,9 @@ export class PostFlatList extends React.Component<Props, State> {
               onMomentumScrollEnd={this.onMomentumScrollEnd}
               onMomentumScrollBegin={this.onMomentumScrollBegin}
               onScrollToTop={this.handleScrollToTop}
+              maxToRenderPerBatch={5}
+              initialNumToRender={8}
+              windowSize={10}
               scrollToOverflowEnabled
               directionalLockEnabled
               style={this.listStyle}

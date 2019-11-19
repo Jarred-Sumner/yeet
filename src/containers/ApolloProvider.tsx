@@ -5,7 +5,7 @@ import React from "react";
 export class ApolloProvider extends React.Component {
   render() {
     return (
-      <RawApolloProvider client={apolloClient}>
+      <RawApolloProvider client={this.props.client}>
         {this.props.children}
       </RawApolloProvider>
     );
