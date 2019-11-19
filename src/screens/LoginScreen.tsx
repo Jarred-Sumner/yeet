@@ -8,7 +8,8 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Settings
 } from "react-native";
 import * as Yup from "yup";
 import { FormField } from "../components/FormField";
@@ -17,7 +18,7 @@ import { LoadingModal } from "../components/LoadingModal";
 import { Alert } from "../lib/Alert";
 import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import LOGIN_MUTATION from "../lib/loginMutation.graphql";
-import { Storage } from "../lib/Storage";
+import { Storage, WATCH_KEYS } from "../lib/Storage";
 import { SPACING } from "../lib/styles";
 import HapticFeedback from "react-native-haptic-feedback";
 import { Background } from "./SignUpScreen";
@@ -38,12 +39,17 @@ const styles = StyleSheet.create({
   loginButton: {
     paddingHorizontal: SPACING.normal,
     justifyContent: "flex-end",
-    alignItems: "center",
-    height: "100%"
+    alignItems: "center"
   },
   headerButton: {
-    width: 40,
-    height: 45
+    flex: 1
+  },
+  headerButtonLeft: {
+    flex: 1,
+    paddingLeft: SPACING.normal,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%"
   }
 });
 
@@ -62,12 +68,13 @@ const HeaderLeftButton = () => {
   const userContext = React.useContext(UserContext);
 
   return (
-    <BackButton
-      behavior={behavior}
-      size={18}
-      onPress={userContext.hideAuthModal}
-      style={styles.headerButton}
-    />
+    <View style={styles.headerButtonLeft}>
+      <BackButton
+        behavior={behavior}
+        size={18}
+        onPress={userContext.hideAuthModal}
+      />
+    </View>
   );
 };
 
@@ -119,6 +126,9 @@ class RawLoginPage extends React.Component {
       this.setState({ isLoading: false }, () => {
         if (login) {
           const onFinish = this.props.navigation.getParam("onFinish");
+          Settings.set({
+            [WATCH_KEYS.WAITLILST]: true
+          });
 
           HapticFeedback.trigger("notificationSuccess");
           if (onFinish) {

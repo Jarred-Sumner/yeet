@@ -3,13 +3,17 @@
  * https://github.com/facebook/react-native
  *
  * @format
- * @flow
  */
+
+import * as React from "react";
 
 import createStackNavigator from "react-native-screens/createNativeStackNavigator";
 import { createSwitchNavigator } from "react-navigation";
 // import { createStackNavigator } from "react-native-screens";
-// import { createStackNavigator } from "react-navigation-stack";
+import {
+  createStackNavigator as _createStackNavigator,
+  NavigationStackOptions
+} from "react-navigation-stack";
 
 import { createAppContainer } from "react-navigation";
 import { createBottomTabNavigator } from "react-navigation-tabs";
@@ -29,16 +33,18 @@ import ThreadPage from "./src/screens/ViewThreadPage";
 import BirthdayScreen from "./src/screens/BirthdayScreen";
 import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import NewThreadPage from "./src/screens/NewThreadPage";
+import WaitlistScreen from "./src/screens/WaitlistScreen";
+import { memoize } from "lodash";
 
 const AuthStack = createStackNavigator(
   {
-    Signup: SignUpScreen,
     Login: LoginScreen,
+    Signup: SignUpScreen,
     Birthday: BirthdayScreen,
     UploadAvatar: AvatarScreen
   },
   {
-    initialRouteName: "Login",
+    initialRouteName: "Signup",
     initialRouteParams: { isOnboarding: true },
     defaultNavigationOptions: ({ navigation }) => ({
       headerStyle: {
@@ -66,158 +72,192 @@ const SHARED_GLOBAL_SCREENS = {
   }
 };
 
-export const Routes = createAppContainer(
-  createSwitchNavigator(
-    {
-      Root: createStackNavigator(
-        {
-          Home: createStackNavigator(
-            {
-              RootScreens: createBottomTabNavigator(
-                {
-                  FeedTab: createStackNavigator(
-                    {
-                      ThreadList: FeedPage,
-                      ViewThread: ThreadPage,
-                      ReplyToPost: ReplyPage,
-                      EditBlockPhotoInReply: ImagePickerPage,
-                      ...SHARED_GLOBAL_SCREENS
-                    },
-                    {
-                      cardStyle: {
-                        backgroundColor: "#000"
+const _AppContainer = memoize(initialRouteName => {
+  return createAppContainer(
+    createSwitchNavigator(
+      {
+        Root: createStackNavigator(
+          {
+            Home: createStackNavigator(
+              {
+                RootScreens: createBottomTabNavigator(
+                  {
+                    FeedTab: createStackNavigator(
+                      {
+                        ThreadList: FeedPage,
+                        ViewThread: ThreadPage,
+                        ReplyToPost: ReplyPage,
+                        EditBlockPhotoInReply: ImagePickerPage,
+                        ...SHARED_GLOBAL_SCREENS
                       },
-                      headerMode: "none",
-                      defaultNavigationOptions: ({ navigation }) => ({
-                        header: () => null
-                      })
-                    },
-                    {
-                      cardStyle: {
-                        backgroundColor: "#000"
-                      },
-
-                      headerMode: "none",
-                      defaultNavigationOptions: ({ navigation }) => ({
-                        header: () => null,
+                      {
+                        cardStyle: {
+                          backgroundColor: "#000"
+                        },
                         headerMode: "none",
-                        headerTransparent: true
-                      })
-                    }
-                  ),
-                  NotificationsTab: createStackNavigator(
-                    {
-                      NotificationsPage: {
-                        screen: NotificationsPage,
-                        navigationOptions: navigation => ({
-                          title: "Activity",
-                          headerTintColor: "#f1f1f1",
-                          headerStyle: {
-                            backgroundColor: "#000"
-                          }
+                        defaultNavigationOptions: ({ navigation }) => ({
+                          header: () => null
                         })
                       },
-                      ...SHARED_GLOBAL_SCREENS
-                    },
-                    {
-                      headerMode: "float"
-                    }
-                  ),
-                  ProfileTab: createStackNavigator(
-                    {
-                      CurrentProfilePage: CurrentProfilePage,
-                      ...SHARED_GLOBAL_SCREENS
-                    },
-                    {
-                      headerMode: "none"
-                    }
-                  )
-                },
-                {
-                  headerMode: "none",
-                  tabBarComponent: () => null,
-                  // initialRouteName: "ProfileTab",
+                      {
+                        cardStyle: {
+                          backgroundColor: "#000"
+                        },
 
-                  safeAreaInset: {
-                    bottom: "never",
-                    top: "never",
-                    left: "never",
-                    right: "never"
+                        headerMode: "none",
+                        defaultNavigationOptions: ({ navigation }) => ({
+                          header: () => null,
+                          headerMode: "none",
+                          headerTransparent: true
+                        })
+                      }
+                    ),
+                    NotificationsTab: createStackNavigator(
+                      {
+                        NotificationsPage: {
+                          screen: NotificationsPage,
+                          navigationOptions: navigation => ({
+                            title: "Activity",
+                            headerTintColor: "#f1f1f1",
+                            headerStyle: {
+                              backgroundColor: "#000"
+                            }
+                          })
+                        },
+                        ...SHARED_GLOBAL_SCREENS
+                      },
+                      {
+                        headerMode: "float"
+                      }
+                    ),
+                    ProfileTab: createStackNavigator(
+                      {
+                        CurrentProfilePage: CurrentProfilePage,
+                        ...SHARED_GLOBAL_SCREENS
+                      },
+                      {
+                        headerMode: "none"
+                      }
+                    )
                   },
-                  tabBarOptions: {
-                    keyboardHidesTabBar: true
-                  },
-                  cardStyle: {
-                    backgroundColor: "#000"
+                  {
+                    headerMode: "none",
+                    tabBarComponent: () => null,
+                    // initialRouteName: "ProfileTab",
+
+                    safeAreaInset: {
+                      bottom: "never",
+                      top: "never",
+                      left: "never",
+                      right: "never"
+                    },
+                    tabBarOptions: {
+                      keyboardHidesTabBar: true
+                    },
+                    cardStyle: {
+                      backgroundColor: "#000"
+                    }
                   }
-                }
-              ),
-              NewPostStack: createStackNavigator(
-                {
-                  NewPost: NewPostPage,
-                  NewThread: NewThreadPage,
-                  ...SHARED_GLOBAL_SCREENS
+                ),
+                NewPostStack: createStackNavigator(
+                  {
+                    NewPost: NewPostPage,
+                    NewThread: NewThreadPage,
+                    ...SHARED_GLOBAL_SCREENS
+                  },
+                  {
+                    // initialRouteName: "NewThread",
+                    cardStyle: {
+                      backgroundColor: "#000"
+                    },
+                    headerMode: "none",
+                    // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
+                    defaultNavigationOptions: {
+                      header: () => null,
+                      mode: "modal",
+                      headerTransparent: true,
+                      gesturesEnabled: false
+                    }
+                  }
+                )
+              },
+              {
+                cardStyle: {
+                  backgroundColor: "#000"
                 },
-                {
-                  // initialRouteName: "NewThread",
-                  cardStyle: {
-                    backgroundColor: "#000"
-                  },
-                  headerMode: "none",
-                  // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
-                  defaultNavigationOptions: {
-                    header: () => null,
-                    mode: "modal",
-                    headerTransparent: true,
-                    gesturesEnabled: false
-                  }
+
+                headerMode: "none",
+                // initialRouteName: "NewPostStack",
+                defaultNavigationOptions: {
+                  header: () => null,
+                  headerMode: "none"
                 }
-              )
+              }
+            ),
+            ViewProfile: {
+              screen: GlobalViewProfilePage,
+              path: "profiles/:profileId"
             },
-            {
-              cardStyle: {
-                backgroundColor: "#000"
+            ViewThread: {
+              screen: ThreadPage,
+              path: "threads/:threadId"
+            },
+            UploadPost: UploadPostPage,
+            InsertSticker: ImagePickerPage,
+            EditBlockPhoto: ImagePickerPage,
+
+            Auth: AuthStack
+          },
+          {
+            // initialRouteName: "NewPost",
+            // initialRouteParams: {
+            //   threadId: "mYkCBX"
+            // },
+            mode: "modal",
+            headerMode: "none",
+            path: "",
+            cardStyle: {
+              backgroundColor: "#000"
+            }
+          }
+        ),
+        RootAuth: AuthStack,
+        Waitlist: _createStackNavigator(
+          {
+            WaitlistScreen: WaitlistScreen,
+            Login: LoginScreen
+          },
+          {
+            mode: "modal",
+
+            defaultNavigationOptions: ({
+              navigation
+            }): NavigationStackOptions => ({
+              headerStyle: {
+                backgroundColor: COLORS.primary,
+                borderBottomWidth: 0
               },
 
-              headerMode: "none",
-              // initialRouteName: "NewPostStack",
-              defaultNavigationOptions: {
-                header: () => null,
-                headerMode: "none"
-              }
-            }
-          ),
-          ViewProfile: {
-            screen: GlobalViewProfilePage,
-            path: "profiles/:profileId"
-          },
-          ViewThread: {
-            screen: ThreadPage,
-            path: "threads/:threadId"
-          },
-          UploadPost: UploadPostPage,
-          InsertSticker: ImagePickerPage,
-          EditBlockPhoto: ImagePickerPage,
-
-          Auth: AuthStack
-        },
-        {
-          // initialRouteName: "NewPost",
-          // initialRouteParams: {
-          //   threadId: "mYkCBX"
-          // },
-          mode: "modal",
-          headerMode: "none",
-          path: "",
-          cardStyle: {
-            backgroundColor: "#000"
+              headerTintColor: "white"
+            })
           }
-        }
-      ),
-      RootAuth: AuthStack
-    },
-    {
-      // initialRouteName: "RootAuth"
+        )
+      },
+      {
+        initialRouteName
+      }
+    )
+  );
+});
+
+let AppContainer;
+
+export const Routes = React.forwardRef(
+  ({ initialRouteName, ...props }, ref) => {
+    if (!AppContainer) {
+      AppContainer = _AppContainer(initialRouteName);
     }
-  )
+
+    return <AppContainer {...props} ref={ref} />;
+  }
 );

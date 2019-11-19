@@ -10,13 +10,13 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import * as Sentry from "@sentry/react-native";
 import React from "react";
 import { ApolloProvider } from "react-apollo";
-import { StatusBar, StyleSheet, View } from "react-native";
+import { StatusBar, StyleSheet, View, Settings } from "react-native";
 import OneSignal from "react-native-onesignal";
 import { enableScreens } from "react-native-screens";
 import SplashScreen from "react-native-splash-screen";
 import { NavigationState } from "react-navigation";
 import { ONESIGNAL_APP_ID } from "./config";
-import { Routes } from "./Routes";
+import { creatRouteseApp, Routes } from "./Routes";
 import { trackScreenTransition } from "./src/components/Analytics";
 import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 import { ModalContextProvider } from "./src/components/ModalContext";
@@ -25,6 +25,7 @@ import { UserContextProvider } from "./src/components/UserContext";
 import APOLLO_CLIENT, { hasLoadedCache, waitForReady } from "./src/lib/graphql";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import NavigationService from "./src/lib/NavigationService";
+import { WATCH_KEYS } from "./src/lib/Storage";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -54,6 +55,7 @@ type State = {
 };
 
 export class App extends React.Component {
+  settingsWatcher: number;
   constructor(props) {
     super(props);
 
@@ -64,6 +66,11 @@ export class App extends React.Component {
     OneSignal.addEventListener("received", this.onReceived);
     OneSignal.addEventListener("opened", this.onOpened);
     OneSignal.addEventListener("ids", this.onIds);
+
+    this.settingsWatcher = Settings.watchKeys(
+      [WATCH_KEYS.WAITLILST],
+      this.handleChangeWaitlistStatus
+    );
 
     this.state = {
       ready: true,
@@ -81,6 +88,24 @@ export class App extends React.Component {
       });
     }
   }
+
+  get initialRouteName() {
+    if (this.showWaitlist) {
+      return "Waitlist";
+    } else {
+      return "Root";
+    }
+  }
+
+  get hideWaitlist() {
+    return !!Settings.get(WATCH_KEYS.WAITLILST);
+  }
+
+  get showWaitlist() {
+    return !this.hideWaitlist;
+  }
+
+  handleChangeWaitlistStatus = () => {};
 
   handleNavigationStateChange = (
     prevState: NavigationState,
@@ -133,6 +158,8 @@ export class App extends React.Component {
   }
 
   componentWillUnmount() {
+    this._hasMountedApp = false;
+    Settings.clearWatch(this.settingsWatcher);
     OneSignal.removeEventListener("received", this.onReceived);
     OneSignal.removeEventListener("opened", this.onOpened);
     OneSignal.removeEventListener("ids", this.onIds);
@@ -155,7 +182,11 @@ export class App extends React.Component {
                   <ModalContextProvider>
                     <>
                       <Toast />
-                      <Routes ref={this.setNavRef} uriPrefix={APP_PREFIX} />
+                      <Routes
+                        initialRouteName={this.initialRouteName}
+                        ref={this.setNavRef}
+                        uriPrefix={APP_PREFIX}
+                      />
                     </>
                   </ModalContextProvider>
                 </ActionSheetProvider>

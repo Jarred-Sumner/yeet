@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
@@ -51,7 +50,6 @@
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
 		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
 		83CC6C47235FB68000772285 /* ContentExportTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CC6C46235FB68000772285 /* ContentExportTest.swift */; };
-		83CD0583234AF4F900BE093D /* static.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 83CD0582234AF4F900BE093D /* static.mp4 */; };
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
 		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
 		83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */; };
@@ -185,7 +183,6 @@
 		839E8B4123481460004BC67E /* TrackableImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableImageSource.swift; sourceTree = "<group>"; };
 		83A72AFE23302EDD00453B25 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		83CC6C46235FB68000772285 /* ContentExportTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportTest.swift; sourceTree = "<group>"; };
-		83CD0582234AF4F900BE093D /* static.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = static.mp4; sourceTree = "<group>"; };
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
 		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
 		83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaQueuePlayer.swift; sourceTree = "<group>"; };
@@ -319,7 +316,6 @@
 		831C520C233F2FC300F364A3 /* MediaPlayer */ = {
 			isa = PBXGroup;
 			children = (
-				83CD0582234AF4F900BE093D /* static.mp4 */,
 				83DC88DB2340559A00FBD467 /* MediaSource.swift */,
 				8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */,
 				839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */,
@@ -609,7 +605,6 @@
 				83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
-				83CD0583234AF4F900BE093D /* static.mp4 in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */,
 			);

@@ -33,6 +33,9 @@ target 'yeet' do
   pod 'React-RCTText',
       path: '../node_modules/react-native/Libraries/Text',
       modular_headers: false
+    pod 'React-RCTSettings',
+      path: '../node_modules/react-native/Libraries/Settings',
+      modular_headers: false
   pod 'React-RCTVibration',
       path: '../node_modules/react-native/Libraries/Vibration'
   pod 'React-Core/RCTWebSocket', path: '../node_modules/react-native/'
@@ -72,6 +75,7 @@ target 'yeet' do
         '../node_modules/react-native/third-party-podspecs/Folly.podspec',
       modular_headers: false
   pod 'SkeletonView'
+
 
   pod 'SDWebImageWebPCoder'
   pod 'SDWebImage', '5.1.1', modular_headers: true

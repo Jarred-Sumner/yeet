@@ -17,7 +17,7 @@ import {
 import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 import tinycolor from "tinycolor2";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation, useNavigationParam } from "react-navigation-hooks";
 import {
   IconBack,
   IconClose,
@@ -255,8 +255,9 @@ export enum BackButtonBehavior {
 
 export const useBackButtonBehavior = (): BackButtonBehavior => {
   const navigation = useNavigation();
+  const isModal = useNavigationParam("isModal") ?? false;
 
-  if (navigation.isFirstRouteInParent()) {
+  if (navigation.isFirstRouteInParent() || isModal) {
     return BackButtonBehavior.close;
   } else {
     return BackButtonBehavior.back;
@@ -284,7 +285,7 @@ export const BackButton = ({
     if (behavior === BackButtonBehavior.back) {
       navigation.goBack(routeName);
     } else if (behavior === BackButtonBehavior.close) {
-      navigation.dismiss();
+      navigation.goBack();
     }
   }, [behavior, navigation, onPress]);
 

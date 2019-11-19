@@ -18,6 +18,10 @@ const KEYS = {
   CURRENT_USER_ID: "CURRENT_USER_ID"
 };
 
+export const WATCH_KEYS = {
+  WAITLILST: "HIDE_WAITILST"
+};
+
 var _cachedJWT;
 
 export class Storage {

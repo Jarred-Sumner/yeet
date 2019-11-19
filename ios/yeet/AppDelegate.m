@@ -52,6 +52,10 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
 
+  if (![[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:@"HIDE_WAITLIST"]) {
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"HIDE_WAITLIST"];
+  }
+
 
 //  [[AVAudioSession sharedInstance] setMode:AVAudioSessionMode error:<#(NSError *__autoreleasing  _Nullable * _Nullable)#>]
   SDImageLoadersManager.sharedManager.loaders = @[SDWebImageDownloader.sharedDownloader, SDWebImagePhotosLoader.sharedLoader];

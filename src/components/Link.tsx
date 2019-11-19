@@ -6,16 +6,20 @@ import { BorderlessButton } from "react-native-gesture-handler";
 import InAppBrowser from "react-native-inappbrowser-reborn";
 import * as Sentry from "@sentry/react-native";
 
-const openLink = async (url: string) => {
+export const openLink = async (url: string) => {
   try {
     if (await InAppBrowser.isAvailable()) {
       return await InAppBrowser.open(url, {
         // iOS Properties
         dismissButtonStyle: "cancel",
-        readerMode: false,
+        readerMode: true,
         animated: true,
+        modalEnabled: true,
         modalPresentationStyle: "automatic",
         enableBarCollapsing: false,
+        preferredBarTintColor: "#000",
+        preferredControlTintColor: "#fff",
+
         // Android Properties
         showTitle: true,
         toolbarColor: "#6200EE",

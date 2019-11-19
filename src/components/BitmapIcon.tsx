@@ -13,7 +13,9 @@ export enum BitmapIconName {
   addGif = "Icon__addGif",
   addSticker = "Icon__addSticker",
   addText = "Icon__addText",
-  next = "Icon__next"
+  next = "Icon__next",
+  waitlistLogo = "Icon__waitlist",
+  twitterDiscuss = "Icon__twitterDiscuss"
 }
 
 const SIZES_BY_NAME = {
@@ -28,6 +30,14 @@ const SIZES_BY_NAME = {
   [BitmapIconName.addSticker]: {
     width: 43,
     height: 43
+  },
+  [BitmapIconName.waitlistLogo]: {
+    width: 83,
+    height: 44
+  },
+  [BitmapIconName.twitterDiscuss]: {
+    width: 155,
+    height: 45
   },
   [BitmapIconName.addGif]: {
     width: 51,
@@ -115,4 +125,18 @@ export const BitmapIconNext = ({
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.next} />
+);
+
+export const BitmapIconLogoWaitlist = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.waitlistLogo} />
+);
+
+export const BitmapIconTwitterDiscuss = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.twitterDiscuss} />
 );

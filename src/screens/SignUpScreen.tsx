@@ -7,7 +7,8 @@ import {
   ScrollView,
   StyleSheet,
   TextInput,
-  View
+  View,
+  Settings
 } from "react-native";
 import HapticFeedback from "react-native-haptic-feedback";
 import LinearGradient from "react-native-linear-gradient";
@@ -28,7 +29,7 @@ import { MediumText } from "../components/Text";
 import { Alert } from "../lib/Alert";
 import CURRENT_USER_QUERY from "../lib/currentUserQuery.graphql";
 import SIGN_UP_MUTATION from "../lib/signUpMutation.graphql";
-import { Storage } from "../lib/Storage";
+import { Storage, WATCH_KEYS } from "../lib/Storage";
 import { COLORS, SPACING } from "../lib/styles";
 import { getPlaceholderUsername } from "../lib/usernames";
 import { UserContext } from "../components/UserContext";
@@ -123,6 +124,9 @@ class RawSignUpPage extends React.Component {
     title: "Sign up",
     mode: "stack",
     headerLeft: () => {
+      if (navigation.getParam("hideBack") === true) {
+        return null;
+      }
       return <HeaderLeftButton />;
     }
   });
@@ -167,6 +171,10 @@ class RawSignUpPage extends React.Component {
         variables: { mediaId, username, password, email }
       });
       this.setState({ isLoading: false });
+
+      Settings.set({
+        [WATCH_KEYS.WAITLILST]: true
+      });
 
       this.props.navigation.push("Birthday", {
         onFinish: this.props.navigation.getParam("onFinish"),

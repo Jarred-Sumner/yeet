@@ -17,4 +17,5 @@ export interface CurrentUserQuery_currentUser {
 
 export interface CurrentUserQuery {
   currentUser: CurrentUserQuery_currentUser | null;
+  isWaitlisted: boolean;
 }

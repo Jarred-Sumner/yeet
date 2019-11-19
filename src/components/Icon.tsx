@@ -19,6 +19,7 @@ export enum IconName {
   hourglass = "hourglass",
   circleCheckmark = "circlecheckmark",
   stopwatch = "stopwatch",
+  help = "help",
   chevronLeft = "chevron-left",
   chevronRight = "chevron-right",
   circleaddAlt = "plus-circle-alt",
@@ -182,6 +183,7 @@ export const IconView = props => <Icon name={IconName.view} {...props} />;
 export const IconHourglass = props => (
   <Icon name={IconName.hourglass} {...props} />
 );
+export const IconHelp = props => <Icon name={IconName.help} {...props} />;
 export const IconCircleCheckmark = props => (
   <Icon name={IconName.circleCheckmark} {...props} />
 );

@@ -4,4 +4,6 @@ query CurrentUserQuery {
   currentUser {
     ...UserFragment
   }
+
+  isWaitlisted
 }
