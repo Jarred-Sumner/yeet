@@ -497,6 +497,7 @@ class ContentExport {
             videoLayer.backgroundColor = UIColor.clear.cgColor
             videoLayer.frame = CGRect(origin: frame.origin, size: frame.size)
             videoLayer.bounds = CGRect(origin: .zero, size: videoLayer.frame.size)
+            
 
             let contentsRect = CGRect(
               origin: CGPoint(

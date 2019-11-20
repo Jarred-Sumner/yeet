@@ -71,20 +71,20 @@
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];
   SDImageCache.sharedImageCache.config.diskCacheReadingOptions = NSDataReadingMappedIfSafe;
 
-//  [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
-//    [Cronet setHttp2Enabled:YES];
-//    [Cronet setQuicEnabled:YES];
-//    [Cronet setBrotliEnabled:YES];
-//    [Cronet setHttpCacheType:CRNHttpCacheTypeDisk];
-//
-////    [Cronet addQuicHint:@"www.google.com" port:443 altPort:443];
-//
-//    [Cronet start];
-//
-//    [Cronet registerHttpProtocolHandler];
-//    [Cronet unregisterHttpProtocolHandler];
-//  }];
-//
+  [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
+    [Cronet setHttp2Enabled:YES];
+    [Cronet setQuicEnabled:YES];
+    [Cronet setBrotliEnabled:YES];
+    [Cronet setHttpCacheType:CRNHttpCacheTypeDisk];
+    [Cronet addQuicHint:@"www.google.com" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://getyeet.app" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://www.getyeet.app" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://yeet-backend.herokuapp.com" port:443 altPort:443];
+
+    [Cronet start];
+    [Cronet registerHttpProtocolHandler];
+  }];
+
 
   // Limit progress block callback frequency
   SDWebImageDownloader.sharedDownloader.config.minimumProgressInterval = 0.1;

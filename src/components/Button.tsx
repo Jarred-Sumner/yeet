@@ -286,6 +286,7 @@ export const BackButton = ({
       navigation.goBack(routeName);
     } else if (behavior === BackButtonBehavior.close) {
       navigation.goBack();
+      navigation.dismiss();
     }
   }, [behavior, navigation, onPress]);
 

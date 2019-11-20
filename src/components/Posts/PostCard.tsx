@@ -405,6 +405,7 @@ const PostCardComponent = ({
         <TrackableMediaPlayer
           sources={sources}
           paused={isNotPlaying}
+          muted={false}
           id={`${post.id}-player`}
           autoPlay={autoPlay}
           ref={mediaPlayerRef}
