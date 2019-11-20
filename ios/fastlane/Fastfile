@@ -32,10 +32,18 @@ platform :ios do
 
     build_app(
       workspace: 'yeet.xcworkspace',
-      scheme: 'yeet',
+      scheme: 'yeet prod',
       output_directory: 'releases/beta',
-      output_name: "Yeet Beta - #{build_number}"
+      output_name: "Yeet Beta - #{build_number}",
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          "com.example.bundleid" => "Provisioning Profile Name",
+          "com.example.bundleid2" => "Provisioning Profile Name 2"
+        }
+      }
     )
+
     upload_to_testflight
     store_size_xcarchive
     add_git_tag(grouping: 'fastlane-builds', prefix: 'v', postfix: '-beta')

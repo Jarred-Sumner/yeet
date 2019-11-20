@@ -193,14 +193,12 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
           let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension(".mp4")
 
-          asset.crop(to: bounds.h264Friendly(), dest: filePath).then(on: DispatchQueue.global(qos: .userInitiated)) { newAsset in
-            newAsset.load().then(on: DispatchQueue.global(qos: .userInitiated)) { _ in
+          asset.crop(to: bounds.h264Friendly(), dest: filePath).then() { newAsset in
+            newAsset.load().then(on: DispatchQueue.global(qos: .background)) { _ in
               guard let videoTrack = newAsset.tracks(withMediaType: .video).first else {
                 YeetError.reject(code: .loadAVAssetFailure, block: rejecter)
                 return
               }
-
-
 
               let size = videoTrack.naturalSize
 
