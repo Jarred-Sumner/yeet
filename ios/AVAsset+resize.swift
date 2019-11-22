@@ -165,8 +165,14 @@ extension AVURLAsset {
         let duration = CMTimeGetSeconds(videoTrack.timeRange.duration)
 
         var presetName = AVAssetExportPresetMediumQuality
+
         if duration < 60.0 {
-          presetName = AVAssetExportPresetHighestQuality
+          if AVAssetExportSession.allExportPresets().contains(AVAssetExportPresetHEVCHighestQuality) {
+            presetName = AVAssetExportPresetHEVCHighestQuality
+          } else {
+            presetName = AVAssetExportPresetHighestQuality
+          }
+
 //          if videoComposition.renderSize.width <= 640 && videoComposition.renderSize.height <= 480 {
 //            presetName = AVAssetExportPreset640x480
 //          } else if videoComposition.renderSize.width <= 960 && videoComposition.renderSize.height <= 540 {
@@ -185,28 +191,30 @@ extension AVURLAsset {
           return
         }
 
-
-
         exportSession.videoComposition = videoComposition
         exportSession.outputURL = dest
-        exportSession.outputFileType = .mp4
+        exportSession.outputFileType = .he
 
         exportSession.shouldOptimizeForNetworkUse = true
 
-        exportSession.exportAsynchronously {
-          switch (exportSession.status) {
-            case .completed:
-              let asset = AVURLAsset(url: dest)
-              resolve(asset)
-            case .cancelled:
-              break
-            case .waiting:
-              break
-            default:
-              reject(exportSession.error ?? NSError(domain: "com.codeblogcorp.yeet", code: 999))
-              break
-          }
-        }
+          exportSession.exportAsynchronously {
+             switch (exportSession.status) {
+               case .completed:
+                 let asset = AVURLAsset(url: dest)
+                 resolve(asset)
+               case .cancelled:
+                 break
+               case .waiting:
+                 break
+               default:
+                 reject(exportSession.error ?? NSError(domain: "com.codeblogcorp.yeet", code: 999))
+                 break
+             }
+           }
+
+
+
+
 
 //        if let audioTrack = asset.tracks(withMediaType: .audio).first {
 //          let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid) else {

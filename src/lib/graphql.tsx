@@ -48,10 +48,10 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 const GRAPHQL_URL = `${BASE_HOSTNAME}/graphql`;
 
-const authLink = setContext((_, { headers: _headers }) => {
-  return Storage.getJWT().then(jwt => {
-    const headers = {
-      ..._headers,
+export const getRequestHeaders = (headers: Object = {}) =>
+  Storage.getJWT().then(jwt => {
+    return {
+      ...headers,
       Authorization: jwt ? `Bearer ${jwt}` : undefined,
       "X-Device-ID": DEVICE_ID,
       "X-App-Version": APP_VERSION,
@@ -59,7 +59,10 @@ const authLink = setContext((_, { headers: _headers }) => {
       "X-Platform-OS": Platform.OS,
       "X-Platform-Version": Platform.Version
     };
+  });
 
+const authLink = setContext((_, { headers: _headers }) => {
+  return getRequestHeaders(_headers).then(headers => {
     return { headers };
   });
 });

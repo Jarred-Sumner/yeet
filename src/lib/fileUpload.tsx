@@ -2,6 +2,9 @@ import RNFetchBlob from "rn-fetch-blob";
 import qs from "qs";
 import { BASE_HOSTNAME } from "../../config";
 import Promise from "bluebird";
+import Upload from "react-native-background-upload";
+import * as Sentry from "@sentry/react-native";
+import { fromPairs } from "lodash";
 import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 
 var Blob = RNFetchBlob.polyfill.Blob;
@@ -137,40 +140,10 @@ S3Upload.prototype.executeOnSignedUrl = function(file, callback) {
 
 S3Upload.prototype.uploadToS3 = function(file, signResult) {
   console.log(signResult);
+  const headers = new Headers();
 
-  var xhr = this.createCORSRequest("PUT", signResult.signedUrl);
-  if (!xhr) {
-    this.onError("CORS not supported", file);
-  } else {
-    xhr.onload = function() {
-      if (xhr.status === 200) {
-        this.onProgress(100, "Upload completed", file);
-        return this.onFinishS3Put(signResult, file).then(() => {
-          this.files[0].safeClose();
-        });
-      } else {
-        console.log(xhr);
-        return this.onError("Upload error: " + xhr.status, file).then(() => {
-          this.files[0].safeClose();
-        });
-      }
-    }.bind(this);
-    xhr.onerror = function(err) {
-      return this.onError("XHR error", file);
-    }.bind(this);
-    xhr.upload.onprogress = function(e) {
-      var percentLoaded;
-      if (e.lengthComputable) {
-        percentLoaded = Math.round((e.loaded / e.total) * 100);
-        return this.onProgress(
-          percentLoaded,
-          percentLoaded === 100 ? "Finalizing" : "Uploading",
-          file
-        );
-      }
-    }.bind(this);
-  }
-  xhr.setRequestHeader("Content-Type", file.type);
+  headers.set("Content-Type", file.type);
+
   if (this.contentDisposition) {
     var disposition = this.contentDisposition;
     if (disposition === "auto") {
@@ -182,29 +155,25 @@ S3Upload.prototype.uploadToS3 = function(file, signResult) {
     }
 
     var fileName = this.scrubFilename(file.name);
-    xhr.setRequestHeader(
+    headers.set(
       "Content-Disposition",
       disposition + '; filename="' + fileName + '"'
     );
   }
+
   if (signResult.headers) {
     var signResultHeaders = signResult.headers;
     Object.keys(signResultHeaders).forEach(function(key) {
-      var val = signResultHeaders[key];
-      xhr.setRequestHeader(key, val);
+      headers.set(key, signResultHeaders[key]);
     });
   }
+
   if (this.uploadRequestHeaders) {
     var uploadRequestHeaders = this.uploadRequestHeaders;
     Object.keys(uploadRequestHeaders).forEach(function(key) {
-      var val = uploadRequestHeaders[key];
-      xhr.setRequestHeader(key, val);
+      headers.set(key, uploadRequestHeaders[key]);
     });
-  } else {
-    // xhr.setRequestHeader("x-amz-acl", "public-read");
   }
-  this.httprequest = xhr;
-  return xhr.send(file);
 };
 
 S3Upload.prototype.uploadFile = function(file) {
@@ -222,25 +191,25 @@ export default S3Upload;
 
 export const startFileUpload = ({ file, type, ...opts }) => {
   console.log("Uploading file", file);
-  const path = RNFetchBlob.wrap(
-    file.uri.startsWith("ph://")
-      ? convertCameraRollIDToRNFetchBlobId(file.uri, file.type.split("/")[1])
-      : file.uri.replace("file://", "").replace("content://", "")
-  );
+
+  // const path = RNFetchBlob.wrap(
+  //   file.uri.startsWith("ph://")
+  //     ? convertCameraRollIDToRNFetchBlobId(file.uri, file.type.split("/")[1])
+  //     : file.uri.replace("file://", "").replace("content://", "")
+  // );
 
   return RNFetchBlob.polyfill.Blob.build(path, {
     type: `${file.type};`
   }).then(
     blob => {
-      const fileBlob = blob;
-      fileBlob.name = file.fileName;
+      file.name = file.fileName;
       console.log("✅ Created blob", blob);
 
       return new Promise((resolve, reject) => {
         resolve(
           new S3Upload({
             ...opts,
-            files: [blob],
+            files: [file],
             signingUrlQueryParams: {
               width: file.width,
               height: file.height,

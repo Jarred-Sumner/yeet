@@ -52,7 +52,7 @@ export type ExportableYeetImage = {
   width: number;
   height: number;
   source: string;
-  mimeType: "image/png" | "image/webp" | "image/jpeg";
+  mimeType: ImageMimeType;
   uri: string;
   duration: number;
 };
@@ -269,7 +269,8 @@ export const startExport = async (
   const data: ExportData = {
     blocks: blocks.filter(Boolean),
     nodes: nodes.filter(Boolean),
-    bounds: await getEstimatedBounds(ref.current)
+    bounds: await getEstimatedBounds(ref.current),
+    containerNode: findNodeHandle(ref.current)
   };
 
   if (process.env.NODE_ENV !== "production") {

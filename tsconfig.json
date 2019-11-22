@@ -15,7 +15,7 @@
     "skipDefaultLibCheck": true,
     "sourceMap": false,
     "strict": false,
-
+    "typeRoots": ["./node_modules/@types", "./typings"],
     "target": "esnext"
   },
   "exclude": ["node_modules", ".next", "static"]

@@ -32,6 +32,7 @@
 #import <CodePush/CodePush.h>
 #import <AVFoundation/AVFoundation.h>
 #import "RNSplashScreen.h"  // here
+#import "VydiaRNFileUploader.h"
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -47,10 +48,28 @@
 
 
 
+
+
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+  [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
+    [Cronet setHttp2Enabled:YES];
+    [Cronet setQuicEnabled:YES];
+    [Cronet setBrotliEnabled:YES];
+    [Cronet setHttpCacheType:CRNHttpCacheTypeDisk];
+    [Cronet addQuicHint:@"www.google.com" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://getyeet.app" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://www.getyeet.app" port:443 altPort:443];
+    [Cronet addQuicHint:@"https://yeet-backend.herokuapp.com" port:443 altPort:443];
+
+    [Cronet start];
+    [Cronet registerHttpProtocolHandler];
+  }];
+
+  [FIRPerformance sharedInstance].dataCollectionEnabled = false;
+  [FIRPerformance sharedInstance].instrumentationEnabled = false;
 
   if (![[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:@"HIDE_WAITLIST"]) {
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"HIDE_WAITLIST"];
@@ -70,20 +89,6 @@
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];
   SDImageCache.sharedImageCache.config.diskCacheReadingOptions = NSDataReadingMappedIfSafe;
-
-  [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
-    [Cronet setHttp2Enabled:YES];
-    [Cronet setQuicEnabled:YES];
-    [Cronet setBrotliEnabled:YES];
-    [Cronet setHttpCacheType:CRNHttpCacheTypeDisk];
-    [Cronet addQuicHint:@"www.google.com" port:443 altPort:443];
-    [Cronet addQuicHint:@"https://getyeet.app" port:443 altPort:443];
-    [Cronet addQuicHint:@"https://www.getyeet.app" port:443 altPort:443];
-    [Cronet addQuicHint:@"https://yeet-backend.herokuapp.com" port:443 altPort:443];
-
-    [Cronet start];
-    [Cronet registerHttpProtocolHandler];
-  }];
 
 
   // Limit progress block callback frequency
@@ -143,6 +148,13 @@
             options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options
 {
   return [RCTLinkingManager application:app openURL:url options:options];
+}
+
+
+- (void)application:(UIApplication *)application
+        handleEventsForBackgroundURLSession:(NSString *)identifier
+        completionHandler:(void (^)(void))completionHandler {
+  [VydiaRNFileUploader setBackgroundSessionCompletionHandler:completionHandler];
 }
 
 @end

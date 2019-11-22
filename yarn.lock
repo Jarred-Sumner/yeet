@@ -8487,6 +8487,10 @@ react-native-animatable@^1.3.1:
   dependencies:
     prop-types "^15.5.10"
 
+react-native-background-upload@Jarred-Sumner/react-native-background-upload#c479fdaa7e373e444cca25ceddefe13dc283857c:
+  version "5.1.0"
+  resolved "https://codeload.github.com/Jarred-Sumner/react-native-background-upload/tar.gz/c479fdaa7e373e444cca25ceddefe13dc283857c"
+
 react-native-code-push@^5.7.0:
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/react-native-code-push/-/react-native-code-push-5.7.0.tgz#38667c1ba5a5e1a6dd1b4271468c6ef6284b3ca4"
