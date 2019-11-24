@@ -193,31 +193,31 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
           let filePath = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent(UUID().uuidString).appendingPathExtension(".mp4")
 
-          asset.crop(to: bounds.h264Friendly(), dest: filePath).then() { newAsset in
-            newAsset.load().then(on: DispatchQueue.global(qos: .background)) { _ in
-              guard let videoTrack = newAsset.tracks(withMediaType: .video).first else {
-                YeetError.reject(code: .loadAVAssetFailure, block: rejecter)
-                return
-              }
-
-              let size = videoTrack.naturalSize
-
-              SwiftyBeaver.info("""
-                Cropped video
-                  \(originalSize.width)x\(originalSize.height) -> \(bounds)
-                  \(filePath.absoluteString)
-                """)
-              resolver([
-                "url": filePath.absoluteString,
-                "width": NSNumber(value: Double(size.width)),
-                "height": NSNumber(value: Double(size.height)),
-                "mimeType": MimeType.mp4.rawValue,
-                "duration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
-                "playDuration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
-                "pixelRatio": NSNumber(value: 1),
-                "id": mediaSource.id + "_cropped"
-              ])
+          asset.crop(to: bounds.h264Friendly(), dest: filePath).then { newAsset in
+            guard let videoTrack = newAsset.tracks(withMediaType: .video).first else {
+              YeetError.reject(code: .loadAVAssetFailure, block: rejecter)
+              return
             }
+
+            let size = videoTrack.naturalSize
+
+            SwiftyBeaver.info("""
+              Cropped video
+                \(originalSize.width)x\(originalSize.height) -> \(bounds)
+                \(filePath.absoluteString)
+              """)
+            resolver([
+              "url": filePath.absoluteString,
+              "width": NSNumber(value: Double(size.width)),
+              "height": NSNumber(value: Double(size.height)),
+              "mimeType": MimeType.mp4.rawValue,
+              "duration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
+              "playDuration": NSNumber(value: CMTimeGetSeconds(newAsset.duration)),
+              "pixelRatio": NSNumber(value: 1),
+              "id": mediaSource.id + "_cropped"
+            ])
+          }.catch { error in
+            rejecter(YeetError.ErrorCode.videoCropFailure.rawValue, error.localizedDescription, error)
           }
         }
       } else {

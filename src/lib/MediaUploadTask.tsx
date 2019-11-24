@@ -1,13 +1,32 @@
-import { CreatePostThreadVariables } from "./graphql/CreatePostThread";
-import { CreatePostVariables } from "./graphql/CreatePost";
-import { UpdateAvatarVariables } from "./graphql/UpdateAvatar";
-import { YeetImage, extensionByMimeType } from "./imageSearch";
-import { ExportableYeetImage, ContentExport, ExportData } from "./Exporter";
-import { uploadFile } from "./FileUploader";
-import { BASE_HOSTNAME } from "../../config";
-import qs from "qs";
+import * as Sentry from "@sentry/react-native";
+import { InMemoryCache } from "apollo-cache-inmemory";
+import ApolloClient from "apollo-client";
 import { basename } from "path";
+import qs from "qs";
+import * as React from "react";
+import { BASE_HOSTNAME } from "../../config";
+import ADD_ATTACHMENT_MUTATION from "./addAttachmentMutation.graphql";
+import CREATE_POST_MUTATION from "./createPostMutation.graphql";
+import CREATE_POST_THREAD_MUTATION from "./createPostThreadMutation.graphql";
+import {
+  AddAttachmentMutation,
+  AddAttachmentMutationVariables
+} from "./graphql/AddAttachmentMutation";
+import { CreatePost } from "./graphql/CreatePost";
+import {
+  CreatePostThread,
+  CreatePostThread_createPostThread
+} from "./graphql/CreatePostThread";
+import { PostFragment } from "./graphql/PostFragment";
+import { ContentExport, ExportableYeetImage, ExportData } from "./Exporter";
+import { uploadFile, allowSuspendIfBackgrounded } from "./FileUploader";
 import { getRequestHeaders } from "./graphql";
+import { CreatePostVariables } from "./graphql/CreatePost";
+import { CreatePostThreadVariables } from "./graphql/CreatePostThread";
+import { PostFormat } from "../components/NewPost/NewPostFormat";
+import { useApolloClient } from "react-apollo";
+import { navigate } from "./NavigationService";
+import Storage from "./Storage";
 
 type PresignResponse = {
   signedUrl: string;
@@ -21,7 +40,7 @@ type PresignResponse = {
 enum MediaUploadStatus {
   waiting = "waiting",
   cancelled = "cancelled",
-  completed = "completed",
+  complete = "complete",
   progressing = "progressing",
   error = "error"
 }
@@ -30,9 +49,10 @@ type MediaUploadChange = (mediaUpload: MediaUpload | null) => void;
 type MediaUploadProgress = (progress: number) => void;
 type MediaTaskProgress = (progress: number, mediaUpload: MediaUpload) => void;
 
-class MediaUpload {
+export class MediaUpload {
   media: ExportableYeetImage;
   taskId: string | null = null;
+  mediaId: string | null = null;
   presignResponse: PresignResponse | null = null;
   presignStatus: MediaUploadStatus = MediaUploadStatus.waiting;
   uploadProgress: number = 0.0;
@@ -43,6 +63,32 @@ class MediaUpload {
   _onProgress: MediaUploadProgress | null = null;
 
   status: MediaUploadStatus;
+
+  constructor({
+    media,
+    onChange = null,
+    onProgress = null,
+    taskId = null,
+    presignResponse = null,
+    presignStatus = MediaUploadStatus.waiting,
+    status = MediaUploadStatus.waiting
+  }: {
+    media: ExportableYeetImage;
+    onChange: MediaUploadChange | null;
+    onProgress: MediaUploadProgress | null;
+    taskId: string | null;
+    presignResponse: PresignResponse | null;
+    presignStatus: MediaUploadStatus;
+    status: MediaUploadStatus;
+  }) {
+    this._onChange = onChange;
+    this._onProgress = onProgress;
+    this.media = media;
+    this.taskId = taskId;
+    this.presignResponse = presignResponse;
+    this.presignStatus = presignStatus;
+    this.status = status;
+  }
 
   startPresign = async () => {
     if (this.presignStatus === MediaUploadStatus.progressing) {
@@ -57,33 +103,55 @@ class MediaUpload {
       type: "Media"
     });
 
-    this.presignStatus = MediaUploadStatus.progressing;
-
-    const fetcher = window.fetch(`${BASE_HOSTNAME}/api/sign-s3?${params}`, {
-      headers: {
-        ...(await getRequestHeaders()),
-        "content-type": "application/json"
-      }
+    const headers = new Headers({
+      Authorization: `Bearer ${Storage.getCachedJWT()}`,
+      "Content-Type": "application/json"
     });
 
-    return fetcher
-      .then(resp => resp.json())
-      .then(json => {
-        this.presignStatus = MediaUploadStatus.completed;
-        this.presignResponse = json;
+    console.log("HEADErs", headers);
+
+    // const headers = await Promise.resolve(getRequestHeaders());
+
+    this.presignStatus = MediaUploadStatus.progressing;
+
+    window.setTimeout(this.onChange, 1);
+
+    const signURL = `${BASE_HOSTNAME}/api/sign-s3?${params}`;
+
+    console.log("Presign request", signURL);
+
+    try {
+      const resp = await fetch(signURL, {
+        method: "POST",
+        mode: "cors",
+        credentials: "include",
+        redirect: "follow",
+        headers
+      });
+
+      console.log("FETCH", resp);
+
+      const json = await resp.json();
+
+      console.log(json);
+
+      if (typeof json === "object" && typeof json.mediaId === "string") {
+        this.presignStatus = MediaUploadStatus.complete;
+        this.presignResponse = json as PresignResponse;
+        this.mediaId = this.presignResponse.mediaId;
 
         this.onChange();
 
         return json;
-      })
-      .catch(err => {
+      } else {
         this.presignStatus = MediaUploadStatus.error;
-        this.presignError = err;
+        this.presignError = json;
 
         this.onChange();
-
-        return Promise.reject(err);
-      });
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   handleError = ({ error }) => {
@@ -93,14 +161,18 @@ class MediaUpload {
     this.onChange();
   };
   handleCompleted = () => {
-    this.status = MediaUploadStatus.completed;
+    this.status = MediaUploadStatus.complete;
 
     this.onChange();
   };
-  handleProgress = ({ progress }: { progress: number }) => {
-    this.uploadProgress = progress;
+  handleProgress = (progress: number) => {
+    if (typeof progress === "number") {
+      this.uploadProgress = progress;
 
-    this.onProgress();
+      this.onProgress();
+    } else {
+      debugger;
+    }
   };
   handleCancel = () => {
     this.status = MediaUploadStatus.cancelled;
@@ -117,19 +189,42 @@ class MediaUpload {
   };
 
   startUpload = () => {
+    if (this.status === MediaUploadStatus.progressing) {
+      return;
+    }
+
+    console.log("Beign upload1", this.presignResponse, this.media.uri);
+
+    this.status = MediaUploadStatus.progressing;
+
+    this.onChange();
+
+    console.log("HEADERS", this.presignResponse.headers);
     uploadFile({
-      file: this.media.uri.replace("file://", ""),
+      file: this.media.uri,
       url: this.presignResponse.signedUrl,
       headers: {
-        ...this.presignResponse.headers
+        ...this.presignResponse.headers,
+        "content-type": this.media.mimeType
       },
       onError: this.handleError,
       onCompleted: this.handleCompleted,
       onProgress: this.handleProgress,
       onCancel: this.handleCancel
-    }).then(taskId => {
-      this.taskId = taskId;
-    });
+    }).then(
+      taskId => {
+        this.taskId = taskId;
+        this.onChange();
+      },
+      err => {
+        this.uploadError = err;
+        console.error(err);
+        Sentry.captureException(err);
+
+        this.status = MediaUploadStatus.error;
+        this.onChange();
+      }
+    );
   };
 
   start = () => {
@@ -137,7 +232,7 @@ class MediaUpload {
       this.startPresign();
     } else if (
       this.status === MediaUploadStatus.waiting &&
-      this.presignStatus === MediaUploadStatus.completed
+      this.presignStatus === MediaUploadStatus.complete
     ) {
       this.startUpload();
     }
@@ -146,22 +241,22 @@ class MediaUpload {
   get isWaiting() {
     return (
       this.presignStatus === MediaUploadStatus.waiting ||
-      (this.presignStatus === MediaUploadStatus.completed &&
+      (this.presignStatus === MediaUploadStatus.complete &&
         this.status === MediaUploadStatus.waiting)
     );
   }
 
   get isCompleted() {
     return (
-      this.presignStatus === MediaUploadStatus.completed &&
-      this.status === MediaUploadStatus.completed
+      this.presignStatus === MediaUploadStatus.complete &&
+      this.status === MediaUploadStatus.complete
     );
   }
 
   get isProgressing() {
     return (
       this.presignStatus === MediaUploadStatus.progressing ||
-      (this.presignStatus === MediaUploadStatus.completed &&
+      (this.presignStatus === MediaUploadStatus.complete &&
         this.status === MediaUploadStatus.progressing)
     );
   }
@@ -179,24 +274,6 @@ class MediaUpload {
 
   resumeUpload = () => {};
 
-  constructor(
-    media: ExportableYeetImage,
-    onChange: MediaUploadChange | null = null,
-    onProgress: MediaUploadProgress | null = null,
-    taskId: string | null = null,
-    presignResponse: PresignResponse | null = null,
-    presignStatus: MediaUploadStatus = MediaUploadStatus.waiting,
-    status: MediaUploadStatus = MediaUploadStatus.waiting
-  ) {
-    this._onChange = onChange;
-    this._onProgress = onProgress;
-    this.media = media;
-    this.taskId = taskId;
-    this.presignResponse = presignResponse;
-    this.presignStatus = presignStatus;
-    this.status = status;
-  }
-
   toJSON() {
     return {
       media: this.media,
@@ -210,16 +287,18 @@ class MediaUpload {
 
 enum MediaUploadTaskStatus {
   waiting = "waiting",
-  failed = "failed",
+  cancelled = "cancelled",
+  complete = "complete",
   progressing = "progressing",
-  complete = "complete"
+  error = "error"
 }
 
 export class MediaUploadTask {
   optionalFiles: Array<MediaUpload> = [];
   requiredFile: MediaUpload;
   status = MediaUploadTaskStatus.waiting;
-  onChangeFile: MediaUploadChange | null = null;
+  onChangeFile: (old: MediaUpload, _new: MediaUpload | null) => void;
+
   onProgress: MediaTaskProgress | null = null;
 
   constructor({
@@ -231,9 +310,9 @@ export class MediaUploadTask {
     this.optionalFiles = optionalFiles;
     this.status = status;
 
-    this.files.forEach(file => {
-      file.onChange = this.handleChange;
-      file.onProgress = this.handleProgress(file);
+    [requiredFile, ...optionalFiles].filter(Boolean).forEach(file => {
+      file._onChange = this.handleChange;
+      file._onProgress = this.handleProgress(file);
     });
   }
 
@@ -256,26 +335,34 @@ export class MediaUploadTask {
   handleChange: MediaUploadChange = mediaUpload => {
     let file = this.currentFile;
 
-    if (
-      mediaUpload.status === MediaUploadStatus.completed &&
-      file &&
-      file.isWaiting
-    ) {
-      file.start();
+    console.log("HANDLE CHANGE", { file, mediaUpload, status: this.status });
+
+    if (mediaUpload.isWaiting) {
+      mediaUpload.start();
     } else if (mediaUpload.isProgressing) {
       this.status = MediaUploadTaskStatus.progressing;
-    } else if (mediaUpload.status === MediaUploadStatus.completed && !file) {
+    } else if (mediaUpload.status === MediaUploadStatus.complete && !file) {
       this.status = MediaUploadTaskStatus.complete;
     } else if (mediaUpload.isFailed && this.requiredFile.isCompleted) {
       this.status = MediaUploadTaskStatus.complete;
     } else if (mediaUpload.isFailed && !this.requiredFile.isCompleted) {
-      this.status = MediaUploadTaskStatus.failed;
+      this.status = MediaUploadTaskStatus.error;
     }
 
-    typeof this.onChangeFile === "function" && this.onChangeFile(file);
+    if (mediaUpload !== file) {
+      typeof this.onChangeFile === "function" &&
+        this.onChangeFile(mediaUpload, file);
+    } else if (mediaUpload === file) {
+      typeof this.onChangeFile === "function" &&
+        this.onChangeFile(mediaUpload, null);
+    }
   };
 
   handleProgress = (mediaUpload: MediaUpload) => (progress: number) => {
+    if (typeof progress !== "number") {
+      return;
+    }
+
     typeof this.onProgress === "function" &&
       this.onProgress(progress, mediaUpload);
   };
@@ -291,18 +378,29 @@ export class MediaUploadTask {
   }): MediaUploadTask {
     const task = new MediaUploadTask({
       requiredFile: new MediaUpload({
-        uri: contentExport.uri,
-        width: contentExport.width,
-        height: contentExport.height,
-        mimeType: contentExport.type,
-        duration: contentExport.duration
+        status: MediaUploadStatus.waiting,
+        presignStatus: MediaUploadStatus.waiting,
+        media: {
+          uri: contentExport.uri,
+          width: contentExport.width,
+          height: contentExport.height,
+          mimeType: contentExport.type,
+          duration: contentExport.duration
+        }
       }),
       optionalFiles: [
         ...exportData.nodes.map(node => node.block),
         ...exportData.blocks
       ]
         .filter(block => typeof block.value === "object")
-        .map(block => new MediaUpload(block.value as ExportableYeetImage))
+        .map(
+          block =>
+            new MediaUpload({
+              media: block.value as ExportableYeetImage,
+              status: MediaUploadStatus.waiting,
+              presignStatus: MediaUploadStatus.waiting
+            })
+        )
     });
 
     task.onChangeFile = onChangeFile;
@@ -312,12 +410,13 @@ export class MediaUploadTask {
   }
 
   get files(): Array<MediaUpload> {
-    return [this.requiredFile, ...this.optionalFiles];
+    return [this.requiredFile, ...this.optionalFiles].filter(Boolean);
   }
 
   resume = () => {};
   start = () => {
-    if (this.currentFile) {
+    const file = this.currentFile;
+    if (file && file.isWaiting) {
       this.currentFile.start();
     }
   };
@@ -331,7 +430,404 @@ export class MediaUploadTask {
   };
 }
 
-export const MediaUploadContext = React.createContext({
-  mediaUploadTask: null,
-  setMediaUploadTask
-});
+export enum PostUploadTaskStatus {
+  uploading = "uploading",
+  posting = "posting",
+  waiting = "waiting",
+  cancelled = "cancelled",
+  complete = "complete",
+  progressing = "progressing",
+  error = "error"
+}
+
+export enum PostUploadTaskType {
+  newPost = "newPost",
+  newThread = "newThread"
+}
+
+export class PostUploadTask {
+  task: MediaUploadTask;
+  contentExport: ContentExport;
+  exportData: ExportData;
+  client: ApolloClient<InMemoryCache>;
+  format: PostFormat;
+  threadId: string | null = null;
+  body: string;
+  post: PostFragment | null = null;
+  postThread: CreatePostThread_createPostThread | null = null;
+  status: PostUploadTaskStatus = PostUploadTaskStatus.waiting;
+  type: PostUploadTaskType;
+
+  onChange: (task: PostUploadTask) => void | null = null;
+  onProgress: (
+    progress: number,
+    mediaUpload: MediaUpload,
+    task: PostUploadTask
+  ) => void | null = null;
+
+  constructor({
+    contentExport,
+    exportData,
+    format,
+    threadId,
+    body,
+    client,
+    onChange,
+    onProgress,
+    type
+  }: Pick<PostUploadTask, "onChange" | "onProgress"> & {
+    contentExport: ContentExport;
+    exportData: ExportData;
+    format: PostFormat;
+    threadId: string | null;
+    body: string | null;
+    client: ApolloClient<InMemoryCache>;
+    type: PostUploadTaskType;
+  }) {
+    this.contentExport = contentExport;
+    this.exportData = exportData;
+    this.format = format;
+    this.threadId = threadId;
+    this.body = body;
+
+    if (client) {
+      this.client = client;
+    }
+
+    this.type = type;
+    this.onChange = onChange;
+    this.onProgress = onProgress;
+
+    this.task = MediaUploadTask.fromExport({
+      contentExport,
+      exportData,
+      onChangeFile: this.onChangeFile,
+      onProgress: this.handleProgress
+    });
+  }
+
+  handleProgress = (progress: number, mediaUpload: MediaUpload) => {
+    console.log(progress);
+    typeof this.onProgress === "function" &&
+      this.onProgress(progress, mediaUpload, this);
+  };
+
+  onChangeFile = (oldFile: MediaUpload, newFile: MediaUpload | null) => {
+    const isRequiredFile = oldFile === this.task.requiredFile;
+    const isRequiredFileCompleted = this.task.requiredFile.isCompleted;
+
+    console.log("Change file", oldFile, newFile);
+
+    if (this.status === PostUploadTaskStatus.error) {
+      return;
+    }
+
+    if (isRequiredFileCompleted && isRequiredFile && this.isWaitingToSubmit) {
+      this.submit().then(() => {
+        if (
+          this.status !== PostUploadTaskStatus.error &&
+          this.status != PostUploadTaskStatus.complete
+        ) {
+          return this.task.start();
+        }
+      });
+    } else if (newFile !== oldFile && oldFile.isWaiting) {
+      oldFile.start();
+      this.updateStatus();
+    } else if (newFile !== oldFile && newFile?.isWaiting) {
+      newFile.start();
+      this.updateStatus();
+    } else {
+      this.updateStatus();
+    }
+
+    typeof this.onChange === "function" && this.onChange(this);
+  };
+
+  get isWaitingToSubmit() {
+    if (this.type === PostUploadTaskType.newPost) {
+      return !this.post;
+    } else if (this.type === PostUploadTaskType.newThread) {
+      return !this.postThread;
+    }
+  }
+
+  start() {
+    if (this.status === PostUploadTaskStatus.uploading) {
+      return;
+    }
+
+    this.status = PostUploadTaskStatus.uploading;
+    console.log("Starting task", this.task);
+    this.task.start();
+  }
+
+  addAtachment = (imageUrl: string, mediaId: string, postId: string) => {
+    return this.client.mutate<
+      AddAttachmentMutation,
+      AddAttachmentMutationVariables
+    >({
+      mutation: ADD_ATTACHMENT_MUTATION,
+      variables: {
+        mediaId,
+        postId,
+        id: imageUrl
+      }
+    });
+  };
+
+  addAttachments = () => {
+    const { id: postId = null } = this.post ?? {};
+
+    if (!postId) {
+      return;
+    }
+
+    this.task.optionalFiles
+      .filter(file => file.isCompleted)
+      .map(file => {
+        this.addAtachment(file.presignResponse.signedUrl, file.mediaId, postId);
+      });
+  };
+
+  createPost = () => {
+    console.log("Creating post", this);
+    return this.client
+      .mutate<CreatePost, CreatePostVariables>({
+        mutation: CREATE_POST_MUTATION,
+        variables: {
+          mediaId: this.task.requiredFile.mediaId,
+          blocks: this.exportData.blocks,
+          nodes: this.exportData.nodes,
+          format: this.format,
+          autoplaySeconds: this.contentExport.duration,
+          bounds: this.exportData.bounds,
+          colors: {
+            primary: this.contentExport.colors?.primary,
+            detail: this.contentExport.colors?.detail,
+            background: this.contentExport.colors?.background,
+            secondary: this.contentExport.colors?.secondary
+          },
+          threadId: this.threadId
+        }
+      })
+      .then(resp => {
+        this.post = resp?.data?.createPost;
+
+        if (!this.post) {
+          this.status = PostUploadTaskStatus.error;
+        } else {
+          this.updateStatus();
+        }
+
+        allowSuspendIfBackgrounded();
+
+        this.onChangeFile(this.task.requiredFile, this.task.optionalFiles[0]);
+
+        return resp;
+      });
+  };
+
+  createPostThread = () => {
+    console.log("Posting thread", this);
+    return this.client
+      .mutate<CreatePostThread, CreatePostThreadVariables>({
+        mutation: CREATE_POST_THREAD_MUTATION,
+        variables: {
+          mediaId: this.task.requiredFile.mediaId,
+          blocks: this.exportData.blocks,
+          nodes: this.exportData.nodes,
+          format: this.format,
+          autoplaySeconds: this.contentExport.duration,
+          bounds: this.exportData.bounds,
+          body: this.body,
+          colors: {
+            primary: this.contentExport.colors?.primary,
+            detail: this.contentExport.colors?.detail,
+            background: this.contentExport.colors?.background,
+            secondary: this.contentExport.colors?.secondary
+          }
+        }
+      })
+      .then(
+        resp => {
+          console.log(resp);
+          this.postThread = resp?.data?.createPostThread;
+
+          const posts = resp?.data?.createPostThread?.posts?.data ?? [];
+
+          if (posts.length > 0) {
+            this.post = posts[0];
+          }
+
+          if (!this.postThread || !this.post) {
+            this.status === PostUploadTaskStatus.error;
+          } else {
+            this.updateStatus();
+          }
+
+          allowSuspendIfBackgrounded();
+
+          this.onChangeFile(this.task.requiredFile, this.task.optionalFiles[0]);
+
+          return resp;
+        },
+        err => {
+          console.error(err);
+          this.status === PostUploadTaskStatus.error;
+          this.onChange();
+        }
+      );
+  };
+
+  updateStatus = () => {
+    if (this.post && this.status === PostUploadTaskStatus.posting) {
+      if (this.task.optionalFiles.some(file => !file.isCompleted)) {
+        this.status = PostUploadTaskStatus.uploading;
+      } else {
+        this.status = PostUploadTaskStatus.complete;
+      }
+    } else if (this.task.files.every(media => media.isCompleted)) {
+      this.status = PostUploadTaskStatus.complete;
+    } else if (
+      this.task.files.find(media => media.status == MediaUploadStatus.cancelled)
+    ) {
+      this.status = PostUploadTaskStatus.cancelled;
+    } else if (
+      this.task.files.find(media => media.status == MediaUploadStatus.error)
+    ) {
+      this.status = PostUploadTaskStatus.error;
+    } else if (this.task.files.find(media => media.isProgressing)) {
+      this.status = PostUploadTaskStatus.progressing;
+    }
+  };
+
+  submit = () => {
+    if (this.task.requiredFile.isCompleted) {
+      this.status = PostUploadTaskStatus.posting;
+    }
+
+    if (this.type === PostUploadTaskType.newPost) {
+      return this.createPost();
+    } else if (this.type === PostUploadTaskType.newThread) {
+      return this.createPostThread();
+    } else {
+      return Promise.reject();
+    }
+  };
+}
+
+type MediaUploadContextValue = {
+  postUploadTask: PostUploadTask | null;
+  setPostUploadTask: (postUploadTask: PostUploadTask | null) => void;
+  progress: number;
+  onPressPost: () => void;
+  status: PostUploadTaskStatus;
+  currentFile: MediaUpload | null;
+};
+export const MediaUploadContext = React.createContext<MediaUploadContextValue | null>(
+  null
+);
+
+export const MediaUploadProvider = ({ children }) => {
+  const client = useApolloClient();
+  const [postUploadTask, setPostUploadTask] = React.useState<PostUploadTask>(
+    null
+  );
+
+  const [progress, setProgress] = React.useState(0.0);
+  const [status, setStatus] = React.useState(
+    postUploadTask?.status ?? PostUploadTaskStatus.waiting
+  );
+
+  const [currentFile, setCurrentFile] = React.useState(
+    postUploadTask?.task?.currentFile
+  );
+
+  const handleProgress = React.useCallback(
+    (progress: number) => {
+      setProgress(progress / 100);
+    },
+    [setProgress]
+  );
+
+  const handleChange = React.useCallback(
+    (upload: PostUploadTask) => {
+      setStatus(upload.status);
+      setCurrentFile(upload.task.currentFile);
+    },
+    [setStatus, setCurrentFile]
+  );
+
+  React.useEffect(() => {
+    if (!postUploadTask) {
+      setProgress(0);
+      setStatus(PostUploadTaskStatus.waiting);
+      setCurrentFile(null);
+      return;
+    }
+
+    postUploadTask.client = client;
+    postUploadTask.onProgress = handleProgress;
+    postUploadTask.onChange = handleChange;
+  }, [
+    setProgress,
+    postUploadTask,
+    client,
+    handleProgress,
+    handleChange,
+    setCurrentFile,
+    setStatus
+  ]);
+
+  const onPressPost = React.useCallback(() => {
+    if (!postUploadTask) {
+      return;
+    }
+
+    const thread = postUploadTask.postThread;
+    const post = postUploadTask.post;
+
+    if (post) {
+      navigate("ViewThread", {
+        threadId: thread.id ?? postUploadTask.threadId,
+        thread: thread,
+        post: post,
+        postId: post.id
+      });
+
+      setPostUploadTask(null);
+    }
+  }, [
+    postUploadTask,
+    postUploadTask?.post?.id,
+    postUploadTask?.postThread?.id,
+    postUploadTask?.status,
+    setPostUploadTask
+  ]);
+
+  const contextValue = React.useMemo(
+    () => ({
+      postUploadTask,
+      setPostUploadTask,
+      progress,
+      onPressPost,
+      status,
+      currentFile
+    }),
+    [
+      postUploadTask,
+      setPostUploadTask,
+      progress,
+      onPressPost,
+      status,
+      currentFile
+    ]
+  );
+
+  return (
+    <MediaUploadContext.Provider value={contextValue}>
+      {children}
+    </MediaUploadContext.Provider>
+  );
+};

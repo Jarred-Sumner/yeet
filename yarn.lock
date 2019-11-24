@@ -8644,10 +8644,10 @@ react-native-permissions@*:
   resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-2.0.3.tgz#b6da83e5e313e41ba5f70ff2c4567291766b0140"
   integrity sha512-8pd+UhyphAiFGzBil5d5pDxRf/rH+20SzDNu9cFnCtoD2MbYTVH7GjXsxaZ2lPsmwrqYYbF8FBfwmncKf/G1+Q==
 
-react-native-permissions@^1.2.0:
-  version "1.2.0"
-  resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-1.2.0.tgz#0deb616bf1565c17c91f1cb1f953809b2892c29e"
-  integrity sha512-+KrP1JZ30RI9p30wsGlGQx22qwiClDnznSQZPpvBMkOIZQ9kXOkLAFXS+vwiHRiiRu/pBMBXYHfI7ng6t2+LbQ==
+react-native-permissions@2.0.0-rc.0:
+  version "2.0.0-rc.0"
+  resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-2.0.0-rc.0.tgz#b2a272d23636d35596e3f6b18ec57c52b7214014"
+  integrity sha512-uyHS/e+Nyp3B4MOce7Gh5UITMuHNFZUL/iYVRiR73JWOK8XJ9OywoLu+A/MreyQBVjuaSVZTT/e5xzYj/MzqFw==
 
 "react-native-photo-manipulator@https://github.com/Jarred-Sumner/react-native-photo-manipulator.git":
   version "1.0.2"

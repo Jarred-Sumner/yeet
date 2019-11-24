@@ -25,7 +25,7 @@ import {
   MediaPlayerPauser,
   MediaPlayerContext
 } from "../components/MediaPlayer";
-import { TOP_Y } from "../../config";
+import { TOP_Y, BOTTOM_Y } from "../../config";
 import { UserContext } from "../components/UserContext";
 import { ModalContext } from "../components/ModalContext";
 import Alert from "../lib/Alert";
@@ -37,9 +37,24 @@ import {
   DeletePostThreadMutationVariables
 } from "../lib/graphql/DeletePostThreadMutation";
 import * as Sentry from "@sentry/react-native";
+import { IconButton } from "../components/Button";
+import {
+  IconCircleAddAlt,
+  IconCircleAdd,
+  IconAdd,
+  IconPlus
+} from "../components/Icon";
+import { COLORS, SPACING } from "../lib/styles";
+import { NewThreadButton } from "../components/ThreadList/NewThreadButton";
 
 const styles = StyleSheet.create({
   postList: {},
+  floatingPlus: {
+    position: "absolute",
+    bottom: BOTTOM_Y + TAB_BAR_HEIGHT,
+    right: SPACING.double,
+    marginBottom: SPACING.double
+  },
   tabBar: {
     position: "absolute",
     bottom: 0,
@@ -47,12 +62,12 @@ const styles = StyleSheet.create({
     right: 0
   },
   wrapper: {
-    backgroundColor: "#111",
+    backgroundColor: "#000",
     flex: 1
   },
   page: {
     flex: 1,
-    backgroundColor: "#111"
+    backgroundColor: "#000"
   }
 });
 
@@ -154,7 +169,7 @@ class FeedPageComponent extends React.Component<Props> {
 
   contentInset = {
     bottom: TAB_BAR_OFFSET,
-    top: TOP_Y,
+    top: 0,
     left: 0,
     right: 0
   };
@@ -174,6 +189,10 @@ class FeedPageComponent extends React.Component<Props> {
           contentInset={this.contentInset}
           ref={this.feedListRef}
         />
+
+        <View style={styles.floatingPlus}>
+          <NewThreadButton />
+        </View>
 
         <BottomTabBar
           onPressCurrentRoute={this.handleScrollTop}

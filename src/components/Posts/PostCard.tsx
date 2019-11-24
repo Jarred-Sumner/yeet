@@ -31,6 +31,7 @@ import { IconComment } from "../Icon";
 import { PostFormat } from "../NewPost/NewPostFormat";
 import { runTiming } from "../../lib/animations";
 import { runSpring, runDecay, decay } from "react-native-redash";
+import { memoize } from "lodash";
 
 const BORDER_RADIUS = 24;
 const AVATAR_SIZE = 24;
@@ -236,8 +237,9 @@ const getPostOpacity = Animated.proc(
     )
 );
 
-export const calculatePostHeight = (post: PostFragment) =>
-  scaleToWidth(SCREEN_DIMENSIONS.width, post.media).height;
+export const calculatePostHeight = (post: PostFragment) => {
+  return scaleToWidth(SCREEN_DIMENSIONS.width, post.media).height;
+};
 
 enum PostCardState {
   shown = "shown",

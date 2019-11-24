@@ -55,8 +55,53 @@ class ContentExportError : NSError {
   }
 }
 
+fileprivate let ContentExportThumbnailSize = CGSize(width: 80, height: 80)
+
+struct ContentExportThumbnail {
+  let uri: String
+  let width: Double
+  let height: Double
+  let type: ExportType
+
+  init?(asset: AVURLAsset) {
+    let imageGenerator = AVAssetImageGenerator(asset: asset)
+    imageGenerator.maximumSize = ContentExportThumbnailSize.applying(CGAffineTransform.init(scaleX: CGFloat(2), y: CGFloat(2)))
+
+     do {
+       let cgImage = try imageGenerator.copyCGImage(at: .zero, actualTime: nil)
+       let image = UIImage(cgImage: cgImage).sd_resizedImage(with: ContentExportThumbnailSize, scaleMode: .aspectFill)!
+       let data = image.jpegData(compressionQuality: 0.9)!
+
+       let thumbnailUrl = VideoProducer.generateExportURL(type: .jpg)
+       try data.write(to: thumbnailUrl)
+
+       self.init(uri: thumbnailUrl.absoluteString, width: Double(image.size.width), height:  Double(image.size.height), type: .jpg)
+     } catch {
+      return nil
+     }
+  }
+
+
+  init(uri: String, width: Double, height: Double, type: ExportType) {
+    self.uri = uri
+    self.width = width
+    self.height = height
+    self.type = type
+  }
+
+  func dictionaryValue() -> Dictionary<String, Any> {
+    return [
+      "uri": self.uri as NSString,
+      "width": NSNumber(value: self.width),
+      "height": NSNumber(value: self.height),
+      "type": type.rawValue,
+    ]
+  }
+}
+
 class ContentExport {
 
+  
   static let CONVERT_PNG_TO_WEBP = true
 
   #if DEBUG
@@ -84,13 +129,15 @@ class ContentExport {
   let type: ExportType
   let duration: TimeInterval
   let colors: UIImageColors?
+  var thumbnail: ContentExportThumbnail? = nil
 
-  init(url: URL, resolution: CGSize, type: ExportType, duration: TimeInterval, colors: UIImageColors?) {
+  init(url: URL, resolution: CGSize, type: ExportType, duration: TimeInterval, colors: UIImageColors?, thumbnail: ContentExportThumbnail? = nil) {
     self.url = url
     self.resolution = resolution
     self.type = type
     self.duration = duration
     self.colors = colors
+    self.thumbnail = thumbnail
   }
 
   func dictionaryValue() -> [String: Any] {
@@ -100,6 +147,12 @@ class ContentExport {
       "height": NSNumber(value: Double(resolution.height)),
       "type": NSString(string: type.rawValue),
       "duration": NSNumber(value: Double(duration)),
+      "thumbnail": thumbnail?.dictionaryValue() ?? [
+        "uri": url.absoluteString as NSString,
+        "width": NSNumber(value: Double(resolution.width)),
+        "height": NSNumber(value: Double(resolution.height)),
+        "type": NSString(string: type.rawValue),
+      ],
       "colors": [
         "background": colors?.background.rgbaString,
         "primary": colors?.primary.rgbaString,
@@ -469,7 +522,7 @@ class ContentExport {
               let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
               layerInstruction.setTransform(layerTransform, at: .zero)
               instruction.layerInstructions.append(layerInstruction)
-              track.preferredTransform = vidAsset.preferredTransform
+            track.preferredTransform = vidAsset.preferredTransform
               track.naturalTimeScale = vidAsset.naturalTimeScale
 
 
@@ -564,10 +617,22 @@ Bounds diff:
           return
         }
 
-        guard let assetExport = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality) else {
+        let presetName: String
+
+        if videoCount == 1 && resources.count == 1 && resources.first?.block?.value.image.isVideo ?? false {
+          presetName = AVAssetExportPresetPassthrough
+        } else if AVURLAsset.hasHEVCHardwareEncoder {
+          presetName = AVAssetExportPresetHEVCHighestQuality
+        } else {
+          presetName = AVAssetExportPresetHighestQuality
+        }
+
+        guard let assetExport = AVAssetExportSession(asset: composition, presetName: presetName) else {
           reject(ContentExportError(.failedToCreateExportSession))
           return
         }
+
+
 
         let canSkipCrop = renderSize == cropRect.size && cropRect.origin == .zero
         assetExport.outputFileType = AVFileType.mp4
@@ -582,6 +647,11 @@ Bounds diff:
         SwiftyBeaver.info("Preparing video export with \(resources.count) completed in \(timeSpentPreparing)s")
         SwiftyBeaver.info("Starting video export...")
         let startExportTime = CACurrentMediaTime()
+
+//        if assetExport.estimatedOutputFileLength > 50000000 {
+//          assetExport.presetName = AVAssetExportPresetHighest
+//        }
+
         assetExport.exportAsynchronously {
           VideoProducer.contentExportQueue.async {
             let status = assetExport.status
@@ -597,26 +667,29 @@ Cropping video...
 """)
 
                 if canSkipCrop {
-                  let resolution = cropRect.size
+                  let resolution = fullAsset.tracks(withMediaType: .video).first?.naturalSize ?? cropRect.size
                   var colors: UIImageColors? = nil
+                  let thumbnail = ContentExportThumbnail(asset: fullAsset)
 
                   let timeSpentExporting = CACurrentMediaTime() - startExportTime
                   SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
 
-                  resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
+
+
+                  resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                 } else {
                   fullAsset.crop(to: cropRect, dest: url).then(on: VideoProducer.contentExportQueue) { asset in
-                    let resolution = cropRect.size
+                    let resolution = asset.tracks(withMediaType: .video).first?.naturalSize ?? cropRect.size
                     var colors: UIImageColors? = nil
+
+                    let thumbnail = ContentExportThumbnail(asset: asset)
 
                     let timeSpentExporting = CACurrentMediaTime() - startExportTime
                     SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
 
-                    resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors))
+                    resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                   }
                 }
-
-
 
 
 
@@ -640,20 +713,41 @@ Cropping video...
         let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale, exportType: type)
 
          let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
+
+        let thumbnailSize = ContentExportThumbnailSize
+        let thumbnailImage = fullImage.sd_resizedImage(with: thumbnailSize, scaleMode: .aspectFill)
+
         let imageData: NSData
+        let thumbnailData: NSData
+        let thumbnailType: ExportType
+
+
         let compressionQuality = isDigitalOnly ? CGFloat(1) : CGFloat(0.99)
         if (type == ExportType.png) {
           imageData = fullImage.pngData()! as NSData
+          thumbnailData = thumbnailImage!.pngData()! as NSData
+          thumbnailType = .png
         } else if (type == ExportType.webp) {
           imageData = SDImageWebPCoder.shared.encodedData(with: fullImage, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality:compressionQuality, SDImageCoderOption.encodeFirstFrameOnly: 0])! as NSData
+
+          thumbnailData = thumbnailImage!.pngData()! as NSData
+          thumbnailType = .png
         } else {
           imageData = fullImage.jpegData(compressionQuality: compressionQuality)! as NSData
+          thumbnailData = thumbnailImage!.jpegData(compressionQuality: compressionQuality)! as NSData
+          thumbnailType = .jpg
         }
 
+        let thumbnailUrl = VideoProducer.generateExportURL(type: thumbnailType)
+
         imageData.write(to: url, atomically: true)
+        thumbnailData.write(to: thumbnailUrl, atomically: true)
         let resolution = fullImage.size
 
-        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: nil))
+
+        let thumbnail = ContentExportThumbnail(uri: thumbnailUrl.absoluteString, width: Double(thumbnailSize.width), height: Double(thumbnailSize.height), type: thumbnailType)
+
+        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: nil, thumbnail: thumbnail))
 
 //        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
       }

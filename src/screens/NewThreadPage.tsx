@@ -29,6 +29,13 @@ import { ToastType, sendToast } from "../components/Toast";
 import { PostFragment } from "../lib/graphql/PostFragment";
 import { CreatePost_createPost } from "../lib/graphql/CreatePost";
 import { CreatePostThread_createPostThread } from "../lib/graphql/CreatePostThread";
+import {
+  MediaUploadContext,
+  PostUploadTask,
+  PostUploadTaskType
+} from "../lib/MediaUploadTask";
+import { debounce } from "lodash";
+import { sendLightFeedback } from "../lib/Vibration";
 
 const ProfileTop = () => {
   const { currentUser } = React.useContext(UserContext);
@@ -136,14 +143,23 @@ type Props = {
 class RawNewThreadPage extends React.Component<Props> {
   state = {
     body: "",
+    isInputFocused: false,
     startExport: false
   };
 
+  _handleCreate = debounce(() => {
+    this.handleUpload();
+  }, 100);
+
   handleCreate = () => {
-    this.setState({ startExport: true }, () => {
-      this.postUploaderRef.current.startUploading(true);
-    });
+    if (this.state.body.length === 0) {
+      sendToast("Please enter title", ToastType.error);
+      return;
+    }
+
+    this._handleCreate();
   };
+
   handleChangeBody = (body: string) => this.setState({ body });
   contentOffset = {
     y: THREAD_HEADER_HEIGHT * -1,
@@ -155,42 +171,36 @@ class RawNewThreadPage extends React.Component<Props> {
 
   componentDidMount() {
     this.textInputRef.current.focus();
+    this.setState({ isInputFocused: true });
   }
 
   handleUpload = async (mediaId: string) => {
-    const { exportData, contentExport, format } = this.props;
+    const { exportData, contentExport, format, setPostUploadTask } = this.props;
 
     const { blocks, nodes, bounds, colors } = exportData;
 
     const { body } = this.state;
 
-    const thread = await this.postUploaderRef.current.createPostThread({
-      mediaId,
-      autoplaySeconds: contentExport.duration,
-      blocks,
-      nodes,
-      body,
+    const uploadTask = new PostUploadTask({
+      contentExport,
+      exportData,
       format,
-      bounds,
-      colors: {
-        background: contentExport.colors?.background ?? null,
-        primary: contentExport.colors?.primary ?? null,
-        secondary: contentExport.colors?.secondary ?? null,
-        detail: contentExport.colors?.detail ?? null
-      }
+      threadId: null,
+      body: body,
+      type: PostUploadTaskType.newThread
     });
 
-    console.log({ thread });
-    sendToast("Posted successfully", ToastType.success);
-    this.setState(
-      {
-        startExport: false
-      },
-      () => {
-        this.props.onDone(thread);
-      }
-    );
+    uploadTask.start();
+
+    setPostUploadTask(uploadTask);
+
+    sendLightFeedback();
+
+    this.props.onDismiss();
   };
+
+  setFocused = () => this.setState({ isInputFocused: true });
+  setBlur = () => this.setState({ isInputFocused: false });
 
   render() {
     const { body, contentExport, exportData } = this.props;
@@ -223,6 +233,8 @@ class RawNewThreadPage extends React.Component<Props> {
             selectionColor={COLORS.primary}
             blurOnSubmit
             textContentType="none"
+            onFocus={this.setFocused}
+            onBlur={this.setBlur}
             maxLength={36}
             keyboardAppearance="dark"
             returnKeyType="next"
@@ -233,10 +245,10 @@ class RawNewThreadPage extends React.Component<Props> {
             {contentExport ? (
               <PostPreviewItem
                 onPress={this.handlePressPost}
-                width={getPostPreviewWidth(contentExport)}
+                width={getPostPreviewWidth(contentExport) * 0.8}
                 height={
                   scaleToWidth(
-                    getPostPreviewWidth(contentExport),
+                    getPostPreviewWidth(contentExport) * 0.8,
                     contentExport
                   ).height
                 }
@@ -257,20 +269,12 @@ class RawNewThreadPage extends React.Component<Props> {
 
           <Button
             onPress={this.handleCreate}
-            style={styles.button}
+            style={[styles.button]}
             color={COLORS.primary}
           >
-            Create new thread
+            Post new thread
           </Button>
         </KeyboardAwareScrollView>
-        <PostUploader
-          visible={this.state.startExport}
-          ref={this.postUploaderRef}
-          onUpload={this.handleUpload}
-          onCancel={this.handleCancel}
-          file={contentExport}
-          data={exportData}
-        />
       </View>
     );
   }
@@ -281,24 +285,19 @@ export const NewThreadPage = props => {
   const exportData = useNavigationParam("exportData");
   const format = useNavigationParam("format");
   const navigation = useNavigation();
+  const { setPostUploadTask } = React.useContext(MediaUploadContext);
 
-  const onDone = React.useCallback(
-    (thread: CreatePostThread_createPostThread) => {
-      navigation.dismiss();
-      navigation.navigate("ViewThread", {
-        threadId: thread.id,
-        thread
-      });
-    },
-    [navigation]
-  );
+  const onDismiss = React.useCallback(() => {
+    navigation.dismiss();
+  }, [navigation]);
 
   return (
     <RawNewThreadPage
       contentExport={contentExport}
       exportData={exportData}
       format={format}
-      onDone={onDone}
+      setPostUploadTask={setPostUploadTask}
+      onDismiss={onDismiss}
     />
   );
 };

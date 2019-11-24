@@ -16,7 +16,8 @@ export enum NotificationKind {
   liked_post = "liked_post",
   remixed_post = "remixed_post",
   new_post_in_thread = "new_post_in_thread",
-  started_following_you = "started_following_you"
+  started_following_you = "started_following_you",
+  new_comment = "new_comment"
 }
 
 export enum NotificationObjectType {
@@ -42,10 +43,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     paddingHorizontal: SPACING.normal,
-
     alignItems: "center",
     overflow: "hidden",
-    height: NOTIFICATION_HEIGHT
+    height: NOTIFICATION_HEIGHT,
+    backgroundColor: "#000"
+  },
+  unreadContainer: {
+    backgroundColor: "#111"
   },
   spacer: {
     width: SPACING.normal,
@@ -182,6 +186,12 @@ const NotificationListItemComponent = ({
     />
   );
 
+  const unreadStyles = React.useMemo(
+    () => [styles.container, styles.unreadContainer],
+    []
+  );
+  const readStyles = React.useMemo(() => styles.container, []);
+
   return (
     <TouchableHighlight
       onLongPress={onLongPress}
@@ -189,7 +199,9 @@ const NotificationListItemComponent = ({
       onPress={onPress}
       underlayColor={"#333"}
     >
-      <View style={styles.container}>
+      <View
+        style={notification.status === "unread" ? unreadStyles : readStyles}
+      >
         {avatar}
         <View style={styles.spacer} />
         {label}

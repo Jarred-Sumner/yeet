@@ -14,13 +14,13 @@ export const shouldShowPushNotificationModal = async (
 ) => {
   const { status } = await checkNotifications();
 
-  if (status === "denied" || status === "blocked" || status === "granted") {
+  if (status === "granted" || status === "blocked") {
     return false;
   }
 
-  const hasDeclinedModal = Storage.hasDismissedPushNotificationModal();
+  const hasDeclinedModal = await Storage.hasDismissedPushNotificationModal();
 
-  if (!aggressive && hasDeclinedModal) {
+  if (hasDeclinedModal) {
     return false;
   }
 
@@ -99,7 +99,9 @@ const PushNotificationModalComponent = ({ onYes, onNo }) => {
 
 export const PushNotificationModal = ({ visible, onDismiss }) => {
   const handleYes = React.useCallback(() => {
-    OneSignal.registerForPushNotifications(permission);
+    OneSignal.registerForPushNotifications();
+    Storage.setDismissedPushNotificationModal(true);
+    onDismiss();
   }, [onDismiss]);
 
   const handleNo = React.useCallback(() => {

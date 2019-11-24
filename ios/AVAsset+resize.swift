@@ -13,9 +13,25 @@ import Promise
 import SwiftyBeaver
 import Photos
 import NextLevelSessionExporter
-
+import VideoToolbox
 
 extension AVURLAsset {
+  public static let hasHEVCHardwareEncoder: Bool = {
+      let spec: [CFString: Any]
+      #if os(macOS)
+          spec = [ kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder: true ]
+      #else
+          spec = [:]
+      #endif
+      var outID: CFString?
+      var properties: CFDictionary?
+      let result = VTCopySupportedPropertyDictionaryForEncoder(width: 1920, height: 1080, codecType: kCMVideoCodecType_HEVC, encoderSpecification: spec as CFDictionary, encoderIDOut: &outID, supportedPropertiesOut: &properties)
+      if result == kVTCouldNotFindVideoEncoderErr {
+          return false // no hardware HEVC encoder
+      }
+      return result == noErr
+  }()
+
 //  static func resolveCameraURL(cameraURL: URL) -> Promise<URL> {
 //    return Promise<URL>() { resolve, reject in
 //      let fetchOpts = PHFetchOptions.init()
@@ -78,20 +94,20 @@ extension AVURLAsset {
         let composition = AVMutableComposition()
 
         guard let videoTrack = asset.tracks(withMediaType: .video).first else {
-          reject(NSError(domain: "com.codeblogcorp.yeet", code: 404))
+          reject(YeetError(.videoTrackError))
           return
         }
 
         guard let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
-          reject(NSError(domain: "com.codeblogcorp.yeet", code: 999))
+          reject(YeetError(.videoTrackError))
           return
         }
-        try! track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
 
-        asset.tracks(withMediaType: .audio).forEach { audioTrack in
-          if let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)  {
-            try! track.insertTimeRange(audioTrack.timeRange, of: audioTrack, at: .zero)
-          }
+        do {
+          try track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
+        } catch {
+          reject(YeetError(.insertVideoTrackError))
+          return
         }
 
         let instruction = AVMutableVideoCompositionInstruction()
@@ -106,49 +122,12 @@ extension AVURLAsset {
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
 
-        var naturalSize = videoTrack.naturalSize
-
-        var transform = videoTrack.preferredTransform
-
-//        let rect = CGRect(x: 0, y: 0, width: naturalSize.width, height: naturalSize.height)
-//        let transformedRect = rect.applying(transform)
-//        // transformedRect should have origin at 0 if correct; otherwise add offset to correct it
-//        transform.tx -= transformedRect.origin.x;
-//        transform.ty -= transformedRect.origin.y;
-//
-//
-//        let videoAngleInDegrees = atan2(transform.b, transform.a) * 180 / .pi
-//        if videoAngleInDegrees == 90 || videoAngleInDegrees == -90 {
-//            let tempWidth = naturalSize.width
-//            naturalSize.width = naturalSize.height
-//            naturalSize.height = tempWidth
-//        }
-
         let _to = to.h264Friendly()
 
         let scaleX = to.width / _to.width
         let scaleY = to.height / _to.height
 
         videoComposition.renderSize = _to.size
-
-        // center the video
-//
-//        var ratio: CGFloat = 0
-//        let xRatio: CGFloat = targetSize.width / naturalSize.width
-//        let yRatio: CGFloat = targetSize.height / naturalSize.height
-//        ratio = min(xRatio, yRatio)
-//
-//        let postWidth = naturalSize.width * ratio
-//        let postHeight = naturalSize.height * ratio
-//        let transX = (targetSize.width - postWidth) * 0.5
-//        let transY = (targetSize.height - postHeight) * 0.5
-//
-//        var matrix = CGAffineTransform(translationX: (transX / xRatio), y: (transY / yRatio))
-//        matrix = matrix.scaledBy(x: (ratio / xRatio), y: (ratio / yRatio))
-//        transform = transform.concatenating(matrix)
-
-
-
         let scaleTransform = CGAffineTransform.init(scaleX: scaleX, y: scaleY)
 //        let scaleTransform = CGAffineTransform.init(scaleX: scaleX, y: scaleY)
 
@@ -160,6 +139,17 @@ extension AVURLAsset {
 
         layerInstruction.setCropRectangle(_to, at: .zero)
 
+        if let audioTrack = asset.tracks(withMediaType: .audio).first {
+          if let track = composition.addMutableTrack(withMediaType: .audio, preferredTrackID: kCMPersistentTrackID_Invalid)  {
+            do {
+              try track.insertTimeRange(audioTrack.timeRange, of: audioTrack, at: .zero)
+            } catch {
+              reject(YeetError(.insertAudioTrackError))
+              return
+            }
+          }
+        }
+
 
 
         let duration = CMTimeGetSeconds(videoTrack.timeRange.duration)
@@ -167,10 +157,14 @@ extension AVURLAsset {
         var presetName = AVAssetExportPresetMediumQuality
 
         if duration < 60.0 {
-          if AVAssetExportSession.allExportPresets().contains(AVAssetExportPresetHEVCHighestQuality) {
+          if AVURLAsset.hasHEVCHardwareEncoder {
             presetName = AVAssetExportPresetHEVCHighestQuality
           } else {
             presetName = AVAssetExportPresetHighestQuality
+          }
+
+          if !AVAssetExportSession.exportPresets(compatibleWith: asset).contains(presetName) {
+            presetName = AVAssetExportPresetMediumQuality
           }
 
 //          if videoComposition.renderSize.width <= 640 && videoComposition.renderSize.height <= 480 {
@@ -187,27 +181,33 @@ extension AVURLAsset {
         }
 
         guard let exportSession = AVAssetExportSession(asset: composition, presetName: presetName) else {
-          reject(NSError(domain: "com.codeblogcorp.yeet", code: 999))
+          reject(YeetError.init(code: .failedToCreateExportSession))
           return
         }
 
         exportSession.videoComposition = videoComposition
         exportSession.outputURL = dest
-        exportSession.outputFileType = .he
+        exportSession.outputFileType = .mp4
+        exportSession.timeRange = videoTrack.timeRange
+        
 
         exportSession.shouldOptimizeForNetworkUse = true
 
           exportSession.exportAsynchronously {
              switch (exportSession.status) {
                case .completed:
+                  SwiftyBeaver.info("AVAssetExportSession crop completed.")
                  let asset = AVURLAsset(url: dest)
                  resolve(asset)
                case .cancelled:
+                SwiftyBeaver.info("AVAssetExportSession crop  canceled.")
                  break
                case .waiting:
+                SwiftyBeaver.info("AVAssetExportSession crop is waiting.")
                  break
                default:
-                 reject(exportSession.error ?? NSError(domain: "com.codeblogcorp.yeet", code: 999))
+                SwiftyBeaver.error("AVAssetExportSession crop is error \(exportSession.status).", context: exportSession.error)
+                reject(exportSession.error ?? YeetError.init(code: .genericError))
                  break
              }
            }

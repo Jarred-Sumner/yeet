@@ -65,10 +65,16 @@ GlobalViewProfilePage.navigationOptions = {
 
 const SHARED_GLOBAL_SCREENS = {
   ViewProfile: {
-    screen: GlobalViewProfilePage
+    screen: GlobalViewProfilePage,
+    navigationOptions: {
+      header: null
+    }
   },
   ViewThread: {
-    screen: ThreadPage
+    screen: ThreadPage,
+    navigationOptions: {
+      header: null
+    }
   }
 };
 
@@ -92,7 +98,7 @@ const _AppContainer = memoize(initialRouteName => {
                       },
                       {
                         cardStyle: {
-                          backgroundColor: "#000"
+                          backgroundColor: "#111"
                         },
                         headerMode: "none",
                         defaultNavigationOptions: ({ navigation }) => ({
@@ -101,7 +107,7 @@ const _AppContainer = memoize(initialRouteName => {
                       },
                       {
                         cardStyle: {
-                          backgroundColor: "#000"
+                          backgroundColor: "#111"
                         },
 
                         headerMode: "none",
@@ -119,8 +125,10 @@ const _AppContainer = memoize(initialRouteName => {
                           navigationOptions: navigation => ({
                             title: "Activity",
                             headerTintColor: "#f1f1f1",
+
                             headerStyle: {
-                              backgroundColor: "#000"
+                              backgroundColor: "#000",
+                              borderBottomColor: "#111"
                             }
                           })
                         },
@@ -141,7 +149,6 @@ const _AppContainer = memoize(initialRouteName => {
                     )
                   },
                   {
-                    headerMode: "none",
                     tabBarComponent: () => null,
                     // initialRouteName: "ProfileTab",
 
@@ -151,11 +158,9 @@ const _AppContainer = memoize(initialRouteName => {
                       left: "never",
                       right: "never"
                     },
-                    tabBarOptions: {
-                      keyboardHidesTabBar: true
-                    },
+
                     cardStyle: {
-                      backgroundColor: "#000"
+                      backgroundColor: "rgba(0, 0, 0, 0.95)"
                     }
                   }
                 ),

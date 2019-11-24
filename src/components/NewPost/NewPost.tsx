@@ -7,7 +7,7 @@ import Animated, {
   Transitioning,
   Easing
 } from "react-native-reanimated";
-import { withNavigation } from "react-navigation";
+import { withNavigation, withNavigationFocus } from "react-navigation";
 import {
   BOTTOM_Y,
   IS_DEVELOPMENT,
@@ -385,6 +385,7 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   formatPickerRef = React.createRef<FormatPicker>();
+  pauser = React.createRef();
 
   render() {
     const { step, showUploader, uploadData, inlineNodes } = this.state;
@@ -416,7 +417,9 @@ class RawNewPost extends React.Component<{}, State> {
                   style={styles.transitionContainer}
                   key={`${this.state.post.format}-${this.state.step}`}
                 >
-                  <MediaPlayerPauser>{this.renderStep()}</MediaPlayerPauser>
+                  <MediaPlayerPauser ref={this.pauser}>
+                    {this.renderStep()}
+                  </MediaPlayerPauser>
                 </Animated.View>
               </Transitioning.View>
 
@@ -438,8 +441,11 @@ class RawNewPost extends React.Component<{}, State> {
     this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
 
-  handleSubmit = (contentExport: ContentExport, data: ExportData) =>
-    this.props.onExport(contentExport, data, this.state.post.format);
+  handleSubmit = (contentExport: ContentExport, data: ExportData) => {
+    this.pauser.current.pausePlayers();
+
+    return this.props.onExport(contentExport, data, this.state.post.format);
+  };
 
   renderStep() {
     const { inlineNodes, step } = this.state;
@@ -510,7 +516,7 @@ class RawNewPost extends React.Component<{}, State> {
 }
 
 export const NewPost = hoistNonReactStatics(
-  withNavigation(RawNewPost),
+  withNavigationFocus(withNavigation(RawNewPost)),
   RawNewPost
 );
 export default NewPost;

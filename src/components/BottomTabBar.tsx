@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
       .darken(25)
       .toRgbString(),
     position: "absolute",
-    top: -9,
-    right: -9,
+    top: -6,
+    right: -6,
     alignItems: "center",
     justifyContent: "center"
     // transform: [{ scale: 0.9 }]
@@ -132,7 +132,7 @@ const TabBarIcon = ({
             size={26}
             color={focused ? "#fff" : "#999"}
           />
-          {/* {badgeCount > 0 && (
+          {badgeCount > 0 && (
             <View
               style={[
                 styles.badgeContainer,
@@ -147,7 +147,7 @@ const TabBarIcon = ({
                 {Math.min(badgeCount, 99)}
               </BoldText>
             </View>
-          )} */}
+          )}
         </View>
       </Animated.View>
     </TouchableOpacity>
@@ -163,8 +163,7 @@ const ROUTE_LABELS = {
 
 const ROUTES_ICONS_MAPPING = {
   FeedTab: [IconHomeAlt, IconHome],
-  NewPostStack: [IconCircleAdd, IconCircleAdd],
-  NotificationsTab: [IconNotificationAlt, IconNotification],
+  NotificationsTab: [IconNotification, IconNotification],
   ProfileTab: [IconProfileAlt, IconProfile]
 };
 
@@ -212,6 +211,7 @@ export const BottomTabBar = ({ style, currentRoute, onPressCurrentRoute }) => {
           openRoute(route);
         }
       }, [onPressCurrentRoute, isFocused, route, openRoute]);
+
       return (
         <TabBarIcon
           key={route}

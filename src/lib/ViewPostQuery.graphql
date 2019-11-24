@@ -3,5 +3,6 @@
 query ViewPost($id: ID!) {
   post(id: $id) {
     ...PostFragment
+    threadId
   }
 }

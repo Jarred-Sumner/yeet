@@ -39,7 +39,8 @@ import { PostFlatList } from "../components/ThreadList/ViewThread";
 import { sendToast, ToastType } from "../components/Toast";
 import {
   RequireAuthenticationFunction,
-  UserContext
+  UserContext,
+  AuthState
 } from "../components/UserContext";
 import DELETE_COMMENT_MUTATION from "../lib/DeleteCommentMutation.graphql";
 import DELETE_POST_MUTATION from "../lib/DeletePostMutation.graphql";
@@ -186,6 +187,9 @@ class ThreadPageComponent extends React.Component<Props, State> {
     hasScrolledToInitialPost: false,
     composerProps: {}
   };
+
+  static navigationOptions = navigation => ({ headerMode: "none" });
+
   // static sharedElements = (navigation, otherNavigation, showing) => {
   //   // Transition element `item.${item.id}.photo` when either
   //   // showing or hiding this screen (coming from any route)
@@ -254,20 +258,26 @@ class ThreadPageComponent extends React.Component<Props, State> {
   keyboardVisibleValue = new Animated.Value<number>(0);
 
   handlePressLike = async (postId: string) => {
-    const authed = await this.props.requireAuthentication();
-    if (!authed) {
-      return;
+    if (this.props.authState !== AuthState.loggedIn) {
+      const authed = await this.props.requireAuthentication();
+      if (!authed) {
+        return;
+      }
     }
 
     await this.props.onLikePost({ variables: { postId } });
+
     return this.autoRequestPush();
   };
 
   autoRequestPush = async () => {
     const shouldRequestPush = await shouldShowPushNotificationModal();
+
     if (shouldRequestPush) {
-      this.props.openPushNotificationModal();
+      return this.props.openPushNotificationModal();
     }
+
+    return false;
   };
 
   handlePressProfile = (profile: ViewThread_postThread_posts_data_profile) => {
@@ -487,7 +497,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
 
         <PostFlatList
           posts={posts}
-          topInset={THREAD_HEADER_HEIGHT + 4}
+          topInset={0}
           bottomInset={THREAD_REPLY_BUTTON_HEIGHT}
           composingPostId={this.state.composerProps?.postId}
           onPressLike={this.handlePressLike}
@@ -568,7 +578,8 @@ const _ThreadPage = () => {
     VIEW_THREAD_QUERY,
     {
       notifyOnNetworkStatusChange: true,
-      returnPartialData: true,
+      returnPartialData: false,
+      partialRefetch: false,
       fetchPolicy: "cache-and-network",
       variables: {
         threadId,
@@ -580,7 +591,9 @@ const _ThreadPage = () => {
   const [onLikePost] = useMutation<LikePost, LikePostVariables>(
     LIME_POST_QUERY
   );
-  const { userId, requireAuthentication } = React.useContext(UserContext);
+  const { userId, requireAuthentication, authState } = React.useContext(
+    UserContext
+  );
   const { openReportModal, openPushNotificationModal } = React.useContext(
     ModalContext
   );
@@ -623,6 +636,7 @@ const _ThreadPage = () => {
       userId={userId}
       deletePost={deletePost}
       requireAuthentication={requireAuthentication}
+      authState={authState}
       deleteComment={deleteComment}
       posts={thread?.posts?.data ?? []}
       thread={thread}

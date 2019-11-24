@@ -16,7 +16,7 @@ import {
   View,
   RefreshControl
 } from "react-native";
-import { SCREEN_DIMENSIONS } from "../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import {
   ViewThreads,
   ViewThreadsVariables,
@@ -32,8 +32,10 @@ import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";
 import { scaleToWidth } from "../../lib/Rect";
+import { MediaUploadContext } from "../../lib/MediaUploadTask";
+import { MediaUploadProgress } from "../MediaUploadProgress";
 
-const ITEM_SEPARATOR_HEIGHT = SPACING.normal;
+const ITEM_SEPARATOR_HEIGHT = SPACING.half;
 
 type Props = {
   threads: Array<ViewThreads_postThreads_data>;
@@ -54,8 +56,10 @@ const styles = StyleSheet.create({
     flex: 1
   },
   separator: {
-    height: ITEM_SEPARATOR_HEIGHT,
-    width: 1
+    height: 1,
+    marginVertical: ITEM_SEPARATOR_HEIGHT / 2 - 1,
+    width: SCREEN_DIMENSIONS.width,
+    backgroundColor: "#111"
   }
 });
 
@@ -231,7 +235,7 @@ class FeedListComponent extends React.Component<Props, State> {
 
   handleRefresh = () => {
     try {
-      this.props.refetch();
+      typeof this.props.refetch === "function" && this.props.refetch();
     } catch (exception) {
       Sentry.captureException(exception);
       console.error(exception);
@@ -239,13 +243,12 @@ class FeedListComponent extends React.Component<Props, State> {
   };
 
   scrollToTop = () => {
-    this.flatListRef.current.scrollToIndex({
-      index: 0,
+    this.flatListRef.current.scrollToOffset({
+      offset: TOP_Y * -1,
       animated: true,
-      viewPosition: 0,
-      viewOffset: this.props.contentInset.top
+      viewPosition: 0
     });
-    this.handleRefresh();
+    // this.handleRefresh();
   };
 
   render() {
@@ -258,6 +261,7 @@ class FeedListComponent extends React.Component<Props, State> {
       refetch,
       error,
       initialLoad,
+      showMediaUpload,
       ...otherProps
     } = this.props;
 
@@ -268,6 +272,7 @@ class FeedListComponent extends React.Component<Props, State> {
         contentInsetAdjustmentBehavior="automatic"
         removeClippedSubviews={false}
         directionalLockEnabled
+        scrollToOverflowEnabled
         vertical
         viewabilityConfig={this.viewabilityConfig}
         {...otherProps}
@@ -276,6 +281,7 @@ class FeedListComponent extends React.Component<Props, State> {
         onRefresh={this.handleRefresh}
         renderItem={this.renderItem}
         ItemSeparatorComponent={ItemSeparatorComponent}
+        ListHeaderComponent={showMediaUpload ? MediaUploadProgress : null}
         keyExtractor={this.keyExtractor}
         initialNumToRender={6}
         refreshControl={
@@ -313,6 +319,7 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
   const _threads = uniqBy(threadsQuery?.data?.postThreads.data ?? [], "id");
   const threads = _threads.filter(thread => thread.posts.data.length > 0);
   const isFocused = useIsFocused();
+  const { postUploadTask } = React.useContext(MediaUploadContext);
 
   return (
     <FeedListComponent
@@ -323,6 +330,7 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
       refetch={threadsQuery.refetch}
+      showMediaUpload={!!postUploadTask}
       refreshing={threadsQuery.networkStatus === NetworkStatus.refetch}
       loading={[
         NetworkStatus.loading,

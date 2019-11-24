@@ -35,20 +35,29 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         return
       }
 
+      let start = CACurrentMediaTime()
       self.getImages(data: exportData).then { images in
-        self.producer = VideoProducer(data: exportData, images: images)
+        let producer = VideoProducer(data: exportData, images: images)
+        self.producer = producer
 
         let boundsDict = exportData["bounds"].dictionaryValue
 
         let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
-        self.producer?.start(estimatedBounds: bounds, isServerOnly: isServerOnly, scale: UIScreen.main.scale, callback: callback)
+
+        producer.start(estimatedBounds: bounds, isServerOnly: isServerOnly, scale: UIScreen.main.scale).then(on: DispatchQueue.main) { export in
+            SwiftyBeaver.info("Completed ContentExport in \(CACurrentMediaTime() - start)")
+
+            callback([nil, export.dictionaryValue()])
+          }.catch { error in
+            callback([error, nil])
+          }
       }
 
     }
 
   }
 
-  func captureTextScreenshot(view: UIView) -> UIImage? {
+  func captureScreenshot(view: UIView) -> UIImage? {
     let size = view.bounds.size
 
     UIGraphicsBeginImageContextWithOptions(size, false, 0);
@@ -111,7 +120,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         }
 
         if block["type"].stringValue == "text" {
-          guard let screenshot = self.captureTextScreenshot(view: view) else {
+          guard let screenshot = self.captureScreenshot(view: view) else {
             return
           }
 

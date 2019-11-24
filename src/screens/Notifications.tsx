@@ -8,9 +8,13 @@ import {
   NotificationPressFunction,
   NotificationObjectType
 } from "../components/Notifications/NotificationListItem";
+import { useLazyQuery, useApolloClient } from "react-apollo";
+import VIEW_POST_QUERY from "../lib/ViewPostQuery.graphql";
+import { ViewPost, ViewPostVariables } from "../lib/graphql/ViewPost";
 
 export const NotificationsPage = ({}) => {
   const navigation = useNavigation();
+  const client = useApolloClient();
 
   const handlePressAvatar: NotificationPressAvatarFunction = React.useCallback(
     (profileId: string) => {
@@ -22,16 +26,33 @@ export const NotificationsPage = ({}) => {
   const handlePressNotification: NotificationPressFunction = React.useCallback(
     (id: string, type: NotificationObjectType) => {
       if (type === NotificationObjectType.post) {
-        navigation.navigate("ViewPost", { postId: id });
+        client
+          .query<ViewPost, ViewPostVariables>({
+            query: VIEW_POST_QUERY,
+            variables: {
+              id: id
+            }
+          })
+          .then(result => {
+            const post = result?.data?.post;
+
+            if (post) {
+              navigation.navigate("ViewThread", {
+                threadId: post.threadId,
+                post,
+                postId: post.id
+              });
+            }
+          });
       } else if (type === NotificationObjectType.profile) {
         navigation.navigate("ViewProfile", { profileId: id });
       }
     },
-    [navigation]
+    [navigation, client]
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#111" }}>
+    <View style={{ flex: 1, backgroundColor: "#000" }}>
       <NotificationsList
         contentOffset={{
           y: 0,

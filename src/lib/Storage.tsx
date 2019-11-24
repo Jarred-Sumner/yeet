@@ -37,7 +37,8 @@ export class Storage {
     const result = await Storage.getItem(
       KEYS.DISMISSED_PUSH_NOTIFICATION_MODAL
     );
-    return result === "true";
+
+    return String(result) === "true";
   }
 
   static setDismissedPushNotificationModal(value) {
@@ -49,7 +50,7 @@ export class Storage {
 
   static async hasDismissedWelcomeModal() {
     const result = await Storage.getItem(KEYS.DISMISSED_WELCOME_MODAL);
-    return result === "true";
+    return String(result) === "true";
   }
 
   static getCachedJWT() {
@@ -83,6 +84,10 @@ export class Storage {
   }
 
   static getJWT() {
+    if (_cachedJWT) {
+      return Promise.resolve(_cachedJWT);
+    }
+
     return Keystore.get(this.formatKey(KEYS.JWT)).then(
       jwt => {
         if (jwt) {

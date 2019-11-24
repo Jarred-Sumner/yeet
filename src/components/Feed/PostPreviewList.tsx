@@ -75,8 +75,7 @@ type Props = Partial<ScrollViewProps> & {
 
 const styles = StyleSheet.create({
   scrollView: {
-    overflow: "visible",
-    height: POST_LIST_HEIGHT
+    overflow: "visible"
   },
   listItem: {
     position: "relative"
@@ -136,9 +135,6 @@ const styles = StyleSheet.create({
   newPostBackground: {
     position: "absolute",
     zIndex: 0,
-    borderWidth: 0.5,
-    borderStyle: "dashed",
-    borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 4,
     overflow: "hidden"
   },
@@ -344,7 +340,7 @@ export const PlaceholderPost = ({ height, width, onPress, children }) => {
 
           <View style={[styles.newPost, { width, height }]}>
             <IconButton
-              type="fill"
+              type="shadow"
               containerSize={48}
               size={24}
               color="#fff"

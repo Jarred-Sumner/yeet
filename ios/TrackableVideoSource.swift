@@ -125,7 +125,7 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
 
       guard let asset = asset else {
         self.status = .error
-        return
+        return  
       }
 
       let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["playable", "duration", "tracks"])
@@ -138,7 +138,11 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
         }
       }
 
-      let looper = AVPlayerLooper(player: self.player!, templateItem: playerItem)
+      guard let player = self.player else {
+        return
+      }
+
+      let looper = AVPlayerLooper(player: player, templateItem: playerItem)
 
       self.looper = looper
 

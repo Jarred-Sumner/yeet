@@ -2,7 +2,7 @@ import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
 import { Image as RNImage, StyleSheet, View } from "react-native";
 import { BaseButton } from "react-native-gesture-handler";
-import Permissions from "react-native-permissions";
+import Permissions, { PERMISSIONS, RESULTS } from "react-native-permissions";
 import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import {
@@ -276,27 +276,27 @@ export class CameraRollList extends React.Component<Props, State> {
   }
 
   checkPermissions = async () => {
-    status = await Permissions.check("photo");
+    status = await Permissions.check(PERMISSIONS.IOS.PHOTO_LIBRARY);
     this.handlePermissionChange(status);
   };
 
   handlePermissionChange = (status: string) => {
-    if (status === "authorized") {
+    if (status === RESULTS.GRANTED) {
       this.loadPhotos(true);
     } else {
       this.setState({
         loadState:
           {
-            denied: CameraRollListLoadState.denied,
-            undetermined: CameraRollListLoadState.requestPermission,
-            restricted: CameraRollListLoadState.loading
+            [RESULTS.BLOCKED]: CameraRollListLoadState.denied,
+            [RESULTS.DENIED]: CameraRollListLoadState.requestPermission,
+            [RESULTS.UNAVAILABLE]: CameraRollListLoadState.loading
           }[status] || CameraRollListLoadState.requestPermission
       });
     }
   };
 
   requestPhotoPermission = async () => {
-    status = await Permissions.request("photo");
+    status = await Permissions.request(PERMISSIONS.IOS.PHOTO_LIBRARY);
     this.handlePermissionChange(status);
   };
 

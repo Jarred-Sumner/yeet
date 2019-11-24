@@ -189,6 +189,36 @@ export const NotificationsList = ({
   ) || { refetch: () => {} };
 
   const [clearAllNotifications] = useMutation(READ_ALL_NOTIFICATIONS_MUTATION, {
+    update(cache) {
+      const { notifications } = cache.readQuery<
+        NotificationsListQuery,
+        NotificationsListQueryVariables
+      >({
+        query: NOTIFICATIONS_LIST_QUERY,
+        variables: {
+          offset: 0,
+          limit: 20
+        }
+      });
+      cache.writeQuery({
+        query: NOTIFICATIONS_LIST_QUERY,
+        variables: {
+          offset: 0,
+          limit: 20
+        },
+        data: {
+          notifications: {
+            ...notifications,
+            data: notifications.data.map(notif => {
+              return {
+                ...notif,
+                status: "read"
+              };
+            })
+          }
+        }
+      });
+    },
     refetchQueries: [
       {
         query: CURRENT_USER_QUERY

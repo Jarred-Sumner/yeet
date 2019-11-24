@@ -26,6 +26,8 @@ import APOLLO_CLIENT, { hasLoadedCache, waitForReady } from "./src/lib/graphql";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import NavigationService from "./src/lib/NavigationService";
 import { WATCH_KEYS } from "./src/lib/Storage";
+import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
+import { MediaUploadProgress } from "./src/components/MediaUploadProgress";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -177,20 +179,23 @@ export class App extends React.Component {
         <MaterialThemeProvider>
           <ApolloProvider client={this.state.client}>
             <UserContextProvider>
-              <ImagePickerProvider>
-                <ActionSheetProvider>
-                  <ModalContextProvider>
-                    <>
-                      <Toast />
-                      <Routes
-                        initialRouteName={this.initialRouteName}
-                        ref={this.setNavRef}
-                        uriPrefix={APP_PREFIX}
-                      />
-                    </>
-                  </ModalContextProvider>
-                </ActionSheetProvider>
-              </ImagePickerProvider>
+              <MediaUploadProvider>
+                <ImagePickerProvider>
+                  <ActionSheetProvider>
+                    <ModalContextProvider>
+                      <>
+                        <Toast />
+
+                        <Routes
+                          initialRouteName={this.initialRouteName}
+                          ref={this.setNavRef}
+                          uriPrefix={APP_PREFIX}
+                        />
+                      </>
+                    </ModalContextProvider>
+                  </ActionSheetProvider>
+                </ImagePickerProvider>
+              </MediaUploadProvider>
             </UserContextProvider>
           </ApolloProvider>
         </MaterialThemeProvider>

@@ -31,6 +31,7 @@ import { IconChevronRight } from "../Icon";
 import { getContentSize, MAX_CONTENT_HEIGHT } from "./FeedList";
 
 const POST_COUNT_BAR = 20 + SPACING.normal * 2;
+// const POST_COUNT_BAR = SPACING.normal;
 
 const styles = StyleSheet.create({
   container: {
@@ -39,12 +40,6 @@ const styles = StyleSheet.create({
   mediaPlayerWrapper: {
     maxHeight: MAX_CONTENT_HEIGHT,
     overflow: "hidden"
-  },
-  previewBar: {
-    backgroundColor: "rgb(42, 42, 42)",
-    width: 4,
-    borderRadius: 8,
-    marginRight: SPACING.normal
   },
   viewAllText: {
     color: COLORS.muted,

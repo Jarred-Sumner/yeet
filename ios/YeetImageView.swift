@@ -427,6 +427,7 @@ class YeetImageView : PINAnimatedImageView {
         return
       }
 
+      SwiftyBeaver.debug(error, context: self.mediaSource)
       onErrorEvent?([ "id": mediaSource.id, "error": error!.localizedDescription ])
       if error != nil {
         DispatchQueue.main.async { [weak self] in
@@ -490,31 +491,35 @@ class YeetImageView : PINAnimatedImageView {
       }
     }
 
-    let maxX = imageWidth(source: source, bounds: bounds)
+    let maxX = Int(imageWidth(source: source, bounds: bounds))
 
     if (maxX == 0) {
       return source.uri
     }
 
 
-    let cropRect = [
-      "cx": source.naturalBounds.origin.x,
-      "cy": source.naturalBounds.origin.y,
-//      "cw": cropMaxX,
-//      "ch": cropMaxY
-    ]
+//    let cropRect = [
+//      "cx": source.naturalBounds.origin.x,
+//      "cy": source.naturalBounds.origin.y,
+////      "cw": cropMaxX,
+////      "ch": cropMaxY
+//    ]
 
-    let cropRectString = cropRect.compactMap { key, value in
-      if (value > .zero) {
-        return "\(key)\(Int(floor(value)))"
-      } else {
-        return nil
-      }
-    }.joined(separator: ",")
+//    let cropRectString = cropRect.compactMap { key, value in
+//      if (value > .zero) {
+//        return "\(key)\(Int(floor(value)))"
+//      } else {
+//        return nil
+//      }
+//    }.joined(separator: ",")
 
-    let urlString = "https://i.webthing.co/\(cropRectString.count > 0 ? cropRectString + "," : "")\(maxX)x/\(source.uri.absoluteString)"
+    var url = URL(string: "https://i.webthing.co/")!
 
-    return URL(string: urlString)!
+
+    url = url.appendingPathComponent("\(maxX)x", isDirectory: true)
+    url = url.appendingPathComponent(source.uri.absoluteString, isDirectory: false)
+
+    return url
   }
 
 

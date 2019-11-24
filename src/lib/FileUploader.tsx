@@ -1,6 +1,8 @@
 import Upload from "react-native-background-upload";
 import * as Sentry from "@sentry/react-native";
 
+export const allowSuspendIfBackgrounded = () => Upload.canSuspendIfBackground();
+
 export const createUploadListeners = ({
   uploadId,
   onCompleted = () => {},
@@ -10,6 +12,8 @@ export const createUploadListeners = ({
 }) => {
   let progressListener, errorListener, completedListener, cancelledListener;
   let clearListeners = () => {};
+
+  onProgress(0);
 
   progressListener = Upload.addListener(
     "progress",
@@ -40,7 +44,7 @@ export const createUploadListeners = ({
     uploadId,
     ({ responseCode, ...data }) => {
       if (responseCode >= 200 && responseCode <= 299) {
-        onProgress({ progress: 100 });
+        onProgress(100);
         onCompleted(data);
       } else {
         onError({ ...data, responseCode });
@@ -62,7 +66,7 @@ export const createUploadListeners = ({
       });
   };
 
-  Upload.canSuspendIfBackground();
+  allowSuspendIfBackgrounded();
 };
 
 export const uploadFile = ({

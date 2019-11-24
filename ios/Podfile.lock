@@ -207,6 +207,18 @@ PODS:
   - NextLevelSessionExporter (0.4.3)
   - Nimble (8.0.4)
   - OneSignal (2.11.2)
+  - Permission-Contacts (2.0.0-rc.0):
+    - RNPermissions
+  - Permission-LocationAlways (2.0.0-rc.0):
+    - RNPermissions
+  - Permission-LocationWhenInUse (2.0.0-rc.0):
+    - RNPermissions
+  - Permission-MediaLibrary (2.0.0-rc.0):
+    - RNPermissions
+  - Permission-Notifications (2.0.0-rc.0):
+    - RNPermissions
+  - Permission-PhotoLibrary (2.0.0-rc.0):
+    - RNPermissions
   - PINCache (3.0.1-beta.8):
     - PINCache/Arc-exception-safe (= 3.0.1-beta.8)
     - PINCache/Core (= 3.0.1-beta.8)
@@ -459,8 +471,6 @@ PODS:
     - React-cxxreact (= 0.61.4)
     - React-jsi (= 0.61.4)
     - ReactCommon/jscallinvoker (= 0.61.4)
-  - ReactNativePermissions (1.2.0):
-    - React
   - rn-fetch-blob (0.10.16):
     - React-Core
   - RNCAsyncStorage (1.6.1):
@@ -499,6 +509,8 @@ PODS:
   - RNGestureHandler (1.5.0):
     - React
   - RNInAppBrowser (3.3.0):
+    - React
+  - RNPermissions (2.0.0-rc.0):
     - React
   - RNReactNativeHapticFeedback (1.8.2):
     - React
@@ -568,6 +580,12 @@ DEPENDENCIES:
   - NextLevelSessionExporter
   - Nimble (from `https://github.com/Quick/Nimble.git`)
   - OneSignal (< 3.0, >= 2.9.3)
+  - Permission-Contacts (from `../node_modules/react-native-permissions/ios/Contacts.podspec`)
+  - Permission-LocationAlways (from `../node_modules/react-native-permissions/ios/LocationAlways.podspec`)
+  - Permission-LocationWhenInUse (from `../node_modules/react-native-permissions/ios/LocationWhenInUse.podspec`)
+  - Permission-MediaLibrary (from `../node_modules/react-native-permissions/ios/MediaLibrary.podspec`)
+  - Permission-Notifications (from `../node_modules/react-native-permissions/ios/Notifications.podspec`)
+  - Permission-PhotoLibrary (from `../node_modules/react-native-permissions/ios/PhotoLibrary.podspec`)
   - PINCache (from `https://github.com/pinterest/PINCache.git`)
   - PINRemoteImage (from `https://github.com/pinterest/PINRemoteImage.git`)
   - PINRemoteImage/WebP (from `https://github.com/pinterest/PINRemoteImage.git`)
@@ -608,7 +626,6 @@ DEPENDENCIES:
   - React-RCTVibration (from `../node_modules/react-native/Libraries/Vibration`)
   - ReactCommon/jscallinvoker (from `../node_modules/react-native/ReactCommon`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
-  - ReactNativePermissions (from `../node_modules/react-native-permissions`)
   - rn-fetch-blob (from `../node_modules/rn-fetch-blob`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-community/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-community/masked-view`)"
@@ -621,6 +638,7 @@ DEPENDENCIES:
   - RNFS (from `../node_modules/react-native-fs`)
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNInAppBrowser (from `../node_modules/react-native-inappbrowser-reborn`)
+  - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNReactNativeHapticFeedback (from `../node_modules/react-native-haptic-feedback`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
@@ -723,6 +741,18 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
   Nimble:
     :git: https://github.com/Quick/Nimble.git
+  Permission-Contacts:
+    :path: "../node_modules/react-native-permissions/ios/Contacts.podspec"
+  Permission-LocationAlways:
+    :path: "../node_modules/react-native-permissions/ios/LocationAlways.podspec"
+  Permission-LocationWhenInUse:
+    :path: "../node_modules/react-native-permissions/ios/LocationWhenInUse.podspec"
+  Permission-MediaLibrary:
+    :path: "../node_modules/react-native-permissions/ios/MediaLibrary.podspec"
+  Permission-Notifications:
+    :path: "../node_modules/react-native-permissions/ios/Notifications.podspec"
+  Permission-PhotoLibrary:
+    :path: "../node_modules/react-native-permissions/ios/PhotoLibrary.podspec"
   PINCache:
     :git: https://github.com/pinterest/PINCache.git
   PINRemoteImage:
@@ -791,8 +821,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/Libraries/Vibration"
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
-  ReactNativePermissions:
-    :path: "../node_modules/react-native-permissions"
   rn-fetch-blob:
     :path: "../node_modules/rn-fetch-blob"
   RNCAsyncStorage:
@@ -817,6 +845,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-gesture-handler"
   RNInAppBrowser:
     :path: "../node_modules/react-native-inappbrowser-reborn"
+  RNPermissions:
+    :path: "../node_modules/react-native-permissions"
   RNReactNativeHapticFeedback:
     :path: "../node_modules/react-native-haptic-feedback"
   RNReanimated:
@@ -908,6 +938,12 @@ SPEC CHECKSUMS:
   NextLevelSessionExporter: b6fc7f3d86ec8067b4ce446762faaf6bdb4993b2
   Nimble: 66110543b37eed1302fa50f2ad411f22d2548373
   OneSignal: 4e3e68bb6c29975286a2fa910cb49132bc6e20bb
+  Permission-Contacts: 807e3482b1d3957a5a321bff0955333ef3babe77
+  Permission-LocationAlways: 5fc356db1e7907c818f69e390ac1d8f19b121af2
+  Permission-LocationWhenInUse: 390e9625c1d31c0211bfecefa2d069b05fd0ac3c
+  Permission-MediaLibrary: 96f3e643983bc67d7109836ebe298eb755b4b2ce
+  Permission-Notifications: 57e7814d37d1b46304a423d3e26d4f3ca95469ec
+  Permission-PhotoLibrary: 0d5f7f07184935d8e899e0e63e55f0702084960d
   PINCache: 534fd41d358d828dfdf227a0d327f3673a65e20b
   PINOperation: 24b774353ca248fcf87d67b2d61eef42087c125a
   PINRemoteImage: c4a78eebe06532b97cf7ac8f930bf1b420d766ea
@@ -946,7 +982,6 @@ SPEC CHECKSUMS:
   React-RCTText: 21934e0a51d522abcd0a275407e80af45d6fd9ec
   React-RCTVibration: 0f76400ee3cec6edb9c125da49fed279340d145a
   ReactCommon: a6a294e7028ed67b926d29551aa9394fd989c24c
-  ReactNativePermissions: f3beb8871251594a8ea2c6b19a3f8252d5c7379d
   rn-fetch-blob: 651b8d076b43d0d7aa294a3d9ec16c00aab8bef9
   RNCAsyncStorage: 2e2e3feb9bdadc752a026703d8c4065ca912e75a
   RNCMaskedView: b79e193409a90bf6b5170d421684f437ff4e2278
@@ -959,6 +994,7 @@ SPEC CHECKSUMS:
   RNFS: a8fbe7060fa49157d819466404794ad9c58e58cf
   RNGestureHandler: a4ddde1ffc6e590c8127b8b7eabfdade45475c74
   RNInAppBrowser: e63d225f1c45e0502edc755889f7a478eae7fbb4
+  RNPermissions: 86932e45b170515f71f76751bc9fa055910b049f
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
   RNReanimated: b2ab0b693dddd2339bd2f300e770f6302d2e960c
   RNScreens: ad3661f864ef18d952e9a4799b6791683e33c1fc
@@ -985,6 +1021,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: f5d1c9a6af1e5229c444ba6bb5148894de6a4a4b
+PODFILE CHECKSUM: 3cd671119ff918e77586120b01df0874ac872b94
 
 COCOAPODS: 1.8.4

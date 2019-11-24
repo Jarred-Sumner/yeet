@@ -819,8 +819,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   @objc(invalidate)
   func invalidate() {
-    source?.stop()
-    bridge?.uiManager.observerCoordinator.remove(self)
+    self.reset()
   }
 
   var videoSource: TrackableVideoSource? {

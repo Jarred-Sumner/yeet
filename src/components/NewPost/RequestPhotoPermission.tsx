@@ -20,7 +20,7 @@ const styles = StyleSheet.create({
 
 export const RequestPhotoPermission = ({ onPress }) => (
   <View style={styles.container}>
-    <BoldText style={styles.title}>Allow access to screenshots?</BoldText>
+    <BoldText style={styles.title}>Allow access to photos?</BoldText>
     <Button onPress={onPress}>Allow access</Button>
   </View>
 );

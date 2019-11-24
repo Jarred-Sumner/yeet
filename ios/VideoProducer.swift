@@ -13,6 +13,7 @@ import AVFoundation
 import CoreImage
 import MobileCoreServices
 import SwiftyBeaver
+import Promise
 
 extension CGRect {
   static func from(json: JSON) -> CGRect {
@@ -322,6 +323,19 @@ enum ExportType : String {
   case webp = "image/webp"
   case jpg = "image/jpeg"
 
+  func mimeType() -> MimeType {
+    switch(self) {
+      case .png:
+        return MimeType.png
+      case .webp:
+        return MimeType.webp
+      case .mp4:
+        return MimeType.mp4
+      case .jpg:
+        return MimeType.jpg
+    }
+  }
+
   func fileExtension() -> String {
     switch(self) {
       case .png:
@@ -438,7 +452,7 @@ class VideoProducer {
 
   static let contentExportQueue = DispatchQueue.init(label: "com.codeblogcorp.ContentExportQueue", qos: .background, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
 
-  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil, callback: @escaping RCTResponseSenderBlock) {
+  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil) -> Promise<ContentExport> {
     let isDigital = self.isDigitalOnly
 
 
@@ -460,13 +474,7 @@ class VideoProducer {
     let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
 
-    let start = CACurrentMediaTime()
-    ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale).then { export in
-      SwiftyBeaver.info("Completed ContentExport in \(CACurrentMediaTime() - start) [\(self.resources.count)]")
-        callback([nil, export.dictionaryValue()])
-    }.catch { error in
-      callback([error, nil])
-    }
+    return ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale)
   }
 
 

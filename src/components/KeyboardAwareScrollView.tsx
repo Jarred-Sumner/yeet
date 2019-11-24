@@ -379,6 +379,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     const {
       enableOnAndroid,
       contentContainerStyle,
+      keyboardDismissMode = "interactive",
       onScroll,
       paddingTop = 0,
       paddingBottom = 0,
@@ -397,7 +398,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       <>
         <ScrollView
           {...otherProps}
-          keyboardDismissMode="interactive"
+          keyboardDismissMode={keyboardDismissMode}
           contentInset={{
             top: paddingTop,
             bottom: keyboardSpace + paddingBottom

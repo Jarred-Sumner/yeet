@@ -65,6 +65,7 @@ export interface ViewPost_post {
   colors: ViewPost_post_colors;
   autoplaySeconds: number;
   attachments: JSON;
+  threadId: string;
 }
 
 export interface ViewPost {

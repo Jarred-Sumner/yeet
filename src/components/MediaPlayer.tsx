@@ -39,87 +39,96 @@ type MediaPlayerContextValue = {
   unregisterID: (id: string) => void;
 };
 
-export const MediaPlayerPauser = ({ children, nodeRef }) => {
-  const players = React.useRef({});
-  const pausedPlayers = React.useRef([]);
-  const ref = React.useRef();
-  const registerID = React.useCallback(
-    (id: string, instance: Object) => {
-      players.current = {
-        ...players.current,
-        [id]: instance
-      };
-    },
-    [uniq, players]
-  );
-
-  const unregisterID = React.useCallback(
-    (id: string) => {
-      let _players = { ...players.current };
-      _players[id] = null;
-      players.current = _players;
-
-      if (pausedPlayers.current.includes(id)) {
-        pausedPlayers.current.splice(pausedPlayers.current.indexOf(id), 1);
-      }
-    },
-    [uniq, players]
-  );
-
-  const pausePlayers = React.useCallback(() => {
-    if (Object.keys(players.current).length === 0) {
-      return;
-    }
-
-    // const handle = findNodeHandle(nodeRef.current) ?? -1;
-    MediaPlayerComponent.batchPause(
-      -1,
-      Object.values(players.current)
-        .map(findNodeHandle)
-        .filter(Boolean)
+export const MediaPlayerPauser = React.forwardRef(
+  ({ children, nodeRef }, ref) => {
+    const players = React.useRef({});
+    const pausedPlayers = React.useRef([]);
+    const registerID = React.useCallback(
+      (id: string, instance: Object) => {
+        players.current = {
+          ...players.current,
+          [id]: instance
+        };
+      },
+      [uniq, players]
     );
-    pausedPlayers.current = uniq([
-      ...pausedPlayers.current,
-      ...Object.values(players.current)
-    ]);
-  }, [players, pausedPlayers, nodeRef]);
 
-  const unpausePlayers = React.useCallback(() => {
-    // const handle = findNodeHandle(nodeRef.current);
-    if (pausedPlayers.current.length > 0) {
-      console.log("PLAYERS", pausedPlayers.current);
-      MediaPlayerComponent.batchPlay(-1, pausedPlayers.current);
-      pausedPlayers.current = [];
-    }
-  }, [players, pausedPlayers, nodeRef]);
+    const unregisterID = React.useCallback(
+      (id: string) => {
+        let _players = { ...players.current };
+        _players[id] = null;
+        players.current = _players;
 
-  const contextValue = React.useMemo(() => {
-    return {
-      registerID,
-      unregisterID,
+        if (pausedPlayers.current.includes(id)) {
+          pausedPlayers.current.splice(pausedPlayers.current.indexOf(id), 1);
+        }
+      },
+      [uniq, players]
+    );
+
+    const pausePlayers = React.useCallback(() => {
+      if (Object.keys(players.current).length === 0) {
+        return;
+      }
+
+      // const handle = findNodeHandle(nodeRef.current) ?? -1;
+      MediaPlayerComponent.batchPause(
+        -1,
+        Object.values(players.current)
+          .map(findNodeHandle)
+          .filter(Boolean)
+      );
+      pausedPlayers.current = uniq([
+        ...pausedPlayers.current,
+        ...Object.values(players.current)
+      ]);
+    }, [players, pausedPlayers, nodeRef]);
+
+    const unpausePlayers = React.useCallback(() => {
+      // const handle = findNodeHandle(nodeRef.current);
+      if (pausedPlayers.current.length > 0) {
+        console.log("PLAYERS", pausedPlayers.current);
+        MediaPlayerComponent.batchPlay(
+          -1,
+          pausedPlayers.current.filter(Boolean)
+        );
+        pausedPlayers.current = [];
+      }
+    }, [players, pausedPlayers, nodeRef]);
+
+    const contextValue = React.useMemo(() => {
+      return {
+        registerID,
+        unregisterID,
+        pausePlayers,
+        unpausePlayers
+      };
+    }, [registerID, unregisterID]);
+
+    useFocusEffect(
+      React.useCallback(() => {
+        console.log("UNPAUSE");
+        unpausePlayers();
+
+        return () => {
+          console.log("PAUSE");
+          pausePlayers();
+        };
+      }, [pausePlayers, unpausePlayers])
+    );
+
+    useImperativeHandle(ref, () => ({
       pausePlayers,
       unpausePlayers
-    };
-  }, [registerID, unregisterID]);
+    }));
 
-  useFocusEffect(
-    React.useCallback(() => {
-      console.log("UNPAUSE");
-      unpausePlayers();
-
-      return () => {
-        console.log("PAUSE");
-        pausePlayers();
-      };
-    }, [pausePlayers, unpausePlayers])
-  );
-
-  return (
-    <MediaPlayerContext.Provider value={contextValue}>
-      {children}
-    </MediaPlayerContext.Provider>
-  );
-};
+    return (
+      <MediaPlayerContext.Provider value={contextValue}>
+        {children}
+      </MediaPlayerContext.Provider>
+    );
+  }
+);
 
 export const MediaPlayerContext = React.createContext<MediaPlayerContextValue | null>(
   null
