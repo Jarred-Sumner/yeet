@@ -56,15 +56,25 @@ platform :ios do
     build_number = get_build_number
     version_number = get_version_number
 
-    get_certificates(output_path: 'config') # invokes cert
-    get_provisioning_profile(output_path: 'config') # invokes sigh
 
-    build_app(
+
+
+    get_certificates(output_path: 'config') # invokes cert
+
+
+
+    build_ios_app(
       workspace: 'yeet.xcworkspace',
-      scheme: 'yeet',
+      scheme: 'yeet prod',
       output_directory: 'releases/production',
       output_name: "Yeet-v#{version_number}-#{build_number}",
-      clean: true
+      clean: true,
+      export_options: {
+        method: "app-store",
+        provisioningProfiles: {
+          "com.codeblogcorp.yeet" => "iOS Team Provisioning Profile: com.codeblogcorp.yeet",
+        }
+      }
     )
     upload_to_app_store(
       automatic_release: true,

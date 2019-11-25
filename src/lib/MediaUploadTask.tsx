@@ -42,6 +42,12 @@ import VIEW_THREAD_QUERY from "./ViewThread.graphql";
 import VIEW_THREADS_QUERY from "./ViewThreads.graphql";
 import { uniqBy } from "lodash";
 import { ViewThreads, ViewThreadsVariables } from "./graphql/ViewThreads";
+import { globalUserContext } from "../components/UserContext";
+import LIST_PROFILE_POSTS_QUERY from "./ListProfilePostsQuery.graphql";
+import {
+  ListProfilePosts,
+  ListProfilePostsVariables
+} from "./graphql/ListProfilePosts";
 
 type PresignResponse = {
   signedUrl: string;
@@ -688,6 +694,38 @@ export class PostUploadTask {
             "id"
           );
 
+          const profileId = globalUserContext.userId;
+
+          if (profileId) {
+            const variables = {
+              profileId,
+              offset: 0,
+              limit: 20
+            };
+
+            const listPosts = store.readQuery<
+              ListProfilePosts,
+              ListProfilePostsVariables
+            >({
+              variables,
+              query: LIST_PROFILE_POSTS_QUERY
+            });
+
+            const data = listPosts?.profile?.posts?.data;
+            if (data) {
+              listPosts.profile.posts.data = [
+                createPost,
+                ...listPosts?.profile?.posts?.data
+              ];
+
+              store.writeQuery({
+                query: LIST_PROFILE_POSTS_QUERY,
+                variables,
+                data: listPosts
+              });
+            }
+          }
+
           // Write our data back to the cache.
           store.writeQuery({ query: VIEW_THREAD_QUERY, data, variables });
         }
@@ -745,6 +783,39 @@ export class PostUploadTask {
             [createPostThread, ...data.postThreads.data],
             "id"
           );
+
+          const profileId = globalUserContext.userId;
+          const post = createPostThread?.posts?.data[0];
+
+          if (profileId && post) {
+            const variables = {
+              profileId,
+              offset: 0,
+              limit: 20
+            };
+
+            const listPosts = store.readQuery<
+              ListProfilePosts,
+              ListProfilePostsVariables
+            >({
+              query: LIST_PROFILE_POSTS_QUERY,
+              variables
+            });
+
+            const data = listPosts?.profile?.posts?.data;
+            if (data) {
+              listPosts.profile.posts.data = [
+                post,
+                ...listPosts?.profile?.posts?.data
+              ];
+
+              store.writeQuery({
+                query: LIST_PROFILE_POSTS_QUERY,
+                variables,
+                data: listPosts
+              });
+            }
+          }
 
           // Write our data back to the cache.
           store.writeQuery({ query: VIEW_THREADS_QUERY, data, variables });

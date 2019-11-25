@@ -41,6 +41,7 @@ export interface CreatePostThread_createPostThread_posts_data_media {
   mediumQualityUrl: string;
   lowQualityUrl: string;
   coverUrl: string;
+  previewUrl: string;
   url: string;
 }
 
@@ -65,6 +66,8 @@ export interface CreatePostThread_createPostThread_posts_data {
   likesCount: number;
   format: string;
   commentsCount: number;
+  createdAt: DateTime;
+  threadId: string;
   likes: CreatePostThread_createPostThread_posts_data_likes;
   blocks: JSON;
   nodes: JSON;

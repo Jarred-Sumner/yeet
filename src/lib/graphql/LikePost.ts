@@ -32,6 +32,7 @@ export interface LikePost_likePost_media {
   mediumQualityUrl: string;
   lowQualityUrl: string;
   coverUrl: string;
+  previewUrl: string;
   url: string;
 }
 
@@ -56,6 +57,8 @@ export interface LikePost_likePost {
   likesCount: number;
   format: string;
   commentsCount: number;
+  createdAt: DateTime;
+  threadId: string;
   likes: LikePost_likePost_likes;
   blocks: JSON;
   nodes: JSON;
