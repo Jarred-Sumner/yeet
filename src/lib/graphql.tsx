@@ -105,20 +105,6 @@ const client = new ApolloClient({
 
 export let hasLoadedCache = false;
 
-export const waitForReady = () => {
-  return persistCache({
-    cache,
-    key: `apollo-cache-persist-${BASE_HOSTNAME}`,
-    storage: AsyncStorage,
-    client
-  })
-    .finally(() => {
-      hasLoadedCache = true;
-      return client;
-    })
-    .then(() => client);
-};
-
 // persistor.purge().then(() => {
 //   console.log("Reset Apollo Cache");
 // });

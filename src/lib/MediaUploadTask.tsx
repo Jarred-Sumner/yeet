@@ -32,6 +32,16 @@ import { useApolloClient } from "react-apollo";
 import { navigate } from "./NavigationService";
 import { throttle } from "lodash";
 import Storage from "./Storage";
+import {
+  ViewThread as ViewThreadQuery,
+  ViewThreadVariables,
+  ViewThread_postThread_posts_data,
+  ViewThread_postThread_posts_data_profile
+} from "./graphql/ViewThread";
+import VIEW_THREAD_QUERY from "./ViewThread.graphql";
+import VIEW_THREADS_QUERY from "./ViewThreads.graphql";
+import { uniqBy } from "lodash";
+import { ViewThreads, ViewThreadsVariables } from "./graphql/ViewThreads";
 
 type PresignResponse = {
   signedUrl: string;
@@ -220,6 +230,7 @@ export class MediaUpload {
     console.log("HEADERS", this.presignResponse.headers);
     uploadFile({
       file: this.media.uri,
+      mimeType: this.media.mimeType,
       url: this.presignResponse.signedUrl,
       headers: {
         ...this.presignResponse.headers,
@@ -658,6 +669,27 @@ export class PostUploadTask {
             secondary: this.contentExport.colors?.secondary
           },
           threadId: this.threadId
+        },
+        update: (store, { data: { createPost } }) => {
+          // Read the data from our cache for this query.
+          const variables = {
+            threadId: this.threadId,
+            postOffset: 0,
+            postsCount: 10
+          };
+          const data = store.readQuery<ViewThreadQuery, ViewThreadVariables>({
+            query: VIEW_THREAD_QUERY,
+            variables
+          });
+
+          // Add our comment from the mutation to the end.
+          data.postThread.posts.data = uniqBy(
+            [...data.postThread.posts.data, createPost],
+            "id"
+          );
+
+          // Write our data back to the cache.
+          store.writeQuery({ query: VIEW_THREAD_QUERY, data, variables });
         }
       })
       .then(resp => {
@@ -696,6 +728,26 @@ export class PostUploadTask {
             background: this.contentExport.colors?.background,
             secondary: this.contentExport.colors?.secondary
           }
+        },
+        update: (store, { data: { createPostThread } }) => {
+          // Read the data from our cache for this query.
+          const variables = {
+            limit: 20,
+            postsCount: 4
+          };
+          const data = store.readQuery<ViewThreads, ViewThreadsVariables>({
+            query: VIEW_THREADS_QUERY,
+            variables
+          });
+
+          // Add our comment from the mutation to the end.
+          data.postThreads.data = uniqBy(
+            [createPostThread, ...data.postThreads.data],
+            "id"
+          );
+
+          // Write our data back to the cache.
+          store.writeQuery({ query: VIEW_THREADS_QUERY, data, variables });
         }
       })
       .then(

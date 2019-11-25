@@ -78,16 +78,6 @@ export class App extends React.Component {
       ready: true,
       client: APOLLO_CLIENT
     };
-
-    if (!hasLoadedCache) {
-      waitForReady().then(client => {
-        if (this._hasMountedApp) {
-          this.setState({ ready: true, client }, () => SplashScreen.hide());
-        } else {
-          this.state = { ready: true, client };
-        }
-      });
-    }
   }
 
   get initialRouteName() {

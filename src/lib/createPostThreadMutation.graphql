@@ -22,6 +22,8 @@ mutation CreatePostThread(
     bounds: $bounds
     colors: $colors
   ) {
+    createdAt
+
     ...ViewThreadFragment
   }
 }

@@ -34,7 +34,8 @@ import { SPACING, COLORS } from "../../lib/styles";
 import { scaleToWidth } from "../../lib/Rect";
 import {
   MediaUploadContext,
-  PostUploadTaskType
+  PostUploadTaskType,
+  PostUploadTaskStatus
 } from "../../lib/MediaUploadTask";
 import { MediaUploadProgress } from "../MediaUploadProgress";
 
@@ -234,11 +235,28 @@ class FeedListComponent extends React.Component<Props, State> {
     ) {
       this.setVisibleIDs(this.props.threads.slice(0, 2));
     }
+
+    if (
+      this.props.postUploadStatus === PostUploadTaskStatus.complete &&
+      prevProps.postUploadStatus !== PostUploadTaskStatus.complete
+    ) {
+      Promise.resolve(() => this.handleRefresh()).then(() => {
+        this.props.clearPostUploadTask();
+      });
+    }
   }
 
   handleRefresh = () => {
     try {
-      typeof this.props.refetch === "function" && this.props.refetch();
+      return (
+        typeof this.props.refetch === "function" &&
+        this.props.refetch({
+          variables: {
+            limit: 20,
+            postsCount: 4
+          }
+        })
+      );
     } catch (exception) {
       Sentry.captureException(exception);
       console.error(exception);
@@ -251,7 +269,7 @@ class FeedListComponent extends React.Component<Props, State> {
       animated: true,
       viewPosition: 0
     });
-    // this.handleRefresh();
+    this.handleRefresh();
   };
 
   render() {
@@ -272,7 +290,7 @@ class FeedListComponent extends React.Component<Props, State> {
       <FlatList
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="interactive"
-        contentInsetAdjustmentBehavior="automatic"
+        contentInsetAdjustmentBehavior="never"
         removeClippedSubviews={false}
         directionalLockEnabled
         scrollToOverflowEnabled
@@ -311,7 +329,6 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
     {
       notifyOnNetworkStatusChange: true,
       fetchPolicy: "cache-and-network",
-      partialRefetch: true,
       variables: {
         limit: 20,
         postsCount: 4
@@ -322,7 +339,13 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
   const _threads = uniqBy(threadsQuery?.data?.postThreads.data ?? [], "id");
   const threads = _threads.filter(thread => thread.posts.data.length > 0);
   const isFocused = useIsFocused();
-  const { postUploadTask } = React.useContext(MediaUploadContext);
+  const { postUploadTask, status, setPostUploadTask } = React.useContext(
+    MediaUploadContext
+  );
+  const showMediaUpload = postUploadTask?.type === PostUploadTaskType.newThread;
+  const clearPostUploadTask = React.useCallback(() => {
+    setPostUploadTask(null);
+  }, [setPostUploadTask]);
 
   return (
     <FeedListComponent
@@ -332,9 +355,12 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
       offset={threadsQuery?.data?.postThreads.offset}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
-      refetch={threadsQuery.refetch}
-      showMediaUpload={postUploadTask?.type === PostUploadTaskType.newThread}
-      refreshing={threadsQuery.networkStatus === NetworkStatus.refetch}
+      refetch={threadsQuery?.refetch}
+      showMediaUpload={showMediaUpload}
+      refreshing={threadsQuery?.networkStatus === NetworkStatus.refetch}
+      isFocused={isFocused}
+      clearPostUploadTask={clearPostUploadTask}
+      postUploadStatus={showMediaUpload ? status : undefined}
       loading={[
         NetworkStatus.loading,
         NetworkStatus.setVariables,

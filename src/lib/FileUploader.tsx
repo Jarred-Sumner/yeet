@@ -1,5 +1,10 @@
 import Upload from "react-native-background-upload";
 import * as Sentry from "@sentry/react-native";
+import {
+  convertLocalIdentifierToAssetLibrary,
+  convertCameraRollIDToRNFetchBlobId
+} from "./imageResize";
+import { extensionByMimeType } from "./imageSearch";
 
 export const allowSuspendIfBackgrounded = () => Upload.canSuspendIfBackground();
 export const cancelUpload = (id: string) => Upload.cancelUpload(id);
@@ -73,15 +78,24 @@ export const createUploadListeners = ({
 export const uploadFile = ({
   file,
   url,
+  mimeType,
   headers,
   onError,
   onCancel,
   onCompleted,
   onProgress
 }): Promise<string> => {
+  let _file = file;
+  if (file.startsWith("ph://")) {
+    _file = convertCameraRollIDToRNFetchBlobId(
+      file,
+      extensionByMimeType(mimeType)
+    );
+  }
+
   return Upload.startUpload({
     url: url,
-    path: file,
+    path: _file,
     method: "PUT",
     type: "raw",
     headers: {

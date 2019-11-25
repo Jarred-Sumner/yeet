@@ -171,7 +171,7 @@ class FeedPageComponent extends React.Component<Props> {
 
   contentInset = {
     bottom: TAB_BAR_OFFSET,
-    top: 0,
+    top: TOP_Y,
     left: 0,
     right: 0
   };

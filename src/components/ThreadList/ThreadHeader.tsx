@@ -143,9 +143,13 @@ export const ThreadHeader = ({ thread }) => {
   const { postUploadTask, setPostUploadTask, status } = React.useContext(
     MediaUploadContext
   );
+
+  const hasAutoExpanded = React.useRef(postUploadTask?.threadId === thread.id);
+
   const [showPendingUploads, setShowPendingUploads] = React.useState(
-    postUploadTask?.threadId === thread.id
+    hasAutoExpanded.current
   );
+
   const transitionRef = React.useRef<TransitioningView>();
 
   const toggleShowPendingUploads = () => {
@@ -175,10 +179,16 @@ export const ThreadHeader = ({ thread }) => {
     ) {
       window.clearTimeout(autoDismissTimer.current);
       autoDismissTimer.current = -1;
+    } else if (
+      status !== PostUploadTaskStatus.complete &&
+      !hasAutoExpanded.current
+    ) {
+      setShowPendingUploads(true);
     }
   }, [
-    postUploadTask?.isFinished,
+    postUploadTask?.isFinished ?? false,
     showPendingUploads,
+    setShowPendingUploads,
     status,
     autoDismissTimer,
     isFocused

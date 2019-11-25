@@ -6,6 +6,7 @@ fragment PostFragment on Post {
   format
   __typename
   commentsCount
+  createdAt
 
   likes {
     ...LikeCountFragment
@@ -31,6 +32,7 @@ fragment PostFragment on Post {
     mediumQualityUrl
     lowQualityUrl
     coverUrl
+    previewUrl
     url
     __typename
   }

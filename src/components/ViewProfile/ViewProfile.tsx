@@ -6,7 +6,8 @@ import {
   ViewabilityConfig,
   InteractionManager,
   SimpleTask,
-  PromiseTask
+  PromiseTask,
+  RefreshControl
 } from "react-native";
 import { State } from "react-native-gesture-handler";
 import { FlatList, ScrollView } from "../FlatList";
@@ -82,7 +83,7 @@ import {
   FollowProfileMutationVariables
 } from "../../lib/graphql/FollowProfileMutation";
 import { BackButtonBehavior } from "../Button";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation, useIsFocused } from "react-navigation-hooks";
 import { NavigationProp } from "react-navigation";
 import {
   ListRemixesQuery,
@@ -195,6 +196,12 @@ class RawViewProfile extends React.Component<Props> {
   state = {
     visibleIDs: []
   };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (!prevProps.isFocused && this.props.isFocused) {
+      this.handleRefresh();
+    }
+  }
 
   handleChangeSection = (section: ViewProfileSection) => {
     if (this.props.data.length > 0) {
@@ -434,8 +441,21 @@ class RawViewProfile extends React.Component<Props> {
     this.setState({ visibleIDs: viewableItems.map(item => item.id) });
   };
 
+  handleRefresh = () => {
+    if (this.props.refreshing || this.props.loadingSection) {
+      return;
+    }
+
+    return this.props.refetch && this.props.refetch();
+  };
   render() {
-    const { data, section, contentInset, contentOffset } = this.props;
+    const {
+      data,
+      section,
+      contentInset,
+      contentOffset,
+      refreshing
+    } = this.props;
 
     const ItemSeparatorComponent =
       section === ViewProfileSection.followers
@@ -450,6 +470,14 @@ class RawViewProfile extends React.Component<Props> {
         contentOffset={contentOffset}
         stickyHeaderIndices={[0]}
         contentInsetAdjustmentBehavior="never"
+        refreshing={refreshing}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={this.handleRefresh}
+            tintColor="white"
+          />
+        }
         extraData={this.state}
         contentInset={contentInset}
         ref={this.flatListRef}
@@ -498,14 +526,19 @@ export const ViewProfile = ({
 
   const navigation = useNavigation();
 
+  const viewProfileQuery = useQuery<ViewProfileQuery, ViewProfileVariables>(
+    VIEW_PROFILE_QUERY,
+    {
+      variables: { profileId },
+
+      notifyOnNetworkStatusChange: true
+    }
+  );
+
   const {
     loading,
     data: { profile = null, following = false } = {}
-  } = useQuery<ViewProfileQuery, ViewProfileVariables>(VIEW_PROFILE_QUERY, {
-    variables: { profileId },
-
-    notifyOnNetworkStatusChange: true
-  });
+  } = viewProfileQuery;
 
   const [followProfile] = useMutation(FOLLOW_PROFILE_MUTATION, {
     variables: { profileId },
@@ -585,6 +618,8 @@ export const ViewProfile = ({
   let hasMore = false;
   let fetchMore;
   let loadingSection = true;
+  let refetch;
+  let refreshing = false;
 
   if (section === ViewProfileSection.followers) {
     const _data = (followersData || {
@@ -595,6 +630,8 @@ export const ViewProfile = ({
         }
       }
     }) as ListFollowers;
+
+    refetch = followersQuery?.refetch;
 
     if (
       typeof _data.profile.followers === "object" &&
@@ -609,6 +646,7 @@ export const ViewProfile = ({
 
     fetchMore = fetchMoreFollowers;
     loadingSection = loadingFollowersSection;
+    refreshing = followersNetworkStatus === NetworkStatus.refetch;
   } else if (section === ViewProfileSection.posts) {
     const _data = (postsData || {
       profile: {
@@ -618,6 +656,9 @@ export const ViewProfile = ({
         }
       }
     }) as ListProfilePosts;
+
+    refetch = postsQuery?.refetch;
+    refreshing = postsNetworkStatus === NetworkStatus.refetch;
 
     if (
       typeof _data.profile.posts === "object" &&
@@ -655,6 +696,8 @@ export const ViewProfile = ({
 
     fetchMore = fetchMoreRemixes;
     loadingSection = loadingRemixesSection;
+    refetch = remixesQuery?.refetch;
+    refreshing = remixNetworkStatus === NetworkStatus.refetch;
   }
 
   React.useEffect(() => {
@@ -668,6 +711,17 @@ export const ViewProfile = ({
   }, [section, loadFollowers, loadPosts, loadRemixes]);
 
   const { userId } = React.useContext(UserContext);
+  const isFocused = useIsFocused();
+
+  const refetchAll = React.useCallback(() => {
+    return Promise.all(
+      [
+        typeof refetch === "function" && refetch(),
+        typeof viewProfileQuery.refetch === "function" &&
+          viewProfileQuery.refetch()
+      ].filter(Boolean)
+    );
+  }, [refetch, viewProfileQuery]);
 
   return (
     <RawViewProfile
@@ -676,6 +730,7 @@ export const ViewProfile = ({
       loadingProfile={loading}
       following={following}
       followProfile={followProfile}
+      isFocused={isFocused}
       navigation={navigation}
       unfollowProfile={unfollowProfile}
       contentInset={contentInset}
@@ -686,6 +741,8 @@ export const ViewProfile = ({
       setSection={setSection}
       backButtonBehavior={backButtonBehavior}
       hasMore={hasMore}
+      refetch={refetchAll}
+      refreshing={refreshing}
       contentOffset={contentOffset}
       isCurrentUser={userId === profileId}
       updateAvatar={updateAvatar}

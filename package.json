@@ -26,7 +26,7 @@
     "@sentry/react-native": "^1.0.9",
     "@terrylinla/react-native-sketch-canvas": "^0.8.0",
     "apollo-cache-inmemory": "^1.6.2",
-    "apollo-cache-persist": "^0.1.1",
+    "apollo-cache-persist": "^0.2.0",
     "apollo-client": "^2.6.3",
     "apollo-link-batch-http": "^1.2.13",
     "apollo-link-context": "^1.0.19",

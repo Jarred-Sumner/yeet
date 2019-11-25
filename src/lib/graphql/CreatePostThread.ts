@@ -87,6 +87,7 @@ export interface CreatePostThread_createPostThread_posts {
 
 export interface CreatePostThread_createPostThread {
   __typename: "PostThread";
+  createdAt: DateTime;
   id: string;
   postsCount: number;
   body: string | null;
