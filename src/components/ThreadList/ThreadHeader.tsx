@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export const ThreadHeader = ({ thread }) => {
+export const ThreadHeader = ({ thread, threadId }) => {
   const ref = React.useRef();
 
   const behavior = useBackButtonBehavior();
@@ -144,7 +144,7 @@ export const ThreadHeader = ({ thread }) => {
     MediaUploadContext
   );
 
-  const hasAutoExpanded = React.useRef(postUploadTask?.threadId === thread.id);
+  const hasAutoExpanded = React.useRef(postUploadTask?.threadId === threadId);
 
   const [showPendingUploads, setShowPendingUploads] = React.useState(
     hasAutoExpanded.current
@@ -161,7 +161,7 @@ export const ThreadHeader = ({ thread }) => {
 
   const showExpandIcon =
     status !== PostUploadTaskStatus.waiting &&
-    postUploadTask?.threadId === thread.id;
+    postUploadTask?.threadId === threadId;
 
   const autoDismissTimer = React.useRef(-1);
 

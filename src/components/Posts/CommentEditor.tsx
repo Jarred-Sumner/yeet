@@ -60,6 +60,7 @@ import {
 import { sendSuccessNotification } from "../../lib/Vibration";
 import Alert from "../../lib/Alert";
 import { sendToast, ToastType } from "../Toast";
+import { ImageMimeType, isVideo } from "../../lib/imageSearch";
 
 const NEXT_BUTTON_WIDTH = 60;
 const TOOLBAR_HEIGHT = 64;
@@ -250,6 +251,8 @@ type State = {
   isSaving: boolean;
   control: FocusControlType;
   timeOffset: number;
+  maxTimeOffset: number;
+  mimeType: ImageMimeType;
 };
 
 class CommentEditorContainer extends React.Component<Props, State> {
@@ -277,13 +280,21 @@ class CommentEditorContainer extends React.Component<Props, State> {
 
     this.focusedBlockValue = new Animated.Value(-1);
 
+    const timeOffset = !isVideo(props.mimeType)
+      ? 0
+      : Math.max(props.timeOffset, 0);
+
     this.state = {
       node,
       isSaving: false,
       control: FocusControlType.none,
       duration: 5,
-      timeOffset: props.timeOffset || 0,
-      focusType: null
+      timeOffset,
+      focusType: null,
+      maxTimeOffset: Math.max(
+        props.autoplaySeconds > 0 ? props.autoplaySeconds - 1 : 3,
+        0
+      )
     };
 
     this.focusTypeValue = new Animated.Value(-1);
@@ -656,8 +667,8 @@ class CommentEditorContainer extends React.Component<Props, State> {
 
             {this.state.control === FocusControlType.timeOffset && (
               <DurationPicker
-                start={1}
-                end={Math.max(this.props.autoplaySeconds - 1, 1)}
+                start={0}
+                end={this.state.maxTimeOffset}
                 key="time-offset"
                 value={this.state.timeOffset}
                 onChange={this.handleChangeTimeOffset}

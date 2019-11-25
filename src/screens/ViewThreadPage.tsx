@@ -489,7 +489,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
   };
 
   render() {
-    const { thread, defaultPost, refreshing, posts } = this.props;
+    const { thread, defaultPost, refreshing, posts, threadId } = this.props;
     const { showComposer, composerProps } = this.state;
 
     return (
@@ -533,7 +533,11 @@ class ThreadPageComponent extends React.Component<Props, State> {
           }
         >
           {showComposer === false && (
-            <ThreadHeader thread={thread} key="thread-header" />
+            <ThreadHeader
+              thread={thread}
+              threadId={thread?.id ?? threadId}
+              key="thread-header"
+            />
           )}
 
           {showComposer && <CommentEditorHeader />}

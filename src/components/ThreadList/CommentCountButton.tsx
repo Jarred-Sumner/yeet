@@ -25,18 +25,15 @@ const CommentCountButtonComponent = ({
   />
 );
 
-export const CommentCountButton = ({ id, onPress, size = 32, disabled }) => {
-  const query: QueryResult<ViewPost> = useQuery(POST_QUERY, {
-    variables: { id },
-    fetchPolicy: "cache-only"
-  });
-  const { userId } = React.useContext(UserContext);
-
-  const post = (query.data || {}).post;
-
+export const CommentCountButton = ({
+  onPress,
+  size = 32,
+  disabled,
+  count = 0
+}) => {
   return (
     <CommentCountButtonComponent
-      count={post ? post.commentsCount : 0}
+      count={count}
       isCommented={false}
       onPress={onPress}
       size={size}

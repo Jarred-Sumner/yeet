@@ -13,7 +13,7 @@ export const DurationPicker = ({
   const values = React.useMemo(() => {
     return range(start, end).map(sec => {
       return {
-        label: String(sec) + "sec",
+        label: sec === 0 ? "Immediately" : String(sec) + "sec",
         value: sec
       };
     });

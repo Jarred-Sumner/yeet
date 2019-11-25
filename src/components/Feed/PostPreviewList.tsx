@@ -315,7 +315,7 @@ const ListItem = ({
       isVisible={isVisible}
       height={height}
       imageSize={imageSize}
-      footerAction={<CommentCountButton id={post.id} size={22} />}
+      footerAction={<CommentCountButton size={22} count={post.commentsCount} />}
       photoURL={profile.photoURL}
       username={profile.username}
     />

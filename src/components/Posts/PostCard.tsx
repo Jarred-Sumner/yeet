@@ -323,6 +323,7 @@ const PostCardComponent = ({
 
     onOpenComposer({
       postId: post.id,
+      mimeType: post.media.mimeType,
       width,
       height,
       x,
