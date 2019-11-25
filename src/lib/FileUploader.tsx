@@ -2,6 +2,7 @@ import Upload from "react-native-background-upload";
 import * as Sentry from "@sentry/react-native";
 
 export const allowSuspendIfBackgrounded = () => Upload.canSuspendIfBackground();
+export const cancelUpload = (id: string) => Upload.cancelUpload(id);
 
 export const createUploadListeners = ({
   uploadId,

@@ -130,14 +130,6 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
 
       let playerItem = AVPlayerItem(asset: asset, automaticallyLoadedAssetKeys: ["playable", "duration", "tracks"])
 
-      if asset.tracks(withMediaType: .audio).count > 0 {
-        do {
-          try AVAudioSession.sharedInstance().setCategory(config.audioSessionCategory, options: [.mixWithOthers, .allowAirPlay])
-        } catch {
-
-        }
-      }
-
       guard let player = self.player else {
         return
       }

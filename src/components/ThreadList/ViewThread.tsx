@@ -121,21 +121,17 @@ export class PostFlatList extends React.Component<Props, State> {
       this.visiblePostIDValue = new Animated.Value(initialPostId.hashCode());
       this.snapOffset = new Animated.Value(offset);
       this.scrollY = new Animated.Value(offset);
-      this.scrollFadeValue = new Animated.Value<number>(0);
       this.skipNextScrollEndDrag = offset;
       this.isScrollingValue = new Animated.Value(0);
 
       this.state = {
         visibleIDs: { [initialPostId]: true },
-        hasScrolledToInitialPost: false
+        hasScrolledToInitialPost: true
       };
-
-      console.log("YEP");
     } else {
       this.visiblePostIDValue = new Animated.Value(-1);
       this.snapOffset = new Animated.Value<number>(offset);
       this.scrollY = new Animated.Value<number>(offset);
-      this.scrollFadeValue = new Animated.Value<number>(0);
       this.skipNextScrollEndDrag = -1;
       this.isScrollingValue = new Animated.Value(0);
 
@@ -144,8 +140,6 @@ export class PostFlatList extends React.Component<Props, State> {
         hasScrolledToInitialPost: false
       };
     }
-
-    this.callbackClock = new Animated.Clock();
 
     this.onScroll = Animated.event(
       [
@@ -159,11 +153,7 @@ export class PostFlatList extends React.Component<Props, State> {
               Animated.set(this.scrollY, scrollY),
               Animated.set(this.isScrollingValue, 1),
 
-              Animated.set(this.contentHeight, contentHeight),
-              Animated.cond(Animated.clockRunning(this.callbackClock), [
-                Animated.stopClock(this.callbackClock),
-                Animated.set(this.scrollFadeValue, 1)
-              ])
+              Animated.set(this.contentHeight, contentHeight)
             ])
         }
       ],
@@ -176,12 +166,11 @@ export class PostFlatList extends React.Component<Props, State> {
           nativeEvent: ({ targetContentOffset: { y: snapOffset } }) =>
             Animated.block([
               Animated.set(this.snapOffset, snapOffset),
-              Animated.set(this.isScrollingValue, 1),
-
-              Animated.cond(Animated.clockRunning(this.callbackClock), [
-                Animated.stopClock(this.callbackClock),
-                Animated.set(this.scrollFadeValue, 1)
-              ])
+              Animated.set(this.isScrollingValue, 0),
+              Animated.call(
+                [this.snapOffset, this.scrollY],
+                this.handleMomentumScrollEnd
+              )
             ])
         }
       ],
@@ -195,23 +184,11 @@ export class PostFlatList extends React.Component<Props, State> {
     }) =>
       Animated.block([
         Animated.set(this.snapOffset, y),
-        Animated.set(this.isScrollingValue, 1),
-        Animated.cond(Animated.clockRunning(this.callbackClock), [
-          Animated.stopClock(this.callbackClock),
-          Animated.set(this.scrollFadeValue, 1)
-        ])
-      ]);
-
-    this.onMomentumScrollBegin = ({
-      nativeEvent: {
-        contentOffset: { y }
-      }
-    }) =>
-      Animated.block([
-        Animated.cond(Animated.clockRunning(this.callbackClock), [
-          Animated.stopClock(this.callbackClock),
-          Animated.set(this.scrollFadeValue, 1)
-        ])
+        Animated.set(this.isScrollingValue, 0),
+        Animated.call(
+          [this.snapOffset, this.scrollY],
+          this.handleMomentumScrollEnd
+        )
       ]);
   }
 
@@ -263,7 +240,7 @@ export class PostFlatList extends React.Component<Props, State> {
 
     let pairs = posts.map((post, index) => [
       post.id,
-      this.getItemLayout(posts, index).offset - this.topInset
+      this.getItemLayout(posts, index).offset
     ]);
 
     this.snapBounds = fromPairs(
@@ -283,7 +260,7 @@ export class PostFlatList extends React.Component<Props, State> {
         if (index === 0) {
           return this.contentOffset.y + offset;
         } else {
-          return offset;
+          return this.contentOffset.y + offset;
         }
       }
     );
@@ -392,6 +369,7 @@ export class PostFlatList extends React.Component<Props, State> {
         visiblePostIDValue={this.visiblePostIDValue}
         onPressProfile={this.props.onPressProfile}
         onPressEllipsis={this.props.onPressPostEllipsis}
+        onPressComment={this.props.onPressComment}
         post={item}
       />
     );
@@ -486,10 +464,6 @@ export class PostFlatList extends React.Component<Props, State> {
   handleMomentumScrollEnd = ([snapOffset, scrollY]) => {
     console.log("SCROLL END", snapOffset, scrollY);
     this.handleSnap(snapOffset, scrollY);
-
-    if (typeof this.handleThrottledSnap.cancel === "function") {
-      this.handleThrottledSnap.cancel();
-    }
   };
 
   contentOffset = {
@@ -629,19 +603,7 @@ export class PostFlatList extends React.Component<Props, State> {
     return SCREEN_DIMENSIONS.height - this.bottomInset;
   }
 
-  panRef = React.createRef<PanGestureHandler>();
   scrollGestureState = new Animated.Value<number>();
-
-  handlePan = Animated.event(
-    [
-      {
-        nativeEvent: {
-          state: this.scrollGestureState
-        }
-      }
-    ],
-    { useNativeDriver: true }
-  );
 
   listStyle = [
     listStyles.list,
@@ -649,8 +611,6 @@ export class PostFlatList extends React.Component<Props, State> {
       height: this.height - this.topInset - this.bottomInset
     }
   ];
-
-  simultaneousListHandlers = [this.panRef];
 
   renderFooterComponent = () => {
     if (this.props.posts.length < 2) {
@@ -662,26 +622,9 @@ export class PostFlatList extends React.Component<Props, State> {
       this.props.posts.length - 1
     );
 
-    const bottom = offset + length;
+    const bottom = (offset % SCREEN_DIMENSIONS.height) + length;
 
-    let height;
-
-    if (bottom > SCREEN_DIMENSIONS.height) {
-      height = Math.abs(
-        (bottom % SCREEN_DIMENSIONS.height) -
-          length -
-          this.contentInset.top +
-          ITEM_SEPARATOR_HEIGHT
-      );
-    } else {
-      height = Math.abs(
-        SCREEN_DIMENSIONS.height +
-          bottom -
-          length -
-          this.contentInset.top +
-          ITEM_SEPARATOR_HEIGHT
-      );
-    }
+    let height = Math.abs(SCREEN_DIMENSIONS.height - bottom);
 
     // if (offset > SCREEN_DIMENSIONS.height) {
     //   height = Math.abs(
@@ -727,104 +670,60 @@ export class PostFlatList extends React.Component<Props, State> {
     } = this.props;
 
     return (
-      <PanGestureHandler
-        onHandlerStateChange={this.handlePan}
-        ref={this.panRef}
-        enabled={scrollEnabled}
-        simultaneousHandlers={[this.flatListRef]}
-      >
-        <Animated.View style={listStyles.wrapper}>
-          <Animated.Code
-            exec={Animated.block([
-              Animated.set(
-                this.scrollFadeValue,
-                runTiming(
-                  this.callbackClock,
-                  1,
-                  0,
-                  100
-
-                  // Animated.cond(
-                  //   Animated.eq(this.scrollGestureState, GestureState.BEGAN),
-                  //   1,
-                  //   0
-                  // )
-                )
-              ),
-              // Animated.onChange(
-              //   this.visiblePostIDValue,
-              //   Animated.block([Animated.set(this.isScrollingValue, 0)])
-              // ),
-              Animated.cond(
-                Animated.and(
-                  Animated.eq(this.scrollFadeValue, 0),
-                  Animated.not(Animated.clockRunning(this.callbackClock))
-                ),
-                Animated.block([
-                  Animated.set(this.scrollFadeValue, 0),
-                  Animated.call(
-                    [this.snapOffset, this.scrollY],
-                    this.handleMomentumScrollEnd
-                  )
-                ])
-              )
-            ])}
+      <Animated.View style={listStyles.wrapper}>
+        <MediaPlayerPauser nodeRef={this.flatListRef}>
+          <FlatList
+            renderItem={this.renderItem}
+            data={posts}
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="white"
+              />
+            }
+            ref={this.flatListRef}
+            contentOffset={this.contentOffset}
+            contenInsetAdjustmentBehavior="never"
+            contentInset={this.contentInset}
+            simultaneousHandlers={this.simultaneousListHandlers}
+            viewabilityConfig={this.viewabilityConfig}
+            scrollEventThrottle={1}
+            ListHeaderComponent={ThreadHeaderSpacer}
+            maintainVisibleContentPosition={this.visibleContentPosition}
+            scrollEnabled={scrollEnabled}
+            onScroll={this.onScroll}
+            onScrollEndDrag={this.onScrollEndDrag}
+            // onScrollBeginDrag={this.onMomentumScrollBegin}
+            // onMomentumScrollEnd={this.onMomentumScrollEnd}
+            // onMomentumScrollBegin={this.onMomentumScrollBegin}
+            onScrollToTop={this.handleScrollToTop}
+            maxToRenderPerBatch={5}
+            initialNumToRender={8}
+            windowSize={10}
+            scrollToOverflowEnabled
+            initialScrollIndex={this.initialPostIndex}
+            snapToOffsets={this.snapToOffsets}
+            decelerationRate="fast"
+            directionalLockEnabled
+            snapToStart
+            snapToEnd={false}
+            disableScrollViewPanResponder
+            style={this.listStyle}
+            extraData={this.props.extraData}
+            vertical
+            keyboardDismissMode="interactive"
+            keyExtractor={this.keyExtractor}
+            ListFooterComponent={this.renderFooterComponent}
+            keyboardShouldPersistTaps="always"
+            getItemLayout={this.getItemLayout}
+            ItemSeparatorComponent={ItemSeparatorComponent}
+            onEndReached={this.handleEndReached}
           />
-          <MediaPlayerPauser nodeRef={this.flatListRef}>
-            <FlatList
-              renderItem={this.renderItem}
-              data={posts}
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              refreshControl={
-                <RefreshControl
-                  refreshing={refreshing}
-                  onRefresh={onRefresh}
-                  tintColor="white"
-                />
-              }
-              ref={this.flatListRef}
-              contentOffset={this.contentOffset}
-              contenInsetAdjustmentBehavior="never"
-              contentInset={this.contentInset}
-              simultaneousHandlers={this.simultaneousListHandlers}
-              viewabilityConfig={this.viewabilityConfig}
-              removeClippedSubviews
-              scrollEventThrottle={1}
-              ListHeaderComponent={ThreadHeaderSpacer}
-              maintainVisibleContentPosition={this.visibleContentPosition}
-              scrollEnabled={scrollEnabled}
-              onScroll={this.onScroll}
-              onScrollEndDrag={this.onScrollEndDrag}
-              onScrollBeginDrag={this.onMomentumScrollBegin}
-              onMomentumScrollEnd={this.onMomentumScrollEnd}
-              onMomentumScrollBegin={this.onMomentumScrollBegin}
-              onScrollToTop={this.handleScrollToTop}
-              maxToRenderPerBatch={5}
-              initialNumToRender={8}
-              windowSize={10}
-              scrollToOverflowEnabled
-              initialScrollIndex={this.initialPostIndex}
-              snapToOffsets={this.snapToOffsets}
-              decelerationRate="fast"
-              directionalLockEnabled
-              snapToStart={false}
-              snapToEnd
-              disableScrollViewPanResponder
-              style={this.listStyle}
-              extraData={this.props.extraData}
-              vertical
-              keyboardDismissMode="interactive"
-              keyExtractor={this.keyExtractor}
-              ListFooterComponent={this.renderFooterComponent}
-              keyboardShouldPersistTaps="always"
-              getItemLayout={this.getItemLayout}
-              ItemSeparatorComponent={ItemSeparatorComponent}
-              onEndReached={this.handleEndReached}
-            />
-          </MediaPlayerPauser>
-        </Animated.View>
-      </PanGestureHandler>
+        </MediaPlayerPauser>
+      </Animated.View>
     );
   }
 }

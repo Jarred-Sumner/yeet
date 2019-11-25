@@ -88,6 +88,8 @@ extension AVURLAsset {
     return AVURLAsset.crop(asset: self, to: to, dest: dest)
   }
 
+  
+
   static func crop(asset: AVURLAsset, to: CGRect, dest: URL) -> Promise<AVURLAsset> {
       return Promise<AVURLAsset> { resolve, reject in
         let videoComposition = AVMutableVideoComposition()

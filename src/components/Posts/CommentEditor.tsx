@@ -185,9 +185,22 @@ const countIconStyles = StyleSheet.create({
   }
 });
 
-const CountIcon = ({ value, onPress, label, Icon, selected }) => {
+const CountIcon = ({
+  value,
+  disallowInterruption,
+  buttonRef,
+  onPress,
+  label,
+  Icon,
+  selected
+}) => {
   return (
-    <BorderlessButton onPress={onPress}>
+    <BorderlessButton
+      disallowInterruption={disallowInterruption}
+      shouldActivateOnStart
+      onPress={onPress}
+      ref={buttonRef}
+    >
       <View style={countIconStyles.container}>
         <View style={countIconStyles.row}>
           <Text style={countIconStyles.label}>{label}</Text>
@@ -463,6 +476,9 @@ class CommentEditorContainer extends React.Component<Props, State> {
       );
   };
 
+  durationButtonRef = React.createRef();
+  timeOffsetButtonRef = React.createRef();
+
   render() {
     const {
       width,
@@ -478,6 +494,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
 
     return (
       <TapGestureHandler
+        waitFor={[this.durationButtonRef, this.timeOffsetButtonRef]}
         enabled={
           this.state.control === FocusControlType.input ||
           this.state.control === FocusControlType.timeOffset ||
@@ -510,6 +527,8 @@ class CommentEditorContainer extends React.Component<Props, State> {
               <CountIcon
                 Icon={IconHourglass}
                 value={timeOffset}
+                buttonRef={this.timeOffsetButtonRef}
+                disallowInterruption
                 selected={control === FocusControlType.timeOffset}
                 label="Show at"
                 onPress={this.handleEditTimeOffset}
@@ -523,6 +542,8 @@ class CommentEditorContainer extends React.Component<Props, State> {
             >
               <CountIcon
                 Icon={IconStopwatch}
+                disallowInterruption
+                buttonRef={this.durationButtonRef}
                 value={duration}
                 selected={control === FocusControlType.duration}
                 label="Hide"
@@ -625,7 +646,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
               <DurationPicker
                 start={1}
                 key="duration"
-                end={10}
+                end={6}
                 value={this.state.duration}
                 onChange={this.handleChangeDuration}
                 color="white"
@@ -636,7 +657,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
             {this.state.control === FocusControlType.timeOffset && (
               <DurationPicker
                 start={1}
-                end={10}
+                end={Math.max(this.props.autoplaySeconds - 1, 1)}
                 key="time-offset"
                 value={this.state.timeOffset}
                 onChange={this.handleChangeTimeOffset}

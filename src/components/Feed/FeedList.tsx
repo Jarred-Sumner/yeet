@@ -32,7 +32,10 @@ import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";
 import { scaleToWidth } from "../../lib/Rect";
-import { MediaUploadContext } from "../../lib/MediaUploadTask";
+import {
+  MediaUploadContext,
+  PostUploadTaskType
+} from "../../lib/MediaUploadTask";
 import { MediaUploadProgress } from "../MediaUploadProgress";
 
 const ITEM_SEPARATOR_HEIGHT = SPACING.half;
@@ -330,7 +333,7 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
       refetch={threadsQuery.refetch}
-      showMediaUpload={!!postUploadTask}
+      showMediaUpload={postUploadTask?.type === PostUploadTaskType.newThread}
       refreshing={threadsQuery.networkStatus === NetworkStatus.refetch}
       loading={[
         NetworkStatus.loading,

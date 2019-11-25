@@ -72,6 +72,12 @@ const styles = StyleSheet.create({
   completedBar: {
     backgroundColor: COLORS.success
   },
+  errorBar: {
+    backgroundColor: COLORS.error
+  },
+  cancelledBar: {
+    backgroundColor: COLORS.muted
+  },
   label: {
     color: COLORS.muted,
     marginBottom: SPACING.half,
@@ -93,6 +99,16 @@ const styles = StyleSheet.create({
     display: "none"
   }
 });
+
+const BAR_COLOR_BY_STATUS = {
+  [PostUploadTaskStatus.waiting]: styles.pendingBar,
+  [PostUploadTaskStatus.progressing]: styles.pendingBar,
+  [PostUploadTaskStatus.posting]: styles.pendingBar,
+  [PostUploadTaskStatus.uploading]: styles.pendingBar,
+  [PostUploadTaskStatus.complete]: styles.completedBar,
+  [PostUploadTaskStatus.error]: styles.errorBar,
+  [PostUploadTaskStatus.cancelled]: styles.cancelledBar
+};
 
 const statusLabel = (
   status: PostUploadTaskStatus,
@@ -132,7 +148,7 @@ const statusLabel = (
       upload.task.optionalFiles.length
     }`;
   } else if (status === PostUploadTaskStatus.error && !hasPosted) {
-    return "Something went wrong while submitting your post.";
+    return "Something broke...please try again.";
   } else if (status === PostUploadTaskStatus.cancelled && !hasPosted) {
     return "Cancelled post";
   } else {
@@ -142,7 +158,14 @@ const statusLabel = (
 
 class MediaUploadProgressComponent extends React.Component<Props> {
   render() {
-    const { progress, status, postUploadTask, file, onPressPost } = this.props;
+    const {
+      progress,
+      status,
+      postUploadTask,
+      file,
+      onPressPost,
+      hideIcon
+    } = this.props;
 
     const hasPosted = !!postUploadTask?.post;
 
@@ -166,9 +189,7 @@ class MediaUploadProgressComponent extends React.Component<Props> {
               <View
                 style={[
                   styles.bar,
-                  status !== PostUploadTaskStatus.complete
-                    ? styles.pendingBar
-                    : styles.completedBar,
+                  BAR_COLOR_BY_STATUS[status],
                   {
                     transform: [
                       {
@@ -187,7 +208,7 @@ class MediaUploadProgressComponent extends React.Component<Props> {
           <View
             style={[
               styles.iconContainer,
-              hasPosted ? styles.shownIcon : styles.hiddenIcon
+              hasPosted && !hideIcon ? styles.shownIcon : styles.hiddenIcon
             ]}
           >
             <IconChevronRight color="#ccc" size={18} />
@@ -210,6 +231,7 @@ export const MediaUploadProgress = props => {
 
   return (
     <MediaUploadProgressComponent
+      hideIcon={props.hideIcon}
       progress={progress}
       status={status}
       postUploadTask={postUploadTask}

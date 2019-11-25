@@ -3,7 +3,8 @@ import { StyleSheet, View, StyleSheetProperties } from "react-native";
 import {
   TouchableHighlight,
   TouchableWithoutFeedback,
-  State as GestureState
+  State as GestureState,
+  LongPressGestureHandler
 } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
@@ -199,44 +200,6 @@ const scrollOpacityAnimation = Animated.proc(
     })
 );
 
-const getPostOpacity = Animated.proc(
-  (
-    prevOffset,
-    snapOffset,
-    height,
-    scrollY,
-    isScrolling,
-    visiblePostIDValue,
-    visibleID
-  ) =>
-    Animated.cond(
-      Animated.eq(isScrolling, 0),
-      Animated.cond(
-        Animated.eq(visiblePostIDValue, visibleID),
-        0,
-        FADE_OVERLAY
-      ),
-      Animated.interpolate(scrollY, {
-        inputRange: [prevOffset, snapOffset, Animated.add(snapOffset, height)],
-        outputRange: [
-          Animated.cond(Animated.greaterThan(snapOffset, 0), FADE_OVERLAY, 0),
-          0,
-          FADE_OVERLAY
-        ],
-        extrapolate: Animated.Extrapolate.CLAMP
-      })
-      // scrollOpacityAnimation(
-      //   prevOffset,
-      //   snapOffset,
-      //   height,
-      //   scrollY,
-      //   isScrolling,
-      //   visiblePostIDValue,
-      //   visibleID
-      // )
-    )
-);
-
 export const calculatePostHeight = (post: PostFragment) => {
   return scaleToWidth(SCREEN_DIMENSIONS.width, post.media).height;
 };
@@ -263,6 +226,7 @@ const PostCardComponent = ({
   keyboardVisibleValue,
   visiblePostIDValue,
   onPressProfile,
+  onPressComment,
   autoPlay = false,
   isComposing,
   isScrolling,
@@ -282,11 +246,11 @@ const PostCardComponent = ({
   const [showAllComments, setShowAllComments] = React.useState(false);
   const [playbackTime, setPlaybackTime] = React.useState(0.0);
 
-  const opacityValue = React.useRef(
-    new Animated.Value(paused ? FADE_OVERLAY : 0)
-  );
-  const opacityClock = React.useRef(new Animated.Clock());
+  const isNotPlaying = isComposing || paused || manuallyPaused;
 
+  const opacityValue = React.useRef(
+    new Animated.Value(!paused || autoPlay ? 0 : FADE_OVERLAY)
+  );
   const handleProgress = React.useCallback(
     ({ elapsed: playbackTime }) => {
       setPlaybackTime(playbackTime);
@@ -297,7 +261,7 @@ const PostCardComponent = ({
   const mediaPlayerRef = React.useRef();
   const handlePress = React.useCallback(() => {
     onPress(post, index);
-  }, [onPress, post, index]);
+  }, [onPress, post, index, isNotPlaying]);
 
   const handlePressProfile = React.useCallback(() => {
     onPressProfile(post.profile);
@@ -344,7 +308,11 @@ const PostCardComponent = ({
 
   const onOpenComposer = React.useCallback(
     composerProps => {
-      openComposer({ ...composerProps, timeOffset: Math.round(playbackTime) });
+      openComposer({
+        ...composerProps,
+        timeOffset: Math.round(playbackTime),
+        autoplaySeconds: post.autoplaySeconds
+      });
     },
     [openComposer, width, height, post.id, playbackTime]
   );
@@ -371,69 +339,90 @@ const PostCardComponent = ({
     toggleShowComments();
   }, [toggleShowComments]);
 
+  const handlePlay = React.useCallback(() => {
+    opacityValue.current.setValue(0);
+  }, []);
+
   const sources = React.useMemo(() => [post.media], [post.media]);
 
-  const isNotPlaying = isComposing || paused || manuallyPaused;
+  const handleCompose = React.useCallback(
+    ({ nativeEvent: { x, y } }) => {
+      if (isNotPlaying) {
+        return;
+      }
+
+      onOpenComposer({
+        x,
+        y,
+        width,
+        height,
+        keyboardVisibleValue,
+        postId: post.id
+      });
+    },
+    [onOpenComposer, width, height, keyboardVisibleValue, post.id, isNotPlaying]
+  );
 
   return (
-    <TouchableWithoutFeedback disabled={!paused} onPress={handlePress}>
-      <Animated.View style={[styles.container, { width, height }]}>
-        <Animated.Code
-          exec={Animated.block([
-            Animated.onChange(
-              isScrolling,
-              Animated.block([Animated.stopClock(opacityClock.current)])
-            ),
+    <LongPressGestureHandler
+      disabled={isNotPlaying}
+      onGestureEvent={handleCompose}
+    >
+      <Animated.View>
+        <TouchableWithoutFeedback
+          disabled={!isNotPlaying}
+          onPress={handlePress}
+        >
+          <Animated.View style={[styles.container, { width, height }]}>
+            <Animated.Code
+              exec={Animated.block([
+                Animated.set(
+                  opacityValue.current,
+                  scrollOpacityAnimation(
+                    prevOffset,
+                    snapOffset,
+                    height,
+                    scrollY,
+                    isScrolling,
+                    visiblePostIDValue,
+                    post.id.hashCode()
+                  )
+                )
+              ])}
+            />
 
-            Animated.set(
-              opacityValue.current,
-              runTiming(
-                opacityClock.current,
-                opacityValue.current,
-                getPostOpacity(
-                  prevOffset,
-                  snapOffset,
-                  height,
-                  scrollY,
-                  isScrolling,
-                  visiblePostIDValue,
-                  post.id.hashCode()
-                ),
-                Animated.cond(Animated.eq(isScrolling, 0), 100, 25)
-              )
-            )
-          ])}
-        />
-        <TrackableMediaPlayer
-          sources={sources}
-          paused={isNotPlaying}
-          muted={false}
-          id={`${post.id}-player`}
-          autoPlay={autoPlay}
-          ref={mediaPlayerRef}
-          duration={
-            (isVideo(post.media.mimeType) ? post.media.duration : 24) * 1000
-          }
-          onProgress={handleProgress}
-          // sharedId={postElementId(post)}
-          borderRadius={BORDER_RADIUS}
-          style={mediaPlayerStyles}
-        />
+            <TrackableMediaPlayer
+              sources={sources}
+              paused={isNotPlaying}
+              muted={false}
+              id={`${post.id}-player`}
+              autoPlay={autoPlay}
+              ref={mediaPlayerRef}
+              onPlay={isVideo(post.media.mimeType) ? handlePlay : undefined}
+              onLoad={!isVideo(post.media.mimeType) ? handlePlay : undefined}
+              duration={
+                (isVideo(post.media.mimeType) ? post.media.duration : 24) * 1000
+              }
+              onProgress={handleProgress}
+              // sharedId={postElementId(post)}
+              borderRadius={BORDER_RADIUS}
+              style={mediaPlayerStyles}
+            />
 
-        <OverlayGradient
-          width={width}
-          height={84}
-          style={[
-            styles.gradient,
-            styles.topGradient,
-            {
-              width,
-              height: 84
-            }
-          ]}
-        />
+            <OverlayGradient
+              width={width}
+              height={84}
+              style={[
+                styles.gradient,
+                styles.topGradient,
+                {
+                  width,
+                  height: 84
+                }
+              ]}
+            />
 
-        {/* <OverlayGradient
+            {/* <OverlayGradient
           width={width}
           height={84}
           flipped
@@ -447,102 +436,101 @@ const PostCardComponent = ({
           ]}
         /> */}
 
-        <Animated.View style={styles.top}>
-          <TouchableHighlight
-            underlayColor="rgba(0, 0, 0, 0.05)"
-            onPress={handlePressProfile}
-          >
-            <View style={styles.profile}>
-              <View style={styles.avatarContainer}>
-                <Avatar
-                  url={post.profile.photoURL}
-                  label={post.profile.username}
-                  size={AVATAR_SIZE}
+            <Animated.View style={styles.top}>
+              <TouchableHighlight
+                underlayColor="rgba(0, 0, 0, 0.05)"
+                onPress={handlePressProfile}
+              >
+                <View style={styles.profile}>
+                  <View style={styles.avatarContainer}>
+                    <Avatar
+                      url={post.profile.photoURL}
+                      label={post.profile.username}
+                      size={AVATAR_SIZE}
+                    />
+                  </View>
+
+                  <SemiBoldText style={styles.username}>
+                    {post.profile.username}
+                  </SemiBoldText>
+                </View>
+              </TouchableHighlight>
+
+              <View
+                pointerEvents={paused ? "none" : "auto"}
+                style={styles.topRight}
+              >
+                <IconButtonEllipsis
+                  onPress={handlePressEllipsis}
+                  style={styles.ellipsis}
+                  vertical
+                  size={18}
                 />
               </View>
+            </Animated.View>
 
-              <SemiBoldText style={styles.username}>
-                {post.profile.username}
-              </SemiBoldText>
-            </View>
-          </TouchableHighlight>
+            {!isNotPlaying && (
+              <>
+                <View pointerEvents="box-none" style={styles.layerWrapper}>
+                  <View pointerEvents="box-none" style={styles.commentsLayer}>
+                    <CommentsViewer
+                      width={width}
+                      height={height}
+                      comments={comments}
+                      showAll={showAllComments}
+                      timeOffset={playbackTime}
+                      keyboardVisibleValue={keyboardVisibleValue}
+                      onTap={onPressComment}
+                    />
+                  </View>
+                </View>
+              </>
+            )}
 
-          <View
-            pointerEvents={paused ? "none" : "auto"}
-            style={styles.topRight}
-          >
-            <IconButtonEllipsis
-              onPress={handlePressEllipsis}
-              style={styles.ellipsis}
-              vertical
-              size={18}
-            />
-          </View>
-        </Animated.View>
-
-        {!isNotPlaying && (
-          <>
-            <View style={styles.layerWrapper}>
-              <View style={styles.commentsLayer}>
-                <CommentsViewer
-                  width={width}
-                  height={height}
-                  comments={comments}
-                  showAll={showAllComments}
-                  timeOffset={playbackTime}
-                  keyboardVisibleValue={keyboardVisibleValue}
-                />
-              </View>
-            </View>
-
-            <View style={[styles.composerLayer]}>
-              <CommentComposer
-                postId={post.id}
-                timeOffset={playbackTime}
-                keyboardVisibleValue={keyboardVisibleValue}
-                width={width}
-                height={height}
-                onOpen={onOpenComposer}
+            <Animated.View
+              pointerEvents="box-none"
+              style={[
+                styles.count
+                // {
+                //   transform: [
+                //     {
+                //       translateY: scrollY.interpolate({
+                //         inputRange: [offset - topInset, offset + height - topInset],
+                //         outputRange: [, -10],
+                //         extrapolate: Animated.Extrapolate.CLAMP
+                //       })
+                //     }
+                //   ]
+                // }
+              ]}
+            >
+              <CountButton
+                iconSize={28}
+                Icon={IconComment}
+                color="white"
+                disabled={paused}
+                count={post.commentsCount || 0}
+                onPress={onPressCommentButton}
+                onLongPress={onLongPressCommentButton}
               />
-            </View>
-          </>
-        )}
 
-        <Animated.View
-          pointerEvents="box-none"
-          style={[
-            styles.count
-            // {
-            //   transform: [
-            //     {
-            //       translateY: scrollY.interpolate({
-            //         inputRange: [offset - topInset, offset + height - topInset],
-            //         outputRange: [, -10],
-            //         extrapolate: Animated.Extrapolate.CLAMP
-            //       })
-            //     }
-            //   ]
-            // }
-          ]}
-        >
-          <CountButton
-            iconSize={28}
-            Icon={IconComment}
-            color="white"
-            disabled={paused}
-            count={post.commentsCount || 0}
-            onPress={onPressCommentButton}
-            onLongPress={onLongPressCommentButton}
-          />
+              <View style={styles.countButtonSeparator} />
 
-          <View style={styles.countButtonSeparator} />
+              <LikeCountButton
+                size={28}
+                id={post.id}
+                onPress={handlePressLike}
+              />
+            </Animated.View>
 
-          <LikeCountButton size={28} id={post.id} onPress={handlePressLike} />
-        </Animated.View>
-
-        <Animated.View pointerEvents="none" style={sheetStyles}></Animated.View>
+            <Animated.View
+              pointerEvents="none"
+              style={sheetStyles}
+            ></Animated.View>
+          </Animated.View>
+        </TouchableWithoutFeedback>
       </Animated.View>
-    </TouchableWithoutFeedback>
+    </LongPressGestureHandler>
   );
 };
 

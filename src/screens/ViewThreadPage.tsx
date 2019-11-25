@@ -239,14 +239,14 @@ class ThreadPageComponent extends React.Component<Props, State> {
 
     this.postListRef.current.scrollToId(composerProps.postId);
     this.setState({ showComposer: true, composerProps });
-    this.transitionFooterRef.current.animateNextTransition();
-    this.transitionHeaderRef.current.animateNextTransition();
+    // this.transitionFooterRef.current.animateNextTransition();
+    // this.transitionHeaderRef.current.animateNextTransition();
   };
 
   handleCloseComposer = () => {
     this.setState({ showComposer: false, composerProps: {} });
-    this.transitionFooterRef.current.animateNextTransition();
-    this.transitionHeaderRef.current.animateNextTransition();
+    // this.transitionFooterRef.current.animateNextTransition();
+    // this.transitionHeaderRef.current.animateNextTransition();
 
     return this.autoRequestPush();
   };
@@ -278,6 +278,10 @@ class ThreadPageComponent extends React.Component<Props, State> {
     }
 
     return false;
+  };
+
+  handlePressComment = (comment: CommentFragment) => {
+    this.handlePressProfile(comment.profile);
   };
 
   handlePressProfile = (profile: ViewThread_postThread_posts_data_profile) => {
@@ -501,6 +505,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
           bottomInset={THREAD_REPLY_BUTTON_HEIGHT}
           composingPostId={this.state.composerProps?.postId}
           onPressLike={this.handlePressLike}
+          onPressComment={this.handlePressComment}
           onPressProfile={this.handlePressProfile}
           onPressPostEllipsis={this.handlePressPostEllipsis}
           onEndReached={this.handleFetchMore}

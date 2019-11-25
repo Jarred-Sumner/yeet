@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
 import { NewPost } from "../components/NewPost/NewPost";
 import { withNavigation } from "react-navigation";
 import { PostFragment } from "../lib/graphql/PostFragment";
@@ -12,6 +12,12 @@ import {
 import { PostFormat } from "../components/NewPost/NewPostFormat";
 import { sendToast, ToastType } from "../components/Toast";
 import PostUploader, { RawPostUploader } from "../components/PostUploader";
+import { useNavigation } from "react-navigation-hooks";
+import {
+  MediaUploadContext,
+  PostUploadTask,
+  PostUploadTaskType
+} from "../lib/MediaUploadTask";
 
 const styles = StyleSheet.create({
   container: {
@@ -27,7 +33,7 @@ type State = {
   format: PostFormat | null;
 };
 
-class ReplyPage extends React.Component<{}, State> {
+class RawReplyPage extends React.Component<{}, State> {
   state = {
     contentExport: null,
     exportData: null,
@@ -49,61 +55,54 @@ class ReplyPage extends React.Component<{}, State> {
     }
   };
 
-  handleExport = (
+  handleExport = async (
     contentExport: ContentExport,
     exportData: ExportData,
     format: PostFormat
   ) => {
-    this.setState(
-      {
-        contentExport,
-        format,
-        exportData,
-        showUploader: true
-      },
-      () => {
-        this.postUploaderRef.current.startUploading(true);
+    const { postUploadTask, setPostUploadTask, navigation } = this.props;
+
+    if (postUploadTask && !postUploadTask.isFinished) {
+      const shouldCancel = await new Promise(resolve =>
+        Alert.alert(
+          "Cancel pending upload?",
+          "Another post is currently being uploaded. Cancel that one and post this one instead?",
+          [
+            {
+              text: "Yes, post this instead",
+              onPress: () => resolve(true)
+            },
+            {
+              text: "No, don't.",
+              style: "cancel",
+              onPress: () => resolve(false)
+            }
+          ]
+        )
+      );
+
+      if (shouldCancel) {
+        await postUploadTask.cancel();
+      } else {
+        return;
       }
-    );
-  };
-
-  handleUploadComplete = async (mediaId: string) => {
-    const { contentExport, exportData, format } = this.state;
-
-    if (!exportData || !contentExport || !format) {
-      sendToast("Something went wrong. Please try again", ToastType.error);
-      return;
     }
 
-    const threadId = this.props.navigation.getParam("threadId");
-    console.log("Creating post for ", mediaId, "in", threadId);
+    const threadId = navigation.getParam("threadId");
 
-    try {
-      const post = await this.postUploaderRef.current.createPost({
-        mediaId,
-        blocks: exportData.blocks,
-        autoplaySeconds: contentExport.duration,
-        format,
-        bounds: exportData.bounds,
-        nodes: exportData.nodes,
-        colors: {
-          background: contentExport.colors?.background ?? null,
-          primary: contentExport.colors?.primary ?? null,
-          secondary: contentExport.colors?.secondary ?? null,
-          detail: contentExport.colors?.detail ?? null
-        },
-        threadId
-      });
+    const _task = new PostUploadTask({
+      contentExport,
+      format,
+      exportData,
+      threadId,
+      type: PostUploadTaskType.newPost
+    });
 
-      sendToast("Posted successfully", ToastType.success);
+    _task.start();
 
-      this.handleCreate();
-    } catch (error) {
-      sendToast("Something went wrong. Please try again", ToastType.error);
-      console.error(error);
-    } finally {
-      this.setState({ showUploader: false, exportData: null });
-    }
+    setPostUploadTask(_task);
+
+    this.handleCreate();
   };
 
   render() {
@@ -135,18 +134,25 @@ class ReplyPage extends React.Component<{}, State> {
           defaultBounds={bounds}
           onExport={this.handleExport}
         />
-
-        <PostUploader
-          ref={this.postUploaderRef}
-          onUpload={this.handleUploadComplete}
-          onCancel={this.handleCancel}
-          visible={this.state.showUploader}
-          file={this.state.contentExport}
-          data={this.state.exportData}
-        />
       </View>
     );
   }
 }
 
-export default withNavigation(ReplyPage);
+export const ReplyPage = props => {
+  const navigation = useNavigation();
+  const { setPostUploadTask, postUploadTask } = React.useContext(
+    MediaUploadContext
+  );
+
+  return (
+    <RawReplyPage
+      {...props}
+      navigation={navigation}
+      setPostUploadTask={setPostUploadTask}
+      postUploadTask={postUploadTask}
+    />
+  );
+};
+
+export default ReplyPage;

@@ -13,6 +13,7 @@ export const TOP_Y = getInset("top");
 export const BOTTOM_Y = getInset("bottom");
 export const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 export const IS_PRODUCTION = process.env.NODE_ENV === "production";
+export const FLICKR_API_KEY = "567fbd36f8779b6b9ee673ee7c5e570f";
 
 if (IS_DEVELOPMENT && !IS_SIMULATOR) {
   BASE_HOSTNAME = Config.PRODUCTION_BASE_HOSTNAME;

@@ -25,6 +25,10 @@ const normalizeSize = (size, rawHeight) => {
 };
 
 export const buildImgSrc = (source, rawSize, rawHeight) => {
+  if (!source.startsWith("https://") && !source.startsWith("http://")) {
+    return source;
+  }
+
   if (source.startsWith("https://image.mux.com")) {
     const vars = qs.stringify({
       ...qs.parse(source.split("?")[1]),

@@ -188,6 +188,11 @@ const _AvatarScreen = props => {
   const handleChangeAvatar = React.useCallback(
     mediaId => {
       setMediaId(mediaId);
+      return updateAvatar({
+        variables: {
+          mediaId
+        }
+      });
     },
     [setMediaId]
   );
@@ -198,27 +203,15 @@ const _AvatarScreen = props => {
       return;
     }
 
-    return updateAvatar({
-      variables: {
-        mediaId
-      }
-    }).then(
-      () => {
-        const onFinish = navigation.getParam("onFinish");
+    const onFinish = navigation.getParam("onFinish");
 
-        if (typeof onFinish === "function") {
-          navigation.dismiss();
-          typeof onFinish === "function" && onFinish();
-        } else {
-          resetTo("ThreadList", {});
-        }
-        userContext.hideAuthModal();
-      },
-      err => {
-        console.error(err);
-        sendToast("Something broke – please try again.", ToastType.error);
-      }
-    );
+    if (typeof onFinish === "function") {
+      navigation.dismiss();
+      typeof onFinish === "function" && onFinish();
+    } else {
+      resetTo("ThreadList", {});
+    }
+    userContext.hideAuthModal();
   }, [updateAvatar, mediaId, sendToast, userContext]);
 
   React.useEffect(() => {

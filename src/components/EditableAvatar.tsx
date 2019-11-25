@@ -18,6 +18,13 @@ import {
   IconPlus
 } from "./Icon";
 import { BitmapIconPlus } from "./BitmapIcon";
+import {
+  MediaUploadTask,
+  MediaUploadStatus,
+  MediaUpload
+} from "../lib/MediaUploadTask";
+import { ImageSourceType } from "../lib/imageSearch";
+import { allowSuspendIfBackgrounded } from "../lib/FileUploader";
 
 const avatarPlaceholderStyles = StyleSheet.create({
   container: {
@@ -110,7 +117,6 @@ type Props = {
 
 export class RawEditableAvatar extends React.Component<Props> {
   willUnmount = false;
-  s3Upload: S3Upload | null = null;
   canceled: boolean = false;
 
   constructor(props) {
@@ -122,9 +128,9 @@ export class RawEditableAvatar extends React.Component<Props> {
   }
 
   cancelRequests = () => {
-    if (this.s3Upload) {
+    if (this.mediaUpload) {
       this.canceled = true;
-      this.s3Upload.abortUpload();
+      this.mediaUpload.cancel();
     }
   };
 
@@ -167,7 +173,7 @@ export class RawEditableAvatar extends React.Component<Props> {
 
     HapticFeedback.trigger("notificationSuccess");
 
-    this.s3Upload = null;
+    this.mediaUpload = null;
 
     return Promise.resolve();
   };
@@ -176,6 +182,8 @@ export class RawEditableAvatar extends React.Component<Props> {
     if (this.canceled) {
       return Promise.resolve();
     }
+
+    allowSuspendIfBackgrounded();
 
     console.error(error);
     alert("Uploading failed. Please try again");
@@ -186,9 +194,22 @@ export class RawEditableAvatar extends React.Component<Props> {
       isUploading: false
     });
 
-    this.s3Upload = null;
+    this.mediaUpload = null;
 
     return Promise.resolve();
+  };
+
+  mediaUpload: MediaUpload | null = null;
+
+  handleUploadChange = (upload: MediaUpload) => {
+    console.log("CHANGE", upload.status, upload.presignStatus);
+    if (upload.isWaiting) {
+      upload.start();
+    } else if (upload.isCompleted) {
+      this.handleUploadComplete({ mediaId: upload.mediaId });
+    } else if (upload.isFailed) {
+      this.handleUploadError(upload.uploadError || upload.presignError);
+    }
   };
 
   startUploading = async (resetStatus = false) => {
@@ -196,23 +217,24 @@ export class RawEditableAvatar extends React.Component<Props> {
       return;
     }
 
-    if (this.props.isUploading && !resetStatus) {
-      return;
-    } else {
-      this.setState({
-        isUploading: true
-      });
-    }
+    const { lastPhoto: photo } = this.props;
 
-    this.s3Upload = await startFileUpload({
-      file: this.props.lastPhoto,
-      onFinishS3Put: this.handleUploadComplete,
-      onError: this.handleUploadError,
-      onProgress: this.handleUploadProgress,
-      params: {
-        from: "avatar"
-      }
+    const media = {
+      width: photo.width,
+      height: photo.height,
+      uri: photo.uri,
+      mimeType: photo.type,
+      source: ImageSourceType.cameraRoll,
+      duration: 0
+    };
+
+    this.mediaUpload = new MediaUpload({
+      media,
+      onChange: this.handleUploadChange,
+      onProgress: this.handleUploadProgress
     });
+
+    this.mediaUpload.start();
 
     this.canceled = false;
   };
@@ -239,6 +261,7 @@ export class RawEditableAvatar extends React.Component<Props> {
             size={this.props.size}
             url={url}
             isLocal={isLocal}
+            key={url}
           />
           {this.state.isUploading && (
             <UploadingAvatarIndicator size={this.props.size} />

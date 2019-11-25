@@ -521,7 +521,9 @@ class _TrackableMediaPlayer extends React.Component<
   }
 
   get shouldTrackProgressNatively() {
-    return isVideo(this.props.sources[0]?.mimeType);
+    return isVideo(
+      this.props.sources[0]?.mimeType || this.props.sources[0]?.type
+    );
   }
 
   get shouldTrackProgress() {

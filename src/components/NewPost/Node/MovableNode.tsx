@@ -37,6 +37,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     keyboardVisibleValue,
     bottom = undefined,
     opacity = 1.0,
+    rasterize,
     children
   } = props;
 
@@ -45,6 +46,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
       <Animated.View
         ref={ref}
         onLayout={onLayout}
+        shouldRasterizeIOS={rasterize}
+        needsOffscreenAlphaCompositing
         style={[
           transformableStyles.bottomContainer,
           {
@@ -75,6 +78,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
       <Animated.View
         ref={ref}
         onLayout={onLayout}
+        shouldRasterizeIOS={rasterize}
+        needsOffscreenAlphaCompositing
         style={[
           transformableStyles.topContainer,
           {

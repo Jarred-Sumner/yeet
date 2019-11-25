@@ -680,6 +680,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 //        return
 //      }
 
+      do {
+        try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category.playback, mode: AVAudioSession.Mode.default, options: .mixWithOthers)
+        try AVAudioSession.sharedInstance().setActive(true)
+      } catch {
+
+      }
+
+
       if !videoSource!.canPlay || videoView?.playerView.superview == nil || videoSource?.player == nil {
 
         if videoSource?.mediaSource.coverUri != nil {

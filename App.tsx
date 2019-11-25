@@ -80,7 +80,6 @@ export class App extends React.Component {
     };
 
     if (!hasLoadedCache) {
-      SplashScreen.show();
       waitForReady().then(client => {
         if (this._hasMountedApp) {
           this.setState({ ready: true, client }, () => SplashScreen.hide());
@@ -172,6 +171,10 @@ export class App extends React.Component {
   };
 
   render() {
+    if (!this.state.ready) {
+      return null;
+    }
+
     return (
       <View style={styles.wrap}>
         <StatusBar barStyle="light-content" />

@@ -106,6 +106,8 @@
 //  [client start];
 
 
+  
+
   SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
   [[SDImageCodersManager sharedManager] addCoder:webPCoder];
 

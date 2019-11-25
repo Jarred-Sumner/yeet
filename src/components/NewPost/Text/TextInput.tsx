@@ -4,7 +4,9 @@ import {
   View,
   StyleSheet,
   NativeModules,
-  InteractionManager
+  InteractionManager,
+  StyleProp,
+  StyleSheetProperties
 } from "react-native";
 import {
   // TextInput as RNTextInput,
@@ -50,6 +52,15 @@ const contrastingColor = memoize((color: string) => {
     return "#fff";
   } else {
     return "#333";
+  }
+});
+
+const textShadowColor = memoize((color: string) => {
+  const _color = tinycolor(color);
+  if (_color.isDark()) {
+    return "rgba(255, 255, 255, 0.25)";
+  } else {
+    return "rgba(0, 0, 0, 0.25)";
   }
 });
 
@@ -115,7 +126,10 @@ const textInputTypeStylesheets = {
       paddingRight: 6,
       fontWeight: "600",
       paddingTop: 10,
-      paddingBottom: 10
+      paddingBottom: 10,
+      textShadowOffset: { width: 0, height: 0 },
+
+      textShadowRadius: 1
     }
   }),
   [PostFormat.screenshot]: StyleSheet.create({
@@ -302,6 +316,7 @@ export class TextInput extends React.Component<Props> {
       username,
       onLayout,
       focusType,
+      onTapAvatar,
       onFocus,
       TextInputComponent
     } = this.props;
@@ -341,6 +356,10 @@ export class TextInput extends React.Component<Props> {
         width:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         fontSize: this.fontSizeValue,
+        textShadowColor:
+          format === PostFormat.comment
+            ? textShadowColor(backgroundColor)
+            : undefined,
         lineHeight:
           format === PostFormat.caption
             ? Animated.multiply(this.fontSizeValue, 1.4)
@@ -391,9 +410,13 @@ export class TextInput extends React.Component<Props> {
           {editable && <View style={StyleSheet.absoluteFill}></View>}
           {format === PostFormat.comment ? (
             photoURL || username ? (
-              <TextCommentAvatar photoURL={photoURL} username={username} />
+              <TextCommentAvatar
+                onTap={onTapAvatar}
+                photoURL={photoURL}
+                username={username}
+              />
             ) : (
-              <CurrentUserCommentAvatar />
+              <CurrentUserCommentAvatar onTap={onTapAvatar} />
             )
           ) : null}
         </View>

@@ -19,13 +19,18 @@ import {
 } from "./graphql/CreatePostThread";
 import { PostFragment } from "./graphql/PostFragment";
 import { ContentExport, ExportableYeetImage, ExportData } from "./Exporter";
-import { uploadFile, allowSuspendIfBackgrounded } from "./FileUploader";
+import {
+  uploadFile,
+  allowSuspendIfBackgrounded,
+  cancelUpload
+} from "./FileUploader";
 import { getRequestHeaders } from "./graphql";
 import { CreatePostVariables } from "./graphql/CreatePost";
 import { CreatePostThreadVariables } from "./graphql/CreatePostThread";
 import { PostFormat } from "../components/NewPost/NewPostFormat";
 import { useApolloClient } from "react-apollo";
 import { navigate } from "./NavigationService";
+import { throttle } from "lodash";
 import Storage from "./Storage";
 
 type PresignResponse = {
@@ -37,7 +42,7 @@ type PresignResponse = {
   fields: Object;
 };
 
-enum MediaUploadStatus {
+export enum MediaUploadStatus {
   waiting = "waiting",
   cancelled = "cancelled",
   complete = "complete",
@@ -89,6 +94,19 @@ export class MediaUpload {
     this.presignStatus = presignStatus;
     this.status = status;
   }
+
+  cancel = () => {
+    if (!this.taskId) {
+      this.status = MediaUploadStatus.cancelled;
+      return;
+    }
+
+    if (this.isCompleted || this.isFailed) {
+      return;
+    }
+
+    return cancelUpload(this.taskId);
+  };
 
   startPresign = async () => {
     if (this.presignStatus === MediaUploadStatus.progressing) {
@@ -332,6 +350,13 @@ export class MediaUploadTask {
     return null;
   }
 
+  cancel = () => {
+    return Promise.all(this.files.map(file => file.cancel())).then(() => {
+      this.status = MediaUploadTaskStatus.cancelled;
+      allowSuspendIfBackgrounded();
+    });
+  };
+
   handleChange: MediaUploadChange = mediaUpload => {
     let file = this.currentFile;
 
@@ -465,6 +490,30 @@ export class PostUploadTask {
     task: PostUploadTask
   ) => void | null = null;
 
+  get isFinished() {
+    return (
+      this.hasPosted &&
+      this.task.files.every(file => !file.isWaiting && !file.isProgressing)
+    );
+  }
+
+  get hasPosted() {
+    if (this.type === PostUploadTaskType.newPost) {
+      return !!this.post;
+    } else if (this.type === PostUploadTaskType.newThread) {
+      return !!this.postThread;
+    } else {
+      return false;
+    }
+  }
+
+  cancel = async () => {
+    await this.task.cancel();
+    this.updateStatus();
+
+    this.onChange(this);
+  };
+
   constructor({
     contentExport,
     exportData,
@@ -506,11 +555,11 @@ export class PostUploadTask {
     });
   }
 
-  handleProgress = (progress: number, mediaUpload: MediaUpload) => {
+  handleProgress = throttle((progress: number, mediaUpload: MediaUpload) => {
     console.log(progress);
     typeof this.onProgress === "function" &&
       this.onProgress(progress, mediaUpload, this);
-  };
+  }, 100);
 
   onChangeFile = (oldFile: MediaUpload, newFile: MediaUpload | null) => {
     const isRequiredFile = oldFile === this.task.requiredFile;
@@ -790,7 +839,7 @@ export const MediaUploadProvider = ({ children }) => {
 
     if (post) {
       navigate("ViewThread", {
-        threadId: thread.id ?? postUploadTask.threadId,
+        threadId: thread?.id ?? postUploadTask.threadId,
         thread: thread,
         post: post,
         postId: post.id

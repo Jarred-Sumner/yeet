@@ -453,9 +453,10 @@ class ContentExport {
 
 
             let _ptFrame = (block.nodeFrame ?? block.frame)
+
             let ptFrame = _ptFrame.normalize(scale: 1 / renderSizeScale)
-            let scaleX = (ptFrame.width / vidAsset.naturalSize.width) * contentsScale
-            let scaleY = (ptFrame.height / vidAsset.naturalSize.height) * contentsScale
+            let scaleX = (ptFrame.width / _asset.resolution.width) * contentsScale
+            let scaleY = (ptFrame.height / _asset.resolution.height) * contentsScale
 
             let rotationTransform = CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))
 
@@ -476,7 +477,7 @@ class ContentExport {
 
             let videoTransform = _videoTransform
             let videoTranslateTransform = CGAffineTransform.init(translationX: .zero, y: videoYPositions[block.id]!)
-            let layerTransform = CGAffineTransform.identity.concatenating(videoTransform).concatenating(videoTranslateTransform).concatenating(vidAsset.preferredTransform)
+            let layerTransform = CGAffineTransform.identity.concatenating(vidAsset.preferredTransform).concatenating(videoTransform).concatenating(videoTranslateTransform)
 
             let videoRect = CGRect(origin: .zero, size: vidAsset.naturalSize).applying(layerTransform)
 
@@ -638,6 +639,7 @@ Bounds diff:
         assetExport.outputFileType = AVFileType.mp4
         assetExport.outputURL = canSkipCrop ? url : VideoProducer.generateExportURL(type: type)
         assetExport.timeRange = vid_timerange
+        assetExport.shouldOptimizeForNetworkUse = canSkipCrop
 
         if layercomposition.instructions.count > 0 {
           assetExport.videoComposition = layercomposition
@@ -667,7 +669,7 @@ Cropping video...
 """)
 
                 if canSkipCrop {
-                  let resolution = fullAsset.tracks(withMediaType: .video).first?.naturalSize ?? cropRect.size
+                  let resolution = fullAsset.resolution ?? cropRect.size
                   var colors: UIImageColors? = nil
                   let thumbnail = ContentExportThumbnail(asset: fullAsset)
 
@@ -679,7 +681,7 @@ Cropping video...
                   resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                 } else {
                   fullAsset.crop(to: cropRect, dest: url).then(on: VideoProducer.contentExportQueue) { asset in
-                    let resolution = asset.tracks(withMediaType: .video).first?.naturalSize ?? cropRect.size
+                    let resolution = asset.resolution ?? cropRect.size
                     var colors: UIImageColors? = nil
 
                     let thumbnail = ContentExportThumbnail(asset: asset)
@@ -902,5 +904,16 @@ extension CALayer {
       maskLayer.path = path.cgPath
 
       self.mask = maskLayer
+  }
+}
+
+
+extension AVAsset {
+  var resolution : CGSize {
+    guard let videoTrack = self.tracks(withMediaType: .video).first else {
+      return .zero
+    }
+
+    return CGRect(origin: .zero, size: videoTrack.naturalSize.applying(videoTrack.preferredTransform)).standardized.size
   }
 }

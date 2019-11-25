@@ -46,6 +46,7 @@ import {
 } from "../components/Icon";
 import { COLORS, SPACING } from "../lib/styles";
 import { NewThreadButton } from "../components/ThreadList/NewThreadButton";
+import { CommentFragment } from "../lib/graphql/CommentFragment";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -109,6 +110,7 @@ class FeedPageComponent extends React.Component<Props> {
       fromFeed: true
     });
   };
+
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {
     const options = ["Cancel"];
     let destructiveButtonIndex = -1;

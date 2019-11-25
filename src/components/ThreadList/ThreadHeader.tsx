@@ -1,7 +1,11 @@
 import * as React from "react";
 
-import { View, StyleSheet } from "react-native";
-import Animated from "react-native-reanimated";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
+import Animated, {
+  TransitioningView,
+  Transitioning,
+  Transition
+} from "react-native-reanimated";
 import SafeAreaView from "react-native-safe-area-view";
 import {
   BackButton,
@@ -15,11 +19,24 @@ import {
   SemiBoldText,
   LETTER_SPACING_MAPPING
 } from "../Text";
-import { IconEllipsis, IconClose } from "../Icon";
+import {
+  IconEllipsis,
+  IconClose,
+  IconDownload,
+  IconChevronLeft,
+  IconCheck
+} from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { BlurView } from "@react-native-community/blur";
 import tinycolor from "tinycolor2";
+import {
+  MediaUploadContext,
+  PostUploadTaskStatus
+} from "../../lib/MediaUploadTask";
+import { MediaUploadProgress } from "../MediaUploadProgress";
+import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import { useFocusState } from "react-navigation-hooks";
 
 export const THREAD_HEADER_HEIGHT = 34 + SPACING.normal;
 
@@ -47,18 +64,20 @@ const styles = StyleSheet.create({
   side: {
     flexDirection: "row",
     alignItems: "center",
-    height: THREAD_HEADER_HEIGHT
+    height: THREAD_HEADER_HEIGHT,
+    overflow: "visible"
   },
   title: {
     marginTop: 4,
     color: "white",
     fontSize: 14,
-    lineHeight: 14,
+    overflow: "visible",
     textAlign: "center"
   },
   bigTitle: {
     marginTop: 0,
     color: "white",
+    overflow: "visible",
     fontSize: 18,
     letterSpacing: LETTER_SPACING_MAPPING["18"],
     textAlign: "center"
@@ -89,6 +108,30 @@ const styles = StyleSheet.create({
   },
   leftSide: {
     width: 44
+  },
+  uploadPending: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SPACING.half,
+    minWidth: 45,
+    justifyContent: "flex-end",
+    height: THREAD_HEADER_HEIGHT
+  },
+  uploadPendingText: {
+    marginRight: SPACING.half
+  },
+  spinner: {
+    marginRight: SPACING.half
+  },
+  down: {
+    transform: [{ rotate: "270deg" }]
+  },
+  progress: {
+    position: "absolute",
+    top: THREAD_HEADER_HEIGHT + TOP_Y,
+    left: 0,
+    right: 0,
+    zIndex: 0
   }
 });
 
@@ -96,6 +139,59 @@ export const ThreadHeader = ({ thread }) => {
   const ref = React.useRef();
 
   const behavior = useBackButtonBehavior();
+
+  const { postUploadTask, setPostUploadTask, status } = React.useContext(
+    MediaUploadContext
+  );
+  const [showPendingUploads, setShowPendingUploads] = React.useState(
+    postUploadTask?.threadId === thread.id
+  );
+  const transitionRef = React.useRef<TransitioningView>();
+
+  const toggleShowPendingUploads = () => {
+    setShowPendingUploads(!showPendingUploads);
+    transitionRef.current.animateNextTransition();
+  };
+
+  const { isFocused } = useFocusState();
+
+  const showExpandIcon =
+    status !== PostUploadTaskStatus.waiting &&
+    postUploadTask?.threadId === thread.id;
+
+  const autoDismissTimer = React.useRef(-1);
+
+  React.useEffect(() => {
+    if (postUploadTask?.isFinished && isFocused) {
+      autoDismissTimer.current = window.setTimeout(() => {
+        setPostUploadTask(null);
+        setShowPendingUploads(false);
+
+        autoDismissTimer.current = -1;
+      }, 10000);
+    } else if (
+      status !== PostUploadTaskStatus.complete &&
+      autoDismissTimer.current > -1
+    ) {
+      window.clearTimeout(autoDismissTimer.current);
+      autoDismissTimer.current = -1;
+    }
+  }, [
+    postUploadTask?.isFinished,
+    showPendingUploads,
+    status,
+    autoDismissTimer,
+    isFocused
+  ]);
+
+  React.useEffect(() => {
+    return () => {
+      if (autoDismissTimer.current > -1) {
+        window.clearTimeout(autoDismissTimer.current);
+      }
+    };
+  }, [autoDismissTimer]);
+
   return (
     <>
       <BlurView
@@ -120,9 +216,39 @@ export const ThreadHeader = ({ thread }) => {
         </View>
 
         <View style={[styles.side, styles.rightSide]}>
-          {/* <IconButtonEllipsis onPress={handlePressEllipsis} /> */}
+          {showExpandIcon && (
+            <TouchableWithoutFeedback onPress={toggleShowPendingUploads}>
+              <Animated.View style={styles.uploadPending}>
+                {!postUploadTask.isFinished && (
+                  <ActivityIndicator
+                    size="small"
+                    color="#fff"
+                    style={styles.spinner}
+                  />
+                )}
+                <IconChevronLeft style={styles.down} size={16} color="#fff" />
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          )}
         </View>
       </View>
+
+      <Transitioning.View
+        ref={transitionRef}
+        transition={
+          <Transition.Together>
+            <Transition.In interpolation="easeIn" type="fade" />
+            <Transition.Change interpolation="easeIn" />
+            <Transition.Out interpolation="easeOut" type="fade" />
+          </Transition.Together>
+        }
+        pointerEvents={showPendingUploads ? "auto" : "none"}
+        style={styles.progress}
+      >
+        {showPendingUploads && postUploadTask?.contentExport && (
+          <MediaUploadProgress hideIcon />
+        )}
+      </Transitioning.View>
     </>
   );
 };
@@ -131,6 +257,7 @@ export const NewThreadHeader = ({}) => {
   const ref = React.useRef();
 
   const behavior = useBackButtonBehavior();
+
   return (
     <>
       <BlurView

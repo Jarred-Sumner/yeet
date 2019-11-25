@@ -73,7 +73,8 @@ const SHARED_GLOBAL_SCREENS = {
   ViewThread: {
     screen: ThreadPage,
     navigationOptions: {
-      header: null
+      header: null,
+      gestureEnabled: true
     }
   }
 };
@@ -91,7 +92,12 @@ const _AppContainer = memoize(initialRouteName => {
                     FeedTab: createStackNavigator(
                       {
                         ThreadList: FeedPage,
-                        ViewThread: ThreadPage,
+                        ViewThread: {
+                          screen: ThreadPage,
+                          navigationOptions: {
+                            gestureEnabled: true
+                          }
+                        },
                         ReplyToPost: ReplyPage,
                         EditBlockPhotoInReply: ImagePickerPage,
                         ...SHARED_GLOBAL_SCREENS
@@ -102,7 +108,9 @@ const _AppContainer = memoize(initialRouteName => {
                         },
                         headerMode: "none",
                         defaultNavigationOptions: ({ navigation }) => ({
-                          header: () => null
+                          header: () => null,
+                          gestureEnabled: true,
+                          gesturesEnabled: true
                         })
                       },
                       {
