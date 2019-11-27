@@ -140,8 +140,7 @@ const styles = StyleSheet.create({
     zIndex: LayerZ.metadata,
     justifyContent: "center",
     alignItems: "center",
-    right: 0,
-    paddingHorizontal: 20
+    right: 0
   },
   ellipsis: {
     width: AVATAR_SIZE + SPACING.normal * 2,
@@ -317,20 +316,6 @@ const PostCardComponent = ({
     [openComposer, width, height, post.id, playbackTime]
   );
 
-  const onPressCommentButton = React.useCallback(() => {
-    const y = Math.max(height - 48, 10);
-    const x = 16;
-
-    onOpenComposer({
-      postId: post.id,
-      mimeType: post.media.mimeType,
-      width,
-      height,
-      x,
-      y
-    });
-  }, [onOpenComposer, width, height, post.id]);
-
   const toggleShowComments = React.useCallback(
     () => setShowAllComments(!showAllComments),
     []
@@ -357,6 +342,7 @@ const PostCardComponent = ({
         y,
         width,
         height,
+        mimeType: post.media.mimeType,
         keyboardVisibleValue,
         postId: post.id
       });
@@ -364,10 +350,26 @@ const PostCardComponent = ({
     [onOpenComposer, width, height, keyboardVisibleValue, post.id, isNotPlaying]
   );
 
+  const onPressCommentButton = React.useCallback(() => {
+    const y = Math.max(height - 48, 10);
+    const x = 16;
+
+    handleCompose({ nativeEvent: { x, y } });
+  }, [handleCompose]);
+
+  const commentCountButtonRef = React.useRef();
+  const likeButtonRef = React.useRef();
+
+  const buttonRefs = React.useMemo(
+    () => [commentCountButtonRef, likeButtonRef],
+    [commentCountButtonRef, likeButtonRef, isNotPlaying]
+  );
+
   return (
     <LongPressGestureHandler
       disabled={isNotPlaying}
       onGestureEvent={handleCompose}
+      waitFor={buttonRefs}
     >
       <Animated.View>
         <TouchableWithoutFeedback
@@ -509,6 +511,7 @@ const PostCardComponent = ({
                 iconSize={28}
                 Icon={IconComment}
                 color="white"
+                buttonRef={commentCountButtonRef.current}
                 disabled={paused}
                 count={post.commentsCount || 0}
                 onPress={onPressCommentButton}
@@ -520,6 +523,7 @@ const PostCardComponent = ({
               <LikeCountButton
                 size={28}
                 id={post.id}
+                buttonRef={likeButtonRef.current}
                 onPress={handlePressLike}
               />
             </Animated.View>

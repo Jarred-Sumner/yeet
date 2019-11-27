@@ -16,9 +16,11 @@ const LikeCountButtonComponent = ({
   onPress,
   isLiked,
   size = 32,
+  buttonRef,
   disabled
 }) => (
   <CountButton
+    buttonRef={buttonRef}
     Icon={isLiked ? IconLike : IconLikeAlt}
     color={isLiked ? "rgb(246, 52, 104)" : "white"}
     type="shadow"
@@ -29,7 +31,13 @@ const LikeCountButtonComponent = ({
   />
 );
 
-export const LikeCountButton = ({ id, onPress, size = 32, disabled }) => {
+export const LikeCountButton = ({
+  id,
+  onPress,
+  size = 32,
+  disabled,
+  buttonRef
+}) => {
   const query: QueryResult<ViewPost> = useQuery(POST_QUERY, {
     variables: { id },
     fetchPolicy: "cache-only"
@@ -41,6 +49,7 @@ export const LikeCountButton = ({ id, onPress, size = 32, disabled }) => {
   return (
     <LikeCountButtonComponent
       count={post ? post.likesCount : 0}
+      buttonRef={buttonRef}
       isLiked={userId ? post?.likes?.profileIDs?.includes(userId) : false}
       onPress={onPress}
       size={size}

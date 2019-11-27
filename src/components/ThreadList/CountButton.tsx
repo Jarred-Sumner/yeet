@@ -14,7 +14,11 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    overflow: "visible"
+    overflow: "visible",
+    paddingHorizontal: 20
+  },
+  disabledContainer: {
+    paddingHorizontal: 0
   },
   textShadow: {
     textShadowRadius: 1,
@@ -49,15 +53,23 @@ export const CountButton = React.memo(
     onPress,
     onLongPress,
     iconSize,
+    buttonRef,
     disabled = false
   }) => {
     return (
       <TouchableWithoutFeedback
         disabled={disabled}
         onLongPress={onLongPress}
+        ref={buttonRef}
         onPress={onPress}
       >
-        <View style={styles.container}>
+        <View
+          style={
+            disabled || !onPress
+              ? [styles.container, styles.disabledContainer]
+              : styles.container
+          }
+        >
           {iconNode ? (
             iconNode
           ) : (

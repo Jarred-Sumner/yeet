@@ -63,6 +63,7 @@ import {
 import LIME_POST_QUERY from "../lib/LikePost.graphql";
 import { SPACING } from "../lib/styles";
 import VIEW_THREAD_QUERY from "../lib/ViewThread.graphql";
+import { sendLightFeedback } from "../lib/Vibration";
 
 const THREAD_REPLY_BUTTON_HEIGHT = 48;
 
@@ -150,7 +151,11 @@ const ThreadReplyButton = React.memo(({ onPress }) => {
   const buttonContainerRef = React.useRef();
 
   return (
-    <View shouldRasterizeIOS style={styles.buttonShadow}>
+    <View
+      pointerEvents="box-none"
+      shouldRasterizeIOS
+      style={styles.buttonShadow}
+    >
       <RectButton underlayColor="transparent" borderless onPress={onPress}>
         <View style={styles.buttonBorder}>
           <BlurView
@@ -266,6 +271,7 @@ class ThreadPageComponent extends React.Component<Props, State> {
     }
 
     await this.props.onLikePost({ variables: { postId } });
+    sendLightFeedback();
 
     return this.autoRequestPush();
   };
@@ -557,7 +563,11 @@ class ThreadPageComponent extends React.Component<Props, State> {
           }
         >
           {showComposer === false && (
-            <Animated.View key="default-footer" style={styles.footer}>
+            <Animated.View
+              pointerEvents="box-none"
+              key="default-footer"
+              style={styles.footer}
+            >
               <ThreadReplyButton onPress={this.handlePressReply} />
             </Animated.View>
           )}
