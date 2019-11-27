@@ -1,11 +1,14 @@
 Welcome to update number two!! This one is smaller.
 
+- Push Notifications send now!
+- It was showing zero comments for every post in the Home tab, even when there were comments. Now it doesn't.
 - Loading images/gifs is more reliable & faster now. Not perfect, but better.
 - You can now block people.
 - Fixed a bug where tapping on a notification would show a black screen
+- Made it easier to tap the like & comment buttons.
 - On the Home tab, you can now tap on the thread creator to view their profile
 - Made the posts on the Home tab bigger and more respectful of the aspect ratios of the posts. Its important to be nice.
-- Fixed a bug where it wouldnt let you choose when your comment would appear.
+- Fixed a bug where it wouldnt let you choose when your comment would appear sometimes.
 - Fixed an issue where posting wouldn't always update the list of posts in a thread correctly
 - Added a link to the Terms of Service & Privacy Policy in the login page
 - Removed some logging that didn't need to run in production
