@@ -8,6 +8,7 @@ import { IconButton } from "../Button";
 import { IconEllipsis } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { Timestamp } from "../Timestamp";
+import { TouchableWithoutFeedback } from "react-native-gesture-handler";
 
 export const AVATAR_SIZE = 42;
 export const PROFILE_FEED_HEIGHT = 42 + SPACING.normal * 2;
@@ -68,34 +69,55 @@ const styles = StyleSheet.create({
 });
 
 type Props = {
-  profile: Pick<PostListItemFragment_profile, "photoURL" | "username">;
+  profile: Pick<PostListItemFragment_profile, "photoURL" | "username" | "id">;
   onPressEllipsis: () => void;
 };
 
 export const ProfileFeedComponent = ({
   profile,
   onPressEllipsis,
+  onPressProfile,
   showTimestamp = true,
   createdAt,
   showEllipsis = true,
   body
 }: Props) => {
+  const handlePressProfile = React.useCallback(() => {
+    typeof onPressProfile === "function" && onPressProfile(profile.id);
+  }, [onPressProfile, profile.id]);
+
   return (
     <Animated.View style={styles.container}>
       <View style={styles.side}>
-        <View style={styles.avatar}>
-          <Avatar
-            url={profile.photoURL}
-            size={AVATAR_SIZE}
-            label={profile.username}
-          />
-        </View>
+        <TouchableWithoutFeedback
+          disabled={!onPressProfile}
+          onPress={handlePressProfile}
+        >
+          <Animated.View style={styles.avatar}>
+            <Avatar
+              url={profile.photoURL}
+              size={AVATAR_SIZE}
+              label={profile.username}
+            />
+          </Animated.View>
+        </TouchableWithoutFeedback>
 
         <View style={styles.textContainer}>
           <View style={styles.textHeader}>
-            <Text numberOfLines={1} adjustsSizeToFit style={styles.username}>
-              {profile.username}
-            </Text>
+            <TouchableWithoutFeedback
+              disabled={!onPressProfile}
+              onPress={handlePressProfile}
+            >
+              <Animated.View>
+                <Text
+                  numberOfLines={1}
+                  adjustsSizeToFit
+                  style={styles.username}
+                >
+                  {profile.username}
+                </Text>
+              </Animated.View>
+            </TouchableWithoutFeedback>
 
             {showTimestamp && (
               <>

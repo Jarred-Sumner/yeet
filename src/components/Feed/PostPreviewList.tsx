@@ -21,11 +21,12 @@ import { postElementId } from "../../lib/ElementTransition";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { CommentCountButton } from "../ThreadList/CommentCountButton";
 
-export const POST_LIST_HEIGHT = SCREEN_DIMENSIONS.height * 0.75;
+export const POST_LIST_HEIGHT = SCREEN_DIMENSIONS.height * 0.65;
 export const HORIZONTAL_POST_LIST_WIDTH =
   SCREEN_DIMENSIONS.width - SPACING.double * 2;
-export const VERTICAL_POST_LIST_WIDTH = SCREEN_DIMENSIONS.width * 0.75;
-export const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.75;
+export const VERTICAL_POST_LIST_WIDTH =
+  SCREEN_DIMENSIONS.width * 0.65 - SPACING.double * 2;
+export const MAX_CONTENT_HEIGHT = POST_LIST_HEIGHT;
 
 export const getPostPreviewWidth = (dimensions: DimensionsRect) => {
   const aspectRatio = dimensions.width / dimensions.height;
@@ -40,7 +41,7 @@ export const getPostWidth = (post: PostListItemFragment) => {
   return getPostPreviewWidth(post.media);
 };
 
-export type PressPostFunction = (post: PostListItemFragment) => Void;
+export type PressPostFunction = (post: PostListItemFragment) => void;
 
 export const getContentSize = (
   post: PostListItemFragment,
@@ -171,6 +172,8 @@ const GradientOverlay = React.memo(({ width, height }) => (
   <LinearGradient
     width={width}
     height={height}
+    renderToHardwareTextureAndroid
+    shouldRasterizeIOS
     colors={["rgba(0, 0, 0, 0)", "rgba(0, 0, 0, 0.5)"]}
     start={{ x: 0, y: 0 }}
     end={{ x: 0, y: 1 }}
@@ -322,23 +325,54 @@ const ListItem = ({
   );
 };
 
+const PlaceholderOverlayGradient = React.memo(({ width, height }) => (
+  <LinearGradient
+    width={width}
+    height={height}
+    colors={["rgba(173, 85, 255, 0.15)", "rgba(194, 129, 255, 0.08)"]}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 0, y: 1 }}
+    locations={[0, 0.3146]}
+  />
+));
+
 export const PlaceholderPost = ({ height, width, onPress, children }) => {
+  const listItemStyle = React.useMemo(
+    () => [styles.listItem, { width, height }],
+    [styles.listItem, width, height]
+  );
+
+  const imageContainerStyle = React.useMemo(
+    () => [styles.imageContainer, { width, height }],
+    [styles.imageContainer, width, height]
+  );
+  const newPostBackgroundStyle = React.useMemo(
+    () => [styles.newPostBackground, { width, height }],
+    [styles.newPostBackground, width, height]
+  );
+  const newPostStyle = React.useMemo(
+    () => [styles.newPost, { width, height }],
+    [styles.newPost, width, height]
+  );
+  const imageBorderStyle = React.useMemo(
+    () => [styles.imageBorder, { width, height }],
+    [styles.imageBorder, width, height]
+  );
+
+  const overlayStyle = React.useMemo(
+    () => [StyleSheet.absoluteFill, styles.overlayContainer, { width, height }],
+    [styles.overlayContainer, width, height]
+  );
+
   return (
     <BaseButton onPress={onPress}>
-      <Animated.View style={[styles.listItem, { width, height }]}>
-        <View style={[styles.imageContainer, { width, height }]}>
-          <View style={[styles.newPostBackground, { width, height }]}>
-            <LinearGradient
-              width={width}
-              height={height}
-              colors={["rgba(173, 85, 255, 0.15)", "rgba(194, 129, 255, 0.08)"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              locations={[0, 0.3146]}
-            />
+      <Animated.View style={listItemStyle}>
+        <View style={imageContainerStyle}>
+          <View style={newPostBackgroundStyle}>
+            <PlaceholderOverlayGradient width={width} height={height} />
           </View>
 
-          <View style={[styles.newPost, { width, height }]}>
+          <View style={newPostStyle}>
             <IconButton
               type="shadow"
               containerSize={48}
@@ -352,17 +386,11 @@ export const PlaceholderPost = ({ height, width, onPress, children }) => {
             <MediumText style={styles.newPostText}>{children}</MediumText>
           </View>
 
-          <View style={[styles.imageBorder, { width, height }]}></View>
+          <View style={imageBorderStyle}></View>
         </View>
 
         {height > 200 && (
-          <View
-            style={[
-              StyleSheet.absoluteFill,
-              styles.overlayContainer,
-              { width, height }
-            ]}
-          >
+          <View style={overlayStyle}>
             <View style={styles.overlay}>
               <View style={styles.overlaySide}>
                 <View style={[styles.avatar, styles.avatarFaded]}>
@@ -431,6 +459,11 @@ export const PostPreviewList = React.forwardRef(
       [onPressPost, height, paused]
     );
 
+    const scrollViewStyle = React.useMemo(
+      () => [styles.scrollView, { height }],
+      [styles.scrollView, height]
+    );
+
     return (
       <ScrollView
         {...otherProps}
@@ -439,7 +472,8 @@ export const PostPreviewList = React.forwardRef(
         ref={ref}
         horizontal
         simultaneousHandlers={waitFor}
-        style={[styles.scrollView, { height }]}
+        style={scrollViewStyle}
+        removeClippedSubviews={false}
       >
         {children}
         {posts.slice(0, 4).map(renderPost)}

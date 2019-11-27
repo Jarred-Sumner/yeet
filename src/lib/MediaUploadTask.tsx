@@ -152,7 +152,7 @@ export class MediaUpload {
 
     const signURL = `${BASE_HOSTNAME}/api/sign-s3?${params}`;
 
-    console.log("Presign request", signURL);
+    console.log("Presign request", signURL, headers);
 
     try {
       const resp = await fetch(signURL, {
@@ -173,7 +173,6 @@ export class MediaUpload {
         this.presignStatus = MediaUploadStatus.complete;
         this.presignResponse = json as PresignResponse;
         this.mediaId = this.presignResponse.mediaId;
-
         this.onChange();
 
         return json;
@@ -227,21 +226,22 @@ export class MediaUpload {
       return;
     }
 
-    console.log("Beign upload1", this.presignResponse, this.media.uri);
-
     this.status = MediaUploadStatus.progressing;
 
     this.onChange();
 
-    console.log("HEADERS", this.presignResponse.headers);
+    const headers = {
+      ...this.presignResponse.headers,
+      "content-type": this.media.mimeType
+    };
+
+    console.log("Begin upload!", this.media.uri, { headers });
+
     uploadFile({
       file: this.media.uri,
       mimeType: this.media.mimeType,
       url: this.presignResponse.signedUrl,
-      headers: {
-        ...this.presignResponse.headers,
-        "content-type": this.media.mimeType
-      },
+      headers,
       onError: this.handleError,
       onCompleted: this.handleCompleted,
       onProgress: this.handleProgress,
@@ -697,32 +697,36 @@ export class PostUploadTask {
           const profileId = globalUserContext.userId;
 
           if (profileId) {
-            const variables = {
-              profileId,
-              offset: 0,
-              limit: 20
-            };
+            try {
+              const variables = {
+                profileId,
+                offset: 0,
+                limit: 20
+              };
 
-            const listPosts = store.readQuery<
-              ListProfilePosts,
-              ListProfilePostsVariables
-            >({
-              variables,
-              query: LIST_PROFILE_POSTS_QUERY
-            });
-
-            const data = listPosts?.profile?.posts?.data;
-            if (data) {
-              listPosts.profile.posts.data = [
-                createPost,
-                ...listPosts?.profile?.posts?.data
-              ];
-
-              store.writeQuery({
-                query: LIST_PROFILE_POSTS_QUERY,
+              const listPosts = store.readQuery<
+                ListProfilePosts,
+                ListProfilePostsVariables
+              >({
                 variables,
-                data: listPosts
+                query: LIST_PROFILE_POSTS_QUERY
               });
+
+              const data = listPosts?.profile?.posts?.data;
+              if (data) {
+                listPosts.profile.posts.data = [
+                  createPost,
+                  ...listPosts?.profile?.posts?.data
+                ];
+
+                store.writeQuery({
+                  query: LIST_PROFILE_POSTS_QUERY,
+                  variables,
+                  data: listPosts
+                });
+              }
+            } catch (exception) {
+              console.error(exception);
             }
           }
 
@@ -788,32 +792,37 @@ export class PostUploadTask {
           const post = createPostThread?.posts?.data[0];
 
           if (profileId && post) {
-            const variables = {
-              profileId,
-              offset: 0,
-              limit: 20
-            };
+            try {
+              console.log({ profileId });
+              const variables = {
+                profileId,
+                offset: 0,
+                limit: 20
+              };
 
-            const listPosts = store.readQuery<
-              ListProfilePosts,
-              ListProfilePostsVariables
-            >({
-              query: LIST_PROFILE_POSTS_QUERY,
-              variables
-            });
-
-            const data = listPosts?.profile?.posts?.data;
-            if (data) {
-              listPosts.profile.posts.data = [
-                post,
-                ...listPosts?.profile?.posts?.data
-              ];
-
-              store.writeQuery({
+              const listPosts = store.readQuery<
+                ListProfilePosts,
+                ListProfilePostsVariables
+              >({
                 query: LIST_PROFILE_POSTS_QUERY,
-                variables,
-                data: listPosts
+                variables
               });
+
+              const data = listPosts?.profile?.posts?.data;
+              if (data) {
+                listPosts.profile.posts.data = [
+                  post,
+                  ...listPosts?.profile?.posts?.data
+                ];
+
+                store.writeQuery({
+                  query: LIST_PROFILE_POSTS_QUERY,
+                  variables,
+                  data: listPosts
+                });
+              }
+            } catch (exception) {
+              console.error(exception);
             }
           }
 

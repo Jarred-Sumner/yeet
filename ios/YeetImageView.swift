@@ -194,7 +194,6 @@ class YeetImageView : PINAnimatedImageView {
     self.backgroundColor = .clear
 
 
-
     self.clipsToBounds = true
     self.pin_updateWithProgress = true
   }
@@ -211,26 +210,6 @@ class YeetImageView : PINAnimatedImageView {
     fatalError("not implemented")
   }
 
-
-  @objc (animated) var animated: Bool {
-    get {
-      return self.isAnimating
-    }
-
-    set (newValue) {
-      if (newValue == self.isAnimating) {
-        return
-      }
-
-      DispatchQueue.main.async { [weak self] in
-        if (self?.isAnimating ?? false) {
-            self?.stopAnimating()
-          } else {
-            self?.startAnimating()
-          }
-      }
-    }
-  }
 
   func loadFullSizeImage(contentMode: UIView.ContentMode, size: CGSize, cropRect: CGRect = .zero) -> Promise<UIImage> {
     return Promise<UIImage>() { resolve, reject in
@@ -282,21 +261,21 @@ class YeetImageView : PINAnimatedImageView {
   }
 
   func handleImageResult(result: PINRemoteImageManagerResult, scale: CGFloat) {
-//    DispatchQueue.main.async {
-//      if let image = result.image {
-//        if image.scale != scale {
-//          self.image = UIImage(cgImage: image.cgImage!, scale: scale, orientation: image.imageOrientation)
-//        } else {
-//          self.image = result.image
-//        }
-//      } else {
-//        self.image = nil
-//      }
-//    }
-
     let success = self.image != nil || self.animatedImage != nil
     self.handleLoad(success: success, error: result.error)
   }
+
+  var lastURL: URL? = nil
+
+   override func coverImageCompleted(_ coverImage: UIImage!) {
+    if let coverImage = coverImage.cgImage?.copy() {
+      self.coverImage = coverImage
+    }
+
+
+    super.coverImageCompleted(coverImage)
+  }
+
 
   func loadImage(async: Bool = true) {
     guard let mediaSource = self.mediaSource else {
@@ -306,9 +285,19 @@ class YeetImageView : PINAnimatedImageView {
 
     if mediaSource.isHTTProtocol {
       let (url, scale) = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
+      let needsChange = lastURL != url || ((image == nil && animatedImage == nil) && pin_downloadImageOperationUUID() == nil)
+
+      guard needsChange else {
+        if (pin_downloadImageOperationUUID() == nil) {
+          self.handleLoad(success: true, error: nil)
+        }
+        return
+      }
+
       self.pin_setImage(from: url, placeholderImage: nil) { [weak self] result in
         self?.handleImageResult(result: result, scale: scale)
       }
+      lastURL = url
     } else if mediaSource.isFromCameraRoll {
       let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: self.contentMode) { [weak self] image in
         if self?.imageRequestID != nil {
@@ -331,6 +320,15 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     onLoadStartEvent?(["id": mediaSource.id])
+  }
+
+  var coverImage: CGImage? = nil
+
+  override func display(_ layer: CALayer) {
+    let imageRef = self.imageRef()
+
+    let image = imageRef?.takeUnretainedValue()
+    layer.contents = image ?? coverImage
   }
 
   var isLoadingImage: Bool {
@@ -427,7 +425,7 @@ class YeetImageView : PINAnimatedImageView {
         return
       }
 
-      SwiftyBeaver.debug(error, context: self.mediaSource)
+      Log.debug(error, context: self.mediaSource)
       onErrorEvent?([ "id": mediaSource.id, "error": error!.localizedDescription ])
       if error != nil {
         DispatchQueue.main.async { [weak self] in
@@ -442,6 +440,7 @@ class YeetImageView : PINAnimatedImageView {
   }
 
   static let imageUriCache = NSCache<NSString, AnyObject>()
+
 
   static func imageUri(source: MediaSource, bounds: CGRect) -> (URL, CGFloat) {
     let cacheKey = "\(source.id)-\(bounds.size.width)-\(bounds.size.height)-\(bounds.origin.y)-\(bounds.origin.x)" as NSString
@@ -479,6 +478,11 @@ class YeetImageView : PINAnimatedImageView {
 
     return maxX < CGFloat(1) ? CGFloat(1) : maxX / boundsWidth
   }
+
+
+
+  
+
 
   static func _imageUri(source: MediaSource, bounds: CGRect) -> URL {
     if (!source.isHTTProtocol) {
@@ -525,6 +529,9 @@ class YeetImageView : PINAnimatedImageView {
 
   deinit {
     self.pin_cancelImageDownload()
+    self.animatedImage?.clearCache()
+    self.animatedImage = nil
+    self.coverImage = nil
 
     if let imageRequest = self.imageRequestID {
       YeetImageView.phImageManager.cancelImageRequest(imageRequest)

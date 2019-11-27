@@ -42,7 +42,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
   func batchPause(_ tag: NSNumber, _ IDs: Array<NSNumber>) {
     DispatchQueue.main.async {
 
-      let players = IDs.compactMap { id -> MediaPlayer? in
+      var players: Array<MediaPlayer>? = IDs.compactMap { id -> MediaPlayer? in
         if let player = self.bridge.uiManager.view(forReactTag: id) {
           return YeetExporter.findMediaPlayer(player)
         } else {
@@ -50,13 +50,29 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
         }
       }
 
-      players.forEach { player in
+      players?.forEach { player in
         guard let current = player.source else {
           return
         }
 
         player.batchPaused = true
         player.haltContent()
+      }
+
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+
+        players?.forEach { player in
+          guard player.batchPaused else {
+            return
+          }
+
+          if let videoView = player.videoView {
+            player.videoView?.showCover = true
+            player.videoView?.playerView.player = nil
+          }
+        }
+
+        players = nil
       }
     }
 

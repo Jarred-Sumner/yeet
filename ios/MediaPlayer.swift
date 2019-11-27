@@ -29,7 +29,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
 
     if let id = self.id {
-      SwiftyBeaver.debug("[\(mediaSource.mediaSource.mimeType.rawValue)] \(id): \(oldStatus.stringValue) -> \(status.stringValue)")
+      Log.debug("[\(mediaSource.mediaSource.mimeType.rawValue)] \(id): \(oldStatus.stringValue) -> \(status.stringValue)")
     }
 
     let item = mediaSource.mediaSource
@@ -195,18 +195,18 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
 
     let paused = self.paused ?? true
-    SwiftyBeaver.debug("PAUSEWD? \(paused)")
+    Log.debug("PAUSEWD? \(paused)")
 
     guard let current = self.source else {
       return
     }
 
     if !paused {
-      SwiftyBeaver.debug("WILL PLAY \(id)")
+      Log.debug("WILL PLAY \(id)")
       self.play()
     } else if paused {
       isWaitingToPlay = false
-      SwiftyBeaver.debug("WILL PAUSE \(id)")
+      Log.debug("WILL PAUSE \(id)")
       self.pause()
 
     }
@@ -484,9 +484,22 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         self.imageView = imageView
         self.addSubview(imageView)
       }
-      self.imageView?.frame = bounds
+      guard let imageView = self.imageView else {
+        return
+      }
 
-      self.imageView?.source = source as! TrackableImageSource?
+      imageView.frame = bounds
+
+      let imageSource = source as! TrackableImageSource?
+
+      if imageView.source != imageSource {
+        if paused && imageSource?.mediaSource.mimeType.isAnimatable() ?? false {
+          imageView.isPlaybackPaused = true
+        }
+
+        imageView.source = imageSource
+      }
+
       self.contentType = MediaPlayerContentType.image
     }
 
@@ -577,15 +590,10 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
       if videoSource.player != nil {
 //        videoSource.player?.delegate = nil
         videoSource.player?.pause()
+        videoSource.player?.currentItem?.cancelPendingSeeks()
         videoSource.player = nil
-        videoSource.status = .pending
-      }
 
-      if let videoView = self.videoView {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-          self?.videoView?.showCover = true
-          self?.videoView?.playerView.player = nil
-        }
+        videoSource.status = .pending
       }
     }
 
@@ -840,7 +848,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   deinit {
     source?.stop()
-    SwiftyBeaver.debug("DEINIT \(source?.mediaSource.id)-\(id)")
+    Log.debug("DEINIT \(source?.mediaSource.id)-\(id)")
 
     if let videoSource = self.videoSource {
       videoSource.player?.pause()

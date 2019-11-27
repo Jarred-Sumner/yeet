@@ -26,6 +26,27 @@
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
 #import <KTVHTTPCache/KTVHTTPCache.h>
 #import <FFFastImageView.h>
+#import <PINRemoteImage/PINAnimatedImageView.h>
+#import <PINRemoteImage/PINDisplayLink.h>
+
+
+@interface PINAnimatedImageView(PrivateMethods)
+
+@property (nonatomic, assign) CGImageRef frameImage;
+@property (nonatomic, strong) PINDisplayLink *displayLink;
+
+@property (nonatomic, assign) CFTimeInterval lastDisplayLinkFire;
+
+- (void)stopAnimating;
+
+
+- (void)coverImageCompleted:(PINImage *)coverImage;
+- (void)setCoverImage:(PINImage *)coverImage;
+- (void)checkIfShouldAnimate;
+- (void)displayLinkFired:(CADisplayLink *)displayLink;
+- (CGImageRef)imageRef;
+
+@end
 
 
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)

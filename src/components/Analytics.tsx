@@ -5,19 +5,21 @@ import { InteractionManager } from "react-native";
 import analytics from "@react-native-firebase/analytics";
 
 export const handleSignIn = (user: CurrentUserQuery_currentUser) => {
-  OneSignal.setExternalUserId(user.id);
+  const _id = __DEV__ ? `${user.id}__dev` : user.id;
+
+  OneSignal.setExternalUserId(_id);
   Sentry.setUser({
-    id: user.id,
+    id: _id,
     email: user.email
   });
 
   Sentry.addBreadcrumb({
     category: "auth",
-    message: "Authenticated user " + user.id,
+    message: "Authenticated user " + _id,
     level: Sentry.Severity.Info
   });
 
-  analytics().setUserId(user.id);
+  analytics().setUserId(_id);
 };
 
 export const trackScreenTransition = (

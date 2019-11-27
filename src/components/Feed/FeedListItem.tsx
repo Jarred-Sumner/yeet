@@ -168,7 +168,14 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
   };
 
   render() {
-    const { height, width, paused, thread, isVisible } = this.props;
+    const {
+      height,
+      width,
+      paused,
+      thread,
+      isVisible,
+      onPressProfile
+    } = this.props;
     const {
       posts: { data: posts },
       postsCount,
@@ -185,6 +192,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
           <ProfileFeedComponent
             profile={op}
             createdAt={thread.createdAt}
+            onPressProfile={onPressProfile}
             body={body}
             onPressEllipsis={this.handlePressElipsis}
           />

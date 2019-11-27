@@ -111,6 +111,13 @@ class FeedPageComponent extends React.Component<Props> {
     });
   };
 
+  handlePressProfile = (profileId: string) => {
+    this.props.navigation.navigate("ViewProfile", {
+      profileId,
+      fromFeed: true
+    });
+  };
+
   handleLongPressThread = (thread: ViewThreads_postThreads_data) => {
     const options = ["Cancel"];
     let destructiveButtonIndex = -1;
@@ -186,6 +193,7 @@ class FeedPageComponent extends React.Component<Props> {
           onPressPost={this.handlePressPost}
           onPressThread={this.handlePressThread}
           onPressNewPost={this.handleNewPost}
+          onPressProfile={this.handlePressProfile}
           onLongPressThread={this.handleLongPressThread}
           contentOffset={this.contentOffset}
           contentInset={this.contentInset}

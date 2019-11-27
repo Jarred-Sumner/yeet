@@ -8,7 +8,7 @@
 #import "AppDelegate.h"
 #import "yeet-Bridging-Header.h"
 
-#import <PINRemoteImage/PINRemoteImageManagerResult.h>
+#import <PINRemoteImage/PINRemoteImage.h>
 
 #import <React/RCTBridge.h>
 #import <React/RCTBundleURLProvider.h>
@@ -33,6 +33,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "RNSplashScreen.h"  // here
 #import "VydiaRNFileUploader.h"
+#import <PINCache/PINCache.h>
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -84,6 +85,11 @@
   if (!KTVHTTPCache.proxyIsRunning) {
     [KTVHTTPCache proxyStart:nil];
   }
+
+
+  PINCache *cache = (PINCache *)[[PINRemoteImageManager sharedImageManager] cache];
+  [[cache memoryCache] setCostLimit:600 * [[UIScreen mainScreen] scale] * 600 * [[UIScreen mainScreen] scale] * 100];
+  [[cache diskCache] setByteLimit:100 * 1024 * 1024];
 
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];

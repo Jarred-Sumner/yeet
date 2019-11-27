@@ -38,6 +38,7 @@ import {
   PostUploadTaskStatus
 } from "../../lib/MediaUploadTask";
 import { MediaUploadProgress } from "../MediaUploadProgress";
+import { throttle } from "lodash";
 
 const ITEM_SEPARATOR_HEIGHT = SPACING.half;
 
@@ -113,7 +114,7 @@ class FeedListComponent extends React.Component<Props, State> {
   }
 
   viewabilityConfig: ViewabilityConfig = {
-    itemVisiblePercentThreshold: 33,
+    itemVisiblePercentThreshold: 20,
     waitForInteraction: false
   };
 
@@ -161,6 +162,7 @@ class FeedListComponent extends React.Component<Props, State> {
         width={ITEM_WIDTH}
         onPressPost={this.props.onPressPost}
         onPressThread={this.props.onPressThread}
+        onPressProfile={this.props.onPressProfile}
         waitFor={[this.flatListRef]}
         onPressNewPost={this.props.onPressNewPost}
         onLongPressThread={this.props.onLongPressThread}
@@ -283,11 +285,13 @@ class FeedListComponent extends React.Component<Props, State> {
       error,
       initialLoad,
       showMediaUpload,
+      onPressProfile,
       ...otherProps
     } = this.props;
 
     return (
       <FlatList
+        {...otherProps}
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="never"
@@ -296,7 +300,6 @@ class FeedListComponent extends React.Component<Props, State> {
         scrollToOverflowEnabled
         vertical
         viewabilityConfig={this.viewabilityConfig}
-        {...otherProps}
         data={threads}
         extraData={this.state.visibleIDs}
         onRefresh={this.handleRefresh}

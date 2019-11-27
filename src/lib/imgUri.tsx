@@ -30,10 +30,11 @@ export const buildImgSrc = (source, rawSize, rawHeight) => {
   }
 
   if (source.startsWith("https://image.mux.com")) {
+    const maxWidth = source.includes(".gif") ? 500 : 1024;
     const vars = qs.stringify({
       ...qs.parse(source.split("?")[1]),
       // width: PixelRatio.roundToNearestPixel(rawSize),
-      width: PixelRatio.getPixelSizeForLayoutSize(rawSize),
+      width: Math.min(PixelRatio.getPixelSizeForLayoutSize(rawSize), maxWidth),
       fit_mode: "preserve",
       start: 0,
       end: 3

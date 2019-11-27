@@ -612,7 +612,7 @@ export class PostFlatList extends React.Component<Props, State> {
     }
   ];
 
-  renderFooterComponent = () => {
+  get bottomContentMargin() {
     if (this.props.posts.length < 2) {
       return null;
     }
@@ -622,38 +622,10 @@ export class PostFlatList extends React.Component<Props, State> {
       this.props.posts.length - 1
     );
 
-    const bottom = (offset % SCREEN_DIMENSIONS.height) + length;
+    const bottom = (offset % SCREEN_DIMENSIONS.height) - length;
 
-    let height = Math.abs(SCREEN_DIMENSIONS.height - bottom);
-
-    // if (offset > SCREEN_DIMENSIONS.height) {
-    //   height = Math.abs(
-    //     SCREEN_DIMENSIONS.height -
-    //       length -
-    //       (offset % SCREEN_DIMENSIONS.height) -
-    //       this.contentInset.bottom -
-    //       this.contentInset.top
-    //   );
-    // } else {
-    //   height = Math.abs(
-    //     SCREEN_DIMENSIONS.height -
-    //       length -
-    //       this.contentInset.top -
-    //       this.contentInset.bottom -
-    //       ITEM_SEPARATOR_HEIGHT -
-    //       (offset + length - SCREEN_DIMENSIONS.height)
-    //   );
-    // }
-
-    return (
-      <View
-        style={{
-          height,
-          width: 1
-        }}
-      />
-    );
-  };
+    return Math.abs(SCREEN_DIMENSIONS.height - bottom - this.topInset);
+  }
 
   visibleContentPosition = {
     minIndexForVisible: 0
@@ -709,14 +681,13 @@ export class PostFlatList extends React.Component<Props, State> {
             decelerationRate="fast"
             directionalLockEnabled
             snapToStart
-            snapToEnd={false}
+            snapToEnd
             disableScrollViewPanResponder
             style={this.listStyle}
             extraData={this.props.extraData}
             vertical
             keyboardDismissMode="interactive"
             keyExtractor={this.keyExtractor}
-            ListFooterComponent={this.renderFooterComponent}
             keyboardShouldPersistTaps="always"
             getItemLayout={this.getItemLayout}
             ItemSeparatorComponent={ItemSeparatorComponent}

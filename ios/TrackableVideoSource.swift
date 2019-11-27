@@ -53,6 +53,7 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
         looper?.disableLooping()
         playerStatusObserver?.invalidate()
         timeControlObserver?.invalidate()
+        player?.currentItem?.cancelPendingSeeks()
       }
     }
   }
@@ -268,5 +269,6 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
     player?.pause()
     playerStatusObserver?.invalidate()
     timeControlObserver?.invalidate()
+    player = nil
   }
 }
