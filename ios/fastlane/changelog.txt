@@ -1,44 +1,11 @@
-Welcome to update number one!!
+Welcome to update number two!! This one is smaller.
 
-Uploading:
-- Changing apps in the middle of uploading avatar should work now
-- Uploading a new post or a new thread should work a lot more reliably now (similar issue as avatar)
-- If your internet is spotty when you're trying to upload a new post, it should work okay now
-- It lets you use the app while uploading a new post / thread now. It uh, didn't before.
-- Your profile page and the feed automatically refreshes after you post something
-- Shows a progress bar while uploading the post
-
-Viewing posts
-- You can now swipe down to go to next post
-- Sound will play on top of other apps, so it doesn’t stop your music
-- Comments show usernames now
-- Comments should be easier to read now
-- Tapping a comment opens their profile
-- Changed the animation for showing comments
-- The show / hide at time is now the length of the video
-- Emoji in the header got cut off, now they’re not
-- Sometimes it was hard to scroll to the last post. It shouldn’t be anymore.
-
-Activity:
-- Liking, posting, or creating a new thread requests push notification access
-- Comments will now show up in the activity feed
-- The activity icon in the tab bar will now show a red badge when there are unread notifications
-- Tapping on a notification now opens up the thread / profile corresponding to the notification.
-- The colors on the page are more black
-
-Editor:
-- Uploading original videos/images should be much faster now.
-- If you skip cropping a video / image, it uploads the original version
-- If you don't insert any gifs/images/text into videos, it will upload the original version instead of resizing it.
-- Added a warning when uploading a video that will take awhile to export
-- Made the preview for the post in the new thread page shorter, so it doesn’t cover the create button
-
-Home:
-- Its darker now
-- It shows more content on the screen at once
-- Three tabs instead of four.
-- Creating a new thread is now a floaty button.
-- The new post card is a little less prominent now.
-
-Misc:
-- The app shouldn’t crash anymore while booting
+- Loading images/gifs is more reliable & faster now. Not perfect, but better.
+- You can now block people.
+- Fixed a bug where tapping on a notification would show a black screen
+- On the Home tab, you can now tap on the thread creator to view their profile
+- Made the posts on the Home tab bigger and more respectful of the aspect ratios of the posts. Its important to be nice.
+- Fixed a bug where it wouldnt let you choose when your comment would appear.
+- Fixed an issue where posting wouldn't always update the list of posts in a thread correctly
+- Added a link to the Terms of Service & Privacy Policy in the login page
+- Removed some logging that didn't need to run in production

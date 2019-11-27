@@ -1,4 +1,4 @@
-module.exports = {
+const config = {
   presets: [
     "module:metro-react-native-babel-preset",
     "@babel/preset-typescript"
@@ -9,3 +9,10 @@ module.exports = {
     "@babel/plugin-proposal-nullish-coalescing-operator"
   ]
 };
+
+if (process.env.NODE_ENV === "production") {
+  config.plugins << "transform-remove-console";
+  console.log("[BABEL] Config", config);
+}
+
+module.exports = config;
