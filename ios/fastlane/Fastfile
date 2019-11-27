@@ -74,6 +74,7 @@ platform :ios do
 
 
     build_number = get_build_number
+    version_number = get_version_number(target: "yeet")
 
 
 
