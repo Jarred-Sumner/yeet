@@ -15,6 +15,9 @@
 
 default_platform(:ios)
 
+APP_ID = "com.codeblogcorp.yeet"
+TEAM_ID = "7FRXF46ZSN"
+
 platform :ios do
   lane :tests do
     run_tests(scheme: "yeet", workspace: 'yeet.xcworkspace', devices: [
@@ -50,16 +53,27 @@ platform :ios do
     commit_version_bump(message: 'Bump beta version')
   end
 
+  lane :changelog do
+    version_number = get_version_number(target: "yeet")
+    set_changelog(app_identifier: APP_ID, version: version_number)
+  end
+
   desc 'Push a new release build to the App Store'
   lane :release do
-    increment_build_number(build_number: Time.now.to_i)
+
+    MY_EXT_APP_ID = "com.codeblogcorp.yeet.OneSignalNotificationServiceExtension"
+    MY_PROFILE = "iOS Team Store Provisioning Profile: com.codeblogcorp.yeet"
+    MY_EXT_PROFILE = "iOS Team Store Provisioning Profile: com.codeblogcorp.yeet.OneSignalNotificationServiceExtension"
+
+    CODESIGN_IDENTITY = "Apple Development: Jarred Sumner (3N4ZYUM325)"
+
+    increment_build_number(build_number: Float(Time.now.to_i) + 0.0)
+    increment_version_number(
+      bump_type: "patch" # Automatically increment patch version number
+    )
+
+
     build_number = get_build_number
-    version_number = get_version_number
-
-
-
-
-    get_certificates(output_path: 'config') # invokes cert
 
 
 
@@ -69,13 +83,13 @@ platform :ios do
       output_directory: 'releases/production',
       output_name: "Yeet-v#{version_number}-#{build_number}",
       clean: true,
-      export_options: {
-        method: "app-store",
-        provisioningProfiles: {
-          "com.codeblogcorp.yeet" => "iOS Team Provisioning Profile: com.codeblogcorp.yeet",
-        }
-      }
+      export_method: "app-store",
+      export_xcargs: "-allowProvisioningUpdates",
+      xcargs: "-allowProvisioningUpdates",
     )
+
+
+
     upload_to_app_store(
       automatic_release: true,
       reject_if_possible: true,

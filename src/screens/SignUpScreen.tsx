@@ -33,6 +33,7 @@ import { Storage, WATCH_KEYS } from "../lib/Storage";
 import { COLORS, SPACING } from "../lib/styles";
 import { getPlaceholderUsername } from "../lib/usernames";
 import { UserContext } from "../components/UserContext";
+import { Compliance } from "../components/Compliance";
 
 const styles = StyleSheet.create({
   form: {
@@ -44,12 +45,7 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.normal,
     height: 60
   },
-  caption: {
-    color: "#ccc",
-    marginTop: SPACING.normal,
-    flexDirection: "row",
-    flexWrap: "wrap"
-  },
+
   signUpButton: {
     paddingHorizontal: SPACING.normal,
     justifyContent: "center",
@@ -336,27 +332,8 @@ class RawSignUpPage extends React.Component {
                 >
                   Create account
                 </Button>
-                <View style={styles.caption}>
-                  <MediumText>
-                    By creating an account, you agree to the{" "}
-                  </MediumText>
-                  <Link
-                    TextComponent={MediumText}
-                    style={{ color: "#ccc" }}
-                    href={BASE_HOSTNAME + "/terms-of-service.html"}
-                  >
-                    terms & conditions
-                  </Link>
-                  <MediumText> and </MediumText>
-                  <Link
-                    TextComponent={MediumText}
-                    style={{ color: "#ccc" }}
-                    href={BASE_HOSTNAME + "/privacy-policy.html"}
-                  >
-                    privacy policy
-                  </Link>
-                  <MediumText>.</MediumText>
-                </View>
+
+                <Compliance />
               </View>
             )}
           </Formik>

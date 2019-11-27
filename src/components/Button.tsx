@@ -26,6 +26,7 @@ import {
   IconEllipsis,
   IconEllipsisAlt
 } from "./Icon";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 
 const styles = StyleSheet.create({
   color_primaryColor: {
@@ -314,13 +315,37 @@ export const IconButtonEllipsis = ({
   color = "white",
   containerSize,
   onPress,
+  onOption,
+  options,
   vertical,
   ...otherProps
 }) => {
+  const actionSheet = useActionSheet();
+
+  const handlePress = React.useCallback(() => {
+    const _options = [...options, "Cancel"];
+    const cancelButtonIndex = _options.length - 1;
+    actionSheet.showActionSheetWithOptions(
+      {
+        options: _options,
+        cancelButtonIndex
+      },
+      index => {
+        if (index === cancelButtonIndex) {
+          return;
+        }
+
+        const option = _options[index];
+
+        onOption(option);
+      }
+    );
+  }, [actionSheet, options, onOption]);
+
   return (
     <IconButton
       {...otherProps}
-      onPress={onPress}
+      onPress={options && onOption ? handlePress : onPress}
       Icon={vertical ? IconEllipsisAlt : IconEllipsis}
       size={size}
       containerSize={containerSize}

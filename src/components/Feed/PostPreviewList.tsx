@@ -21,11 +21,11 @@ import { postElementId } from "../../lib/ElementTransition";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { CommentCountButton } from "../ThreadList/CommentCountButton";
 
-export const POST_LIST_HEIGHT = 320;
+export const POST_LIST_HEIGHT = SCREEN_DIMENSIONS.height * 0.75;
 export const HORIZONTAL_POST_LIST_WIDTH =
   SCREEN_DIMENSIONS.width - SPACING.double * 2;
-export const VERTICAL_POST_LIST_WIDTH = 204;
-export const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.6;
+export const VERTICAL_POST_LIST_WIDTH = SCREEN_DIMENSIONS.width * 0.75;
+export const MAX_CONTENT_HEIGHT = SCREEN_DIMENSIONS.height * 0.75;
 
 export const getPostPreviewWidth = (dimensions: DimensionsRect) => {
   const aspectRatio = dimensions.width / dimensions.height;

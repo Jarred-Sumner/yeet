@@ -26,6 +26,11 @@ fastlane ios tests
 fastlane ios beta
 ```
 
+### ios changelog
+```
+fastlane ios changelog
+```
+
 ### ios release
 ```
 fastlane ios release

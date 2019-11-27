@@ -27,6 +27,7 @@ import { useBackButtonBehavior, BackButton } from "../components/Button";
 import { resetTo } from "../lib/NavigationService";
 import { getPlaceholderUsername } from "../lib/usernames";
 import { UserContext } from "../components/UserContext";
+import { Compliance } from "../components/Compliance";
 
 const styles = StyleSheet.create({
   form: {
@@ -241,6 +242,8 @@ class RawLoginPage extends React.Component {
           >
             {this.renderForm}
           </Formik>
+
+          <Compliance />
         </KeyboardAwareScrollView>
         {this.state.isLoading && (
           <LoadingModal visible={this.state.isLoading} />

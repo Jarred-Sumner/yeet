@@ -21,6 +21,7 @@ import LIST_FOLLOWERS_QUERY from "../../lib/ListFollowersQuery.graphql";
 import FOLLOW_PROFILE_MUTATION from "../../lib/FollowProfileMutation.graphql";
 import UNFOLLOW_PROFILE_MUTATION from "../../lib/UnfollowProfileMutation.graphql";
 import UPDATE_AVATAR_MUTATION from "../../lib/UpdateAvatarMutation.graphql";
+import BLOCK_USER_MUTATION from "../../lib/BlockUserMutation.graphql";
 
 import {
   useQuery,
@@ -91,6 +92,12 @@ import {
 } from "../../lib/graphql/ListRemixesQuery";
 import FollowerSeparatorComponent from "../ItemSeparatorComponent";
 import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
+import {
+  BlockUserMutation,
+  BlockUserMutationVariables
+} from "../../lib/graphql/BlockUserMutation";
+import Alert from "../../lib/Alert";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 
 type ListItemType = ListFollowers | ListProfilePosts | ListRemixes;
 type ListItemVariables =
@@ -219,7 +226,7 @@ class RawViewProfile extends React.Component<Props> {
   };
 
   renderListHeader = () => {
-    const { profile } = this.props;
+    const { profile, onBlock } = this.props;
 
     return (
       <View
@@ -240,6 +247,7 @@ class RawViewProfile extends React.Component<Props> {
             onChangeSection={this.handleChangeSection}
             onFollow={this.handleFollow}
             onUnfollow={this.handleUnfollow}
+            onBlock={onBlock}
           />
         )}
       </View>
@@ -526,6 +534,9 @@ export const ViewProfile = ({
 
   const navigation = useNavigation();
 
+  const { userId } = React.useContext(UserContext);
+  const isFocused = useIsFocused();
+
   const viewProfileQuery = useQuery<ViewProfileQuery, ViewProfileVariables>(
     VIEW_PROFILE_QUERY,
     {
@@ -559,6 +570,11 @@ export const ViewProfile = ({
       { query: CURRENT_USER_QUERY }
     ]
   });
+
+  const [blockUser] = useMutation<
+    BlockUserMutation,
+    BlockUserMutationVariables
+  >(BLOCK_USER_MUTATION);
 
   const variables = React.useMemo(
     () => ({
@@ -710,8 +726,27 @@ export const ViewProfile = ({
     }
   }, [section, loadFollowers, loadPosts, loadRemixes]);
 
-  const { userId } = React.useContext(UserContext);
-  const isFocused = useIsFocused();
+  const handleBlockUser = React.useCallback(async () => {
+    const shouldContinue = await Alert.prompt({
+      title: "Are you sure?",
+      message:
+        "This will prevent them from seeing any of your posts or comments in yeet.",
+      confirm: "Yes",
+      cancel: "Cancel"
+    });
+
+    if (!shouldContinue) {
+      return;
+    }
+
+    blockUser({
+      variables: {
+        userId: profileId
+      }
+    }).then(() => {
+      navigation.goBack();
+    });
+  }, [navigation, blockUser, profileId]);
 
   const refetchAll = React.useCallback(() => {
     return Promise.all(
@@ -722,6 +757,8 @@ export const ViewProfile = ({
       ].filter(Boolean)
     );
   }, [refetch, viewProfileQuery]);
+
+  const isCurrentUser = userId === profileId;
 
   return (
     <RawViewProfile
@@ -744,7 +781,8 @@ export const ViewProfile = ({
       refetch={refetchAll}
       refreshing={refreshing}
       contentOffset={contentOffset}
-      isCurrentUser={userId === profileId}
+      isCurrentUser={isCurrentUser}
+      onBlock={handleBlockUser}
       updateAvatar={updateAvatar}
     />
   );

@@ -11,7 +11,7 @@ import {
   Text,
   LETTER_SPACING_MAPPING
 } from "../Text";
-import { Button, BackButton } from "../Button";
+import { Button, BackButton, IconButtonEllipsis } from "../Button";
 import { COLORS, SPACING } from "../../lib/styles";
 import { TouchableHighlight } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -48,6 +48,17 @@ const styles = StyleSheet.create({
     top: TOP_Y,
     marginTop: SPACING.normal,
     left: SPACING.normal
+  },
+  ellipsisButtonContainer: {
+    position: "absolute",
+    top: TOP_Y,
+    alignItems: "center",
+    paddingTop: SPACING.half,
+    paddingBottom: SPACING.half,
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: SPACING.normal,
+    right: SPACING.normal
   },
   avatarWrapper: {
     alignItems: "center"
@@ -248,6 +259,7 @@ const ViewProfileHeaderComponent = ({
   onFollow,
   onUnfollow,
   onChangeAvatar,
+  onBlock,
   onBlurAvatar = () => {},
   section,
   onChangeSection
@@ -265,6 +277,15 @@ const ViewProfileHeaderComponent = ({
     : onFollow;
 
   const AvatarComponent = isCurrentUser ? EditableAvatar : Avatar;
+
+  const handleOption = React.useCallback(
+    (option: string) => {
+      if (option === "Block") {
+        onBlock();
+      }
+    },
+    [onBlock]
+  );
 
   return (
     <Animated.View
@@ -285,6 +306,16 @@ const ViewProfileHeaderComponent = ({
         <View pointerEvents="box-none" style={styles.backButtonContainer}>
           <BackButton behavior={backButtonBehavior} />
         </View>
+
+        {!isCurrentUser && (
+          <View pointerEvents="box-none" style={styles.ellipsisButtonContainer}>
+            <IconButtonEllipsis
+              size={5}
+              onOption={handleOption}
+              options={["Block"]}
+            />
+          </View>
+        )}
 
         <View style={styles.top}>
           <View style={styles.avatarWrapper}>
@@ -358,7 +389,8 @@ export class ViewProfileHeader extends React.Component<Props> {
       onFollow,
       onUnfollow,
       section,
-      translateY
+      translateY,
+      onBlock
     } = this.props;
 
     return (
@@ -377,6 +409,7 @@ export class ViewProfileHeader extends React.Component<Props> {
         onChangeSection={onChangeSection}
         section={section}
         isCurrentUser={isCurrentUser}
+        onBlock={onBlock}
         editAvatar={this.handlePressAvatar}
         backButtonBehavior={backButtonBehavior}
       />
