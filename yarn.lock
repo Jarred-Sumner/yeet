@@ -1352,6 +1352,11 @@
     react-native-safe-area-view "^0.14.1"
     react-native-screens "^1.0.0 || ^1.0.0-alpha"
 
+"@rnhooks/keyboard@^0.0.2":
+  version "0.0.2"
+  resolved "https://registry.yarnpkg.com/@rnhooks/keyboard/-/keyboard-0.0.2.tgz#2e7cec3aa95c0ee946c8282123cd1cc6c7ef4f24"
+  integrity sha512-WR9U3Npi9OMCrAowwr79/VBVMGJfkT+Xo0ytWcEdBavuOnb1lgU1bO6XvTiCzshmK3TevcRWeex/8NuuKmsNEg==
+
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.0.tgz#ecdf48d532c58ea477acfcab80348424f8d0662f"
@@ -2030,7 +2035,7 @@ apollo-cache-inmemory@^1.6.2:
     ts-invariant "^0.4.0"
     tslib "^1.9.3"
 
-apollo-cache-persist@^0.2.0:
+apollo-cache-persist@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/apollo-cache-persist/-/apollo-cache-persist-0.1.1.tgz#e6cfe1983b998982a679aaf05241d3ed395edb1e"
   integrity sha512-/7GAyblPR169ryW3ugbtHqiU0UGkhIt10NeaO2gn2ClxjLHF/nIkJD5mx/0OCF2vLNbbnzLZVDeIO1pf72TrEA==
@@ -8727,10 +8732,10 @@ react-native-safe-area-view@^0.14.1, react-native-safe-area-view@^0.14.6:
   dependencies:
     hoist-non-react-statics "^2.3.1"
 
-react-native-screens@2.0.0-alpha.11:
-  version "2.0.0-alpha.11"
-  resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-2.0.0-alpha.11.tgz#077674284e0f80130cf971ba8eacc4f969724eea"
-  integrity sha512-Sw01mMTvqMgNl4stk7rdcE8LRiISTx7DhXMeBgvmlI4uF1rIZBFcTV5tH/wZ8ld6Pa/H5ASKWAiaaMMxgv1fBw==
+react-native-screens@2.0.0-alpha.16:
+  version "2.0.0-alpha.16"
+  resolved "https://registry.yarnpkg.com/react-native-screens/-/react-native-screens-2.0.0-alpha.16.tgz#4675c0e9b8cbd6b9321bfd3881b5939d61aba72b"
+  integrity sha512-CGa0LT+AksCgttrVfM3cp8VWxUz6xcInj+qCUY1Nvd2HQh4gP3WQtH3SDWvMC3pFy3CbK0CbXZz7UcZsG3pzwQ==
   dependencies:
     debounce "^1.2.0"
 
@@ -10860,6 +10865,11 @@ url-parse-lax@^1.0.0:
   integrity sha1-evjzA2Rem9eaJy56FKxovAYJ2nM=
   dependencies:
     prepend-http "^1.0.1"
+
+use-debounce@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/use-debounce/-/use-debounce-3.2.0.tgz#9c2b1adeb0f51d0c77bd256790c0ad66edc1c577"
+  integrity sha512-qhOyE6F7KYTq4esMUCbAqnlMvGbbqXcO4jG6Q+ymGQAIAMbyqASD3y4vbDbxl/t7sOUcqTdwQila8M0g85xdvw==
 
 use-memo-one@^1.1.1:
   version "1.1.1"

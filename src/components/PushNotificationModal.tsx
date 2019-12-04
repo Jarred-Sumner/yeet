@@ -101,6 +101,7 @@ export const PushNotificationModal = ({ visible, onDismiss }) => {
   const handleYes = React.useCallback(() => {
     OneSignal.registerForPushNotifications();
     Storage.setDismissedPushNotificationModal(true);
+
     onDismiss();
   }, [onDismiss]);
 

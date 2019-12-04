@@ -15,7 +15,14 @@ export enum BitmapIconName {
   addText = "Icon__addText",
   next = "Icon__next",
   waitlistLogo = "Icon__waitlist",
-  twitterDiscuss = "Icon__twitterDiscuss"
+  twitterDiscuss = "Icon__twitterDiscuss",
+  formatHorizontalTextMedia = "Format__horizontalTextMedia",
+  formatVerticalTextMedia = "Format__verticalTextMedia",
+  formatVerticalMediaText = "Format__verticalMediaText",
+  formatHorizontalMediaText = "Format__horizontalMediaText",
+  formatMedia = "Format__media",
+  formatVerticalMediaMedia = "Format__verticalMediaMedia",
+  formatHorizontalMediaMedia = "Format__horizontalMediaMedia"
 }
 
 const SIZES_BY_NAME = {
@@ -26,6 +33,34 @@ const SIZES_BY_NAME = {
   [BitmapIconName.addPhoto]: {
     width: 41,
     height: 38
+  },
+  [BitmapIconName.formatHorizontalTextMedia]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatVerticalTextMedia]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatVerticalMediaText]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatHorizontalMediaText]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatMedia]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatVerticalMediaMedia]: {
+    width: 39,
+    height: 39
+  },
+  [BitmapIconName.formatHorizontalMediaMedia]: {
+    width: 39,
+    height: 39
   },
   [BitmapIconName.addSticker]: {
     width: 43,
@@ -139,4 +174,65 @@ export const BitmapIconTwitterDiscuss = ({
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.twitterDiscuss} />
+);
+
+export const BitmapIconFormatHorizontalTextMedia = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatHorizontalTextMedia}
+  />
+);
+export const BitmapIconFormatVerticalTextMedia = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatVerticalTextMedia}
+  />
+);
+export const BitmapIconFormatVerticalMediaText = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatVerticalMediaText}
+  />
+);
+export const BitmapIconFormatHorizontalMediaText = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatHorizontalMediaText}
+  />
+);
+export const BitmapIconFormatMedia = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.formatMedia} />
+);
+export const BitmapIconFormatVerticalMediaMedia = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatVerticalMediaMedia}
+  />
+);
+export const BitmapIconFormatHorizontalMediaMedia = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.formatHorizontalMediaMedia}
+  />
 );

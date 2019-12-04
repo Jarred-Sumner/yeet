@@ -25,7 +25,10 @@ const _FlatList = React.forwardRef((props, ref) => {
   return <FlatListComponent {...props} ref={_ref} />;
 });
 
-export const FlatList = hoistNonReactStatics(_FlatList, RNFlatList);
+export const FlatList = hoistNonReactStatics(
+  _FlatList,
+  RNFlatList
+) as React.ComponentType<FlatListProps<any>>;
 
 FlatList.defaultProps = {
   ...(FlatList.defaultProps || {}),

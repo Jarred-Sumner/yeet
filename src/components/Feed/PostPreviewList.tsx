@@ -325,7 +325,7 @@ const ListItem = ({
   );
 };
 
-const PlaceholderOverlayGradient = React.memo(({ width, height }) => (
+export const PlaceholderOverlayGradient = React.memo(({ width, height }) => (
   <LinearGradient
     width={width}
     height={height}

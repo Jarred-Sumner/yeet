@@ -1,0 +1,28 @@
+#import "local/YeetImageContainerFragment.graphql"
+
+query CameraRollQuery(
+  $assetType: String
+  $first: Int!
+  $mediaSubtypes: [String]
+  $after: String
+) {
+  cameraRoll(
+    assetType: $assetType
+    first: $first
+    mediaSubtypes: $mediaSubtypes
+    after: $after
+  ) @client {
+    page_info {
+      id
+      has_next_page
+      end_cursor
+      start_cursor
+    }
+
+    id
+
+    data {
+      ...YeetImageContainerFragment
+    }
+  }
+}

@@ -27,9 +27,9 @@ const PLACEHOLDER_COLOR = "#ccc";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000",
     height: IMAGE_SEARCH_HEIGHT,
     paddingLeft: SPACING.half,
+    backgroundColor: "#000",
     width: "100%",
     alignItems: "center",
     position: "relative",
@@ -46,6 +46,7 @@ const styles = StyleSheet.create({
   text: {
     backgroundColor: "rgb(38, 38, 38)",
     borderWidth: 1,
+    borderColor: "transparent",
     flex: 1,
     color: "white",
     fontWeight: "500",
@@ -123,6 +124,10 @@ export class ImageSearch extends React.Component<Props> {
     this.props.onBlur && this.props.onBlur(evt);
   };
 
+  static defaultProps = {
+    placeholder: "Search GIPHY"
+  };
+
   render() {
     const {
       query,
@@ -130,6 +135,8 @@ export class ImageSearch extends React.Component<Props> {
       onBlur,
       onFocus,
       onSubmit,
+      placeholder,
+      disabled,
       keyboardVisibleValue
     } = this.props;
 
@@ -138,7 +145,6 @@ export class ImageSearch extends React.Component<Props> {
         style={[
           styles.container,
           {
-            backgroundColor: this.containerBackgroundColor,
             paddingRight: this.paddingRightValue
           }
         ]}
@@ -153,15 +159,17 @@ export class ImageSearch extends React.Component<Props> {
           clearButtonMode="always"
           clearTextOnFocus={false}
           autoCompleteType="off"
+          disabled={disabled}
+          editable={!disabled}
           enablesReturnKeyAutomatically
           onChangeText={onChange}
           onSubmitEditing={onSubmit}
           importantForAutofill={false}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
-          value={query}
+          defaultValue={query}
           style={[styles.text, styles.textish]}
-          placeholder="Search GIPHY"
+          placeholder={placeholder}
           caretColor={COLORS.primary}
           placeholderTextColor={PLACEHOLDER_COLOR}
           tintColor={COLORS.primary}

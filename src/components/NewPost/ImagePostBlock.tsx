@@ -1,33 +1,32 @@
 import { connectActionSheet } from "@expo/react-native-action-sheet";
 import assert from "assert";
 import * as React from "react";
-import { StyleSheet, StyleProp } from "react-native";
-import FastImage from "react-native-fast-image";
+import { StyleProp, StyleSheet, View } from "react-native";
 import {
   LongPressGestureHandler,
-  State as GestureState
+  State as GestureState,
+  TapGestureHandler
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import Video from "react-native-video";
 import { SharedElement } from "react-navigation-shared-element";
-import { SCREEN_DIMENSIONS } from "../../../config";
-import { convertCameraRollIDToRNFetchBlobId } from "../../lib/imageResize";
 import {
-  ImageMimeType,
-  YeetImageContainer,
-  mediaSourceFromImage,
-  mediaSourcesFromImage
+  mediaSourcesFromImage,
+  YeetImageContainer
 } from "../../lib/imageSearch";
-import Image from "../Image";
-import { ImagePicker, LIST_HEADER_HEIGHT } from "./ImagePicker";
+import { BoundsRect } from "../../lib/Rect";
+import MediaPlayer from "../MediaPlayer";
+import { LIST_HEADER_HEIGHT } from "./ImagePicker";
 import {
   ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
   PostFormat,
   presetsByFormat
 } from "./NewPostFormat";
-import MediaPlayer from "../MediaPlayer";
-import { BoundsRect } from "../../lib/Rect";
+import { IconPlus, IconPhoto, IconUploadphoto } from "../Icon";
+import { MediumText } from "../Text";
+import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
+import { SPACING } from "../../lib/styles";
+import { BitmapIconAddPhoto } from "../BitmapIcon";
 // import Image from "../Image";
 
 type Props = {
@@ -38,35 +37,38 @@ type Props = {
 const styles = StyleSheet.create({
   container: {
     width: "100%"
+  },
+  placeholderGradient: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0
+  },
+  placeholderContent: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  placeholderIcon: {
+    fontSize: 32,
+    color: "#eee",
+    transform: [{ scale: 1.5 }]
+  },
+  placeholderLabel: {
+    fontSize: 18,
+    paddingHorizontal: SPACING.normal,
+    color: "#eee",
+
+    textAlign: "center",
+    marginTop: SPACING.double
   }
 });
 
 const stylesByFormat = {
-  [PostFormat.caption]: StyleSheet.create({
-    image: {
-      overflow: "hidden",
-      flex: 0,
-      borderRadius: presetsByFormat[PostFormat.caption].borderRadius,
-      backgroundColor: "transparent"
-    },
-    container: {
-      paddingVertical: presetsByFormat[PostFormat.caption].paddingVertical,
-      width: "100%",
-      backgroundColor: "transparent"
-    }
-  }),
-  [PostFormat.screenshot]: StyleSheet.create({
+  [PostFormat.post]: StyleSheet.create({
     image: {},
     container: {
       width: "100%",
-      backgroundColor: presetsByFormat[PostFormat.screenshot].backgroundColor
-    }
-  }),
-  [PostFormat.library]: StyleSheet.create({
-    image: {},
-    container: {
-      width: "100%",
-      backgroundColor: presetsByFormat[PostFormat.screenshot].backgroundColor
+      backgroundColor: presetsByFormat[PostFormat.post].backgroundColor
     }
   }),
   [PostFormat.sticker]: StyleSheet.create({
@@ -86,6 +88,7 @@ const MediaComponent = React.forwardRef(
       dimensions,
       playDuration,
       borderRadius,
+      layout,
       id,
       style,
       ...otherProps
@@ -102,37 +105,19 @@ const MediaComponent = React.forwardRef(
       [mediaSourcesFromImage, source, playDuration, dimensions]
     );
 
+    React.useImperativeHandle(ref, () => ref.current);
+
     return (
       <MediaPlayer
         {...otherProps}
         paused={false}
         autoPlay
         id={id}
+        key={`${id}-${layout}`}
         borderRadius={borderRadius}
         ref={ref}
         sources={sources}
         style={style}
-      />
-    );
-  }
-);
-
-const ScreenshotImage = React.forwardRef(
-  ({ block }: { block: ImagePostBlockType }, ref) => {
-    return (
-      <MediaComponent
-        ref={ref}
-        source={block.value}
-        id={block.id}
-        dimensions={block.config.dimensions}
-        style={[
-          stylesByFormat[block.format].image,
-          {
-            transform: block.value.image.transform,
-            width: block.config.dimensions.width,
-            height: block.config.dimensions.height
-          }
-        ]}
       />
     );
   }
@@ -145,27 +130,7 @@ const LibraryImage = React.forwardRef(
         ref={ref}
         source={block.value}
         id={block.id}
-        dimensions={block.config.dimensions}
-        style={[
-          stylesByFormat[block.format].image,
-          {
-            transform: block.value.image.transform,
-            width: block.config.dimensions.width,
-            height: block.config.dimensions.height
-          }
-        ]}
-      />
-    );
-  }
-);
-
-const CaptionImage = React.forwardRef(
-  ({ block }: { block: ImagePostBlockType }, ref) => {
-    return (
-      <MediaComponent
-        ref={ref}
-        source={block.value}
-        id={block.id}
+        layout={block.layout}
         dimensions={block.config.dimensions}
         style={[
           stylesByFormat[block.format].image,
@@ -187,6 +152,7 @@ const StickerImage = React.forwardRef(
         ref={ref}
         source={block.value}
         id={block.id}
+        layout={block.layout}
         dimensions={block.config.dimensions}
         borderRadius={2}
         style={[
@@ -234,8 +200,8 @@ class RawImagePostBlock extends React.Component<Props> {
   };
 
   handleTapEvent = ({ nativeEvent: { state: gestureState } }) => {
-    if (gestureState === GestureState.BEGAN && this.props.onTap) {
-      this.props.onTap(this.props.block.id);
+    if (gestureState === GestureState.END) {
+      this.handleOpenPicker();
     }
   };
 
@@ -255,16 +221,20 @@ class RawImagePostBlock extends React.Component<Props> {
   render() {
     const { block, onLayout, scrollRef, inputRef, onTap } = this.props;
 
-    const ImageComponent = {
-      [PostFormat.caption]: CaptionImage,
-      [PostFormat.screenshot]: ScreenshotImage,
-      [PostFormat.sticker]: StickerImage,
-      [PostFormat.library]: LibraryImage
-    }[block.format];
+    const ImageComponent =
+      {
+        [PostFormat.sticker]: StickerImage,
+        [PostFormat.post]: LibraryImage
+      }[block.format] || LibraryImage;
 
     if (!ImageComponent) {
       assert(ImageComponent, `must exist for format: ${block.format}`);
     }
+
+    const sizeStyle = {
+      width: block.config.dimensions.width,
+      height: block.config.dimensions.height
+    };
 
     if (block.value) {
       return (
@@ -278,18 +248,14 @@ class RawImagePostBlock extends React.Component<Props> {
             style={[
               styles.container,
               stylesByFormat[block.format].container,
+              sizeStyle,
               {
-                width: block.config.dimensions.width,
-                height: block.config.dimensions.height,
                 overflow: "hidden"
               }
             ]}
           >
             <SharedElement
-              style={{
-                width: block.config.dimensions.width,
-                height: block.config.dimensions.height
-              }}
+              style={sizeStyle}
               id={`block.imagePicker.${block.id}`}
             >
               <ImageComponent block={block} />
@@ -300,33 +266,45 @@ class RawImagePostBlock extends React.Component<Props> {
         </LongPressGestureHandler>
       );
     } else {
-      const translateY =
-        PostFormat.screenshot === block.format
-          ? 0
-          : -1 * (LIST_HEADER_HEIGHT + 15);
-
       return (
-        <Animated.View
-          onLayout={onLayout}
-          style={[
-            styles.container,
-            stylesByFormat[block.format].container,
-            {
-              flex: 1,
-              overflow: "hidden"
-            }
-          ]}
+        <TapGestureHandler
+          maxDeltaX={5}
+          maxDeltaY={5}
+          maxDist={10}
+          onGestureEvent={this.handleTapEvent}
+          onHandlerStateChange={this.handleTapEvent}
         >
           <Animated.View
-            style={{
-              transform: [{ translateY }],
-              flex: 1,
-              backgroundColor: "#000"
-            }}
-          ></Animated.View>
+            onLayout={onLayout}
+            style={[
+              styles.container,
+              sizeStyle,
+              stylesByFormat[block.format].container,
+              {
+                overflow: "hidden"
+              }
+            ]}
+          >
+            <View
+              style={[styles.placeholderGradient, sizeStyle]}
+              pointerEvents="none"
+            >
+              <PlaceholderOverlayGradient
+                width={sizeStyle.width}
+                height={sizeStyle.height}
+              />
+            </View>
 
-          {this.props.children}
-        </Animated.View>
+            <View style={[styles.placeholderContent, sizeStyle]}>
+              <View style={styles.placeholderIcon}>
+                <BitmapIconAddPhoto
+                  style={styles.placeholderIcon}
+                  color="#fff"
+                />
+              </View>
+            </View>
+          </Animated.View>
+        </TapGestureHandler>
       );
     }
   }

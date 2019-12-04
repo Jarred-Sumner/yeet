@@ -1,0 +1,20 @@
+fragment CameraRollNode on CameraRollPhoto {
+  type
+  group_name
+  image {
+    filename
+    uri
+    height
+    width
+    isStored
+    playableDuration
+  }
+  timestamp
+  location {
+    latitude
+    longitude
+    altitude
+    heading
+    speed
+  }
+}

@@ -12,7 +12,7 @@ import {
 import { SPACING, COLORS } from "../../lib/styles";
 import Animated from "react-native-reanimated";
 
-export const CAROUSEL_BACKGROUND = "rgba(0, 0, 10, 0.97)";
+export const CAROUSEL_BACKGROUND = "rgba(15, 10, 15, 0.97)";
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -116,9 +116,10 @@ const BackButtonLayer = () => {
 export const PostHeader = React.forwardRef(
   (
     {
-      defaultFormat,
+      layout,
+      position,
       translateY = 0,
-      onChangeFormat,
+      onChangeLayout,
       controlsOpacityValue: opacity
     },
     ref
@@ -129,9 +130,10 @@ export const PostHeader = React.forwardRef(
       >
         <View style={styles.content}>
           <FormatPicker
-            defaultFormat={defaultFormat}
+            value={layout}
             ref={ref}
-            onChangeFormat={onChangeFormat}
+            position={position}
+            onChangeLayout={onChangeLayout}
           />
 
           <BackButtonLayer />

@@ -163,6 +163,7 @@ const ROUTE_LABELS = {
 
 const ROUTES_ICONS_MAPPING = {
   FeedTab: [IconHomeAlt, IconHome],
+
   NotificationsTab: [IconNotification, IconNotification],
   ProfileTab: [IconProfileAlt, IconProfile]
 };

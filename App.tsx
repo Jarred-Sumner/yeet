@@ -28,6 +28,8 @@ import NavigationService from "./src/lib/NavigationService";
 import { WATCH_KEYS } from "./src/lib/Storage";
 import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
 import { MediaUploadProgress } from "./src/components/MediaUploadProgress";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { getInset } from "react-native-safe-area-view";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -168,30 +170,38 @@ export class App extends React.Component {
     return (
       <View style={styles.wrap}>
         <StatusBar barStyle="light-content" />
+        <SafeAreaProvider
+          initialSafeAreaInsets={{
+            top: getInset("top"),
+            bottom: getInset("bottom"),
+            left: getInset("left"),
+            right: getInset("right")
+          }}
+        >
+          <MaterialThemeProvider>
+            <ApolloProvider client={this.state.client}>
+              <UserContextProvider>
+                <MediaUploadProvider>
+                  <ImagePickerProvider>
+                    <ActionSheetProvider>
+                      <ModalContextProvider>
+                        <>
+                          <Toast />
 
-        <MaterialThemeProvider>
-          <ApolloProvider client={this.state.client}>
-            <UserContextProvider>
-              <MediaUploadProvider>
-                <ImagePickerProvider>
-                  <ActionSheetProvider>
-                    <ModalContextProvider>
-                      <>
-                        <Toast />
-
-                        <Routes
-                          initialRouteName={this.initialRouteName}
-                          ref={this.setNavRef}
-                          uriPrefix={APP_PREFIX}
-                        />
-                      </>
-                    </ModalContextProvider>
-                  </ActionSheetProvider>
-                </ImagePickerProvider>
-              </MediaUploadProvider>
-            </UserContextProvider>
-          </ApolloProvider>
-        </MaterialThemeProvider>
+                          <Routes
+                            initialRouteName={this.initialRouteName}
+                            ref={this.setNavRef}
+                            uriPrefix={APP_PREFIX}
+                          />
+                        </>
+                      </ModalContextProvider>
+                    </ActionSheetProvider>
+                  </ImagePickerProvider>
+                </MediaUploadProvider>
+              </UserContextProvider>
+            </ApolloProvider>
+          </MaterialThemeProvider>
+        </SafeAreaProvider>
       </View>
     );
   }

@@ -7,7 +7,9 @@ import {
   buildImageBlock,
   minImageWidthByFormat,
   DEFAULT_POST_FORMAT,
-  PostFormat
+  PostFormat,
+  PostLayout,
+  generateBlockId
 } from "../components/NewPost/NewPostFormat";
 import { ContentExport, ExportData } from "../lib/Exporter";
 import { ToastType, sendToast } from "../components/Toast";
@@ -26,27 +28,21 @@ export class NewPostPage extends React.Component {
     const image = props.navigation.getParam("image");
     const blockId = props.navigation.getParam("blockId");
 
-    if (image && blockId) {
+    if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
 
       const imageBlock = buildImageBlock({
         image,
-        id: blockId,
+        id: blockId || generateBlockId(),
         width: minWidth,
+        layout: PostLayout.media,
         autoInserted: true,
         height: image.image.height * (minWidth / image.image.width),
         format: DEFAULT_POST_FORMAT
       });
 
-      const defaultBlocks = [...DEFAULT_POST.blocks];
-      defaultBlocks.splice(
-        defaultBlocks.findIndex(block => block.type === "image"),
-        1,
-        imageBlock
-      );
-
       this.state = {
-        defaultBlocks
+        defaultBlocks: [imageBlock]
       };
     } else {
       this.state = { defaultBlocks: undefined };

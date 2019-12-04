@@ -4,7 +4,13 @@ const config = {
     "@babel/preset-typescript"
   ],
   plugins: [
-    "import-graphql",
+    [
+      "import-graphql",
+      {
+        extensions: [".graphql", ".local.graphql"],
+        emitDeclarations: true
+      }
+    ],
     "@babel/plugin-proposal-optional-chaining",
     "@babel/plugin-proposal-nullish-coalescing-operator"
   ]

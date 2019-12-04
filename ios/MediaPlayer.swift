@@ -500,6 +500,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         imageView.source = imageSource
       }
 
+      imageView.resizeMode = self.resizeMode
+
       self.contentType = MediaPlayerContentType.image
     }
 
@@ -563,28 +565,42 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   @objc(reset)
   func reset() {
       if self.videoSource != nil {
-        DispatchQueue.global(qos: .background).async { [weak self, weak videoSource] in
+//        DispatchQueue.global(qos: .background).async { [weak self, weak videoSource] in
           if let videoSource = videoSource {
             videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
             videoSource.player?.pause()
             videoSource.player = nil
           }
 
-          self?.playerLayerObserver = nil
-          self?.isWaitingToPlay = false
+          self.playerLayerObserver = nil
+          self.isWaitingToPlay = false
 
           DispatchQueue.main.async { [weak self] in
             self?.videoView?.removeFromSuperview()
           }
-        }
+//        }
       } else if let imageView = self.imageView {
         imageView.isPlaybackPaused = true
       }
 
   }
 
+  var _resizeMode: String = YeetImageViewResizeMode.aspectFit.rawValue;
+
+     @objc(resizeMode)
+     var resizeMode: String {
+       get {
+        return _resizeMode
+       }
+
+       set (newValue) {
+          _resizeMode = newValue
+          self.imageView?.resizeMode = newValue
+       }
+     }
+
   func haltContent() {
-//    imageView?.isPlaybackPaused = true
+    imageView?.isPlaybackPaused = true
 
     if let videoSource = self.videoSource {
       if videoSource.player != nil {

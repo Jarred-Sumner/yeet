@@ -1,0 +1,27 @@
+#import "local/YeetImageContainerFragment.graphql"
+
+query GalleryListQuery($columnCount: Int!, $photoColumnCount: Int!) {
+  photos: cameraRoll(assetType: "photos", first: $photoColumnCount) @client {
+    data {
+      ...YeetImageContainerFragment
+    }
+  }
+
+  gifs(offset: 0, limit: $columnCount) @client {
+    data {
+      ...YeetImageContainerFragment
+    }
+
+    page_info {
+      has_next_page
+      offset
+      limit
+    }
+  }
+
+  videos: cameraRoll(assetType: "videos", first: $columnCount) @client {
+    data {
+      ...YeetImageContainerFragment
+    }
+  }
+}

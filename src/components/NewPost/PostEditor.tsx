@@ -13,7 +13,12 @@ import { NavigationEvents } from "react-navigation";
 import tinycolor from "tinycolor2";
 import { IS_SIMULATOR, TOP_Y } from "../../../config";
 import { startExport } from "../../lib/Exporter";
-import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
+import {
+  YeetImageContainer,
+  YeetImageRect,
+  ImageSourceType,
+  isVideo
+} from "../../lib/imageSearch";
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
@@ -31,7 +36,9 @@ import {
   PostBlockType,
   PostFormat,
   POST_WIDTH,
-  presetsByFormat
+  presetsByFormat,
+  PostLayout,
+  ImagePostBlock
 } from "./NewPostFormat";
 import {
   buildEditableNode,
@@ -44,6 +51,7 @@ import {
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
+import { GallerySectionItem } from "./ImagePicker/FilterBar";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -233,9 +241,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handlePressToolbarButton = activeButton => {
     if (activeButton === ToolbarButtonType.photo) {
-      this.handleInsertPhoto(undefined, ImagePickerRoute.camera);
+      this.handleInsertPhoto(undefined, GallerySectionItem.photos);
     } else if (activeButton === ToolbarButtonType.gif) {
-      this.handleInsertPhoto(undefined, ImagePickerRoute.internet);
+      this.handleInsertPhoto(undefined, GallerySectionItem.gifs);
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
         x: POST_WIDTH / 2,
@@ -256,6 +264,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             const block = buildTextBlock({
               value: "",
               format: this.props.post.format,
+              layout: PostLayout.text,
               placeholder: "Write something",
               autoInserted: false,
               required: false
@@ -285,6 +294,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               height: minWidth,
               autoInserted: false,
               format,
+              layout: this.props.post.layout,
               required: false
             });
 
@@ -329,7 +339,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   handleInsertText = ({ x, y }) => {
     const block = buildTextBlock({
       value: "",
-      format: PostFormat.screenshot,
+      format: PostFormat.sticker,
+      layout: PostLayout.text,
       placeholder: " ",
       autoInserted: false
     });
@@ -530,10 +541,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleTapBackground = ([tapGestureState, x, y]) => {
     const { focusedBlockId } = this.state;
-    if (this.hasPlaceholderImageBlocks()) {
-      this.openImagePickerForPlaceholder();
-      return;
-    }
+
     this.handlePressBackground({ x, y });
   };
 
@@ -562,21 +570,28 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.setState({ bounds: { x, y: y, width, height } });
   };
 
-  handleOpenImagePicker = (block, shouldAnimate = true) => {
+  handleOpenImagePicker = (block: ImagePostBlock, shouldAnimate = true) => {
+    let initialRoute;
+    if (block.value) {
+      if (block.value.image.source === ImageSourceType.giphy) {
+        initialRoute = GallerySectionItem.gifs;
+      } else if (isVideo(block.value.image.mimeType)) {
+        initialRoute = GallerySectionItem.videos;
+      } else if (block.value.image?.mimeType) {
+        initialRoute = GallerySectionItem.photos;
+      }
+    }
+
     this.props.navigation.navigate("EditBlockPhoto", {
       blockId: block.id,
       post: this.props.post,
-      initialRoute: ImagePickerRoute.camera,
+      initialRoute,
       shouldAnimate,
       onChange: this.handleChangeImageBlockPhoto
     });
   };
 
-  handleInsertPhoto = (
-    block,
-    initialRoute = ImagePickerRoute.internet,
-    shouldAnimate = false
-  ) => {
+  handleInsertPhoto = (block, initialRoute = "all", shouldAnimate = false) => {
     this.props.navigation.navigate("EditBlockPhoto", {
       blockId: block && block.id,
       post: this.props.post,
@@ -596,6 +611,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const block = buildImageBlock({
       image,
       id: blockId,
+      layout: PostLayout.media,
       width: minWidth,
       height: image.image.height * (minWidth / image.image.width),
       dimensions,
@@ -640,6 +656,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const block = buildImageBlock({
       image,
       id: blockId,
+      layout: _block.layout,
       width: minWidth,
       height: image.image.height * (minWidth / image.image.width),
       dimensions,
@@ -891,6 +908,8 @@ class RawwPostEditor extends React.Component<Props, State> {
             paddingBottom={FOOTER_HEIGHT}
             inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
+            layout={post.layout}
+            simultaneousHandlers={this.props.simultaneousHandlers}
             focusTypeValue={this.focusTypeValue}
             minX={bounds.x}
             onTapBlock={this.handleTapBlock}

@@ -26,7 +26,7 @@ import {
 import { COLORS, SPACING } from "../../lib/styles";
 import { PostUploader, RawPostUploader } from "../PostUploader";
 import { sendToast, ToastType } from "../Toast";
-import FormatPicker from "./FormatPicker";
+import FormatPicker, { FORMATS } from "./FormatPicker";
 import {
   buildImageBlock,
   buildPost,
@@ -36,7 +36,8 @@ import {
   NewPostType,
   PostFormat,
   POST_WIDTH,
-  CAROUSEL_HEIGHT
+  CAROUSEL_HEIGHT,
+  PostLayout
 } from "./NewPostFormat";
 import { EditableNodeMap } from "./Node/BaseNode";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
@@ -46,11 +47,13 @@ import ImageCropper from "./ImageCropper";
 import {
   FlingGestureHandler,
   Directions,
-  State as GestureState
+  State as GestureState,
+  PanGestureHandler
 } from "react-native-gesture-handler";
 import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
 import { scaleToWidth } from "../../lib/Rect";
 import { MediaPlayerPauser } from "../MediaPlayer";
+import { Panner } from "./Panner";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -63,73 +66,6 @@ type State = {
   defaultPhoto: YeetImageContainer | null;
   step: NewPostStep;
   inlineNodes: EditableNodeMap;
-};
-
-const DEFAULT_POST_FIXTURE = {
-  [PostFormat.screenshot]: {
-    format: PostFormat.screenshot,
-    backgroundColor: "#000",
-    blocks: [
-      {
-        type: "image",
-        id: "1231232",
-        format: "screenshot",
-        required: true,
-        autoInserted: true,
-        value: null,
-        config: {
-          dimensions: {}
-        }
-      }
-    ]
-  },
-  [PostFormat.library]: {
-    format: PostFormat.library,
-    backgroundColor: "#000",
-    blocks: [
-      {
-        type: "image",
-        id: "1231232",
-        format: "screenshot",
-        required: true,
-        autoInserted: true,
-        value: null,
-        config: {
-          dimensions: {}
-        }
-      }
-    ]
-  },
-  [PostFormat.caption]: {
-    format: PostFormat.canvas,
-    backgroundColor: "#000",
-    blocks: [
-      {
-        type: "text",
-        id: "123123",
-        format: "caption",
-        value: "",
-        autoInserted: true,
-        config: { placeholder: "Enter a title", overrides: {} }
-      },
-      {
-        type: "image",
-        id: "1231232",
-        format: "caption",
-        required: true,
-        autoInserted: true,
-        value: null,
-        config: {
-          dimensions: {}
-        }
-      }
-    ]
-  },
-  [PostFormat.canvas]: {
-    format: PostFormat.canvas,
-    backgroundColor: "#000",
-    blocks: []
-  }
 };
 
 const styles = StyleSheet.create({
@@ -192,12 +128,6 @@ enum StickyHeaderBehavior {
 
 const DEVELOPMENT_STEP = NewPostStep.choosePhoto;
 
-// const post = IS_DEVELOPMENT ? DEVELOPMENT_POST_FIXTURE : DEFAULT_POST_FIXTURE;
-export const DEFAULT_POST =
-  IS_DEVELOPMENT && typeof DEVELOPMENT_POST_FIXTURE !== "undefined"
-    ? DEVELOPMENT_POST_FIXTURE
-    : DEFAULT_POST_FIXTURE[DEFAULT_POST_FORMAT];
-
 const DEFAULT_BOUNDS = {
   x: 0,
   y: 0,
@@ -207,8 +137,9 @@ const DEFAULT_BOUNDS = {
 
 class RawNewPost extends React.Component<{}, State> {
   static defaultProps = {
-    defaultFormat: DEFAULT_POST.format,
-    defaultBlocks: DEFAULT_POST.blocks,
+    defaultFormat: PostFormat.post,
+    defaultLayout: PostLayout.media,
+    defaultBlocks: [],
     defaultInlineNodes: {},
     defaultBounds: DEFAULT_BOUNDS,
     threadId: null,
@@ -225,7 +156,8 @@ class RawNewPost extends React.Component<{}, State> {
         width: props.defaultWidth,
         height: props.defaultHeight,
         blocks: props.defaultBlocks,
-        format: props.defaultFormat
+        format: props.defaultFormat,
+        layout: props.defaultLayout
       }),
       defaultPhoto: null,
       inlineNodes: props.defaultInlineNodes,
@@ -235,8 +167,7 @@ class RawNewPost extends React.Component<{}, State> {
         ...props.defaultBounds,
         x: DEFAULT_BOUNDS.x,
         y: DEFAULT_BOUNDS.y
-      },
-      step: NewPostStep.choosePhoto
+      }
     };
   }
 
@@ -250,7 +181,6 @@ class RawNewPost extends React.Component<{}, State> {
       defaultPhoto: photo,
       post: post
     });
-    this.stepContainerRef.current.animateNextTransition();
   };
 
   transitionToCropPhoto = (photo: YeetImageContainer) => {
@@ -258,8 +188,6 @@ class RawNewPost extends React.Component<{}, State> {
       step: NewPostStep.resizePhoto,
       defaultPhoto: photo
     });
-
-    this.stepContainerRef.current.animateNextTransition();
   };
 
   handleChoosePhoto = (photo: YeetImageContainer) => {
@@ -285,10 +213,12 @@ class RawNewPost extends React.Component<{}, State> {
     image: YeetImageContainer,
     dimensions: YeetImageRect
   ) => {
+    const { format, layout } = this.state.post;
     const displaySize = scaleToWidth(POST_WIDTH, dimensions);
 
     return buildPost({
-      format: this.state.post.format,
+      format,
+      layout,
       width: displaySize.width,
       height: displaySize.height,
       blocks: [
@@ -296,7 +226,8 @@ class RawNewPost extends React.Component<{}, State> {
           image,
           dimensions,
           autoInserted: true,
-          format: this.state.post.format,
+          layout,
+          format,
           width: displaySize.width,
           height: displaySize.height,
           required: true
@@ -336,21 +267,12 @@ class RawNewPost extends React.Component<{}, State> {
     this.scrollUpTranslateY
   );
 
-  handleChangeFormat = (format: PostFormat) => {
-    this.stepContainerRef.current.animateNextTransition();
+  handleChangeLayout = (layout: PostLayout) => {
+    const { format } = this.state.post;
 
-    if (
-      this.state.post.blocks.length === 0 &&
-      DEFAULT_POST_FIXTURE[format].blocks.length > 0
-    ) {
-      this.setState({
-        post: DEFAULT_POST_FIXTURE[format]
-      });
-    } else {
-      this.setState({
-        post: buildPost({ format, blocks: this.state.post.blocks })
-      });
-    }
+    this.setState({
+      post: buildPost({ format, layout, blocks: this.state.post.blocks })
+    });
 
     if (this.state.step === NewPostStep.choosePhoto) {
       window.requestAnimationFrame(() => {
@@ -362,7 +284,6 @@ class RawNewPost extends React.Component<{}, State> {
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
     this.scrollY.setValue(0);
-    this.stepContainerRef.current.animateNextTransition();
   };
 
   handleBack = () => {
@@ -386,54 +307,69 @@ class RawNewPost extends React.Component<{}, State> {
 
   formatPickerRef = React.createRef<FormatPicker>();
   pauser = React.createRef();
+  handleChangeLayoutIndex = (index: number) => {
+    console.log({ index });
+    this.handleChangeLayout(FORMATS[index].value);
+  };
+
+  pannerRef = React.createRef<PanGestureHandler>();
+  layoutIndexValue = new Animated.Value(0);
 
   render() {
     const { step, showUploader, uploadData, inlineNodes } = this.state;
     const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
-      <FlingGestureHandler
-        onHandlerStateChange={this.onFlingRight}
-        direction={Directions.RIGHT}
+      <Panner
+        onIndexChange={this.handleChangeLayoutIndex}
+        swipeEnabled
+        position={this.layoutIndexValue}
+        gestureHandlerProps={{
+          ref: this.pannerRef
+        }}
+        index={
+          FORMATS.findIndex(
+            format => this.state.post.layout === format.value
+          ) ?? 0
+        }
+        length={FORMATS.length}
       >
         <Animated.View style={styles.page}>
-          <FlingGestureHandler
-            onHandlerStateChange={this.onFlingLeft}
-            direction={Directions.LEFT}
+          <StatusBar hidden showHideTransition="slide" />
+
+          <Animated.View
+            key={this.state.post.layout}
+            style={styles.transitionContainer}
           >
-            <Animated.View style={styles.page}>
-              <StatusBar hidden showHideTransition="slide" />
-
-              <Transitioning.View
-                ref={this.stepContainerRef}
-                transition={
-                  <Transition.Sequence>
-                    {/* <Transition.In type="fade" /> */}
-                    <Transition.Out type="fade" />
-                  </Transition.Sequence>
-                }
-                style={styles.transitioningView}
-              >
-                <Animated.View
-                  style={styles.transitionContainer}
-                  key={`${this.state.post.format}-${this.state.step}`}
-                >
-                  <MediaPlayerPauser ref={this.pauser}>
-                    {this.renderStep()}
-                  </MediaPlayerPauser>
-                </Animated.View>
-              </Transitioning.View>
-
-              <PostHeader
-                defaultFormat={this.state.post.format}
-                onChangeFormat={this.handleChangeFormat}
-                ref={this.formatPickerRef}
-                translateY={this.translateY}
+            <MediaPlayerPauser ref={this.pauser}>
+              <PostEditor
+                bounds={this.state.bounds}
+                post={this.state.post}
+                onBack={this.handleBack}
+                navigation={this.props.navigation}
+                onChange={this.handleChangePost}
+                isReply={!this.props.threadId}
+                onChangeFormat={this.handleChangeLayout}
                 controlsOpacityValue={this.controlsOpacityValue}
+                scrollY={this.scrollY}
+                inlineNodes={inlineNodes}
+                simultaneousHandlers={[this.pannerRef]}
+                yInset={CAROUSEL_HEIGHT}
+                onChangeNodes={this.handleChangeNodes}
+                onSubmit={this.handleSubmit}
               />
-            </Animated.View>
-          </FlingGestureHandler>
+            </MediaPlayerPauser>
+          </Animated.View>
+
+          <PostHeader
+            position={this.layoutIndexValue}
+            layout={this.state.post.layout}
+            onChangeLayout={this.handleChangeLayout}
+            ref={this.formatPickerRef}
+            translateY={this.translateY}
+            controlsOpacityValue={this.controlsOpacityValue}
+          />
         </Animated.View>
-      </FlingGestureHandler>
+      </Panner>
     );
   }
 
@@ -446,73 +382,6 @@ class RawNewPost extends React.Component<{}, State> {
 
     return this.props.onExport(contentExport, data, this.state.post.format);
   };
-
-  renderStep() {
-    const { inlineNodes, step } = this.state;
-
-    const { format } = this.state.post;
-
-    if (step === NewPostStep.editPhoto) {
-      return (
-        <PostEditor
-          bounds={this.state.bounds}
-          post={this.state.post}
-          key={this.state.post.format}
-          onBack={this.handleBack}
-          navigation={this.props.navigation}
-          onChange={this.handleChangePost}
-          isReply={!this.props.threadId}
-          onChangeFormat={this.handleChangeFormat}
-          controlsOpacityValue={this.controlsOpacityValue}
-          scrollY={this.scrollY}
-          inlineNodes={inlineNodes}
-          yInset={CAROUSEL_HEIGHT}
-          onChangeNodes={this.handleChangeNodes}
-          onSubmit={this.handleSubmit}
-        />
-      );
-    } else if (step === NewPostStep.resizePhoto) {
-      return (
-        <ImageCropper
-          height={SCREEN_DIMENSIONS.height}
-          width={SCREEN_DIMENSIONS.width}
-          scrollEnabled
-          source={this.state.defaultPhoto}
-          photo={this.state.defaultPhoto}
-          paddingTop={CAROUSEL_HEIGHT}
-          animatedYOffset={this.scrollY}
-          onDone={this.handleCropPhoto}
-        />
-      );
-    } else if (step === NewPostStep.choosePhoto) {
-      if (format === PostFormat.screenshot) {
-        return (
-          <ScreenshotList
-            height={SCREEN_DIMENSIONS.height}
-            width={SCREEN_DIMENSIONS.width}
-            scrollEnabled
-            paddingTop={CAROUSEL_HEIGHT}
-            animatedYOffset={this.scrollY}
-            onChange={this.handleChoosePhoto}
-          />
-        );
-      } else {
-        return (
-          <CameraRollList
-            height={SCREEN_DIMENSIONS.height}
-            width={SCREEN_DIMENSIONS.width}
-            scrollEnabled
-            paddingTop={CAROUSEL_HEIGHT}
-            tabBarHeight={CAROUSEL_HEIGHT}
-            animatedYOffset={this.scrollY}
-            onChange={this.handleChoosePhoto}
-          />
-        );
-      }
-    } else {
-      return null;
-    }
-  }
 }
 
 export const NewPost = hoistNonReactStatics(

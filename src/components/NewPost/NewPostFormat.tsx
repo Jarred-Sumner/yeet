@@ -3,6 +3,11 @@ import { SPACING, COLORS } from "../../lib/styles";
 import { getInset } from "react-native-safe-area-view";
 import { YeetImageContainer, YeetImageRect } from "../../lib/imageSearch";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
+import {
+  scaleToWidth,
+  scaleRectToWidth,
+  scaleRectToHeight
+} from "../../lib/Rect";
 
 export const CAROUSEL_HEIGHT = 40 + getInset("top") + SPACING.half;
 
@@ -10,16 +15,37 @@ export const POST_WIDTH = SCREEN_DIMENSIONS.width;
 
 export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y - 100;
 
+const MAX_BLOCK_WIDTH = POST_WIDTH;
+const MAX_BLOCK_HEIGHT = MAX_POST_HEIGHT;
+
+const VERTICAL_IMAGE_DIMENSIONS = {
+  width: MAX_BLOCK_WIDTH,
+  height: MAX_BLOCK_HEIGHT / 3
+};
+
+const HORIZONTAL_IMAGE_DIMENSIONS = {
+  width: MAX_BLOCK_WIDTH / 2,
+  height: MAX_BLOCK_WIDTH
+};
+
 export enum PostFormat {
-  screenshot = "screenshot",
-  comment = "comment",
-  caption = "caption",
-  library = "library",
-  canvas = "canvas",
+  post = "post",
   sticker = "sticker",
-  vent = "vent",
-  comic = "comic",
-  blargh = "blargh"
+  comment = "comment"
+}
+
+export enum PostLayout {
+  horizontalTextMedia = "horizontalTextMedia",
+  verticalTextMedia = "verticalTextMedia",
+
+  verticalMediaText = "verticalMediaText",
+  horizontalMediaText = "horizontalMediaText",
+
+  media = "media",
+  text = "text",
+
+  verticalMediaMedia = "verticalMediaMedia",
+  horizontalMediaMedia = "horizontalMediaMedia"
 }
 
 export const minImageWidthByFormat = (format: PostFormat) => {
@@ -34,6 +60,7 @@ interface PostBlock {
   type: "text" | "image";
   required: boolean;
   format: PostFormat;
+  layout: PostLayout;
   config: {};
   autoInserted: boolean;
   id: string;
@@ -44,6 +71,7 @@ export type TextPostBlock = PostBlock & {
   value: string;
   config: {
     placeholder?: string;
+    minHeight?: number;
     overrides: Object;
   };
 };
@@ -63,19 +91,22 @@ export type NewPostType = {
   height: number;
   width: number;
   format: PostFormat;
+  layout: PostLayout;
 };
 
 export const DEFAULT_TEXT_COLOR = "#f1f1f1";
 export const DEFAULT_TEXT_BACKGROUND_COLOR = "#121212";
 
-export const DEFAULT_FORMAT = PostFormat.library;
+export const DEFAULT_FORMAT = PostFormat.post;
 
 export type ChangeBlockFunction = (change: PostBlockType) => void;
 
 export const buildTextBlock = ({
   value,
   format,
+  layout,
   autoInserted,
+  minHeight,
   placeholder,
   overrides = {},
   id = null,
@@ -85,12 +116,13 @@ export const buildTextBlock = ({
     type: "text",
     id: id ?? generateBlockId(),
     format,
+    layout,
     value,
     autoInserted,
     required,
     config: {
       placeholder,
-
+      minHeight,
       overrides
     }
   };
@@ -101,6 +133,7 @@ export const buildImageBlock = ({
   width,
   height,
   autoInserted,
+  layout,
   required = true,
   placeholder = false,
   id: _id,
@@ -108,6 +141,9 @@ export const buildImageBlock = ({
   dimensions = {}
 }: {
   image: YeetImageContainer;
+  layout: PostLayout;
+  autoInserted: boolean;
+  format: PostFormat;
   dimensions: Partial<YeetImageRect>;
 }): ImagePostBlock => {
   const id = _id || generateBlockId();
@@ -116,6 +152,7 @@ export const buildImageBlock = ({
     return {
       type: "image",
       id,
+      layout,
       format,
       autoInserted,
       required,
@@ -132,6 +169,7 @@ export const buildImageBlock = ({
     type: "image",
     id,
     format,
+    layout,
     autoInserted,
     required,
     value: image,
@@ -139,8 +177,8 @@ export const buildImageBlock = ({
       dimensions: Object.assign(
         {},
         {
-          width,
-          height,
+          width: width || _width,
+          height: height || _height,
           x: 0,
           y: 0,
           maxX: width,
@@ -148,6 +186,32 @@ export const buildImageBlock = ({
         },
         _dimensions
       )
+    }
+  };
+};
+
+const scaleImageBlockToWidth = (
+  width: number,
+  block: ImagePostBlock
+): ImagePostBlock => {
+  return {
+    ...block,
+    config: {
+      ...block.config,
+      dimensions: scaleRectToWidth(width, block.config.dimensions)
+    }
+  };
+};
+
+const scaleImageBlockToHeight = (
+  height: number,
+  block: ImagePostBlock
+): ImagePostBlock => {
+  return {
+    ...block,
+    config: {
+      ...block.config,
+      dimensions: scaleRectToHeight(height, block.config.dimensions)
     }
   };
 };
@@ -163,40 +227,13 @@ export const presetsByFormat = {
     padding: 0,
     borderRadius: 4
   },
-  [PostFormat.library]: {
+  [PostFormat.post]: {
     borderRadius: 8,
     paddingTop: 0,
     textTop: 0,
     paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
     backgroundColor: "#000",
-    color: "white"
-  },
-  [PostFormat.caption]: {
-    borderRadius: 8,
-    paddingTop: 0,
-    textTop: 12,
-    paddingHorizontal: SPACING.normal,
-    paddingVertical: SPACING.normal,
-    backgroundColor: "#000",
-    color: "white"
-  },
-  [PostFormat.screenshot]: {
-    backgroundColor: "#000",
-    borderRadius: 0,
-    textTop: 60,
-    paddingTop: 0,
-    padding: 0,
-    paddingVertical: 0,
-    color: "white"
-  },
-  [PostFormat.canvas]: {
-    backgroundColor: "#000",
-    borderRadius: 0,
-    textTop: 12,
-    paddingTop: 0,
-    padding: 0,
-    paddingVertical: 0,
     color: "white"
   }
 };
@@ -209,90 +246,279 @@ export enum FocusType {
 
 const blocksForFormat = (
   format: PostFormat,
+  layout: PostLayout,
   _blocks: Array<PostBlockType>
 ): Array<PostBlockType> => {
-  const blocks = [..._blocks];
+  let blocks = [..._blocks];
 
-  if (format === PostFormat.screenshot) {
-    return blocks.filter(
-      ({ type, autoInserted }) => !(type === "text" && autoInserted)
-    );
-  } else if (format === PostFormat.caption) {
-    const firstBlock = blocks[0];
-
-    if (!firstBlock || firstBlock.type === "image") {
-      blocks.unshift(
+  if (format === PostFormat.comment) {
+    return [
+      blocks.find(block => block.type === "text") ??
         buildTextBlock({
           value: "",
-          placeholder: "Enter a caption",
+          placeholder: "",
           autoInserted: true,
-          format,
-          overrides: {
-            backgroundColor: "#fff",
-            color: "#000"
-          }
+          id: generateBlockId(),
+          format: PostFormat.comment,
+          layout
         })
+    ];
+  }
+
+  switch (layout) {
+    case PostLayout.horizontalMediaMedia: {
+      blocks = blocks.filter(block => block.type === "image").slice(0, 2);
+
+      for (let i = blocks.length; i < 2; i++) {
+        blocks.push(
+          buildImageBlock({
+            image: null,
+            autoInserted: true,
+            format,
+            layout,
+            dimensions: HORIZONTAL_IMAGE_DIMENSIONS
+          })
+        );
+      }
+
+      return blocks.map(block =>
+        scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block)
       );
     }
+    case PostLayout.verticalMediaMedia: {
+      blocks = blocks.filter(block => block.type === "image").slice(0, 2);
 
-    return blocks;
-  } else if (format === PostFormat.library) {
-    return blocks;
-  } else if (format === PostFormat.canvas) {
-    return blocks.filter(({ autoInserted }) => !autoInserted);
-  } else {
-    return blocks;
+      let dimensions = VERTICAL_IMAGE_DIMENSIONS;
+
+      if (blocks.length === 1) {
+        dimensions = blocks[0].config.dimensions;
+
+        if (dimensions.height < 200) {
+          dimensions = {
+            ...dimensions,
+            height: Math.max(dimensions.height, 200)
+          };
+        }
+      }
+
+      for (let i = blocks.length; i < 2; i++) {
+        blocks.push(
+          buildImageBlock({
+            image: null,
+            autoInserted: true,
+            format,
+            layout,
+            dimensions
+          })
+        );
+      }
+
+      return blocks.map(block =>
+        scaleImageBlockToWidth(VERTICAL_IMAGE_DIMENSIONS.width, block)
+      );
+    }
+    case PostLayout.verticalTextMedia: {
+      const imageBlock =
+        blocks.find(block => block.type === "image") ??
+        buildImageBlock({
+          image: null,
+          autoInserted: true,
+          format,
+          layout,
+          dimensions: VERTICAL_IMAGE_DIMENSIONS
+        });
+
+      const textBlock =
+        blocks.find(block => block.type === "text") ??
+        buildTextBlock({
+          value: "",
+          placeholder: "Tap to edit text",
+          autoInserted: true,
+          format,
+          layout
+        });
+
+      textBlock.config.minHeight = null;
+
+      return [
+        textBlock,
+        scaleImageBlockToWidth(VERTICAL_IMAGE_DIMENSIONS.width, imageBlock)
+      ];
+    }
+    case PostLayout.verticalMediaText: {
+      const imageBlock = scaleImageBlockToWidth(
+        VERTICAL_IMAGE_DIMENSIONS.width,
+        blocks.find(block => block.type === "image") ??
+          buildImageBlock({
+            image: null,
+            autoInserted: true,
+            format,
+            layout,
+            dimensions: VERTICAL_IMAGE_DIMENSIONS
+          })
+      );
+
+      const textBlock =
+        blocks.find(block => block.type === "text") ??
+        buildTextBlock({
+          value: "",
+          placeholder: "Tap to edit text",
+          autoInserted: true,
+          format,
+          layout
+        });
+
+      textBlock.config.minHeight = null;
+
+      return [imageBlock, textBlock];
+    }
+    case PostLayout.horizontalMediaText: {
+      const imageBlock = scaleImageBlockToWidth(
+        HORIZONTAL_IMAGE_DIMENSIONS.width,
+        blocks.find(block => block.type === "image") ??
+          buildImageBlock({
+            image: null,
+            autoInserted: true,
+            format,
+            layout,
+            dimensions: {
+              width: MAX_BLOCK_WIDTH / 2,
+              height: MAX_BLOCK_WIDTH
+            }
+          })
+      );
+
+      const textBlock: TextPostBlock =
+        blocks.find(block => block.type === "text") ??
+        buildTextBlock({
+          value: "",
+          placeholder: "Tap to edit text",
+          autoInserted: true,
+          format,
+          layout
+        });
+
+      textBlock.config.minHeight = imageBlock.config.dimensions.maxY;
+
+      return [imageBlock, textBlock];
+    }
+    case PostLayout.horizontalTextMedia: {
+      const imageBlock: ImagePostBlock = scaleImageBlockToWidth(
+        HORIZONTAL_IMAGE_DIMENSIONS.width,
+        blocks.find(block => block.type === "image") ??
+          buildImageBlock({
+            autoInserted: true,
+
+            image: null,
+            format,
+            layout,
+            dimensions: {
+              width: MAX_BLOCK_WIDTH / 2,
+              height: MAX_BLOCK_WIDTH
+            }
+          })
+      );
+
+      const textBlock: TextPostBlock =
+        blocks.find(block => block.type === "text") ??
+        buildTextBlock({
+          value: "",
+          placeholder: "Tap to edit text",
+          autoInserted: true,
+          format,
+          layout
+        });
+
+      textBlock.config.minHeight = imageBlock.config.dimensions.height;
+
+      return [textBlock, imageBlock];
+    }
+    case PostLayout.horizontalMediaMedia: {
+      const firstImageBlock =
+        blocks.find(block => block.type === "image") ??
+        buildImageBlock({
+          image: null,
+          autoInserted: true,
+          format,
+          layout,
+          dimensions: HORIZONTAL_IMAGE_DIMENSIONS
+        });
+
+      const secondImageBlock =
+        blocks.filter(block => block.type === "image")[1] ??
+        buildImageBlock({
+          image: null,
+          autoInserted: true,
+          format,
+          layout,
+          dimensions: HORIZONTAL_IMAGE_DIMENSIONS
+        });
+
+      return [firstImageBlock, secondImageBlock].map(block =>
+        scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block)
+      );
+    }
+    case PostLayout.media: {
+      return [
+        scaleImageBlockToWidth(
+          POST_WIDTH,
+          blocks.find(block => block.type === "image") ??
+            buildImageBlock({
+              image: null,
+              autoInserted: true,
+              format,
+              layout,
+              dimensions: VERTICAL_IMAGE_DIMENSIONS
+            })
+        )
+      ];
+    }
+    case PostLayout.text: {
+      return [
+        blocks.find(block => block.type === "text") ??
+          buildTextBlock({
+            value: "",
+            placeholder: "Tap to edit text",
+            autoInserted: true,
+            format,
+            layout
+          })
+      ];
+    }
   }
 };
 
 export const buildPost = ({
   format,
+  layout,
   blocks: _blocks,
   width,
   height
 }: {
   format: PostFormat;
+  layout: PostLayout;
   blocks: Array<PostBlockType>;
   width: number;
   height: number;
 }): NewPostType => {
   const presets = presetsByFormat[format];
-  const blocks = blocksForFormat(format, _blocks);
+  const blocks = blocksForFormat(format, layout, _blocks).map(block => ({
+    ...block,
+    layout
+  }));
 
-  if (format === PostFormat.caption) {
-    return {
-      format,
-      width,
-      height,
-      backgroundColor: presets.backgroundColor,
-      blocks
-    };
-  } else if (format === PostFormat.screenshot) {
-    return {
-      format,
-      backgroundColor: presets.backgroundColor,
-      blocks
-    };
-  } else if (format === PostFormat.library) {
-    return {
-      format,
-      backgroundColor: presets.backgroundColor,
-      blocks
-    };
-  } else if (format === PostFormat.canvas) {
-    return {
-      format,
-      backgroundColor: presets.backgroundColor,
-      blocks
-    };
-  } else {
-    throw Error(`Unimplemented format ${format}`);
-  }
+  return {
+    format,
+    layout,
+    width,
+    blocks,
+    height
+  };
 };
 
 export const generateBlockId = nanoid;
 
-export const DEFAULT_POST_FORMAT = PostFormat.library;
+export const DEFAULT_POST_FORMAT = PostFormat.post;
 
 // const DEVELOPMENT_POST_FIXTURE = {
 //   format: "screenshot",

@@ -7,7 +7,11 @@ import {
   StyleProp,
   InteractionManager
 } from "react-native";
-import React, { ReactEventHandler, useImperativeHandle } from "react";
+import React, {
+  ReactEventHandler,
+  useImperativeHandle,
+  useEffect
+} from "react";
 import { ImageMimeType, YeetImageRect, isVideo } from "../lib/imageSearch";
 import { DimensionsRect, BoundsRect } from "../lib/Rect";
 import {
@@ -40,7 +44,7 @@ type MediaPlayerContextValue = {
 };
 
 export const MediaPlayerPauser = React.forwardRef(
-  ({ children, nodeRef }, ref) => {
+  ({ children, nodeRef, isHidden }, ref) => {
     const players = React.useRef({});
     const pausedPlayers = React.useRef([]);
     const registerID = React.useCallback(
@@ -117,6 +121,14 @@ export const MediaPlayerPauser = React.forwardRef(
       }, [pausePlayers, unpausePlayers])
     );
 
+    useEffect(() => {
+      if (isHidden === false) {
+        pausePlayers();
+      } else if (isHidden === true) {
+        unpausePlayers();
+      }
+    }, [pausePlayers, unpausePlayers, isHidden]);
+
     useImperativeHandle(ref, () => ({
       pausePlayers,
       unpausePlayers
@@ -167,6 +179,7 @@ type Props = {
   style: StyleProp<any>;
   prefetch?: boolean;
   muted?: boolean;
+  resizeMode: "aspectFill" | "aspectFit";
   onEnd?: ReactEventHandler<StatusEventData>;
   onLoad?: ReactEventHandler<StatusEventData>;
   onPlay?: ReactEventHandler<StatusEventData>;
@@ -209,6 +222,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
     prefetch: false,
     muted: false,
     isActive: true,
+    pauseUnUnmount: false,
     sources: []
   };
 
@@ -348,6 +362,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       prefetch,
       borderRadius,
       onError,
+      resizeMode,
       isActive,
       muted,
       onPlay,
@@ -367,7 +382,8 @@ export class MediaPlayerComponent extends React.Component<Props> {
       borderRadius !== nextProps.borderRadius ||
       onError !== nextProps.onError ||
       isActive !== nextProps.isActive ||
-      prefetch != nextProps.prefetch
+      prefetch != nextProps.prefetch ||
+      resizeMode !== nextProps.resizeMode
     ) {
       return true;
     }
@@ -398,6 +414,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
       onPlay,
       onPause,
       muted,
+      resizeMode,
       onError,
       onChangeItem
     } = this.props;
@@ -416,6 +433,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
         onProgress={onProgress}
         muted={muted}
         onPlay={onPlay}
+        resizeMode={resizeMode}
         onPause={onPause}
         onLoad={onLoad}
         onError={onError}

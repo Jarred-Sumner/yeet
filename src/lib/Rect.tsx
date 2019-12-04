@@ -1,5 +1,6 @@
 import { pointBox as isPointInside } from "intersects";
 import { PixelRatio } from "react-native";
+import { YeetImageRect } from "./imageSearch";
 
 export type DimensionsRect = {
   width: number;
@@ -47,6 +48,52 @@ export const scaleToWidth = (
     height: PixelRatio.roundToNearestPixel(
       (width / dimensions.width) * dimensions.height
     )
+  };
+};
+
+export const scaleToHeight = (
+  height: number,
+  dimensions: Partial<BoundsRect>
+): BoundsRect => {
+  return {
+    x:
+      typeof dimensions.x === "number"
+        ? (height / dimensions.height) * dimensions.x
+        : 0,
+    height,
+    y:
+      typeof dimensions.y === "number"
+        ? (height / dimensions.height) * dimensions.y
+        : 0,
+    width: PixelRatio.roundToNearestPixel(
+      (height / dimensions.height) * dimensions.width
+    )
+  };
+};
+
+export const scaleRectToWidth = (
+  width: number,
+  dimensions: Partial<BoundsRect>
+): YeetImageRect => {
+  const bounds = scaleToWidth(width, dimensions);
+
+  return {
+    ...bounds,
+    maxX: bounds.width,
+    maxY: bounds.height
+  };
+};
+
+export const scaleRectToHeight = (
+  height: number,
+  dimensions: Partial<BoundsRect>
+): YeetImageRect => {
+  const bounds = scaleToHeight(height, dimensions);
+
+  return {
+    ...bounds,
+    maxX: bounds.width,
+    maxY: bounds.height
   };
 };
 

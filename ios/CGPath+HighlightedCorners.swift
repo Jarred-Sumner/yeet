@@ -19,12 +19,13 @@ extension UITextView {
     let textContainerInset = textView.textContainerInset
 
     var layout = textView.layoutManager
-
+    
     let minSize = " ".size(OfFont: textView.font ?? UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
   
 
     let range = NSMakeRange(0, layout.numberOfGlyphs)
     var rects = [CGRect]()
+
 
     layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, _, _) in
       if usedRect.width > 0 && usedRect.height > 0 {

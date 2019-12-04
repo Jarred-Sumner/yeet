@@ -174,6 +174,12 @@ const _AppContainer = memoize(initialRouteName => {
                 ),
                 NewPostStack: createStackNavigator(
                   {
+                    ImagePicker: {
+                      screen: ImagePickerPage,
+                      cardStyle: {
+                        backgroundColor: "#000"
+                      }
+                    },
                     NewPost: NewPostPage,
                     NewThread: NewThreadPage,
                     ...SHARED_GLOBAL_SCREENS

@@ -1,0 +1,19 @@
+fragment YeetImageContainerFragment on YeetImageContainer {
+  preview {
+    width
+    height
+    duration
+    uri
+    mimeType
+  }
+
+  image {
+    width
+    height
+    duration
+    uri
+    mimeType
+  }
+
+  id
+}

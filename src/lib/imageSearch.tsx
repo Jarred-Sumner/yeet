@@ -114,6 +114,7 @@ export type YeetImage = {
   width: number;
   height: number;
   duration: number;
+  __typename: "YeetImage";
   uri: string;
   mimeType: ImageMimeType;
   source: ImageSourceType;
@@ -171,6 +172,7 @@ const normalizeBaseImage = (
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     asset: Image.resolveAssetSource(assetData),
+    __typename: "YeetImage",
     transform
   };
 };
@@ -194,6 +196,7 @@ export const normalizeResizedImage = (
     duration: duration,
     playDuration: duration,
     mimeType: original.image.mimeType,
+    __typename: "YeetImage",
     source: ImageSourceType.cameraRoll,
     asset: Image.resolveAssetSource(assetData),
     transform
@@ -234,6 +237,7 @@ export const imageContainerFromCameraRoll = (
   const image = {
     ...assetData,
     duration: duration,
+    __typename: "YeetImage",
     playDuration: duration,
     mimeType,
     source: ImageSourceType.cameraRoll,
@@ -260,6 +264,7 @@ const normalizeOriginalImage = (image, transform = []): YeetImage => {
     ...assetData,
     duration: Number(image.length || 1),
     playDuration: Number(image.length || 1),
+    __typename: "YeetImage",
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     asset: Image.resolveAssetSource(assetData),
@@ -273,6 +278,7 @@ const findGiphyImage = (
     "fixed_height_small",
     "fixed_height",
     "fixed_height_downsampled",
+
     "downsized_medium"
   ],
   preferredContentType: "mp4" | "webp" = "mp4"
@@ -298,9 +304,10 @@ const findGiphyImage = (
 const normalizeImage = (gif: giphyClient.GIFObject): YeetImageContainer => ({
   id: gif.id,
   source: gif,
-  preview: normalizeBaseImage(findGiphyImage(gif)),
+  preview: normalizeBaseImage(findGiphyImage(gif, undefined, "webp")),
   image: normalizeOriginalImage(gif.images.original),
-  sourceType: ImageSourceType.giphy
+  sourceType: ImageSourceType.giphy,
+  __typename: "YeetImageContainer"
 });
 
 export type ImageSearchResponse = {
@@ -406,6 +413,7 @@ export const imageFromMediaSource = (
   return {
     uri: url,
     width,
+    __typename: "YeetImage",
     height,
     mimeType,
     duration,
@@ -436,9 +444,12 @@ export const imageContainerFromMediaSource = (
 export const mediaSourceFromImage = (
   container: YeetImageContainer,
   dimensions: BoundsRect,
-  forceImage: Boolean = false
+  forceImage: Boolean = false,
+  preferPreview: Boolean = false
 ): MediaSource => {
-  const { image } = container;
+  const image = preferPreview
+    ? container.preview ?? container.image
+    : container.image;
 
   const { width, height, uri: _url, mimeType, duration } = image;
 
@@ -457,6 +468,7 @@ export const mediaSourceFromImage = (
 
   const _mimeType =
     forceImage && isVideo(mimeType) ? ImageMimeType.jpeg : mimeType;
+
   return {
     url,
     width,

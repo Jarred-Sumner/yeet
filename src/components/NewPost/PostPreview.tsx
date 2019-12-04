@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View } from "react-native";
+import { View, StyleSheet } from "react-native";
 import {
   LongPressGestureHandler,
   TapGestureHandler
@@ -8,11 +8,35 @@ import { useLayout } from "react-native-hooks";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import Animated from "react-native-reanimated";
 import { useFocusState } from "react-navigation-hooks";
-import { FocusType, PostBlockType, CAROUSEL_HEIGHT } from "./NewPostFormat";
+import {
+  FocusType,
+  PostBlockType,
+  CAROUSEL_HEIGHT,
+  PostLayout
+} from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import { getInset } from "react-native-safe-area-view";
 export const ScrollView = KeyboardAwareScrollView;
+
+const styles = StyleSheet.create({
+  horizontalList: { flexDirection: "row", flex: 1 },
+  verticalList: { flexDirection: "column", flex: 1 }
+});
+
+const BlockLayoutContainer = ({ layout, children }: { layout: PostLayout }) => {
+  if (
+    [
+      PostLayout.horizontalMediaMedia,
+      PostLayout.horizontalMediaText,
+      PostLayout.horizontalTextMedia
+    ].includes(layout)
+  ) {
+    return <View style={styles.horizontalList}>{children}</View>;
+  } else {
+    return <View style={styles.verticalList}>{children}</View>;
+  }
+};
 
 type BlockListProps = {
   blocks: Array<PostBlockType>;
@@ -24,6 +48,7 @@ export const BlockList = ({
   setBlockInputRef,
   focusType,
   focusedBlockValue,
+  layout,
   onBlur,
   onChangePhoto,
   onOpenImagePicker,
@@ -46,27 +71,48 @@ export const BlockList = ({
     [setBlockInputRef]
   );
 
-  return blocks.map((block, index) => {
-    return (
-      <Block
-        onLayout={onLayout}
-        block={block}
-        onFocus={onFocus}
-        focusedBlockValue={focusedBlockValue}
-        scrollRef={scrollRef}
-        isFocused={focusedBlockId === block.id}
-        onOpenImagePicker={onOpenImagePicker}
-        focusType={focusType}
-        onChangePhoto={onChangePhoto}
-        onTap={onTap}
-        onBlur={onBlur}
-        focusTypeValue={focusTypeValue}
-        key={block.id}
-        ref={handleSetBlockInputRef(block)}
-        onChange={handleChangeBlock(index)}
-      />
-    );
-  });
+  const renderBlock = React.useCallback(
+    (block: PostBlockType, index: number) => {
+      return (
+        <Block
+          onLayout={onLayout}
+          block={block}
+          onFocus={onFocus}
+          focusedBlockValue={focusedBlockValue}
+          scrollRef={scrollRef}
+          isFocused={focusedBlockId === block.id}
+          onOpenImagePicker={onOpenImagePicker}
+          focusType={focusType}
+          onChangePhoto={onChangePhoto}
+          onTap={onTap}
+          onBlur={onBlur}
+          focusTypeValue={focusTypeValue}
+          key={block.id}
+          ref={handleSetBlockInputRef(block)}
+          onChange={handleChangeBlock(index)}
+        />
+      );
+    },
+    [
+      onFocus,
+      onLayout,
+      focusedBlockValue,
+      onOpenImagePicker,
+      focusType,
+      onChangePhoto,
+      onTap,
+      onBlur,
+      focusTypeValue,
+      handleSetBlockInputRef,
+      handleChangeBlock
+    ]
+  );
+
+  return (
+    <BlockLayoutContainer layout={layout}>
+      {blocks.map(renderBlock)}
+    </BlockLayoutContainer>
+  );
 };
 
 type EditableNodeListProps = {
@@ -170,6 +216,7 @@ export const PostPreview = React.forwardRef(
       maxX,
       maxY,
       backgroundColor,
+      layout: postLayout,
       onFocus,
       setBlockAtIndex,
       blocks,
@@ -195,6 +242,7 @@ export const PostPreview = React.forwardRef(
       onOpenImagePicker,
       focusTypeValue,
       contentViewRef,
+      simultaneousHandlers,
       swipeOnly,
       paddingBottom,
       onScroll,
@@ -264,6 +312,9 @@ export const PostPreview = React.forwardRef(
     //   });
     // }, [scrollRef.current, paddingTop]);
 
+    const GestureHandler = focusedBlockValue
+      ? TapGestureHandler
+      : LongPressGestureHandler;
     return (
       <ScrollView
         directionalLockEnabled
@@ -291,17 +342,18 @@ export const PostPreview = React.forwardRef(
         style={scrollViewStyle}
         contentContainerStyle={contentContainerStyle}
       >
-        <TapGestureHandler
+        <GestureHandler
           onHandlerStateChange={onTapBackground}
           onGestureEvent={onTapBackground}
           waitFor={waitFor}
-          minDurationMs={swipeOnly ? 150 : undefined}
+          minDurationMs={150}
           maxDist={9999}
         >
           <Animated.View ref={contentViewRef} style={contenViewStyle}>
             <BlockList
               setBlockInputRef={setBlockInputRef}
               blocks={blocks}
+              layout={postLayout}
               onFocus={onFocus}
               focusTypeValue={focusTypeValue}
               onOpenImagePicker={onOpenImagePicker}
@@ -317,7 +369,7 @@ export const PostPreview = React.forwardRef(
 
             {children}
           </Animated.View>
-        </TapGestureHandler>
+        </GestureHandler>
       </ScrollView>
     );
   }

@@ -1,15 +1,24 @@
 import * as React from "react";
-import { Dimensions, StyleSheet } from "react-native";
+import { Dimensions, ImageProps, StyleSheet, View } from "react-native";
+import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import Carousel from "react-native-snap-carousel";
-import { BoldText, BlackText, ExtraBoldText } from "../Text";
-import { CAROUSEL_HEIGHT, PostFormat } from "./NewPostFormat";
-import { TOP_Y } from "../../../config";
-import { SPACING } from "../../lib/styles";
-import { BorderlessButton } from "react-native-gesture-handler";
+import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { SPACING, COLORS } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
+import {
+  BitmapIconFormatHorizontalMediaMedia,
+  BitmapIconFormatHorizontalMediaText,
+  BitmapIconFormatHorizontalTextMedia,
+  BitmapIconFormatMedia,
+  BitmapIconFormatVerticalMediaMedia,
+  BitmapIconFormatVerticalMediaText,
+  BitmapIconFormatVerticalTextMedia
+} from "../BitmapIcon";
+import { CAROUSEL_HEIGHT, PostLayout } from "./NewPostFormat";
 
-const ITEM_WIDTH = 120;
+const LIST_ITEM_HEIGHT = 46;
+const LIST_ITEM_WIDTH = 60;
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
 const styles = StyleSheet.create({
@@ -17,15 +26,50 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     alignItems: "center",
     width: "100%",
+    flexDirection: "row",
+    overflow: "visible",
     height: CAROUSEL_HEIGHT
   },
-  item: {
-    paddingTop: TOP_Y + SPACING.half,
-    paddingBottom: SPACING.half,
-    justifyContent: "center",
+  list: {
     height: CAROUSEL_HEIGHT,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  unselectedBorder: {
+    borderWidth: 2,
+    borderRadius: 4,
+    borderColor: "transparent",
+    overflow: "hidden",
+    width: 37,
+    height: 39,
+    margin: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    ...StyleSheet.absoluteFillObject
+  },
+  selectedBorder: {
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    borderRadius: 4,
+    overflow: "visible",
+    width: 39 - 4,
+    margin: 2,
+    height: 39 - 4,
+    ...StyleSheet.absoluteFillObject
+  },
+  icon: {
+    width: 39,
+    height: 39,
+    position: "relative"
+  },
+
+  item: {
+    marginTop: TOP_Y,
+    justifyContent: "center",
     alignItems: "center",
-    width: ITEM_WIDTH
+    width: LIST_ITEM_WIDTH,
+    height: LIST_ITEM_HEIGHT
   },
   label: {
     color: "white",
@@ -36,48 +80,52 @@ const styles = StyleSheet.create({
   }
 });
 
-type PostFormatData = {
-  value: PostFormat;
-  width: number;
-  label: string;
+type PostLayoutData = {
+  value: PostLayout;
+  Icon: React.ComponentType<ImageProps>;
 };
 
-const FORMATS: Array<PostFormatData> = [
+export const FORMATS: Array<PostLayoutData> = [
   {
-    value: PostFormat.screenshot,
-    width: 100,
-    label: "Screenshot"
+    value: PostLayout.horizontalTextMedia,
+    Icon: BitmapIconFormatHorizontalTextMedia
+  },
+
+  {
+    value: PostLayout.verticalMediaText,
+    Icon: BitmapIconFormatVerticalMediaText
   },
   {
-    value: PostFormat.library,
-    width: 100,
-    label: "Library"
+    value: PostLayout.horizontalMediaText,
+    Icon: BitmapIconFormatHorizontalMediaText
   },
   {
-    value: PostFormat.caption,
-    width: 100,
-    label: "Caption"
+    value: PostLayout.media,
+    Icon: BitmapIconFormatMedia
+  },
+  {
+    value: PostLayout.verticalTextMedia,
+    Icon: BitmapIconFormatVerticalTextMedia
+  },
+  // {
+  //   value: PostLayout.text,
+  //   Icon: BitmapIconFormatText,
+  // },
+  {
+    value: PostLayout.verticalMediaMedia,
+    Icon: BitmapIconFormatVerticalMediaMedia
+  },
+  {
+    value: PostLayout.horizontalMediaMedia,
+    Icon: BitmapIconFormatHorizontalMediaMedia
   }
-  // {
-  //   value: PostFormat.vent,
-  //   width: 100,
-  //   label: "Vent"
-  // },
-  // {
-  //   value: PostFormat.comic,
-  //   width: 100,
-  //   label: "Comic"
-  // },
-  // {
-  //   value: PostFormat.blargh,
-  //   width: 100,
-  //   label: "blargh"
-  // }
 ];
 
 const offsets = FORMATS.map(({ width }, index) => width * index);
 
-const FormatPickerListItem = ({ item: format, contentOffsetY, onPress }) => {
+const FormatPickerListItem = ({ item: format, onPress, isSelected }) => {
+  const { Icon } = format;
+
   const handlePress = React.useCallback(() => {
     onPress(format);
   }, [format, onPress]);
@@ -88,13 +136,13 @@ const FormatPickerListItem = ({ item: format, contentOffsetY, onPress }) => {
       onPress={handlePress}
     >
       <Animated.View style={styles.item}>
-        <ExtraBoldText
-          adjustsFontSizeToFit
-          numberOfLines={1}
-          style={[styles.label]}
-        >
-          {format.label}
-        </ExtraBoldText>
+        <View style={styles.icon}>
+          <Icon />
+
+          <View
+            style={isSelected ? styles.selectedBorder : styles.unselectedBorder}
+          />
+        </View>
       </Animated.View>
     </BorderlessButton>
   );
@@ -107,10 +155,11 @@ export class FormatPicker extends React.PureComponent {
     super(props);
   }
 
-  renderItem = ({ item }) => {
+  renderItem = item => {
     return (
       <FormatPickerListItem
         onPress={this.onPressItem}
+        isSelected={this.props.value === item.value}
         item={item}
         contentOffsetY={this.xOffsetValue}
       />
@@ -119,47 +168,49 @@ export class FormatPicker extends React.PureComponent {
 
   onPressItem = (format: Object) => {
     const index = FORMATS.indexOf(format);
-    this.carouselRef.current.snapToItem(index);
+    this.handleSnap(index);
   };
 
   goNext = () => {
-    this.carouselRef.current.snapToNext();
+    // this.carouselRef.current.snapToNext();
   };
 
   goPrevious = () => {
-    this.carouselRef.current.snapToPrev();
+    // this.carouselRef.current.snapToPrev();
   };
 
   handleSnap = index => {
     sendLightFeedback();
-    this.props.onChangeFormat(FORMATS[index].value);
+    this.props.onChangeLayout(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
-  getFirstItem = FORMATS.findIndex(
-    ({ value }) => this.props.defaultFormat === value
-  );
+
   carouselRef = React.createRef<Carousel>();
+
+  translateX = Animated.multiply(
+    Animated.multiply(this.props.position, LIST_ITEM_WIDTH),
+    -1
+  );
 
   render() {
     return (
-      <Carousel
-        data={FORMATS}
-        renderItem={this.renderItem}
-        sliderWidth={SCREEN_WIDTH}
-        itemWidth={ITEM_WIDTH}
-        itemHeight={CAROUSEL_HEIGHT}
-        horizontal
-        ref={this.carouselRef}
-        sliderHeight={CAROUSEL_HEIGHT}
-        enableSnap
-        firstItem={this.getFirstItem}
-        useScrollView
-        layoutCardOffset={0}
-        inactiveSlideScale={1}
-        layout="default"
-        style={styles.container}
-        onSnapToItem={this.handleSnap}
-      />
+      <Animated.View style={styles.container}>
+        <Animated.View
+          style={[
+            styles.list,
+            {
+              transform: [
+                {
+                  translateX: SCREEN_DIMENSIONS.width / 2 - LIST_ITEM_WIDTH / 2
+                },
+                { translateX: this.translateX }
+              ]
+            }
+          ]}
+        >
+          {FORMATS.map(this.renderItem)}
+        </Animated.View>
+      </Animated.View>
     );
   }
 }

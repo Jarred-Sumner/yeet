@@ -1,0 +1,17 @@
+#import "local/YeetImageContainerFragment.graphql"
+
+query GIFSearchQuery($offset: Int!, $limit: Int!, $query: String) {
+  gifs(offset: $offset, limit: $limit, query: $query) @client {
+    data {
+      ...YeetImageContainerFragment
+    }
+
+    id
+
+    page_info {
+      has_next_page
+      offset
+      limit
+    }
+  }
+}

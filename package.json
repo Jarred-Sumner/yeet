@@ -6,7 +6,7 @@
     "pregraphql:schema": "rimraf src/lib/graphql-schema.json",
     "graphql:schema": "apollo client:download-schema --endpoint=http://localhost:3000/graphql src/lib/graphql-schema.json",
     "pregraphql:types": "yarn graphql:schema && rimraf src/lib/graphql && mkdir src/lib/graphql",
-    "graphql:types": "apollo client:codegen src/lib/graphql --config=apollo.config.js --localSchemaFile=src/lib/graphql-schema.json  --includes=\"src/lib/*.graphql\" --target typescript --passthroughCustomScalars --outputFlat --namespace GraphQL",
+    "graphql:types": "apollo client:codegen src/lib/graphql --config=apollo.config.js --localSchemaFile=src/lib/graphql-schema.json  --includes=\"src/lib/*.graphql\"  --excludes=\"src/lib/*.local.graphql\"  --target typescript --passthroughCustomScalars --outputFlat --namespace GraphQL",
     "start": "react-native start",
     "test": "jest",
     "lint": "eslint ."
@@ -23,6 +23,7 @@
     "@react-native-firebase/app": "^6.0.3",
     "@react-native-firebase/perf": "^6.0.3",
     "@react-navigation/core": "3.5.1",
+    "@rnhooks/keyboard": "^0.0.2",
     "@sentry/react-native": "^1.0.9",
     "@terrylinla/react-native-sketch-canvas": "^0.8.0",
     "apollo-cache-inmemory": "^1.6.2",
@@ -91,7 +92,7 @@
     "react-native-redash": "^7.5.1",
     "react-native-safe-area-context": "^0.6.0",
     "react-native-safe-area-view": "^0.14.6",
-    "react-native-screens": "2.0.0-alpha.11",
+    "react-native-screens": "2.0.0-alpha.16",
     "react-native-section-list-get-item-layout": "^2.2.3",
     "react-native-secure-key-store": "^2.0.4",
     "react-native-shared-element": "^0.5.1",
@@ -114,6 +115,7 @@
     "svg-path-properties": "^0.5.2",
     "svg-points": "^6.0.1",
     "tinycolor2": "^1.4.1",
+    "use-debounce": "^3.2.0",
     "yup": "^0.27.0"
   },
   "rnpm": {
