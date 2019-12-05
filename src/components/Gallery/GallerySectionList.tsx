@@ -171,6 +171,7 @@ export const GallerySectionList = ({
       columnCount: COLUMN_COUNT,
       photoColumnCount: COLUMN_COUNT * 2
     },
+    returnPartialData: true,
     notifyOnNetworkStatusChange: true
   });
 

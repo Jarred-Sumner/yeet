@@ -137,8 +137,14 @@ import ModernAVPlayer
     }
   }
 
-  deinit {
+  func reset() {
+    coverView.isHidden = true
     observer?.invalidate()
+    playerView.player = nil
+  }
+
+  deinit {
+    self.reset()
     print("DEINIT VIDEO")
 
 //    if playerLayer?.superlayer != nil {

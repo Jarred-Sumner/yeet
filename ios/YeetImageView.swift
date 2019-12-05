@@ -45,7 +45,10 @@ class YeetImageView : PINAnimatedImageView {
           self.imageRequestID = nil
         }
 
-        self.loadImage()
+        if newValue != nil {
+          self.loadImage()
+        }
+
       }
    }
   }
@@ -267,16 +270,6 @@ class YeetImageView : PINAnimatedImageView {
 
   var lastURL: URL? = nil
 
-   override func coverImageCompleted(_ coverImage: UIImage!) {
-    if let coverImage = coverImage.cgImage?.copy() {
-      self.coverImage = coverImage
-    }
-
-
-    super.coverImageCompleted(coverImage)
-  }
-
-
   func loadImage(async: Bool = true) {
     guard let mediaSource = self.mediaSource else {
 //      self.image = nil
@@ -322,15 +315,6 @@ class YeetImageView : PINAnimatedImageView {
     onLoadStartEvent?(["id": mediaSource.id])
   }
 
-  var coverImage: CGImage? = nil
-
-  override func display(_ layer: CALayer) {
-    let imageRef = self.imageRef()
-
-    let image = imageRef?.takeUnretainedValue()
-    layer.contents = image ?? coverImage
-  }
-
   var isLoadingImage: Bool {
     guard let mediaSource = mediaSource else {
       return false
@@ -369,8 +353,8 @@ class YeetImageView : PINAnimatedImageView {
 
   func handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil, async: Bool = true) {
     if async {
-      DispatchQueue.main.async {
-        self._handleImageLoad(image: image, scale: scale, error: error)
+      DispatchQueue.main.async { [weak self] in
+        self?._handleImageLoad(image: image, scale: scale, error: error)
       }
     } else {
         self._handleImageLoad(image: image, scale: scale, error: error)
@@ -526,16 +510,22 @@ class YeetImageView : PINAnimatedImageView {
     return url
   }
 
-
-  deinit {
+  func reset() {
+    self.source = nil
     self.pin_cancelImageDownload()
-    self.animatedImage?.clearCache()
-    self.animatedImage = nil
-    self.coverImage = nil
 
     if let imageRequest = self.imageRequestID {
       YeetImageView.phImageManager.cancelImageRequest(imageRequest)
       self.imageRequestID = nil
     }
+
+    self.isPlaybackPaused = true
+  }
+
+
+  deinit {
+    self.reset()
+    self.animatedImage?.clearCache()
+    self.animatedImage = nil
   }
 }

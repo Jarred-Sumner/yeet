@@ -43,29 +43,25 @@ export class ImagePicker extends React.Component {
     switch (route.key) {
       case ImagePickerRoute.camera:
         return (
-          <MediaPlayerPauser>
-            <CameraRollRoute
-              jumpTo={jumpTo}
-              position={position}
-              width={width}
-              height={height - LIST_HEADER_HEIGHT}
-              tabBarHeight={LIST_HEADER_HEIGHT}
-              {...otherProps}
-            />
-          </MediaPlayerPauser>
+          <CameraRollRoute
+            jumpTo={jumpTo}
+            position={position}
+            width={width}
+            height={height - LIST_HEADER_HEIGHT}
+            tabBarHeight={LIST_HEADER_HEIGHT}
+            {...otherProps}
+          />
         );
       case ImagePickerRoute.internet:
         return (
-          <MediaPlayerPauser>
-            <InternetImagesRoute
-              jumpTo={jumpTo}
-              position={position}
-              width={width}
-              height={height - LIST_HEADER_HEIGHT}
-              tabBarHeight={LIST_HEADER_HEIGHT}
-              {...otherProps}
-            />
-          </MediaPlayerPauser>
+          <InternetImagesRoute
+            jumpTo={jumpTo}
+            position={position}
+            width={width}
+            height={height - LIST_HEADER_HEIGHT}
+            tabBarHeight={LIST_HEADER_HEIGHT}
+            {...otherProps}
+          />
         );
       default: {
         throw Error(`Invalid route: ${route}`);

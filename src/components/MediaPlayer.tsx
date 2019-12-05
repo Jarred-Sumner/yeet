@@ -109,25 +109,25 @@ export const MediaPlayerPauser = React.forwardRef(
       };
     }, [registerID, unregisterID]);
 
-    useFocusEffect(
-      React.useCallback(() => {
-        console.log("UNPAUSE");
-        unpausePlayers();
+    // useFocusEffect(
+    //   React.useCallback(() => {
+    //     console.log("UNPAUSE");
+    //     unpausePlayers();
 
-        return () => {
-          console.log("PAUSE");
-          pausePlayers();
-        };
-      }, [pausePlayers, unpausePlayers])
-    );
+    //     return () => {
+    //       console.log("PAUSE");
+    //       pausePlayers();
+    //     };
+    //   }, [pausePlayers, unpausePlayers])
+    // );
 
-    useEffect(() => {
-      if (isHidden === false) {
-        pausePlayers();
-      } else if (isHidden === true) {
-        unpausePlayers();
-      }
-    }, [pausePlayers, unpausePlayers, isHidden]);
+    // useEffect(() => {
+    //   if (isHidden === false) {
+    //     pausePlayers();
+    //   } else if (isHidden === true) {
+    //     unpausePlayers();
+    //   }
+    // }, [pausePlayers, unpausePlayers, isHidden]);
 
     useImperativeHandle(ref, () => ({
       pausePlayers,
@@ -275,7 +275,7 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 
   componentWillUnmount() {
-    this.reset();
+    // this1.reset();
   }
 
   reset = () => {

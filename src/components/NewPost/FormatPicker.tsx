@@ -158,6 +158,7 @@ export class FormatPicker extends React.PureComponent {
   renderItem = item => {
     return (
       <FormatPickerListItem
+        key={item.value}
         onPress={this.onPressItem}
         isSelected={this.props.value === item.value}
         item={item}

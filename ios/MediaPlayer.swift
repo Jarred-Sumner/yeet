@@ -42,7 +42,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         return
       }
 
-      if this.batchPaused {
+      if this.halted {
         return
       }
 
@@ -77,7 +77,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   }
 
-  var batchPaused = false
+  var halted = false
 
 
 
@@ -243,8 +243,15 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
-  weak  var imageView: YeetImageView? = nil
-  weak var videoView: YeetVideoView? = nil
+  var imageView: YeetImageView? {
+    let imageViewTag = self.imageViewTag
+    return viewWithTag(imageViewTag) as? YeetImageView
+  }
+
+  var videoView: YeetVideoView? {
+    let videoViewTag = self.videoViewTag
+   return viewWithTag(videoViewTag) as? YeetVideoView
+  }
   var bridge: RCTBridge? = nil
   var isInitialMount = true
 
@@ -274,9 +281,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         source?.alwaysLoop = true
       } else {
         if let source = source as? TrackableVideoSource {
-          playerLayerObserver = nil
           source.player?.pause()
-          videoView = nil
           source.player = nil
         }
         source = nil
@@ -431,19 +436,19 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   var mediaQueueObserver: NSKeyValueObservation? = nil
   var bridgeObserver: NSKeyValueObservation? = nil
 
+
+
   func layoutContentView() {
+    if (invalidated) {
+      return
+    }
+
     let contentViewShouldChange =  (isContentViewImage && !self.shouldShowImageView)  || (isContentViewVideo  && !self.shouldShowVideoView)
 
     if contentViewShouldChange {
       if contentView?.superview != nil {
         contentView?.removeFromSuperview()
         self.contentType = MediaPlayerContentType.none
-      }
-
-      if isContentViewImage {
-        self.imageView = nil
-      } else if isContentViewVideo {
-        self.videoView = nil
       }
     }
 
@@ -456,7 +461,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         videoView.bounds = frame
         videoView.tag = self.videoViewTag
 
-        self.videoView = videoView
         self.addSubview(videoView)
       } else {
         self.videoView!.frame = frame
@@ -481,7 +485,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         let imageView = YeetImageView()
         imageView.tag = imageViewTag
 
-        self.imageView = imageView
         self.addSubview(imageView)
       }
       guard let imageView = self.imageView else {
@@ -513,7 +516,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   }
 
   var canSendEvents: Bool {
-    return bridge?.isValid ?? false && !batchPaused
+    return bridge?.isValid ?? false && !halted && !invalidated
   }
 
 
@@ -565,22 +568,16 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   @objc(reset)
   func reset() {
       if self.videoSource != nil {
-//        DispatchQueue.global(qos: .background).async { [weak self, weak videoSource] in
-          if let videoSource = videoSource {
-            videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
-            videoSource.player?.pause()
-            videoSource.player = nil
-          }
+        if let videoSource = videoSource {
+          videoSource.elapsed = videoSource.player?.currentTime().seconds ?? videoSource.elapsed
+          videoSource.player?.pause()
+          videoSource.looper?.disableLooping()
+          videoSource.player = nil
+        }
 
-          self.playerLayerObserver = nil
-          self.isWaitingToPlay = false
-
-          DispatchQueue.main.async { [weak self] in
-            self?.videoView?.removeFromSuperview()
-          }
-//        }
+        self.isWaitingToPlay = false
       } else if let imageView = self.imageView {
-        imageView.isPlaybackPaused = true
+        imageView.reset()
       }
 
   }
@@ -604,10 +601,13 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
     if let videoSource = self.videoSource {
       if videoSource.player != nil {
-//        videoSource.player?.delegate = nil
+
         videoSource.player?.pause()
+        videoSource.looper?.disableLooping()
         videoSource.player?.currentItem?.cancelPendingSeeks()
+        videoSource.player?.removeAllItems()
         videoSource.player = nil
+        videoView?.showCover = true
 
         videoSource.status = .pending
       }
@@ -718,12 +718,12 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
           self.videoView?.showCover = true
         }
 
-        DispatchQueue.main.async {
+        DispatchQueue.main.async { [weak self] in
           let player = videoSource?.player ?? AVQueuePlayer()
-          player.isMuted = self.muted
+          player.isMuted = self?.muted ?? false
 
-          if self.videoView?.playerLayer.player != player {
-             self.videoView!.configurePlayer(player: player)
+          if self?.videoView?.playerLayer.player != player {
+             self?.videoView!.configurePlayer(player: player)
            }
 
           DispatchQueue.global(qos: .background).async { [weak self] in
@@ -766,42 +766,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   var hasAutoPlayed = false
 
-  func handleReady() {
-    guard self.canSendEvents else {
-      return
-    }
-
-    guard let item = self.currentItem else {
-      return
-    }
-
-
-    self.onLoad?([
-      "index": 0,
-      "id": item.id,
-      "status": "ready",
-      "url": item.uri.absoluteString,
-    ])
-  }
-
-  func handleError() {
-    guard self.canSendEvents else {
-      return
-    }
-
-    guard let item = self.currentItem else {
-      return
-    }
-
-
-    self.onError?([
-      "index": 0,
-      "id": item.id,
-      "status": "error",
-      "url": item.uri.absoluteString,
-    ])
-  }
-
   func sendStatusUpdate(status: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
     guard canSendEvents else {
       return
@@ -834,25 +798,68 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         "duration": mediaSource.duration,
         "interval": TrackableMediaSource.periodicInterval * 1000,
         "elapsed": mediaSource.elapsed,
+        "error": mediaSource.error?.localizedDescription ?? nil
       ])
     }
   }
 
-  func handleLoad() {
-
-  }
-
-  var inactiveStatus: TrackableMediaSource.Status? = nil
   @objc(isActive)
   var isActive: Bool = true
 
   @objc(muted)
   var muted: Bool = false
 
+  private var invalidated = false
   @objc(invalidate)
   func invalidate() {
-    self.reset()
+    invalidated = true
   }
+
+  @objc(didMoveToWindow)
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+
+    let isVisible = superview != nil && window != nil
+    let isDetachedView = superview != nil && window == nil
+    Log.debug("[\(String(describing: id))]: superview \(superview != nil) \n window \(window != nil)")
+    if (isVisible) {
+      
+    } else if (isDetachedView && !invalidated) {
+      self.haltContent()
+      self.halted = true
+    } else if (isDetachedView && invalidated) {
+      self.source?.stop()
+      self.reset()
+      videoView?.reset()
+      self.imageView?.removeFromSuperview()
+      self.videoView?.removeFromSuperview()
+      self.source = nil
+    }
+  }
+
+  override func willMove(toWindow newWindow: UIWindow?) {
+    super.willMove(toWindow: newWindow)
+
+    let wasDetached = superview != nil && window == nil && newWindow != nil
+    if (wasDetached && halted) {
+      self.unhaltContent()
+      self.halted = false
+    }
+  }
+
+  func unhaltContent() {
+    if !self.paused {
+      play()
+    }
+
+    if imageView?.isPlaybackPaused ?? false {
+      imageView?.isPlaybackPaused = false
+    }
+  }
+
+
+
+
 
   var videoSource: TrackableVideoSource? {
     return source as? TrackableVideoSource

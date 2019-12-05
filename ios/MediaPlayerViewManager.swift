@@ -55,14 +55,14 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
           return
         }
 
-        player.batchPaused = true
+        player.halted = true
         player.haltContent()
       }
 
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
 
         players?.forEach { player in
-          guard player.batchPaused else {
+          guard player.halted else {
             return
           }
 
@@ -96,8 +96,8 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
           return
         }
 
-        if player.batchPaused {
-          player.batchPaused = false
+        if player.halted {
+          player.halted = false
 
           if !player.paused {
             player.play()

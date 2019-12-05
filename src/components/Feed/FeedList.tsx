@@ -206,10 +206,9 @@ class FeedListComponent extends React.Component<Props, State> {
         { fetchMoreResult }: { fetchMoreResult: ViewThreads }
       ) => {
         const data = uniqBy(
-          [
-            ...previousResult.postThreads.data,
-            ...fetchMoreResult.postThreads.data
-          ],
+          previousResult.postThreads.data.concat(
+            fetchMoreResult.postThreads.data
+          ),
           "id"
         );
 

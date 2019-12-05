@@ -105,15 +105,12 @@ const MediaComponent = React.forwardRef(
       [mediaSourcesFromImage, source, playDuration, dimensions]
     );
 
-    React.useImperativeHandle(ref, () => ref.current);
-
     return (
       <MediaPlayer
         {...otherProps}
         paused={false}
         autoPlay
         id={id}
-        key={`${id}-${layout}`}
         borderRadius={borderRadius}
         ref={ref}
         sources={sources}

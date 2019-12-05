@@ -643,57 +643,55 @@ export class PostFlatList extends React.Component<Props, State> {
 
     return (
       <Animated.View style={listStyles.wrapper}>
-        <MediaPlayerPauser nodeRef={this.flatListRef}>
-          <FlatList
-            renderItem={this.renderItem}
-            data={posts}
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                tintColor="white"
-              />
-            }
-            ref={this.flatListRef}
-            contentOffset={this.contentOffset}
-            contenInsetAdjustmentBehavior="never"
-            contentInset={this.contentInset}
-            simultaneousHandlers={this.simultaneousListHandlers}
-            viewabilityConfig={this.viewabilityConfig}
-            scrollEventThrottle={1}
-            ListHeaderComponent={ThreadHeaderSpacer}
-            maintainVisibleContentPosition={this.visibleContentPosition}
-            scrollEnabled={scrollEnabled}
-            onScroll={this.onScroll}
-            onScrollEndDrag={this.onScrollEndDrag}
-            // onScrollBeginDrag={this.onMomentumScrollBegin}
-            // onMomentumScrollEnd={this.onMomentumScrollEnd}
-            // onMomentumScrollBegin={this.onMomentumScrollBegin}
-            onScrollToTop={this.handleScrollToTop}
-            maxToRenderPerBatch={5}
-            initialNumToRender={8}
-            windowSize={10}
-            scrollToOverflowEnabled
-            initialScrollIndex={this.initialPostIndex}
-            snapToOffsets={this.snapToOffsets}
-            decelerationRate="fast"
-            directionalLockEnabled
-            snapToStart
-            snapToEnd
-            disableScrollViewPanResponder
-            style={this.listStyle}
-            extraData={this.props.extraData}
-            vertical
-            keyboardDismissMode="interactive"
-            keyExtractor={this.keyExtractor}
-            keyboardShouldPersistTaps="always"
-            getItemLayout={this.getItemLayout}
-            ItemSeparatorComponent={ItemSeparatorComponent}
-            onEndReached={this.handleEndReached}
-          />
-        </MediaPlayerPauser>
+        <FlatList
+          renderItem={this.renderItem}
+          data={posts}
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor="white"
+            />
+          }
+          ref={this.flatListRef}
+          contentOffset={this.contentOffset}
+          contenInsetAdjustmentBehavior="never"
+          contentInset={this.contentInset}
+          simultaneousHandlers={this.simultaneousListHandlers}
+          viewabilityConfig={this.viewabilityConfig}
+          scrollEventThrottle={1}
+          ListHeaderComponent={ThreadHeaderSpacer}
+          maintainVisibleContentPosition={this.visibleContentPosition}
+          scrollEnabled={scrollEnabled}
+          onScroll={this.onScroll}
+          onScrollEndDrag={this.onScrollEndDrag}
+          // onScrollBeginDrag={this.onMomentumScrollBegin}
+          // onMomentumScrollEnd={this.onMomentumScrollEnd}
+          // onMomentumScrollBegin={this.onMomentumScrollBegin}
+          onScrollToTop={this.handleScrollToTop}
+          maxToRenderPerBatch={5}
+          initialNumToRender={8}
+          windowSize={10}
+          scrollToOverflowEnabled
+          initialScrollIndex={this.initialPostIndex}
+          snapToOffsets={this.snapToOffsets}
+          decelerationRate="fast"
+          directionalLockEnabled
+          snapToStart
+          snapToEnd
+          disableScrollViewPanResponder
+          style={this.listStyle}
+          extraData={this.props.extraData}
+          vertical
+          keyboardDismissMode="interactive"
+          keyExtractor={this.keyExtractor}
+          keyboardShouldPersistTaps="always"
+          getItemLayout={this.getItemLayout}
+          ItemSeparatorComponent={ItemSeparatorComponent}
+          onEndReached={this.handleEndReached}
+        />
       </Animated.View>
     );
   }

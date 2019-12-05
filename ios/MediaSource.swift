@@ -79,17 +79,18 @@ class MediaSource : NSObject  {
 
   private var _asset: AVURLAsset? = nil
 
-  lazy var asset: AVURLAsset? = {
-    if (!isVideo) {
-      return nil
+  var asset: AVURLAsset? {
+    guard isVideo else {
+      return _asset
     }
 
-    if (_asset == nil) {
-      _asset = AVURLAsset(url: assetURI)
+    if (_asset == nil && isHTTProtocol) {
+      _asset = AVURLAsset(url: self.assetURI)
+      self.assetStatus = .pending
     }
 
     return _asset
-  }()
+  }
 
   enum AssetLoadStatus {
     case pending
@@ -177,7 +178,7 @@ class MediaSource : NSObject  {
         } else if asset.mediaType == .video || asset.mediaType == .audio {
           MediaSource.videoAssetManager.requestAVAsset(forVideo: asset, options: request) { [weak self] _asset, _,error  in
             if let __asset = _asset {
-              self?._asset = __asset as? AVURLAsset
+              self?._asset = __asset as! AVURLAsset
               self?.loadAVAsset()
             } else {
               SwiftyBeaver.error("Loading AVAsset failed.\n\(error!)")
@@ -203,6 +204,11 @@ class MediaSource : NSObject  {
        guard let this = self else {
          return
        }
+
+      guard _asset == this.asset else {
+        this.assetStatus = .pending
+        return
+      }
 
        this._onLoadAsset.forEach { [weak self] cb in
          cb(self?._asset)

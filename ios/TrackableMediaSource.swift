@@ -182,8 +182,11 @@ class TrackableMediaSource : NSObject {
     _onLoadCallbacks = []
   }
 
+  var error: Error? = nil
+
   public func onError(error: Error?) {
     self.status = .error
+    self.error = error
   }
 
   public func onEnd() {

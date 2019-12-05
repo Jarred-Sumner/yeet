@@ -10,6 +10,7 @@ import {
 } from "../../lib/imageSearch";
 import { DurationLabel } from "../NewPost/ImagePicker/DurationLabel";
 import { SPACING } from "../../lib/styles";
+import memoizee from "memoizee";
 
 const photoCellStyles = StyleSheet.create({
   container: {
@@ -29,6 +30,21 @@ const photoCellStyles = StyleSheet.create({
   }
 });
 
+export const galleryItemMediaSource = memoizee(
+  (image: YeetImageContainer, width: number, height: number) => {
+    return mediaSourceFromImage(image, { width, height }, true, true);
+  }
+);
+
+export const galleryItemResizeMode = ({ image, width, height }) => {
+  const isSquareInAHorizontalImage =
+    width / height === 1 && image.preview?.width / image.preview?.height > 1.3;
+
+  return image.image.duration > 0 || isSquareInAHorizontalImage
+    ? "aspectFit"
+    : "aspectFill";
+};
+
 export const GalleryItem = React.memo(
   ({
     onPress,
@@ -46,16 +62,12 @@ export const GalleryItem = React.memo(
     paused: boolean;
   }) => {
     const sources = React.useMemo(() => {
-      return [mediaSourceFromImage(image, { width, height }, true, true)];
-    }, [image, width, height, mediaSourceFromImage]);
+      return [galleryItemMediaSource(image, width, height)];
+    }, [image, width, height, galleryItemMediaSource]);
 
     const _onPress = React.useCallback(() => {
       onPress(image);
     }, [onPress, image]);
-
-    const isSquareInAHorizontalImage =
-      width / height === 1 &&
-      image.preview?.width / image.preview?.height > 1.3;
 
     // const onError = React.useCallback(() => {
     //   if (image.sourceType === ImageSourceType.giphy) {
@@ -76,11 +88,7 @@ export const GalleryItem = React.memo(
             muted
             paused={paused}
             loop
-            resizeMode={
-              image.image.duration > 0 || isSquareInAHorizontalImage
-                ? "aspectFit"
-                : "aspectFill"
-            }
+            resizeMode={galleryItemResizeMode({ image, width, height })}
             id={image.id}
             autoPlay={false}
             // onError={onError}

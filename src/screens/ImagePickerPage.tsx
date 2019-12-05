@@ -9,6 +9,12 @@ import { generateBlockId } from "../components/NewPost/NewPostFormat";
 import { GalleryTabView } from "../components/Gallery/GalleryTabView";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import { MediaPlayerPauser } from "../components/MediaPlayer";
+import {
+  useNavigationState,
+  useFocusState,
+  useNavigation
+} from "react-navigation-hooks";
+import { SafeAreaContext } from "react-native-safe-area-context";
 
 const styles = StyleSheet.create({
   container: {
@@ -16,7 +22,7 @@ const styles = StyleSheet.create({
   }
 });
 
-export class ImagePickerPage extends React.Component {
+class RawImagePickerPage extends React.Component {
   static sharedElements = (navigation, otherNavigation, showing) => {
     // Transition element `item.${item.id}.photo` when either
     // showing or hiding this screen (coming from any route)
@@ -95,29 +101,36 @@ export class ImagePickerPage extends React.Component {
 
   render() {
     return (
-      <MediaPlayerPauser>
-        <View style={styles.container}>
-          {/* <AnimatedKeyboardTracker
+      <View style={styles.container}>
+        {/* <AnimatedKeyboardTracker
           onKeyboardShow={this.handleKeyboardShow}
           onKeyboardHide={this.handleKeyboardHide}
           keyboardVisibleValue={this.keyboardVisibleValue}
         /> */}
-          <GalleryTabView
-            width={SCREEN_DIMENSIONS.width}
-            isKeyboardVisible={this.state.isKeyboardVisible}
-            height={SCREEN_DIMENSIONS.height}
-            onPress={this.handlePickPhoto}
-            initialRoute={
-              this.props.navigation.getParam("initialRoute") || "all"
-            }
-          />
-        </View>
-      </MediaPlayerPauser>
+        <GalleryTabView
+          width={this.props.width}
+          isKeyboardVisible={this.state.isKeyboardVisible}
+          height={this.props.height}
+          onPress={this.handlePickPhoto}
+          initialRoute={this.props.navigation.getParam("initialRoute") || "all"}
+        />
+      </View>
     );
   }
 }
 
-export default hoistNonReactStatics(
-  withNavigationFocus(ImagePickerPage),
-  ImagePickerPage
-);
+export const ImagePickerPage = props => {
+  const navigation = useNavigation();
+  const { top, left, right } = React.useContext(SafeAreaContext);
+
+  return (
+    <RawImagePickerPage
+      navigation={navigation}
+      height={SCREEN_DIMENSIONS.height - top}
+      width={SCREEN_DIMENSIONS.width - left - right}
+      {...props}
+    />
+  );
+};
+
+export default ImagePickerPage;

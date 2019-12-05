@@ -92,10 +92,6 @@ class FeedPageComponent extends React.Component<Props> {
       postId: post.id,
       elementId: postElementId(post)
     });
-
-    InteractionManager.runAfterInteractions(() => {
-      this.props.pausePlayers();
-    });
   };
   handlePressThread = (thread: ViewThreads_postThreads_data) => {
     this.props.navigation.navigate("ViewThread", {
