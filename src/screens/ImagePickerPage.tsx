@@ -18,7 +18,8 @@ import { SafeAreaContext } from "react-native-safe-area-context";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: "#000"
   }
 });
 
@@ -112,6 +113,7 @@ class RawImagePickerPage extends React.Component {
           isKeyboardVisible={this.state.isKeyboardVisible}
           height={this.props.height}
           onPress={this.handlePickPhoto}
+          showHeader
           initialRoute={this.props.navigation.getParam("initialRoute") || "all"}
         />
       </View>

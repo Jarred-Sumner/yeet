@@ -28,6 +28,7 @@ import ImageSearch from "../NewPost/ImagePicker/ImageSearch";
 import { useDebouncedCallback } from "use-debounce";
 import useKeyboard from "@rnhooks/keyboard";
 import MediaPlayer from "../MediaPlayer";
+import Animated from "react-native-reanimated";
 
 const COLUMN_COUNT = 3;
 const GIF_COLUMN_COUNT = 2;
@@ -126,11 +127,26 @@ class GalleryFilterListComponent extends React.Component<Props> {
     index
   });
 
-  contentInset = { top: 0, left: 0, right: 0, bottom: 0 };
+  contentInset = { top: this.props.inset, left: 0, right: 0, bottom: 0 };
+  contentOffset = { y: this.props.inset * -1, x: 0 };
 
   static stickerHeaderIndices = [0];
   // https://github.com/facebook/react-native/issues/26610
   static scrollIndicatorInsets = { right: 1 };
+  handleScroll = this.props.scrollY
+    ? Animated.event(
+        [
+          {
+            nativeEvent: {
+              contentOffset: {
+                y: this.props.scrollY
+              }
+            }
+          }
+        ],
+        { useNativeDriver: true }
+      )
+    : undefined;
 
   render() {
     const {
@@ -145,11 +161,28 @@ class GalleryFilterListComponent extends React.Component<Props> {
       simultaneousHandlers,
       ListHeaderComponent,
       stickyHeader,
+      scrollY,
+      inset,
       ...otherProps
     } = this.props;
 
     return (
-      <View style={styles.wrapper}>
+      <Animated.View
+        style={[
+          styles.wrapper,
+          this.props.scrollY && {
+            transform: [
+              {
+                translateY: Animated.interpolate(this.props.scrollY, {
+                  inputRange: [-100, inset * -1, 0],
+                  outputRange: [-100, inset * -1, 0],
+                  extrapolateRight: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]
+          }
+        ]}
+      >
         <FlatList
           ref={this.setFlatListRef}
           data={data}
@@ -158,16 +191,18 @@ class GalleryFilterListComponent extends React.Component<Props> {
           extraData={isFocused}
           getItemLayout={this.getItemLayout}
           keyboardShouldPersistTaps="always"
+          onScroll={scrollY ? this.handleScroll : undefined}
+          scrollEventThrottle={scrollY ? 1 : undefined}
           scrollIndicatorInsets={
             GalleryFilterListComponent.scrollIndicatorInsets
           }
-          refreshControl={
-            <RefreshControl
-              refreshing={networkStatus === NetworkStatus.refetch}
-              onRefresh={onRefresh}
-              tintColor="white"
-            />
-          }
+          // refreshControl={
+          //   <RefreshControl
+          //     refreshing={networkStatus === NetworkStatus.refetch}
+          //     onRefresh={onRefresh}
+          //     tintColor="white"
+          //   />
+          // }
           simultaneousHandlers={simultaneousHandlers}
           ItemSeparatorComponent={ItemSeparatorComponent}
           refreshing={networkStatus === NetworkStatus.refetch}
@@ -181,7 +216,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
               ? GalleryFilterListComponent.stickerHeaderIndices
               : undefined
           }
-          contentInset={this.contentInset}
+          contentInset={!ListHeaderComponent ? this.contentInset : undefined}
+          overScrollMode="always"
+          alwaysBounceVertical
           numColumns={numColumns}
           columnWrapperStyle={styles.column}
           renderItem={this.renderColumn}
@@ -192,7 +229,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
           }
           onEndReachedThreshold={0.75}
         />
-      </View>
+      </Animated.View>
     );
   }
 }
@@ -206,11 +243,7 @@ const buildValue = (data: Array<YeetImageContainer> = []) => {
   });
 };
 
-export const GIFsFilterList = ({
-  isFocused,
-
-  ...otherProps
-}) => {
+export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
   const [query, onChangeQuery] = React.useState("");
   const [isKeyboardVisible] = useKeyboard();
 
@@ -262,7 +295,13 @@ export const GIFsFilterList = ({
   );
 
   const renderSearchBar = React.useMemo(
-    () => () => <ImageSearch query={query} onChange={debouncedChangeQuery} />,
+    () => () => (
+      <ImageSearch
+        inset={inset}
+        query={query}
+        onChange={debouncedChangeQuery}
+      />
+    ),
     [debouncedChangeQuery]
   );
 
@@ -319,9 +358,10 @@ export const GIFsFilterList = ({
       itemWidth={HORIZONTAL_ITEM_WIDTH}
       numColumns={GIF_COLUMN_COUNT}
       onEndReached={handleEndReached}
+      inset={inset}
       ListHeaderComponent={renderSearchBar}
       stickyHeader={query.length > 0 || isKeyboardVisible}
-      removeClippedSubviews={isFocused}
+      // removeClippedSubviews={isFocused}
       isFocused={isFocused}
       hasNextPage={gifsQuery?.data?.gifs?.page_info?.has_next_page ?? false}
       networkStatus={gifsQuery.networkStatus}

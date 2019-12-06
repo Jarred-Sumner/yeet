@@ -197,3 +197,26 @@ export function runLoopAnimation({
     state.position
   ]);
 }
+
+export const sheetOpacity = Animated.proc((dismissY, scrollY, height, offset) =>
+  Animated.cond(
+    Animated.lessOrEq(
+      dismissY,
+      Animated.add(Animated.multiply(height, -1), 10)
+    ),
+    Animated.interpolate(scrollY, {
+      inputRange: [Animated.multiply(offset, -1), 0],
+      outputRange: [0, 1]
+    }),
+    Animated.interpolate(dismissY, {
+      inputRange: [Animated.multiply(height, -1), 0],
+      outputRange: [
+        Animated.interpolate(scrollY, {
+          inputRange: [Animated.multiply(offset, -1), 0],
+          outputRange: [0, 1]
+        }),
+        0
+      ]
+    })
+  )
+);

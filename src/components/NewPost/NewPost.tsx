@@ -37,7 +37,8 @@ import {
   PostFormat,
   POST_WIDTH,
   CAROUSEL_HEIGHT,
-  PostLayout
+  PostLayout,
+  generateBlockId
 } from "./NewPostFormat";
 import { EditableNodeMap } from "./Node/BaseNode";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
@@ -54,6 +55,7 @@ import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
 import { scaleToWidth } from "../../lib/Rect";
 import { MediaPlayerPauser } from "../MediaPlayer";
 import { Panner } from "./Panner";
+import { GallerySheet } from "../Gallery/GallerySheet";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -65,6 +67,7 @@ type State = {
   post: NewPostType;
   defaultPhoto: YeetImageContainer | null;
   step: NewPostStep;
+  showGallery: Boolean;
   inlineNodes: EditableNodeMap;
 };
 
@@ -152,6 +155,7 @@ class RawNewPost extends React.Component<{}, State> {
     super(props);
 
     this.state = {
+      showGallery: false,
       post: buildPost({
         width: props.defaultWidth,
         height: props.defaultHeight,
@@ -245,28 +249,6 @@ class RawNewPost extends React.Component<{}, State> {
     this.transitionToEditPhoto(photo);
   };
 
-  scrollY = new Animated.Value<number>(CAROUSEL_HEIGHT * -1);
-
-  clampedScrollY = Animated.cond(
-    Animated.greaterThan(this.scrollY, CAROUSEL_HEIGHT * -1),
-    Animated.diffClamp(this.scrollY, 0, CAROUSEL_HEIGHT),
-    0
-  );
-
-  scrollUpTranslateY = Animated.interpolate(this.clampedScrollY, {
-    inputRange: [0, CAROUSEL_HEIGHT],
-    outputRange: [0, CAROUSEL_HEIGHT * -1],
-    extrapolate: Animated.Extrapolate.CLAMP
-  });
-
-  animatedTranslateY = new Animated.Value(0);
-
-  translateY = Animated.cond(
-    Animated.lessThan(this.animatedTranslateY, 0),
-    this.animatedTranslateY,
-    this.scrollUpTranslateY
-  );
-
   handleChangeLayout = (layout: PostLayout) => {
     const { format } = this.state.post;
 
@@ -315,32 +297,69 @@ class RawNewPost extends React.Component<{}, State> {
   pannerRef = React.createRef<PanGestureHandler>();
   layoutIndexValue = new Animated.Value(0);
 
+  openGalleryCallback: Function | null = null;
+
+  handleOpenGallery = ({ initialRoute, shouldAnimate, onChange, blockId }) => {
+    if (this.state.showGallery) {
+      return;
+    }
+
+    this.setState({
+      showGallery: true,
+      galleryBlockId: blockId,
+      galleryFilter: initialRoute
+    });
+    this.openGalleryCallback = onChange;
+  };
+
+  handlePressGallery = (image: YeetImageContainer) => {
+    const blockId = this.state.galleryBlockId;
+
+    if (this.openGalleryCallback) {
+      this.openGalleryCallback(blockId || generateBlockId(), image);
+    }
+
+    this.dismissGallery();
+  };
+
+  dismissGallery = () => {
+    this.setState({
+      showGallery: false,
+      galleryBlockId: null,
+      galleryFilter: null
+    });
+    this.openGalleryCallback = null;
+  };
+
   render() {
     const { step, showUploader, uploadData, inlineNodes } = this.state;
     const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
-      <Panner
-        onIndexChange={this.handleChangeLayoutIndex}
-        swipeEnabled
-        position={this.layoutIndexValue}
-        gestureHandlerProps={{
-          ref: this.pannerRef
-        }}
-        index={
-          FORMATS.findIndex(
-            format => this.state.post.layout === format.value
-          ) ?? 0
-        }
-        length={FORMATS.length}
-      >
-        <Animated.View style={styles.page}>
-          <StatusBar hidden showHideTransition="slide" />
-
+      <>
+        <Panner
+          onIndexChange={this.handleChangeLayoutIndex}
+          swipeEnabled={!this.state.showGallery}
+          position={this.layoutIndexValue}
+          gestureHandlerProps={{
+            ref: this.pannerRef
+          }}
+          index={
+            FORMATS.findIndex(
+              format => this.state.post.layout === format.value
+            ) ?? 0
+          }
+          length={FORMATS.length}
+        >
           <Animated.View
-            key={this.state.post.layout}
-            style={styles.transitionContainer}
+            pointerEvents={this.state.showGallery ? "none" : "auto"}
+            style={styles.page}
           >
-            <MediaPlayerPauser ref={this.pauser}>
+            <StatusBar hidden showHideTransition="slide" />
+
+            <Animated.View
+              key={this.state.post.layout}
+              style={styles.transitionContainer}
+            >
               <PostEditor
                 bounds={this.state.bounds}
                 post={this.state.post}
@@ -350,26 +369,33 @@ class RawNewPost extends React.Component<{}, State> {
                 isReply={!this.props.threadId}
                 onChangeFormat={this.handleChangeLayout}
                 controlsOpacityValue={this.controlsOpacityValue}
-                scrollY={this.scrollY}
+                onOpenGallery={this.handleOpenGallery}
                 inlineNodes={inlineNodes}
                 simultaneousHandlers={[this.pannerRef]}
                 yInset={CAROUSEL_HEIGHT}
                 onChangeNodes={this.handleChangeNodes}
                 onSubmit={this.handleSubmit}
               />
-            </MediaPlayerPauser>
-          </Animated.View>
+            </Animated.View>
 
-          <PostHeader
-            position={this.layoutIndexValue}
-            layout={this.state.post.layout}
-            onChangeLayout={this.handleChangeLayout}
-            ref={this.formatPickerRef}
-            translateY={this.translateY}
-            controlsOpacityValue={this.controlsOpacityValue}
-          />
-        </Animated.View>
-      </Panner>
+            <PostHeader
+              position={this.layoutIndexValue}
+              layout={this.state.post.layout}
+              onChangeLayout={this.handleChangeLayout}
+              ref={this.formatPickerRef}
+              controlsOpacityValue={this.controlsOpacityValue}
+            />
+          </Animated.View>
+        </Panner>
+        <GallerySheet
+          show={this.state.showGallery}
+          blockId={this.state.galleryBlockId}
+          onDismiss={this.dismissGallery}
+          post={this.state.post}
+          onPress={this.handlePressGallery}
+          initialRoute={this.state.galleryFilter || "all"}
+        />
+      </>
     );
   }
 

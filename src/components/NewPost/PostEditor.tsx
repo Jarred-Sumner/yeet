@@ -239,6 +239,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
   };
 
+  componentWillUnmount() {}
+
   handlePressToolbarButton = activeButton => {
     if (activeButton === ToolbarButtonType.photo) {
       this.handleInsertPhoto(undefined, GallerySectionItem.photos);
@@ -582,9 +584,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       }
     }
 
-    this.props.navigation.navigate("EditBlockPhoto", {
-      blockId: block.id,
-      post: this.props.post,
+    this.props.onOpenGallery({
+      blockId: block?.id,
       initialRoute,
       shouldAnimate,
       onChange: this.handleChangeImageBlockPhoto
@@ -592,9 +593,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleInsertPhoto = (block, initialRoute = "all", shouldAnimate = false) => {
-    this.props.navigation.navigate("EditBlockPhoto", {
-      blockId: block && block.id,
-      post: this.props.post,
+    this.props.onOpenGallery({
+      blockId: block?.id,
       initialRoute,
       shouldAnimate,
       onChange: this.handleInsertSticker

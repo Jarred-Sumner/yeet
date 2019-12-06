@@ -20,6 +20,7 @@ import {
   VERTICAL_ITEM_WIDTH,
   SQUARE_ITEM_WIDTH
 } from "./GalleryFilterList";
+import Animated from "react-native-reanimated";
 
 const COLUMN_COUNT = 3;
 const COLUMN_GAP = 2;
@@ -32,8 +33,8 @@ const styles = StyleSheet.create({
   },
   wrapper: {
     flex: 1,
-    width: SCREEN_DIMENSIONS.width,
-    overflow: "hidden"
+    width: SCREEN_DIMENSIONS.width
+    // overflow: "hidden"
   },
   column: {},
   sectionSeparator: {
@@ -108,17 +109,49 @@ class GallerySectionListComponent extends React.Component<Props> {
   };
 
   contentInset = {
-    top: SPACING.normal,
+    top: this.props.inset,
     bottom: 0,
     left: 0,
     right: 0
   };
 
+  contentOffset = { x: 0, y: this.contentInset.top * -1 };
+
+  handleScroll = this.props.scrollY
+    ? Animated.event(
+        [
+          {
+            nativeEvent: {
+              contentOffset: {
+                y: this.props.scrollY
+              }
+            }
+          }
+        ],
+        { useNativeDriver: true }
+      )
+    : undefined;
+
   render() {
-    const { sections, section, isFocused, onEndReached } = this.props;
+    const { sections, section, isFocused, onEndReached, inset } = this.props;
 
     return (
-      <View style={styles.wrapper}>
+      <Animated.View
+        style={[
+          styles.wrapper,
+          this.props.scrollY && {
+            transform: [
+              {
+                translateY: Animated.interpolate(this.props.scrollY, {
+                  inputRange: [-100, inset * -1, 0],
+                  outputRange: [-100, inset * -1, 0],
+                  extrapolateRight: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]
+          }
+        ]}
+      >
         <FlatList
           ref={this.setFlatListRef}
           data={sections}
@@ -126,12 +159,16 @@ class GallerySectionListComponent extends React.Component<Props> {
           contentInset={this.contentInset}
           extraData={isFocused}
           style={styles.container}
+          onScroll={this.handleScroll}
+          scrollEventThrottle={this.handleScroll ? 1 : undefined}
           keyExtractor={this.sectionKeyExtractor}
           renderItem={this.renderSectionItem}
+          overScrollMode="always"
+          alwaysBounceVertical
           ItemSeparatorComponent={SectionSeparatorComponent}
           contentInsetAdjustmentBehavior="automatic"
         />
-      </View>
+      </Animated.View>
     );
   }
 }
@@ -160,6 +197,8 @@ const ORDERED_ITEMS = [
 export const GallerySectionList = ({
   onPress,
   flatListRef,
+  scrollY,
+  inset,
   onChangeFilter,
   isFocused
 }) => {
@@ -203,8 +242,10 @@ export const GallerySectionList = ({
       sections={sections}
       isFocused={isFocused}
       onChangeFilter={onChangeFilter}
+      scrollY={scrollY}
       flatListRef={flatListRef}
       onPressColumn={onPress}
+      inset={inset}
     />
   );
 };

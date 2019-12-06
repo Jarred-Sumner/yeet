@@ -69,6 +69,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     position: "relative"
   },
+  lightContainer: {
+    alignItems: "center",
+    height: LIST_HEADER_HEIGHT,
+    width: SCREEN_DIMENSIONS.width,
+    shadowRadius: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowOffset: {
+      width: 0,
+      height: 1
+    },
+    borderRadius: 12,
+    flexDirection: "row",
+    justifyContent: "center",
+    position: "relative"
+  },
   headerText: {
     fontSize: 12,
     textAlign: "center"
@@ -124,7 +140,7 @@ export const ListHeaderRow = ({
   );
 };
 
-export const FilterBar = ({ position, onChange, value }) => {
+export const FilterBar = ({ position, onChange, value, light, scrollY }) => {
   const indicatorStyles = [
     styles.indicator,
     {
@@ -162,10 +178,10 @@ export const FilterBar = ({ position, onChange, value }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <Animated.View style={[light ? styles.lightContainer : styles.container]}>
       {FILTERS.map(renderFilter)}
       <Animated.View style={indicatorStyles} />
-    </View>
+    </Animated.View>
   );
 };
 

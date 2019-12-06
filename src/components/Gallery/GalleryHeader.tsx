@@ -29,9 +29,17 @@ const styles = StyleSheet.create({
     paddingVertical: SPACING.half,
     paddingHorizontal: SPACING.normal
   },
+
   spacer: {
     height: SPACING.half,
     width: 1
+  },
+  light: {
+    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    paddingTop: 4,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    overflow: "hidden"
   }
 });
 
@@ -41,6 +49,8 @@ export const GalleryHeader = ({
   filter,
   position = new Animated.Value(0),
   jumpTo,
+  showHeader,
+  scrollY,
   navigationState: { index, routes },
   ...otherProps
 }) => {
@@ -49,8 +59,13 @@ export const GalleryHeader = ({
 
   const { top } = React.useContext(SafeAreaContext);
   return (
-    <View style={[styles.container, { paddingTop: top }]}>
-      {navigation.isFirstRouteInParent() && (
+    <Animated.View
+      style={[
+        styles.container,
+        showHeader ? { paddingTop: top } : styles.light
+      ]}
+    >
+      {showHeader && (
         <View style={styles.header}>
           <BackButton size={18} behavior={behavior} />
         </View>
@@ -58,8 +73,10 @@ export const GalleryHeader = ({
       <FilterBar
         value={routes[index].key}
         onChange={jumpTo}
+        light={!showHeader}
+        scrollY={scrollY}
         position={position}
       />
-    </View>
+    </Animated.View>
   );
 };

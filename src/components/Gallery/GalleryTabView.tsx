@@ -16,7 +16,6 @@ import { PanGestureHandler, FlatList } from "react-native-gesture-handler";
 const styles = StyleSheet.create({
   sceneContainer: { overflow: "visible", flex: 1 },
   container: {
-    backgroundColor: "#000",
     flex: 1
   }
 });
@@ -50,8 +49,23 @@ export class GalleryTabView extends React.Component {
   }
 
   static defaultProps = {
-    initialRoute: "all"
+    initialRoute: "all",
+    inset: 0
   };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.props.initialRoute !== prevProps.initialRoute && this.props.show) {
+      this.setState({
+        navigationState: {
+          index: Math.max(
+            ROUTE_LIST.findIndex(({ key }) => key === this.props.initialRoute),
+            0
+          ),
+          routes: this.state.navigationState.routes
+        }
+      });
+    }
+  }
 
   panRef = React.createRef<PanGestureHandler>();
 
@@ -82,7 +96,9 @@ export class GalleryTabView extends React.Component {
             flatListRef={this.allSectionListRef}
             onPress={onPress}
             onChangeFilter={jumpTo}
+            inset={this.props.inset}
             simultaneousHandlers={this.simultaneousHandlers}
+            scrollY={this.props.scrollY}
           />
         );
       case GallerySectionItem.photos:
@@ -93,6 +109,8 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onPress={onPress}
             onChangeFilter={jumpTo}
+            inset={this.props.inset}
+            scrollY={this.props.scrollY}
           />
         );
       case GallerySectionItem.gifs:
@@ -103,6 +121,8 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            inset={this.props.inset}
+            scrollY={this.props.scrollY}
           />
         );
       case GallerySectionItem.memes:
@@ -113,6 +133,8 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            inset={this.props.inset}
+            scrollY={this.props.scrollY}
           />
         );
       case GallerySectionItem.videos:
@@ -123,6 +145,8 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            inset={this.props.inset}
+            scrollY={this.props.scrollY}
           />
         );
       default: {
@@ -138,7 +162,9 @@ export class GalleryTabView extends React.Component {
     <GalleryHeader
       {...props}
       query={this.state.query}
+      showHeader={this.props.showHeader}
       filter={props.navigationState.routes[0].key}
+      scrollY={this.props.scrollY}
       position={this.position}
     />
   );
@@ -162,7 +188,7 @@ export class GalleryTabView extends React.Component {
         removeClippedSubviews={false}
         gestureHandlerProps={{
           ref: this.panRef,
-          simultaneousHandlers: [
+          waitFor: [
             this.gifsListRef,
             this.allSectionListRef,
             this.memesListRef,
