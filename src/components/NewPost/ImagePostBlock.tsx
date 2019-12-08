@@ -13,7 +13,7 @@ import {
   mediaSourcesFromImage,
   YeetImageContainer
 } from "../../lib/imageSearch";
-import { BoundsRect } from "../../lib/Rect";
+import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
 import MediaPlayer from "../MediaPlayer";
 import { LIST_HEADER_HEIGHT } from "./ImagePicker";
 import {
@@ -88,7 +88,9 @@ const MediaComponent = React.forwardRef(
       dimensions,
       playDuration,
       borderRadius,
+      usePreview,
       layout,
+      scale = 1.0,
       id,
       style,
       ...otherProps
@@ -97,12 +99,26 @@ const MediaComponent = React.forwardRef(
       dimensions: BoundsRect;
       playDuration?: number | null;
       style: StyleProp<any>;
+      scale: number;
     },
     ref
   ) => {
     const sources = React.useMemo(
-      () => mediaSourcesFromImage(source, dimensions, playDuration),
-      [mediaSourcesFromImage, source, playDuration, dimensions]
+      () =>
+        mediaSourcesFromImage(
+          source,
+          scaleRectByFactor(scale, dimensions),
+          playDuration,
+          usePreview
+        ),
+      [
+        mediaSourcesFromImage,
+        source,
+        playDuration,
+        dimensions,
+        usePreview,
+        scale
+      ]
     );
 
     return (
@@ -121,7 +137,14 @@ const MediaComponent = React.forwardRef(
 );
 
 const LibraryImage = React.forwardRef(
-  ({ block }: { block: ImagePostBlockType }, ref) => {
+  (
+    {
+      block,
+      usePreview,
+      scale = 1.0
+    }: { block: ImagePostBlockType; usePreview: boolean; scale: number },
+    ref
+  ) => {
     return (
       <MediaComponent
         ref={ref}
@@ -129,12 +152,15 @@ const LibraryImage = React.forwardRef(
         id={block.id}
         layout={block.layout}
         dimensions={block.config.dimensions}
+        usePreview={usePreview}
         style={[
           stylesByFormat[block.format].image,
           {
-            transform: block.value.image.transform,
             width: block.config.dimensions.width,
             height: block.config.dimensions.height
+          },
+          {
+            transform: block.value.image.transform
           }
         ]}
       />
@@ -143,21 +169,32 @@ const LibraryImage = React.forwardRef(
 );
 
 const StickerImage = React.forwardRef(
-  ({ block }: { block: ImagePostBlockType }, ref) => {
+  (
+    {
+      block,
+      usePreview,
+      scale = 1.0
+    }: { block: ImagePostBlockType; usePreview: boolean; scale: number },
+    ref
+  ) => {
     return (
       <MediaComponent
         ref={ref}
         source={block.value}
+        usePreview={usePreview}
         id={block.id}
         layout={block.layout}
+        scale={scale}
         dimensions={block.config.dimensions}
         borderRadius={2}
         style={[
           stylesByFormat[block.format].image,
           {
-            transform: block.value.image.transform,
             width: block.config.dimensions.width,
             height: block.config.dimensions.height
+          },
+          {
+            transform: block.value.image.transform
           }
         ]}
       />
@@ -216,7 +253,15 @@ class RawImagePostBlock extends React.Component<Props> {
   );
 
   render() {
-    const { block, onLayout, scrollRef, inputRef, onTap } = this.props;
+    const {
+      block,
+      onLayout,
+      scrollRef,
+      inputRef,
+      scale,
+      onTap,
+      usePreview = false
+    } = this.props;
 
     const ImageComponent =
       {
@@ -255,7 +300,11 @@ class RawImagePostBlock extends React.Component<Props> {
               style={sizeStyle}
               id={`block.imagePicker.${block.id}`}
             >
-              <ImageComponent block={block} />
+              <ImageComponent
+                block={block}
+                usePreview={usePreview}
+                scale={scale}
+              />
             </SharedElement>
 
             {this.props.children}

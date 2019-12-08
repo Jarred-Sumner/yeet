@@ -5,6 +5,7 @@ import {
   StyleSheet,
   NativeModules,
   InteractionManager,
+  TextInput as _RNTextInput,
   StyleProp,
   StyleSheetProperties
 } from "react-native";
@@ -23,7 +24,9 @@ import {
   PostFormat,
   presetsByFormat,
   FocusType,
-  PostLayout
+  PostLayout,
+  TextTemplate,
+  TextBorderType
 } from "../NewPostFormat";
 import { COLORS } from "../../../lib/styles";
 import {
@@ -33,6 +36,7 @@ import {
 } from "../../Posts/CommentsViewer";
 import { TextInput as RNTextInput } from "./CustomTextInputComponent";
 import { memoize } from "lodash";
+import { FONT_STYLES } from "../../../lib/fonts";
 const ZERO_WIDTH_SPACE = "​";
 
 const RawAnimatedTextInput = Animated.createAnimatedComponent(
@@ -61,17 +65,9 @@ const getPlaceholderColor = memoize((color: string) =>
     .setAlpha(0.65)
     .toString()
 );
-const textShadowColor = memoize((color: string) => {
-  const _color = tinycolor(color);
-  if (_color.isDark()) {
-    return "rgba(255, 255, 255, 0.25)";
-  } else {
-    return "rgba(0, 0, 0, 0.25)";
-  }
-});
 
 const textInputStyles = {
-  [PostFormat.comment]: {
+  [TextTemplate.comment]: {
     fontSizes: {
       "0": 14,
       "8": 14,
@@ -83,7 +79,7 @@ const textInputStyles = {
       color: "white"
     }
   },
-  [PostFormat.post]: {
+  [TextTemplate.post]: {
     fontSizes: {
       "0": 24,
       "8": 24,
@@ -102,7 +98,7 @@ const textInputStyles = {
       textShadowRadius: 1
     }
   },
-  [PostFormat.sticker]: {
+  [TextTemplate.basic]: {
     fontSizes: {
       "0": 24,
       "8": 24,
@@ -110,7 +106,144 @@ const textInputStyles = {
       "24": 24
     },
     presets: {
-      backgroundColor: COLORS.secondary,
+      backgroundColor: COLORS.primary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.gary]: {
+    fontSizes: {
+      "0": 48,
+      "8": 48,
+      "12": 48,
+      "24": 48
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
+      textAlign: "center",
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 5
+    }
+  },
+  [TextTemplate.comic]: {
+    fontSizes: {
+      "0": 36,
+      "8": 36,
+      "12": 36,
+      "24": 36
+    },
+    presets: {
+      backgroundColor: "white",
+      textAlign: "center",
+      color: "black",
+      borderRadius: 8,
+      textShadowColor: "transparent",
+      placeholderColor: "white",
+
+      textShadowOffset: {
+        width: 0,
+        height: 0
+      },
+      textShadowRadius: 0
+    }
+  },
+  [TextTemplate.terminal]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.space]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.magic]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.superhero]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.pickaxe]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.primary,
       color: "white",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "white",
@@ -123,8 +256,89 @@ const textInputStyles = {
   }
 };
 
-const textInputTypeStylesheets = {
-  [PostFormat.comment]: StyleSheet.create({
+const getTextShadow = memoize(
+  (
+    backgroundColor: string,
+    color: string,
+    format: PostFormat,
+    border: TextBorderType,
+    template: TextTemplate
+  ) => {
+    let _backgroundColor =
+      backgroundColor === "transparent" ? null : backgroundColor;
+
+    let textShadowColor: string = "transparent";
+    if (format === PostFormat.comment) {
+      const _color = tinycolor(_backgroundColor || color);
+      if (_color.isDark()) {
+        textShadowColor = "rgba(255, 255, 255, 0.25)";
+      } else {
+        textShadowColor = "rgba(0, 0, 0, 0.25)";
+      }
+    } else if (border === TextBorderType.hidden) {
+      const _color = tinycolor(_backgroundColor || color);
+      if (_color.isDark()) {
+        textShadowColor = "rgba(255, 255, 255, 0.95)";
+      } else {
+        textShadowColor = "rgba(0, 0, 0, 0.95)";
+      }
+    }
+
+    if (textShadowColor === "transparent") {
+      return {
+        textShadowColor: "transparent",
+        textShadowOffset: { width: 0, height: 0 },
+        textShadowRadius: 0
+      };
+    }
+
+    let textShadowOffset = textInputStyles[template].presets
+      ?.textShadowOffset ?? {
+      width: 0,
+      height: 0
+    };
+
+    let textShadowRadius =
+      textInputStyles[template].presets?.textShadowRadius ?? 0;
+
+    if (
+      (border === TextBorderType.hidden ||
+        border === TextBorderType.highlight) &&
+      !textInputStyles[template].presets?.textShadowRadius
+    ) {
+      textShadowRadius = 2;
+      // textShadowOffset = {
+      //   width
+      // }
+    }
+
+    return {
+      textShadowColor,
+      textShadowOffset,
+      textShadowRadius
+    };
+  }
+);
+
+const BASE_OVERLAY_STYLE = {
+  textAlign: "left",
+  backgroundColor: "transparent",
+  fontFamily: "Helvetica",
+  marginTop: 0,
+  paddingTop: 8,
+  paddingBottom: 8,
+  paddingLeft: 6,
+  textAlignVertical: "center",
+  paddingRight: 6
+};
+
+const textInputTypeStylesheets: {
+  [style: TextTemplate]: {
+    container: StyleProp<View>;
+    input: StyleProp<_RNTextInput>;
+  };
+} = {
+  [TextTemplate.comment]: StyleSheet.create({
     container: {
       borderRadius: 4
     },
@@ -142,31 +356,47 @@ const textInputTypeStylesheets = {
       textShadowRadius: 1
     }
   }),
-  [PostFormat.sticker]: StyleSheet.create({
+  [TextTemplate.basic]: StyleSheet.create({
     container: {
       backgroundColor: "transparent"
     },
     input: {
-      textAlign: "left",
-      backgroundColor: "transparent",
-      fontFamily: "Helvetica",
-      marginTop: 0,
-      paddingTop: 8,
-      paddingBottom: 8,
-      paddingLeft: 6,
-      textAlignVertical: "center",
-      paddingRight: 6,
-      color: textInputStyles[PostFormat.post].presets.color,
+      ...BASE_OVERLAY_STYLE,
+      textAlign:
+        textInputStyles[TextTemplate.basic].presets.textAlign || "left",
+      color: textInputStyles[TextTemplate.basic].presets.color,
       fontWeight: "bold",
-      textShadowColor: textInputStyles[PostFormat.post].presets.textShadowColor,
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
       textShadowOffset:
-        textInputStyles[PostFormat.post].presets.textShadowOffset,
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
 
       textShadowRadius:
-        textInputStyles[PostFormat.post].presets.textShadowRadius
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
     }
   }),
-  [PostFormat.post]: StyleSheet.create({
+  [TextTemplate.comic]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.comic,
+      textAlign:
+        textInputStyles[TextTemplate.comic].presets.textAlign || "left",
+      color: textInputStyles[TextTemplate.comic].presets.color,
+      fontWeight: "bold",
+      textShadowColor:
+        textInputStyles[TextTemplate.comic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.comic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.comic].presets.textShadowRadius
+    }
+  }),
+
+  [TextTemplate.post]: StyleSheet.create({
     container: {
       backgroundColor: "transparent"
     },
@@ -180,14 +410,109 @@ const textInputTypeStylesheets = {
       paddingLeft: 8,
       textAlignVertical: "center",
       paddingRight: 8,
-      color: textInputStyles[PostFormat.post].presets.color,
+      color: textInputStyles[TextTemplate.post].presets.color,
       fontWeight: "500",
-      textShadowColor: textInputStyles[PostFormat.post].presets.textShadowColor,
+      textShadowColor:
+        textInputStyles[TextTemplate.post].presets.textShadowColor,
       textShadowOffset:
-        textInputStyles[PostFormat.post].presets.textShadowOffset,
+        textInputStyles[TextTemplate.post].presets.textShadowOffset,
 
       textShadowRadius:
-        textInputStyles[PostFormat.post].presets.textShadowRadius
+        textInputStyles[TextTemplate.post].presets.textShadowRadius
+    }
+  }),
+  [TextTemplate.space]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.starwars,
+      textAlign:
+        textInputStyles[TextTemplate.space].presets.textAlign || "left",
+      color: textInputStyles[TextTemplate.basic].presets.color,
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    }
+  }),
+  [TextTemplate.pickaxe]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.minecraft,
+      textAlign:
+        textInputStyles[TextTemplate.pickaxe].presets.textAlign || "left",
+      color: textInputStyles[TextTemplate.basic].presets.color,
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    }
+  }),
+  [TextTemplate.magic]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.waltograph,
+      textAlign:
+        textInputStyles[TextTemplate.magic].presets.textAlign || "center",
+      color: textInputStyles[TextTemplate.basic].presets.color,
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    }
+  }),
+  [TextTemplate.superhero]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.avenger,
+      textAlign:
+        textInputStyles[TextTemplate.superhero].presets.textAlign || "left",
+      color: textInputStyles[TextTemplate.basic].presets.color,
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    }
+  }),
+  [TextTemplate.gary]: StyleSheet.create({
+    container: {
+      backgroundColor: "transparent"
+    },
+    input: {
+      ...BASE_OVERLAY_STYLE,
+      ...FONT_STYLES.spongebob,
+      color: textInputStyles[TextTemplate.basic].presets.color,
+      textAlign: textInputStyles[TextTemplate.gary].presets.textAlign || "left",
+      textShadowColor:
+        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+      textShadowOffset:
+        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputStyles[TextTemplate.basic].presets.textShadowRadius
     }
   })
 };
@@ -252,7 +577,7 @@ export class TextInput extends React.Component<Props> {
   fontSizeClock = new Animated.Clock();
 
   getFontSizeValue = (props, text) => {
-    const fontSizes = textInputStyles[props.block.format].fontSizes;
+    const fontSizes = textInputStyles[props.block.config.template].fontSizes;
     return fontSizes[getClosestNumber(text.length, Object.keys(fontSizes))];
   };
 
@@ -302,9 +627,12 @@ export class TextInput extends React.Component<Props> {
       config: {
         placeholder = " ",
         minHeight,
+        template,
+        border,
         overrides = {
           color: undefined,
-          backgroundColor: undefined
+          backgroundColor: undefined,
+          textAlign: undefined
         }
       },
       value,
@@ -345,32 +673,62 @@ export class TextInput extends React.Component<Props> {
       width = "100%";
     }
 
-    console.log({ layout, width, format });
+    const showHighlight = border === TextBorderType.highlight;
+    const highlightRadius = showHighlight
+      ? overrides?.borderRadius ||
+        textInputStyles[template].presets.borderRadius ||
+        8
+      : 0;
+
+    let backgroundColor =
+      overrides?.backgroundColor ||
+      textInputStyles[template].presets.backgroundColor;
+
+    let textAlign =
+      overrides?.textAlign || textInputStyles[template].presets.textAlign;
+
+    let color = overrides?.color || textInputStyles[template].presets.color;
+
+    if (border === TextBorderType.hidden) {
+      backgroundColor = "transparent";
+    } else if (border === TextBorderType.invert) {
+      const _color = backgroundColor;
+      backgroundColor = color;
+      color = _color;
+    } else if (border === TextBorderType.stroke) {
+      backgroundColor = color;
+      color = backgroundColor;
+    }
+
+    const textShadow = getTextShadow(
+      backgroundColor,
+      color,
+      format,
+      border,
+      template
+    );
 
     const containerStyles = [
       styles.container,
-      textInputTypeStylesheets[format].container,
+      textInputTypeStylesheets[template].container,
       {
         height,
-        width
+        width,
+        backgroundColor:
+          border === TextBorderType.solid ? backgroundColor : undefined
       }
     ];
 
-    const showHighlight =
-      format === PostFormat.sticker || format === PostFormat.comment;
-
-    const backgroundColor =
-      overrides?.backgroundColor ??
-      textInputStyles[format].presets.backgroundColor;
-
-    const color = overrides?.color ?? textInputStyles[format].presets.color;
-
     const inputStyles = [
       styles.input,
-      textInputTypeStylesheets[format].input,
+      textInputTypeStylesheets[template].input,
       {
-        backgroundColor: showHighlight ? "transparent" : backgroundColor,
+        backgroundColor:
+          border !== TextBorderType.solid && !showHighlight
+            ? backgroundColor
+            : undefined,
         minHeight,
+        textAlign,
         color,
         flex: focusType === FocusType.absolute && isFocused ? 1 : 0,
         height:
@@ -378,10 +736,7 @@ export class TextInput extends React.Component<Props> {
         width:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         fontSize: this.fontSizeValue,
-        textShadowColor:
-          format === PostFormat.comment
-            ? textShadowColor(backgroundColor)
-            : undefined
+        ...textShadow
       }
     ];
 
@@ -404,14 +759,15 @@ export class TextInput extends React.Component<Props> {
             autoCorrect
             spellCheck={false}
             adjustsFontSizeToFit
-            inputAccessoryViewID={`new-post-input`}
+            inputAccessoryViewID={editable ? `new-post-input` : undefined}
             minimumFontScale={0.4}
             selectionColor={selectionColor}
-            highlightInset={-4}
-            highlightCornerRadius={8}
+            template={template}
+            highlightInset={highlightRadius / -20}
+            highlightCornerRadius={highlightRadius}
             lengthPerLine={50}
             blurOnSubmit={false}
-            fontSizeRange={textInputStyles[format].fontSizes}
+            fontSizeRange={textInputStyles[template].fontSizes}
             showHighlight={showHighlight}
             placeholderTextColor={getPlaceholderColor(selectionColor)}
             onBlur={this.handleBlur}

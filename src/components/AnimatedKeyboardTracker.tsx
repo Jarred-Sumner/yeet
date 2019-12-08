@@ -11,7 +11,7 @@ export class AnimatedKeyboardTracker extends React.Component {
     }
   }
   static defaultProps = {
-    keyboardVisibleValue: new Animated.Value(0),
+    keyboardVisibleValue: null,
     enabled: true,
     onKeyboardHide: () => {},
     onKeyboardShow: () => {}
@@ -44,7 +44,7 @@ export class AnimatedKeyboardTracker extends React.Component {
     Keyboard.addListener("keyboardWillHide", this.handleKeyboardWillHide);
   };
 
-  keyboardVisibleValue = new Animated.Value(0);
+  keyboardVisibleValue = this.props.keyboardVisibleValue;
 
   handleKeyboardWillChangeFrame = evt => {
     this.props.onKeyboardWillChangeFrame &&

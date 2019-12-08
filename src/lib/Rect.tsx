@@ -115,3 +115,25 @@ export function intersectRect(r1: BoundsRect, r2: BoundsRect) {
     r2.height + r2.y < r1.y
   );
 }
+
+export const scaleRectByFactor = (
+  scale: number,
+  bounds: BoundsRect
+): BoundsRect => {
+  const point = (typeof bounds.x === "number" ||
+    typeof bounds.y === "number") && {
+    x: (bounds.x || 0) * scale,
+    y: (bounds.y || 0) * scale
+  };
+
+  const size = (typeof bounds.width === "number" ||
+    typeof bounds.height === "number") && {
+    width: bounds.width * scale,
+    height: bounds.height * scale
+  };
+
+  return {
+    ...point,
+    ...size
+  };
+};

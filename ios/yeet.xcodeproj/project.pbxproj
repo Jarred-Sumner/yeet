@@ -5,7 +5,6 @@
 	};
 	objectVersion = 46;
 	objects = {
-
 /* Begin PBXBuildFile section */
 		095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
@@ -64,6 +63,13 @@
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
 		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
 		E89FAC1D34B2BB6AE4FD5D29 /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */; };
+		2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E20673983BA24843B933769A /* Inconsolata-Bold.ttf */; };
+		454FC91D75814E8AB3C93627 /* Some Time Later.otf in Resources */ = {isa = PBXBuildFile; fileRef = DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */; };
+		71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */; };
+		F1DF6E0108264F58AE93A12F /* AVENGEANCE HEROIC AVENGER.otf in Resources */ = {isa = PBXBuildFile; fileRef = AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */; };
+		6137DE4766E346D3AF7F453D /* Waltograph.otf in Resources */ = {isa = PBXBuildFile; fileRef = 305010FE8F30417A9DC89FE8 /* Waltograph.otf */; };
+		A2450C7E1A4F49D3A46C35C4 /* Starjedi.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */; };
+		B09D39601111437BA6444F6E /* Webcomic Bros.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -219,6 +225,13 @@
 		F468F36F44933D26EB631F78 /* Pods-yeet-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-yeet-tvOS/Pods-yeet-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneSignalNotificationServiceExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB9130AC28034BA49643E52B /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"; sourceTree = "<group>"; };
+		E20673983BA24843B933769A /* Inconsolata-Bold.ttf */ = {isa = PBXFileReference; name = "Inconsolata-Bold.ttf"; path = "../assets/fonts/Inconsolata-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */ = {isa = PBXFileReference; name = "Some Time Later.otf"; path = "../assets/fonts/Some Time Later.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */ = {isa = PBXFileReference; name = "Minecrafter.Reg.ttf"; path = "../assets/fonts/Minecrafter.Reg.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */ = {isa = PBXFileReference; name = "AVENGEANCE HEROIC AVENGER.otf"; path = "../assets/fonts/AVENGEANCE HEROIC AVENGER.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		305010FE8F30417A9DC89FE8 /* Waltograph.otf */ = {isa = PBXFileReference; name = "Waltograph.otf"; path = "../assets/fonts/Waltograph.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */ = {isa = PBXFileReference; name = "Starjedi.ttf"; path = "../assets/fonts/Starjedi.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */ = {isa = PBXFileReference; name = "Webcomic Bros.ttf"; path = "../assets/fonts/Webcomic Bros.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -480,6 +493,13 @@
 				2B5EF1418C52406596EC0DA0 /* SimpleLineIcons.ttf */,
 				4CA3A3CBD49D44F6BB9B0675 /* Zocial.ttf */,
 				DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */,
+				E20673983BA24843B933769A /* Inconsolata-Bold.ttf */,
+				DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */,
+				060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */,
+				AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */,
+				305010FE8F30417A9DC89FE8 /* Waltograph.otf */,
+				027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */,
+				6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -612,6 +632,13 @@
 				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */,
+				2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */,
+				454FC91D75814E8AB3C93627 /* Some Time Later.otf in Resources */,
+				71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */,
+				F1DF6E0108264F58AE93A12F /* AVENGEANCE HEROIC AVENGER.otf in Resources */,
+				6137DE4766E346D3AF7F453D /* Waltograph.otf in Resources */,
+				A2450C7E1A4F49D3A46C35C4 /* Starjedi.ttf in Resources */,
+				B09D39601111437BA6444F6E /* Webcomic Bros.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

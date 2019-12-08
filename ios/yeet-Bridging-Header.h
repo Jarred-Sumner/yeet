@@ -60,6 +60,7 @@ RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly ca
 RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
 RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(template, NSString);
 RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
 

@@ -403,7 +403,6 @@ class VideoProducer {
       let id = block["id"].stringValue
       let image = images[id]!
 
-
       blocks.append(ContentBlock(value: value, dimensions: block["dimensions"], viewTag: block["viewTag"].numberValue, format: block["format"].stringValue, id: id, zIndex: NSNumber(value: currentIndex), image: image, position: node?["position"], frame: frame, nodeFrame: nodeFrame, text: text, type: type))
 
 

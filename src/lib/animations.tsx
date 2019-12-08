@@ -198,25 +198,29 @@ export function runLoopAnimation({
   ]);
 }
 
-export const sheetOpacity = Animated.proc((dismissY, scrollY, height, offset) =>
-  Animated.cond(
-    Animated.lessOrEq(
-      dismissY,
-      Animated.add(Animated.multiply(height, -1), 10)
-    ),
-    Animated.interpolate(scrollY, {
-      inputRange: [Animated.multiply(offset, -1), 0],
-      outputRange: [0, 1]
-    }),
-    Animated.interpolate(dismissY, {
-      inputRange: [Animated.multiply(height, -1), 0],
-      outputRange: [
-        Animated.interpolate(scrollY, {
-          inputRange: [Animated.multiply(offset, -1), 0],
-          outputRange: [0, 1]
-        }),
-        0
-      ]
-    })
-  )
+export const sheetOpacity = Animated.proc(
+  (dismissY, scrollY, height, offset, maxOpacity = 0.65) =>
+    Animated.cond(
+      Animated.lessOrEq(
+        dismissY,
+        Animated.add(Animated.multiply(height, -1), 10)
+      ),
+      Animated.interpolate(scrollY, {
+        inputRange: [Animated.multiply(offset, -1), 0],
+        outputRange: [0, maxOpacity],
+        extrapolate: Animated.Extrapolate.CLAMP
+      }),
+      Animated.interpolate(dismissY, {
+        inputRange: [Animated.multiply(height, -1), 0],
+        outputRange: [
+          Animated.interpolate(scrollY, {
+            inputRange: [Animated.multiply(offset, -1), 0],
+            outputRange: [0, maxOpacity],
+            extrapolate: Animated.Extrapolate.CLAMP
+          }),
+          0
+        ],
+        extrapolate: Animated.Extrapolate.CLAMP
+      })
+    )
 );

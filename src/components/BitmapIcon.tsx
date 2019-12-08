@@ -16,6 +16,8 @@ export enum BitmapIconName {
   next = "Icon__next",
   waitlistLogo = "Icon__waitlist",
   twitterDiscuss = "Icon__twitterDiscuss",
+  logo = "Icon__logo",
+  circleCheckSelected = "Icon__circlelCheckSelected",
   formatHorizontalTextMedia = "Format__horizontalTextMedia",
   formatVerticalTextMedia = "Format__verticalTextMedia",
   formatVerticalMediaText = "Format__verticalMediaText",
@@ -29,6 +31,14 @@ const SIZES_BY_NAME = {
   [BitmapIconName.plus]: {
     width: 19,
     height: 19
+  },
+  [BitmapIconName.logo]: {
+    width: 114,
+    height: 59
+  },
+  [BitmapIconName.circleCheckSelected]: {
+    width: 29,
+    height: 29
   },
   [BitmapIconName.addPhoto]: {
     width: 41,
@@ -235,4 +245,18 @@ export const BitmapIconFormatHorizontalMediaMedia = ({
     {...otherProps}
     name={BitmapIconName.formatHorizontalMediaMedia}
   />
+);
+
+export const BitmapIconLogo = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.logo} />
+);
+
+export const BitmapIconCircleCheckSelected = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage {...otherProps} name={BitmapIconName.circleCheckSelected} />
 );

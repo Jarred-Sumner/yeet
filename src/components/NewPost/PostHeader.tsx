@@ -114,19 +114,25 @@ const BackButtonLayer = () => {
 };
 
 export const PostHeader = React.forwardRef(
-  (
-    {
-      layout,
-      position,
-      translateY = 0,
-      onChangeLayout,
-      controlsOpacityValue: opacity
-    },
-    ref
-  ) => {
+  ({ layout, position, opacity, translateY = 0, onChangeLayout }, ref) => {
     return (
       <Animated.View
-        style={[styles.wrapper, { opacity, transform: [{ translateY }] }]}
+        style={[
+          styles.wrapper,
+          {
+            opacity,
+            transform: [
+              { translateY },
+              {
+                translateY: Animated.cond(
+                  Animated.eq(opacity, 0),
+                  CAROUSEL_HEIGHT * -1,
+                  0
+                )
+              }
+            ]
+          }
+        ]}
       >
         <View style={styles.content}>
           <FormatPicker

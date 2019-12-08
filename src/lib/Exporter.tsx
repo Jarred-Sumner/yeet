@@ -19,7 +19,8 @@ import {
   PostBlockType,
   PostFormat,
   buildImageBlock,
-  buildTextBlock
+  buildTextBlock,
+  TextTemplate
 } from "../components/NewPost/NewPostFormat";
 import {
   EditableNodeStaticPosition,
@@ -80,6 +81,7 @@ type ExportableTextBlock = {
   value: string;
   contentId: string;
   viewTag: number;
+  template: TextTemplate;
   format: PostFormat;
   id: string;
   frame: BoundsRect;
@@ -129,6 +131,7 @@ const createExportableBlock = (
       type: "text",
       format: block.format,
       viewTag: viewTag,
+      template: block.config.template,
       contentId: block.id,
       id: block.id,
       frame,
@@ -419,6 +422,7 @@ const convertExportableBlock = (block: ExportableBlock, assets: AssetMap) => {
       id: block.id,
       value: block.value,
       placeholder: "",
+      template: block.template,
       autoInserted: false,
       format: PostFormat[block.format]
     });

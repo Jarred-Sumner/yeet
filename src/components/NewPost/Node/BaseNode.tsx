@@ -174,7 +174,9 @@ export class BaseNode extends React.Component<Props> {
       focusTypeValue,
       onLayout,
       format,
+      topInsetValue,
       maxScale,
+      scrollY,
       inputAccessoryView,
       keyboardHeightValue
     } = this.props;
@@ -204,6 +206,8 @@ export class BaseNode extends React.Component<Props> {
         absoluteX={absoluteX}
         absoluteY={absoluteY}
         containerRef={containerRef}
+        topInsetValue={topInsetValue}
+        scrollY={scrollY}
         isTextBlock={block.type === "text"}
         onChangePosition={this.handleChangePosition}
         yLiteral={position.y}

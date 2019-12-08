@@ -185,6 +185,7 @@ const _AppContainer = memoize(initialRouteName => {
                     ...SHARED_GLOBAL_SCREENS
                   },
                   {
+                    translucent: false,
                     // initialRouteName: "NewThread",
                     cardStyle: {
                       backgroundColor: "#000"
@@ -194,7 +195,8 @@ const _AppContainer = memoize(initialRouteName => {
                     defaultNavigationOptions: {
                       header: () => null,
                       mode: "modal",
-                      headerTransparent: true,
+                      headerMode: "none",
+                      headerTransparent: false,
                       gesturesEnabled: false
                     }
                   }

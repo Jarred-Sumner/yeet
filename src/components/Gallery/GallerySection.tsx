@@ -38,6 +38,7 @@ export const GallerySectionComponent = ({
   section,
   onPressHeader,
   onPressColumn,
+  selectedIDs = [],
   paused,
   rowCount,
   columnWidth,
@@ -49,8 +50,10 @@ export const GallerySectionComponent = ({
     onPressHeader(section.type);
   }, [section.type, onPressHeader]);
 
-  const renderColumn = React.useCallback(
+  const renderColumn =
+    // React.useCallback(
     (column: GalleryValue, index: number) => {
+      const isSelected = selectedIDs.includes(column.image.id);
       return (
         <View key={column.id} style={styles.column}>
           <GalleryItem
@@ -60,15 +63,16 @@ export const GallerySectionComponent = ({
             width={columnWidth}
             height={columnHeight}
             onPress={onPressColumn}
+            isSelected={isSelected}
           />
         </View>
       );
-    },
-    [columnWidth, columnHeight, onPressColumn]
-  );
+    };
+  // [columnWidth, columnHeight, onPressColumn, selectedIDs]
+  // );
 
   return (
-    <View key={section.type} style={styles.container}>
+    <View style={styles.container}>
       <SectionHeader
         label={FILTER_LABELS[section.type]}
         onPress={handlePressHeader}

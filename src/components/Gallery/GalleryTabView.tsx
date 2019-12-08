@@ -2,7 +2,11 @@ import * as React from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import { TabView, SceneMap } from "react-native-tab-view";
 import { MediaPlayerPauser } from "../MediaPlayer";
-import { GallerySectionItem, FILTERS } from "../NewPost/ImagePicker/FilterBar";
+import {
+  GallerySectionItem,
+  FILTERS,
+  LIST_HEADER_HEIGHT
+} from "../NewPost/ImagePicker/FilterBar";
 import {
   GIFsFilterList,
   PhotosFilterList,
@@ -14,7 +18,10 @@ import Animated from "react-native-reanimated";
 import { PanGestureHandler, FlatList } from "react-native-gesture-handler";
 
 const styles = StyleSheet.create({
-  sceneContainer: { overflow: "visible", flex: 1 },
+  sceneContainer: {
+    overflow: "visible",
+    flex: 1
+  },
   container: {
     flex: 1
   }
@@ -50,7 +57,9 @@ export class GalleryTabView extends React.Component {
 
   static defaultProps = {
     initialRoute: "all",
-    inset: 0
+    tabBarPosition: "top",
+    inset: 0,
+    offset: 0
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -75,7 +84,7 @@ export class GalleryTabView extends React.Component {
   memesListRef = React.createRef<FlatList>();
   videosListRef = React.createRef<FlatList>();
 
-  simultaneousHandlers = [this.panRef];
+  simultaneousHandlers = this.panRef;
 
   renderScene = ({ route, jumpTo, position }) => {
     const {
@@ -83,6 +92,8 @@ export class GalleryTabView extends React.Component {
       height,
       isKeyboardVisible,
       onPress,
+      keyboardVisibleValue,
+      selectedIDs,
       ...otherProps
     } = this.props;
     const { query, navigationState } = this.state;
@@ -95,8 +106,13 @@ export class GalleryTabView extends React.Component {
             isFocused={currentRoute === "all"}
             flatListRef={this.allSectionListRef}
             onPress={onPress}
+            isModal={this.props.isModal}
             onChangeFilter={jumpTo}
+            offset={this.props.offset}
+            insetValue={this.props.insetValue}
             inset={this.props.inset}
+            selectedIDs={selectedIDs}
+            keyboardVisibleValue={keyboardVisibleValue}
             simultaneousHandlers={this.simultaneousHandlers}
             scrollY={this.props.scrollY}
           />
@@ -109,8 +125,13 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onPress={onPress}
             onChangeFilter={jumpTo}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            selectedIDs={selectedIDs}
+            isModal={this.props.isModal}
             inset={this.props.inset}
             scrollY={this.props.scrollY}
+            keyboardVisibleValue={keyboardVisibleValue}
           />
         );
       case GallerySectionItem.gifs:
@@ -121,6 +142,11 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            selectedIDs={selectedIDs}
+            isModal={this.props.isModal}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            keyboardVisibleValue={keyboardVisibleValue}
             inset={this.props.inset}
             scrollY={this.props.scrollY}
           />
@@ -134,6 +160,11 @@ export class GalleryTabView extends React.Component {
             onChangeFilter={jumpTo}
             onPress={onPress}
             inset={this.props.inset}
+            keyboardVisibleValue={keyboardVisibleValue}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            selectedIDs={selectedIDs}
+            isModal={this.props.isModal}
             scrollY={this.props.scrollY}
           />
         );
@@ -145,6 +176,11 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            selectedIDs={selectedIDs}
+            keyboardVisibleValue={keyboardVisibleValue}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            isModal={this.props.isModal}
             inset={this.props.inset}
             scrollY={this.props.scrollY}
           />
@@ -165,7 +201,9 @@ export class GalleryTabView extends React.Component {
       showHeader={this.props.showHeader}
       filter={props.navigationState.routes[0].key}
       scrollY={this.props.scrollY}
+      keyboardVisibleValue={this.props.keyboardVisibleValue}
       position={this.position}
+      tabBarPosition={this.props.tabBarPosition}
     />
   );
 
@@ -177,18 +215,18 @@ export class GalleryTabView extends React.Component {
     });
 
   render() {
-    const { width, height } = this.props;
+    const { width, height, tabBarPosition, showHeader } = this.props;
 
     return (
       <TabView
         navigationState={this.state.navigationState}
         renderScene={this.renderScene}
-        tabBarPosition="top"
+        tabBarPosition={showHeader ? "bottom" : "top"}
         lazy={false}
         removeClippedSubviews={false}
         gestureHandlerProps={{
           ref: this.panRef,
-          waitFor: [
+          simultaneousHandlers: [
             this.gifsListRef,
             this.allSectionListRef,
             this.memesListRef,

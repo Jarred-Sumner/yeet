@@ -67,7 +67,7 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to use your location</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
 	<key>NSMotionUsageDescription</key>
@@ -100,6 +100,13 @@
 		<string>SimpleLineIcons.ttf</string>
 		<string>Zocial.ttf</string>
 		<string>Inter.var.ttf</string>
+		<string>Inconsolata-Bold.ttf</string>
+		<string>Some Time Later.otf</string>
+		<string>Minecrafter.Reg.ttf</string>
+		<string>AVENGEANCE HEROIC AVENGER.otf</string>
+		<string>Waltograph.otf</string>
+		<string>Starjedi.ttf</string>
+		<string>Webcomic Bros.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

@@ -9,8 +9,9 @@ import {
   isVideo
 } from "../../lib/imageSearch";
 import { DurationLabel } from "../NewPost/ImagePicker/DurationLabel";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import memoizee from "memoizee";
+import { BitmapIconCircleCheckSelected } from "../BitmapIcon";
 
 const photoCellStyles = StyleSheet.create({
   container: {
@@ -18,10 +19,19 @@ const photoCellStyles = StyleSheet.create({
     backgroundColor: "#222",
 
     borderRadius: 1,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
     overflow: "hidden",
     justifyContent: "center"
+  },
+  selectedContainer: {
+    borderColor: COLORS.primary,
+    borderWidth: 1
+  },
+  selectedIcon: {
+    position: "absolute",
+    right: SPACING.half,
+    bottom: SPACING.half
   },
   durationContainer: {
     position: "absolute",
@@ -51,12 +61,14 @@ export const GalleryItem = React.memo(
     image,
     id,
     height,
+    isSelected = false,
     width,
     paused
   }: {
     onPress: (id: string) => void;
     image: YeetImageContainer;
     height: number;
+    isSelected: boolean;
     id: string;
     width: number;
     paused: boolean;
@@ -81,8 +93,19 @@ export const GalleryItem = React.memo(
     // }, [setSource, image]);
 
     return (
-      <BaseButton exclusive={false} onPress={_onPress}>
-        <View style={[photoCellStyles.container, { width, height }]}>
+      <BaseButton
+        shouldCancelWhenOutside
+        shouldActivateOnStart={false}
+        exclusive={false}
+        onPress={_onPress}
+      >
+        <View
+          style={[
+            photoCellStyles.container,
+            isSelected && photoCellStyles.selectedContainer,
+            { width, height }
+          ]}
+        >
           <MediaPlayer
             sources={sources}
             muted
@@ -100,6 +123,12 @@ export const GalleryItem = React.memo(
               duration={image.image.duration}
               style={photoCellStyles.durationContainer}
             />
+          )}
+
+          {isSelected && (
+            <View style={photoCellStyles.selectedIcon}>
+              <BitmapIconCircleCheckSelected />
+            </View>
           )}
         </View>
       </BaseButton>

@@ -1,17 +1,19 @@
 import * as React from "react";
 import { FlatList as RNFlatList, FlatListProps } from "react-native";
-import { FlatList as GestureHandlerFlatList } from "react-native-gesture-handler";
-import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
+import {
+  FlatList as GestureHandlerFlatList,
+  ScrollView as _ScrollView
+} from "react-native-gesture-handler";
+// import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import Animated from "react-native-reanimated";
-import { ScrollView as NavigationScrollView } from "react-navigation";
+import { createNavigationAwareScrollable } from "@react-navigation/native";
 import hoistNonReactStatics from "hoist-non-react-statics";
 
-export const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(NavigationScrollView),
-  {
-    disallowInterruption: true
-  }
+export const ScrollView = createNavigationAwareScrollable(
+  Animated.createAnimatedComponent(_ScrollView)
 );
+
+const renderScrollView = props => <ScrollView {...props} />;
 
 const FlatListComponent = Animated.createAnimatedComponent(
   GestureHandlerFlatList
@@ -32,7 +34,7 @@ export const FlatList = hoistNonReactStatics(
 
 FlatList.defaultProps = {
   ...(FlatList.defaultProps || {}),
-  renderScrollView: props => <ScrollView {...props} />
+  renderScrollView
 };
 
 export default FlatList;

@@ -11,7 +11,8 @@ import Animated, {
 import {
   buildTextBlock,
   PostFormat,
-  FocusType
+  FocusType,
+  TextTemplate
 } from "../NewPost/NewPostFormat";
 import TextInput from "../NewPost/Text/TextInput";
 import {
@@ -272,6 +273,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
           autoInserted: false,
           placeholder: "",
           format: PostFormat.comment,
+          template: TextTemplate.comment,
           overrides: {
             ...sample(COMMENT_COLORS)
           }

@@ -60,6 +60,15 @@ type Props = {
 class GallerySectionListComponent extends React.Component<Props> {
   constructor(props) {
     super(props);
+
+    this.contentInset = {
+      top: props.inset,
+      bottom: 0,
+      left: 0,
+      right: 0
+    };
+
+    this.contentOffset = { x: 0, y: props.offset };
   }
 
   setFlatListRef = (flatList: FlatList) => {
@@ -93,6 +102,7 @@ class GallerySectionListComponent extends React.Component<Props> {
         rowCount={item.type === GallerySectionItem.photos ? 2 : 1}
         onPressHeader={this.props.onChangeFilter}
         onPressColumn={this.handlePressColumn}
+        selectedIDs={this.props.selectedIDs}
         paused={!this.props.isFocused}
         columnHeight={
           item.type === GallerySectionItem.videos
@@ -108,15 +118,6 @@ class GallerySectionListComponent extends React.Component<Props> {
     );
   };
 
-  contentInset = {
-    top: this.props.inset,
-    bottom: 0,
-    left: 0,
-    right: 0
-  };
-
-  contentOffset = { x: 0, y: this.contentInset.top * -1 };
-
   handleScroll = this.props.scrollY
     ? Animated.event(
         [
@@ -124,6 +125,9 @@ class GallerySectionListComponent extends React.Component<Props> {
             nativeEvent: {
               contentOffset: {
                 y: this.props.scrollY
+              },
+              contentInset: {
+                top: this.props.insetValue
               }
             }
           }
@@ -133,13 +137,20 @@ class GallerySectionListComponent extends React.Component<Props> {
     : undefined;
 
   render() {
-    const { sections, section, isFocused, onEndReached, inset } = this.props;
+    const {
+      sections,
+      section,
+      isFocused,
+      onEndReached,
+      inset,
+      isModal
+    } = this.props;
 
     return (
       <Animated.View
         style={[
           styles.wrapper,
-          this.props.scrollY && {
+          isModal && {
             transform: [
               {
                 translateY: Animated.interpolate(this.props.scrollY, {
@@ -157,12 +168,16 @@ class GallerySectionListComponent extends React.Component<Props> {
           data={sections}
           directionalLockEnabled
           contentInset={this.contentInset}
+          contentOffset={this.contentOffset}
           extraData={isFocused}
           style={styles.container}
           onScroll={this.handleScroll}
           scrollEventThrottle={this.handleScroll ? 1 : undefined}
           keyExtractor={this.sectionKeyExtractor}
+          extraData={this.props.selectedIDs}
           renderItem={this.renderSectionItem}
+          simultaneousHandlers={this.props.simultaneousHandlers}
+          scrollToOverflowEnabled
           overScrollMode="always"
           alwaysBounceVertical
           ItemSeparatorComponent={SectionSeparatorComponent}
@@ -198,6 +213,11 @@ export const GallerySectionList = ({
   onPress,
   flatListRef,
   scrollY,
+  selectedIDs,
+  insetValue,
+  offset,
+  isModal,
+  simultaneousHandlers,
   inset,
   onChangeFilter,
   isFocused
@@ -208,7 +228,8 @@ export const GallerySectionList = ({
   const galleryQuery = useQuery(GALLERY_QUERY, {
     variables: {
       columnCount: COLUMN_COUNT,
-      photoColumnCount: COLUMN_COUNT * 2
+      photoColumnCount: COLUMN_COUNT * 2,
+      videoColumnCount: COLUMN_COUNT
     },
     returnPartialData: true,
     notifyOnNetworkStatusChange: true
@@ -243,8 +264,13 @@ export const GallerySectionList = ({
       isFocused={isFocused}
       onChangeFilter={onChangeFilter}
       scrollY={scrollY}
+      offset={offset}
+      isModal={isModal}
+      insetValue={insetValue}
       flatListRef={flatListRef}
+      selectedIDs={selectedIDs}
       onPressColumn={onPress}
+      simultaneousHandlers={simultaneousHandlers}
       inset={inset}
     />
   );

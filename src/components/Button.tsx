@@ -270,6 +270,7 @@ export const BackButton = ({
   style,
   routeName,
   size = 24,
+  alwaysChevron,
   onPress,
   ...otherProps
 }: {
@@ -296,7 +297,9 @@ export const BackButton = ({
   }
 
   const IconComponent =
-    behavior === BackButtonBehavior.back ? IconChevronLeft : IconClose;
+    behavior === BackButtonBehavior.back || alwaysChevron
+      ? IconChevronLeft
+      : IconClose;
 
   return (
     <IconButton

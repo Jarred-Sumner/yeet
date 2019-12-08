@@ -28,7 +28,11 @@ import { memoize } from "lodash";
 import { MovableNode, TransformableView } from "../NewPost/Node/MovableNode";
 import { CommentComposer } from "./CommentComposer";
 import TextInput from "../NewPost/Text/TextInput";
-import { buildTextBlock, PostFormat } from "../NewPost/NewPostFormat";
+import {
+  buildTextBlock,
+  PostFormat,
+  TextTemplate
+} from "../NewPost/NewPostFormat";
 import { UserContext } from "../UserContext";
 import { useNavigation } from "react-navigation-hooks";
 
@@ -167,6 +171,7 @@ const TextComment = ({
     return buildTextBlock({
       value: body,
       format: PostFormat.comment,
+      template: TextTemplate.comment,
       overrides: { backgroundColor, textColor },
       placeholder: "",
       autoInserted: false,

@@ -1,7 +1,7 @@
 import { connectActionSheet } from "@expo/react-native-action-sheet";
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Keyboard, StyleSheet, View } from "react-native";
+import { Keyboard, StyleSheet, View, InputAccessoryView } from "react-native";
 import {
   ScrollView,
   State as GestureState,
@@ -11,7 +11,7 @@ import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
 import tinycolor from "tinycolor2";
-import { IS_SIMULATOR, TOP_Y } from "../../../config";
+import { IS_SIMULATOR, TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { startExport } from "../../lib/Exporter";
 import {
   YeetImageContainer,
@@ -38,7 +38,8 @@ import {
   POST_WIDTH,
   presetsByFormat,
   PostLayout,
-  ImagePostBlock
+  ImagePostBlock,
+  TextTemplate
 } from "./NewPostFormat";
 import {
   buildEditableNode,
@@ -52,6 +53,7 @@ import {
   ToolbarType
 } from "./Toolbar";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
+import { TextInputToolbar } from "./TextInputToolbar";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -75,6 +77,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     flex: 1,
+    flexShrink: 0,
     width: POST_WIDTH,
     alignSelf: "center"
   },
@@ -269,7 +272,8 @@ class RawwPostEditor extends React.Component<Props, State> {
               layout: PostLayout.text,
               placeholder: "Write something",
               autoInserted: false,
-              required: false
+              required: false,
+              template: TextTemplate.post
             });
 
             this.handleAppendBlock(block);
@@ -342,6 +346,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const block = buildTextBlock({
       value: "",
       format: PostFormat.sticker,
+      template: TextTemplate.comic,
       layout: PostLayout.text,
       placeholder: " ",
       autoInserted: false
@@ -517,8 +522,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   scrollRef = React.createRef<ScrollView>();
-  keyboardVisibleValue = new Animated.Value<number>(0);
-  keyboardHeightValue = new Animated.Value<number>(0);
+  keyboardVisibleValue = this.props.keyboardVisibleValue;
+  keyboardHeightValue = this.props.keyboardHeightValue;
   focusedBlockValue = new Animated.Value<number>(-1);
   focusTypeValue = new Animated.Value<FocusType | -1>(-1);
 
@@ -569,7 +574,9 @@ class RawwPostEditor extends React.Component<Props, State> {
       layout: { x, y, width, height }
     }
   }) => {
-    this.setState({ bounds: { x, y: y, width, height } });
+    this.setState({
+      bounds: { x, y: y + this.props.yInset, width, height }
+    });
   };
 
   handleOpenImagePicker = (block: ImagePostBlock, shouldAnimate = true) => {
@@ -697,16 +704,22 @@ class RawwPostEditor extends React.Component<Props, State> {
       return ToolbarType.panning;
     }
 
-    const node = this.props.inlineNodes[focusedBlockId];
-    const block = node
-      ? node.block
-      : this.props.post.blocks.find(block => block.id === focusedBlockId);
+    const block = this.focusedBlock;
 
     if (block && block.type === "text") {
       return ToolbarType.text;
     }
 
     return ToolbarType.default;
+  }
+
+  get focusedBlock() {
+    const { focusedBlockId, focusType } = this.state;
+
+    const node = this.props.inlineNodes[focusedBlockId];
+    return node
+      ? node.block
+      : this.props.post.blocks.find(block => block.id === focusedBlockId);
   }
 
   handlePan = ({
@@ -775,6 +788,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   panX = new Animated.Value(0);
   panY = new Animated.Value(0);
   contentViewRef = React.createRef();
+  topInsetValue = new Animated.Value<number>(this.props.yInset || 0);
 
   relativeKeyboardHeightValue = Animated.sub(
     this.keyboardHeightValue,
@@ -816,34 +830,33 @@ class RawwPostEditor extends React.Component<Props, State> {
     const presets = presetsByFormat[post.format];
 
     const {
-      bounds = { width: POST_WIDTH, height: MAX_POST_HEIGHT, x: 0, y: 0 }
+      bounds = {
+        width: POST_WIDTH,
+        height: SCREEN_DIMENSIONS.height,
+        x: 0,
+        y: 0
+      }
     } = this.state;
     const sizeStyle = {
       width: bounds.width || POST_WIDTH,
-      height: bounds.height || MAX_POST_HEIGHT
+      height: bounds.height || SCREEN_DIMENSIONS.height
     };
 
     return (
       <Animated.View
         style={[
           styles.wrapper,
+          sizeStyle,
           {
-            backgroundColor: post.backgroundColor,
-            height: MAX_POST_HEIGHT,
-            width: POST_WIDTH
+            backgroundColor: post.backgroundColor
           }
         ]}
       >
         <NavigationEvents onWillFocus={this.handleWillFocus} />
-        <AnimatedKeyboardTracker
-          keyboardVisibleValue={this.keyboardVisibleValue}
-          keyboardHeightValue={this.keyboardHeightValue}
-          onKeyboardShow={this.handleShowKeyboard}
-          onKeyboardHide={this.handleHideKeyboard}
-          onKeyboardWillChangeFrame={this.handleChangeFrame}
-        />
+
         <Animated.Code
           exec={Animated.block([
+            set(this.props.headerOpacity, sub(1.0, this.keyboardVisibleValue)),
             Animated.onChange(
               this.focusTypeValue,
               block([
@@ -852,10 +865,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
                   Animated.block([set(this.props.controlsOpacityValue, 1.0)])
                 ),
-                cond(
-                  eq(this.focusTypeValue, FocusType.absolute),
+                cond(eq(this.focusTypeValue, FocusType.absolute), [
                   set(this.props.controlsOpacityValue, 1.0)
-                ),
+                ]),
 
                 cond(eq(this.focusTypeValue, FocusType.static), [
                   set(
@@ -908,6 +920,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             paddingBottom={FOOTER_HEIGHT}
             inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
+            topInsetValue={this.topInsetValue}
             layout={post.layout}
             simultaneousHandlers={this.props.simultaneousHandlers}
             focusTypeValue={this.focusTypeValue}
@@ -957,13 +970,15 @@ class RawwPostEditor extends React.Component<Props, State> {
                 setBlockInputRef={this.setBlockInputRef}
                 panX={this.panX}
                 panY={this.panY}
+                scrollY={this.props.scrollY}
+                topInsetValue={this.topInsetValue}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 keyboardHeightValue={this.relativeKeyboardHeightValue}
                 waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
                 focusType={this.state.focusType}
                 minX={bounds.x}
-                minY={14}
+                minY={bounds.y}
                 maxX={sizeStyle.width}
                 onFocus={this.handleFocusBlock}
                 maxY={sizeStyle.height}
@@ -1003,10 +1018,10 @@ class RawwPostEditor extends React.Component<Props, State> {
               isPageModal={this.props.isReply}
               waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
               width={sizeStyle.width}
+              height={sizeStyle.height}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text
               }
-              height={sizeStyle.height}
               onPressToolbarButton={this.handlePressToolbarButton}
               isFocused={!!this.state.focusedBlockId}
               insertTextNode={this.handleInsertText}
@@ -1023,6 +1038,10 @@ class RawwPostEditor extends React.Component<Props, State> {
             ></ActiveLayer>
           </Layer>
         </Animated.View>
+
+        <InputAccessoryView nativeID="new-post-input">
+          <TextInputToolbar block={this.focusedBlock} />
+        </InputAccessoryView>
       </Animated.View>
     );
   }

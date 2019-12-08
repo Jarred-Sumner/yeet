@@ -34,6 +34,19 @@ export enum PostFormat {
   comment = "comment"
 }
 
+export enum TextTemplate {
+  basic = "basic",
+  post = "post",
+  comment = "comment",
+  comic = "comic",
+  gary = "gary",
+  terminal = "terminal",
+  space = "space",
+  magic = "magic",
+  superhero = "superhero",
+  pickaxe = "pickaxe"
+}
+
 export enum PostLayout {
   horizontalTextMedia = "horizontalTextMedia",
   verticalTextMedia = "verticalTextMedia",
@@ -66,6 +79,29 @@ interface PostBlock {
   id: string;
 }
 
+export enum TextBorderType {
+  stroke = "stroke",
+  solid = "solid",
+  hidden = "hidden",
+  invert = "invert",
+  highlight = "highlight"
+}
+
+export const DEFAULT_TEXT_BORDER_BY_TEMPLATE: {
+  [key: TextTemplate]: TextBorderType;
+} = {
+  [TextTemplate.post]: TextBorderType.solid,
+  [TextTemplate.comment]: TextBorderType.highlight,
+  [TextTemplate.basic]: TextBorderType.hidden,
+  [TextTemplate.gary]: TextBorderType.hidden,
+  [TextTemplate.comic]: TextBorderType.highlight,
+  [TextTemplate.terminal]: TextBorderType.hidden,
+  [TextTemplate.space]: TextBorderType.hidden,
+  [TextTemplate.magic]: TextBorderType.hidden,
+  [TextTemplate.superhero]: TextBorderType.hidden,
+  [TextTemplate.pickaxe]: TextBorderType.hidden
+};
+
 export type TextPostBlock = PostBlock & {
   type: "text";
   value: string;
@@ -73,6 +109,8 @@ export type TextPostBlock = PostBlock & {
     placeholder?: string;
     minHeight?: number;
     overrides: Object;
+    border: TextBorderType;
+    template: TextTemplate;
   };
 };
 
@@ -105,10 +143,12 @@ export const buildTextBlock = ({
   value,
   format,
   layout,
+  border,
   autoInserted,
   minHeight,
   placeholder,
   overrides = {},
+  template = TextTemplate.post,
   id = null,
   required = true
 }): TextPostBlock => {
@@ -123,7 +163,9 @@ export const buildTextBlock = ({
     config: {
       placeholder,
       minHeight,
-      overrides
+      overrides,
+      border: border || DEFAULT_TEXT_BORDER_BY_TEMPLATE[template],
+      template
     }
   };
 };
@@ -235,6 +277,15 @@ export const presetsByFormat = {
     paddingVertical: SPACING.normal,
     backgroundColor: "#000",
     color: "white"
+  },
+  [PostFormat.sticker]: {
+    borderRadius: 8,
+    paddingTop: 0,
+    textTop: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+    backgroundColor: "#000",
+    color: "white"
   }
 };
 
@@ -260,6 +311,7 @@ const blocksForFormat = (
           autoInserted: true,
           id: generateBlockId(),
           format: PostFormat.comment,
+          template: TextTemplate.comment,
           layout
         })
     ];
@@ -335,7 +387,8 @@ const blocksForFormat = (
           placeholder: "Tap to edit text",
           autoInserted: true,
           format,
-          layout
+          layout,
+          template: TextTemplate.post
         });
 
       textBlock.config.minHeight = null;
@@ -365,7 +418,8 @@ const blocksForFormat = (
           placeholder: "Tap to edit text",
           autoInserted: true,
           format,
-          layout
+          layout,
+          template: TextTemplate.post
         });
 
       textBlock.config.minHeight = null;
@@ -395,7 +449,8 @@ const blocksForFormat = (
           placeholder: "Tap to edit text",
           autoInserted: true,
           format,
-          layout
+          layout,
+          template: TextTemplate.post
         });
 
       textBlock.config.minHeight = imageBlock.config.dimensions.maxY;
@@ -426,7 +481,8 @@ const blocksForFormat = (
           placeholder: "Tap to edit text",
           autoInserted: true,
           format,
-          layout
+          layout,
+          template: TextTemplate.post
         });
 
       textBlock.config.minHeight = imageBlock.config.dimensions.height;
@@ -481,7 +537,8 @@ const blocksForFormat = (
             placeholder: "Tap to edit text",
             autoInserted: true,
             format,
-            layout
+            layout,
+            template: TextTemplate.post
           })
       ];
     }

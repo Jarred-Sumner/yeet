@@ -1,5 +1,10 @@
 import * as React from "react";
-import { Keyboard, StyleSheet, View } from "react-native";
+import {
+  Keyboard,
+  StyleSheet,
+  View,
+  TextInput as RNTextInput
+} from "react-native";
 import {
   BorderlessButton,
   TextInput as GestureTextInput
@@ -10,7 +15,10 @@ import tinycolor from "tinycolor2";
 import { COLORS, SPACING } from "../../../lib/styles";
 import { IconSearch } from "../../Icon";
 import { SemiBoldText } from "../../Text";
+import { BlurView } from "@react-native-community/blur";
+import { TOP_Y } from "../../../../config";
 
+export const ImageSearchContext = React.createContext(null);
 const TextInput = Animated.createAnimatedComponent(GestureTextInput);
 
 type Props = {
@@ -28,11 +36,18 @@ const PLACEHOLDER_COLOR = "#ccc";
 const styles = StyleSheet.create({
   container: {
     height: IMAGE_SEARCH_HEIGHT,
+    width: "100%"
+  },
+  blur: {
+    height: IMAGE_SEARCH_HEIGHT,
+    width: "100%"
+  },
+  content: {
+    height: IMAGE_SEARCH_HEIGHT,
     paddingLeft: SPACING.half,
-    backgroundColor: "#000",
+    position: "relative",
     width: "100%",
     alignItems: "center",
-    position: "relative",
     flexDirection: "row",
     paddingVertical: SPACING.half
   },
@@ -44,9 +59,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal
   },
   text: {
-    backgroundColor: "rgb(38, 38, 38)",
     borderWidth: 1,
     borderColor: "transparent",
+    paddingTop: SPACING.half,
     flex: 1,
     color: "white",
     fontWeight: "500",
@@ -90,30 +105,28 @@ const styles = StyleSheet.create({
   }
 });
 
-export class ImageSearch extends React.Component<Props> {
-  containerBackgroundColor = interpolateColor(
-    this.props.keyboardVisibleValue,
-    {
-      inputRange: [0, 1],
-      outputRange: [
-        tinycolor("#000")
-          .darken(20)
-          .toRgb(),
-        tinycolor("#111")
-          .darken(10)
-          .toRgb()
-      ]
-    },
-    "rgb"
-  );
+class ImageSearchComponent extends React.Component<Props> {
   paddingRightValue = Animated.interpolate(this.props.keyboardVisibleValue, {
     inputRange: [0, 1],
     outputRange: [SPACING.half, 75 + SPACING.half],
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
-  dismissKeyboard = () => Keyboard.dismiss();
-  state = { isFocused: false };
+  translateX = Animated.interpolate(this.props.keyboardVisibleValue, {
+    inputRange: [0, 1],
+    outputRange: [CANCEL_WIDTH, 0],
+    extrapolate: Animated.Extrapolate.CLAMP
+  });
+
+  dismissKeyboard = () => {
+    this.textInputRef.current.getNode().blur();
+
+    window.requestAnimationFrame(() => {
+      this.textInputRef.current.getNode().clear();
+      this.props.onChange("");
+    });
+  };
+  state = { isFocused: false, defaultQuery: this.props.query };
 
   handleFocus = evt => {
     this.setState({ isFocused: true });
@@ -128,6 +141,9 @@ export class ImageSearch extends React.Component<Props> {
     placeholder: "Search GIPHY"
   };
 
+  inputStyles = [styles.textish, styles.text];
+  textInputRef = React.createRef<RNTextInput>();
+
   render() {
     const {
       query,
@@ -136,72 +152,114 @@ export class ImageSearch extends React.Component<Props> {
       onFocus,
       onSubmit,
       placeholder,
+      inset = 0,
+      offset,
+      hasTextValue,
+      scrollY,
       disabled,
-      keyboardVisibleValue
+      translateY,
+      keyboardVisibleValue,
+      additionalOffset = 0
     } = this.props;
+
+    const marginTop = (IMAGE_SEARCH_HEIGHT + offset - additionalOffset) * -1;
 
     return (
       <Animated.View
         style={[
           styles.container,
           {
-            paddingRight: this.paddingRightValue
+            // marginTop,
+            // transform: [
+            //   {
+            //     translateY: Animated.block([
+            //       Animated.interpolate(scrollY, {
+            //         inputRange: [-100, offset, 0],
+            //         outputRange: [additionalOffset, inset, inset],
+            //         extrapolate: Animated.Extrapolate.CLAMP
+            //       })
+            //     ])
+            //   }
+            // ]
           }
         ]}
       >
-        <View style={[styles.textish, styles.iconContainer]}>
-          <IconSearch style={styles.icon} />
-        </View>
+        <BlurView blurType="extraDark" style={styles.blur} blurAmount={25}>
+          <Animated.View
+            style={[
+              styles.content,
+              // { height: IMAGE_SEARCH_HEIGHT - inset },
+              {
+                paddingRight: this.paddingRightValue
+                // transform: [
+                //   {
+                //     translateY
+                //   }
+                // ]
+              }
+            ]}
+          >
+            <View style={[styles.textish, styles.iconContainer]}>
+              <IconSearch style={styles.icon} />
+            </View>
 
-        <TextInput
-          keyboardAppearance="dark"
-          textContentType="none"
-          clearButtonMode="always"
-          clearTextOnFocus={false}
-          autoCompleteType="off"
-          disabled={disabled}
-          editable={!disabled}
-          enablesReturnKeyAutomatically
-          onChangeText={onChange}
-          onSubmitEditing={onSubmit}
-          importantForAutofill={false}
-          onFocus={this.handleFocus}
-          onBlur={this.handleBlur}
-          defaultValue={query}
-          style={[styles.text, styles.textish]}
-          placeholder={placeholder}
-          caretColor={COLORS.primary}
-          placeholderTextColor={PLACEHOLDER_COLOR}
-          tintColor={COLORS.primary}
-        ></TextInput>
+            <TextInput
+              keyboardAppearance="dark"
+              textContentType="none"
+              clearButtonMode="always"
+              clearTextOnFocus={false}
+              autoCompleteType="off"
+              ref={this.textInputRef}
+              disabled={disabled}
+              editable={!disabled}
+              enablesReturnKeyAutomatically
+              onChangeText={onChange}
+              onSubmitEditing={onSubmit}
+              importantForAutofill={false}
+              onFocus={this.handleFocus}
+              onBlur={this.handleBlur}
+              defaultValue={this.state.defaultQuery}
+              style={this.inputStyles}
+              placeholder={placeholder}
+              caretColor={COLORS.primary}
+              placeholderTextColor={PLACEHOLDER_COLOR}
+              tintColor={COLORS.primary}
+              selectionColor={COLORS.primary}
+            ></TextInput>
 
-        <Animated.View
-          pointerEvents={this.state.isFocused ? "auto" : "none"}
-          style={[
-            styles.cancelWrapper,
-            {
-              opacity: keyboardVisibleValue,
-              transform: [
+            <Animated.View
+              pointerEvents={this.state.isFocused ? "auto" : "none"}
+              style={[
+                styles.cancelWrapper,
                 {
-                  translateX: Animated.interpolate(keyboardVisibleValue, {
-                    inputRange: [0, 1],
-                    outputRange: [CANCEL_WIDTH, 0],
-                    extrapolate: Animated.Extrapolate.CLAMP
-                  })
+                  opacity: keyboardVisibleValue,
+                  transform: [
+                    {
+                      translateX: this.translateX
+                    }
+                  ]
                 }
-              ]
-            }
-          ]}
-        >
-          <BorderlessButton onPress={this.dismissKeyboard}>
-            <Animated.View style={styles.cancelButton}>
-              <SemiBoldText style={styles.cancelText}>Cancel</SemiBoldText>
+              ]}
+            >
+              <BorderlessButton onPress={this.dismissKeyboard}>
+                <Animated.View style={styles.cancelButton}>
+                  <SemiBoldText style={styles.cancelText}>Cancel</SemiBoldText>
+                </Animated.View>
+              </BorderlessButton>
             </Animated.View>
-          </BorderlessButton>
-        </Animated.View>
+          </Animated.View>
+        </BlurView>
       </Animated.View>
     );
   }
 }
+
+export const ImageSearch = ({ inset, offset }) => {
+  const imageSearchProps = React.useContext(ImageSearchContext);
+
+  return (
+    <ImageSearchComponent inset={inset} offset={offset} {...imageSearchProps} />
+  );
+};
 
 export default ImageSearch;

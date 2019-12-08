@@ -4,7 +4,7 @@ import Animated from "react-native-reanimated";
 import SafeAreaView, { getInset } from "react-native-safe-area-view";
 import tinycolor from "tinycolor2";
 import { COLORS } from "../../../lib/styles";
-import { SemiBoldText } from "../../Text";
+import { SemiBoldText, BoldText } from "../../Text";
 import { RectButton } from "react-native-gesture-handler";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
     position: "relative"
   },
   headerText: {
-    fontSize: 12,
+    fontSize: 13,
     textAlign: "center"
   },
   activeRow: {
@@ -107,10 +107,19 @@ const styles = StyleSheet.create({
     width: FILTER_WIDTH,
     height: 3,
     borderRadius: 4,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "white",
     position: "absolute",
-    bottom: 0,
-    left: 0
+    left: 0,
+    zIndex: 10
+  },
+  lightIndicator: {
+    backgroundColor: COLORS.primary
+  },
+  bottomIndicator: {
+    top: -4
+  },
+  topIndicator: {
+    bottom: -3
   }
 });
 
@@ -118,17 +127,22 @@ export const ListHeaderRow = ({
   isActive = true,
   children,
   onPress,
-  value
+  value,
+  inset
 }) => {
   const handlePress = React.useCallback(() => {
     onPress(value);
   }, [onPress, value]);
 
+  const width = { width: FILTER_WIDTH - inset / count };
+
   return (
     <RectButton
       onPress={handlePress}
       enabled={!isActive}
-      style={isActive ? [styles.row, styles.activeRow] : styles.row}
+      style={
+        isActive ? [styles.row, styles.activeRow, width] : [styles.row, width]
+      }
       underlayColor={tinycolor(COLORS.primary)
         .setAlpha(0.5)
         .toString()}
@@ -140,21 +154,36 @@ export const ListHeaderRow = ({
   );
 };
 
-export const FilterBar = ({ position, onChange, value, light, scrollY }) => {
+export const FilterBar = ({
+  position,
+  onChange,
+  value,
+  light,
+  scrollY,
+  inset,
+  tabBarPosition
+}) => {
   const indicatorStyles = [
     styles.indicator,
+    light && styles.lightIndicator,
+    inset > 0 && { width: FILTER_WIDTH - inset / count },
+    tabBarPosition === "bottom" && styles.bottomIndicator,
+    tabBarPosition === "top" && styles.topIndicator,
     {
       transform: [
+        {
+          translateX: inset
+        },
         {
           translateX: Animated.min(
             Animated.max(
               Animated.divide(
-                Animated.multiply(position, SCREEN_DIMENSIONS.width),
+                Animated.multiply(position, SCREEN_DIMENSIONS.width - inset),
                 count
               ),
               0
             ),
-            SCREEN_DIMENSIONS.width
+            SCREEN_DIMENSIONS.width - inset
           )
         }
       ]
@@ -168,17 +197,19 @@ export const FilterBar = ({ position, onChange, value, light, scrollY }) => {
           key={filter.value}
           onPress={onChange}
           isActive={value === filter.value}
+          inset={inset}
           value={filter.value}
         >
           {filter.label}
         </ListHeaderRow>
       );
     },
-    [onChange, value]
+    [onChange, value, inset]
   );
 
   return (
     <Animated.View style={[light ? styles.lightContainer : styles.container]}>
+      <View style={{ width: inset, heihgt: 1 }} />
       {FILTERS.map(renderFilter)}
       <Animated.View style={indicatorStyles} />
     </Animated.View>

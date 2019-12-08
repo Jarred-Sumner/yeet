@@ -56,6 +56,7 @@ import { scaleToWidth } from "../../lib/Rect";
 import { MediaPlayerPauser } from "../MediaPlayer";
 import { Panner } from "./Panner";
 import { GallerySheet } from "../Gallery/GallerySheet";
+import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -68,6 +69,7 @@ type State = {
   defaultPhoto: YeetImageContainer | null;
   step: NewPostStep;
   showGallery: Boolean;
+  isKeyboardVisible: boolean;
   inlineNodes: EditableNodeMap;
 };
 
@@ -87,7 +89,9 @@ const styles = StyleSheet.create({
   },
   transitioningView: { width: POST_WIDTH, height: SCREEN_DIMENSIONS.height },
   page: {
-    flex: 1
+    flex: 1,
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height
   },
   titleContainer: {
     left: 0,
@@ -156,6 +160,7 @@ class RawNewPost extends React.Component<{}, State> {
 
     this.state = {
       showGallery: false,
+      isKeyboardVisible: false,
       post: buildPost({
         width: props.defaultWidth,
         height: props.defaultHeight,
@@ -330,15 +335,31 @@ class RawNewPost extends React.Component<{}, State> {
     });
     this.openGalleryCallback = null;
   };
+  keyboardVisibleValue = new Animated.Value<number>(0);
+  keyboardHeightValue = new Animated.Value<number>(0);
+  headerOffset = new Animated.Value(0);
+  headerOpacity = new Animated.Value(0);
+
+  showKeyboard = () => this.setState({ isKeyboardVisible: true });
+  hideKeyboard = () => this.setState({ isKeyboardVisible: false });
 
   render() {
     const { step, showUploader, uploadData, inlineNodes } = this.state;
     const isHeaderFloating = step !== NewPostStep.editPhoto;
     return (
       <>
+        <AnimatedKeyboardTracker
+          onKeyboardShow={this.showKeyboard}
+          onKeyboardHide={this.hideKeyboard}
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
+        />
+
         <Panner
           onIndexChange={this.handleChangeLayoutIndex}
-          swipeEnabled={!this.state.showGallery}
+          swipeEnabled={
+            !this.state.showGallery && !this.state.isKeyboardVisible
+          }
           position={this.layoutIndexValue}
           gestureHandlerProps={{
             ref: this.pannerRef
@@ -364,6 +385,10 @@ class RawNewPost extends React.Component<{}, State> {
                 bounds={this.state.bounds}
                 post={this.state.post}
                 onBack={this.handleBack}
+                keyboardVisibleValue={this.keyboardVisibleValue}
+                keyboardHeightValue={this.keyboardHeightValue}
+                headerOffset={this.headerOffset}
+                headerOpacity={this.headerOpacity}
                 navigation={this.props.navigation}
                 onChange={this.handleChangePost}
                 isReply={!this.props.threadId}
@@ -383,6 +408,8 @@ class RawNewPost extends React.Component<{}, State> {
               layout={this.state.post.layout}
               onChangeLayout={this.handleChangeLayout}
               ref={this.formatPickerRef}
+              translateY={this.headerOffset}
+              opacity={this.headerOpacity}
               controlsOpacityValue={this.controlsOpacityValue}
             />
           </Animated.View>
@@ -394,6 +421,8 @@ class RawNewPost extends React.Component<{}, State> {
           post={this.state.post}
           onPress={this.handlePressGallery}
           initialRoute={this.state.galleryFilter || "all"}
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
         />
       </>
     );
@@ -404,7 +433,7 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleSubmit = (contentExport: ContentExport, data: ExportData) => {
-    this.pauser.current.pausePlayers();
+    // this.pauser.current.pausePlayers();
 
     return this.props.onExport(contentExport, data, this.state.post.format);
   };

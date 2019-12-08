@@ -81,6 +81,7 @@ export const BlockList = ({
           focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
           isFocused={focusedBlockId === block.id}
+          disabled={focusedBlockId ? focusedBlockId !== block.id : false}
           onOpenImagePicker={onOpenImagePicker}
           focusType={focusType}
           onChangePhoto={onChangePhoto}
@@ -120,9 +121,10 @@ type EditableNodeListProps = {
   inlineNodeRefs: Map<string, React.Ref<View>>;
   maxY: number;
   panX: Animated.Value<number>;
-
+  scrollY: Animated.Value<number>;
   panY: Animated.Value<number>;
   maxX: number;
+  topInsetValue: Animated.Value<number>;
   onTapNode: (node: EditableNode) => void;
   onChangeNode: (node: EditableNode) => void;
 };
@@ -133,11 +135,13 @@ export const EditableNodeList = ({
   maxX,
   keyboardHeightValue,
   focusType,
+  topInsetValue,
   keyboardVisibleValue,
   onFocus,
   waitFor,
   maxY,
   focusedBlockValue,
+  scrollY,
   focusTypeValue,
   minY,
   onBlur: onBlurNode,
@@ -177,6 +181,8 @@ export const EditableNodeList = ({
         maxX={maxX}
         minY={minY}
         maxY={maxY}
+        scrollY={scrollY}
+        topInsetValue={topInsetValue}
         containerRef={containerRef(id)}
         onBlur={onBlurNode}
         focusedBlockValue={focusedBlockValue}
@@ -241,6 +247,7 @@ export const PostPreview = React.forwardRef(
       onBlur,
       onOpenImagePicker,
       focusTypeValue,
+      topInsetValue,
       contentViewRef,
       simultaneousHandlers,
       swipeOnly,
@@ -329,6 +336,7 @@ export const PostPreview = React.forwardRef(
         onScroll={onScroll}
         onLayout={onLayout}
         scrollY={scrollY}
+        topInsetValue={topInsetValue}
         keyboardShouldPersistTaps="always"
         contentInsetAdjustmentBehavior="never"
         keyboardOpeningTime={0}

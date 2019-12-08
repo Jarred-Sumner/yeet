@@ -14,10 +14,12 @@ import { SPACING } from "../../lib/styles";
 import { BaseButton } from "react-native-gesture-handler";
 import { throttle } from "lodash";
 import { sheetOpacity } from "../../lib/animations";
+import { getSelectedIDs } from "../../screens/ImagePickerPage";
+import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/FilterBar";
 
 const styles = StyleSheet.create({
   sheet: {
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    backgroundColor: "black",
     height: SCREEN_DIMENSIONS.height,
     width: SCREEN_DIMENSIONS.width
   },
@@ -45,7 +47,8 @@ export class GallerySheet extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: false
+      show: false,
+      selectedImages: []
     };
   }
 
@@ -78,14 +81,27 @@ export class GallerySheet extends React.Component {
     }
   }
 
-  scrollY = new Animated.Value(0);
   dismissY = new Animated.Value(0);
   isDismissingValue = new Animated.Value(0);
   static TOP_OFFSET = 100;
+  static CONTENT_INSET = 1;
+  scrollY = new Animated.Value(0);
+  insetValue = new Animated.Value(GallerySheet.CONTENT_INSET);
+
+  dismissThreshold = Animated.multiply(Animated.add(this.insetValue, 30), -1);
 
   translateY = Animated.interpolate(this.scrollY, {
-    inputRange: [-1 * GallerySheet.TOP_OFFSET, 0],
-    outputRange: [GallerySheet.TOP_OFFSET, TOP_Y],
+    inputRange: [
+      Animated.multiply(
+        -1,
+        Animated.add(GallerySheet.TOP_OFFSET, this.insetValue)
+      ),
+      0
+    ],
+    outputRange: [
+      Animated.add(GallerySheet.TOP_OFFSET, this.insetValue),
+      TOP_Y
+    ],
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
@@ -94,9 +110,11 @@ export class GallerySheet extends React.Component {
 
     const { show } = this.state;
 
-    const inset = SPACING.normal;
-
-    const height = SCREEN_DIMENSIONS.height - GallerySheet.TOP_OFFSET + TOP_Y;
+    const height =
+      SCREEN_DIMENSIONS.height -
+      GallerySheet.TOP_OFFSET -
+      GallerySheet.CONTENT_INSET +
+      TOP_Y;
 
     return (
       <>
@@ -127,7 +145,7 @@ export class GallerySheet extends React.Component {
               this.scrollY,
               Animated.cond(
                 Animated.and(
-                  Animated.lessThan(this.scrollY, -50),
+                  Animated.lessThan(this.scrollY, this.dismissThreshold),
                   Animated.eq(this.isDismissingValue, 0)
                 ),
                 Animated.block([
@@ -184,8 +202,12 @@ export class GallerySheet extends React.Component {
               <GalleryTabView
                 width={SCREEN_DIMENSIONS.width}
                 height={height}
-                inset={inset}
+                inset={GallerySheet.CONTENT_INSET}
+                insetValue={this.insetValue}
                 onPress={this.props.onPress}
+                isModal
+                keyboardVisibleValue={this.props.keyboardVisibleValue}
+                selectedIDs={getSelectedIDs(this.state.selectedImages)}
                 initialRoute={this.props.initialRoute}
                 show={this.props.show}
                 scrollY={this.scrollY}

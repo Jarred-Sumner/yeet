@@ -33,6 +33,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     translateY = 0,
     onLayout,
     rotate = 0,
+    zIndex,
     scale = 1.0,
     keyboardVisibleValue,
     bottom = undefined,
@@ -53,6 +54,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
           {
             opacity,
             bottom,
+            zIndex,
             transform: [
               {
                 translateY
@@ -84,6 +86,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
           transformableStyles.topContainer,
           {
             opacity,
+            zIndex,
             transform: [
               {
                 translateY
@@ -227,8 +230,14 @@ export class MovableNode extends Component<Props> {
       eq(props.focusedBlockValue, this.blockId)
     );
 
-    this._translateX = keyboardVisibleInterpolater(
+    this.keyboardVisibleFocusedValue = Animated.cond(
+      eq(this.isFocusedValue, 1),
       props.keyboardVisibleValue,
+      0
+    );
+
+    this._translateX = keyboardVisibleInterpolater(
+      this.keyboardVisibleFocusedValue,
       this.X,
       15
     );
@@ -236,12 +245,13 @@ export class MovableNode extends Component<Props> {
     this.bottomValue =
       props.keyboardHeightValue && props.isTextBlock
         ? keyboardVisibleInterpolater(
-            props.keyboardVisibleValue,
+            this.keyboardVisibleFocusedValue,
             0,
             Animated.multiply(
               Animated.sub(
-                SCREEN_DIMENSIONS.height - props.minY,
-                props.keyboardHeightValue
+                SCREEN_DIMENSIONS.height,
+                props.keyboardHeightValue,
+                props.topInsetValue || 0
               ),
               -1
             )
@@ -249,19 +259,19 @@ export class MovableNode extends Component<Props> {
         : null;
 
     this._translateY = keyboardVisibleInterpolater(
-      props.keyboardVisibleValue,
+      this.keyboardVisibleFocusedValue,
       this.Y,
       props.paddingTop
     );
 
     this._scale = keyboardVisibleInterpolater(
-      props.keyboardVisibleValue,
+      this.keyboardVisibleFocusedValue,
       this.Z,
       1
     );
 
     this._rotate = keyboardVisibleInterpolater(
-      props.keyboardVisibleValue,
+      this.keyboardVisibleFocusedValue,
       Animated.concat(this.R, "rad"),
       Animated.concat(0, "rad")
     );

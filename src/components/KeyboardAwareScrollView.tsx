@@ -86,7 +86,6 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
   static defaultProps = {
     enableAutomaticScroll: ScrollIntoViewDefaultOptions.enableAutomaticScroll,
     extraHeight: ScrollIntoViewDefaultOptions.extraHeight,
-    scrollY: new Animated.Value(0),
     extraScrollHeight: ScrollIntoViewDefaultOptions.extraScrollHeight,
     enableResetScrollToCoords:
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
@@ -341,10 +340,18 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         : this.props.keyboardOpeningTime || 0
     );
   };
-
   contentOffsetValue = new Animated.Value(this.props.defaultPosition.y);
+  contentInsetValue = new Animated.Value(this.props.paddingTop);
+
   onScrollEvent = Animated.event(
-    [{ nativeEvent: { contentOffset: { y: this.contentOffsetValue } } }],
+    [
+      {
+        nativeEvent: {
+          contentOffset: { y: this.contentOffsetValue }
+          // contentInset: { top: this.contentInsetValue }
+        }
+      }
+    ],
     { useNativeDriver: true }
   );
 
@@ -422,8 +429,10 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         />
         <Animated.Code
           exec={Animated.block([
-            Animated.set(this.props.scrollY, this.contentOffsetValue),
-
+            this.props.scrollY &&
+              Animated.set(this.props.scrollY, this.contentOffsetValue),
+            this.props.topInsetValue &&
+              Animated.set(this.props.topInsetValue, this.contentInsetValue),
             Animated.onChange(this.contentOffsetValue, [
               Animated.call([this.contentOffsetValue], this._handleOnScroll)
             ])

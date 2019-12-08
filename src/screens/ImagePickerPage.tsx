@@ -1,26 +1,29 @@
-import hoistNonReactStatics from "hoist-non-react-statics";
+import memoizee from "memoizee";
 import * as React from "react";
-import { InteractionManager, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
-import Animated, { Easing } from "react-native-reanimated";
-import { withNavigationFocus } from "react-navigation";
-import { SCREEN_DIMENSIONS } from "../../config";
-import { generateBlockId } from "../components/NewPost/NewPostFormat";
-import { GalleryTabView } from "../components/Gallery/GalleryTabView";
-import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
-import { MediaPlayerPauser } from "../components/MediaPlayer";
-import {
-  useNavigationState,
-  useFocusState,
-  useNavigation
-} from "react-navigation-hooks";
+import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
+import { useNavigation } from "react-navigation-hooks";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
+import { GalleryTabView } from "../components/Gallery/GalleryTabView";
+
+import { YeetImageContainer } from "../lib/imageSearch";
+import { sendLightFeedback } from "../lib/Vibration";
+import { LIST_HEADER_HEIGHT } from "../components/NewPost/ImagePicker/FilterBar";
+import { SPACING } from "../lib/styles";
+import { isArray } from "lodash";
+import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000"
   }
+});
+
+export const getSelectedIDs = memoizee((images: Array<YeetImageContainer>) => {
+  return images.map(image => image.id);
 });
 
 class RawImagePickerPage extends React.Component {
@@ -59,7 +62,9 @@ class RawImagePickerPage extends React.Component {
 
     this.state = {
       blockId: props.navigation.getParam("blockId"),
-      isKeyboardVisible: false
+      isKeyboardVisible: false,
+      selectedImages: [],
+      selectMultiple: false
     };
   }
 
@@ -69,13 +74,42 @@ class RawImagePickerPage extends React.Component {
   handleKeyboardShow = () => this.setState({ isKeyboardVisible: true });
   handleKeyboardHide = () => this.setState({ isKeyboardVisible: false });
 
-  handlePickPhoto = photo => {
+  handlePickPhoto = (photo: YeetImageContainer) => {
+    const { selectedImages, selectMultiple } = this.state;
+    sendLightFeedback();
+    console.log(photo);
+
+    const index = selectedImages.findIndex(image => photo.id === image.id);
+
+    const _selectedImages = [...selectedImages];
+    if (typeof index === "number" && index > -1) {
+      _selectedImages.splice(index, 1);
+    } else {
+      _selectedImages.push(photo);
+    }
+
+    if (selectMultiple) {
+      this.setState({ selectedImages: _selectedImages });
+    } else {
+      console.log(_selectedImages);
+      this.handleFinish(_selectedImages);
+    }
+  };
+
+  handleFinish = _selectedImages => {
+    const selectedImages = isArray(_selectedImages)
+      ? _selectedImages
+      : this.state.selectedImages;
+
     const onChange = this.props.navigation.getParam("onChange");
+
+    const photo = selectedImages[0];
 
     if (onChange) {
       onChange(this.props.navigation.getParam("blockId"), photo);
       this.goBack(true);
     } else {
+      console.log(photo);
       this.props.navigation.navigate("NewPost", {
         image: photo,
         blockId: this.state.blockId
@@ -100,20 +134,29 @@ class RawImagePickerPage extends React.Component {
     this.scrollRef = flatListRef?.getScrollableNode();
   };
 
+  scrollY = new Animated.Value<number>(0);
+
   render() {
     return (
       <View style={styles.container}>
-        {/* <AnimatedKeyboardTracker
-          onKeyboardShow={this.handleKeyboardShow}
-          onKeyboardHide={this.handleKeyboardHide}
+        <AnimatedKeyboardTracker
           keyboardVisibleValue={this.keyboardVisibleValue}
-        /> */}
+          // keyboardHeightValue={this.keyboardHeightValue}
+        />
+
         <GalleryTabView
           width={this.props.width}
           isKeyboardVisible={this.state.isKeyboardVisible}
           height={this.props.height}
+          keyboardVisibleValue={this.keyboardVisibleValue}
           onPress={this.handlePickPhoto}
+          inset={LIST_HEADER_HEIGHT + SPACING.normal}
+          isModal={false}
+          offset={(LIST_HEADER_HEIGHT + SPACING.normal) * -1}
+          selectedIDs={getSelectedIDs(this.state.selectedImages)}
+          tabBarPosition="top"
           showHeader
+          scrollY={this.scrollY}
           initialRoute={this.props.navigation.getParam("initialRoute") || "all"}
         />
       </View>
@@ -128,7 +171,7 @@ export const ImagePickerPage = props => {
   return (
     <RawImagePickerPage
       navigation={navigation}
-      height={SCREEN_DIMENSIONS.height - top}
+      height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
       {...props}
     />

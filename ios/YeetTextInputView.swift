@@ -151,6 +151,23 @@ class YeetTextInputView : RCTMultilineTextInputView {
     self.adjustFontSize(text: textView.text)
   }
 
+  enum TextTemplate : String {
+    case post = "post"
+    case comment = "comment"
+    case basic = "basic"
+    case momsSpaghetti = "momsSpaghetti"
+    case sarcasticText = "sarcasticText"
+  }
+
+  var textTemplate: TextTemplate = .post
+
+
+  @objc(template)
+  var template: String = "post" {
+    didSet {
+      self.textTemplate = TextTemplate(rawValue: template) ?? .post
+    }
+  }
 
 
   var textView: UITextView {
@@ -171,6 +188,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 //    self.textView.contentMode = .center
     self.highlightLayer.fillColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR.cgColor
+//    self.highlightLayer.fillColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR.cgColor
 
 
 //    textView.textContainer.lineBreakMode = .byWordWrapping
@@ -190,8 +208,6 @@ class YeetTextInputView : RCTMultilineTextInputView {
   override func textInputDidReturn() {
     self.drawHighlight()
   }
-
-
 
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()

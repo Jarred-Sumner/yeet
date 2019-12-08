@@ -23,6 +23,25 @@ import { MediaSource } from "../components/MediaPlayer";
 import { DimensionsRect, BoundsRect } from "./Rect";
 import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 
+export enum ImageAspectRatio {
+  vertical = "vertical",
+  square = "square",
+  horizontal = "horizontal"
+}
+
+export const getAspectRatio = (image: YeetImageContainer) => {
+  const { width, height } = image.image;
+  const ratio = width / height;
+
+  if (ratio > 0.9 && ratio < 1.1) {
+    return ImageAspectRatio.square;
+  } else if (ratio <= 0.9) {
+    return ImageAspectRatio.vertical;
+  } else {
+    return ImageAspectRatio.horizontal;
+  }
+};
+
 export enum ImageMimeType {
   png = "image/png",
   gif = "image/gif",
@@ -485,7 +504,8 @@ export const mediaSourceFromImage = (
 export const mediaSourceFromSource = (
   source: ImageSourcePropType,
   dimensions: BoundsRect,
-  duration: number = 0
+  duration: number = 0,
+  preferPreview: Boolean = false
 ): MediaSource => {
   const { width = 0, uri: _url, height = 0, mimeType: _mimeType } = source;
 
@@ -520,7 +540,8 @@ export const mediaSourceFromSource = (
 export const mediaSourcesFromImage = (
   container: YeetImageContainer,
   dimensions: BoundsRect,
-  playDuration?: number
+  playDuration?: number = 0.0,
+  usePreview: Boolean = false
 ): Array<MediaSource> => {
-  return [mediaSourceFromImage(container, dimensions)];
+  return [mediaSourceFromImage(container, dimensions, usePreview, usePreview)];
 };

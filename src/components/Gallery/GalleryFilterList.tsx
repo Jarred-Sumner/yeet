@@ -7,7 +7,7 @@ import {
   RefreshControl,
   KeyboardAvoidingView
 } from "react-native";
-import { SCREEN_DIMENSIONS } from "../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import CAMERA_ROLL_QUERY from "../../lib/CameraRollQuery.local.graphql";
 import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
 import {
@@ -24,7 +24,10 @@ import GalleryItem, {
 } from "./GalleryItem";
 import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
 import { uniqBy } from "lodash";
-import ImageSearch from "../NewPost/ImagePicker/ImageSearch";
+import ImageSearch, {
+  IMAGE_SEARCH_HEIGHT,
+  ImageSearchContext
+} from "../NewPost/ImagePicker/ImageSearch";
 import { useDebouncedCallback } from "use-debounce";
 import useKeyboard from "@rnhooks/keyboard";
 import MediaPlayer from "../MediaPlayer";
@@ -40,7 +43,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexShrink: 0,
-    width: SCREEN_DIMENSIONS.width
+    width: SCREEN_DIMENSIONS.width,
+    overflow: "visible"
   },
   wrapper: {
     flex: 1,
@@ -58,6 +62,13 @@ const styles = StyleSheet.create({
   item: {
     marginRight: COLUMN_GAP,
     flex: 1
+  },
+  header: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 9999
   }
 });
 
@@ -83,6 +94,9 @@ export const HORIZONTAL_ITEM_WIDTH =
   SCREEN_DIMENSIONS.width / GIF_COLUMN_COUNT - COLUMN_GAP * GIF_COLUMN_COUNT;
 
 class GalleryFilterListComponent extends React.Component<Props> {
+  static defaultProps = {
+    headerHeight: 0
+  };
   constructor(props) {
     super(props);
   }
@@ -96,6 +110,22 @@ class GalleryFilterListComponent extends React.Component<Props> {
       flatListRef(flatList);
     }
   };
+
+  componentDidUpdate(prevProps) {
+    const { data } = this.props;
+
+    if (
+      prevProps.data !== data &&
+      data.length > 0 &&
+      prevProps.data.length > 0 &&
+      data[0].id !== prevProps.data[0].id
+    ) {
+      this.flatListRef.scrollToOffset({
+        offset: this.props.offset - (this.props.isModal ? 0 : TOP_Y),
+        animated: true
+      });
+    }
+  }
 
   flatListRef: FlatList | null = null;
 
@@ -112,6 +142,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
           height={this.props.itemHeight}
           onPress={this.handlePressColumn}
           resizeMode={this.props.resizeMode}
+          isSelected={this.props.selectedIDs.includes(item.image.id)}
           paused={!this.props.isFocused}
           id={item.id}
         />
@@ -128,7 +159,10 @@ class GalleryFilterListComponent extends React.Component<Props> {
   });
 
   contentInset = { top: this.props.inset, left: 0, right: 0, bottom: 0 };
-  contentOffset = { y: this.props.inset * -1, x: 0 };
+  contentOffset = {
+    y: this.props.offset,
+    x: 0
+  };
 
   static stickerHeaderIndices = [0];
   // https://github.com/facebook/react-native/issues/26610
@@ -140,6 +174,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
             nativeEvent: {
               contentOffset: {
                 y: this.props.scrollY
+              },
+              contentInset: {
+                top: this.props.insetValue
               }
             }
           }
@@ -148,11 +185,36 @@ class GalleryFilterListComponent extends React.Component<Props> {
       )
     : undefined;
 
+  translateY = this.props.isModal
+    ? Animated.interpolate(this.props.scrollY, {
+        inputRange: [-200, this.props.inset * -1, 0],
+        outputRange: [-200, this.props.inset, 0],
+        extrapolateRight: Animated.Extrapolate.CLAMP
+      })
+    : undefined;
+
+  onScrollBeginDrag = Animated.event(
+    [
+      {
+        nativeEvent: {
+          // contentOffset: {
+          //   y: this.props.scrollY
+          // },
+          contentInset: {
+            top: this.props.insetValue
+          }
+        }
+      }
+    ],
+    { useNativeDriver: true }
+  );
+
   render() {
     const {
       data,
       networkStatus,
       isFocused,
+      selectedIDs,
       onRefresh,
       hasNextPage = false,
       removeClippedSubviews,
@@ -160,76 +222,113 @@ class GalleryFilterListComponent extends React.Component<Props> {
       onEndReached,
       simultaneousHandlers,
       ListHeaderComponent,
+      isModal,
       stickyHeader,
       scrollY,
       inset,
+      headerHeight = 0,
+      offset,
       ...otherProps
     } = this.props;
 
     return (
-      <Animated.View
-        style={[
-          styles.wrapper,
-          this.props.scrollY && {
-            transform: [
+      <>
+        <Animated.View
+          style={[
+            styles.wrapper,
+            isModal && {
+              transform: [
+                {
+                  translateY: this.translateY
+                }
+              ]
+            }
+          ]}
+        >
+          {ListHeaderComponent && isModal && (
+            <Animated.View
+              style={{
+                height: headerHeight,
+                width: 1,
+                transform: [
+                  { translateY: Animated.multiply(this.translateY, -1) }
+                ]
+              }}
+            >
+              <ListHeaderComponent />
+            </Animated.View>
+          )}
+
+          <FlatList
+            ref={this.setFlatListRef}
+            data={data}
+            directionalLockEnabled
+            // ListHeaderComponent={ListHeaderComponent}
+            extraData={isFocused}
+            getItemLayout={this.getItemLayout}
+            keyboardShouldPersistTaps="always"
+            onScroll={scrollY ? this.handleScroll : undefined}
+            onScrollBeginDrag={this.onScrollBeginDrag}
+            scrollEventThrottle={scrollY ? 1 : undefined}
+            scrollIndicatorInsets={
+              GalleryFilterListComponent.scrollIndicatorInsets
+            }
+            // refreshControl={
+            //   <RefreshControl
+            //     refreshing={networkStatus === NetworkStatus.refetch}
+            //     onRefresh={onRefresh}
+            //     tintColor="white"
+            //   />
+            // }
+            simultaneousHandlers={simultaneousHandlers}
+            ItemSeparatorComponent={ItemSeparatorComponent}
+            refreshing={networkStatus === NetworkStatus.refetch}
+            keyboardDismissMode="on-drag"
+            style={styles.container}
+            keyExtractor={this.keyExtractor}
+            contentInsetAdjustmentBehavior="automatic"
+            extraData={selectedIDs}
+            removeClippedSubviews={removeClippedSubviews}
+            contentInset={this.contentInset}
+            contentOffset={this.contentOffset}
+            overScrollMode="always"
+            // stickyHeaderIndices={
+            //   ListHeaderComponent
+            //     ? GalleryFilterListComponent.stickerHeaderIndices
+            //     : undefined
+            // }
+            alwaysBounceVertical
+            numColumns={numColumns}
+            columnWrapperStyle={styles.column}
+            scrollToOverflowEnabled
+            renderItem={this.renderColumn}
+            onEndReached={
+              networkStatus === NetworkStatus.ready && hasNextPage
+                ? onEndReached
+                : undefined
+            }
+            onEndReachedThreshold={0.75}
+          />
+        </Animated.View>
+
+        {ListHeaderComponent && (
+          <Animated.View
+            style={[
+              styles.header,
               {
-                translateY: Animated.interpolate(this.props.scrollY, {
-                  inputRange: [-100, inset * -1, 0],
-                  outputRange: [-100, inset * -1, 0],
-                  extrapolateRight: Animated.Extrapolate.CLAMP
-                })
+                top: this.props.isModal
+                  ? inset - 1
+                  : TOP_Y + inset - headerHeight - SPACING.normal
               }
-            ]
-          }
-        ]}
-      >
-        <FlatList
-          ref={this.setFlatListRef}
-          data={data}
-          directionalLockEnabled
-          ListHeaderComponent={ListHeaderComponent}
-          extraData={isFocused}
-          getItemLayout={this.getItemLayout}
-          keyboardShouldPersistTaps="always"
-          onScroll={scrollY ? this.handleScroll : undefined}
-          scrollEventThrottle={scrollY ? 1 : undefined}
-          scrollIndicatorInsets={
-            GalleryFilterListComponent.scrollIndicatorInsets
-          }
-          // refreshControl={
-          //   <RefreshControl
-          //     refreshing={networkStatus === NetworkStatus.refetch}
-          //     onRefresh={onRefresh}
-          //     tintColor="white"
-          //   />
-          // }
-          simultaneousHandlers={simultaneousHandlers}
-          ItemSeparatorComponent={ItemSeparatorComponent}
-          refreshing={networkStatus === NetworkStatus.refetch}
-          keyboardDismissMode="on-drag"
-          style={styles.container}
-          keyExtractor={this.keyExtractor}
-          contentInsetAdjustmentBehavior="automatic"
-          removeClippedSubviews={removeClippedSubviews}
-          stickyHeaderIndices={
-            ListHeaderComponent
-              ? GalleryFilterListComponent.stickerHeaderIndices
-              : undefined
-          }
-          contentInset={!ListHeaderComponent ? this.contentInset : undefined}
-          overScrollMode="always"
-          alwaysBounceVertical
-          numColumns={numColumns}
-          columnWrapperStyle={styles.column}
-          renderItem={this.renderColumn}
-          onEndReached={
-            networkStatus === NetworkStatus.ready && hasNextPage
-              ? onEndReached
-              : undefined
-          }
-          onEndReachedThreshold={0.75}
-        />
-      </Animated.View>
+              // {
+              //   translateY: this.translateY
+              // }
+            ]}
+          >
+            <ListHeaderComponent />
+          </Animated.View>
+        )}
+      </>
     );
   }
 }
@@ -243,9 +342,21 @@ const buildValue = (data: Array<YeetImageContainer> = []) => {
   });
 };
 
-export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
+export const GIFsFilterList = ({
+  isFocused,
+  inset,
+  offset,
+  isModal,
+  insetValue,
+  keyboardVisibleValue,
+  scrollY,
+  ...otherProps
+}) => {
   const [query, onChangeQuery] = React.useState("");
   const [isKeyboardVisible] = useKeyboard();
+  const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
+
+  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
 
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
@@ -261,9 +372,13 @@ export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
     if (isFocused && typeof loadGifs === "function") {
       loadGifs();
     }
-  }, [loadGifs, isFocused]);
 
-  const [debouncedChangeQuery] = useDebouncedCallback(
+    if (isFocused && insetValue) {
+      insetValue.setValue(_inset);
+    }
+  }, [loadGifs, isFocused, insetValue, _inset]);
+
+  const changeQuery = React.useCallback(
     // function
     (_query: string) => {
       if (_query === query) {
@@ -271,6 +386,7 @@ export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
       }
 
       onChangeQuery(_query);
+      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
 
       if (
         !(
@@ -287,23 +403,19 @@ export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
         }
       });
     },
-    // delay in ms
-    500,
-    {
-      maxWait: 2000
-    }
+    [onChangeQuery, gifsQuery, hasTextValue]
   );
 
-  const renderSearchBar = React.useMemo(
-    () => () => (
-      <ImageSearch
-        inset={inset}
-        query={query}
-        onChange={debouncedChangeQuery}
-      />
-    ),
-    [debouncedChangeQuery]
-  );
+  const imageSearchContext = React.useMemo(() => {
+    return {
+      query,
+      scrollY,
+      additionalOffset: 4,
+      keyboardVisibleValue,
+      hasTextValue: hasTextValue.current,
+      onChange: changeQuery
+    };
+  }, [query, scrollY, keyboardVisibleValue, hasTextValue, changeQuery]);
 
   const data = React.useMemo(() => {
     return buildValue(gifsQuery?.data?.gifs?.data);
@@ -350,26 +462,41 @@ export const GIFsFilterList = ({ isFocused, inset, ...otherProps }) => {
   }, [gifsQuery?.networkStatus, gifsQuery?.fetchMore, gifsQuery?.data]);
 
   return (
-    <GalleryFilterListComponent
-      {...otherProps}
-      data={data}
-      onRefresh={gifsQuery?.refetch}
-      itemHeight={HORIZONTAL_ITEM_HEIGHT}
-      itemWidth={HORIZONTAL_ITEM_WIDTH}
-      numColumns={GIF_COLUMN_COUNT}
-      onEndReached={handleEndReached}
-      inset={inset}
-      ListHeaderComponent={renderSearchBar}
-      stickyHeader={query.length > 0 || isKeyboardVisible}
-      // removeClippedSubviews={isFocused}
-      isFocused={isFocused}
-      hasNextPage={gifsQuery?.data?.gifs?.page_info?.has_next_page ?? false}
-      networkStatus={gifsQuery.networkStatus}
-    />
+    <ImageSearchContext.Provider value={imageSearchContext}>
+      <GalleryFilterListComponent
+        {...otherProps}
+        data={data}
+        offset={
+          isModal ? offset : (Math.abs(offset) + IMAGE_SEARCH_HEIGHT) * -1
+        }
+        onRefresh={gifsQuery?.refetch}
+        itemHeight={HORIZONTAL_ITEM_HEIGHT}
+        itemWidth={HORIZONTAL_ITEM_WIDTH}
+        numColumns={GIF_COLUMN_COUNT}
+        headerHeight={IMAGE_SEARCH_HEIGHT}
+        scrollY={scrollY}
+        onEndReached={handleEndReached}
+        isModal={isModal}
+        insetValue={insetValue}
+        inset={_inset}
+        ListHeaderComponent={ImageSearch}
+        stickyHeader={query.length > 0 || isKeyboardVisible}
+        // removeClippedSubviews={isFocused}
+        isFocused={isFocused}
+        hasNextPage={gifsQuery?.data?.gifs?.page_info?.has_next_page ?? false}
+        networkStatus={gifsQuery.networkStatus}
+      />
+    </ImageSearchContext.Provider>
   );
 };
 
-export const PhotosFilterList = ({ query = "", isFocused, ...otherProps }) => {
+export const PhotosFilterList = ({
+  query = "",
+  isFocused,
+  offset,
+  scrollY,
+  ...otherProps
+}) => {
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
 
@@ -472,6 +599,8 @@ export const PhotosFilterList = ({ query = "", isFocused, ...otherProps }) => {
       data={data}
       onRefresh={photosQuery?.refetch}
       isFocused={isFocused}
+      offset={offset}
+      scrollY={scrollY}
       itemHeight={height}
       itemWidth={width}
       onEndReached={handleEndReached}
@@ -483,7 +612,13 @@ export const PhotosFilterList = ({ query = "", isFocused, ...otherProps }) => {
   );
 };
 
-export const VideosFilterList = ({ query = "", isFocused, ...otherProps }) => {
+export const VideosFilterList = ({
+  query = "",
+  isFocused,
+  offset,
+  scrollY,
+  ...otherProps
+}) => {
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
 
@@ -589,7 +724,9 @@ export const VideosFilterList = ({ query = "", isFocused, ...otherProps }) => {
       data={data}
       onRefresh={videosQuery?.refetch}
       isFocused={isFocused}
+      offset={offset}
       onEndReached={handleEndReached}
+      scrollY={scrollY}
       itemHeight={height}
       itemWidth={width}
       networkStatus={videosQuery.networkStatus}
