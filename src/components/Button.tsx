@@ -140,6 +140,8 @@ export const IconButton = ({
   enabled = true,
   isLoading = false,
   containerSize: _containerSize,
+  borderRadius,
+  rectangle = false,
   opacity = 1,
   transform,
   size = 24,
@@ -196,7 +198,7 @@ export const IconButton = ({
       overflow: "visible",
       width: containerSize,
       height: containerSize,
-      borderRadius: containerSize / 2
+      borderRadius: borderRadius ?? containerSize / 2
     });
 
     iconWrapperStyles.push(StyleSheet.absoluteFill);
@@ -215,7 +217,7 @@ export const IconButton = ({
               backgroundColor,
               width: containerSize,
               height: containerSize,
-              borderRadius: containerSize / 2,
+              borderRadius: borderRadius ?? containerSize / 2,
               borderColor,
               borderWidth: borderColor ? 1 : undefined,
               opacity

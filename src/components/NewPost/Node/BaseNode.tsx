@@ -4,6 +4,7 @@ import Animated from "react-native-reanimated";
 import { PostBlock, FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
+import { getTextBlockAlign } from "../Text/TextInput";
 
 export type EditableNodeStaticPosition = {
   y: number;
@@ -210,6 +211,7 @@ export class BaseNode extends React.Component<Props> {
         scrollY={scrollY}
         isTextBlock={block.type === "text"}
         onChangePosition={this.handleChangePosition}
+        textAlign={block.type === "text" ? getTextBlockAlign(block) : "left"}
         yLiteral={position.y}
         xLiteral={position.x}
         rLiteral={position.rotate}
@@ -233,7 +235,8 @@ export class BaseNode extends React.Component<Props> {
             flex: 0,
             padding: EXTRA_PADDING,
             margin: -1 * EXTRA_PADDING,
-            maxWidth: maxX
+            maxWidth: maxX,
+            overflow: "visible"
           }}
         >
           <Block
@@ -244,6 +247,7 @@ export class BaseNode extends React.Component<Props> {
             focusType={FocusType.absolute}
             gestureRef={this.gestureRef}
             autoFocus={autoFocus}
+            maxX={maxX - EXTRA_PADDING}
             focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}
             onBlur={this.handleBlur}

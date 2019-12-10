@@ -5,14 +5,18 @@
 	};
 	objectVersion = 46;
 	objects = {
+
 /* Begin PBXBuildFile section */
 		095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F3FC0C6659AB12B478EB5695 /* libPods-yeet.a */; };
 		13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.m */; };
 		13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB11A68108700A75B9A /* LaunchScreen.xib */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E20673983BA24843B933769A /* Inconsolata-Bold.ttf */; };
+		454FC91D75814E8AB3C93627 /* Some Time Later.otf in Resources */ = {isa = PBXBuildFile; fileRef = DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */; };
 		6C644D7EA51846C59656FE41 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 91F298074E284CF6B08FFFBF /* libz.tbd */; };
 		6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */; };
+		71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */; };
 		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
 		830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */; };
 		8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */; };
@@ -44,6 +48,8 @@
 		834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834CDE69236A324E006D5A74 /* YeetError.swift */; };
 		83532FB623701B9400BA0F1A /* DispatchQueue+throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
+		8366FB2E239F000F00F73311 /* YeetColorSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8366FB2D239F000F00F73311 /* YeetColorSlider.swift */; };
+		8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8366FB2F239F001F00F73311 /* YeetColorSliderViewManager.swift */; };
 		836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836B71C823566EF1003BF812 /* AVAsset+resize.swift */; };
 		8371AB59237EB8A50034EF15 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
@@ -60,16 +66,12 @@
 		83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E45AC92341B0880091D443 /* MediaPlayerViewManager.swift */; };
 		83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */; };
 		83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */; };
+		8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEF9871D096D405696E59228 /* digistrip_i.ttf */; };
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
 		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
+		D6199777328941FA86FF2ED7 /* digistrip.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C343AA0F86574D3F9E225BA8 /* digistrip.ttf */; };
 		E89FAC1D34B2BB6AE4FD5D29 /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */; };
-		2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = E20673983BA24843B933769A /* Inconsolata-Bold.ttf */; };
-		454FC91D75814E8AB3C93627 /* Some Time Later.otf in Resources */ = {isa = PBXBuildFile; fileRef = DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */; };
-		71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */; };
-		F1DF6E0108264F58AE93A12F /* AVENGEANCE HEROIC AVENGER.otf in Resources */ = {isa = PBXBuildFile; fileRef = AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */; };
-		6137DE4766E346D3AF7F453D /* Waltograph.otf in Resources */ = {isa = PBXBuildFile; fileRef = 305010FE8F30417A9DC89FE8 /* Waltograph.otf */; };
-		A2450C7E1A4F49D3A46C35C4 /* Starjedi.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */; };
-		B09D39601111437BA6444F6E /* Webcomic Bros.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */; };
+		FE241F33283D4841987A11D3 /* digistrip_b.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C65AC7FEA2B148D09473E95D /* digistrip_b.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -105,6 +107,8 @@
 
 /* Begin PBXFileReference section */
 		008F07F21AC5B25A0029DE68 /* main.jsbundle */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = main.jsbundle; sourceTree = "<group>"; };
+		027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Starjedi.ttf; path = ../assets/fonts/Starjedi.ttf; sourceTree = "<group>"; };
+		060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Minecrafter.Reg.ttf; path = ../assets/fonts/Minecrafter.Reg.ttf; sourceTree = "<group>"; };
 		09FCFF8A18384E6889D97EBB /* AntDesign.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = AntDesign.ttf; path = "../node_modules/react-native-vector-icons/Fonts/AntDesign.ttf"; sourceTree = "<group>"; };
 		0F2C14404E3D43D286E8A252 /* Proxima Nova Bold.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Proxima Nova Bold.otf"; path = "../assets/fonts/Proxima Nova Bold.otf"; sourceTree = "<group>"; };
 		11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-yeetTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -121,6 +125,7 @@
 		29C4A578EBD74A5FAA67663F /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Brands.ttf"; sourceTree = "<group>"; };
 		2B5EF1418C52406596EC0DA0 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SimpleLineIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; };
 		2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = iconfont.ttf; path = ../assets/fonts/iconfont.ttf; sourceTree = "<group>"; };
+		305010FE8F30417A9DC89FE8 /* Waltograph.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Waltograph.otf; path = ../assets/fonts/Waltograph.otf; sourceTree = "<group>"; };
 		30FD9E05B5164CACA7A8F920 /* Pods-yeet-Tests-yeetTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-Tests-yeetTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-Tests-yeetTests/Pods-yeet-Tests-yeetTests.release.xcconfig"; sourceTree = "<group>"; };
 		37AC0AB0DC534C909626091D /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Solid.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Solid.ttf"; sourceTree = "<group>"; };
 		4426C7E1A10F4FDCA3AA5EC6 /* MaterialIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialIcons.ttf"; sourceTree = "<group>"; };
@@ -134,6 +139,7 @@
 		5BA9E24A7965405FBCFAF1E7 /* libRNTextInputMask.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; path = libRNTextInputMask.a; sourceTree = "<group>"; };
 		61BF90C6FFD44674B828B97A /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		63AE1CAA636BE65F0051DE79 /* Pods-yeet-tvOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.release.xcconfig"; sourceTree = "<group>"; };
+		6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Webcomic Bros.ttf"; path = "../assets/fonts/Webcomic Bros.ttf"; sourceTree = "<group>"; };
 		830303C62324AD8C00BD2260 /* ExportableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableImage.swift; sourceTree = "<group>"; };
 		830418642345AAEE007C9E5A /* EnableWebpDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnableWebpDecoder.h; sourceTree = "<group>"; };
 		8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableMediaSource.swift; sourceTree = "<group>"; };
@@ -180,6 +186,8 @@
 		83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+throttle.swift"; sourceTree = "<group>"; };
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMediaSource.swift; sourceTree = "<group>"; };
+		8366FB2D239F000F00F73311 /* YeetColorSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetColorSlider.swift; sourceTree = "<group>"; };
+		8366FB2F239F001F00F73311 /* YeetColorSliderViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetColorSliderViewManager.swift; sourceTree = "<group>"; };
 		836B71C823566EF1003BF812 /* AVAsset+resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+resize.swift"; sourceTree = "<group>"; };
 		8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		838A18B52328528E00FC8C22 /* WebPMux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPMux.framework; sourceTree = "<group>"; };
@@ -206,16 +214,22 @@
 		91F298074E284CF6B08FFFBF /* libz.tbd */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
 		9A5A9068C3B94F099E9F2DF5 /* Proxima Nova Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Proxima Nova Medium.ttf"; path = "../assets/fonts/Proxima Nova Medium.ttf"; sourceTree = "<group>"; };
 		9E75BF8917DECDA8BFCF861D /* Pods-yeet.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet.release.xcconfig"; path = "Target Support Files/Pods-yeet/Pods-yeet.release.xcconfig"; sourceTree = "<group>"; };
+		AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "AVENGEANCE HEROIC AVENGER.otf"; path = "../assets/fonts/AVENGEANCE HEROIC AVENGER.otf"; sourceTree = "<group>"; };
 		AF4CA8C1A60F66FB76D46049 /* Pods-yeet-Tests-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-Tests-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-yeet-Tests-yeetTests/Pods-yeet-Tests-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
 		B034A7D51A402246D77EF6DF /* Pods-yeet-tvOSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.debug.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.debug.xcconfig"; sourceTree = "<group>"; };
 		B39C265FCA3E96E5584FD0B2 /* Pods-Tests-yeetTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests-yeetTests.release.xcconfig"; path = "Target Support Files/Pods-Tests-yeetTests/Pods-Tests-yeetTests.release.xcconfig"; sourceTree = "<group>"; };
 		C0875605D33A48F08FA502BE /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf"; sourceTree = "<group>"; };
 		C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "ProximaNova-Regular.otf"; path = "../assets/fonts/ProximaNova-Regular.otf"; sourceTree = "<group>"; };
+		C343AA0F86574D3F9E225BA8 /* digistrip.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = digistrip.ttf; path = ../assets/fonts/digistrip.ttf; sourceTree = "<group>"; };
+		C65AC7FEA2B148D09473E95D /* digistrip_b.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = digistrip_b.ttf; path = ../assets/fonts/digistrip_b.ttf; sourceTree = "<group>"; };
 		D5114AD872654918B44679D5 /* Foundation.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Foundation.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Foundation.ttf"; sourceTree = "<group>"; };
 		D66386338575CF6C78F7BD18 /* Pods-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-yeetTests/Pods-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
 		DC5BB82CED3342C9B3044E91 /* Inter.var.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Inter.var.ttf; path = ../assets/fonts/Inter.var.ttf; sourceTree = "<group>"; };
+		DEF9871D096D405696E59228 /* digistrip_i.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = digistrip_i.ttf; path = ../assets/fonts/digistrip_i.ttf; sourceTree = "<group>"; };
 		DF1FE5A6BC8B6AE8B7E6AF75 /* Pods-yeet-tvOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOS.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOS/Pods-yeet-tvOS.release.xcconfig"; sourceTree = "<group>"; };
+		DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Some Time Later.otf"; path = "../assets/fonts/Some Time Later.otf"; sourceTree = "<group>"; };
 		E0E0DAE39A4E029A9D86DEA4 /* Pods-yeet.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet.debug.xcconfig"; path = "Target Support Files/Pods-yeet/Pods-yeet.debug.xcconfig"; sourceTree = "<group>"; };
+		E20673983BA24843B933769A /* Inconsolata-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Inconsolata-Bold.ttf"; path = "../assets/fonts/Inconsolata-Bold.ttf"; sourceTree = "<group>"; };
 		E2A4009720181E12B7E61E39 /* Pods-yeetTests.staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeetTests.staging.xcconfig"; path = "Target Support Files/Pods-yeetTests/Pods-yeetTests.staging.xcconfig"; sourceTree = "<group>"; };
 		E3CB30E9A5274D5897429CAB /* Entypo.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Entypo.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Entypo.ttf"; sourceTree = "<group>"; };
 		E9D1C95879754A9296AFF715 /* EvilIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = EvilIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/EvilIcons.ttf"; sourceTree = "<group>"; };
@@ -225,13 +239,6 @@
 		F468F36F44933D26EB631F78 /* Pods-yeet-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-yeet-tvOS/Pods-yeet-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneSignalNotificationServiceExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB9130AC28034BA49643E52B /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"; sourceTree = "<group>"; };
-		E20673983BA24843B933769A /* Inconsolata-Bold.ttf */ = {isa = PBXFileReference; name = "Inconsolata-Bold.ttf"; path = "../assets/fonts/Inconsolata-Bold.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		DFBD53EC46C841E88FB6ECFF /* Some Time Later.otf */ = {isa = PBXFileReference; name = "Some Time Later.otf"; path = "../assets/fonts/Some Time Later.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */ = {isa = PBXFileReference; name = "Minecrafter.Reg.ttf"; path = "../assets/fonts/Minecrafter.Reg.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		AEEBEE5A305F48148CB1B180 /* AVENGEANCE HEROIC AVENGER.otf */ = {isa = PBXFileReference; name = "AVENGEANCE HEROIC AVENGER.otf"; path = "../assets/fonts/AVENGEANCE HEROIC AVENGER.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		305010FE8F30417A9DC89FE8 /* Waltograph.otf */ = {isa = PBXFileReference; name = "Waltograph.otf"; path = "../assets/fonts/Waltograph.otf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */ = {isa = PBXFileReference; name = "Starjedi.ttf"; path = "../assets/fonts/Starjedi.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
-		6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */ = {isa = PBXFileReference; name = "Webcomic Bros.ttf"; path = "../assets/fonts/Webcomic Bros.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,6 +273,7 @@
 		13B07FAE1A68108700A75B9A /* yeet */ = {
 			isa = PBXGroup;
 			children = (
+				8366FB2C239EFFFB00F73311 /* ColorSlider */,
 				839219D22378EC3300DC3461 /* yeet.entitlements */,
 				83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */,
 				83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */,
@@ -423,6 +431,15 @@
 			name = TextInput;
 			sourceTree = "<group>";
 		};
+		8366FB2C239EFFFB00F73311 /* ColorSlider */ = {
+			isa = PBXGroup;
+			children = (
+				8366FB2D239F000F00F73311 /* YeetColorSlider.swift */,
+				8366FB2F239F001F00F73311 /* YeetColorSliderViewManager.swift */,
+			);
+			name = ColorSlider;
+			sourceTree = "<group>";
+		};
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
@@ -500,6 +517,9 @@
 				305010FE8F30417A9DC89FE8 /* Waltograph.otf */,
 				027770EE6DD74C27B38BD6B9 /* Starjedi.ttf */,
 				6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */,
+				C65AC7FEA2B148D09473E95D /* digistrip_b.ttf */,
+				DEF9871D096D405696E59228 /* digistrip_i.ttf */,
+				C343AA0F86574D3F9E225BA8 /* digistrip.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -635,10 +655,9 @@
 				2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */,
 				454FC91D75814E8AB3C93627 /* Some Time Later.otf in Resources */,
 				71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */,
-				F1DF6E0108264F58AE93A12F /* AVENGEANCE HEROIC AVENGER.otf in Resources */,
-				6137DE4766E346D3AF7F453D /* Waltograph.otf in Resources */,
-				A2450C7E1A4F49D3A46C35C4 /* Starjedi.ttf in Resources */,
-				B09D39601111437BA6444F6E /* Webcomic Bros.ttf in Resources */,
+				FE241F33283D4841987A11D3 /* digistrip_b.ttf in Resources */,
+				8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */,
+				D6199777328941FA86FF2ED7 /* digistrip.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -865,6 +884,7 @@
 				8341A1EB238E1D8F00632E88 /* Log.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
+				8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */,
 				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */,
@@ -885,6 +905,7 @@
 				83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */,
 				83E45ACA2341B0880091D443 /* MediaPlayerViewManager.swift in Sources */,
 				836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */,
+				8366FB2E239F000F00F73311 /* YeetColorSlider.swift in Sources */,
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
 				83161E8A2344282800C271F3 /* MediaFrameViewManager.swift in Sources */,
 				83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */,

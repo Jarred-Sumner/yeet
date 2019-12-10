@@ -39,7 +39,9 @@ import {
   presetsByFormat,
   PostLayout,
   ImagePostBlock,
-  TextTemplate
+  TextTemplate,
+  TextPostBlock,
+  TextBorderType
 } from "./NewPostFormat";
 import {
   buildEditableNode,
@@ -342,11 +344,49 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
+  handleChangeTemplate = (template: TextTemplate, _block?: TextPostBlock) => {
+    const __block: TextPostBlock = _block || this.focusedBlock;
+
+    if (!__block) {
+      return;
+    }
+
+    this.handleChangeFocusedBlock(
+      buildTextBlock({
+        value: __block.value,
+        autoInserted: __block.autoInserted,
+        template,
+        layout: __block.layout,
+        format: __block.format,
+        minHeight: __block.config.minHeight,
+        overrides: __block.config.overrides,
+        placeholder: __block.config.placeholder,
+        id: __block.id,
+        required: __block.required
+      })
+    );
+  };
+
+  handleChangeFocusedBlock = (block: PostBlockType) => {
+    if (this.state.focusType === FocusType.absolute) {
+      const node = { ...this.props.inlineNodes[block.id], block };
+      this.props.onChangeNodes({
+        ...this.props.inlineNodes,
+        [node.block.id]: node
+      });
+    } else if (this.state.focusType === FocusType.static) {
+      this.handleChangeBlock(
+        block,
+        this.props.post.blocks.findIndex(({ id }) => id === block.id)
+      );
+    }
+  };
+
   handleInsertText = ({ x, y }) => {
     const block = buildTextBlock({
       value: "",
       format: PostFormat.sticker,
-      template: TextTemplate.comic,
+      template: TextTemplate.basic,
       layout: PostLayout.text,
       placeholder: " ",
       autoInserted: false
@@ -439,13 +479,16 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.focusTypeValue.setValue(-1);
   };
 
-  handleFocusBlock = block => {
+  handleFocusBlock = (block: PostBlockType) => {
     const focusType = this.props.inlineNodes[block.id]
       ? FocusType.absolute
       : FocusType.static;
 
     this.focusedBlockValue.setValue(block.id.hashCode());
     this.focusTypeValue.setValue(focusType);
+
+    if (block.type === "text") {
+    }
 
     this.setState({
       focusedBlockId: block.id,
@@ -787,6 +830,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   panX = new Animated.Value(0);
   panY = new Animated.Value(0);
+  textColorValue = Animated.color(0, 0, 0, 1);
   contentViewRef = React.createRef();
   topInsetValue = new Animated.Value<number>(this.props.yInset || 0);
 
@@ -816,6 +860,23 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
+  handleChangeOverrides = overrides => {
+    const _block: TextPostBlock = { ...this.focusedBlock };
+
+    _block.config.overrides = { ..._block.config.overrides, ...overrides };
+
+    this.handleChangeFocusedBlock(_block);
+  };
+
+  handleChangeBorderType = (border: TextBorderType, overrides: Object) => {
+    const block = { ...this.focusedBlock } as TextPostBlock;
+    block.config.border = border;
+
+    if (overrides) {
+      block.config.overrides = overrides;
+    }
+    this.handleChangeFocusedBlock(block);
+  };
 
   handleBack = () => {
     if (this.state.focusType !== null) {
@@ -934,7 +995,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             scrollY={this.props.scrollY}
             ref={this.scrollRef}
             maxX={bounds.width}
-            swipeOnly={this.hasPlaceholderImageBlocks()}
+            scrollEnabled={this.state.focusType !== FocusType.absolute}
             onFocus={this.handleFocusBlock}
             onOpenImagePicker={this.handleOpenImagePicker}
             onChangePhoto={this.handleChangeImageBlockPhoto}
@@ -1013,12 +1074,18 @@ class RawwPostEditor extends React.Component<Props, State> {
               onBack={this.handleBack}
               onSend={this.handleSend}
               onPressDownload={this.handleDownload}
+              onChangeOverrides={this.handleChangeOverrides}
+              onChangeBorderType={this.handleChangeBorderType}
+              focusedBlock={this.focusedBlock}
+              keyboardVisibleOpacity={this.keyboardVisibleValue}
               panX={this.panX}
+              inputRef={this._blockInputRefs[this.state.focusedBlockId]}
               panY={this.panY}
               isPageModal={this.props.isReply}
               waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
               width={sizeStyle.width}
               height={sizeStyle.height}
+              relativeHeight={this.relativeKeyboardHeightValue}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text
               }
@@ -1040,7 +1107,10 @@ class RawwPostEditor extends React.Component<Props, State> {
         </Animated.View>
 
         <InputAccessoryView nativeID="new-post-input">
-          <TextInputToolbar block={this.focusedBlock} />
+          <TextInputToolbar
+            onChooseTemplate={this.handleChangeTemplate}
+            block={this.focusedBlock}
+          />
         </InputAccessoryView>
       </Animated.View>
     );

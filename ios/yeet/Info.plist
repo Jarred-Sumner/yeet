@@ -103,10 +103,9 @@
 		<string>Inconsolata-Bold.ttf</string>
 		<string>Some Time Later.otf</string>
 		<string>Minecrafter.Reg.ttf</string>
-		<string>AVENGEANCE HEROIC AVENGER.otf</string>
-		<string>Waltograph.otf</string>
-		<string>Starjedi.ttf</string>
-		<string>Webcomic Bros.ttf</string>
+		<string>digistrip_b.ttf</string>
+		<string>digistrip_i.ttf</string>
+		<string>digistrip.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

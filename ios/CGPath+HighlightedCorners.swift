@@ -14,45 +14,71 @@ extension CGPath {
 
 extension UITextView {
 
-  static func setHighlightPath(textView: UITextView, inset: CGFloat, radius: CGFloat, highlightLayer: CAShapeLayer) {
+  static fileprivate let minSize = " ".size(OfFont: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
+
+  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border) {
     let textLayer = textView.layer
     let textContainerInset = textView.textContainerInset
 
     var layout = textView.layoutManager
-    
-    let minSize = " ".size(OfFont: textView.font ?? UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
   
 
     let range = NSMakeRange(0, layout.numberOfGlyphs)
-    var rects = [CGRect]()
+
+    if borderType == .highlight || borderType == .invert {
+      var rects = [CGRect]()
+
+      layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, currentRange, stop) in
+        if usedRect.width > 0 && usedRect.height > 0 {
+          var rect = usedRect
+          if rect.size == .zero {
+            rect.size = minSize
+          }
 
 
-    layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, _, _) in
-      if usedRect.width > 0 && usedRect.height > 0 {
-        var rect = usedRect
-        if rect.size == .zero {
-          rect.size = minSize
+          rect.origin.x += textContainerInset.left
+          rect.origin.y += textContainerInset.top
+          rect = highlightLayer.convert(rect, from: textLayer)
+          rect = rect.inset(by: inset)
+          rects.append(rect)
         }
+      }
+
+      highlightLayer.path = CGPath.makeUnion(of: rects, cornerRadius: radius)
+      highlightLayer.cornerRadius = .zero
+      highlightLayer.masksToBounds = false
+      highlightLayer.lineJoin = .round
+      
+    } else if borderType == .solid {
+      let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
+      
+
+      highlightLayer.path = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+      highlightLayer.cornerRadius = 0
+      highlightLayer.masksToBounds = false
+      highlightLayer.lineJoin = .miter
+    } else if borderType == .ellipse {
+      let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
+
+      highlightLayer.path = CGPath(ellipseIn: rect, transform: nil)
+      highlightLayer.cornerRadius = .zero
+      highlightLayer.masksToBounds = false
+      highlightLayer.lineJoin = .round
+    }
+
+
+    if [.solid, .highlight, .invert, .ellipse].contains(borderType) {
+      if highlightLayer.path?.isEmpty ?? true {
+        var rect = CGRect(origin: .zero, size: minSize)
         rect.origin.x += textContainerInset.left
         rect.origin.y += textContainerInset.top
         rect = highlightLayer.convert(rect, from: textLayer)
-        rect = rect.insetBy(dx: inset - textContainerInset.right, dy: inset)
-        rects.append(rect)
+        rect = rect.inset(by: inset)
+
+        highlightLayer.path = CGPath(rect: rect, transform: nil)
       }
     }
 
-    highlightLayer.path = CGPath.makeUnion(of: rects, cornerRadius: radius)
-
-    if highlightLayer.path?.isEmpty ?? true {
-      var rect = CGRect(origin: .zero, size: minSize)
-      rect.origin.x += textContainerInset.left
-      rect.origin.y += textContainerInset.top
-      rect = highlightLayer.convert(rect, from: textLayer)
-      rect = rect.insetBy(dx: inset - textContainerInset.right, dy: inset)
-
-      highlightLayer.path = CGPath(rect: rect, transform: nil)
-
-    }
   }
 }
 
@@ -346,4 +372,10 @@ extension String {
     func size(OfFont font: UIFont) -> CGSize {
       return (self as NSString).size(withAttributes: [NSAttributedString.Key.font: font])
     }
+}
+
+extension UIEdgeInsets {
+  var negate : UIEdgeInsets {
+    return UIEdgeInsets.init(top: top * -1, left: left * -1, bottom: bottom * -1, right: right * -1)
+  }
 }

@@ -40,6 +40,8 @@ target 'yeet' do
       path: '../node_modules/react-native/Libraries/Vibration'
   pod 'React-Core/RCTWebSocket', path: '../node_modules/react-native/'
 
+  pod 'ColorSlider'
+
   pod 'SBObjectiveCWrapper',
       git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
 

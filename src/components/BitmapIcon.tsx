@@ -24,10 +24,35 @@ export enum BitmapIconName {
   formatHorizontalMediaText = "Format__horizontalMediaText",
   formatMedia = "Format__media",
   formatVerticalMediaMedia = "Format__verticalMediaMedia",
-  formatHorizontalMediaMedia = "Format__horizontalMediaMedia"
+  formatHorizontalMediaMedia = "Format__horizontalMediaMedia",
+  templatePixel = "Template__pixel",
+  templateMonospace = "Template__monospace",
+  templateGary = "Template__gary",
+  templateComic = "Template__comic",
+  templateClassic = "Template__classic"
 }
 
 const SIZES_BY_NAME = {
+  [BitmapIconName.templateClassic]: {
+    width: 85,
+    height: 21
+  },
+  [BitmapIconName.templateComic]: {
+    width: 107,
+    height: 50
+  },
+  [BitmapIconName.templateGary]: {
+    width: 47,
+    height: 21
+  },
+  [BitmapIconName.templateMonospace]: {
+    width: 113,
+    height: 23
+  },
+  [BitmapIconName.templatePixel]: {
+    width: 77,
+    height: 21
+  },
   [BitmapIconName.plus]: {
     width: 19,
     height: 19
@@ -259,4 +284,55 @@ export const BitmapIconCircleCheckSelected = ({
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.circleCheckSelected} />
+);
+
+export const BitmapIconTemplatePixel = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templatePixel}
+  />
+);
+export const BitmapIconTemplateMonospace = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templateMonospace}
+  />
+);
+export const BitmapIconTemplateGary = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templateGary}
+  />
+);
+export const BitmapIconTemplateComic = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templateComic}
+  />
+);
+export const BitmapIconTemplateClassic = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templateClassic}
+  />
 );

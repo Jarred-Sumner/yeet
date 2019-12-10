@@ -28,6 +28,17 @@
 #import <FFFastImageView.h>
 #import <PINRemoteImage/PINAnimatedImageView.h>
 #import <PINRemoteImage/PINDisplayLink.h>
+#import <React/RCTSurfacePresenterStub.h>
+#import <React/RCTUITextView.h>
+
+@interface RCTBaseTextInputView(PrivateMethods)
+
+- (void)enforceTextAttributesIfNeeded;
+@property (nonatomic, assign) CGFloat preferredMaxLayoutWidth;
+@property (nonatomic, copy) RCTTextSelection *selection;
+
+@end
+
 
 
 @interface PINAnimatedImageView(PrivateMethods)
@@ -55,11 +66,26 @@ RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly ca
 
 @end
 
+@interface RCT_EXTERN_MODULE(YeetColorSliderViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(color, UIColor);
+RCT_EXPORT_VIEW_PROPERTY(inputRef, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(colorType, NSString);
+RCT_EXPORT_VIEW_PROPERTY(onPress, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onChange, RCTBubblingEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
+
+@end
+
 @interface RCT_EXTERN_MODULE(YeetTextInputViewManager, RCTMultilineTextInputViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
+RCT_EXPORT_VIEW_PROPERTY(strokeColor, UIColor);
+RCT_EXPORT_VIEW_PROPERTY(strokeWidth, CGFloat);
+RCT_REMAP_VIEW_PROPERTY(borderType, borderTypeString, YeetTextInputBorder);
 RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
+
 RCT_EXPORT_VIEW_PROPERTY(template, NSString);
 RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);

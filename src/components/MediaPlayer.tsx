@@ -1,29 +1,17 @@
-import {
-  NativeModules,
-  requireNativeComponent,
-  View,
-  UIManager,
-  findNodeHandle,
-  StyleProp,
-  InteractionManager
-} from "react-native";
-import React, {
-  ReactEventHandler,
-  useImperativeHandle,
-  useEffect
-} from "react";
-import { ImageMimeType, YeetImageRect, isVideo } from "../lib/imageSearch";
-import { DimensionsRect, BoundsRect } from "../lib/Rect";
-import {
-  useFocusEffect,
-  useIsFocused,
-  useNavigationState
-} from "react-navigation-hooks";
 import hoistNonReactStatics from "hoist-non-react-statics";
-import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
-import { SharedElement } from "react-navigation-shared-element";
 import { uniq } from "lodash";
-import { withNavigationFocus } from "react-navigation";
+import React, { ReactEventHandler, useImperativeHandle } from "react";
+import {
+  findNodeHandle,
+  NativeModules,
+  StyleProp,
+  UIManager,
+  View
+} from "react-native";
+import { SharedElement } from "react-navigation-shared-element";
+import { ImageMimeType, isVideo } from "../lib/imageSearch";
+import { BoundsRect, DimensionsRect } from "../lib/Rect";
+import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 

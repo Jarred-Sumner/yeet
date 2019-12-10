@@ -244,6 +244,7 @@ export const PostPreview = React.forwardRef(
       paddingTop,
       onChangePhoto,
       onTapBlock,
+      scrollEnabled,
       onBlur,
       onOpenImagePicker,
       focusTypeValue,
@@ -332,7 +333,7 @@ export const PostPreview = React.forwardRef(
         overScrollMode="always"
         defaultPosition={initialOffset}
         contentOffset={initialOffset}
-        scrollEnabled={!swipeOnly}
+        scrollEnabled={scrollEnabled}
         onScroll={onScroll}
         onLayout={onLayout}
         scrollY={scrollY}

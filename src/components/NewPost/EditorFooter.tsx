@@ -1,16 +1,46 @@
 import euclideanDistance from "euclidean-distance";
 import * as React from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { Dimensions, StyleSheet, View, TextInput } from "react-native";
 import Animated from "react-native-reanimated";
 import { interpolateColor } from "react-native-redash";
 import { getInset } from "react-native-safe-area-view";
 import { COLORS, SPACING } from "../../lib/styles";
 import { IconButton } from "../Button";
-import { IconDownload, IconSend, IconTrash } from "../Icon";
-import { MAX_POST_HEIGHT } from "./NewPostFormat";
+import {
+  IconDownload,
+  IconSend,
+  IconTrash,
+  IconClose,
+  IconJustifyLeft,
+  IconJustifyCenter,
+  IconJustifyRight,
+  IconText
+} from "../Icon";
+import {
+  MAX_POST_HEIGHT,
+  CAROUSEL_HEIGHT,
+  FocusType,
+  TextBorderType,
+  TextTemplate,
+  PostFormat
+} from "./NewPostFormat";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { BitmapIconNext } from "../BitmapIcon";
 import { CAROUSEL_BACKGROUND } from "./PostHeader";
+import { ToolbarType } from "./Toolbar";
+import { SafeAreaContext } from "react-native-safe-area-context";
+import ColorSlider from "../ColorSlider";
+import { useToggle } from "../../lib/useToggle";
+import {
+  getTextBlockColor,
+  getTextBlockBackgroundColor,
+  getTextBlockAlign,
+  contrastingColor,
+  getDenormalizedColor,
+  getDenormalizedBackgroundColor
+} from "./Text/TextInput";
+import { SelectableColorSwatch } from "./ColorSwatch";
+import tinycolor from "tinycolor2";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -19,18 +49,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center"
   },
-  footer: {
-    flexDirection: "row",
+  leftHeaderSide: {
+    paddingLeft: SPACING.normal
+  },
+  centerHeaderSide: {
+    justifyContent: "center"
+  },
+  rightHeaderSide: {
+    paddingRight: 0,
+    justifyContent: "flex-end"
+  },
+  sidebar: {
     position: "absolute",
-    paddingTop: SPACING.half,
-    paddingRight: SPACING.normal,
-    paddingBottom: BOTTOM_Y,
-    backgroundColor: CAROUSEL_BACKGROUND,
-    height: FOOTER_HEIGHT,
-    left: 0,
+    top: 0,
     right: 0,
-    bottom: 0,
-    width: "100%",
+
+    width: 60,
+    height: "100%"
+  },
+  container: {
     shadowRadius: StyleSheet.hairlineWidth,
     shadowOffset: {
       width: 0,
@@ -39,7 +76,25 @@ const styles = StyleSheet.create({
     shadowColor: "rgb(0, 0, 30)",
     shadowOpacity: 0.8,
 
-    justifyContent: "space-between"
+    justifyContent: "space-between",
+    width: "100%",
+    flexDirection: "row",
+    paddingRight: SPACING.normal,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    backgroundColor: CAROUSEL_BACKGROUND
+  },
+  header: {
+    height: CAROUSEL_HEIGHT,
+    top: 0
+  },
+  footer: {
+    paddingTop: SPACING.half,
+    paddingBottom: BOTTOM_Y,
+    height: FOOTER_HEIGHT,
+
+    bottom: 0
   }
 });
 
@@ -67,13 +122,303 @@ const NextButton = ({ onPress, waitFor }) => {
   );
 };
 
+const BorderTypeButton = ({
+  block,
+  opacity,
+  onChange
+}: {
+  block: TextPostBlock;
+  onChange;
+}) => {
+  const { border, template } = block.config;
+
+  let iconType = "shadow";
+  const Icon = IconText;
+  const containerColor = getTextBlockBackgroundColor(block);
+  const color = getTextBlockColor(block);
+  let nextValue;
+  let containerSize = 28;
+  let iconSize = 14;
+  let borderRadius = undefined;
+
+  const willFlipColors =
+    template === TextTemplate.comic || block.format === PostFormat.post;
+
+  if (willFlipColors) {
+    borderRadius = 1;
+    iconType = "fill";
+  } else if (border === TextBorderType.hidden) {
+    borderRadius = 2;
+  } else if (
+    border === TextBorderType.solid ||
+    border === TextBorderType.highlight ||
+    border === TextBorderType.invert
+  ) {
+    iconType = "fill";
+    borderRadius = 2;
+  }
+
+  const handleChange = React.useCallback(() => {
+    const shouldFlipColors =
+      template === TextTemplate.comic || block.format === PostFormat.post;
+    let backgroundColor = getDenormalizedBackgroundColor(block);
+    let color = getTextBlockColor(block);
+
+    const isTooDark =
+      tinycolor(backgroundColor).isDark() && tinycolor(color).isDark();
+    const isTooLight =
+      tinycolor(backgroundColor).isLight() && tinycolor(color).isLight();
+
+    if (shouldFlipColors) {
+      if (isTooDark) {
+        color = "#fff";
+      } else if (isTooLight) {
+        color = "#000";
+      }
+      onChange(border, {
+        ...block.config.overrides,
+        color: backgroundColor,
+        backgroundColor: color
+      });
+    } else if (border === TextBorderType.hidden) {
+      if (isTooDark) {
+        backgroundColor = "#fff";
+      } else if (isTooLight) {
+        backgroundColor = "#000";
+      }
+
+      onChange(TextBorderType.highlight, {
+        ...block.config.overrides,
+        backgroundColor,
+        color
+      });
+    } else if (border === TextBorderType.highlight) {
+      if (isTooDark) {
+        backgroundColor = "#fff";
+      } else if (isTooLight) {
+        backgroundColor = "#000";
+      }
+
+      onChange(TextBorderType.invert, {
+        ...block.config.overrides,
+        color,
+        backgroundColor
+      });
+    } else if (border === TextBorderType.invert) {
+      onChange(TextBorderType.hidden);
+    }
+  }, [containerColor, color, block, template, border, onChange]);
+
+  return (
+    <Animated.View
+      style={{
+        transform: [
+          {
+            scale: Animated.interpolate(opacity, {
+              inputRange: [0, 0.5, 1],
+              outputRange: [0, 0.25, 1.0]
+            })
+          }
+        ]
+      }}
+    >
+      <IconButton
+        type={iconType}
+        color={color}
+        borderRadius={borderRadius}
+        containerSize={containerSize}
+        size={iconType === "shadow" ? containerSize * 0.75 : iconSize}
+        borderColor={color}
+        backgroundColor={containerColor}
+        Icon={Icon}
+        onPress={handleChange}
+      />
+    </Animated.View>
+  );
+};
+
+const TextAlignmentButton = ({
+  block,
+  onChange
+}: {
+  block: TextPostBlock;
+  onChange;
+}) => {
+  const textAlign = getTextBlockAlign(block);
+
+  let Icon;
+  let nextValue;
+
+  if (textAlign === "left" || !textAlign) {
+    Icon = IconJustifyLeft;
+    nextValue = "center";
+  } else if (textAlign === "center") {
+    Icon = IconJustifyCenter;
+    nextValue = "right";
+  } else if (textAlign === "right") {
+    Icon = IconJustifyRight;
+    nextValue = "left";
+  }
+
+  const handleChange = React.useCallback(() => {
+    onChange(nextValue);
+  }, [nextValue, onChange]);
+
+  return (
+    <IconButton
+      type="shadow"
+      color="white"
+      size={20}
+      Icon={Icon}
+      onPress={handleChange}
+    />
+  );
+};
+
+export const TextHeader = ({
+  opacity,
+  onBack,
+  onChangeOverrides,
+  onChangeBorderType,
+  focusType,
+  block,
+  height
+}) => {
+  const { top } = React.useContext(SafeAreaContext);
+
+  const color = getTextBlockColor(block);
+  const backgroundColor = getTextBlockBackgroundColor(block);
+
+  const onChangeColor = React.useCallback(
+    ({ nativeEvent: { color } }) => {
+      const backgroundColor = getTextBlockBackgroundColor(block);
+
+      const isTooDark =
+        tinycolor(backgroundColor).isDark() && tinycolor(color).isDark();
+      const isTooLight =
+        tinycolor(backgroundColor).isLight() && tinycolor(color).isLight();
+
+      let overides = { ...block.config.overrides, color };
+
+      if (isTooDark) {
+        overides.backgroundColor = "white";
+      } else if (isTooLight) {
+        overides.backgroundColor = "black";
+      }
+
+      onChangeOverrides(overides);
+    },
+    [onChangeOverrides, block]
+  );
+
+  const onChangeTextAlign = React.useCallback(
+    textAlign => {
+      const overrides = { ...block.config.overrides, textAlign };
+
+      onChangeOverrides(overrides);
+    },
+    [onChangeOverrides, block]
+  );
+
+  return (
+    <Animated.View style={{ opacity: opacity }}>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[styles.container, styles.header, { paddingTop: top }]}
+      >
+        <View style={[styles.footerSide, styles.leftHeaderSide]}>
+          <IconButton
+            Icon={IconClose}
+            onPress={onBack}
+            type="shadow"
+            size={18}
+            color="#fff"
+          />
+        </View>
+
+        <View style={[styles.footerSide, styles.centerHeaderSide]}>
+          <BorderTypeButton
+            opacity={opacity}
+            block={block}
+            onChange={onChangeBorderType}
+          />
+        </View>
+
+        <View style={[styles.footerSide, styles.rightHeaderSide]}>
+          {focusType === FocusType.static && (
+            <TextAlignmentButton block={block} onChange={onChangeTextAlign} />
+          )}
+        </View>
+      </Animated.View>
+      <Animated.View
+        pointerEvents="box-none"
+        style={[
+          styles.sidebar,
+          {
+            top: CAROUSEL_HEIGHT,
+            right: 0,
+
+            height: Animated.sub(height, top + CAROUSEL_HEIGHT)
+          }
+        ]}
+      >
+        <ColorSlider
+          color={color}
+          onPress={onChangeColor}
+          inputRef={TextInput.State.currentlyFocusedField()}
+          colorType={"textColor"}
+          style={{
+            marginTop: SPACING.double,
+            height: 220,
+            marginRight: SPACING.normal,
+            width: 20,
+            alignSelf: "flex-end"
+          }}
+        />
+      </Animated.View>
+    </Animated.View>
+  );
+};
+
+export const EditorHeader = ({
+  type,
+  opacity,
+  isModal,
+  panX,
+  panY,
+  focusedBlock: block,
+  height,
+  onPress,
+  onChangeBorderType,
+  focusType,
+  onChangeOverrides,
+  inputRef,
+  onBack
+}) => {
+  if (type === ToolbarType.text) {
+    return (
+      <TextHeader
+        opacity={opacity}
+        height={height}
+        block={block}
+        onBack={onBack}
+        onChangeOverrides={onChangeOverrides}
+        onChangeBorderType={onChangeBorderType}
+        focusType={focusType}
+      />
+    );
+  } else {
+    return <Animated.View />;
+  }
+};
+
 export const EditorFooter = ({
   onPressDownload,
   onPressSend,
   waitFor,
   toolbar
 }) => (
-  <View pointerEvents="box-none" style={styles.footer}>
+  <View pointerEvents="box-none" style={[styles.container, styles.footer]}>
     {toolbar}
 
     <View
@@ -176,7 +521,10 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
   );
 
   return (
-    <View pointerEvents="none" style={[styles.footer, styles.footerCenter]}>
+    <View
+      pointerEvents="none"
+      style={[styles.container, styles.footer, styles.footerCenter]}
+    >
       <Animated.Code
         exec={Animated.block([
           Animated.set(

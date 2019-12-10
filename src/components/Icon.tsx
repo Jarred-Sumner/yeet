@@ -15,6 +15,15 @@ export enum IconName {
   background = "background",
   camera = "camera",
   cameraroll = "cameraroll",
+  cut = "cut",
+  playbackFastforward = "playbackfastforward",
+  playbackPrevious = "playbackprevious",
+  playbackRewind = "playbackrewind",
+  movie = "movie",
+  justifyAll = "justifyall",
+  justifyCenter = "justifycenter",
+  justifyLeft = "justifyleft",
+  justifyRight = "justifyright",
   checkmark = "checkmark",
   hourglass = "hourglass",
   circleCheckmark = "circlecheckmark",
@@ -209,3 +218,27 @@ export const IconPisces = props => <Icon name={IconName.pisces} {...props} />;
 export const IconVirgo = props => <Icon name={IconName.virgo} {...props} />;
 export const IconLibra = props => <Icon name={IconName.libra} {...props} />;
 export const IconScorpio = props => <Icon name={IconName.scorpio} {...props} />;
+
+export const IconCut = props => <Icon name={IconName.cut} {...props} />;
+export const IconPlaybackFastforward = props => (
+  <Icon name={IconName.playbackFastforward} {...props} />
+);
+export const IconPlaybackPrevious = props => (
+  <Icon name={IconName.playbackPrevious} {...props} />
+);
+export const IconPlaybackRewind = props => (
+  <Icon name={IconName.playbackRewind} {...props} />
+);
+export const IconMovie = props => <Icon name={IconName.movie} {...props} />;
+export const IconJustifyAll = props => (
+  <Icon name={IconName.justifyAll} {...props} />
+);
+export const IconJustifyCenter = props => (
+  <Icon name={IconName.justifyCenter} {...props} />
+);
+export const IconJustifyLeft = props => (
+  <Icon name={IconName.justifyLeft} {...props} />
+);
+export const IconJustifyRight = props => (
+  <Icon name={IconName.justifyRight} {...props} />
+);

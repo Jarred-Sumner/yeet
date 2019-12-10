@@ -8,6 +8,8 @@
 
 import Foundation
 
+
+
 @objc(YeetTextInputView)
 class YeetTextInputView : RCTMultilineTextInputView {
   static var DEFAULT_HIGHLIGHT_CORNER_RADIUS = CGFloat(4)
@@ -22,6 +24,23 @@ class YeetTextInputView : RCTMultilineTextInputView {
   }
 
 
+  @objc(strokeColor)
+  var strokeColor: UIColor? = nil {
+    didSet {
+      highlightLayer.strokeColor = self.strokeColor?.cgColor
+    }
+  }
+
+  enum Border : String {
+    case stroke = "stroke"
+    case ellipse = "ellipse"
+    case solid = "solid"
+    case hidden = "hidden"
+    case invert = "invert"
+    case highlight = "highlight"
+  }
+
+  var border: Border = .hidden
 
   @objc(highlightLayer)
   var highlightLayer = CAShapeLayer()
@@ -30,7 +49,6 @@ class YeetTextInputView : RCTMultilineTextInputView {
   var highlightColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR {
     didSet {
       highlightLayer.fillColor = self.highlightColor.cgColor
-      self.drawHighlight()
     }
   }
 
@@ -38,43 +56,52 @@ class YeetTextInputView : RCTMultilineTextInputView {
   var highlightCornerRadius = YeetTextInputView.DEFAULT_HIGHLIGHT_CORNER_RADIUS {
     didSet {
       highlightLayer.cornerRadius = self.highlightCornerRadius
-      self.drawHighlight()
+    }
+  }
+
+  @objc(strokeWidth)
+  var strokeWidth: CGFloat = 0.0 {
+    didSet {
+      highlightLayer.lineWidth = strokeWidth
     }
   }
 
   @objc(highlightInset)
-  var highlightInset = CGFloat(YeetTextInputView.DEFAULT_HIGHLIGHT_INSET) {
-    didSet {
-      self.drawHighlight()
-    }
+  var highlightInset = CGFloat(YeetTextInputView.DEFAULT_HIGHLIGHT_INSET)
+  var showHighlight: Bool {
+    return [.solid, .stroke, .highlight, .ellipse, .invert].contains(borderType)
   }
 
-  @objc(showHighlight)
-  var showHighlight = true {
-    didSet (newValue) {
-      if (newValue) {
-        self.drawHighlight()
-      } else {
-        self.removeHighlight()
-      }
-    }
-  }
+//  override var intrinsicContentSize: CGSize {
+//    if showHighlight {
+//      return self.highlightLayer.path?.boundingBox.size ?? super.intrinsicContentSize
+//    } else {
+//      return super.intrinsicContentSize
+//    }
+//  }
 
 
   var lastHighlightKey: String? = nil
   func highlightKey(text: String?) -> String {
     return "\(String(describing: text))-\(highlightInset)-\(highlightCornerRadius)-\(highlightColor)"
   }
-  func drawHighlight(text: NSString? = nil) {
+
+  func drawHighlight(async: Bool = false) {
     if (!showHighlight) {
       return
     }
 
-    let _text: NSString = text != nil ? text! : (textView.text as NSString)
-
-    DispatchQueue.main.async {
-      UITextView.setHighlightPath(textView: self.textView, inset: self.highlightInset, radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer)
+    if (self.highlightLayer.superlayer == nil) {
+      self.highlightSubview.layer.addSublayer(self.highlightLayer)
     }
+
+    let box = self.highlightLayer.path?.boundingBox
+    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType)
+
+//    if box != self.highlightLayer.path?.boundingBox {
+//      self.setNeedsDisplay()
+//
+//    }
 
 //
 //
@@ -103,7 +130,30 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 
   }
+  
 
+  @objc(didSetProps:)
+  override func didSetProps(_ changedProps: Array<String>) {
+    super.didSetProps(changedProps)
+
+    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius")
+    if (needsUpdateHighlight) {
+      DispatchQueue.main.async {
+        self.updateHighlight()
+        
+      }
+    }
+
+  }
+
+
+  func updateHighlight() {
+    if (showHighlight) {
+      self.drawHighlight()
+    } else {
+      self.removeHighlight()
+    }
+  }
 
   func adjustFontSize(text: String) {
 //    if (self.fontSizeRange.count == 0) {
@@ -134,6 +184,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
   func removeHighlight() {
     if self.highlightLayer.superlayer != nil {
       self.highlightLayer.removeFromSuperlayer()
+      self.invalidateIntrinsicContentSize()
     }
   }
 
@@ -143,11 +194,15 @@ class YeetTextInputView : RCTMultilineTextInputView {
     super.layoutSubviews()
 
     if self.highlightSubview.superview == nil {
-      highlightSubview.layer.addSublayer(highlightLayer)
+      if showHighlight {
+        highlightSubview.layer.addSublayer(highlightLayer)
+      }
+
       self.backedTextInputView.insertSubview(highlightSubview, at: 0)
+
     }
 
-    self.drawHighlight()
+    self.updateHighlight()
     self.adjustFontSize(text: textView.text)
   }
 
@@ -160,6 +215,30 @@ class YeetTextInputView : RCTMultilineTextInputView {
   }
 
   var textTemplate: TextTemplate = .post
+
+
+  @objc(borderTypeString)
+  var borderTypeString: String = "hidden" {
+    didSet {
+      self.borderType = Border.init(rawValue: borderTypeString) ?? .hidden
+    }
+  }
+
+  var borderType: Border = .hidden
+
+//  override func sizeThatFits(_ size: CGSize) -> CGSize {
+//    guard showHighlight && textView.text.count > 0 else {
+//      return super.sizeThatFits(size)
+//    }
+//
+//
+//    if let boundingBox = self.highlightLayer.path?.boundingBox {
+//      return boundingBox.inset(by: reactPaddingInsets).standardized.size
+//    } else {
+//      return super.sizeThatFits(size)
+//    }
+//  }
+
 
 
   @objc(template)
@@ -178,12 +257,17 @@ class YeetTextInputView : RCTMultilineTextInputView {
     super.init(bridge: bridge)
     self.highlightLayer = CAShapeLayer()
     self.highlightLayer.masksToBounds = false
-    self.highlightLayer.isOpaque = true
+    highlightSubview.clipsToBounds = false
+    highlightSubview.isOpaque = false
+
+    self.highlightLayer.isOpaque = false
+//    self.highl
     
     self.highlightLayer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15)
     self.highlightLayer.allowsEdgeAntialiasing = true
     self.highlightLayer.cornerRadius = YeetTextInputView.DEFAULT_HIGHLIGHT_CORNER_RADIUS
-
+    self.highlightLayer.lineCap = .round
+    self.highlightLayer.lineJoin = .bevel
 
 
 //    self.textView.contentMode = .center
@@ -195,6 +279,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
     self.adjustFontSize(text: textView.text)
     backedTextInputView.textInputDelegate = self
+    backedTextInputView.clipsToBounds = false
+    textView.layer.masksToBounds = false
 
   }
 
@@ -212,7 +298,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()
     self.adjustFontSize(text: textView.text)
-    self.drawHighlight(text: textView.text as NSString?)
+    self.drawHighlight()
 
   }
 
@@ -228,7 +314,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
       let newString = oldString.replacingCharacters(in: range, with: string)
       self.adjustFontSize(text: newString)
-      self.drawHighlight(text: newString as NSString?)
+      self.drawHighlight()
+
     }
 
     return shouldReject
@@ -238,9 +325,21 @@ class YeetTextInputView : RCTMultilineTextInputView {
     super.textInputDidChange()
 
     self.adjustFontSize(text: textView.text)
-    self.drawHighlight(text: textView.text as NSString?)
+    self.drawHighlight()
 
   }
 
 }
 
+
+extension RCTConvert {
+
+  @objc(YeetTextInputBorder:)
+  static func textInputBorder(json: AnyObject) -> String {
+    guard let border = self.nsString(json) else {
+      return YeetTextInputView.Border.hidden.rawValue
+    }
+
+    return YeetTextInputView.Border.init(rawValue: border)?.rawValue ?? YeetTextInputView.Border.hidden.rawValue
+  }
+}

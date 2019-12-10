@@ -21,6 +21,7 @@ PODS:
     - JWT (~> 3.0.0-beta.7)
     - React
     - SSZipArchive (~> 2.1)
+  - ColorSlider (4.4)
   - Crashlytics (3.14.0):
     - Fabric (~> 1.10.2)
   - Cronet (78.0.3904.84)
@@ -574,6 +575,7 @@ DEPENDENCIES:
   - appcenter-analytics (from `../node_modules/appcenter-analytics/ios`)
   - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
   - CodePush (from `../node_modules/react-native-code-push`)
+  - ColorSlider
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - DVAssetLoaderDelegate
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -678,6 +680,7 @@ SPEC REPOS:
     - Base64
     - boost-for-react-native
     - CocoaAsyncSocket
+    - ColorSlider
     - Crashlytics
     - Cronet
     - DVAssetLoaderDelegate
@@ -909,6 +912,7 @@ SPEC CHECKSUMS:
   BVLinearGradient: e3aad03778a456d77928f594a649e96995f1c872
   CocoaAsyncSocket: eafaa68a7e0ec99ead0a7b35015e0bf25d2c8987
   CodePush: d2e54ad42df82a8db65b2d23d8191b950ba945e1
+  ColorSlider: 9a888e65b871fa1e6a26fadebf4931c949935681
   Crashlytics: 540b7e5f5da5a042647227a5e3ac51d85eed06df
   Cronet: b2a25b6504607e8d75181800fa10b8dbfbb60ea7
   DoubleConversion: 5805e889d232975c086db112ece9ed034df7a0b2
@@ -1033,6 +1037,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: 3cd671119ff918e77586120b01df0874ac872b94
+PODFILE CHECKSUM: 5ec3c8561a2e811b79cae2677c3743b86eeed107
 
 COCOAPODS: 1.8.4

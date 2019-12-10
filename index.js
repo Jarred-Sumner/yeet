@@ -18,6 +18,7 @@ YellowBox.ignoreWarnings([
   "Unable to find module for UIManager",
   "Module YeetExporter requires main queue setup since it overrides",
   "Module YeetTextInputViewManager requires main queue setup since it o",
+  "Module YeetColorSlider requires main queue setup since it o",
   "Warning: componentWillMount is deprecated",
   "Warning: componentWillMount has been renamed",
   "Warning: componentWillReceiveProps is deprecated",

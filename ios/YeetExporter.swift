@@ -57,18 +57,14 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
   }
 
-  func captureScreenshot(view: UIView) -> UIImage? {
-    let size = view.bounds.size
+  func captureScreenshot(view: UIView, bounds: CGRect) -> UIImage? {
+    let textInputView: YeetTextInputView? = YeetExporter.findTextInputView(view)
 
-    UIGraphicsBeginImageContextWithOptions(size, false, 0);
-    guard view.drawHierarchy(in: CGRect(origin: .zero, size: size), afterScreenUpdates: true) else {
-      UIGraphicsEndImageContext()
-      return nil
+
+    let renderer = UIGraphicsImageRenderer(bounds: CGRect(origin: .zero, size: CGSize(width: abs(bounds.origin.x) + bounds.width, height: abs(bounds.origin.y) + bounds.height)))
+    return renderer.image { rendererContext in
+      view.layer.render(in: rendererContext.cgContext)
     }
-    let screenshot = UIGraphicsGetImageFromCurrentImageContext()
-    UIGraphicsEndImageContext()
-
-    return screenshot
   }
 
 
@@ -85,8 +81,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     var allBlocks = data["blocks"].arrayValue
     allBlocks.append(contentsOf: nodeBlocks)
 
-    return Promise<Dictionary<String, UIView>>.init(queue: .main) { resolve, reject in
-      var views: Dictionary<String, UIView> = [:]
+    return Promise<Dictionary<String, (UIView, CGRect)>>.init(queue: .main) { resolve, reject in
+      var views: Dictionary<String, (UIView, CGRect)> = [:]
       allBlocks.forEach { block in
         let node = data["nodes"].arrayValue.first { node in
           if let blockId = node["block"].dictionaryValue["id"]?.stringValue {
@@ -98,29 +94,33 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         }
 
         var viewTag: NSNumber
+        var rect: CGRect
         if let _node = node {
            viewTag = _node["viewTag"].numberValue
+            rect = CGRect.from(json: _node["frame"])
          } else {
            viewTag = block["viewTag"].numberValue
+          rect = CGRect.from(json: block["frame"])
          }
 
         guard let view = self.bridge.uiManager.view(forReactTag: viewTag) else {
           return;
         }
 
-        views[block["id"].stringValue] = view
+        views[block["id"].stringValue] = (view, rect)
       }
 
       resolve(views)
     }.then { views in
+      let containerNode = self.bridge.uiManager.view(forReactTag:  data["containerNode"].numberValue)
       var dict = Dictionary<String, ExportableMediaSource>();
       allBlocks.forEach { block in
-        guard let view = views[block["id"].stringValue] else {
+        guard let (view, rect) = views[block["id"].stringValue] else {
           return
         }
 
         if block["type"].stringValue == "text" {
-          guard let screenshot = self.captureScreenshot(view: view) else {
+          guard let screenshot = self.captureScreenshot(view: view, bounds: view.bounds ) else {
             return
           }
 
@@ -150,6 +150,27 @@ class YeetExporter: NSObject, RCTBridgeModule  {
           return subview as! MediaPlayer
         } else if (subview.subviews.count > 0) {
           if let player = findMediaPlayer(subview) {
+            return player
+          }
+        }
+
+      }
+      return nil
+
+    } else {
+      return nil;
+    }
+  }
+
+  static func findTextInputView(_ view: UIView) -> YeetTextInputView? {
+    if type(of: view) == YeetTextInputView.self {
+      return view as! YeetTextInputView;
+    } else if (view.subviews.count > 0) {
+      for subview in view.subviews {
+        if (type(of: subview) == YeetTextInputView.self) {
+          return subview as! YeetTextInputView
+        } else if (subview.subviews.count > 0) {
+          if let player = findTextInputView(subview) {
             return player
           }
         }

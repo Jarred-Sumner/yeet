@@ -132,7 +132,8 @@ const keyboardVisibleInterpolater = Animated.proc(
   (keyboardVisibleValue, start, end) =>
     Animated.interpolate(keyboardVisibleValue, {
       inputRange: [0, 1],
-      outputRange: [start, end]
+      outputRange: [start, end],
+      extrapolate: Animated.Extrapolate.CLAMP
     })
 );
 
@@ -239,7 +240,7 @@ export class MovableNode extends Component<Props> {
     this._translateX = keyboardVisibleInterpolater(
       this.keyboardVisibleFocusedValue,
       this.X,
-      15
+      props.extraPadding || 15
     );
 
     this.bottomValue =
@@ -400,27 +401,6 @@ export class MovableNode extends Component<Props> {
         panGestureState === State.ACTIVE || panGestureState === State.BEGAN
     });
   };
-
-  handleLayout = ({ nativeEvent: { layout: bounds } }) => {
-    this.bounds = bounds;
-    if (!this.startBounds) {
-      this.startBounds = bounds;
-    }
-  };
-
-  bounds: BoundsRect | null = null;
-  startBounds: BoundsRect | null = null;
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.isFocused !== this.props.isFocused) {
-      this.startBounds = this.bounds;
-    }
-
-    if (prevProps.isHidden !== this.props.isHidden) {
-      // window.setTimeout(() => {
-      //   this.visibilityValue.setValue(this.props.isHidden ? 0 : 1);
-    }
-  }
 
   componentWillUnmount() {
     this._isMounted = false;

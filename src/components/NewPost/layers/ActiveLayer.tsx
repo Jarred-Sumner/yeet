@@ -8,7 +8,7 @@ import DefaultToolbar, {
   TextToolbarButton,
   ToolbarButton
 } from "../Toolbar";
-import { EditorFooter, DeleteFooter } from "../EditorFooter";
+import { EditorFooter, DeleteFooter, EditorHeader } from "../EditorFooter";
 
 const styles = StyleSheet.create({
   container: {
@@ -26,6 +26,14 @@ const styles = StyleSheet.create({
   footer: {
     position: "absolute",
     bottom: 0,
+    overflow: "visible",
+    left: 0,
+    right: 0,
+    zIndex: 10
+  },
+  header: {
+    position: "absolute",
+    top: 0,
     overflow: "visible",
     left: 0,
     right: 0,
@@ -51,6 +59,7 @@ type Props = {
 class ActiveLayerComponent extends React.Component<Props> {
   toolbarContainer = React.createRef();
   footerContainer = React.createRef();
+  headerContainer = React.createRef();
   childrenContainer = React.createRef();
 
   componentDidUpdate(prevProps: Props) {
@@ -76,6 +85,7 @@ class ActiveLayerComponent extends React.Component<Props> {
       height,
       controlsOpacity,
       waitFor,
+      header,
       toggleActive,
       isTappingEnabled
     } = this.props;
@@ -87,6 +97,25 @@ class ActiveLayerComponent extends React.Component<Props> {
           style={[styles.layer, { width, height }]}
         >
           <View pointerEvents="box-none" style={styles.container}>
+            <Transitioning.View
+              ref={this.headerContainer}
+              pointerEvents="box-none"
+              transition={
+                <Transition.Sequence>
+                  <Transition.Out type="fade" delayMs={0} durationMs={100} />
+                  <Transition.In
+                    type="fade"
+                    durationMs={100}
+                    delayMs={0}
+                    interpolation="easeIn"
+                  />
+                </Transition.Sequence>
+              }
+              style={styles.header}
+            >
+              {header}
+            </Transitioning.View>
+
             <Transitioning.View
               ref={this.footerContainer}
               pointerEvents="box-none"
@@ -168,12 +197,18 @@ export const ActiveLayer = ({
   onPressToolbarButton,
   controlsOpacity,
   onPressDownload,
+  onChangeBorderType,
+  onChangeOverrides,
   onSend,
+  inputRef,
+  relativeHeight,
   isPageModal,
+  focusedBlock,
   onDelete,
   activeButton,
   focusType,
   onBack,
+  keyboardVisibleOpacity,
   panX,
   panY,
   ...otherProps
@@ -184,6 +219,24 @@ export const ActiveLayer = ({
       toolbarType={toolbarType}
       controlsOpacity={controlsOpacity}
       focusType={focusType}
+      header={
+        <EditorHeader
+          type={toolbarType}
+          opacity={keyboardVisibleOpacity}
+          key={`toolbar-${toolbarType}`}
+          inputRef={inputRef}
+          focusType={focusType}
+          focusedBlock={focusedBlock}
+          onChangeOverrides={onChangeOverrides}
+          onChangeBorderType={onChangeBorderType}
+          height={relativeHeight}
+          isModal={isPageModal}
+          panX={panX}
+          panY={panY}
+          onPress={onPressToolbarButton}
+          onBack={onBack}
+        />
+      }
       footer={
         <Footer
           type={toolbarType}

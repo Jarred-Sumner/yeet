@@ -41,9 +41,6 @@ export enum TextTemplate {
   comic = "comic",
   gary = "gary",
   terminal = "terminal",
-  space = "space",
-  magic = "magic",
-  superhero = "superhero",
   pickaxe = "pickaxe"
 }
 
@@ -82,6 +79,7 @@ interface PostBlock {
 export enum TextBorderType {
   stroke = "stroke",
   solid = "solid",
+  ellipse = "ellipse",
   hidden = "hidden",
   invert = "invert",
   highlight = "highlight"
@@ -90,15 +88,12 @@ export enum TextBorderType {
 export const DEFAULT_TEXT_BORDER_BY_TEMPLATE: {
   [key: TextTemplate]: TextBorderType;
 } = {
-  [TextTemplate.post]: TextBorderType.solid,
+  [TextTemplate.post]: TextBorderType.hidden,
   [TextTemplate.comment]: TextBorderType.highlight,
   [TextTemplate.basic]: TextBorderType.hidden,
   [TextTemplate.gary]: TextBorderType.hidden,
-  [TextTemplate.comic]: TextBorderType.highlight,
+  [TextTemplate.comic]: TextBorderType.solid,
   [TextTemplate.terminal]: TextBorderType.hidden,
-  [TextTemplate.space]: TextBorderType.hidden,
-  [TextTemplate.magic]: TextBorderType.hidden,
-  [TextTemplate.superhero]: TextBorderType.hidden,
   [TextTemplate.pickaxe]: TextBorderType.hidden
 };
 
@@ -558,7 +553,6 @@ export const buildPost = ({
   width: number;
   height: number;
 }): NewPostType => {
-  const presets = presetsByFormat[format];
   const blocks = blocksForFormat(format, layout, _blocks).map(block => ({
     ...block,
     layout

@@ -131,6 +131,8 @@ export const SelectableColorSwatch = ({
   height,
   waitFor,
   selected,
+  selectedStyle,
+  bottomBorderSelected = true,
   onPress
 }) => {
   const handlePress = React.useCallback(() => {
@@ -139,19 +141,25 @@ export const SelectableColorSwatch = ({
     // }
   }, [backgroundColor, color]);
 
+  const selectedColor =
+    backgroundColor && backgroundColor !== "transparent"
+      ? tinycolor(backgroundColor)
+          .setAlpha(0.5)
+          .toString()
+      : COLORS.primaryDark;
+
   return (
     <BaseButton onPress={handlePress}>
       <View
         style={[
           styles.selectableContainer,
           {
-            height,
-            borderBottomColor: selected
-              ? tinycolor(backgroundColor)
-                  .setAlpha(0.5)
-                  .toString()
-              : "transparent"
-          }
+            height
+          },
+          selected &&
+            (selectedStyle || {
+              borderBottomColor: selected ? selectedColor : "transparent"
+            })
         ]}
       >
         <ColorSwatchComponent

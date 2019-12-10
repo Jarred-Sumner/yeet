@@ -13,6 +13,7 @@ export const Block = React.forwardRef(
       onBlur,
       onLayout,
       onOpenImagePicker,
+      maxX,
       inputRef,
       focusType,
       focusTypeValue,
@@ -45,6 +46,7 @@ export const Block = React.forwardRef(
           focusType={focusType}
           scale={scale}
           block={block}
+          maxX={maxX}
           onTap={onTap}
           autoFocus={autoFocus}
           onOpenImagePicker={onOpenImagePicker}

@@ -235,7 +235,7 @@ class ContentExport {
 
 
   static func setupInnerLayer(layer: CALayer, block: ContentBlock? = nil) {
-    layer.masksToBounds = true
+    layer.masksToBounds = false
     layer.allowsEdgeAntialiasing = true
     layer.contentsScale = CGFloat(1)
     layer.isOpaque = false

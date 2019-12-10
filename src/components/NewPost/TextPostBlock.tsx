@@ -57,6 +57,7 @@ export class TextPostBlock extends React.Component<Props> {
       onLayout,
       inputRef,
       disabled,
+      maxX,
       gestureRef,
       focusTypeValue,
       focusType,
@@ -67,6 +68,7 @@ export class TextPostBlock extends React.Component<Props> {
       <TextInput
         editable={!disabled}
         block={block}
+        maxX={maxX}
         inputRef={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}

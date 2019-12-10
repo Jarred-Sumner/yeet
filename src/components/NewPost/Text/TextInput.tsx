@@ -7,10 +7,11 @@ import {
   InteractionManager,
   TextInput as _RNTextInput,
   StyleProp,
-  StyleSheetProperties
+  StyleSheetProperties,
+  TextInputProps
 } from "react-native";
+import { isNumber } from "lodash";
 import {
-  // TextInput as RNTextInput,
   TapGestureHandler,
   GestureHandlerGestureEvent,
   State,
@@ -22,13 +23,12 @@ import Animated, { Easing } from "react-native-reanimated";
 import {
   TextPostBlock,
   PostFormat,
-  presetsByFormat,
   FocusType,
   PostLayout,
   TextTemplate,
   TextBorderType
 } from "../NewPostFormat";
-import { COLORS } from "../../../lib/styles";
+import { COLORS, SPACING } from "../../../lib/styles";
 import {
   normalizeBackgroundColor,
   CurrentUserCommentAvatar,
@@ -37,6 +37,8 @@ import {
 import { TextInput as RNTextInput } from "./CustomTextInputComponent";
 import { memoize } from "lodash";
 import { FONT_STYLES } from "../../../lib/fonts";
+import { SpeechBubble } from "./SpeechBubble";
+import { SCREEN_DIMENSIONS } from "../../../../config";
 const ZERO_WIDTH_SPACE = "​";
 
 const RawAnimatedTextInput = Animated.createAnimatedComponent(
@@ -49,9 +51,9 @@ const AnimatedTextInput = React.forwardRef((props, ref) => {
   React.useImperativeHandle(ref, () => inputRef.current.getNode());
 
   return <RawAnimatedTextInput ref={inputRef} {...props} />;
-});
+}) as React.ComponentType<TextInputProps>;
 
-const contrastingColor = memoize((color: string) => {
+export const contrastingColor = memoize((color: string) => {
   const _color = tinycolor(color);
   if (_color.isDark()) {
     return "#fff";
@@ -87,8 +89,8 @@ const textInputStyles = {
       "24": 24
     },
     presets: {
-      backgroundColor: "#fff",
-      color: "#000",
+      backgroundColor: "#000",
+      color: "#fff",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "white",
       textShadowOffset: {
@@ -106,10 +108,12 @@ const textInputStyles = {
       "24": 24
     },
     presets: {
-      backgroundColor: COLORS.primary,
+      backgroundColor: COLORS.secondary,
       color: "white",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "white",
+      highlightInset: -6,
+      highlightCornerRadius: 2,
       textShadowOffset: {
         width: 1,
         height: 1
@@ -125,9 +129,9 @@ const textInputStyles = {
       "24": 48
     },
     presets: {
-      backgroundColor: COLORS.primary,
+      backgroundColor: COLORS.secondary,
       textAlign: "center",
-      color: "white",
+      color: "rgb(250,197,194)",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "white",
       textShadowOffset: {
@@ -139,16 +143,20 @@ const textInputStyles = {
   },
   [TextTemplate.comic]: {
     fontSizes: {
-      "0": 36,
-      "8": 36,
-      "12": 36,
-      "24": 36
+      "0": 20,
+      "8": 20,
+      "12": 20,
+      "24": 20
     },
     presets: {
       backgroundColor: "white",
       textAlign: "center",
       color: "black",
-      borderRadius: 8,
+      borderRadius: 0,
+      highlightInset: -12,
+
+      highlightCornerRadius: 4,
+
       textShadowColor: "transparent",
       placeholderColor: "white",
 
@@ -159,82 +167,7 @@ const textInputStyles = {
       textShadowRadius: 0
     }
   },
-  [TextTemplate.terminal]: {
-    fontSizes: {
-      "0": 24,
-      "8": 24,
-      "12": 24,
-      "24": 24
-    },
-    presets: {
-      backgroundColor: COLORS.primary,
-      color: "white",
-      textShadowColor: "rgba(51,51,51, 0.25)",
-      placeholderColor: "white",
-      textShadowOffset: {
-        width: 1,
-        height: 1
-      },
-      textShadowRadius: 1
-    }
-  },
-  [TextTemplate.space]: {
-    fontSizes: {
-      "0": 24,
-      "8": 24,
-      "12": 24,
-      "24": 24
-    },
-    presets: {
-      backgroundColor: COLORS.primary,
-      color: "white",
-      textShadowColor: "rgba(51,51,51, 0.25)",
-      placeholderColor: "white",
-      textShadowOffset: {
-        width: 1,
-        height: 1
-      },
-      textShadowRadius: 1
-    }
-  },
-  [TextTemplate.magic]: {
-    fontSizes: {
-      "0": 24,
-      "8": 24,
-      "12": 24,
-      "24": 24
-    },
-    presets: {
-      backgroundColor: COLORS.primary,
-      color: "white",
-      textShadowColor: "rgba(51,51,51, 0.25)",
-      placeholderColor: "white",
-      textShadowOffset: {
-        width: 1,
-        height: 1
-      },
-      textShadowRadius: 1
-    }
-  },
-  [TextTemplate.superhero]: {
-    fontSizes: {
-      "0": 24,
-      "8": 24,
-      "12": 24,
-      "24": 24
-    },
-    presets: {
-      backgroundColor: COLORS.primary,
-      color: "white",
-      textShadowColor: "rgba(51,51,51, 0.25)",
-      placeholderColor: "white",
-      textShadowOffset: {
-        width: 1,
-        height: 1
-      },
-      textShadowRadius: 1
-    }
-  },
+
   [TextTemplate.pickaxe]: {
     fontSizes: {
       "0": 24,
@@ -243,10 +176,32 @@ const textInputStyles = {
       "24": 24
     },
     presets: {
-      backgroundColor: COLORS.primary,
+      backgroundColor: COLORS.secondary,
       color: "white",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "white",
+      textShadowOffset: {
+        width: 1,
+        height: 1
+      },
+      textShadowRadius: 1
+    }
+  },
+  [TextTemplate.terminal]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: COLORS.secondary,
+      color: "white",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "white",
+      highlightInset: -6,
+      textAlign: "left",
+      highlightCornerRadius: 2,
       textShadowOffset: {
         width: 1,
         height: 1
@@ -284,7 +239,7 @@ const getTextShadow = memoize(
       }
     }
 
-    if (textShadowColor === "transparent") {
+    if (textShadowColor === "transparent" || format === PostFormat.post) {
       return {
         textShadowColor: "transparent",
         textShadowOffset: { width: 0, height: 0 },
@@ -321,7 +276,6 @@ const getTextShadow = memoize(
 );
 
 const BASE_OVERLAY_STYLE = {
-  textAlign: "left",
   backgroundColor: "transparent",
   fontFamily: "Helvetica",
   marginTop: 0,
@@ -382,6 +336,17 @@ const textInputTypeStylesheets: {
     input: {
       ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.comic,
+      borderRadius: 0,
+      paddingLeft: 0,
+      paddingRight: 12,
+      paddingVertical: 0,
+      paddingHorizontal: 0,
+      paddingTop: 0,
+      paddingBottom: 12,
+
+      overflow: "visible",
+      backgroundColor:
+        textInputStyles[TextTemplate.comic].presets.backgroundColor,
       textAlign:
         textInputStyles[TextTemplate.comic].presets.textAlign || "left",
       color: textInputStyles[TextTemplate.comic].presets.color,
@@ -421,25 +386,6 @@ const textInputTypeStylesheets: {
         textInputStyles[TextTemplate.post].presets.textShadowRadius
     }
   }),
-  [TextTemplate.space]: StyleSheet.create({
-    container: {
-      backgroundColor: "transparent"
-    },
-    input: {
-      ...BASE_OVERLAY_STYLE,
-      ...FONT_STYLES.starwars,
-      textAlign:
-        textInputStyles[TextTemplate.space].presets.textAlign || "left",
-      color: textInputStyles[TextTemplate.basic].presets.color,
-      textShadowColor:
-        textInputStyles[TextTemplate.basic].presets.textShadowColor,
-      textShadowOffset:
-        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
-
-      textShadowRadius:
-        textInputStyles[TextTemplate.basic].presets.textShadowRadius
-    }
-  }),
   [TextTemplate.pickaxe]: StyleSheet.create({
     container: {
       backgroundColor: "transparent"
@@ -449,7 +395,6 @@ const textInputTypeStylesheets: {
       ...FONT_STYLES.minecraft,
       textAlign:
         textInputStyles[TextTemplate.pickaxe].presets.textAlign || "left",
-      color: textInputStyles[TextTemplate.basic].presets.color,
       textShadowColor:
         textInputStyles[TextTemplate.basic].presets.textShadowColor,
       textShadowOffset:
@@ -459,42 +404,25 @@ const textInputTypeStylesheets: {
         textInputStyles[TextTemplate.basic].presets.textShadowRadius
     }
   }),
-  [TextTemplate.magic]: StyleSheet.create({
+
+  [TextTemplate.terminal]: StyleSheet.create({
     container: {
       backgroundColor: "transparent"
     },
     input: {
       ...BASE_OVERLAY_STYLE,
-      ...FONT_STYLES.waltograph,
+      ...FONT_STYLES.monospace,
+      paddingTop: SPACING.normal,
+      paddingBottom: SPACING.normal,
       textAlign:
-        textInputStyles[TextTemplate.magic].presets.textAlign || "center",
-      color: textInputStyles[TextTemplate.basic].presets.color,
+        textInputStyles[TextTemplate.terminal].presets.textAlign || "left",
       textShadowColor:
-        textInputStyles[TextTemplate.basic].presets.textShadowColor,
+        textInputStyles[TextTemplate.terminal].presets.textShadowColor,
       textShadowOffset:
-        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
+        textInputStyles[TextTemplate.terminal].presets.textShadowOffset,
 
       textShadowRadius:
-        textInputStyles[TextTemplate.basic].presets.textShadowRadius
-    }
-  }),
-  [TextTemplate.superhero]: StyleSheet.create({
-    container: {
-      backgroundColor: "transparent"
-    },
-    input: {
-      ...BASE_OVERLAY_STYLE,
-      ...FONT_STYLES.avenger,
-      textAlign:
-        textInputStyles[TextTemplate.superhero].presets.textAlign || "left",
-      color: textInputStyles[TextTemplate.basic].presets.color,
-      textShadowColor:
-        textInputStyles[TextTemplate.basic].presets.textShadowColor,
-      textShadowOffset:
-        textInputStyles[TextTemplate.basic].presets.textShadowOffset,
-
-      textShadowRadius:
-        textInputStyles[TextTemplate.basic].presets.textShadowRadius
+        textInputStyles[TextTemplate.terminal].presets.textShadowRadius
     }
   }),
   [TextTemplate.gary]: StyleSheet.create({
@@ -504,7 +432,6 @@ const textInputTypeStylesheets: {
     input: {
       ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.spongebob,
-      color: textInputStyles[TextTemplate.basic].presets.color,
       textAlign: textInputStyles[TextTemplate.gary].presets.textAlign || "left",
       textShadowColor:
         textInputStyles[TextTemplate.basic].presets.textShadowColor,
@@ -541,6 +468,68 @@ const styles = StyleSheet.create({
   }
 });
 
+export const getDenormalizedColor = (block: TextPostBlock) => {
+  const { template, overrides = {} } = block.config;
+
+  return overrides?.color || textInputStyles[template].presets.color;
+};
+
+export const getDenormalizedBackgroundColor = (block: TextPostBlock) => {
+  const { template, overrides = {} } = block.config;
+
+  return (
+    overrides?.backgroundColor ||
+    textInputStyles[template].presets.backgroundColor
+  );
+};
+
+export const getTextBlockColor = (block: TextPostBlock) => {
+  const { border } = block.config;
+
+  let color = getDenormalizedColor(block);
+  let backgroundColor = getDenormalizedBackgroundColor(block);
+
+  if (border === TextBorderType.invert) {
+    return backgroundColor;
+  } else {
+    return color;
+  }
+};
+
+export const getTextBlockBackgroundColor = (block: TextPostBlock) => {
+  const { template, overrides = {}, border } = block.config;
+
+  let color = getDenormalizedColor(block);
+  let backgroundColor = getDenormalizedBackgroundColor(block);
+
+  if (border === TextBorderType.hidden && template !== TextTemplate.post) {
+    return "transparent";
+  } else if (border === TextBorderType.invert) {
+    return color;
+  } else {
+    if (
+      (!overrides?.backgroundColor &&
+        tinycolor(backgroundColor).isDark() &&
+        tinycolor(color).isDark()) ||
+      (tinycolor(backgroundColor).isLight() && tinycolor(color).isLight())
+    ) {
+      return contrastingColor(color);
+    } else {
+      return backgroundColor;
+    }
+  }
+};
+
+export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
+  const { template, overrides = {}, border } = block.config;
+
+  return (
+    overrides?.textAlign ||
+    textInputStyles[template].presets.textAlign ||
+    "left"
+  );
+};
+
 const getClosestNumber = (goal, counts) =>
   counts.find(count => {
     if (goal - Number(count) <= 0) {
@@ -551,6 +540,7 @@ const getClosestNumber = (goal, counts) =>
 type Props = {
   block: TextPostBlock;
   onChangeValue: (value: string) => void;
+  TextInputComponent: React.ComponentType<TextInputProps>;
 };
 
 export class TextInput extends React.Component<Props> {
@@ -567,11 +557,6 @@ export class TextInput extends React.Component<Props> {
     super(props);
 
     // this._value = new Animated.Value(props.text);
-
-    this.fontSizeValue = new Animated.Value(
-      this.getFontSizeValue(props, props.text),
-      props.text
-    );
   }
 
   fontSizeClock = new Animated.Clock();
@@ -650,7 +635,10 @@ export class TextInput extends React.Component<Props> {
       onLayout,
       focusType,
       onTapAvatar,
+      focusTypeValue,
+      maxX = SCREEN_DIMENSIONS.width,
       onFocus,
+      block,
       TextInputComponent
     } = this.props;
     const { isFocused } = this.state;
@@ -673,32 +661,9 @@ export class TextInput extends React.Component<Props> {
       width = "100%";
     }
 
-    const showHighlight = border === TextBorderType.highlight;
-    const highlightRadius = showHighlight
-      ? overrides?.borderRadius ||
-        textInputStyles[template].presets.borderRadius ||
-        8
-      : 0;
-
-    let backgroundColor =
-      overrides?.backgroundColor ||
-      textInputStyles[template].presets.backgroundColor;
-
-    let textAlign =
-      overrides?.textAlign || textInputStyles[template].presets.textAlign;
-
-    let color = overrides?.color || textInputStyles[template].presets.color;
-
-    if (border === TextBorderType.hidden) {
-      backgroundColor = "transparent";
-    } else if (border === TextBorderType.invert) {
-      const _color = backgroundColor;
-      backgroundColor = color;
-      color = _color;
-    } else if (border === TextBorderType.stroke) {
-      backgroundColor = color;
-      color = backgroundColor;
-    }
+    const backgroundColor = getTextBlockBackgroundColor(block);
+    const color = getTextBlockColor(block);
+    const textAlign = getTextBlockAlign(block);
 
     const textShadow = getTextShadow(
       backgroundColor,
@@ -714,33 +679,50 @@ export class TextInput extends React.Component<Props> {
       {
         height,
         width,
-        backgroundColor:
-          border === TextBorderType.solid ? backgroundColor : undefined
+        backgroundColor: null
       }
     ];
+
+    const highlightInset =
+      textInputStyles[template].presets?.highlightInset ?? 0;
+
+    const highlightCornerRadius =
+      textInputStyles[template].presets?.highlightCornerRadius ?? 0;
+
+    console.log({ border, highlightInset, template });
 
     const inputStyles = [
       styles.input,
       textInputTypeStylesheets[template].input,
       {
-        backgroundColor:
-          border !== TextBorderType.solid && !showHighlight
-            ? backgroundColor
-            : undefined,
+        backgroundColor: format === PostFormat.post && backgroundColor,
         minHeight,
+        marginLeft:
+          template === TextTemplate.comic
+            ? Math.abs(highlightInset)
+            : undefined,
         textAlign,
+        borderWidth: 0,
+        borderColor: "transparent",
+        borderRadius: 0,
+        overflow: "visible",
+        shadowOpacity: 0,
         color,
-        flex: focusType === FocusType.absolute && isFocused ? 1 : 0,
-        height:
-          focusType === FocusType.absolute && isFocused ? "100%" : undefined,
+
+        flex: focusType === FocusType.absolute && isFocused ? 0 : 0,
         width:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
-        fontSize: this.fontSizeValue,
+        height:
+          focusType === FocusType.absolute && isFocused ? "100%" : undefined,
+
+        fontSize: this.getFontSizeValue(this.props, value),
         ...textShadow
       }
     ];
 
     const selectionColor = contrastingColor(backgroundColor);
+
+    const borderType = border;
 
     return (
       <TapGestureHandler
@@ -748,51 +730,107 @@ export class TextInput extends React.Component<Props> {
         ref={this.props.gestureRef}
         onHandlerStateChange={this.handleHandlerChange}
       >
-        <View key={`${format}-${layout}`} style={containerStyles}>
-          <TextInputComponent
-            {...otherProps}
-            editable={editable}
-            pointerEvents={editable ? "auto" : "none"}
-            ref={inputRef}
-            style={inputStyles}
-            multiline
-            autoCorrect
-            spellCheck={false}
-            adjustsFontSizeToFit
-            inputAccessoryViewID={editable ? `new-post-input` : undefined}
-            minimumFontScale={0.4}
-            selectionColor={selectionColor}
-            template={template}
-            highlightInset={highlightRadius / -20}
-            highlightCornerRadius={highlightRadius}
-            lengthPerLine={50}
-            blurOnSubmit={false}
-            fontSizeRange={textInputStyles[template].fontSizes}
-            showHighlight={showHighlight}
-            placeholderTextColor={getPlaceholderColor(selectionColor)}
-            onBlur={this.handleBlur}
-            onFocus={this.handleFocus}
-            scrollEnabled={false}
-            placeholder={placeholder}
-            defaultValue={this.props.text}
-            highlightColor={backgroundColor}
-            onChangeText={this.handleChange}
-            keyboardAppearance="dark"
-            textContentType="none"
-            autoFocus={false}
-          />
-          {editable && <View style={StyleSheet.absoluteFill}></View>}
-          {format === PostFormat.comment ? (
-            photoURL || username ? (
-              <TextCommentAvatar
-                onTap={onTapAvatar}
-                photoURL={photoURL}
-                username={username}
+        <View>
+          {template == TextTemplate.comic && (
+            <>
+              <View
+                style={{
+                  height: 40,
+                  width: "100%",
+                  marginLeft: Math.abs(highlightInset)
+                }}
               />
-            ) : (
-              <CurrentUserCommentAvatar onTap={onTapAvatar} />
-            )
-          ) : null}
+            </>
+          )}
+          <View key={`${format}-${layout}`} style={containerStyles}>
+            <TextInputComponent
+              {...otherProps}
+              editable={editable}
+              pointerEvents={editable ? "auto" : "none"}
+              ref={inputRef}
+              style={inputStyles}
+              multiline
+              // autoCorrect={
+              //   {
+              //     [TextTemplate.basic]: true,
+              //     [TextTemplate.comic]: true,
+              //     [TextTemplate.terminal]: false
+              //   }[template] ?? true
+              // }
+              // autoCapitalize={
+              //   {
+              //     [TextTemplate.basic]: "sentences",
+              //     [TextTemplate.comic]: "none",
+              //     [TextTemplate.terminal]: "characters"
+              //   }[template] || "sentences"
+              // }
+              spellCheck={false}
+              adjustsFontSizeToFit
+              inputAccessoryViewID={editable ? `new-post-input` : undefined}
+              minimumFontScale={0.4}
+              selectionColor={selectionColor}
+              template={template}
+              highlightInset={highlightInset}
+              highlightCornerRadius={highlightCornerRadius}
+              strokeColor={color}
+              borderType={borderType}
+              strokeWidth={2}
+              lengthPerLine={50}
+              blurOnSubmit={false}
+              fontSizeRange={textInputStyles[template].fontSizes}
+              placeholderTextColor={getPlaceholderColor(selectionColor)}
+              onBlur={this.handleBlur}
+              onFocus={this.handleFocus}
+              scrollEnabled={false}
+              placeholder={placeholder}
+              defaultValue={this.props.text}
+              highlightColor={backgroundColor}
+              onChangeText={this.handleChange}
+              keyboardAppearance="dark"
+              textContentType="none"
+              autoFocus={false}
+            />
+
+            {editable && <View style={StyleSheet.absoluteFill}></View>}
+            {format === PostFormat.comment ? (
+              photoURL || username ? (
+                <TextCommentAvatar
+                  onTap={onTapAvatar}
+                  photoURL={photoURL}
+                  username={username}
+                />
+              ) : (
+                <CurrentUserCommentAvatar onTap={onTapAvatar} />
+              )
+            ) : null}
+          </View>
+          {template === TextTemplate.comic && (
+            <View
+              pointerEvents="none"
+              style={{
+                opacity: String(this.props.text).length > 4 ? 1 : 0,
+                alignItems: "center",
+                top: 0,
+                position: "absolute",
+                left: 0,
+                right: 0,
+                zIndex: 1,
+                transform: [
+                  {
+                    rotate: "-4deg"
+                  },
+                  { scale: -1 }
+                ]
+              }}
+            >
+              <SpeechBubble
+                strokeColor={color}
+                fillColor={backgroundColor}
+                width={91 / 2}
+                height={68 / 2}
+              />
+            </View>
+          )}
         </View>
       </TapGestureHandler>
     );

@@ -126,6 +126,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0
   },
+
   buttonContainer: {
     flexDirection: "row",
     height: 48,
