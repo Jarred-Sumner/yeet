@@ -47,6 +47,7 @@ export const BlockList = ({
   setBlockAtIndex,
   setBlockInputRef,
   focusType,
+  disabled,
   focusedBlockValue,
   layout,
   onBlur,
@@ -81,7 +82,9 @@ export const BlockList = ({
           focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
           isFocused={focusedBlockId === block.id}
-          disabled={focusedBlockId ? focusedBlockId !== block.id : false}
+          disabled={
+            disabled || focusedBlockId ? focusedBlockId !== block.id : false
+          }
           onOpenImagePicker={onOpenImagePicker}
           focusType={focusType}
           onChangePhoto={onChangePhoto}
@@ -369,6 +372,7 @@ export const PostPreview = React.forwardRef(
               onChangePhoto={onChangePhoto}
               focusType={focusType}
               onTap={onTapBlock}
+              disabled={!scrollEnabled}
               scrollRef={scrollRef}
               focusedBlockId={focusedBlockId}
               focusedBlockValue={focusedBlockValue}

@@ -315,7 +315,6 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
-      ...BASE_OVERLAY_STYLE,
       textAlign:
         textInputStyles[TextTemplate.basic].presets.textAlign || "left",
       color: textInputStyles[TextTemplate.basic].presets.color,
@@ -327,6 +326,9 @@ const textInputTypeStylesheets: {
 
       textShadowRadius:
         textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
     }
   }),
   [TextTemplate.comic]: StyleSheet.create({
@@ -334,7 +336,6 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
-      ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.comic,
       borderRadius: 0,
       paddingLeft: 0,
@@ -358,6 +359,9 @@ const textInputTypeStylesheets: {
 
       textShadowRadius:
         textInputStyles[TextTemplate.comic].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
     }
   }),
 
@@ -391,7 +395,6 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
-      ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.minecraft,
       textAlign:
         textInputStyles[TextTemplate.pickaxe].presets.textAlign || "left",
@@ -402,6 +405,9 @@ const textInputTypeStylesheets: {
 
       textShadowRadius:
         textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
     }
   }),
 
@@ -410,7 +416,6 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
-      ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.monospace,
       paddingTop: SPACING.normal,
       paddingBottom: SPACING.normal,
@@ -423,6 +428,9 @@ const textInputTypeStylesheets: {
 
       textShadowRadius:
         textInputStyles[TextTemplate.terminal].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
     }
   }),
   [TextTemplate.gary]: StyleSheet.create({
@@ -430,7 +438,6 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
-      ...BASE_OVERLAY_STYLE,
       ...FONT_STYLES.spongebob,
       textAlign: textInputStyles[TextTemplate.gary].presets.textAlign || "left",
       textShadowColor:
@@ -440,6 +447,9 @@ const textInputTypeStylesheets: {
 
       textShadowRadius:
         textInputStyles[TextTemplate.basic].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
     }
   })
 };
@@ -724,116 +734,134 @@ export class TextInput extends React.Component<Props> {
 
     const borderType = border;
 
-    return (
-      <TapGestureHandler
-        enabled={editable && !this.state.isFocused}
-        ref={this.props.gestureRef}
-        onHandlerStateChange={this.handleHandlerChange}
-      >
-        <View>
-          {template == TextTemplate.comic && (
-            <>
-              <View
-                style={{
-                  height: 40,
-                  width: "100%",
-                  marginLeft: Math.abs(highlightInset)
-                }}
-              />
-            </>
-          )}
-          <View key={`${format}-${layout}`} style={containerStyles}>
-            <TextInputComponent
-              {...otherProps}
-              editable={editable}
-              pointerEvents={editable ? "auto" : "none"}
-              ref={inputRef}
-              style={inputStyles}
-              multiline
-              // autoCorrect={
-              //   {
-              //     [TextTemplate.basic]: true,
-              //     [TextTemplate.comic]: true,
-              //     [TextTemplate.terminal]: false
-              //   }[template] ?? true
-              // }
-              // autoCapitalize={
-              //   {
-              //     [TextTemplate.basic]: "sentences",
-              //     [TextTemplate.comic]: "none",
-              //     [TextTemplate.terminal]: "characters"
-              //   }[template] || "sentences"
-              // }
-              spellCheck={false}
-              adjustsFontSizeToFit
-              inputAccessoryViewID={editable ? `new-post-input` : undefined}
-              minimumFontScale={0.4}
-              selectionColor={selectionColor}
-              template={template}
-              highlightInset={highlightInset}
-              highlightCornerRadius={highlightCornerRadius}
-              strokeColor={color}
-              borderType={borderType}
-              strokeWidth={2}
-              lengthPerLine={50}
-              blurOnSubmit={false}
-              fontSizeRange={textInputStyles[template].fontSizes}
-              placeholderTextColor={getPlaceholderColor(selectionColor)}
-              onBlur={this.handleBlur}
-              onFocus={this.handleFocus}
-              scrollEnabled={false}
-              placeholder={placeholder}
-              defaultValue={this.props.text}
-              highlightColor={backgroundColor}
-              onChangeText={this.handleChange}
-              keyboardAppearance="dark"
-              textContentType="none"
-              autoFocus={false}
-            />
+    const innerContent = (
+      <View key={`${format}-${layout}`} style={containerStyles}>
+        <TextInputComponent
+          {...otherProps}
+          editable={editable}
+          pointerEvents={editable ? "auto" : "none"}
+          ref={inputRef}
+          style={inputStyles}
+          multiline
+          // autoCorrect={
+          //   {
+          //     [TextTemplate.basic]: true,
+          //     [TextTemplate.comic]: true,
+          //     [TextTemplate.terminal]: false
+          //   }[template] ?? true
+          // }
+          // autoCapitalize={
+          //   {
+          //     [TextTemplate.basic]: "sentences",
+          //     [TextTemplate.comic]: "none",
+          //     [TextTemplate.terminal]: "characters"
+          //   }[template] || "sentences"
+          // }
+          spellCheck={false}
+          adjustsFontSizeToFit
+          inputAccessoryViewID={editable ? `new-post-input` : undefined}
+          minimumFontScale={0.4}
+          selectionColor={selectionColor}
+          template={template}
+          highlightInset={highlightInset}
+          highlightCornerRadius={highlightCornerRadius}
+          strokeColor={color}
+          borderType={borderType}
+          strokeWidth={2}
+          lengthPerLine={50}
+          blurOnSubmit={false}
+          fontSizeRange={textInputStyles[template].fontSizes}
+          placeholderTextColor={getPlaceholderColor(selectionColor)}
+          onBlur={this.handleBlur}
+          onFocus={this.handleFocus}
+          scrollEnabled={false}
+          placeholder={placeholder}
+          defaultValue={this.props.text}
+          highlightColor={backgroundColor}
+          onChangeText={this.handleChange}
+          keyboardAppearance="dark"
+          textContentType="none"
+          autoFocus={false}
+        />
 
-            {editable && <View style={StyleSheet.absoluteFill}></View>}
-            {format === PostFormat.comment ? (
-              photoURL || username ? (
-                <TextCommentAvatar
-                  onTap={onTapAvatar}
-                  photoURL={photoURL}
-                  username={username}
-                />
-              ) : (
-                <CurrentUserCommentAvatar onTap={onTapAvatar} />
-              )
-            ) : null}
-          </View>
-          {template === TextTemplate.comic && (
-            <View
-              pointerEvents="none"
-              style={{
-                opacity: String(this.props.text).length > 4 ? 1 : 0,
-                alignItems: "center",
-                top: 0,
-                position: "absolute",
-                left: 0,
-                right: 0,
-                zIndex: 1,
-                transform: [
-                  {
-                    rotate: "-4deg"
-                  },
-                  { scale: -1 }
-                ]
-              }}
-            >
-              <SpeechBubble
-                strokeColor={color}
-                fillColor={backgroundColor}
-                width={91 / 2}
-                height={68 / 2}
-              />
-            </View>
-          )}
-        </View>
-      </TapGestureHandler>
+        {editable && <View style={StyleSheet.absoluteFill}></View>}
+        {format === PostFormat.comment ? (
+          photoURL || username ? (
+            <TextCommentAvatar
+              onTap={onTapAvatar}
+              photoURL={photoURL}
+              username={username}
+            />
+          ) : (
+            <CurrentUserCommentAvatar onTap={onTapAvatar} />
+          )
+        ) : null}
+      </View>
     );
+
+    if (format === PostFormat.sticker) {
+      return (
+        <TapGestureHandler
+          enabled={editable && !this.state.isFocused}
+          ref={this.props.gestureRef}
+          onHandlerStateChange={this.handleHandlerChange}
+        >
+          <View>
+            {template == TextTemplate.comic && (
+              <>
+                <View
+                  style={{
+                    height: 40,
+                    width: "100%",
+                    marginLeft: Math.abs(highlightInset)
+                  }}
+                />
+              </>
+            )}
+
+            {innerContent}
+
+            {template === TextTemplate.comic && (
+              <View
+                pointerEvents="none"
+                style={{
+                  opacity: String(this.props.text).length > 4 ? 1 : 0,
+                  alignItems: "center",
+                  top: 0,
+                  position: "absolute",
+                  left: 0,
+                  right: 0,
+                  zIndex: 1,
+                  transform: [
+                    {
+                      rotate: "-4deg"
+                    },
+                    { scale: -1 }
+                  ]
+                }}
+              >
+                <SpeechBubble
+                  strokeColor={color}
+                  fillColor={backgroundColor}
+                  width={91 / 2}
+                  height={68 / 2}
+                />
+              </View>
+            )}
+          </View>
+        </TapGestureHandler>
+      );
+    } else {
+      return (
+        <TapGestureHandler
+          enabled={editable && !this.state.isFocused}
+          ref={this.props.gestureRef}
+          onHandlerStateChange={this.handleHandlerChange}
+        >
+          {innerContent}
+        </TapGestureHandler>
+      );
+    }
   }
 }
 export default TextInput;
