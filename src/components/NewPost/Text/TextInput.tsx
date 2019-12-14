@@ -78,7 +78,9 @@ const textInputStyles = {
     },
     presets: {
       backgroundColor: normalizeBackgroundColor("#7367FC"),
-      color: "white"
+      color: "white",
+      highlightInset: -6,
+      highlightCornerRadius: 2
     }
   },
   [TextTemplate.post]: {
@@ -294,7 +296,7 @@ const textInputTypeStylesheets: {
 } = {
   [TextTemplate.comment]: StyleSheet.create({
     container: {
-      borderRadius: 4
+      borderRadius: 0
     },
     input: {
       borderRadius: 4,
@@ -481,7 +483,11 @@ const styles = StyleSheet.create({
 export const getDenormalizedColor = (block: TextPostBlock) => {
   const { template, overrides = {} } = block.config;
 
-  return overrides?.color || textInputStyles[template].presets.color;
+  return (
+    overrides?.color ||
+    overrides?.textColor ||
+    textInputStyles[template].presets.color
+  );
 };
 
 export const getDenormalizedBackgroundColor = (block: TextPostBlock) => {
@@ -510,7 +516,12 @@ export const getTextBlockBackgroundColor = (block: TextPostBlock) => {
   const { template, overrides = {}, border } = block.config;
 
   let color = getDenormalizedColor(block);
+
   let backgroundColor = getDenormalizedBackgroundColor(block);
+
+  if (block.format === PostFormat.comment) {
+    return backgroundColor;
+  }
 
   if (border === TextBorderType.hidden && template !== TextTemplate.post) {
     return "transparent";
@@ -763,7 +774,9 @@ export class TextInput extends React.Component<Props> {
           template={template}
           highlightInset={highlightInset}
           highlightCornerRadius={highlightCornerRadius}
-          strokeColor={color}
+          strokeColor={
+            TextBorderType.highlight === borderType ? "transparent" : color
+          }
           borderType={borderType}
           strokeWidth={2}
           lengthPerLine={50}

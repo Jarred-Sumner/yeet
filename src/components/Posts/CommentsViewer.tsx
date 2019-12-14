@@ -31,7 +31,8 @@ import TextInput from "../NewPost/Text/TextInput";
 import {
   buildTextBlock,
   PostFormat,
-  TextTemplate
+  TextTemplate,
+  TextBorderType
 } from "../NewPost/NewPostFormat";
 import { UserContext } from "../UserContext";
 import { useNavigation } from "react-navigation-hooks";
@@ -172,6 +173,7 @@ const TextComment = ({
       value: body,
       format: PostFormat.comment,
       template: TextTemplate.comment,
+      border: TextBorderType.highlight,
       overrides: { backgroundColor, textColor },
       placeholder: "",
       autoInserted: false,

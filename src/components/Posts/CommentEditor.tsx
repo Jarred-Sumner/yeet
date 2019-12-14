@@ -569,7 +569,7 @@ class CommentEditorContainer extends React.Component<Props, State> {
             maxX={width}
             maxY={height}
             minY={TOP_Y + topInset}
-            paddingTop={-14}
+            paddingTop={-100}
             containerRef={this.containerRef}
             onBlur={this.handleBlur}
             focusedBlockValue={this.focusedBlockValue}
