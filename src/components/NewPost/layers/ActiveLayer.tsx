@@ -64,7 +64,7 @@ class ActiveLayerComponent extends React.Component<Props> {
 
   componentDidUpdate(prevProps: Props) {
     if (prevProps.toolbarType !== this.props.toolbarType) {
-      this.footerContainer.current.animateNextTransition();
+      // this.footerContainer.current.animateNextTransition();
     }
   }
 
@@ -118,7 +118,6 @@ class ActiveLayerComponent extends React.Component<Props> {
 
             <Transitioning.View
               ref={this.footerContainer}
-              pointerEvents="box-none"
               onLayout={this.onLayoutFooter}
               transition={
                 <Transition.Sequence>
@@ -143,14 +142,8 @@ class ActiveLayerComponent extends React.Component<Props> {
 }
 
 const Toolbar = ({ type, onPress, onBack, opacity }) => {
-  if (type === ToolbarType.default) {
+  if (type === ToolbarType.default || type === ToolbarType.text) {
     return <DefaultToolbar onPress={onPress} onBack={onBack} type={type} />;
-  } else if (type === ToolbarType.text) {
-    return (
-      <DefaultToolbar onPress={onPress} onBack={onBack} type={type}>
-        <TextToolbarButton isActive onPress={onPress} />
-      </DefaultToolbar>
-    );
   } else if (type === ToolbarType.panning) {
     return <Animated.View pointerEvents="none" />;
   }

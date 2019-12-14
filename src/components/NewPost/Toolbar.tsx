@@ -1,26 +1,12 @@
 import * as React from "react";
-import { View, StyleSheet } from "react-native";
-import { IconButton } from "../Button";
-import Animated from "react-native-reanimated";
-import { SPACING, COLORS } from "../../lib/styles";
+import { StyleSheet, View } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import {
-  IconText,
-  IconRedact,
-  IconDraw,
-  IconPhoto,
-  IconSticker,
-  IconPlus,
-  IconBack,
-  IconClose
-} from "../Icon";
-import { TOP_Y } from "../../../config";
-import {
-  BitmapIconPlus,
   BitmapIconAddGif,
-  BitmapIconAddText,
   BitmapIconAddPhoto,
-  BitmapIconAddSticker
+  BitmapIconAddSticker,
+  BitmapIconAddText
 } from "../BitmapIcon";
 
 export enum ToolbarType {
@@ -171,9 +157,9 @@ export const DefaultToolbar = ({
         isActive={activeButton === ToolbarButtonType.photo}
         onPress={onPressPhoto}
       />
-      <GifToolbarButton
-        isActive={activeButton === ToolbarButtonType.gif}
-        onPress={onPressGif}
+      <StickerToolbarButton
+        isActive={activeButton === ToolbarButtonType.sticker}
+        onPress={onPressSticker}
       />
     </>
   );

@@ -184,7 +184,7 @@ class FeedPageComponent extends React.Component<Props> {
 
   render() {
     return (
-      <View ref={this.props.pageRef} style={styles.page}>
+      <View style={styles.page}>
         <FeedList
           onPressPost={this.handlePressPost}
           onPressThread={this.handlePressThread}
@@ -210,10 +210,9 @@ class FeedPageComponent extends React.Component<Props> {
   }
 }
 
-const FeedPageWrapper = React.forwardRef((props, ref) => {
+export const FeedPage = React.forwardRef((props, ref) => {
   const navigation = useNavigation();
   const actionSheet = useActionSheet();
-  const { pausePlayers, unpausePlayers } = React.useContext(MediaPlayerContext);
   const { userId } = React.useContext(UserContext);
   const { openReportModal } = React.useContext(ModalContext);
   const [deletePostThread] = useMutation<
@@ -224,8 +223,6 @@ const FeedPageWrapper = React.forwardRef((props, ref) => {
   return (
     <FeedPageComponent
       pageRef={ref}
-      pausePlayers={pausePlayers}
-      unpausePlayers={unpausePlayers}
       userId={userId}
       navigation={navigation}
       deletePostThread={deletePostThread}
@@ -234,15 +231,5 @@ const FeedPageWrapper = React.forwardRef((props, ref) => {
     />
   );
 });
-
-export const FeedPage = () => {
-  const ref = React.useRef();
-
-  return (
-    <MediaPlayerPauser nodeRef={ref}>
-      <FeedPageWrapper ref={ref} />
-    </MediaPlayerPauser>
-  );
-};
 
 export default FeedPage;

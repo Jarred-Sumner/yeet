@@ -1,6 +1,8 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-community/async-storage";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
+import { YeetImageContainer, YeetImage } from "./imageSearch";
+import { uniqBy } from "lodash";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -14,6 +16,7 @@ const SUPER_STORE =
 const KEYS = {
   DISMISSED_PUSH_NOTIFICATION_MODAL: "DISMISSED_PUSH_NOTIFICATION_MODAL",
   DISMISSED_WELCOME_MODAL: "DISMISSED_WELCOME_MODAL",
+  RECENTLY_USED_IMAGES: "RECENTLY_USED_IMAGES",
   JWT: "JWT",
   CURRENT_USER_ID: "CURRENT_USER_ID"
 };
@@ -115,6 +118,35 @@ export class Storage {
   static getItem(key: string) {
     console.log(`[Storage] GET ${key}`);
     return AsyncStorage.getItem(Storage.formatKey(key));
+  }
+
+  static getRecentlyUsed(): Promise<Array<YeetImage>> {
+    return this.getItem(KEYS.RECENTLY_USED_IMAGES).then(result => {
+      if (result && typeof result === "string") {
+        try {
+          return JSON.parse(result);
+        } catch {
+          return [];
+        }
+      } else {
+        return [];
+      }
+    });
+  }
+
+  static async insertRecentlyUsed(imageContainer: YeetImageContainer) {
+    const recentlyUsed = await this.getRecentlyUsed();
+
+    recentlyUsed.unshift(imageContainer.image);
+
+    return Storage.setItem(
+      KEYS.RECENTLY_USED_IMAGES,
+      JSON.stringify(uniqBy(recentlyUsed, "uri").slice(0, 80))
+    );
+  }
+
+  static clearRecentlyUsed() {
+    return Storage.setItem(KEYS.RECENTLY_USED_IMAGES, JSON.stringify([]));
   }
 
   static setItem(key, value) {

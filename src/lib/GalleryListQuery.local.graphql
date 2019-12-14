@@ -11,7 +11,17 @@ query GalleryListQuery(
     }
   }
 
+  recentImages @client {
+    id
+
+    data {
+      ...YeetImageContainerFragment
+    }
+  }
+
   gifs(offset: 0, limit: $videoColumnCount) @client {
+    id
+
     data {
       ...YeetImageContainerFragment
     }

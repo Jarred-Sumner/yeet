@@ -699,8 +699,6 @@ export class TextInput extends React.Component<Props> {
     const highlightCornerRadius =
       textInputStyles[template].presets?.highlightCornerRadius ?? 0;
 
-    console.log({ border, highlightInset, template });
-
     const inputStyles = [
       styles.input,
       textInputTypeStylesheets[template].input,

@@ -9,6 +9,7 @@ import SectionHeader from "./SectionHeader";
 import * as React from "react";
 import GalleryItem from "./GalleryItem";
 import { SPACING } from "../../lib/styles";
+import { range } from "lodash";
 
 export type GalleryValue = {
   image: YeetImageContainer;
@@ -41,6 +42,7 @@ export const GallerySectionComponent = ({
   selectedIDs = [],
   paused,
   rowCount,
+  columnCount = 0,
   columnWidth,
   columnHeight
 }: {
@@ -52,19 +54,25 @@ export const GallerySectionComponent = ({
 
   const renderColumn =
     // React.useCallback(
-    (column: GalleryValue, index: number) => {
-      const isSelected = selectedIDs.includes(column.image.id);
+    (index: number) => {
+      const column = section.data[index];
+      const isSelected = selectedIDs.includes(column?.image?.id);
       return (
-        <View key={column.id} style={styles.column}>
-          <GalleryItem
-            image={column.image}
-            id={column.id}
-            paused={paused}
-            width={columnWidth}
-            height={columnHeight}
-            onPress={onPressColumn}
-            isSelected={isSelected}
-          />
+        <View
+          key={column?.id ?? `placeholder-${index}`}
+          style={[styles.column, { width: columnWidth }]}
+        >
+          {column && (
+            <GalleryItem
+              image={column.image}
+              id={column.id}
+              paused={paused}
+              width={columnWidth}
+              height={columnHeight}
+              onPress={onPressColumn}
+              isSelected={isSelected}
+            />
+          )}
         </View>
       );
     };
@@ -76,9 +84,18 @@ export const GallerySectionComponent = ({
       <SectionHeader
         label={FILTER_LABELS[section.type]}
         onPress={handlePressHeader}
+        showViewAll={
+          ![
+            GallerySectionItem.clipboardImage,
+            GallerySectionItem.clipboardURL,
+            GallerySectionItem.recent
+          ].includes(section.type)
+        }
       />
 
-      <View style={styles.columns}>{section.data.map(renderColumn)}</View>
+      <View style={styles.columns}>
+        {range(0, columnCount * rowCount).map(renderColumn)}
+      </View>
     </View>
   );
 };

@@ -10,7 +10,8 @@ import {
 import {
   GIFsFilterList,
   PhotosFilterList,
-  VideosFilterList
+  VideosFilterList,
+  SearchFilterList
 } from "./GalleryFilterList";
 import { GallerySectionList } from "./GallerySectionList";
 import { GalleryHeader } from "./GalleryHeader";
@@ -34,7 +35,7 @@ const ROUTE_LIST = FILTERS.map(filter => {
   };
 });
 
-export class GalleryTabView extends React.Component {
+class GalleryTabViewComponent extends React.Component {
   constructor(props) {
     super(props);
 
@@ -59,11 +60,12 @@ export class GalleryTabView extends React.Component {
     initialRoute: "all",
     tabBarPosition: "top",
     inset: 0,
+    bottomInset: 0,
     offset: 0
   };
 
   componentDidUpdate(prevProps, prevState) {
-    if (this.props.initialRoute !== prevProps.initialRoute && this.props.show) {
+    if (this.props.show !== prevProps.show && this.props.show) {
       this.setState({
         navigationState: {
           index: Math.max(
@@ -78,11 +80,11 @@ export class GalleryTabView extends React.Component {
 
   panRef = React.createRef<PanGestureHandler>();
 
-  allSectionListRef = React.createRef<FlatList>();
   photosListRef = React.createRef<FlatList>();
   gifsListRef = React.createRef<FlatList>();
   memesListRef = React.createRef<FlatList>();
   videosListRef = React.createRef<FlatList>();
+  searchListRef = React.createRef<FlatList>();
 
   simultaneousHandlers = this.panRef;
 
@@ -102,18 +104,22 @@ export class GalleryTabView extends React.Component {
     switch (route.key) {
       case "all":
         return (
-          <GallerySectionList
+          <SearchFilterList
             isFocused={currentRoute === "all"}
-            flatListRef={this.allSectionListRef}
-            onPress={onPress}
-            isModal={this.props.isModal}
-            onChangeFilter={jumpTo}
-            offset={this.props.offset}
-            insetValue={this.props.insetValue}
-            inset={this.props.inset}
-            selectedIDs={selectedIDs}
-            keyboardVisibleValue={keyboardVisibleValue}
+            flatListRef={this.searchListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            onChangeFilter={jumpTo}
+            onPress={onPress}
+            inset={this.props.inset}
+            show={this.props.show}
+            keyboardVisibleValue={keyboardVisibleValue}
+            defaultTransparent={this.props.transparentSearch}
+            autoFocus={this.props.autoFocusSearch}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            bottomInset={this.props.bottomInset}
+            selectedIDs={selectedIDs}
+            isModal={this.props.isModal}
             scrollY={this.props.scrollY}
           />
         );
@@ -127,6 +133,7 @@ export class GalleryTabView extends React.Component {
             onChangeFilter={jumpTo}
             insetValue={this.props.insetValue}
             offset={this.props.offset}
+            bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
             isModal={this.props.isModal}
             inset={this.props.inset}
@@ -142,6 +149,7 @@ export class GalleryTabView extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
             onPress={onPress}
+            bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
             isModal={this.props.isModal}
             insetValue={this.props.insetValue}
@@ -151,23 +159,7 @@ export class GalleryTabView extends React.Component {
             scrollY={this.props.scrollY}
           />
         );
-      case GallerySectionItem.memes:
-        return (
-          <GIFsFilterList
-            isFocused={currentRoute === GallerySectionItem.memes}
-            flatListRef={this.memesListRef}
-            simultaneousHandlers={this.simultaneousHandlers}
-            onChangeFilter={jumpTo}
-            onPress={onPress}
-            inset={this.props.inset}
-            keyboardVisibleValue={keyboardVisibleValue}
-            insetValue={this.props.insetValue}
-            offset={this.props.offset}
-            selectedIDs={selectedIDs}
-            isModal={this.props.isModal}
-            scrollY={this.props.scrollY}
-          />
-        );
+
       case GallerySectionItem.videos:
         return (
           <VideosFilterList
@@ -177,6 +169,7 @@ export class GalleryTabView extends React.Component {
             onChangeFilter={jumpTo}
             onPress={onPress}
             selectedIDs={selectedIDs}
+            bottomInset={this.props.bottomInset}
             keyboardVisibleValue={keyboardVisibleValue}
             insetValue={this.props.insetValue}
             offset={this.props.offset}
@@ -228,7 +221,6 @@ export class GalleryTabView extends React.Component {
           ref: this.panRef,
           simultaneousHandlers: [
             this.gifsListRef,
-            this.allSectionListRef,
             this.memesListRef,
             this.photosListRef,
             this.videosListRef
@@ -245,5 +237,7 @@ export class GalleryTabView extends React.Component {
     );
   }
 }
+
+export const GalleryTabView = React.memo(GalleryTabViewComponent);
 
 export default GalleryTabView;

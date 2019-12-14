@@ -24,6 +24,11 @@ const photoCellStyles = StyleSheet.create({
     overflow: "hidden",
     justifyContent: "center"
   },
+  transparentContainer: {
+    alignItems: "center",
+    overflow: "hidden",
+    justifyContent: "center"
+  },
   selectedContainer: {
     borderColor: COLORS.primary,
     borderWidth: 1
@@ -59,12 +64,15 @@ export const GalleryItem = React.memo(
   ({
     onPress,
     image,
+    resizeMode,
+    transparent = false,
     id,
     height,
     isSelected = false,
     width,
     paused
   }: {
+    transparent: boolean;
     onPress: (id: string) => void;
     image: YeetImageContainer;
     height: number;
@@ -101,7 +109,9 @@ export const GalleryItem = React.memo(
       >
         <View
           style={[
-            photoCellStyles.container,
+            transparent
+              ? photoCellStyles.transparentContainer
+              : photoCellStyles.container,
             isSelected && photoCellStyles.selectedContainer,
             { width, height }
           ]}
@@ -111,7 +121,9 @@ export const GalleryItem = React.memo(
             muted
             paused={paused}
             loop
-            resizeMode={galleryItemResizeMode({ image, width, height })}
+            resizeMode={
+              resizeMode || galleryItemResizeMode({ image, width, height })
+            }
             id={image.id}
             autoPlay={false}
             // onError={onError}

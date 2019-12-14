@@ -1,6 +1,9 @@
 import * as React from "react";
 import { View, StyleSheet } from "react-native";
-import { YeetImageContainer } from "../../lib/imageSearch";
+import {
+  YeetImageContainer,
+  imageContainerFromMediaSource
+} from "../../lib/imageSearch";
 import { NetworkStatus } from "apollo-client";
 import { FlatList } from "../FlatList";
 import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
@@ -21,11 +24,16 @@ import {
   SQUARE_ITEM_WIDTH
 } from "./GalleryFilterList";
 import Animated from "react-native-reanimated";
+import { ClipboardContext } from "../Clipboard/ClipboardContext";
+import { scaleRectToWidth } from "../../lib/Rect";
 
 const COLUMN_COUNT = 3;
 const COLUMN_GAP = 2;
 
 const SECTION_SEPARATOR_HEIGHT = SPACING.double;
+
+const CLIPBOARD_IMAGE_WIDTH = SCREEN_DIMENSIONS.width / 2;
+const CLIPBOARD_IMAGE_HEIGHT = 200;
 
 const styles = StyleSheet.create({
   container: {
@@ -58,83 +66,58 @@ type Props = {
 };
 
 class GallerySectionListComponent extends React.Component<Props> {
-  constructor(props) {
-    super(props);
-
-    this.contentInset = {
-      top: props.inset,
-      bottom: 0,
-      left: 0,
-      right: 0
-    };
-
-    this.contentOffset = { x: 0, y: props.offset };
-  }
-
-  setFlatListRef = (flatList: FlatList) => {
-    this.flatListRef = flatList;
-
-    const { flatListRef } = this.props;
-
-    if (flatListRef && typeof flatListRef === "function") {
-      flatListRef(flatList);
-    }
-  };
-
-  sectionKeyExtractor = item => {
-    return item.type;
-  };
-
   handlePressColumn = (image: YeetImageContainer) => {
     this.props.onPressColumn(image);
   };
 
-  renderSectionItem = ({
-    item,
-    index
-  }: {
-    item: GallerySection;
-    index: number;
-  }) => {
+  renderSectionItem = (item: GallerySection, index: number) => {
+    let height = SQUARE_ITEM_HEIGHT;
+    let width = SQUARE_ITEM_WIDTH;
+    let rowCount = 1;
+    let columnCount = 3;
+
+    if (item.type === GallerySectionItem.videos) {
+      height = VERTICAL_ITEM_HEIGHT;
+      width = VERTICAL_ITEM_WIDTH;
+    } else if (item.type === GallerySectionItem.clipboardImage) {
+      const image = item.data[0]?.image?.image;
+
+      height = CLIPBOARD_IMAGE_HEIGHT;
+      width = CLIPBOARD_IMAGE_WIDTH;
+
+      if (image && (image.width < width || image.height < height)) {
+        width = image.width;
+        height = image.height;
+      } else if (image && image.width > width) {
+        const dimensions = scaleRectToWidth(width, image);
+        width = dimensions.width;
+        height = dimensions.height;
+      }
+
+      columnCount = 2;
+    } else if (item.type === GallerySectionItem.photos) {
+      rowCount = 2;
+    } else if (item.type === GallerySectionItem.recent) {
+      rowCount = Math.ceil(item.data.length / columnCount);
+    }
+
     return (
-      <GallerySectionComponent
-        section={item}
-        rowCount={item.type === GallerySectionItem.photos ? 2 : 1}
-        onPressHeader={this.props.onChangeFilter}
-        onPressColumn={this.handlePressColumn}
-        selectedIDs={this.props.selectedIDs}
-        paused={!this.props.isFocused}
-        columnHeight={
-          item.type === GallerySectionItem.videos
-            ? VERTICAL_ITEM_HEIGHT
-            : SQUARE_ITEM_HEIGHT
-        }
-        columnWidth={
-          item.type === GallerySectionItem.videos
-            ? VERTICAL_ITEM_WIDTH
-            : SQUARE_ITEM_WIDTH
-        }
-      />
+      <React.Fragment key={item.type}>
+        <GallerySectionComponent
+          section={item}
+          rowCount={rowCount}
+          columnCount={columnCount}
+          onPressHeader={this.props.onChangeFilter}
+          onPressColumn={this.handlePressColumn}
+          selectedIDs={this.props.selectedIDs}
+          paused={!this.props.isFocused}
+          columnHeight={height}
+          columnWidth={width}
+        />
+        <SectionSeparatorComponent />
+      </React.Fragment>
     );
   };
-
-  handleScroll = this.props.scrollY
-    ? Animated.event(
-        [
-          {
-            nativeEvent: {
-              contentOffset: {
-                y: this.props.scrollY
-              },
-              contentInset: {
-                top: this.props.insetValue
-              }
-            }
-          }
-        ],
-        { useNativeDriver: true }
-      )
-    : undefined;
 
   render() {
     const {
@@ -147,42 +130,8 @@ class GallerySectionListComponent extends React.Component<Props> {
     } = this.props;
 
     return (
-      <Animated.View
-        style={[
-          styles.wrapper,
-          isModal && {
-            transform: [
-              {
-                translateY: Animated.interpolate(this.props.scrollY, {
-                  inputRange: [-100, inset * -1, 0],
-                  outputRange: [-100, inset * -1, 0],
-                  extrapolateRight: Animated.Extrapolate.CLAMP
-                })
-              }
-            ]
-          }
-        ]}
-      >
-        <FlatList
-          ref={this.setFlatListRef}
-          data={sections}
-          directionalLockEnabled
-          contentInset={this.contentInset}
-          contentOffset={this.contentOffset}
-          extraData={isFocused}
-          style={styles.container}
-          onScroll={this.handleScroll}
-          scrollEventThrottle={this.handleScroll ? 1 : undefined}
-          keyExtractor={this.sectionKeyExtractor}
-          extraData={this.props.selectedIDs}
-          renderItem={this.renderSectionItem}
-          simultaneousHandlers={this.props.simultaneousHandlers}
-          scrollToOverflowEnabled
-          overScrollMode="always"
-          alwaysBounceVertical
-          ItemSeparatorComponent={SectionSeparatorComponent}
-          contentInsetAdjustmentBehavior="automatic"
-        />
+      <Animated.View style={styles.wrapper}>
+        {sections.map(this.renderSectionItem)}
       </Animated.View>
     );
   }
@@ -204,15 +153,22 @@ const buildSection = (
 };
 
 const ORDERED_ITEMS = [
+  GallerySectionItem.clipboardURL,
+  GallerySectionItem.clipboardImage,
   GallerySectionItem.photos,
   GallerySectionItem.videos,
-  GallerySectionItem.gifs
+  GallerySectionItem.gifs,
+  GallerySectionItem.recent
 ];
+
+const sectionWithContent = (section: GallerySection) => {
+  return (
+    section.data.length > 0 && section.type !== GallerySectionItem.clipboardURL
+  );
+};
 
 export const GallerySectionList = ({
   onPress,
-  flatListRef,
-  scrollY,
   selectedIDs,
   insetValue,
   offset,
@@ -223,6 +179,7 @@ export const GallerySectionList = ({
   isFocused
 }) => {
   const client = useApolloClient();
+  const clipboardContext = React.useContext(ClipboardContext);
   client.addResolvers(CameraRollGraphQL);
 
   const galleryQuery = useQuery(GALLERY_QUERY, {
@@ -231,20 +188,89 @@ export const GallerySectionList = ({
       photoColumnCount: COLUMN_COUNT * 2,
       videoColumnCount: COLUMN_COUNT
     },
+    fetchPolicy: "cache-and-network",
     returnPartialData: true,
+    errorPolicy: "all",
     notifyOnNetworkStatusChange: true
   });
 
+  const initiallyFocused = React.useRef(isFocused);
+  React.useEffect(() => {
+    if (
+      isFocused &&
+      !initiallyFocused.current &&
+      galleryQuery?.networkStatus === NetworkStatus.ready
+    ) {
+      galleryQuery?.refetch();
+    }
+  }, [isFocused, galleryQuery]);
+
+  const clipboardImageSection = React.useMemo(() => {
+    const { mediaSource } = clipboardContext;
+
+    if (mediaSource) {
+      return buildSection(
+        GallerySectionItem.clipboardImage,
+        [imageContainerFromMediaSource(mediaSource, null)],
+        NetworkStatus.ready
+      );
+    } else {
+      return null;
+    }
+  }, [
+    clipboardContext,
+    clipboardContext.mediaSource,
+    clipboardContext.clipboard.hasImages,
+    buildSection,
+    imageContainerFromMediaSource
+  ]);
+
+  const clipboardURLSection = React.useMemo(() => {
+    const {
+      clipboard: { urls }
+    } = clipboardContext;
+
+    if (!clipboardImageSection && urls.length > 0) {
+      return buildSection(
+        GallerySectionItem.clipboardURL,
+        [],
+        NetworkStatus.ready
+      );
+    } else {
+      return null;
+    }
+  }, [
+    clipboardImageSection,
+    clipboardContext.clipboard.urls,
+    buildSection,
+    imageContainerFromMediaSource
+  ]);
+
   const sections: Array<GallerySection> = React.useMemo(() => {
     if (typeof galleryQuery.data === "undefined") {
-      return ORDERED_ITEMS.map(type =>
-        buildSection(type, [], galleryQuery.networkStatus)
-      );
+      return ORDERED_ITEMS.map(type => {
+        if (type === GallerySectionItem.clipboardImage) {
+          return clipboardImageSection;
+        } else if (type === GallerySectionItem.clipboardURL) {
+          return clipboardURLSection;
+        } else {
+          return buildSection(type, [], galleryQuery.networkStatus);
+        }
+      })
+        .filter(Boolean)
+        .filter(sectionWithContent);
     }
 
-    const { videos = {}, gifs = {}, photos = {} } = galleryQuery?.data ?? {};
+    const { videos = {}, gifs = {}, photos = {}, recentImages = {} } =
+      galleryQuery?.data ?? {};
 
     return ORDERED_ITEMS.map(type => {
+      if (type === GallerySectionItem.clipboardImage) {
+        return clipboardImageSection;
+      } else if (type === GallerySectionItem.clipboardURL) {
+        return clipboardURLSection;
+      }
+
       let data = [];
       if (type === GallerySectionItem.videos) {
         data = videos?.data;
@@ -252,22 +278,30 @@ export const GallerySectionList = ({
         data = gifs?.data;
       } else if (type === GallerySectionItem.photos) {
         data = photos?.data;
+      } else if (type === GallerySectionItem.recent) {
+        data = recentImages?.data;
       }
 
       return buildSection(type, data || [], galleryQuery?.networkStatus);
-    });
-  }, [galleryQuery?.data, galleryQuery?.networkStatus, galleryQuery]);
+    })
+      .filter(Boolean)
+      .filter(sectionWithContent);
+  }, [
+    clipboardImageSection,
+    clipboardURLSection,
+    galleryQuery?.data,
+    galleryQuery?.networkStatus,
+    galleryQuery,
+    clipboardContext
+  ]);
 
   return (
     <GallerySectionListComponent
       sections={sections}
       isFocused={isFocused}
       onChangeFilter={onChangeFilter}
-      scrollY={scrollY}
       offset={offset}
       isModal={isModal}
-      insetValue={insetValue}
-      flatListRef={flatListRef}
       selectedIDs={selectedIDs}
       onPressColumn={onPress}
       simultaneousHandlers={simultaneousHandlers}

@@ -19,5 +19,11 @@ import SwiftyBeaver
     #else
       SwiftyBeaver.addDestination(ConsoleDestination())
     #endif
+
+    NotificationCenter.default.addObserver(YeetClipboard.self,
+                                           selector: #selector(YeetClipboard.onApplicationBecomeActive),
+                                           name: UIApplication.didBecomeActiveNotification, // UIApplication.didBecomeActiveNotification for swift 4.2+
+    object: nil)
+
   }
 }

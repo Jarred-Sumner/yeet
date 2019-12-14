@@ -192,3 +192,4 @@
 @interface EnableWebpDecoder : NSObject
 + (void)enable;
 @end
+

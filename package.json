@@ -92,7 +92,7 @@
     "react-native-redash": "^7.5.1",
     "react-native-safe-area-context": "^0.6.0",
     "react-native-safe-area-view": "^0.14.6",
-    "react-native-screens": "2.0.0-alpha.11",
+    "react-native-screens": "2.0.0-alpha.19",
     "react-native-section-list-get-item-layout": "^2.2.3",
     "react-native-secure-key-store": "^2.0.4",
     "react-native-shared-element": "^0.5.1",

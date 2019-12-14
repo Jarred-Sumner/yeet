@@ -1,0 +1,27 @@
+#import "local/YeetImageContainerFragment.graphql"
+
+query ImageSearchQuery(
+  $offset: Int!
+  $limit: Int!
+  $query: String
+  $transparent: Boolean
+) {
+  images(
+    offset: $offset
+    limit: $limit
+    query: $query
+    transparent: $transparent
+  ) @client {
+    data {
+      ...YeetImageContainerFragment
+    }
+
+    id
+
+    page_info {
+      has_next_page
+      offset
+      limit
+    }
+  }
+}

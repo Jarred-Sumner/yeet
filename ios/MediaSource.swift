@@ -19,11 +19,34 @@ class MediaSource : NSObject  {
   let playDuration: NSNumber
   let id: String
   let uri: URL
+  let audioURI: URL?
+
   let width: NSNumber
   let height: NSNumber
   let pixelRatio: NSNumber
   let bounds: CGRect
   let coverUri: URL?
+
+  var toDictionary: [String: Any] {
+    return [
+      "url": uri.absoluteString,
+      "audio": audioURI?.absoluteString ?? nil,
+      "mimeType": mimeType.rawValue,
+      "duration": duration,
+      "playDuration": playDuration,
+      "id": id,
+      "width": width,
+      "height": height,
+      "pixelRatio": pixelRatio,
+      "bounds": [
+        "width": width,
+        "height": height,
+        "x": NSNumber(value: 0),
+        "y": NSNumber(value: 0),
+      ],
+      "cover": coverUri?.absoluteString ?? nil
+    ]
+  }
 
   static let ENABLE_VIDE_CACHE = true
 
@@ -269,7 +292,7 @@ class MediaSource : NSObject  {
     return MediaSource(cover, mimeType, NSNumber(value: Double.zero), NSNumber(value: Double.zero), self.id + "-cover", self.width, self.height, self.bounds, pixelRatio)
   }()
 
-  init(_ uri: URL, _ mimeType: MimeType, _ duration: NSNumber, _ playDuration: NSNumber, _ id: String, _ width: NSNumber, _ height: NSNumber, _ bounds: CGRect, _ pixelRatio: NSNumber, _ cover: URL? = nil) {
+  init(_ uri: URL, _ mimeType: MimeType, _ duration: NSNumber, _ playDuration: NSNumber, _ id: String, _ width: NSNumber, _ height: NSNumber, _ bounds: CGRect, _ pixelRatio: NSNumber, _ cover: URL? = nil, _ audioURI: URL? = nil) {
     self.playDuration = playDuration
     self.mimeType = mimeType
     self.duration = duration
@@ -280,6 +303,7 @@ class MediaSource : NSObject  {
     self.bounds = bounds
     self.pixelRatio = pixelRatio
     self.coverUri = cover
+    self.audioURI = audioURI
     super.init()
   }
 
@@ -294,7 +318,11 @@ class MediaSource : NSObject  {
     return isVideo && uri.pathExtension == "mp4"
   }
 
-  static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?) -> MediaSource {
+  var isMultiTrack: Bool {
+    return audioURI != nil
+  }
+
+  static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?, audioURI: String? = nil) -> MediaSource {
     var mediaSource: MediaSource? = nil
 
     let cacheKey = "\(uri)-\(id)-\(width.intValue)-\(height.intValue)"
@@ -303,7 +331,7 @@ class MediaSource : NSObject  {
     if (mediaSource == nil) {
       let coverURL = cover != nil ? URL(string: cover!) : nil
 
-      mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL )
+      mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL, audioURI != nil ? URL(string: audioURI!) : nil)
       cache.setObject(mediaSource!, forKey: cacheKey as NSString)
     }
 
@@ -330,10 +358,11 @@ extension RCTConvert {
     let id = dictionary["id"] as? String ?? uri
     let width = dictionary["width"] as! NSNumber
     let cover = dictionary["cover"] as? String
+    let audioURI = dictionary["audioURI"] as? String
     let height = dictionary["height"] as! NSNumber
     let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
 
-    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover)
+    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
   }
 
   @objc(MediaSourceArray:)

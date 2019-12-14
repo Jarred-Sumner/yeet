@@ -4,7 +4,7 @@ import { StyleSheet, View } from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation, useFocusState } from "react-navigation-hooks";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
 import { GalleryTabView } from "../components/Gallery/GalleryTabView";
 
@@ -14,6 +14,7 @@ import { LIST_HEADER_HEIGHT } from "../components/NewPost/ImagePicker/FilterBar"
 import { SPACING } from "../lib/styles";
 import { isArray } from "lodash";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
+import Storage from "../lib/Storage";
 
 const styles = StyleSheet.create({
   container: {
@@ -104,6 +105,9 @@ class RawImagePickerPage extends React.Component {
     const onChange = this.props.navigation.getParam("onChange");
 
     const photo = selectedImages[0];
+    window.requestIdleCallback(() => {
+      Storage.insertRecentlyUsed(photo);
+    });
 
     if (onChange) {
       onChange(this.props.navigation.getParam("blockId"), photo);
@@ -150,6 +154,7 @@ class RawImagePickerPage extends React.Component {
           height={this.props.height}
           keyboardVisibleValue={this.keyboardVisibleValue}
           onPress={this.handlePickPhoto}
+          show
           inset={LIST_HEADER_HEIGHT + SPACING.normal}
           isModal={false}
           offset={(LIST_HEADER_HEIGHT + SPACING.normal) * -1}

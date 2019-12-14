@@ -242,14 +242,14 @@ class RawUserContextProvider extends React.Component<Props, State> {
       <UserContext.Provider value={this.state.contextValue}>
         <>
           {this.props.children}
-          {this.state.showAuthCard && (
+          {/* {this.state.showAuthCard && (
             <AuthModal
               visible={this.state.showAuthCard}
               onDismiss={this.handleDismissAuth}
               onPressLogin={this.navigateLogin}
               onPressSignUp={this.navigateSignup}
             />
-          )}
+          )} */}
         </>
       </UserContext.Provider>
     );

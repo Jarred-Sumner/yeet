@@ -357,6 +357,9 @@ export const TextHeader = ({
           {
             top: CAROUSEL_HEIGHT,
             right: 0,
+            overflow: "visible",
+            width: 100,
+            alignItems: "flex-end",
 
             height: Animated.sub(height, top + CAROUSEL_HEIGHT)
           }
@@ -368,11 +371,18 @@ export const TextHeader = ({
           inputRef={TextInput.State.currentlyFocusedField()}
           colorType={"textColor"}
           style={{
-            marginTop: SPACING.double,
             height: 220,
-            marginRight: SPACING.normal,
+            justifyContent: "flex-end",
+            alignItems: "flex-end",
+            overflow: "visible",
+            flex: 0,
             width: 20,
-            alignSelf: "flex-end"
+            marginRight: SPACING.normal,
+            transform: [
+              {
+                translateY: SPACING.double
+              }
+            ]
           }}
         />
       </Animated.View>

@@ -525,7 +525,7 @@ PODS:
     - React
   - RNReanimated (1.4.0):
     - React
-  - RNScreens (2.0.0-alpha.11):
+  - RNScreens (2.0.0-alpha.19):
     - React
   - RNSecureKeyStore (1.0.0):
     - React
@@ -575,7 +575,7 @@ DEPENDENCIES:
   - appcenter-analytics (from `../node_modules/appcenter-analytics/ios`)
   - BVLinearGradient (from `../node_modules/react-native-linear-gradient`)
   - CodePush (from `../node_modules/react-native-code-push`)
-  - ColorSlider
+  - ColorSlider (from `https://github.com/Jarred-Sumner/ColorSlider.git`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - DVAssetLoaderDelegate
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
@@ -680,7 +680,6 @@ SPEC REPOS:
     - Base64
     - boost-for-react-native
     - CocoaAsyncSocket
-    - ColorSlider
     - Crashlytics
     - Cronet
     - DVAssetLoaderDelegate
@@ -741,6 +740,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-linear-gradient"
   CodePush:
     :path: "../node_modules/react-native-code-push"
+  ColorSlider:
+    :git: https://github.com/Jarred-Sumner/ColorSlider.git
   DoubleConversion:
     :podspec: "../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec"
   FBLazyVector:
@@ -889,6 +890,9 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 CHECKOUT OPTIONS:
+  ColorSlider:
+    :commit: 5b8d99bd4d5de5e28537915c2453602696a5fc1b
+    :git: https://github.com/Jarred-Sumner/ColorSlider.git
   Nimble:
     :commit: 9a4564effa6607cd571adbccf990bb0e6f8558db
     :git: https://github.com/Quick/Nimble.git
@@ -912,7 +916,7 @@ SPEC CHECKSUMS:
   BVLinearGradient: e3aad03778a456d77928f594a649e96995f1c872
   CocoaAsyncSocket: eafaa68a7e0ec99ead0a7b35015e0bf25d2c8987
   CodePush: d2e54ad42df82a8db65b2d23d8191b950ba945e1
-  ColorSlider: 9a888e65b871fa1e6a26fadebf4931c949935681
+  ColorSlider: d4bdb56d2a8197e6a24b8e4672e9c81157f60e4d
   Crashlytics: 540b7e5f5da5a042647227a5e3ac51d85eed06df
   Cronet: b2a25b6504607e8d75181800fa10b8dbfbb60ea7
   DoubleConversion: 5805e889d232975c086db112ece9ed034df7a0b2
@@ -1013,7 +1017,7 @@ SPEC CHECKSUMS:
   RNPermissions: 86932e45b170515f71f76751bc9fa055910b049f
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
   RNReanimated: 8b675a650fc67c87f63d4345a1b2d4a699c25e4f
-  RNScreens: ad3661f864ef18d952e9a4799b6791683e33c1fc
+  RNScreens: 62284de159bbddba268edd282337afdb8771aaed
   RNSecureKeyStore: f1ad870e53806453039f650720d2845c678d89c8
   RNSentry: 2803ba8c8129dcf26b79e9b4d8c80168be6e4390
   RNSharedElement: a3ce1a9ac47351997b2ddc1e34682457c4da128d
@@ -1037,6 +1041,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: 5ec3c8561a2e811b79cae2677c3743b86eeed107
+PODFILE CHECKSUM: fe46a15ae7ede5dc128a5bf87c2a7a93ce8cb768
 
 COCOAPODS: 1.8.4

@@ -390,6 +390,16 @@ class YeetImageView : PINAnimatedImageView {
   @objc (onLoad) var onLoadEvent: RCTDirectEventBlock? = nil
   @objc (onError) var onErrorEvent: RCTDirectEventBlock? = nil
 
+  var imageSize: CGSize {
+    if let animatedImage = self.animatedImage {
+      return animatedImage.coverImage.size
+    } else if let image = self.image {
+      return image.size.applying(CGAffineTransform.init(scaleX: 1 / image.scale, y: 1 / image.scale))
+    } else {
+      return .zero
+    }
+  }
+
   func handleLoad(success: Bool, error: Error? = nil) {
     if (success) {
       self._source?.onLoad()
@@ -403,7 +413,8 @@ class YeetImageView : PINAnimatedImageView {
       }
 
 
-      onLoadEvent?([ "id": mediaSource.id ])
+      let size = imageSize
+      onLoadEvent?([ "id": mediaSource.id, "width": size.width, "height": size.height ])
     } else {
       guard let mediaSource = self.mediaSource else {
         return
@@ -474,7 +485,7 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     if let host = source.uri.host {
-      if host.contains("giphy") || host.contains("mux") || host.contains("webthing") {
+      if host.contains("giphy") || host.contains("mux") || host.contains("webthing") || source.width.doubleValue < 1 || source.height.doubleValue < 1 {
         return source.uri
       }
     }

@@ -304,7 +304,14 @@ class RawNewPost extends React.Component<{}, State> {
 
   openGalleryCallback: Function | null = null;
 
-  handleOpenGallery = ({ initialRoute, shouldAnimate, onChange, blockId }) => {
+  handleOpenGallery = ({
+    initialRoute,
+    shouldAnimate,
+    onChange,
+    blockId,
+    transparent = false,
+    autoFocus = false
+  }) => {
     if (this.state.showGallery) {
       return;
     }
@@ -312,7 +319,9 @@ class RawNewPost extends React.Component<{}, State> {
     this.setState({
       showGallery: true,
       galleryBlockId: blockId,
-      galleryFilter: initialRoute
+      galleryFilter: initialRoute,
+      galleryAutoFocus: autoFocus,
+      galleryTransparent: transparent
     });
     this.openGalleryCallback = onChange;
   };
@@ -331,7 +340,9 @@ class RawNewPost extends React.Component<{}, State> {
     this.setState({
       showGallery: false,
       galleryBlockId: null,
-      galleryFilter: null
+      galleryFilter: null,
+      galleryAutoFocus: false,
+      galleryTransparent: false
     });
     this.openGalleryCallback = null;
   };
@@ -381,26 +392,28 @@ class RawNewPost extends React.Component<{}, State> {
               key={this.state.post.layout}
               style={styles.transitionContainer}
             >
-              <PostEditor
-                bounds={this.state.bounds}
-                post={this.state.post}
-                onBack={this.handleBack}
-                keyboardVisibleValue={this.keyboardVisibleValue}
-                keyboardHeightValue={this.keyboardHeightValue}
-                headerOffset={this.headerOffset}
-                headerOpacity={this.headerOpacity}
-                navigation={this.props.navigation}
-                onChange={this.handleChangePost}
-                isReply={!this.props.threadId}
-                onChangeFormat={this.handleChangeLayout}
-                controlsOpacityValue={this.controlsOpacityValue}
-                onOpenGallery={this.handleOpenGallery}
-                inlineNodes={inlineNodes}
-                simultaneousHandlers={[this.pannerRef]}
-                yInset={CAROUSEL_HEIGHT}
-                onChangeNodes={this.handleChangeNodes}
-                onSubmit={this.handleSubmit}
-              />
+              <MediaPlayerPauser isHidden={this.state.showGallery}>
+                <PostEditor
+                  bounds={this.state.bounds}
+                  post={this.state.post}
+                  onBack={this.handleBack}
+                  keyboardVisibleValue={this.keyboardVisibleValue}
+                  keyboardHeightValue={this.keyboardHeightValue}
+                  headerOffset={this.headerOffset}
+                  headerOpacity={this.headerOpacity}
+                  navigation={this.props.navigation}
+                  onChange={this.handleChangePost}
+                  isReply={!this.props.threadId}
+                  onChangeFormat={this.handleChangeLayout}
+                  controlsOpacityValue={this.controlsOpacityValue}
+                  onOpenGallery={this.handleOpenGallery}
+                  inlineNodes={inlineNodes}
+                  simultaneousHandlers={[this.pannerRef]}
+                  yInset={CAROUSEL_HEIGHT}
+                  onChangeNodes={this.handleChangeNodes}
+                  onSubmit={this.handleSubmit}
+                />
+              </MediaPlayerPauser>
             </Animated.View>
 
             <PostHeader
@@ -421,6 +434,8 @@ class RawNewPost extends React.Component<{}, State> {
           post={this.state.post}
           onPress={this.handlePressGallery}
           initialRoute={this.state.galleryFilter || "all"}
+          autoFocus={!!this.state.galleryAutoFocus}
+          transparentSearch={!!this.state.galleryTransparent}
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
         />

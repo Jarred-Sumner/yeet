@@ -90,6 +90,45 @@ enum MimeType: String {
   case mov = "video/quicktime"
   case bmp = "image/bmp"
 
+  static func images() -> Array<MimeType> {
+    return [
+      MimeType.heic,
+      MimeType.webp,
+      MimeType.jpg,
+      MimeType.heif,
+      MimeType.tiff,
+      MimeType.bmp,
+      MimeType.png,
+    ]
+  }
+
+  func utiType() -> String {
+    switch self {
+    case .png:
+      return "public.png"
+    case .gif:
+      return "public.gif"
+    case .webp:
+      return "public.webp"
+    case .jpg:
+      return "public.jpeg"
+    case .mp4:
+      return "public.mpeg-4"
+
+    case .heic:
+      return "public.heic"
+
+    case .heif:
+      return "public.heif"
+    case .tiff:
+      return "public.tiff"
+    case .mov:
+      return "com.apple.quicktime-movie"
+    case .bmp:
+      return "public.bmp"
+    }
+  }
+
   func fileExtension() -> String {
     switch self {
     case .png:

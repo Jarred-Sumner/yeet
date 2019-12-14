@@ -9,13 +9,22 @@ import { RectButton } from "react-native-gesture-handler";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
 export enum GallerySectionItem {
+  clipboardImage = "clipboardImage",
+  clipboardURL = "clipboardURL",
+  search = "search",
   memes = "memes",
+  recent = "recent",
   gifs = "gifs",
   photos = "photos",
   videos = "videos"
 }
 
 export const FILTER_LABELS = {
+  [GallerySectionItem.search]: "SEARCH",
+  [GallerySectionItem.clipboardImage]: "CLIPBOARD",
+  [GallerySectionItem.recent]: "RECENT",
+
+  [GallerySectionItem.clipboardURL]: "CLIPBOARD",
   [GallerySectionItem.memes]: "MEMES",
   [GallerySectionItem.gifs]: "GIFs",
   [GallerySectionItem.photos]: "PHOTOS",
@@ -26,7 +35,7 @@ export const LIST_HEADER_HEIGHT = 35;
 
 export const FILTERS = [
   {
-    label: "RECENT",
+    label: "SEARCH",
     value: "all"
   },
   // {
@@ -42,6 +51,7 @@ export const FILTERS = [
     label: FILTER_LABELS[GallerySectionItem.videos],
     value: GallerySectionItem.videos
   },
+
   {
     label: FILTER_LABELS[GallerySectionItem.gifs],
     value: GallerySectionItem.gifs
@@ -209,7 +219,7 @@ export const FilterBar = ({
 
   return (
     <Animated.View style={[light ? styles.lightContainer : styles.container]}>
-      <View style={{ width: inset, heihgt: 1 }} />
+      <View style={{ width: inset, height: 1 }} />
       {FILTERS.map(renderFilter)}
       <Animated.View style={indicatorStyles} />
     </Animated.View>

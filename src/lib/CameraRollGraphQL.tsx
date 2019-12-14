@@ -4,8 +4,13 @@ import {
   searchPhrase,
   getTrending,
   ImageSearchResponse,
-  YeetImageContainer
+  YeetImageContainer,
+  YeetImage,
+  ImageSourceType
 } from "./imageSearch";
+import { performSearch } from "./SearchResponse";
+import { downloadLink } from "./LinkDownloader";
+import Storage from "./Storage";
 
 const graphqlImageContainer = (
   image: YeetImageContainer
@@ -14,6 +19,17 @@ const graphqlImageContainer = (
     ...image,
     __typename: "YeetImageContainer",
     preview: image.preview ?? image.image
+  };
+};
+
+const imageToImageContainer = (image: YeetImage): YeetImageContainer => {
+  return {
+    id: image.uri,
+    image,
+    preview: image,
+    source: image,
+    sourceType: ImageSourceType.search,
+    __typename: "YeetImageContainer"
   };
 };
 
@@ -53,6 +69,76 @@ export default {
       };
 
       return response;
+    },
+    resolveMedia: async (_, args = {}, { cache }) => {
+      const { url } = args;
+
+      if (
+        (url && typeof url === "string" && url.startsWith("https://")) ||
+        url.startsWith("http://")
+      ) {
+        return await downloadLink(url);
+      } else {
+        return null;
+      }
+    },
+    recentImages: async (_, args = {}, { cache }) => {
+      const data = await Storage.getRecentlyUsed();
+      const id = `recent/${data.map(({ uri }) => uri).join("-")}`;
+      console.log(data);
+      return {
+        __typename: "RecentImageSearchResponse",
+        id: id,
+        data: data.map(imageToImageContainer),
+        page_info: {
+          __typename: "PageInfo",
+          has_next_page: false,
+          offset: 0,
+          limit: 80,
+          id: `${id}_pageinfo`
+        }
+      };
+    },
+    images: async (_, args = {}, { cache }) => {
+      const { query = "", limit = 20, offset = 0, transparent } = args;
+
+      const _query = String(query).trim();
+      let response: ImageSearchResponse = {
+        images: [],
+        offset,
+        hasMore: false,
+        success: false
+      };
+      if (_query.length > 0) {
+        const search = await performSearch({
+          query: _query,
+          transparent,
+          limit,
+          offset
+        });
+
+        response = {
+          images: search.results,
+          hasMore: true,
+          offset,
+          success: !!search?.results
+        };
+      }
+
+      const id = `images_${query}-${offset}-${limit}-${transparent}`;
+
+      return {
+        __typename: "RemoteImageSearchResponse",
+        id,
+        data: response.images,
+        page_info: {
+          __typename: "PageInfo",
+          has_next_page: true,
+          offset: offset,
+          limit,
+          id: `${id}_pageinfo`
+        }
+      };
     },
     gifs: async (_, args = {}, { cache }) => {
       const { query = "", limit = 20, offset = 0 } = args;

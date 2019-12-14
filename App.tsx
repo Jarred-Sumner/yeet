@@ -30,6 +30,7 @@ import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
 import { MediaUploadProgress } from "./src/components/MediaUploadProgress";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { getInset } from "react-native-safe-area-view";
+import { ClipboardProvider } from "./src/components/Clipboard/ClipboardContext";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -184,17 +185,19 @@ export class App extends React.Component {
                 <MediaUploadProvider>
                   <ImagePickerProvider>
                     <ActionSheetProvider>
-                      <ModalContextProvider>
-                        <>
-                          <Toast />
+                      <ClipboardProvider>
+                        <ModalContextProvider>
+                          <>
+                            <Toast />
 
-                          <Routes
-                            initialRouteName={this.initialRouteName}
-                            ref={this.setNavRef}
-                            uriPrefix={APP_PREFIX}
-                          />
-                        </>
-                      </ModalContextProvider>
+                            <Routes
+                              initialRouteName={this.initialRouteName}
+                              ref={this.setNavRef}
+                              uriPrefix={APP_PREFIX}
+                            />
+                          </>
+                        </ModalContextProvider>
+                      </ClipboardProvider>
                     </ActionSheetProvider>
                   </ImagePickerProvider>
                 </MediaUploadProvider>

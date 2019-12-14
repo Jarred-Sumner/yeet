@@ -5,10 +5,13 @@ import {
   StyleSheet,
   View,
   RefreshControl,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  InteractionManager,
+  Keyboard
 } from "react-native";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import CAMERA_ROLL_QUERY from "../../lib/CameraRollQuery.local.graphql";
+import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
 import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
 import {
   YeetImageContainer,
@@ -32,6 +35,10 @@ import { useDebouncedCallback } from "use-debounce";
 import useKeyboard from "@rnhooks/keyboard";
 import MediaPlayer from "../MediaPlayer";
 import Animated from "react-native-reanimated";
+import { GallerySectionList } from "./GallerySectionList";
+import { TransparentToggle } from "./GallerySearchFilter";
+import useToggle from "../../lib/useToggle";
+import { memoize } from "lodash";
 
 const COLUMN_COUNT = 3;
 const GIF_COLUMN_COUNT = 2;
@@ -141,6 +148,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
           width={this.props.itemWidth}
           height={this.props.itemHeight}
           onPress={this.handlePressColumn}
+          transparent={this.props.transparent}
           resizeMode={this.props.resizeMode}
           isSelected={this.props.selectedIDs.includes(item.image.id)}
           paused={!this.props.isFocused}
@@ -158,10 +166,34 @@ class GalleryFilterListComponent extends React.Component<Props> {
     index
   });
 
-  contentInset = { top: this.props.inset, left: 0, right: 0, bottom: 0 };
+  contentInset = {
+    top: this.props.inset,
+    left: 0,
+    right: 0,
+    bottom: this.props.bottomInset || 0
+  };
   contentOffset = {
     y: this.props.offset,
     x: 0
+  };
+
+  renderListEmpty = () => {
+    const {
+      ListEmptyComponent,
+      onPressColumn,
+      isFocused,
+      onChangeFilter,
+      selectedIDs
+    } = this.props;
+
+    return (
+      <ListEmptyComponent
+        isFocused={isFocused}
+        onPress={this.props.onPress}
+        onChangeFilter={onChangeFilter}
+        selectedIDs={selectedIDs}
+      />
+    );
   };
 
   static stickerHeaderIndices = [0];
@@ -192,6 +224,16 @@ class GalleryFilterListComponent extends React.Component<Props> {
         extrapolateRight: Animated.Extrapolate.CLAMP
       })
     : undefined;
+
+  scrollTop = (animated = true) => {
+    this.flatListRef &&
+      this.flatListRef.scrollToOffset({
+        offset: this.props.isModal
+          ? this.contentOffset.y
+          : this.contentOffset.y - TOP_Y,
+        animated
+      });
+  };
 
   onScrollBeginDrag = Animated.event(
     [
@@ -227,6 +269,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
       scrollY,
       inset,
       headerHeight = 0,
+      ListEmptyComponent,
       offset,
       ...otherProps
     } = this.props;
@@ -264,6 +307,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
             data={data}
             directionalLockEnabled
             // ListHeaderComponent={ListHeaderComponent}
+            ListEmptyComponent={
+              ListEmptyComponent ? this.renderListEmpty : undefined
+            }
             extraData={isFocused}
             getItemLayout={this.getItemLayout}
             keyboardShouldPersistTaps="always"
@@ -333,13 +379,245 @@ class GalleryFilterListComponent extends React.Component<Props> {
   }
 }
 
-const buildValue = (data: Array<YeetImageContainer> = []) => {
+const buildValue = memoize((data: Array<YeetImageContainer> = []) => {
   return (data || []).map(image => {
     return {
       image,
       id: image.id
     };
   });
+});
+
+export const SearchFilterList = ({
+  isFocused,
+  inset,
+  offset,
+  isModal,
+  autoFocus,
+  show = true,
+  defaultTransparent = false,
+  insetValue,
+  keyboardVisibleValue,
+  scrollY,
+  ...otherProps
+}) => {
+  const [query, onChangeQuery] = React.useState("");
+
+  const [transparent, changeTransparent] = React.useState(defaultTransparent);
+  const [isKeyboardVisible] = useKeyboard();
+  const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
+
+  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
+
+  const filterListRef = React.useRef();
+
+  const client = useApolloClient();
+  client.addResolvers(CameraRollGraphQL);
+
+  const skip = String(query).trim().length === 0 || !isFocused || !show;
+
+  console.log({ skip, show, isFocused });
+
+  const imagesQuery = useQuery(IMAGE_SEARCH_QUERY, {
+    errorPolicy: "all",
+    fetchPolicy: "cache-and-network",
+    variables: {
+      query: String(query).trim(),
+      transparent
+    },
+    skip,
+    notifyOnNetworkStatusChange: true
+  });
+
+  const isFirstShown = React.useRef(true);
+  React.useEffect(() => {
+    if (show && !isFirstShown.current) {
+      changeTransparent(defaultTransparent);
+      onChangeQuery("");
+    } else if (show && isFirstShown.current) {
+      isFirstShown.current = false;
+    }
+  }, [changeTransparent, defaultTransparent, onChangeQuery, show]);
+
+  const [data, setData] = React.useState(
+    buildValue(imagesQuery?.data?.images?.data)
+  );
+
+  React.useEffect(() => {
+    if (isFocused && insetValue && show) {
+      insetValue.setValue(_inset);
+    }
+  }, [isFocused, show, insetValue, _inset, onChangeQuery]);
+
+  React.useEffect(() => {
+    const images = imagesQuery?.data?.images?.data;
+
+    if (typeof images !== "undefined") {
+      setData(buildValue(images));
+    }
+  }, [imagesQuery?.data, setData]);
+
+  React.useEffect(() => {
+    if (!show) {
+      const task = InteractionManager.runAfterInteractions(() => {
+        changeTransparent(defaultTransparent);
+        onChangeQuery("");
+        filterListRef.current && filterListRef.current.scrollTop(false);
+        setData([]);
+      });
+
+      return () => {
+        task.cancel();
+      };
+    }
+  }, [show, onChangeQuery, setData, defaultTransparent]);
+
+  const changeQuery = React.useCallback(
+    // function
+    (_query: string) => {
+      onChangeQuery(_query);
+      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
+      filterListRef.current && filterListRef.current.scrollTop();
+    },
+    [
+      onChangeQuery,
+      imagesQuery,
+      hasTextValue,
+
+      setData,
+      transparent,
+      isFocused,
+      show
+    ]
+  );
+
+  const toggleTransparent = React.useCallback(
+    (value: boolean) => {
+      if (!isFocused) {
+        return;
+      }
+      changeTransparent(value);
+      filterListRef.current && filterListRef.current.scrollTop();
+    },
+    [changeTransparent, query, isFocused]
+  );
+
+  const imageSearchContext = React.useMemo(() => {
+    return {
+      query,
+      scrollY,
+      isFocused,
+      additionalOffset: 4,
+      show,
+      autoFocus: autoFocus,
+      keyboardVisibleValue,
+      rightActions: (
+        <TransparentToggle value={transparent} onPress={toggleTransparent} />
+      ),
+      placeholder: "Search the internet",
+      networkStatus: imagesQuery?.loading
+        ? NetworkStatus.loading
+        : imagesQuery?.networkStatus,
+      hasTextValue: hasTextValue.current,
+      onChange: changeQuery
+    };
+  }, [
+    query,
+    isFocused,
+    scrollY,
+    keyboardVisibleValue,
+    show,
+    hasTextValue,
+    autoFocus,
+    changeQuery,
+    toggleTransparent,
+
+    transparent,
+    imagesQuery.networkStatus,
+    imagesQuery
+  ]);
+
+  const handleEndReached = React.useCallback(() => {
+    const { networkStatus, loading } = imagesQuery;
+
+    if (loading === true) {
+      return;
+    }
+
+    if (
+      !(
+        (imagesQuery?.data?.images?.page_info?.has_next_page ?? false) &&
+        networkStatus !== NetworkStatus.fetchMore &&
+        typeof imagesQuery?.fetchMore === "function"
+      )
+    ) {
+      return;
+    }
+
+    return imagesQuery.fetchMore({
+      variables: {
+        offset: imagesQuery.data.images.page_info.offset + 20,
+        query,
+        transparent,
+        limit: 20
+      },
+      updateQuery: (
+        previousResult,
+        { fetchMoreResult }: { fetchMoreResult }
+      ) => {
+        return {
+          ...fetchMoreResult,
+          images: {
+            ...fetchMoreResult.images,
+            data: uniqBy(
+              previousResult.images.data.concat(fetchMoreResult.images.data),
+              "id"
+            )
+          }
+        };
+      }
+    });
+  }, [
+    imagesQuery?.networkStatus,
+    imagesQuery?.fetchMore,
+    transparent,
+    imagesQuery?.data,
+    imagesQuery?.data?.images?.page_info?.offset
+  ]);
+
+  return (
+    <ImageSearchContext.Provider value={imageSearchContext}>
+      <GalleryFilterListComponent
+        {...otherProps}
+        data={String(query).trim().length === 0 ? [] : data}
+        offset={
+          isModal ? offset : (Math.abs(offset) + IMAGE_SEARCH_HEIGHT) * -1
+        }
+        onRefresh={imagesQuery?.refetch}
+        itemHeight={SQUARE_ITEM_HEIGHT}
+        itemWidth={SQUARE_ITEM_WIDTH}
+        numColumns={COLUMN_COUNT}
+        headerHeight={IMAGE_SEARCH_HEIGHT}
+        resizeMode="aspectFit"
+        transparent={transparent}
+        scrollY={scrollY}
+        onEndReached={handleEndReached}
+        isModal={isModal}
+        ref={filterListRef}
+        insetValue={insetValue}
+        inset={_inset}
+        ListHeaderComponent={ImageSearch}
+        ListEmptyComponent={GallerySectionList}
+        stickyHeader={query.length > 0 || isKeyboardVisible}
+        // removeClippedSubviews={isFocused}
+        isFocused={isFocused}
+        hasNextPage={
+          imagesQuery?.data?.images?.page_info?.has_next_page ?? false
+        }
+        networkStatus={imagesQuery.networkStatus}
+      />
+    </ImageSearchContext.Provider>
+  );
 };
 
 export const GIFsFilterList = ({
@@ -412,10 +690,19 @@ export const GIFsFilterList = ({
       scrollY,
       additionalOffset: 4,
       keyboardVisibleValue,
+      networkStatus: gifsQuery?.networkStatus,
+      placeholder: "Search GIPHY",
       hasTextValue: hasTextValue.current,
       onChange: changeQuery
     };
-  }, [query, scrollY, keyboardVisibleValue, hasTextValue, changeQuery]);
+  }, [
+    query,
+    scrollY,
+    keyboardVisibleValue,
+    hasTextValue,
+    changeQuery,
+    gifsQuery?.networkStatus
+  ]);
 
   const data = React.useMemo(() => {
     return buildValue(gifsQuery?.data?.gifs?.data);
@@ -441,7 +728,8 @@ export const GIFsFilterList = ({
     return gifsQuery.fetchMore({
       variables: {
         offset: gifsQuery.data.gifs.page_info.offset,
-        query
+        query,
+        limit: 20
       },
       updateQuery: (
         previousResult,

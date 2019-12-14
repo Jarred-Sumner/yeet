@@ -251,6 +251,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.handleInsertPhoto(undefined, GallerySectionItem.photos);
     } else if (activeButton === ToolbarButtonType.gif) {
       this.handleInsertPhoto(undefined, GallerySectionItem.gifs);
+    } else if (activeButton === ToolbarButtonType.sticker) {
+      this.handleInsertPhoto(undefined, "all", true, true, true);
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
         x: POST_WIDTH / 2,
@@ -642,12 +644,20 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
-  handleInsertPhoto = (block, initialRoute = "all", shouldAnimate = false) => {
+  handleInsertPhoto = (
+    block,
+    initialRoute = "all",
+    shouldAnimate = false,
+    transparent: boolean = false,
+    autoFocus: boolean = false
+  ) => {
     this.props.onOpenGallery({
       blockId: block?.id,
       initialRoute,
       shouldAnimate,
-      onChange: this.handleInsertSticker
+      onChange: this.handleInsertSticker,
+      transparent,
+      autoFocus
     });
   };
 

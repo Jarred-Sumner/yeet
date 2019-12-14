@@ -83,30 +83,36 @@ export const extensionByMimeType = (mimeType: ImageMimeType) => {
   }
 };
 
-export const mimeTypeFromFilename = (filename: string) =>
-  ({
-    png: ImageMimeType.png,
-    gif: ImageMimeType.gif,
-    jpg: ImageMimeType.jpg,
-    jpeg: ImageMimeType.jpeg,
-    webp: ImageMimeType.webp,
-    heic: ImageMimeType.heic,
-    tiff: ImageMimeType.tiff,
-    tif: ImageMimeType.tiff,
-    mp4: ImageMimeType.mp4,
-    plist: ImageMimeType.jpg,
-    bmp: ImageMimeType.bmp,
-    mov: ImageMimeType.mov
-  }[
+export const MIME_TYPE_MAPPING = {
+  png: ImageMimeType.png,
+  gif: ImageMimeType.gif,
+  jpg: ImageMimeType.jpg,
+  jpeg: ImageMimeType.jpeg,
+  webp: ImageMimeType.webp,
+  heic: ImageMimeType.heic,
+  tiff: ImageMimeType.tiff,
+  tif: ImageMimeType.tiff,
+  mp4: ImageMimeType.mp4,
+  plist: ImageMimeType.jpg,
+  bmp: ImageMimeType.bmp,
+  mov: ImageMimeType.mov
+};
+
+export const mimeTypeFromFilename = (filename: string) => {
+  return MIME_TYPE_MAPPING[
     extname(filename || ".")
       .substring(1)
       .toLowerCase()
-  ]);
+  ];
+};
 
 export enum ImageSourceType {
   cameraRoll = "cameraRoll",
   giphy = "giphy",
-  yeet = "yeet"
+  yeet = "yeet",
+  search = "search",
+  youtube_dl = "youtube_dl",
+  opengraph = "opengraph"
 }
 
 const giphy = giphyClient({
@@ -135,9 +141,10 @@ export type YeetImage = {
   duration: number;
   __typename: "YeetImage";
   uri: string;
+  audioURI?: string;
   mimeType: ImageMimeType;
   source: ImageSourceType;
-  asset: ImageResolvedAssetSource;
+
   transform: YeetTransform;
 };
 
@@ -190,7 +197,6 @@ const normalizeBaseImage = (
     duration: Number(image.length || 0),
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
-    asset: Image.resolveAssetSource(assetData),
     __typename: "YeetImage",
     transform
   };
@@ -217,7 +223,6 @@ export const normalizeResizedImage = (
     mimeType: original.image.mimeType,
     __typename: "YeetImage",
     source: ImageSourceType.cameraRoll,
-    asset: Image.resolveAssetSource(assetData),
     transform
   };
 
@@ -260,7 +265,6 @@ export const imageContainerFromCameraRoll = (
     playDuration: duration,
     mimeType,
     source: ImageSourceType.cameraRoll,
-    asset: Image.resolveAssetSource(assetData),
     transform
   };
 
@@ -286,7 +290,7 @@ const normalizeOriginalImage = (image, transform = []): YeetImage => {
     __typename: "YeetImage",
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
-    asset: Image.resolveAssetSource(assetData),
+
     transform
   };
 };
@@ -436,12 +440,6 @@ export const imageFromMediaSource = (
     height,
     mimeType,
     duration,
-    asset: {
-      width,
-      height,
-      uri: url,
-      scale: pixelRatio
-    },
     transform: [],
     source: ImageSourceType.yeet
   };

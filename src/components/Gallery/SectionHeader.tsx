@@ -36,13 +36,21 @@ const styles = StyleSheet.create({
   }
 });
 
-export const SectionHeader = ({ label, onPress }) => (
-  <BaseButton exclusive enabled={!!onPress} onPress={onPress}>
+export const SectionHeader = ({ label, onPress, showViewAll }) => (
+  <BaseButton
+    exclusive
+    enabled={!!(!!onPress && showViewAll)}
+    onPress={onPress}
+  >
     <View style={styles.container}>
       <SemiBoldText style={styles.title}>{label}</SemiBoldText>
       <View style={styles.right}>
-        <Text style={styles.viewAll}>View all</Text>
-        <IconChevronRight style={styles.chevron} color="#ccc" />
+        {showViewAll && (
+          <>
+            <Text style={styles.viewAll}>View all</Text>
+            <IconChevronRight style={styles.chevron} color="#ccc" />
+          </>
+        )}
       </View>
     </View>
   </BaseButton>

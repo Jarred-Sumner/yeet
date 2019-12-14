@@ -30,6 +30,7 @@
 #import <PINRemoteImage/PINDisplayLink.h>
 #import <React/RCTSurfacePresenterStub.h>
 #import <React/RCTUITextView.h>
+#import <React/RCTEventEmitter.h>
 
 @interface RCTBaseTextInputView(PrivateMethods)
 
@@ -63,6 +64,13 @@
 @interface RCT_EXTERN_MODULE(YeetExporter, NSObject)
 
 RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly callback: (RCTResponseSenderBlock)callback);
+
+@end
+
+@interface RCT_EXTERN_MODULE(YeetClipboard, RCTEventEmitter)
+
+RCT_EXTERN_METHOD(getContent:(RCTResponseSenderBlock)callback);
+RCT_EXTERN_METHOD(clipboardMediaSource:(RCTResponseSenderBlock)callback);
 
 @end
 

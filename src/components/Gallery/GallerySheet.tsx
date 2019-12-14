@@ -1,5 +1,5 @@
 import BottomSheet from "reanimated-bottom-sheet";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, InteractionManager, Keyboard } from "react-native";
 import * as React from "react";
 import { BlurView } from "@react-native-community/blur";
 import GalleryTabView from "./GalleryTabView";
@@ -16,6 +16,9 @@ import { throttle } from "lodash";
 import { sheetOpacity } from "../../lib/animations";
 import { getSelectedIDs } from "../../screens/ImagePickerPage";
 import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/FilterBar";
+import { MediaPlayerPauser } from "../MediaPlayer";
+import { YeetImageContainer } from "../../lib/imageSearch";
+import Storage from "../../lib/Storage";
 
 const styles = StyleSheet.create({
   sheet: {
@@ -55,6 +58,8 @@ export class GallerySheet extends React.Component {
   componentDidUpdate(prevProps) {
     if (this.props.show !== prevProps.show) {
       if (!this.props.show) {
+        const handle = InteractionManager.createInteractionHandle();
+        Keyboard.dismiss();
         Animated.timing(this.dismissY, {
           toValue: 0,
           duration: 500,
@@ -64,9 +69,12 @@ export class GallerySheet extends React.Component {
 
           this.setState({ show: false }, () => {
             this.scrollY.setValue(0);
+            InteractionManager.clearInteractionHandle(handle);
           });
         });
       } else if (this.props.show) {
+        const handle = InteractionManager.createInteractionHandle();
+
         this.scrollY.setValue(0);
         this.setState({ show: true }, () => {
           Animated.timing(this.dismissY, {
@@ -75,6 +83,7 @@ export class GallerySheet extends React.Component {
             easing: Easing.elastic(0.8)
           }).start(() => {
             this.isDismissingValue.setValue(0);
+            InteractionManager.clearInteractionHandle(handle);
           });
         });
       }
@@ -105,16 +114,73 @@ export class GallerySheet extends React.Component {
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
+  handlePress = (photo: YeetImageContainer) => {
+    this.props.onPress(photo);
+
+    window.requestIdleCallback(() => {
+      Storage.insertRecentlyUsed(photo);
+    });
+  };
+
+  blurWrapperStyles = [
+    styles.blurWrapper,
+    {
+      height: SCREEN_DIMENSIONS.height,
+      width: SCREEN_DIMENSIONS.width
+    },
+    {
+      transform: [
+        {
+          translateY: this.translateY
+        }
+      ]
+    }
+  ];
+
+  transitionStyles = [
+    styles.transition,
+    {
+      opacity: Animated.cond(Animated.eq(this.dismissY, 0), 0, 1),
+      transform: [
+        {
+          translateY: SCREEN_DIMENSIONS.height
+        },
+        {
+          translateY: this.dismissY
+        },
+        {
+          translateY: this.translateY
+        }
+      ]
+    }
+  ];
+
+  height =
+    SCREEN_DIMENSIONS.height -
+    GallerySheet.TOP_OFFSET -
+    GallerySheet.CONTENT_INSET +
+    TOP_Y;
+
+  blurStyle = {
+    height: this.height
+  };
+
+  sheetStyles = [
+    styles.sheet,
+    {
+      opacity: sheetOpacity(
+        this.dismissY,
+        this.scrollY,
+        SCREEN_DIMENSIONS.height,
+        GallerySheet.TOP_OFFSET
+      )
+    }
+  ];
   render() {
     const { onDismiss } = this.props;
 
     const { show } = this.state;
-
-    const height =
-      SCREEN_DIMENSIONS.height -
-      GallerySheet.TOP_OFFSET -
-      GallerySheet.CONTENT_INSET +
-      TOP_Y;
+    const { height } = this;
 
     return (
       <>
@@ -123,19 +189,7 @@ export class GallerySheet extends React.Component {
           style={styles.sheetTransition}
         >
           <BaseButton enabled={show} onPress={onDismiss}>
-            <Animated.View
-              style={[
-                styles.sheet,
-                {
-                  opacity: sheetOpacity(
-                    this.dismissY,
-                    this.scrollY,
-                    SCREEN_DIMENSIONS.height,
-                    GallerySheet.TOP_OFFSET
-                  )
-                }
-              ]}
-            />
+            <Animated.View style={this.sheetStyles} />
           </BaseButton>
         </Animated.View>
 
@@ -159,60 +213,33 @@ export class GallerySheet extends React.Component {
 
         <Animated.View
           pointerEvents={show ? "auto" : "none"}
-          style={[
-            styles.transition,
-            {
-              transform: [
-                {
-                  translateY: SCREEN_DIMENSIONS.height
-                },
-                {
-                  translateY: this.dismissY
-                },
-                {
-                  translateY: this.translateY
-                }
-              ]
-            }
-          ]}
+          style={this.transitionStyles}
         >
-          <Animated.View
-            style={[
-              styles.blurWrapper,
-              {
-                height: SCREEN_DIMENSIONS.height,
-                width: SCREEN_DIMENSIONS.width
-              },
-              {
-                transform: [
-                  {
-                    translateY: this.translateY
-                  }
-                ]
-              }
-            ]}
-          >
-            <BlurView
-              blurType="extraDark"
-              blurAmount={25}
-              style={{
-                height
-              }}
-            >
-              <GalleryTabView
-                width={SCREEN_DIMENSIONS.width}
-                height={height}
-                inset={GallerySheet.CONTENT_INSET}
-                insetValue={this.insetValue}
-                onPress={this.props.onPress}
-                isModal
-                keyboardVisibleValue={this.props.keyboardVisibleValue}
-                selectedIDs={getSelectedIDs(this.state.selectedImages)}
-                initialRoute={this.props.initialRoute}
-                show={this.props.show}
-                scrollY={this.scrollY}
-              />
-            </BlurView>
+          <Animated.View style={this.blurWrapperStyles}>
+            <MediaPlayerPauser isHidden={!this.props.show}>
+              <BlurView
+                blurType="extraDark"
+                blurAmount={25}
+                style={this.blurStyle}
+              >
+                <GalleryTabView
+                  width={SCREEN_DIMENSIONS.width}
+                  height={height}
+                  inset={GallerySheet.CONTENT_INSET}
+                  bottomInset={GallerySheet.TOP_OFFSET}
+                  insetValue={this.insetValue}
+                  autoFocusSearch={this.props.autoFocus}
+                  transparentSearch={this.props.transparentSearch}
+                  onPress={this.handlePress}
+                  isModal
+                  keyboardVisibleValue={this.props.keyboardVisibleValue}
+                  selectedIDs={getSelectedIDs(this.state.selectedImages)}
+                  initialRoute={this.props.initialRoute}
+                  show={this.props.show}
+                  scrollY={this.scrollY}
+                />
+              </BlurView>
+            </MediaPlayerPauser>
           </Animated.View>
         </Animated.View>
       </>

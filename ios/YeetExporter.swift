@@ -69,8 +69,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
 
   @objc(requiresMainQueueSetup)
-  private func requiresMainQueueSetup() -> Bool {
-    return true
+  static func requiresMainQueueSetup() -> Bool {
+    return false
   }
 
   func getImages(data: JSON) -> Promise<Dictionary<String, ExportableMediaSource>> {

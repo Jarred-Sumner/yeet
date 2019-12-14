@@ -3,7 +3,9 @@ import {
   Keyboard,
   StyleSheet,
   View,
-  TextInput as RNTextInput
+  TextInput as RNTextInput,
+  ActivityIndicator,
+  InteractionManager
 } from "react-native";
 import {
   BorderlessButton,
@@ -17,6 +19,8 @@ import { IconSearch } from "../../Icon";
 import { SemiBoldText } from "../../Text";
 import { BlurView } from "@react-native-community/blur";
 import { TOP_Y } from "../../../../config";
+import { debounce } from "lodash";
+import { NetworkStatus } from "apollo-client";
 
 export const ImageSearchContext = React.createContext(null);
 const TextInput = Animated.createAnimatedComponent(GestureTextInput);
@@ -77,6 +81,7 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     right: 0,
+
     width: CANCEL_WIDTH
   },
   cancelButton: {
@@ -86,10 +91,28 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
+  spinnerContainer: {
+    position: "absolute",
+    height: IMAGE_SEARCH_HEIGHT,
+    left: SPACING.normal,
+    justifyContent: "center",
+    zIndex: 10
+  },
+  right: {
+    position: "absolute",
+    top: 0,
+    right: SPACING.normal,
+    alignItems: "center",
+    paddingBottom: SPACING.half,
+    bottom: 0,
+    height: IMAGE_SEARCH_HEIGHT,
+    flexDirection: "row"
+  },
   iconContainer: {
     position: "absolute",
     left: SPACING.half,
     top: 0,
+
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
@@ -97,6 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     zIndex: 10
   },
+
   icon: {
     fontSize: 16,
     color: PLACEHOLDER_COLOR,
@@ -106,6 +130,11 @@ const styles = StyleSheet.create({
 });
 
 class ImageSearchComponent extends React.Component<Props> {
+  static defaultProps = {
+    autoFocus: false,
+    placeholder: "Search GIPHY"
+  };
+
   paddingRightValue = Animated.interpolate(this.props.keyboardVisibleValue, {
     inputRange: [0, 1],
     outputRange: [SPACING.half, 75 + SPACING.half],
@@ -115,6 +144,12 @@ class ImageSearchComponent extends React.Component<Props> {
   translateX = Animated.interpolate(this.props.keyboardVisibleValue, {
     inputRange: [0, 1],
     outputRange: [CANCEL_WIDTH, 0],
+    extrapolate: Animated.Extrapolate.CLAMP
+  });
+
+  spinnerX = Animated.interpolate(this.props.keyboardVisibleValue, {
+    inputRange: [0, 1],
+    outputRange: [SPACING.normal * -1, (CANCEL_WIDTH + SPACING.normal) * -1],
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
@@ -137,12 +172,44 @@ class ImageSearchComponent extends React.Component<Props> {
     this.props.onBlur && this.props.onBlur(evt);
   };
 
-  static defaultProps = {
-    placeholder: "Search GIPHY"
-  };
-
   inputStyles = [styles.textish, styles.text];
   textInputRef = React.createRef<RNTextInput>();
+
+  debouncedChange = debounce(this.props.onChange, 1000);
+
+  didAutoFocus = false;
+
+  componentDidMount() {
+    if (
+      this.props.show &&
+      !this.didAutoFocus &&
+      this.props.isFocused &&
+      this.props.autoFocus
+    ) {
+      this.autoFocus();
+    }
+  }
+
+  autoFocus = () => {
+    this.textInputRef.current.getNode().focus();
+    this.debouncedChange("");
+    this.didAutoFocus = true;
+  };
+
+  componentDidUpdate(prevProps) {
+    if (
+      !this.didAutoFocus &&
+      this.props.show &&
+      this.props.isFocused &&
+      this.props.autoFocus
+    ) {
+      this.autoFocus();
+    } else if (!this.props.show && prevProps.show) {
+      this.didAutoFocus = false;
+      this.debouncedChange.cancel();
+      this.textInputRef.current.getNode().clear();
+    }
+  }
 
   render() {
     const {
@@ -153,14 +220,21 @@ class ImageSearchComponent extends React.Component<Props> {
       onSubmit,
       placeholder,
       inset = 0,
+      networkStatus,
       offset,
-      hasTextValue,
       scrollY,
       disabled,
       translateY,
       keyboardVisibleValue,
-      additionalOffset = 0
+      additionalOffset = 0,
+      rightActions
     } = this.props;
+
+    const isLoading = [
+      NetworkStatus.loading,
+      NetworkStatus.refetch,
+      NetworkStatus.fetchMore
+    ].includes(networkStatus);
 
     const marginTop = (IMAGE_SEARCH_HEIGHT + offset - additionalOffset) * -1;
 
@@ -199,21 +273,41 @@ class ImageSearchComponent extends React.Component<Props> {
               }
             ]}
           >
-            <View style={[styles.textish, styles.iconContainer]}>
-              <IconSearch style={styles.icon} />
+            <View
+              pointerEvents="none"
+              style={[styles.textish, styles.iconContainer]}
+            >
+              <IconSearch
+                style={[
+                  styles.icon,
+                  {
+                    opacity: isLoading ? 0 : 1
+                  }
+                ]}
+              />
+
+              {isLoading && (
+                <View style={styles.spinnerContainer}>
+                  <ActivityIndicator
+                    color={COLORS.muted}
+                    size="small"
+                    animating={isLoading}
+                  />
+                </View>
+              )}
             </View>
 
             <TextInput
               keyboardAppearance="dark"
               textContentType="none"
-              clearButtonMode="always"
+              clearButtonMode="never"
               clearTextOnFocus={false}
               autoCompleteType="off"
               ref={this.textInputRef}
               disabled={disabled}
               editable={!disabled}
               enablesReturnKeyAutomatically
-              onChangeText={onChange}
+              onChangeText={this.debouncedChange}
               onSubmitEditing={onSubmit}
               importantForAutofill={false}
               onFocus={this.handleFocus}
@@ -226,6 +320,27 @@ class ImageSearchComponent extends React.Component<Props> {
               tintColor={COLORS.primary}
               selectionColor={COLORS.primary}
             ></TextInput>
+
+            {rightActions && (
+              <Animated.View
+                style={[
+                  styles.right,
+                  {
+                    transform: [
+                      {
+                        translateX: keyboardVisibleValue.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, (CANCEL_WIDTH - SPACING.half) * -1],
+                          extrapolate: Animated.Extrapolate.CLAMP
+                        })
+                      }
+                    ]
+                  }
+                ]}
+              >
+                {rightActions}
+              </Animated.View>
+            )}
 
             <Animated.View
               pointerEvents={this.state.isFocused ? "auto" : "none"}
