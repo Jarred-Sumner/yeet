@@ -1,14 +1,21 @@
-Welcome to update number two!! This one is smaller.
+Welcome to update number three!! This is the biggest update yet, and its all about the editor.
 
-- Push Notifications send now!
-- It was showing zero comments for every post in the Home tab, even when there were comments. Now it doesn't.
-- Loading images/gifs is more reliable & faster now. Not perfect, but better.
-- You can now block people.
-- Fixed a bug where tapping on a notification would show a black screen
-- Made it easier to tap the like & comment buttons.
-- On the Home tab, you can now tap on the thread creator to view their profile
-- Made the posts on the Home tab bigger and more respectful of the aspect ratios of the posts. Its important to be nice.
-- Fixed a bug where it wouldnt let you choose when your comment would appear sometimes.
-- Fixed an issue where posting wouldn't always update the list of posts in a thread correctly
-- Added a link to the Terms of Service & Privacy Policy in the login page
-- Removed some logging that didn't need to run in production
+New layout presets make yeet a great editor for memes
+- Swipe horizontally to change the layout
+
+Text styling!
+- There are now five font styles to choose from.
+- There are a handful of text background styles to choose, letting you set a background color that wraps around the text, just a text shadow, and more
+- You can now change the color & alignment of text
+
+Image browser:
+- Redeisgned to be faster at choosing & inserting images/video
+- Recent section shows previously used images
+- If you copy an image to your clipboard, it will show up in the image browser so you can use it without saving it to your photo library.
+- When you're in the editor and you tap new image, it will open on top of the editor instead of a different screen.
+- Swipe down to dismiss the image browser from the editor
+
+Image search!
+- You can now search the internet for images to use in your photos/videos
+- Filter by transparency, so you can insert stickers or images with backgrounds
+- While the search is loading, the search icon becomes a spinner
