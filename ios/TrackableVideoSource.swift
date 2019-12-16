@@ -9,36 +9,9 @@
 import Foundation
 import AVFoundation
 import SwiftyBeaver
-import ModernAVPlayer
 
-public struct YeetAVPlayerConfiguration: PlayerConfiguration {
 
-    // Buffering State
-    public let rateObservingTimeout: TimeInterval = 1.0
-    public let rateObservingTickTime: TimeInterval = 0.33
-
-    // General Audio preferences
-    public let preferedTimeScale: CMTimeScale = CMTimeScale(NSEC_PER_SEC)
-    public let periodicPlayingTime: CMTime
-    public let audioSessionCategory = AVAudioSession.Category.playback
-
-    // Reachability Service
-    public let reachabilityURLSessionTimeout: TimeInterval = 3
-    //swiftlint:disable:next force_unwrapping
-    public let reachabilityNetworkTestingURL = URL(string: "https://www.google.com")!
-    public let reachabilityNetworkTestingTickTime: TimeInterval = 3
-    public let reachabilityNetworkTestingIteration: UInt = 10
-
-    public var useDefaultRemoteCommand = true
-
-    public let allowsExternalPlayback = false
-
-    public init() {
-        periodicPlayingTime = CMTime(seconds: 1, preferredTimescale: preferedTimeScale)
-    }
-}
-
-class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
+class TrackableVideoSource : TrackableMediaSource {
   var playerStatusObserver: NSKeyValueObservation? = nil
   var timeControlObserver: NSKeyValueObservation? = nil
   var player: AVQueuePlayer? = nil {
@@ -88,8 +61,6 @@ class TrackableVideoSource : TrackableMediaSource, ModernAVPlayerDelegate {
   var itemObserver: NSKeyValueObservation? = nil
 
   func start(player: AVQueuePlayer, autoPlay: Bool = false) {
-    let config = YeetAVPlayerConfiguration()
-
     self.player = player
 
     mediaSource.loadAsset { [unowned self] asset in

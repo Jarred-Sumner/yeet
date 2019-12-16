@@ -196,9 +196,6 @@ PODS:
   - libwebp/mux (1.0.3):
     - libwebp/demux
   - libwebp/webp (1.0.3)
-  - ModernAVPlayer (1.4.0):
-    - ModernAVPlayer/Core (= 1.4.0)
-  - ModernAVPlayer/Core (1.4.0)
   - MulticastDelegateSwift (2.1.4)
   - nanopb (0.3.9011):
     - nanopb/decode (= 0.3.9011)
@@ -208,6 +205,7 @@ PODS:
   - NextLevelSessionExporter (0.4.3)
   - Nimble (8.0.4)
   - OneSignal (2.11.2)
+  - OpenCV2 (4.1.2)
   - Permission-Contacts (2.0.0-rc.0):
     - RNPermissions
   - Permission-LocationAlways (2.0.0-rc.0):
@@ -560,7 +558,6 @@ PODS:
   - Sentry (4.4.1):
     - Sentry/Core (= 4.4.1)
   - Sentry/Core (4.4.1)
-  - SkeletonView (1.8.2)
   - SSZipArchive (2.2.2)
   - SwiftyBeaver (1.7.1)
   - SwiftyJSON (4.3.0)
@@ -585,11 +582,11 @@ DEPENDENCIES:
   - GoogleIDFASupport (~> 3.14.0)
   - KTVHTTPCache (~> 2.0.0)
   - libwebp
-  - ModernAVPlayer
   - MulticastDelegateSwift
   - NextLevelSessionExporter
   - Nimble (from `https://github.com/Quick/Nimble.git`)
   - OneSignal (< 3.0, >= 2.9.3)
+  - OpenCV2
   - Permission-Contacts (from `../node_modules/react-native-permissions/ios/Contacts.podspec`)
   - Permission-LocationAlways (from `../node_modules/react-native-permissions/ios/LocationAlways.podspec`)
   - Permission-LocationWhenInUse (from `../node_modules/react-native-permissions/ios/LocationWhenInUse.podspec`)
@@ -665,7 +662,6 @@ DEPENDENCIES:
   - SDWebImage (= 5.1.1)
   - SDWebImagePhotosPlugin
   - SDWebImageWebPCoder
-  - SkeletonView
   - SwiftyBeaver
   - SwiftyJSON (~> 4.0)
   - SwiftyTimer
@@ -709,11 +705,11 @@ SPEC REPOS:
     - KTVCocoaHTTPServer
     - KTVHTTPCache
     - libwebp
-    - ModernAVPlayer
     - MulticastDelegateSwift
     - nanopb
     - NextLevelSessionExporter
     - OneSignal
+    - OpenCV2
     - PINOperation
     - Promises
     - Protobuf
@@ -722,7 +718,6 @@ SPEC REPOS:
     - SDWebImagePhotosPlugin
     - SDWebImageWebPCoder
     - Sentry
-    - SkeletonView
     - SSZipArchive
     - SwiftyBeaver
     - SwiftyJSON
@@ -951,12 +946,12 @@ SPEC CHECKSUMS:
   KTVCocoaHTTPServer: df8d7b861e603ff8037e9b2138aca2563a6b768d
   KTVHTTPCache: 588c3eb16f6bd1e6fde1e230dabfb7bd4e490a4d
   libwebp: 057912d6d0abfb6357d8bb05c0ea470301f5d61e
-  ModernAVPlayer: f11249a036df101ecc02c5a947e1e00a1fc953ed
   MulticastDelegateSwift: 84c42e7a0a31385d8222bbbb4c89bcdb00cb5f4d
   nanopb: 18003b5e52dab79db540fe93fe9579f399bd1ccd
   NextLevelSessionExporter: b6fc7f3d86ec8067b4ce446762faaf6bdb4993b2
   Nimble: 66110543b37eed1302fa50f2ad411f22d2548373
   OneSignal: 4e3e68bb6c29975286a2fa910cb49132bc6e20bb
+  OpenCV2: 3ac0512dabaddda936f112507f9095697d392551
   Permission-Contacts: 807e3482b1d3957a5a321bff0955333ef3babe77
   Permission-LocationAlways: 5fc356db1e7907c818f69e390ac1d8f19b121af2
   Permission-LocationWhenInUse: 390e9625c1d31c0211bfecefa2d069b05fd0ac3c
@@ -1031,7 +1026,6 @@ SPEC CHECKSUMS:
   SDWebImagePhotosPlugin: 7577bd9f01f16c2f3b35fd81109b0612c739c81a
   SDWebImageWebPCoder: 947093edd1349d820c40afbd9f42acb6cdecd987
   Sentry: 5d312a04e369154aeac616214f4dfc3cbcc8b296
-  SkeletonView: bb27c39857e5492136f02ee8a3aa78de55d12ecd
   SSZipArchive: fa16b8cc4cdeceb698e5e5d9f67e9558532fbf23
   SwiftyBeaver: da5e573ad583586c18236324c36900990afe1733
   SwiftyJSON: 6faa0040f8b59dead0ee07436cbf76b73c08fd08
@@ -1041,6 +1035,6 @@ SPEC CHECKSUMS:
   WCPhotoManipulator: 2a49edd1ecdf0aec9207b86257cee0cc7f46ea79
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: fe46a15ae7ede5dc128a5bf87c2a7a93ce8cb768
+PODFILE CHECKSUM: 9829c4e2209e481159adaa54a14ec0b421855ed7
 
 COCOAPODS: 1.8.4

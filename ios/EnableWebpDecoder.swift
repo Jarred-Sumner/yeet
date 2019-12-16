@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Vision
 import SwiftyBeaver
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
@@ -24,6 +25,5 @@ import SwiftyBeaver
                                            selector: #selector(YeetClipboard.onApplicationBecomeActive),
                                            name: UIApplication.didBecomeActiveNotification, // UIApplication.didBecomeActiveNotification for swift 4.2+
     object: nil)
-
   }
 }

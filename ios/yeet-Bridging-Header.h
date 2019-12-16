@@ -31,6 +31,7 @@
 #import <React/RCTSurfacePresenterStub.h>
 #import <React/RCTUITextView.h>
 #import <React/RCTEventEmitter.h>
+#import "FindContours.h"
 
 @interface RCTBaseTextInputView(PrivateMethods)
 

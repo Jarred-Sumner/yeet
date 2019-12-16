@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import ModernAVPlayer
 
 class VideoPlayerView: UIView {
     var player: AVPlayer? {

@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import ModernAVPlayer
 
 @objc class YeetVideoView: UIView, TrackableMediaSourceDelegate {
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {

@@ -12,8 +12,6 @@ import UIKit
 import SwiftyBeaver
 import Promise
 import Photos
-import ModernAVPlayer
-import SkeletonView
 
 enum MediaPlayerContentType {
   case video
@@ -821,7 +819,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
     let isVisible = superview != nil && window != nil
     let isDetachedView = superview != nil && window == nil
-    Log.debug("[\(String(describing: id))]: superview \(superview != nil) \n window \(window != nil)")
+
     if (isVisible) {
       
     } else if (isDetachedView && !invalidated) {

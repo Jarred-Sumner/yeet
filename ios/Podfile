@@ -76,7 +76,6 @@ target 'yeet' do
       podspec:
         '../node_modules/react-native/third-party-podspecs/Folly.podspec',
       modular_headers: false
-  pod 'SkeletonView'
 
 
   pod 'SDWebImageWebPCoder'
@@ -127,10 +126,9 @@ target 'yeet' do
       path: '../node_modules/react-native-secure-key-store/ios',
       modular_headers: false
 
-  # pod 'RNTextDetector', :path => '../node_modules/react-native-text-detector/ios', modular_headers: false
-  pod 'RNSketchCanvas',
-      path: '../node_modules/@terrylinla/react-native-sketch-canvas',
-      modular_headers: false
+
+      pod 'OpenCV2'
+
 
   pod 'RNFS', path: '../node_modules/react-native-fs', modular_headers: false
 
@@ -157,7 +155,6 @@ target 'yeet' do
   pod 'RNFBAnalytics', path: '../node_modules/@react-native-firebase/analytics'
   pod 'GoogleIDFASupport', '~> 3.14.0'
 
-  pod 'ModernAVPlayer'
 
   # pod 'appcenter', :path => '../node_modules/appcenter'
   # pod 'appcenter-analytics', :path => '../node_modules/appcenter-analytics'

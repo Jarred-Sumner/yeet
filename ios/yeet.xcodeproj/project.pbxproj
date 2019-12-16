@@ -36,6 +36,9 @@
 		8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489923222C3F00E816E8 /* YeetExportData.swift */; };
 		8330489C23222D4800E816E8 /* EditorExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489B23222D4800E816E8 /* EditorExport.swift */; };
 		8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489D23223B0D00E816E8 /* VideoProducer.swift */; };
+		83356DDE23A5C4E300943381 /* FeatureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83356DDD23A5C4E300943381 /* FeatureDetector.swift */; };
+		83356DE323A5D53800943381 /* FindContours.mm in Sources */ = {isa = PBXBuildFile; fileRef = 83356DE223A5D53800943381 /* FindContours.mm */; };
+		83356DE923A5DD7600943381 /* UIImage+OpenCVConversion.mm in Sources */ = {isa = PBXBuildFile; fileRef = 83356DE823A5DD7600943381 /* UIImage+OpenCVConversion.mm */; };
 		8336FE54236EC6050076F8AA /* VideoPool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8336FE53236EC6050076F8AA /* VideoPool.swift */; };
 		833C158C2362F0B70054A183 /* CALayerContentsGravity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 833C158B2362F0B70054A183 /* CALayerContentsGravity.swift */; };
 		8341A1EB238E1D8F00632E88 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8341A1EA238E1D8F00632E88 /* Log.swift */; };
@@ -171,6 +174,11 @@
 		8330489B23222D4800E816E8 /* EditorExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExport.swift; sourceTree = "<group>"; };
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
 		83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableWebpDecoder.swift; sourceTree = "<group>"; };
+		83356DDD23A5C4E300943381 /* FeatureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureDetector.swift; sourceTree = "<group>"; };
+		83356DE123A5D53800943381 /* FindContours.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FindContours.h; sourceTree = "<group>"; };
+		83356DE223A5D53800943381 /* FindContours.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FindContours.mm; sourceTree = "<group>"; };
+		83356DE723A5DD7600943381 /* UIImage+OpenCVConversion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCVConversion.h"; sourceTree = "<group>"; };
+		83356DE823A5DD7600943381 /* UIImage+OpenCVConversion.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCVConversion.mm"; sourceTree = "<group>"; };
 		83364A372351B29600D42298 /* liblibwebp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = liblibwebp.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		8336FE53236EC6050076F8AA /* VideoPool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPool.swift; sourceTree = "<group>"; };
 		833C158B2362F0B70054A183 /* CALayerContentsGravity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CALayerContentsGravity.swift; sourceTree = "<group>"; };
@@ -275,6 +283,7 @@
 		13B07FAE1A68108700A75B9A /* yeet */ = {
 			isa = PBXGroup;
 			children = (
+				83356DDC23A5C4D900943381 /* AI */,
 				8346978123A424FA00CDE5D8 /* Clipboard */,
 				8366FB2C239EFFFB00F73311 /* ColorSlider */,
 				839219D22378EC3300DC3461 /* yeet.entitlements */,
@@ -420,6 +429,18 @@
 				833C158B2362F0B70054A183 /* CALayerContentsGravity.swift */,
 			);
 			name = Exporting;
+			sourceTree = "<group>";
+		};
+		83356DDC23A5C4D900943381 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				83356DDD23A5C4E300943381 /* FeatureDetector.swift */,
+				83356DE123A5D53800943381 /* FindContours.h */,
+				83356DE223A5D53800943381 /* FindContours.mm */,
+				83356DE723A5DD7600943381 /* UIImage+OpenCVConversion.h */,
+				83356DE823A5DD7600943381 /* UIImage+OpenCVConversion.mm */,
+			);
+			name = AI;
 			sourceTree = "<group>";
 		};
 		8346978123A424FA00CDE5D8 /* Clipboard */ = {
@@ -896,6 +917,8 @@
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */,
+				83356DDE23A5C4E300943381 /* FeatureDetector.swift in Sources */,
+				83356DE323A5D53800943381 /* FindContours.mm in Sources */,
 				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
 				8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */,
@@ -930,6 +953,7 @@
 				83E45AC6234197D80091D443 /* YeetImageView.swift in Sources */,
 				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,
+				83356DE923A5DD7600943381 /* UIImage+OpenCVConversion.mm in Sources */,
 				83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */,
 				83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */,
 			);
@@ -1012,7 +1036,7 @@
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1069,7 +1093,7 @@
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1236,7 +1260,7 @@
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
