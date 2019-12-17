@@ -20,6 +20,32 @@
 	<string>69.69.74</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>SCSDKClientId</key>
+	<string>e784095d-e4a6-4800-8e15-c1bf80a2f82e</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+
+     <string>fb</string>
+     <string>fbapi</string>
+     <string>fbauth2</string>
+     <string>fbshareextension</string>
+     <string>fb-messenger-api</string>
+     <string>twitter</string>
+     <string>viber</string>
+     <string>whatsapp</string>
+     <string>wechat</string>
+     <string>line</string>
+		 <string>snapchat</string>
+     <string>instagram</string>
+     <string>kakaotalk</string>
+     <string>mqq</string>
+     <string>vk</string>
+     <string>comgooglemaps</string>
+     <string>googlephotos</string>
+     <string>ha</string>
+     <string>yammer</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

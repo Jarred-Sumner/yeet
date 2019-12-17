@@ -52,12 +52,16 @@ export class NewPostPage extends React.Component {
   handleExport = (
     contentExport: ContentExport,
     exportData: ExportData,
-    format: PostFormat
+    format: PostFormat,
+    layout: PostLayout,
+    editToken: string
   ) => {
     this.props.navigation.navigate("NewThread", {
       contentExport,
       exportData,
-      format
+      format,
+      layout,
+      editToken
     });
   };
 

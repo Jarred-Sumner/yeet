@@ -1,4 +1,4 @@
-import { Text as RNText, StyleSheet, Platform } from "react-native";
+import { Text as RNText, StyleSheet, Platform, TextProps } from "react-native";
 import React from "react";
 import { isArray } from "lodash";
 
@@ -127,7 +127,7 @@ export const Text = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;
 
 export const ThinText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
@@ -136,7 +136,7 @@ export const ThinText = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;
 
 export const SemiBoldText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
@@ -145,7 +145,7 @@ export const SemiBoldText = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;
 
 export const MediumText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
@@ -154,7 +154,7 @@ export const MediumText = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;
 
 export const BoldText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
@@ -163,7 +163,7 @@ export const BoldText = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;
 
 export const ExtraBoldText = React.memo(
   ({ children, style, ...otherProps }) => (
@@ -174,7 +174,7 @@ export const ExtraBoldText = React.memo(
       {children}
     </RNText>
   )
-);
+) as React.ComponentType<TextProps>;
 
 export const BlackText = React.memo(({ children, style, ...otherProps }) => (
   <RNText
@@ -183,4 +183,4 @@ export const BlackText = React.memo(({ children, style, ...otherProps }) => (
   >
     {children}
   </RNText>
-));
+)) as React.ComponentType<TextProps>;

@@ -179,6 +179,51 @@ enum MimeType: String {
   }
 }
 
+extension UIImage {
+  var mimeType: MimeType {
+    switch sd_imageFormat {
+    case .GIF:
+      return .gif
+    case .HEIC:
+        return .heic
+    case .HEIF:
+      return .heif
+    case .PNG:
+      return .png
+    case .TIFF:
+      return .tiff
+    case .JPEG:
+      return .jpg
+    case .undefined:
+      return .jpg
+    case .webP:
+      return .webp
+    default:
+      return .jpg
+    }
+  }
+
+  var sharableMimeType: MimeType {
+    let type = self.mimeType
+
+    if [MimeType.png, MimeType.tiff, MimeType.bmp, MimeType.webp].contains(type) {
+      return .png
+    } else {
+      return .jpg
+    }
+  }
+
+  var sharableData: Data? {
+    let type = self.sharableMimeType
+
+    if type == .png {
+      return self.pngData()
+    } else {
+      return self.jpegData(compressionQuality: CGFloat(0.95))
+    }
+  }
+}
+
 class YeetMedia {
   let width: NSNumber;
   let height: NSNumber;

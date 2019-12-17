@@ -673,6 +673,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
                   self?.reactViewController().present(alertController, animated: true, completion: nil)
                 }
 
+
                 resolve(true)
               } else {
                 reject(error ?? YeetError.init(code: .saveFailed))
@@ -855,7 +856,39 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
+  var sharableMimeType : MimeType {
+    if let image = imageView?.image {
+      return image.sharableMimeType
+    } else if let video = source as? TrackableVideoSource {
+      if video.mediaSource.mimeType == .mp4 {
+        return .mp4
+      } else {
+        return .mov
+      }
+    } else {
+      return .jpg
+    }
+  }
 
+
+  var sharableData : Data? {
+    if let image = imageView?.image {
+      return image.sharableData
+    } else if let video = source as? TrackableVideoSource {
+      guard let asset = video.mediaSource.asset else {
+        return nil
+      }
+
+      do {
+        return try Data.init(contentsOf: asset.url)
+      } catch {
+        Log.error(error)
+        return nil
+      }
+    } else {
+      return nil
+    }
+  }
 
 
 

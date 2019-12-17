@@ -48,6 +48,8 @@ class MediaSource : NSObject  {
     ]
   }
 
+  
+
   static let ENABLE_VIDE_CACHE = true
 
 
@@ -108,6 +110,9 @@ class MediaSource : NSObject  {
     }
 
     if (_asset == nil && isHTTProtocol) {
+      _asset = AVURLAsset(url: self.assetURI)
+      self.assetStatus = .pending
+    } else if (_asset == nil && isFileProtocol) {
       _asset = AVURLAsset(url: self.assetURI)
       self.assetStatus = .pending
     }

@@ -35,8 +35,13 @@ import {
   PostUploadTaskStatus
 } from "../../lib/MediaUploadTask";
 import { MediaUploadProgress } from "../MediaUploadProgress";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
+import {
+  TouchableWithoutFeedback,
+  BorderlessButton
+} from "react-native-gesture-handler";
 import { useFocusState } from "react-navigation-hooks";
+import { CurrentUserAvatar } from "../Avatar";
+import { UserContext } from "../UserContext";
 
 export const THREAD_HEADER_HEIGHT = 34 + SPACING.normal;
 
@@ -61,6 +66,22 @@ const styles = StyleSheet.create({
     zIndex: 0,
     height: THREAD_HEADER_HEIGHT + TOP_Y
   },
+  nonBlurryBar: {
+    backgroundColor: "black"
+  },
+  usernameContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  avatarContainer: {
+    marginRight: SPACING.half,
+    marginLeft: -24 - SPACING.half
+  },
+  doneSection: {
+    width: 100,
+    marginLeft: -100
+  },
   side: {
     flexDirection: "row",
     alignItems: "center",
@@ -83,8 +104,7 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   rightSide: {
-    justifyContent: "flex-end",
-    width: 44
+    justifyContent: "flex-end"
   },
   username: {
     fontSize: 13,
@@ -105,6 +125,29 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     width: "100%"
+  },
+  textButton: {
+    paddingLeft: SPACING.normal,
+    height: THREAD_HEADER_HEIGHT,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  usernameTitle: {
+    fontSize: 16,
+    flexWrap: "nowrap",
+    color: "white",
+    marginTop: 0
+  },
+  usernameTitleContainer: {
+    alignItems: "center",
+    flexDirection: "row",
+    height: 24
+  },
+  textButtonLabel: {
+    color: COLORS.muted,
+    fontSize: 18,
+    textAlign: "center"
   },
   leftSide: {
     width: 44
@@ -263,39 +306,47 @@ export const ThreadHeader = ({ thread, threadId }) => {
   );
 };
 
-export const NewThreadHeader = ({}) => {
+export const NewThreadHeader = ({ onDone, onBack, buttonStyle, children }) => {
   const ref = React.useRef();
 
   const behavior = useBackButtonBehavior();
+  const {
+    currentUser: { username }
+  } = React.useContext(UserContext);
 
   return (
-    <>
-      <BlurView
-        style={[styles.bar, styles.blur]}
-        blurType="dark"
-        blurAmount={12}
-        viewRef={ref}
-      />
+    <View ref={ref} style={[styles.bar, styles.container, styles.nonBlurryBar]}>
+      <View style={[styles.side, styles.leftSide]}>
+        <BackButton onPress={onBack} behavior={behavior} size={16} />
+      </View>
 
-      <View ref={ref} style={[styles.bar, styles.container]}>
-        <View style={[styles.side, styles.leftSide]}>
-          <BackButton behavior={behavior} size={16} />
+      <View style={[styles.side, styles.titleSide, styles.usernameContainer]}>
+        <View style={styles.avatarContainer}>
+          <CurrentUserAvatar size={24} />
         </View>
-
-        <View style={[styles.side, styles.titleSide]}>
-          <SemiBoldText
+        <View style={styles.usernameTitleContainer}>
+          <MediumText
             numberOfLines={1}
-            style={(styles.title, styles.bigTitle)}
+            adjustsFontSizeToFit
+            suppressHighlighting
+            lineBreakMode="tail"
+            style={[styles.title, styles.usernameTitle]}
           >
-            New thread
-          </SemiBoldText>
-        </View>
-
-        <View style={[styles.side, styles.rightSide]}>
-          {/* <IconButtonEllipsis onPress={handlePressEllipsis} /> */}
+            @{username}
+          </MediumText>
         </View>
       </View>
-    </>
+
+      <View style={[styles.side, styles.rightSide, styles.doneSection]}>
+        <BorderlessButton onPress={onDone}>
+          <View style={styles.textButton}>
+            <SemiBoldText style={[styles.textButtonLabel, buttonStyle]}>
+              {children}
+            </SemiBoldText>
+          </View>
+        </BorderlessButton>
+      </View>
+    </View>
   );
 };
 

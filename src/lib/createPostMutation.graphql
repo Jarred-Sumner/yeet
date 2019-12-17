@@ -9,6 +9,8 @@ mutation CreatePost(
   $autoplaySeconds: Int
   $colors: ColorsInputObject!
   $threadId: ID!
+  $editToken: String
+  $layout: String
 ) {
   createPost(
     mediaId: $mediaId
@@ -19,6 +21,8 @@ mutation CreatePost(
     autoplaySeconds: $autoplaySeconds
     threadId: $threadId
     colors: $colors
+    editToken: $editToken
+    layout: $layout
   ) {
     ...PostFragment
   }

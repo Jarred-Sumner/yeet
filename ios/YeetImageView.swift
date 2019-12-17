@@ -344,10 +344,18 @@ class YeetImageView : PINAnimatedImageView {
   func loadFileImage(async: Bool = true) throws {
     if async {
       DispatchQueue.global(qos: .userInitiated).async {
-        try! self._loadFileImage(async: async)
+        do {
+          try self._loadFileImage(async: async)
+        } catch {
+          self.handleLoad(success: false, error: error)
+        }
       }
     } else {
-      try self._loadFileImage(async: async)
+      do {
+        try self._loadFileImage(async: async)
+      } catch {
+        self.handleLoad(success: false, error: error)
+      }
     }
   }
 

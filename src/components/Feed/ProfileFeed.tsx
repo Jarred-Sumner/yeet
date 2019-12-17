@@ -128,7 +128,7 @@ export const ProfileFeedComponent = ({
             )}
           </View>
 
-          {body && (
+          {body?.length > 0 && (
             <View style={styles.bodyTextContainer}>
               <MediumText
                 style={styles.bodyText}

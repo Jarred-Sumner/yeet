@@ -7,7 +7,6 @@
 //
 
 import Foundation
-//import SkeletonView
 import SwiftyBeaver
 
 @objc(MediaPlayerViewManager)
@@ -267,6 +266,14 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
       }.catch { error in
         cb([error, nil])
       }
+    }
+  }
+
+  @objc(share:network:callback:)
+  func share(_ tag: NSNumber, _ network: String, _ cb: @escaping RCTResponseSenderBlock) {
+    withView(tag: tag) { view in
+      let success = MediaPlayerShare.share(network: MediaPlayerShare.Network.init(rawValue: network), mediaPlayer: view)
+      cb([nil, success])
     }
   }
     

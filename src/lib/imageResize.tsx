@@ -1,12 +1,8 @@
-import path from "path";
-import { Image } from "react-native";
 import RNFS from "react-native-fs";
 import PhotoEditor from "react-native-photo-manipulator";
-import RNFetchBlob from "rn-fetch-blob";
 import {
-  YeetImage,
-  YeetImageContainer,
   normalizeResizedImage,
+  YeetImageContainer,
   YeetImageRect
 } from "./imageSearch";
 

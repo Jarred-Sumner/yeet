@@ -1,18 +1,15 @@
 import * as React from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
+import { useNavigation } from "react-navigation-hooks";
 import { NewPost } from "../components/NewPost/NewPost";
-import { withNavigation } from "react-navigation";
-import { PostFragment } from "../lib/graphql/PostFragment";
+import { PostFormat } from "../components/NewPost/NewPostFormat";
 import {
+  ContentExport,
   convertExportedBlocks,
   convertExportedNodes,
-  ContentExport,
   ExportData
 } from "../lib/Exporter";
-import { PostFormat } from "../components/NewPost/NewPostFormat";
-import { sendToast, ToastType } from "../components/Toast";
-import PostUploader, { RawPostUploader } from "../components/PostUploader";
-import { useNavigation } from "react-navigation-hooks";
+import { PostFragment } from "../lib/graphql/PostFragment";
 import {
   MediaUploadContext,
   PostUploadTask,
@@ -39,7 +36,6 @@ class RawReplyPage extends React.Component<{}, State> {
     exportData: null,
     showUploader: false
   };
-  postUploaderRef = React.createRef<RawPostUploader>();
   handleCreate = () => {
     const fromFeed = this.props.navigation.getParam("fromFeed") ?? false;
 

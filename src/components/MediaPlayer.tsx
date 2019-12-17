@@ -327,6 +327,23 @@ export class MediaPlayerComponent extends React.Component<Props> {
     });
   };
 
+  share = (network: String | null) => {
+    return new Promise((resolve, reject) => {
+      MediaPlayer.NativeModule.share(
+        findNodeHandle(this),
+        network,
+        (err, success) => {
+          if (err) {
+            reject(err);
+            return;
+          } else {
+            resolve(success);
+          }
+        }
+      );
+    });
+  };
+
   crop = (bounds: BoundsRect, size: DimensionsRect) => {
     return MediaPlayer.NativeModule.crop(findNodeHandle(this), bounds, size);
   };
@@ -458,37 +475,45 @@ export class MediaPlayerComponent extends React.Component<Props> {
   }
 }
 
+const BatchPausableMediaPlayer = React.forwardRef(({ id, ...props }, ref) => {
+  const _ref = React.useRef<MediaPlayerComponent>(null);
+  useImperativeHandle(ref, () => _ref.current);
+  const mediaPlayerContext = React.useContext(MediaPlayerContext);
+
+  React.useEffect(() => {
+    if (mediaPlayerContext === null || !id) {
+      return;
+    }
+
+    if (id) {
+      mediaPlayerContext.registerID(id, findNodeHandle(_ref.current));
+    }
+
+    return () => {
+      mediaPlayerContext.unregisterID(id);
+    };
+  }, [mediaPlayerContext, id]);
+
+  return <MediaPlayerComponent id={id} {...props} ref={_ref} />;
+});
+
 const _MediaPlayer = (React.forwardRef(
   ({ onLoad, isActive, id, sharedId, borderRadius, ...props }: Props, ref) => {
-    const _ref = React.useRef<MediaPlayerComponent>(null);
-    useImperativeHandle(ref, () => _ref.current);
-    const mediaPlayerContext = React.useContext(MediaPlayerContext);
-
-    React.useEffect(() => {
-      if (mediaPlayerContext === null || !id) {
-        return;
-      }
-
-      if (id) {
-        mediaPlayerContext.registerID(id, findNodeHandle(_ref.current));
-      }
-
-      return () => {
-        mediaPlayerContext.unregisterID(id);
-      };
-    }, [mediaPlayerContext, id]);
+    const MediaPlayerContainer =
+      typeof id === "string" && id.length > 0
+        ? BatchPausableMediaPlayer
+        : MediaPlayerComponent;
 
     const player = (
-      <MediaPlayerComponent
+      <MediaPlayerContainer
+        {...props}
         onLoad={onLoad}
         id={id}
         isActive={isActive}
         borderRadius={borderRadius}
-        ref={_ref}
-        {...props}
+        ref={ref}
       />
     );
-
     if (sharedId) {
       return (
         <SharedElement id={sharedId}>

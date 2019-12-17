@@ -29,7 +29,16 @@ export enum BitmapIconName {
   templateMonospace = "Template__monospace",
   templateGary = "Template__gary",
   templateComic = "Template__comic",
-  templateClassic = "Template__classic"
+  templateClassic = "Template__classic",
+  shareCardInstagram = "ShareCard__Instagram",
+  shareCardInstagramStory = "ShareCard__InstagramStory",
+  shareCardSnapchat = "ShareCard__Snapchat",
+  socialButtonInstagram = "SocialButton__Instagram",
+  socialButtonSnapchat = "SocialButton__Snapchat",
+  socialLogoInstagram = "SocialLogo__Instagram",
+  socialLogoSnapchat = "SocialLogo__Snapchat",
+  instagramPostFooter = "InstagramPostFooter",
+  instagramTabBar = "InstagramTabBar"
 }
 
 const SIZES_BY_NAME = {
@@ -334,5 +343,98 @@ export const BitmapIconTemplateClassic = ({
     {...otherProps}
     style={style}
     name={BitmapIconName.templateClassic}
+  />
+);
+
+export const BitmapIconShareCardInstagram = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.shareCardInstagram}
+    style={style}
+  />
+);
+export const BitmapIconShareCardInstagramStory = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.shareCardInstagramStory}
+    style={style}
+  />
+);
+export const BitmapIconShareCardSnapchat = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.shareCardSnapchat}
+    style={style}
+  />
+);
+export const BitmapIconSocialButtonInstagram = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.socialButtonInstagram}
+    style={style}
+  />
+);
+export const BitmapIconSocialButtonSnapchat = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.socialButtonSnapchat}
+    style={style}
+  />
+);
+export const BitmapIconSocialLogoInstagram = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.socialLogoInstagram}
+    style={style}
+  />
+);
+export const BitmapIconSocialLogoSnapchat = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.socialLogoSnapchat}
+    style={style}
+  />
+);
+
+export const BitmapIconInstagramTabBar = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.instagramTabBar}
+    style={style}
+  />
+);
+
+export const BitmapIconInstagramPostFooter = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.instagramPostFooter}
+    style={style}
   />
 );

@@ -32,6 +32,7 @@
 #import <React/RCTUITextView.h>
 #import <React/RCTEventEmitter.h>
 #import "FindContours.h"
+#import <XExtensionItem/XExtensionItem.h>
 
 @interface RCTBaseTextInputView(PrivateMethods)
 
@@ -153,6 +154,7 @@ RCT_EXTERN_METHOD(startCachingMediaSources:(nonnull NSArray*)mediaSources bounds
 RCT_EXTERN_METHOD(stopCachingMediaSources:(nonnull NSArray*)mediaSources bounds:(CGRect)bounds contentMode:(UIViewContentMode)contentMode);
 RCT_EXTERN_METHOD(stopCachingAll);
 
+RCT_EXTERN_METHOD(share:(nonnull NSNumber*)tag network:(NSString*)network callback:(RCTResponseSenderBlock)callback);
 RCT_EXTERN_METHOD(pause:);
 RCT_EXTERN_METHOD(play:);
 RCT_EXTERN_METHOD(reset:);

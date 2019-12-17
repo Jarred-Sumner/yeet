@@ -340,14 +340,18 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         : this.props.keyboardOpeningTime || 0
     );
   };
-  contentOffsetValue = new Animated.Value(this.props.defaultPosition.y);
+  contentOffsetYValue = new Animated.Value(this.props.defaultPosition.y);
+  contentOffsetXValue = new Animated.Value(this.props.defaultPosition.x);
   contentInsetValue = new Animated.Value(this.props.paddingTop);
 
   onScrollEvent = Animated.event(
     [
       {
         nativeEvent: {
-          contentOffset: { y: this.contentOffsetValue }
+          contentOffset: {
+            y: this.contentOffsetYValue,
+            x: this.contentOffsetXValue
+          }
           // contentInset: { top: this.contentInsetValue }
         }
       }
@@ -390,6 +394,8 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       onScroll,
       paddingTop = 0,
       paddingBottom = 0,
+      paddingLeft = 0,
+      paddingRight = 0,
       ...otherProps
     } = this.props;
     const { keyboardSpace } = this.state;
@@ -408,7 +414,9 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
           keyboardDismissMode={keyboardDismissMode}
           contentInset={{
             top: paddingTop,
-            bottom: keyboardSpace + paddingBottom
+            bottom: keyboardSpace + paddingBottom,
+            left: paddingLeft,
+            right: paddingRight
           }}
           automaticallyAdjustContentInsets={false}
           showsVerticalScrollIndicator={true}
@@ -430,11 +438,15 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         <Animated.Code
           exec={Animated.block([
             this.props.scrollY &&
-              Animated.set(this.props.scrollY, this.contentOffsetValue),
+              Animated.set(this.props.scrollY, this.contentOffsetYValue),
+
+            this.props.scrollX &&
+              Animated.set(this.props.scrollX, this.contentOffsetXValue),
+
             this.props.topInsetValue &&
               Animated.set(this.props.topInsetValue, this.contentInsetValue),
-            Animated.onChange(this.contentOffsetValue, [
-              Animated.call([this.contentOffsetValue], this._handleOnScroll)
+            Animated.onChange(this.contentOffsetYValue, [
+              Animated.call([this.contentOffsetYValue], this._handleOnScroll)
             ])
           ])}
         />

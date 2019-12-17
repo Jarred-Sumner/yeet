@@ -271,7 +271,8 @@ class ContentExport {
   // 4. We take the video output...and crop it.
   static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil) -> Promise<ContentExport> {
     return Promise<ContentExport>(queue: VideoProducer.contentExportQueue) { resolve, reject in
-      let contentsScale = scale ?? UIScreen.main.scale
+      let contentsScale = min(scale ?? UIScreen.main.scale, CGFloat(1.5))
+
 
       var renderSize = CGSize.zero
       var videoCount = 0

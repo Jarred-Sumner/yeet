@@ -27,7 +27,7 @@ import {
 import { getRequestHeaders } from "./graphql";
 import { CreatePostVariables } from "./graphql/CreatePost";
 import { CreatePostThreadVariables } from "./graphql/CreatePostThread";
-import { PostFormat } from "../components/NewPost/NewPostFormat";
+import { PostFormat, PostLayout } from "../components/NewPost/NewPostFormat";
 import { useApolloClient } from "react-apollo";
 import { navigate } from "./NavigationService";
 import { throttle } from "lodash";
@@ -499,6 +499,8 @@ export class PostUploadTask {
   postThread: CreatePostThread_createPostThread | null = null;
   status: PostUploadTaskStatus = PostUploadTaskStatus.waiting;
   type: PostUploadTaskType;
+  editToken: string;
+  layout: PostLayout;
 
   onChange: (task: PostUploadTask) => void | null = null;
   onProgress: (
@@ -534,22 +536,28 @@ export class PostUploadTask {
   constructor({
     contentExport,
     exportData,
+    editToken,
     format,
     threadId,
     body,
     client,
     onChange,
     onProgress,
-    type
+    type,
+    layout
   }: Pick<PostUploadTask, "onChange" | "onProgress"> & {
+    layout: PostLayout;
     contentExport: ContentExport;
     exportData: ExportData;
     format: PostFormat;
+    editToken: string;
     threadId: string | null;
     body: string | null;
     client: ApolloClient<InMemoryCache>;
     type: PostUploadTaskType;
   }) {
+    this.editToken = editToken;
+    this.layout = layout;
     this.contentExport = contentExport;
     this.exportData = exportData;
     this.format = format;
@@ -663,6 +671,8 @@ export class PostUploadTask {
         mutation: CREATE_POST_MUTATION,
         variables: {
           mediaId: this.task.requiredFile.mediaId,
+          editToken: this.editToken,
+          layout: this.layout,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
           format: this.format,
@@ -760,6 +770,8 @@ export class PostUploadTask {
           mediaId: this.task.requiredFile.mediaId,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
+          editToken: this.editToken,
+          layout: this.layout,
           format: this.format,
           autoplaySeconds: this.contentExport.duration,
           bounds: this.exportData.bounds,
@@ -772,62 +784,65 @@ export class PostUploadTask {
           }
         },
         update: (store, { data: { createPostThread } }) => {
-          // Read the data from our cache for this query.
-          const variables = {
-            limit: 20,
-            postsCount: 4
-          };
-          const data = store.readQuery<ViewThreads, ViewThreadsVariables>({
-            query: VIEW_THREADS_QUERY,
-            variables
-          });
+          try {
+            // Read the data from our cache for this query.
+            const variables = {
+              limit: 20,
+              postsCount: 4
+            };
+            const data = store.readQuery<ViewThreads, ViewThreadsVariables>({
+              query: VIEW_THREADS_QUERY,
+              variables
+            });
 
-          // Add our comment from the mutation to the end.
-          data.postThreads.data = uniqBy(
-            [createPostThread, ...data.postThreads.data],
-            "id"
-          );
+            // Add our comment from the mutation to the end.
+            data.postThreads.data = uniqBy(
+              [createPostThread, ...data.postThreads.data],
+              "id"
+            );
 
-          const profileId = globalUserContext.userId;
-          const post = createPostThread?.posts?.data[0];
+            const profileId = globalUserContext.userId;
+            const post = createPostThread?.posts?.data[0];
 
-          if (profileId && post) {
-            try {
-              console.log({ profileId });
-              const variables = {
-                profileId,
-                offset: 0,
-                limit: 20
-              };
+            if (profileId && post) {
+              try {
+                console.log({ profileId });
+                const variables = {
+                  profileId,
+                  offset: 0,
+                  limit: 20
+                };
 
-              const listPosts = store.readQuery<
-                ListProfilePosts,
-                ListProfilePostsVariables
-              >({
-                query: LIST_PROFILE_POSTS_QUERY,
-                variables
-              });
-
-              const data = listPosts?.profile?.posts?.data;
-              if (data) {
-                listPosts.profile.posts.data = [
-                  post,
-                  ...listPosts?.profile?.posts?.data
-                ];
-
-                store.writeQuery({
+                const listPosts = store.readQuery<
+                  ListProfilePosts,
+                  ListProfilePostsVariables
+                >({
                   query: LIST_PROFILE_POSTS_QUERY,
-                  variables,
-                  data: listPosts
+                  variables
                 });
-              }
-            } catch (exception) {
-              console.error(exception);
-            }
-          }
 
-          // Write our data back to the cache.
-          store.writeQuery({ query: VIEW_THREADS_QUERY, data, variables });
+                const data = listPosts?.profile?.posts?.data;
+                if (data) {
+                  listPosts.profile.posts.data = [
+                    post,
+                    ...listPosts?.profile?.posts?.data
+                  ];
+
+                  store.writeQuery({
+                    query: LIST_PROFILE_POSTS_QUERY,
+                    variables,
+                    data: listPosts
+                  });
+                }
+              } catch (exception) {
+                console.error(exception);
+              }
+            }
+            // Write our data back to the cache.
+            store.writeQuery({ query: VIEW_THREADS_QUERY, data, variables });
+          } catch (exception) {
+            console.error(exception);
+          }
         }
       })
       .then(

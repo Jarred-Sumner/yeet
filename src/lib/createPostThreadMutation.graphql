@@ -11,6 +11,8 @@ mutation CreatePostThread(
   $colors: ColorsInputObject!
   $postOffset: Int = 0
   $postsCount: Int = 2
+  $editToken: String
+  $layout: String
 ) {
   createPostThread(
     mediaId: $mediaId
@@ -21,6 +23,8 @@ mutation CreatePostThread(
     autoplaySeconds: $autoplaySeconds
     bounds: $bounds
     colors: $colors
+    editToken: $editToken
+    layout: $layout
   ) {
     createdAt
 

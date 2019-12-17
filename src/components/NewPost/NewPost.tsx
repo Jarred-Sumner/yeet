@@ -1,62 +1,44 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
-import { StatusBar, StyleSheet, View } from "react-native";
-import Animated, {
-  Transition,
-  Transitioning,
-  Easing
-} from "react-native-reanimated";
-import { withNavigation, withNavigationFocus } from "react-navigation";
+import { StatusBar, StyleSheet } from "react-native";
 import {
-  BOTTOM_Y,
-  IS_DEVELOPMENT,
-  SCREEN_DIMENSIONS,
-  TOP_Y
-} from "../../../config";
+  PanGestureHandler,
+  State as GestureState
+} from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import { withNavigation, withNavigationFocus } from "react-navigation";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { ContentExport, ExportData } from "../../lib/Exporter";
-import { resizeImage, calculateAspectRatioFit } from "../../lib/imageResize";
+import { calculateAspectRatioFit } from "../../lib/imageResize";
 import {
   getSourceDimensions,
+  imageContainerFromMediaSource,
   YeetImageContainer,
-  YeetImageRect,
-  imageContainerFromCameraRoll,
-  imageContainerFromMediaSource
+  YeetImageRect
 } from "../../lib/imageSearch";
+import { scaleToWidth } from "../../lib/Rect";
 import { COLORS, SPACING } from "../../lib/styles";
-import { PostUploader, RawPostUploader } from "../PostUploader";
-import { sendToast, ToastType } from "../Toast";
+import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import { GallerySheet } from "../Gallery/GallerySheet";
+import { MediaPlayerPauser } from "../MediaPlayer";
 import FormatPicker, { FORMATS } from "./FormatPicker";
 import {
   buildImageBlock,
   buildPost,
-  DEFAULT_FORMAT,
-  DEFAULT_POST_FORMAT,
+  CAROUSEL_HEIGHT,
+  generateBlockId,
   MAX_POST_HEIGHT,
   NewPostType,
   PostFormat,
-  POST_WIDTH,
-  CAROUSEL_HEIGHT,
   PostLayout,
-  generateBlockId
+  POST_WIDTH
 } from "./NewPostFormat";
 import { EditableNodeMap } from "./Node/BaseNode";
+import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
-import { ImagePicker } from "./ImagePicker";
-import ImageCropper from "./ImageCropper";
-import {
-  FlingGestureHandler,
-  Directions,
-  State as GestureState,
-  PanGestureHandler
-} from "react-native-gesture-handler";
-import { CameraRollList, ScreenshotList } from "./ImagePicker/CameraRollList";
-import { scaleToWidth } from "../../lib/Rect";
-import { MediaPlayerPauser } from "../MediaPlayer";
-import { Panner } from "./Panner";
-import { GallerySheet } from "../Gallery/GallerySheet";
-import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
+import nanoid from "nanoid/non-secure";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -71,6 +53,7 @@ type State = {
   showGallery: Boolean;
   isKeyboardVisible: boolean;
   inlineNodes: EditableNodeMap;
+  editToken: string;
 };
 
 const styles = StyleSheet.create({
@@ -161,6 +144,7 @@ class RawNewPost extends React.Component<{}, State> {
     this.state = {
       showGallery: false,
       isKeyboardVisible: false,
+      editToken: nanoid(),
       post: buildPost({
         width: props.defaultWidth,
         height: props.defaultHeight,
@@ -170,8 +154,7 @@ class RawNewPost extends React.Component<{}, State> {
       }),
       defaultPhoto: null,
       inlineNodes: props.defaultInlineNodes,
-      showUploader: false,
-      uploadData: null,
+
       bounds: {
         ...props.defaultBounds,
         x: DEFAULT_BOUNDS.x,
@@ -278,7 +261,6 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   stepContainerRef = React.createRef();
-  postUploaderRef = React.createRef<RawPostUploader>();
 
   onFlingLeft = ({ nativeEvent: { state, ...other } }) => {
     if (state === GestureState.ACTIVE) {
@@ -355,8 +337,7 @@ class RawNewPost extends React.Component<{}, State> {
   hideKeyboard = () => this.setState({ isKeyboardVisible: false });
 
   render() {
-    const { step, showUploader, uploadData, inlineNodes } = this.state;
-    const isHeaderFloating = step !== NewPostStep.editPhoto;
+    const { step, inlineNodes } = this.state;
     return (
       <>
         <AnimatedKeyboardTracker
@@ -450,7 +431,13 @@ class RawNewPost extends React.Component<{}, State> {
   handleSubmit = (contentExport: ContentExport, data: ExportData) => {
     // this.pauser.current.pausePlayers();
 
-    return this.props.onExport(contentExport, data, this.state.post.format);
+    return this.props.onExport(
+      contentExport,
+      data,
+      this.state.post.format,
+      this.state.post.layout,
+      this.state.editToken
+    );
   };
 }
 

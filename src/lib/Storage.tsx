@@ -3,6 +3,9 @@ import AsyncStorage from "@react-native-community/async-storage";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
 import { YeetImageContainer, YeetImage } from "./imageSearch";
 import { uniqBy } from "lodash";
+import RNFS from "react-native-fs";
+import { basename, join, extname } from "path";
+import nanoid from "nanoid/non-secure";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -137,7 +140,23 @@ export class Storage {
   static async insertRecentlyUsed(imageContainer: YeetImageContainer) {
     const recentlyUsed = await this.getRecentlyUsed();
 
-    recentlyUsed.unshift(imageContainer.image);
+    let image = imageContainer.image;
+    if (image.uri.includes(RNFS.TemporaryDirectoryPath)) {
+      const path = image.uri.replace("file://", "");
+
+      const filename = basename(path);
+      let newPath = join(RNFS.DocumentDirectoryPath, filename);
+      if (await RNFS.exists(newPath)) {
+        const extension = extname(newPath);
+        newPath = join(RNFS.DocumentDirectoryPath, nanoid() + extension);
+      }
+
+      await RNFS.copyFile(path, newPath);
+
+      image = { ...image, uri: newPath };
+    }
+
+    recentlyUsed.unshift(image);
 
     return Storage.setItem(
       KEYS.RECENTLY_USED_IMAGES,

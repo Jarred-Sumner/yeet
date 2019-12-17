@@ -1535,11 +1535,6 @@
     source-map-support "^0.5.7"
     tslib "^1.9.3"
 
-"@terrylinla/react-native-sketch-canvas@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@terrylinla/react-native-sketch-canvas/-/react-native-sketch-canvas-0.8.0.tgz#3d3aa4ce2afb71bac2fbd512889e292d3265b264"
-  integrity sha512-rWLZkvYbbQ2Pje8AyT7+8nunXRNaOjfpJTYUHfUH1EVvRs+Es0rJlqoS1UmQbhKCXIra8xiBBD1jHs10S//mxg==
-
 "@types/agent-base@^4.2.0":
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/@types/agent-base/-/agent-base-4.2.0.tgz#00644e8b395b40e1bf50aaf1d22cabc1200d5051"
@@ -8571,13 +8566,13 @@ react-native-formik@^1.7.7:
     react-native-root-siblings "3.1.7"
     recompose "^0.30.0"
 
-react-native-fs@^2.14.1:
-  version "2.14.1"
-  resolved "https://registry.yarnpkg.com/react-native-fs/-/react-native-fs-2.14.1.tgz#61c70a865b5b5bcb020dd4e4befd60a2c20c836f"
-  integrity sha512-ZcfiwNP+FBgvv2eRk0B62/NI58mbjszjjYvQlP352HLkUqVsK4Ld6X8fdBO1lZAz6SgitUk8WEc9NEciRIt31g==
+react-native-fs@^2.16.1:
+  version "2.16.2"
+  resolved "https://registry.yarnpkg.com/react-native-fs/-/react-native-fs-2.16.2.tgz#a312ce5f418e6d91d13b51e50ba0c49b1da1ec79"
+  integrity sha512-N9V8cMAOE49+er0/Qnf/xSFzsVWVWPW7Uggr11KVh18uv7FEPLEfLwEsL1Gv9vdkTgAK+6SYT46nqrhKtJClSw==
   dependencies:
     base-64 "^0.1.0"
-    utf8 "^2.1.1"
+    utf8 "^3.0.0"
 
 react-native-gesture-handler@1.5.0:
   version "1.5.0"
@@ -8782,10 +8777,6 @@ react-native-tab-view@^2.10.0, react-native-tab-view@^2.9.0:
   version "2.10.0"
   resolved "https://registry.yarnpkg.com/react-native-tab-view/-/react-native-tab-view-2.10.0.tgz#5e249e5650502010013449ffd4e5edc18a95364b"
   integrity sha512-qgexVz5eO4yaFjdkmn/sURXgVvaBo6pZD/q1eoca96SbPVbaH3WzVhF3bRUfeTHwZkXwznFTpS3JURqIFU8vQA==
-
-"react-native-text-detector@https://github.com/zsajjad/react-native-text-detector.git#firebase":
-  version "0.0.6"
-  resolved "https://github.com/zsajjad/react-native-text-detector.git#a116012da31033c790ad6c7a918be3958a125f2c"
 
 react-native-thumbnail@^1.1.3:
   version "1.1.3"
@@ -10885,10 +10876,10 @@ use@^3.1.0:
   resolved "https://registry.yarnpkg.com/use/-/use-3.1.1.tgz#d50c8cac79a19fbc20f2911f56eb973f4e10070f"
   integrity sha512-cwESVXlO3url9YWlFW/TA9cshCEhtu7IKJ/p5soJ/gGpj7vbvFrAY/eIioQ6Dw23KjZhYgiIo8HOs1nQ2vr/oQ==
 
-utf8@^2.1.1:
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/utf8/-/utf8-2.1.2.tgz#1fa0d9270e9be850d9b05027f63519bf46457d96"
-  integrity sha1-H6DZJw6b6FDZsFAn9jUZv0ZFfZY=
+utf8@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/utf8/-/utf8-3.0.0.tgz#f052eed1364d696e769ef058b183df88c87f69d1"
+  integrity sha512-E8VjFIQ/TyQgp+TZfS6l8yp/xWppSAHzidGiRrqe4bK4XP9pTRyKFgGJpO3SN7zdX4DeomTrwaseCHovfpFcqQ==
 
 util-deprecate@^1.0.1, util-deprecate@~1.0.1:
   version "1.0.2"

@@ -283,8 +283,8 @@ export const BackButton = ({
 }) => {
   const navigation = useNavigation();
 
-  const handlePress = React.useCallback(() => {
-    typeof onPress === "function" && onPress();
+  const handlePress = React.useCallback(async () => {
+    typeof onPress === "function" && (await onPress());
 
     if (behavior === BackButtonBehavior.back) {
       navigation.goBack(routeName);
