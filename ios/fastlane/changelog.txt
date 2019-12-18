@@ -1,21 +1,15 @@
-Welcome to update number three!! This is the biggest update yet, and its all about the editor.
+Welcome to update number four!
 
-New layout presets make yeet a great editor for memes
-- Swipe horizontally to change the layout
+New share page:
+- After you post, it now lets you share directly to other social networks
+- It lets you save too.
 
-Text styling!
-- There are now five font styles to choose from.
-- There are a handful of text background styles to choose, letting you set a background color that wraps around the text, just a text shadow, and more
-- You can now change the color & alignment of text
+Thread titles are now automatic. If you write anything in a post for a new thread, it will show up at the top.
 
-Image browser:
-- Redeisgned to be faster at choosing & inserting images/video
-- Recent section shows previously used images
-- If you copy an image to your clipboard, it will show up in the image browser so you can use it without saving it to your photo library.
-- When you're in the editor and you tap new image, it will open on top of the editor instead of a different screen.
-- Swipe down to dismiss the image browser from the editor
+Performance:
+- Sped up exporting and uploading video & images a lot! Now the maximum scale for images/video is @1.5x screen size, instead of full retina.
 
-Image search!
-- You can now search the internet for images to use in your photos/videos
-- Filter by transparency, so you can insert stickers or images with backgrounds
-- While the search is loading, the search icon becomes a spinner
+Bug fixes:
+- Fixed a crash that can occur when tapping the Plus button
+- Fixed missing images in Recent section for some videos/gifs
+- Fixed an issue where it would say that uploading a new post errored when it actually didn't.

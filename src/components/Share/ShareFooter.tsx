@@ -185,9 +185,9 @@ export const ShareFooter = ({
         <FooterButton Icon={IconSave} onPress={onPressSave}>
           Save
         </FooterButton>
-        <FooterButton Icon={IconLink} onPress={onPressLink}>
+        {/* <FooterButton Icon={IconLink} onPress={onPressLink}>
           Link
-        </FooterButton>
+        </FooterButton> */}
         <FooterButton Icon={IconEllipsis} onPress={onPressMore}>
           More
         </FooterButton>

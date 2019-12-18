@@ -32,6 +32,8 @@ import { scaleToWidth } from "../lib/Rect";
 import { SPACING, COLORS } from "../lib/styles";
 import { NavigationStackProp } from "react-navigation-stack";
 
+const SHOW_SNAPCHAT = false;
+
 const ITEM_SEPARATOR_WIDTH = 32;
 
 const NETWORK_ORDER = [
@@ -369,11 +371,13 @@ class RawNewThreadPage extends React.Component<Props> {
     x: 0
   };
 
-  snapOffsets = [
-    this.contentOffset.x,
-    ITEM_SEPARATOR_WIDTH + SHARE_CARD_WIDTH,
-    (ITEM_SEPARATOR_WIDTH + SHARE_CARD_WIDTH) * 2
-  ];
+  snapOffsets = SHOW_SNAPCHAT
+    ? [
+        this.contentOffset.x,
+        ITEM_SEPARATOR_WIDTH + SHARE_CARD_WIDTH,
+        (ITEM_SEPARATOR_WIDTH + SHARE_CARD_WIDTH) * 2
+      ]
+    : [this.contentOffset.x, ITEM_SEPARATOR_WIDTH + SHARE_CARD_WIDTH];
 
   position = Animated.interpolate(this.scrollX, {
     inputRange: this.snapOffsets,
@@ -464,8 +468,12 @@ class RawNewThreadPage extends React.Component<Props> {
           />
           <ItemSeparatorComponent />
           <InstagramStoryShareNetwork />
-          <ItemSeparatorComponent />
-          <SnapchatShareNetwork />
+          {SHOW_SNAPCHAT && (
+            <>
+              <ItemSeparatorComponent />
+              <SnapchatShareNetwork />
+            </>
+          )}
           <ItemSeparatorComponent />
           <ItemSeparatorComponent />
         </ScrollView>

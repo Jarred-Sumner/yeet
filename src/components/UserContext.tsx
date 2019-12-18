@@ -183,7 +183,7 @@ class RawUserContextProvider extends React.Component<Props, State> {
   handleRequireAuthentication: RequireAuthenticationFunction = authCallback => {
     if (typeof authCallback === "function") {
       if (this.state.authState === AuthState.guest) {
-        this.navigateLogin();
+        // this.navigateLogin();
         this.authCallback = authCallback;
       }
 
@@ -195,7 +195,7 @@ class RawUserContextProvider extends React.Component<Props, State> {
         return Promise.resolve(true);
       } else {
         return new Promise(resolve => {
-          this.navigateLogin();
+          // this.navigateLogin();
           this.authCallback = resolve;
         });
       }
