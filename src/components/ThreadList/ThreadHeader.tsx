@@ -104,7 +104,8 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   rightSide: {
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
+    width: 44
   },
   username: {
     fontSize: 13,
@@ -264,7 +265,7 @@ export const ThreadHeader = ({ thread, threadId }) => {
             @{thread?.profile?.username}
           </Text>
           <MediumText numberOfLines={1} style={styles.title}>
-            {thread?.body}
+            {thread?.body || ""}
           </MediumText>
         </View>
 

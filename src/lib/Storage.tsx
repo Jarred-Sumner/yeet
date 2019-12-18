@@ -1,7 +1,7 @@
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-community/async-storage";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
-import { YeetImageContainer, YeetImage } from "./imageSearch";
+import { YeetImageContainer, YeetImage, isVideo } from "./imageSearch";
 import { uniqBy } from "lodash";
 import RNFS from "react-native-fs";
 import { basename, join, extname } from "path";
@@ -29,6 +29,12 @@ export const WATCH_KEYS = {
 };
 
 var _cachedJWT;
+
+type RecentImage = YeetImage & {
+  id: string;
+};
+
+const recentlyUsedId = (image: RecentImage) => image.id || image.uri;
 
 export class Storage {
   static formatKey = key => {
@@ -123,7 +129,7 @@ export class Storage {
     return AsyncStorage.getItem(Storage.formatKey(key));
   }
 
-  static getRecentlyUsed(): Promise<Array<YeetImage>> {
+  static getRecentlyUsed(): Promise<Array<RecentImage>> {
     return this.getItem(KEYS.RECENTLY_USED_IMAGES).then(result => {
       if (result && typeof result === "string") {
         try {
@@ -140,7 +146,8 @@ export class Storage {
   static async insertRecentlyUsed(imageContainer: YeetImageContainer) {
     const recentlyUsed = await this.getRecentlyUsed();
 
-    let image = imageContainer.image;
+    let image: RecentImage = { ...imageContainer.image };
+    image.id = imageContainer.id;
     if (image.uri.includes(RNFS.TemporaryDirectoryPath)) {
       const path = image.uri.replace("file://", "");
 
@@ -153,14 +160,14 @@ export class Storage {
 
       await RNFS.copyFile(path, newPath);
 
-      image = { ...image, uri: newPath };
+      image.uri = newPath;
     }
 
     recentlyUsed.unshift(image);
 
     return Storage.setItem(
       KEYS.RECENTLY_USED_IMAGES,
-      JSON.stringify(uniqBy(recentlyUsed, "uri").slice(0, 80))
+      JSON.stringify(uniqBy(recentlyUsed, recentlyUsedId).slice(0, 80))
     );
   }
 

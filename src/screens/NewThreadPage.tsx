@@ -30,6 +30,7 @@ import {
 } from "../lib/MediaUploadTask";
 import { scaleToWidth } from "../lib/Rect";
 import { SPACING, COLORS } from "../lib/styles";
+import { NavigationStackProp } from "react-navigation-stack";
 
 const ITEM_SEPARATOR_WIDTH = 32;
 
@@ -317,7 +318,10 @@ class RawNewThreadPage extends React.Component<Props> {
 
     const { blocks, nodes, bounds, colors } = exportData;
 
-    const { body } = this.state;
+    const body = [...blocks, ...Object.values(nodes).map(node => node.block)]
+      .filter(block => block.type === "text")
+      .map(block => String(block.value).trim())
+      .find(text => text.length > 0);
 
     this.uploadTask = new PostUploadTask({
       contentExport,
@@ -483,13 +487,30 @@ export const NewThreadPage = props => {
   const exportData = useNavigationParam("exportData");
   const format = useNavigationParam("format");
   const layout = useNavigationParam("layout");
+  const threadId = useNavigationParam("threadId");
   const editToken = useNavigationParam("editToken");
+  const backKey = useNavigationParam("backKey");
   const navigation = useNavigation();
   const { setPostUploadTask } = React.useContext(MediaUploadContext);
 
   const onDismiss = React.useCallback(() => {
-    navigation.dismiss();
-  }, [navigation]);
+    if (backKey && threadId) {
+      const stack = navigation.dangerouslyGetParent() as NavigationStackProp;
+
+      navigation.navigate(backKey);
+      if (backKey === "ThreadList") {
+        navigation.navigate("ViewThread", {
+          threadId
+        });
+      }
+    } else if (threadId) {
+      navigation.navigate("ViewThread", {
+        threadId
+      });
+    } else {
+      navigation.dismiss();
+    }
+  }, [navigation, backKey, threadId]);
 
   return (
     <RawNewThreadPage
@@ -497,9 +518,11 @@ export const NewThreadPage = props => {
       exportData={exportData}
       editToken={editToken}
       layout={layout}
+      backKey={backKey}
       format={format}
       setPostUploadTask={setPostUploadTask}
       onDismiss={onDismiss}
+      threadId={threadId}
     />
   );
 };

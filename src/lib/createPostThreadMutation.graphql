@@ -3,7 +3,7 @@
 mutation CreatePostThread(
   $mediaId: ID!
   $blocks: JSON
-  $body: String!
+  $body: String
   $nodes: JSON
   $format: String!
   $autoplaySeconds: Int

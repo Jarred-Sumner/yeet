@@ -1,8 +1,8 @@
 import * as React from "react";
 import { Alert, StyleSheet, View } from "react-native";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation, useNavigationParam } from "react-navigation-hooks";
 import { NewPost } from "../components/NewPost/NewPost";
-import { PostFormat } from "../components/NewPost/NewPostFormat";
+import { PostFormat, PostLayout } from "../components/NewPost/NewPostFormat";
 import {
   ContentExport,
   convertExportedBlocks,
@@ -54,51 +54,20 @@ class RawReplyPage extends React.Component<{}, State> {
   handleExport = async (
     contentExport: ContentExport,
     exportData: ExportData,
-    format: PostFormat
+    format: PostFormat,
+    layout: PostLayout,
+    editToken: string
   ) => {
-    const { postUploadTask, setPostUploadTask, navigation } = this.props;
-
-    if (postUploadTask && !postUploadTask.isFinished) {
-      const shouldCancel = await new Promise(resolve =>
-        Alert.alert(
-          "Cancel pending upload?",
-          "Another post is currently being uploaded. Cancel that one and post this one instead?",
-          [
-            {
-              text: "Yes, post this instead",
-              onPress: () => resolve(true)
-            },
-            {
-              text: "No, don't.",
-              style: "cancel",
-              onPress: () => resolve(false)
-            }
-          ]
-        )
-      );
-
-      if (shouldCancel) {
-        await postUploadTask.cancel();
-      } else {
-        return;
-      }
-    }
-
-    const threadId = navigation.getParam("threadId");
-
-    const _task = new PostUploadTask({
+    const { threadId, navigation, fromFeed } = this.props;
+    navigation.navigate("SharePost", {
       contentExport,
-      format,
       exportData,
+      format,
+      layout,
+      editToken,
       threadId,
-      type: PostUploadTaskType.newPost
+      backKey: fromFeed ? "ThreadList" : "ViewThread"
     });
-
-    _task.start();
-
-    setPostUploadTask(_task);
-
-    this.handleCreate();
   };
 
   render() {
@@ -136,17 +105,16 @@ class RawReplyPage extends React.Component<{}, State> {
 }
 
 export const ReplyPage = props => {
+  const threadId = useNavigationParam("threadId");
+  const fromFeed = useNavigationParam("fromFeed") || false;
   const navigation = useNavigation();
-  const { setPostUploadTask, postUploadTask } = React.useContext(
-    MediaUploadContext
-  );
 
   return (
     <RawReplyPage
       {...props}
       navigation={navigation}
-      setPostUploadTask={setPostUploadTask}
-      postUploadTask={postUploadTask}
+      threadId={threadId}
+      fromFeed={fromFeed}
     />
   );
 };

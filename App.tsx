@@ -163,6 +163,13 @@ export class App extends React.Component {
     NavigationService.setTopLevelNavigator(navigatorRef);
   };
 
+  initialSafeAreaInsets = {
+    top: getInset("top"),
+    bottom: getInset("bottom"),
+    left: getInset("left"),
+    right: getInset("right")
+  };
+
   render() {
     if (!this.state.ready) {
       return null;
@@ -171,14 +178,7 @@ export class App extends React.Component {
     return (
       <View style={styles.wrap}>
         <StatusBar barStyle="light-content" />
-        <SafeAreaProvider
-          initialSafeAreaInsets={{
-            top: getInset("top"),
-            bottom: getInset("bottom"),
-            left: getInset("left"),
-            right: getInset("right")
-          }}
-        >
+        <SafeAreaProvider initialSafeAreaInsets={this.initialSafeAreaInsets}>
           <MaterialThemeProvider>
             <ApolloProvider client={this.state.client}>
               <UserContextProvider>

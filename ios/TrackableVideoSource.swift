@@ -63,40 +63,40 @@ class TrackableVideoSource : TrackableMediaSource {
   func start(player: AVQueuePlayer, autoPlay: Bool = false) {
     self.player = player
 
-    mediaSource.loadAsset { [unowned self] asset in
+    mediaSource.loadAsset { [weak self] asset in
       guard self != nil else {
         return
       }
 
       guard let asset = asset else {
-        self.status = .error
+        self?.status = .error
         return  
       }
 
       let playerItem = AVPlayerItem(asset: asset)
 
       if let error = playerItem.error {
-        self.onError(error: error)
+        self?.onError(error: error)
         return
       }
 
-      guard let player = self.player else {
+      guard let player = self?.player else {
         return
       }
 
       let looper = AVPlayerLooper(player: player, templateItem: playerItem, timeRange: CMTimeRangeMake(start: .zero, duration: asset.duration))
 
-      if let _looper = self.looper {
+      if let _looper = self?.looper {
         _looper.disableLooping()
       }
 
-      self.looper = looper
+      self?.looper = looper
 
-      self.periodicObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: TrackableMediaSource.periodicInterval), queue: .main) {  [weak self] time in
+      self?.periodicObserver = player.addPeriodicTimeObserver(forInterval: CMTime(seconds: TrackableMediaSource.periodicInterval), queue: .main) {  [weak self] time in
         self?.onProgress(elapsed: time)
         } as AnyObject
 
-      self.timeControlObserver = player.observe(\AVQueuePlayer.timeControlStatus, options: [.new, .old]) { [weak self] player, changes in
+      self?.timeControlObserver = player.observe(\AVQueuePlayer.timeControlStatus, options: [.new, .old]) { [weak self] player, changes in
         guard let this = self else {
           self?.timeControlObserver?.invalidate()
           return
@@ -117,7 +117,7 @@ class TrackableVideoSource : TrackableMediaSource {
         }
       }
 
-      self.itemObserver = player.observe(\.currentItem, options: [.new, .old]) { [weak self] player, changes in
+      self?.itemObserver = player.observe(\.currentItem, options: [.new, .old]) { [weak self] player, changes in
         guard let playerItem = player.currentItem else {
           self?.playerStatusObserver = nil
           return

@@ -84,11 +84,7 @@ class MediaSource : NSObject  {
 
 //  lazy var asset = AVURLAsset(url: uri)
 
-  func getAssetURI() -> URL {
-    if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 || !self.isHTTProtocol {
-      return uri
-    }
-
+  private var _assetURI : URL {
     if let cacheCompleteURL = KTVHTTPCache.cacheCompleteFileURL(with: self.uri) {
       return cacheCompleteURL
     } else if KTVHTTPCache.proxyIsRunning() {
@@ -98,6 +94,18 @@ class MediaSource : NSObject  {
     }
   }
 
+  func getAssetURI() -> URL {
+    if !MediaSource.ENABLE_VIDE_CACHE || !self.isMP4 || !self.isHTTProtocol {
+      return uri
+    }
+
+    return _assetURI
+  }
+
+  var isVideoCover : Bool {
+    return isImage && ["mp4", "mov"].contains(self.uri.pathExtension)
+  }
+
   lazy var assetURI: URL = {
     return self.getAssetURI()
   }()
@@ -105,7 +113,7 @@ class MediaSource : NSObject  {
   private var _asset: AVURLAsset? = nil
 
   var asset: AVURLAsset? {
-    guard isVideo else {
+    if !isVideo && !isVideoCover {
       return _asset
     }
 
@@ -170,7 +178,7 @@ class MediaSource : NSObject  {
   typealias LoadAssetCallback = (_ asset: AVURLAsset?) -> Void
   private var _onLoadAsset: Array<LoadAssetCallback> = []
   func loadAsset(callback: @escaping LoadAssetCallback) {
-    guard isVideo else {
+    guard isVideo || isVideoCover else {
       callback(nil)
       return
     }

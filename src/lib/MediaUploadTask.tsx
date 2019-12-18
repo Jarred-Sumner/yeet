@@ -142,8 +142,6 @@ export class MediaUpload {
       "Content-Type": "application/json"
     });
 
-    console.log("HEADErs", headers);
-
     // const headers = await Promise.resolve(getRequestHeaders());
 
     this.presignStatus = MediaUploadStatus.progressing;
@@ -434,7 +432,26 @@ export class MediaUploadTask {
         ...exportData.nodes.map(node => node.block),
         ...exportData.blocks
       ]
-        .filter(block => typeof block.value === "object")
+        .filter(block => {
+          if (
+            block.type !== "image" ||
+            typeof block.value === "string" ||
+            !block.value?.uri
+          ) {
+            return false;
+          }
+
+          const image = block.value as ExportableYeetImage;
+          const isLocalImage = [
+            "ph://",
+            "file://",
+            "photos://",
+            "asset-library://",
+            "/"
+          ].some(scheme => image.uri.toLowerCase().startsWith(scheme));
+
+          return isLocalImage;
+        })
         .map(
           block =>
             new MediaUpload({

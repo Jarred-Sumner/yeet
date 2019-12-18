@@ -100,6 +100,7 @@ const _AppContainer = memoize(initialRouteName => {
                         },
                         ReplyToPost: ReplyPage,
                         EditBlockPhotoInReply: ImagePickerPage,
+                        SharePost: NewThreadPage,
                         ...SHARED_GLOBAL_SCREENS
                       },
                       {
