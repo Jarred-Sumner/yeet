@@ -173,8 +173,8 @@ const TextComment = ({
       value: body,
       format: PostFormat.comment,
       template: TextTemplate.comment,
-      border: TextBorderType.highlight,
       overrides: { backgroundColor, textColor },
+      border: TextBorderType.highlight,
       placeholder: "",
       autoInserted: false,
       required: false
