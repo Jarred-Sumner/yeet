@@ -209,9 +209,11 @@ export class MovableNode extends Component<Props> {
 
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
 
+    console.log({ scale: props.scale, _scale: props.scaleLiteral });
+
     this.Z = Animated.min(
       preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
-      props.maxScale
+      props.maxScale || 100
     );
 
     this.handleTap = event(

@@ -34,7 +34,7 @@ type RecentImage = YeetImage & {
   id: string;
 };
 
-const recentlyUsedId = (image: RecentImage) => image.id || image.uri;
+const recentlyUsedId = (image: RecentImage) => image.id ?? image.uri;
 
 export class Storage {
   static formatKey = key => {

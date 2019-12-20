@@ -109,19 +109,7 @@ class MediaPlayerShare: NSObject {
            }
 
 
-           UIApplication.shared.open(_network.url(id)) { success in
-            DispatchQueue.global(qos: .background).asyncAfter(deadline: .now() + 0.5) {
-              do {
-                try PHPhotoLibrary.shared().performChangesAndWait({
-                  if let asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject {
-                    PHAssetChangeRequest.deleteAssets([asset] as NSArray)
-                  }
-                })
-              } catch {
-
-              }
-            }
-           }
+           UIApplication.shared.open(_network.url(id))
             return true
 
       case .snapchat:

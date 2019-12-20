@@ -124,7 +124,10 @@ extension AVURLAsset {
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
 
-        let _to = to
+        var _to = to
+
+        _to.width = ceil(_to.width / 16) * 16
+        _to.height = ceil(_to.height / 16) * 16
 
         let scaleX = to.width / _to.width
         let scaleY = to.height / _to.height

@@ -301,7 +301,24 @@ class ContentBlock {
     return frame.normalize(scale: scale)
   }
 
-  
+  // The AVMutableVideoComposition layer is one long sheet of videos
+  // The videos are not rotated until later, but they are scaled.
+  func renderSizeFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
+    var frame = (self.nodeFrame ?? self.frame)
+
+    if (self.value.image.isVideo) {
+      if let asset = self.value.image.video?.asset {
+        return AVMakeRect(aspectRatio: asset.resolution, insideRect: frame.normalize(scale: scale))
+      }
+    }
+
+    return CGRect(
+      origin: frame.origin,
+      size: frame.size
+    ).normalize(scale: scale).applying(position.transform())
+  }
+
+
   func maxRenderedFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
     var frame = (self.nodeFrame ?? self.frame)
 

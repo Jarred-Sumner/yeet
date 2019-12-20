@@ -536,6 +536,10 @@ class RawwPostEditor extends React.Component<Props, State> {
     //   format: "png",
     //   quality: 1.0
     // });
+    if (this.props.onBeforeExport) {
+      await this.props.onBeforeExport();
+    }
+
     return startExport(
       this.props.post.blocks,
       this.props.inlineNodes,

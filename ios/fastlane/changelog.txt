@@ -1,15 +1,4 @@
-Welcome to update number four!
+Welcome to update number five! This is a small update that fixes two important bugs.
 
-New share page:
-- After you post, it now lets you share directly to other social networks
-- It lets you save too.
-
-Thread titles are now automatic. If you write anything in a post for a new thread, it will show up at the top.
-
-Performance:
-- Sped up exporting and uploading video & images a lot! Now the maximum scale for images/video is @1.5x screen size, instead of full retina.
-
-Bug fixes:
-- Fixed a crash that can occur when tapping the Plus button
-- Fixed missing images in Recent section for some videos/gifs
-- Fixed an issue where it would say that uploading a new post errored when it actually didn't.
+1. When exporting rotated content, sometimes it would show up distorted in the exported video. That issue is now fixed! You'd be shocked at just how...many....weeks...this bug took. I probably would've shipped this app a month ago if I hadn't been stuck on that...
+2. When sharing to social networks, it would sometimes prompt you to delete the photo from your Camera Roll. Now it just doesn't do that.

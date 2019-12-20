@@ -144,6 +144,7 @@ class RawNewPost extends React.Component<{}, State> {
     this.state = {
       showGallery: false,
       isKeyboardVisible: false,
+      disableGallery: false,
       editToken: nanoid(),
       post: buildPost({
         width: props.defaultWidth,
@@ -251,6 +252,16 @@ class RawNewPost extends React.Component<{}, State> {
     }
   };
 
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      !prevProps.isFocused &&
+      this.props.isFocused &&
+      this.state.disableGallery
+    ) {
+      this.setState({ disableGallery: false });
+    }
+  }
+
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
     this.scrollY.setValue(0);
@@ -277,7 +288,6 @@ class RawNewPost extends React.Component<{}, State> {
   formatPickerRef = React.createRef<FormatPicker>();
   pauser = React.createRef();
   handleChangeLayoutIndex = (index: number) => {
-    console.log({ index });
     this.handleChangeLayout(FORMATS[index].value);
   };
 
@@ -301,6 +311,7 @@ class RawNewPost extends React.Component<{}, State> {
     this.setState({
       showGallery: true,
       galleryBlockId: blockId,
+      disableGallery: false,
       galleryFilter: initialRoute,
       galleryAutoFocus: autoFocus,
       galleryTransparent: transparent
@@ -321,6 +332,7 @@ class RawNewPost extends React.Component<{}, State> {
   dismissGallery = () => {
     this.setState({
       showGallery: false,
+      disableGallery: false,
       galleryBlockId: null,
       galleryFilter: null,
       galleryAutoFocus: false,
@@ -335,6 +347,7 @@ class RawNewPost extends React.Component<{}, State> {
 
   showKeyboard = () => this.setState({ isKeyboardVisible: true });
   hideKeyboard = () => this.setState({ isKeyboardVisible: false });
+  handleBeforeExport = () => this.setState({ disableGallery: true });
 
   render() {
     const { step, inlineNodes } = this.state;
@@ -392,6 +405,7 @@ class RawNewPost extends React.Component<{}, State> {
                   simultaneousHandlers={[this.pannerRef]}
                   yInset={CAROUSEL_HEIGHT}
                   onChangeNodes={this.handleChangeNodes}
+                  onBeforeExport={this.handleBeforeExport}
                   onSubmit={this.handleSubmit}
                 />
               </MediaPlayerPauser>
@@ -408,18 +422,20 @@ class RawNewPost extends React.Component<{}, State> {
             />
           </Animated.View>
         </Panner>
-        <GallerySheet
-          show={this.state.showGallery}
-          blockId={this.state.galleryBlockId}
-          onDismiss={this.dismissGallery}
-          post={this.state.post}
-          onPress={this.handlePressGallery}
-          initialRoute={this.state.galleryFilter || "all"}
-          autoFocus={!!this.state.galleryAutoFocus}
-          transparentSearch={!!this.state.galleryTransparent}
-          keyboardVisibleValue={this.keyboardVisibleValue}
-          keyboardHeightValue={this.keyboardHeightValue}
-        />
+        {!this.state.disableGallery && (
+          <GallerySheet
+            show={this.state.showGallery}
+            blockId={this.state.galleryBlockId}
+            onDismiss={this.dismissGallery}
+            post={this.state.post}
+            onPress={this.handlePressGallery}
+            initialRoute={this.state.galleryFilter || "all"}
+            autoFocus={!!this.state.galleryAutoFocus}
+            transparentSearch={!!this.state.galleryTransparent}
+            keyboardVisibleValue={this.keyboardVisibleValue}
+            keyboardHeightValue={this.keyboardHeightValue}
+          />
+        )}
       </>
     );
   }

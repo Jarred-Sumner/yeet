@@ -25,7 +25,7 @@ export const createUploadListeners = ({
     "progress",
     uploadId,
     ({ progress }) => {
-      console.log(`Progress: ${progress}%`);
+      // console.log(`Progress: ${progress}%`);
 
       onProgress(progress);
     }

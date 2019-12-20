@@ -118,26 +118,24 @@ export const preserveOffset = (
   // }
 };
 
-const _preserveMultiplicativeOffset = Animated.proc(
-  (
-    value: Animated.Adaptable<number>,
-    state: Animated.Adaptable<number>,
-    previous: Animated.Value<number>,
-    offset: Animated.Value<number>
-  ) => {
-    return block([
-      cond(
-        eq(state, State.BEGAN),
-        [set(previous, 1)],
-        [
-          set(offset, multiply(offset, divide(value, previous))),
-          set(previous, value)
-        ]
-      ),
-      offset
-    ]);
-  }
-);
+const _preserveMultiplicativeOffset = (
+  value: Animated.Adaptable<number>,
+  state: Animated.Adaptable<number>,
+  previous: Animated.Value<number>,
+  offset: Animated.Value<number>
+) => {
+  return block([
+    cond(
+      eq(state, State.BEGAN),
+      [set(previous, 1)],
+      [
+        set(offset, multiply(offset, divide(value, previous))),
+        set(previous, value)
+      ]
+    ),
+    offset
+  ]);
+};
 
 export const preserveMultiplicativeOffset = (
   value: Animated.Adaptable<number>,

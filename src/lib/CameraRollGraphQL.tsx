@@ -8,6 +8,7 @@ import {
   YeetImage,
   ImageSourceType
 } from "./imageSearch";
+import { uniqBy } from "lodash";
 import { performSearch } from "./SearchResponse";
 import { downloadLink } from "./LinkDownloader";
 import Storage from "./Storage";
@@ -24,7 +25,7 @@ const graphqlImageContainer = (
 
 const imageToImageContainer = (image: YeetImage): YeetImageContainer => {
   return {
-    id: image.uri,
+    id: image.id ?? image.uri,
     image,
     preview: image,
     source: image,
@@ -85,11 +86,10 @@ export default {
     recentImages: async (_, args = {}, { cache }) => {
       const data = await Storage.getRecentlyUsed();
       const id = `recent/${data.map(({ uri }) => uri).join("-")}`;
-      console.log(data);
       return {
         __typename: "RecentImageSearchResponse",
         id: id,
-        data: data.map(imageToImageContainer),
+        data: uniqBy(data.map(imageToImageContainer), "id").slice(0, 15),
         page_info: {
           __typename: "PageInfo",
           has_next_page: false,
