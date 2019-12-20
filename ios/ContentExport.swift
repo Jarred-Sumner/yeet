@@ -162,14 +162,29 @@ class ContentExport {
     ]
   }
 
-  static func composeImageLayer(image: ExportableImageSource, frame: CGRect, duration: TimeInterval, block: ContentBlock? = nil, scale: CGFloat, exportType: ExportType) -> CALayer {
+  static func composeImageLayer(image: ExportableImageSource, frame: CGRect, duration: TimeInterval, block: ContentBlock? = nil, scale: CGFloat, exportType: ExportType, rotation: CGFloat = .zero, estimatedBounds: CGRect) -> CALayer {
+
+    let view = image.nodeView!
+    var containerView = view.superview!
+    while (containerView.bounds.height < 1 || containerView.bounds.width < 1) {
+      containerView = containerView.superview!
+    }
+
+
     let layer = CALayer()
-    layer.bounds = frame
-    layer.frame = frame
+    let _frame = frame
+
+    layer.bounds = CGRect(origin: .zero, size: _frame.size)
+    layer.setRotatableFrame(frame: frame, rotation: rotation)
+
+
 
     setupInnerLayer(layer: layer, block: block)
+//    layer.setAffineTransform(.identity)
 
-    layer.contentsScale = scale
+
+
+
 
     if (image.isAnimated) {
       layer.contents = image.firstFrame
@@ -182,15 +197,34 @@ class ContentExport {
       }
 
       layer.add(getFramesAnimation(frames: images, duration: duration), forKey: nil)
-    } else if (image.mediaSource.mimeType == .png) {
-      if (exportType == .mp4) {
-        let newImage = SDImageWebPCoder.shared.decodedImage(with: SDImageWebPCoder.shared.encodedData(with: image.staticImage!, format: .webP, options: [SDImageCoderOption.encodeCompressionQuality: CGFloat(1), SDImageCoderOption.encodeFirstFrameOnly: 1]), options: nil)!
-        layer.contents = newImage.cgImage!
-      } else {
-        layer.contents = image.staticImage!.cgImage!
-      }
     } else {
-      layer.contents = image.firstFrame.cgImage!
+      DispatchQueue.main.sync {
+        let format = UIGraphicsImageRendererFormat.init()
+        format.opaque = false
+        format.preferredRange = .automatic
+
+        format.scale = view.layer.contentsScale * CGFloat(block!.position.scale.doubleValue)
+
+        let _size = view.bounds.normalize(scale: scale).size
+        let __frame = view.frame.normalize(scale: scale)
+
+        let renderer = UIGraphicsImageRenderer.init(size: view.bounds.size, format: format)
+        let cropRect = view.bounds.applying(view.transform)
+
+        let _originalScale = view.layer.contentsScale
+
+        layer.contents = renderer.image { ctx in
+          view.layer.contentsScale = format.scale
+          view.layer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerRightEdge, .layerLeftEdge]
+          view.layer.allowsEdgeAntialiasing = true
+          view.drawHierarchy(in: ctx.format.bounds, afterScreenUpdates: true)
+        }.cgImage!
+        view.layer.contentsScale = _originalScale
+
+        layer.contentsGravity = .center
+        layer.contentsScale = view.layer.contentsScale / scale
+      }
+
     }
 
     return layer
@@ -207,7 +241,7 @@ class ContentExport {
       guard let image = block.value.image.image else {
         return
       }
-
+      
       let frame = (block.nodeFrame ?? block.frame).normalize(scale: contentsScale)
 
       if (frame.origin.y + frame.size.height > maxY) {
@@ -218,10 +252,13 @@ class ContentExport {
        minY = frame.origin.y
       }
 
-      let layer = composeImageLayer(image: image, frame: frame, duration: duration, block: block, scale: contentsScale, exportType: exportType)
+      let rotation = CGFloat(block.position.rotate.doubleValue)
+      let layer = composeImageLayer(image: image, frame: frame, duration: duration, block: block, scale: contentsScale, exportType: exportType, rotation: rotation, estimatedBounds: estimatedBounds)
 
 
       parentLayer.addSublayer(layer)
+
+
     }
 
     return CGRect(x: estimatedBounds.origin.x, y: minY, width: estimatedBounds.size.width, height: maxY)
@@ -293,8 +330,6 @@ class ContentExport {
 
           let minY = min(frame.origin.y, yOffset)
           let minX = min(frame.origin.x, xOffset)
-
-
 
           if minY < yOffset {
             yOffset = minY
@@ -448,18 +483,16 @@ class ContentExport {
             }
 
             let assetDuration = CMTimeGetSeconds(vidAsset.timeRange.duration)
-            let frame = block.scaledFrame(scale: contentsScale)
+            let frame = (block.nodeFrame ?? block.frame).normalize(scale: contentsScale)
             let loopCount = ( seconds / assetDuration).rounded(.up)
-            let nodeView = video.nodeView
+            let nodeView = video.nodeView!
+
+            let ptFrame = (block.nodeFrame ?? block.frame)
+            let ___rect = AVMakeRect(aspectRatio: _asset.resolution, insideRect: CGRect(origin: .zero, size: ptFrame.size))
 
 
-            let _ptFrame = (block.nodeFrame ?? block.frame)
-
-            let ptFrame = _ptFrame.normalize(scale: 1 / renderSizeScale)
-            let scaleX = (ptFrame.width / _asset.resolution.width) * contentsScale
-            let scaleY = (ptFrame.height / _asset.resolution.height) * contentsScale
-
-            let rotationTransform = CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))
+            let scaleX = (___rect.width / _asset.resolution.width) * contentsScale
+            let scaleY = (___rect.height / _asset.resolution.height) * contentsScale
 
             var _videoTransform = CGAffineTransform.identity
 
@@ -484,7 +517,8 @@ class ContentExport {
 
             let videoLayer = CALayer()
             let interRect = videoContainerRect.intersection(videoRect)
-           videoLayer.contentsScale = (videoContainerRect.height / interRect.height)
+           videoLayer.contentsScale = 1 / contentsScale
+
 
 
              let view = video.view
@@ -538,7 +572,6 @@ class ContentExport {
 
             videoLayer.isGeometryFlipped = false
             videoLayer.backgroundColor = UIColor.clear.cgColor
-            videoLayer.contentsGravity = .center
             videoLayer.masksToBounds = true
             
 
@@ -550,8 +583,11 @@ class ContentExport {
 
 
             videoLayer.backgroundColor = UIColor.clear.cgColor
-            videoLayer.frame = CGRect(origin: frame.origin, size: frame.size)
-            videoLayer.bounds = CGRect(origin: .zero, size: videoLayer.frame.size)
+
+            videoLayer.bounds = CGRect(origin: ___rect.origin, size: ___rect.size)
+            videoLayer.setRotatableFrame(frame: frame, rotation: CGFloat(block.position.rotate.doubleValue))
+
+
             
 
             let contentsRect = CGRect(
@@ -566,6 +602,8 @@ class ContentExport {
             )
 
             videoLayer.contentsRect = contentsRect
+            videoLayer.contentsGravity = video.videoView!.playerLayer.videoGravity.contentsGravity
+
 
 
             // ~1722 x ~1285
@@ -584,8 +622,8 @@ Bounds diff:
 - Editor: \(frame)
 - View: \(view?.bounds),\(view?.frame)
 - vidRect: \(videoRect)
-- Node: \(nodeView?.bounds),\(nodeView?.frame)
-- Node Transform: \(nodeView?.transform)
+- Node: \(nodeView.bounds),\(nodeView.frame)
+- Node Transform: \(nodeView.transform)
 - contentsScale: \(videoLayer.contentsScale)
 """)
           } else if (isImage) {
@@ -891,6 +929,17 @@ extension CGRect {
 
 
 extension CALayer {
+  func setRotatableFrame(frame: CGRect, rotation: CGFloat) {
+    if (rotation == .zero || Int(abs(rotation.radiansToDegrees).rounded()) % 90 == 0) {
+      self.frame = frame
+    } else {
+      let _layer = CALayer()
+      _layer.bounds = frame
+      _layer.frame = frame
+      self.position = _layer.position
+    }
+  }
+
   func mask(to: CGRect, inverse: Bool = false) {
       let path = UIBezierPath(rect: to)
       let maskLayer = CAShapeLayer()
@@ -916,5 +965,57 @@ extension AVAsset {
     }
 
     return CGRect(origin: .zero, size: videoTrack.naturalSize.applying(videoTrack.preferredTransform)).standardized.size
+  }
+}
+
+extension UIImage {
+  public func hasAlpha() -> Bool {
+    guard let alpha: CGImageAlphaInfo = self.cgImage?.alphaInfo else { return false }
+    return alpha == .first || alpha == .last || alpha == .premultipliedFirst || alpha == .premultipliedLast
+  }
+
+  func rotate(radians: Float) -> UIImage? {
+       var newSize = CGRect(origin: CGPoint.zero, size: self.size).applying(CGAffineTransform(rotationAngle: CGFloat(radians))).size
+       // Trim off the extremely small float value to prevent core graphics from rounding it up
+       newSize.width = floor(newSize.width)
+       newSize.height = floor(newSize.height)
+
+       UIGraphicsBeginImageContextWithOptions(newSize, !hasAlpha(), self.scale)
+       let context = UIGraphicsGetCurrentContext()!
+
+       // Move origin to middle
+       context.translateBy(x: newSize.width/2, y: newSize.height/2)
+       // Rotate around middle
+       context.rotate(by: CGFloat(radians))
+       // Draw the image at its center
+       self.draw(in: CGRect(x: -self.size.width/2, y: -self.size.height/2, width: self.size.width, height: self.size.height))
+
+       let newImage = UIGraphicsGetImageFromCurrentImageContext()
+       UIGraphicsEndImageContext()
+
+       return newImage
+   }
+}
+
+extension BinaryInteger {
+    var degreesToRadians: CGFloat { return CGFloat(self) * .pi / 180 }
+}
+
+extension FloatingPoint {
+    var degreesToRadians: Self { return self * .pi / 180 }
+    var radiansToDegrees: Self { return self * 180 / .pi }
+}
+
+
+extension AVLayerVideoGravity {
+  var contentsGravity: CALayerContentsGravity {
+//    return .center
+    switch self {
+      case .resize: return .resize
+      case .resizeAspect: return .resizeAspect
+      case .resizeAspectFill: return  .resizeAspectFill
+    default:
+      return .resizeAspect
+    }
   }
 }

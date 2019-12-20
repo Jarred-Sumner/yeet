@@ -124,7 +124,7 @@ extension AVURLAsset {
         instruction.layerInstructions = [layerInstruction]
         videoComposition.instructions = [instruction]
 
-        let _to = to.h264Friendly()
+        let _to = to
 
         let scaleX = to.width / _to.width
         let scaleY = to.height / _to.height

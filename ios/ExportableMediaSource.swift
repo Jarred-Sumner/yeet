@@ -189,6 +189,18 @@ extension ExportableMediaSource {
     }
   }
 
+  var videoView: YeetVideoView? {
+    guard isVideo else {
+      return nil
+    }
+
+    return mediaPlayerView?.videoView
+  }
+
+  var mediaPlayerView: MediaPlayer? {
+    return self.view as? MediaPlayer ?? self.nodeView as? MediaPlayer
+  }
+
   var image: ExportableImageSource? {
     if isImage {
       return self as? ExportableImageSource

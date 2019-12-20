@@ -124,7 +124,10 @@ class YeetExporter: NSObject, RCTBridgeModule  {
             return
           }
 
-          dict[block["id"].stringValue] = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
+          let imageSource = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
+          imageSource.nodeView = view
+        
+          dict[block["id"].stringValue] = imageSource
         } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
             guard let mediaPlayer = YeetExporter.findMediaPlayer(view) else {
              return

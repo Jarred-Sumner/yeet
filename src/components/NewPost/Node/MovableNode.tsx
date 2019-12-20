@@ -63,10 +63,10 @@ export const TransformableView = React.forwardRef((props, ref) => {
                 translateX
               },
               {
-                rotate
+                scale
               },
               {
-                scale
+                rotate
               }
             ]
           }
@@ -95,10 +95,10 @@ export const TransformableView = React.forwardRef((props, ref) => {
                 translateX
               },
               {
-                rotate
+                scale
               },
               {
-                scale
+                rotate
               }
             ]
           }
@@ -393,7 +393,7 @@ export class MovableNode extends Component<Props> {
     this.props.onChangePosition({
       x,
       y,
-      scale: Math.min(scale, this.props.maxScale),
+      scale,
       rotate,
       absoluteX,
       absoluteY,

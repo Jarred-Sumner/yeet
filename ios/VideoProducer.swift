@@ -303,12 +303,18 @@ class ContentBlock {
 
   
   func maxRenderedFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
-    let frame = (self.nodeFrame ?? self.frame)
+    var frame = (self.nodeFrame ?? self.frame)
+
+    if (self.value.image.isVideo) {
+      if let asset = self.value.image.video?.asset {
+        return AVMakeRect(aspectRatio: asset.resolution, insideRect: frame).applying(position.transform()).normalize(scale: scale)
+      }
+    }
 
     return CGRect(
       origin: frame.origin,
-      size: frame.applying(position.transform()).size
-    ).normalize(scale: scale)
+      size: frame.size
+    ).normalize(scale: scale).applying(position.transform())
   }
 
 
