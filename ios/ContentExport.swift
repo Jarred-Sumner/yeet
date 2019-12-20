@@ -162,14 +162,8 @@ class ContentExport {
     ]
   }
 
-  static func composeImageLayer(image: ExportableImageSource, frame: CGRect, duration: TimeInterval, block: ContentBlock? = nil, scale: CGFloat, exportType: ExportType, rotation: CGFloat = .zero, estimatedBounds: CGRect) -> CALayer {
-
+  static func composeImageLayer(image: ExportableMediaSource, frame: CGRect, duration: TimeInterval, block: ContentBlock? = nil, scale: CGFloat, exportType: ExportType, rotation: CGFloat = .zero, estimatedBounds: CGRect) -> CALayer {
     let view = image.nodeView!
-    var containerView = view.superview!
-    while (containerView.bounds.height < 1 || containerView.bounds.width < 1) {
-      containerView = containerView.superview!
-    }
-
 
     let layer = CALayer()
     let _frame = frame
@@ -186,12 +180,14 @@ class ContentExport {
 
 
 
-    if (image.isAnimated) {
-      layer.contents = image.firstFrame
+    if (image.image?.isAnimated ?? false) {
+      let _image = image as! ExportableImageSource
+
+      layer.contents = _image.firstFrame
       var images: Array<CGImage> = []
 
-      for frameIndex in 0...image.animatedImageFrameCount - 1 {
-        let frame = image.animatedImageFrame(at: UInt(frameIndex))
+      for frameIndex in 0..._image.animatedImageFrameCount - 1 {
+        let frame = _image.animatedImageFrame(at: UInt(frameIndex))
 
         images.append(frame)
       }
@@ -205,11 +201,7 @@ class ContentExport {
 
         format.scale = view.layer.contentsScale * CGFloat(block!.position.scale.doubleValue)
 
-        let _size = view.bounds.normalize(scale: scale).size
-        let __frame = view.frame.normalize(scale: scale)
-
         let renderer = UIGraphicsImageRenderer.init(size: view.bounds.size, format: format)
-        let cropRect = view.bounds.applying(view.transform)
 
         let _originalScale = view.layer.contentsScale
 
@@ -238,9 +230,7 @@ class ContentExport {
         return
       }
 
-      guard let image = block.value.image.image else {
-        return
-      }
+      let image = block.value.image
       
       let frame = (block.nodeFrame ?? block.frame).normalize(scale: contentsScale)
 
