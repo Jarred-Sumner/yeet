@@ -25,7 +25,10 @@ const normalizeSize = (size, rawHeight) => {
 };
 
 export const buildImgSrc = (source, rawSize, rawHeight) => {
-  if (!source.startsWith("https://") && !source.startsWith("http://")) {
+  if (
+    (!source.startsWith("https://") && !source.startsWith("http://")) ||
+    source.includes(IMAGE_HOST)
+  ) {
     return source;
   }
 

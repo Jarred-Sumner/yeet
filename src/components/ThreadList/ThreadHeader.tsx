@@ -28,7 +28,7 @@ import {
 } from "../Icon";
 import { SPACING, COLORS } from "../../lib/styles";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "../BlurView";
 import tinycolor from "tinycolor2";
 import {
   MediaUploadContext,

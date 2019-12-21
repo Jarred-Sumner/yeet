@@ -8,8 +8,7 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
-  Settings
+  View
 } from "react-native";
 import * as Yup from "yup";
 import { FormField } from "../components/FormField";
@@ -28,6 +27,7 @@ import { resetTo } from "../lib/NavigationService";
 import { getPlaceholderUsername } from "../lib/usernames";
 import { UserContext } from "../components/UserContext";
 import { Compliance } from "../components/Compliance";
+import { setWaitlisted } from "../lib/Settings";
 
 const styles = StyleSheet.create({
   form: {
@@ -127,9 +127,7 @@ class RawLoginPage extends React.Component {
       this.setState({ isLoading: false }, () => {
         if (login) {
           const onFinish = this.props.navigation.getParam("onFinish");
-          Settings.set({
-            [WATCH_KEYS.WAITLILST]: true
-          });
+          setWaitlisted(false);
 
           HapticFeedback.trigger("notificationSuccess");
           if (onFinish) {

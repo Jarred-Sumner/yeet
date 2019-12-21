@@ -1,7 +1,7 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
-import { StatusBar, StyleSheet } from "react-native";
+import { StatusBar, StyleSheet, Platform } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState
@@ -362,9 +362,10 @@ class RawNewPost extends React.Component<{}, State> {
 
         <Panner
           onIndexChange={this.handleChangeLayoutIndex}
-          swipeEnabled={
-            !this.state.showGallery && !this.state.isKeyboardVisible
-          }
+          swipeEnabled={Platform.select({
+            ios: !this.state.showGallery && !this.state.isKeyboardVisible,
+            android: false
+          })}
           position={this.layoutIndexValue}
           gestureHandlerProps={{
             ref: this.pannerRef

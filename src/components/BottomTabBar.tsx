@@ -19,7 +19,6 @@ import { BAR_HEIGHT } from "./ThreadList/Seekbar";
 import { AuthState, UserContext } from "./UserContext";
 import { SemiBoldText, BoldText, MediumText, Text } from "./Text";
 import tinyColor from "tinycolor2";
-import { BlurView } from "@react-native-community/blur";
 
 export const TAB_BAR_HEIGHT = 56.5;
 export const TAB_BAR_OFFSET = TAB_BAR_HEIGHT + BOTTOM_Y;

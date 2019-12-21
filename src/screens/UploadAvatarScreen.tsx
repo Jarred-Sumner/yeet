@@ -1,31 +1,25 @@
 import { subYears } from "date-fns/esm";
 import hoistNonReactStatics from "hoist-non-react-statics";
-import { capitalize } from "lodash";
 import * as React from "react";
 import { useMutation } from "react-apollo";
-import { StyleSheet, View, InteractionManager } from "react-native";
-import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
-import SafeAreaView from "react-native-safe-area-view";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import { StyleSheet, View } from "react-native";
+import { TouchableOpacity } from "react-native-gesture-handler";
+import LinearGradient from "react-native-linear-gradient";
+import { useNavigation } from "react-navigation-hooks";
 import { NavigationStackOptions } from "react-navigation-stack";
-import { DatePicker } from "../components/DatePicker";
-import { BoldText, Text, MediumText, SemiBoldText } from "../components/Text";
+import { SCREEN_DIMENSIONS } from "../../config";
+import { EditableAvatar } from "../components/EditableAvatar";
+import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
+import { BoldText, SemiBoldText } from "../components/Text";
 import { sendToast, ToastType } from "../components/Toast";
+import { UserContext } from "../components/UserContext";
 import {
   UpdateAvatar,
   UpdateAvatarVariables
 } from "../lib/graphql/UpdateAvatar";
+import { resetTo } from "../lib/NavigationService";
 import { COLORS, SPACING } from "../lib/styles";
 import UPDATE_AVATAR_MUTATION from "../lib/UpdateAvatarMutation.graphql";
-import { COPY_BY_SIGN, getSign, ZodiacIcon } from "../lib/zodiac";
-import { KeyboardAwareScrollView } from "../components/KeyboardAwareScrollView";
-import { EditableAvatar } from "../components/EditableAvatar";
-import { UserContext } from "../components/UserContext";
-import { SCREEN_DIMENSIONS } from "../../config";
-import LinearGradient from "react-native-linear-gradient";
-import { EmojiTextInput } from "../components/NewPost/Text/EmojiTextInput";
-import { NavigationActions } from "react-navigation";
-import { navigate, resetTo } from "../lib/NavigationService";
 
 const AVATAR_SIZE = 196;
 

@@ -25,10 +25,6 @@
 #import <React/RCTLinkingManager.h>
 #import <AppCenterReactNativeShared/AppCenterReactNativeShared.h>
 #import <AppCenterReactNative.h>
-#import <AppCenterReactNativeAnalytics.h>
-#import <AppCenterReactNativeShared/AppCenterReactNativeShared.h>
-#import <AppCenterReactNative.h>
-#import <AppCenterReactNativeAnalytics.h>
 #import <CodePush/CodePush.h>
 #import <AVFoundation/AVFoundation.h>
 #import "RNSplashScreen.h"  // here
@@ -126,7 +122,7 @@
 #ifndef TEST
 [FIRApp configure];
 [AppCenterReactNative register];
-[AppCenterReactNativeAnalytics registerWithInitiallyEnabled:true];
+//[AppCenterReactNativeAnalytics registerWithInitiallyEnabled:true];
 #endif
 [EnableWebpDecoder enable];
 

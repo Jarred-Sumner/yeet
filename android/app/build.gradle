@@ -1,4 +1,5 @@
 apply plugin: "com.android.application"
+apply plugin: "kotlin-android"
 
 import com.android.build.OutputFile
 
@@ -11,73 +12,11 @@ import com.android.build.OutputFile
  * and their defaults. If you decide to add a configuration block, make sure to add it before the
  * `apply from: "../../node_modules/react-native/react.gradle"` line.
  *
- * project.ext.react = [
- *   // the name of the generated asset file containing your JS bundle
- *   bundleAssetName: "index.android.bundle",
- *
- *   // the entry file for bundle generation
- *   entryFile: "index.android.js",
- *
- *   // https://facebook.github.io/react-native/docs/performance#enable-the-ram-format
- *   bundleCommand: "ram-bundle",
- *
- *   // whether to bundle JS and assets in debug mode
- *   bundleInDebug: false,
- *
- *   // whether to bundle JS and assets in release mode
- *   bundleInRelease: true,
- *
- *   // whether to bundle JS and assets in another build variant (if configured).
- *   // See http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Build-Variants
- *   // The configuration property can be in the following formats
- *   //         'bundleIn${productFlavor}${buildType}'
- *   //         'bundleIn${buildType}'
- *   // bundleInFreeDebug: true,
- *   // bundleInPaidRelease: true,
- *   // bundleInBeta: true,
- *
- *   // whether to disable dev mode in custom build variants (by default only disabled in release)
- *   // for example: to disable dev mode in the staging build type (if configured)
- *   devDisabledInStaging: true,
- *   // The configuration property can be in the following formats
- *   //         'devDisabledIn${productFlavor}${buildType}'
- *   //         'devDisabledIn${buildType}'
- *
- *   // the root of your project, i.e. where "package.json" lives
- *   root: "../../",
- *
- *   // where to put the JS bundle asset in debug mode
- *   jsBundleDirDebug: "$buildDir/intermediates/assets/debug",
- *
- *   // where to put the JS bundle asset in release mode
- *   jsBundleDirRelease: "$buildDir/intermediates/assets/release",
- *
- *   // where to put drawable resources / React Native assets, e.g. the ones you use via
- *   // require('./image.png')), in debug mode
- *   resourcesDirDebug: "$buildDir/intermediates/res/merged/debug",
- *
- *   // where to put drawable resources / React Native assets, e.g. the ones you use via
- *   // require('./image.png')), in release mode
- *   resourcesDirRelease: "$buildDir/intermediates/res/merged/release",
- *
- *   // by default the gradle tasks are skipped if none of the JS files or assets change; this means
- *   // that we don't look at files in android/ or ios/ to determine whether the tasks are up to
- *   // date; if you have any other folders that you want to ignore for performance reasons (gradle
- *   // indexes the entire tree), add them here. Alternatively, if you have JS files in android/
- *   // for example, you might want to remove it from here.
- *   inputExcludes: ["android/**", "ios/**"],
- *
- *   // override which node gets called and with what additional arguments
- *   nodeExecutableAndArgs: ["node"],
- *
- *   // supply additional arguments to the packager
- *   extraPackagerArgs: []
- * ]
  */
 
 project.ext.react = [
     entryFile: "index.js",
-    enableHermes: false,  // clean and rebuild if changing
+    enableHermes: true,  // clean and rebuild if changing
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -123,6 +62,7 @@ def enableHermes = project.ext.react.get("enableHermes", false);
 
 android {
     compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion '28.0.3'
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
@@ -135,7 +75,16 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        multiDexEnabled true // This is for method limit
+         // Add these lines below the existing config
+        renderscriptTargetApi 28
+        renderscriptSupportModeEnabled true
     }
+
+    dexOptions {
+        jumboMode true  // This for string limit
+    }
+
     splits {
         abi {
             reset()
@@ -190,11 +139,25 @@ android {
 }
 
 dependencies {
+    implementation project(':@react-native-community_async-storage')
+    implementation project(':@react-native-community_cameraroll')
+    implementation 'com.android.support:multidex:1.0.3'
+    compile project(":reactnativekeyboardinput")
+
+    implementation 'com.facebook.fresco:fresco:2.0.0'
+        // For animated GIF support
+    implementation 'com.facebook.fresco:animated-gif:2.0.0'
+
+    // For WebP support, including animated WebP
+    implementation 'com.facebook.fresco:animated-webp:2.0.0'
+    implementation 'com.facebook.fresco:webpsupport:2.0.0'
+
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:${rootProject.ext.kotlinVersion}"
+    implementation project(':@react-native-firebase_app')
     implementation project(':react-native-code-push')
-    implementation project(':appcenter-analytics')
     implementation project(':appcenter')
     implementation project(':@react-native-firebase_analytics')
-    implementation project(':react-native-firebase')
     implementation project(':react-native-fast-image')
     implementation project(':react-native-cronet')
     implementation project(':react-native-config')
@@ -202,10 +165,7 @@ dependencies {
     implementation project(':react-native-gesture-handler')
     implementation project(':react-native-shared-element')
     implementation project(':react-native-fs')
-    implementation project(':@terrylinla_react-native-sketch-canvas')
-    implementation project(':react-native-text-detector')
     implementation project(':react-native-photo-manipulator')
-    implementation project(':react-native-text-input-mask')
     implementation project(':react-native-secure-key-store')
     implementation project(':react-native-haptic-feedback')
     implementation project(':rn-fetch-blob')

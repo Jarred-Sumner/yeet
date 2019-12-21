@@ -14,7 +14,8 @@ import {
   ListRenderItem,
   ViewabilityConfig,
   View,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from "react-native";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import {
@@ -294,9 +295,12 @@ class FeedListComponent extends React.Component<Props, State> {
         keyboardShouldPersistTaps="always"
         keyboardDismissMode="interactive"
         contentInsetAdjustmentBehavior="never"
-        removeClippedSubviews={false}
         directionalLockEnabled
         scrollToOverflowEnabled
+        removeClippedSubviews={Platform.select({
+          ios: false,
+          android: true
+        })}
         vertical
         viewabilityConfig={this.viewabilityConfig}
         data={threads}

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { FlatList as RNFlatList, FlatListProps } from "react-native";
+import { FlatList as RNFlatList, FlatListProps, Platform } from "react-native";
 import {
   FlatList as GestureHandlerFlatList,
   ScrollView as _ScrollView
@@ -13,19 +13,44 @@ export const ScrollView = createNavigationAwareScrollable(
   Animated.createAnimatedComponent(_ScrollView)
 );
 
-const renderScrollView = props => <ScrollView {...props} />;
-
 const FlatListComponent = Animated.createAnimatedComponent(
   GestureHandlerFlatList
 ) as RNFlatList<any>;
 
-const _FlatList = React.forwardRef((props, ref) => {
-  let _ref = React.useRef();
+const _FlatList = React.forwardRef(
+  ({ contentContainerStyle, contentInset, contentOffset, ...props }, ref) => {
+    let _ref = React.useRef();
 
-  React.useImperativeHandle(ref, () => _ref.current.getNode());
+    React.useImperativeHandle(ref, () => _ref.current.getNode());
 
-  return <FlatListComponent {...props} ref={_ref} />;
-});
+    if (Platform.OS === "ios") {
+      return (
+        <FlatListComponent
+          contentInset={contentInset}
+          contentOffset={contentOffset}
+          contentContainerStyle={contentContainerStyle}
+          {...props}
+          ref={_ref}
+        />
+      );
+    } else {
+      return (
+        <FlatListComponent
+          contentContainerStyle={
+            !contentContainerStyle && (contentInset || contentOffset)
+              ? {
+                  paddingTop: contentInset?.top || 0,
+                  paddingBottom: contentInset?.bottom || 0
+                }
+              : contentContainerStyle
+          }
+          {...props}
+          ref={_ref}
+        />
+      );
+    }
+  }
+);
 
 export const FlatList = hoistNonReactStatics(
   _FlatList,
@@ -33,8 +58,7 @@ export const FlatList = hoistNonReactStatics(
 ) as React.ComponentType<FlatListProps<any>>;
 
 FlatList.defaultProps = {
-  ...(FlatList.defaultProps || {}),
-  renderScrollView
+  ...(FlatList.defaultProps || {})
 };
 
 export default FlatList;

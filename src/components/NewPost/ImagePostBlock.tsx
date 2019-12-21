@@ -8,25 +8,21 @@ import {
   TapGestureHandler
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { SharedElement } from "react-navigation-shared-element";
 import {
   mediaSourcesFromImage,
   YeetImageContainer
 } from "../../lib/imageSearch";
 import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
+import { SPACING } from "../../lib/styles";
+import { BitmapIconAddPhoto } from "../BitmapIcon";
+import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
 import MediaPlayer from "../MediaPlayer";
-import { LIST_HEADER_HEIGHT } from "./ImagePicker";
 import {
   ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
   PostFormat,
   presetsByFormat
 } from "./NewPostFormat";
-import { IconPlus, IconPhoto, IconUploadphoto } from "../Icon";
-import { MediumText } from "../Text";
-import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
-import { SPACING } from "../../lib/styles";
-import { BitmapIconAddPhoto } from "../BitmapIcon";
 // import Image from "../Image";
 
 type Props = {
@@ -296,16 +292,11 @@ class RawImagePostBlock extends React.Component<Props> {
               }
             ]}
           >
-            <SharedElement
-              style={sizeStyle}
-              id={`block.imagePicker.${block.id}`}
-            >
-              <ImageComponent
-                block={block}
-                usePreview={usePreview}
-                scale={scale}
-              />
-            </SharedElement>
+            <ImageComponent
+              block={block}
+              usePreview={usePreview}
+              scale={scale}
+            />
 
             {this.props.children}
           </Animated.View>

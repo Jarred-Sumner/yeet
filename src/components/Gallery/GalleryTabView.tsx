@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, StyleSheet, Dimensions } from "react-native";
+import { View, StyleSheet, Dimensions, Platform } from "react-native";
 import { TabView, SceneMap } from "react-native-tab-view";
 import { MediaPlayerPauser } from "../MediaPlayer";
 import {
@@ -216,7 +216,10 @@ class GalleryTabViewComponent extends React.Component {
         renderScene={this.renderScene}
         tabBarPosition={showHeader ? "bottom" : "top"}
         lazy={false}
-        removeClippedSubviews={false}
+        removeClippedSubviews={Platform.select({
+          ios: false,
+          android: false
+        })}
         gestureHandlerProps={{
           ref: this.panRef,
           simultaneousHandlers: [

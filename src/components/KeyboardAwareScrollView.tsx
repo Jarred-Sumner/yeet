@@ -402,6 +402,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     let newContentContainerStyle;
     if (Platform.OS === "android" && enableOnAndroid) {
       newContentContainerStyle = [].concat(contentContainerStyle).concat({
+        paddingTop: paddingTop,
         paddingBottom:
           ((contentContainerStyle || {}).paddingBottom || 0) + keyboardSpace
       });

@@ -10,27 +10,26 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import * as Sentry from "@sentry/react-native";
 import React from "react";
 import { ApolloProvider } from "react-apollo";
-import { StatusBar, StyleSheet, View, Settings } from "react-native";
+import { Platform, StatusBar, StyleSheet, View } from "react-native";
 import OneSignal from "react-native-onesignal";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { getInset } from "react-native-safe-area-view";
 import { enableScreens } from "react-native-screens";
 import SplashScreen from "react-native-splash-screen";
 import { NavigationState } from "react-navigation";
 import { ONESIGNAL_APP_ID } from "./config";
-import { creatRouteseApp, Routes } from "./Routes";
+import { Routes } from "./Routes";
 import { trackScreenTransition } from "./src/components/Analytics";
+import { ClipboardProvider } from "./src/components/Clipboard/ClipboardContext";
 import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 import { ModalContextProvider } from "./src/components/ModalContext";
 import { Toast } from "./src/components/Toast";
 import { UserContextProvider } from "./src/components/UserContext";
-import APOLLO_CLIENT, { hasLoadedCache, waitForReady } from "./src/lib/graphql";
+import APOLLO_CLIENT from "./src/lib/graphql";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
-import NavigationService from "./src/lib/NavigationService";
-import { WATCH_KEYS } from "./src/lib/Storage";
 import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
-import { MediaUploadProgress } from "./src/components/MediaUploadProgress";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { getInset } from "react-native-safe-area-view";
-import { ClipboardProvider } from "./src/components/Clipboard/ClipboardContext";
+import NavigationService from "./src/lib/NavigationService";
+import { isWaitlisted } from "./src/lib/Settings";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -72,31 +71,22 @@ export class App extends React.Component {
     OneSignal.addEventListener("opened", this.onOpened);
     OneSignal.addEventListener("ids", this.onIds);
 
-    this.settingsWatcher = Settings.watchKeys(
-      [WATCH_KEYS.WAITLILST],
-      this.handleChangeWaitlistStatus
-    );
-
     this.state = {
-      ready: true,
+      waitlisted: Platform.select({ ios: isWaitlisted(), android: null }),
+      ready: Platform.select({
+        ios: true,
+        android: false
+      }),
       client: APOLLO_CLIENT
     };
   }
 
   get initialRouteName() {
-    if (this.showWaitlist) {
+    if (this.state.waitlisted) {
       return "Waitlist";
     } else {
       return "Root";
     }
-  }
-
-  get hideWaitlist() {
-    return !!Settings.get(WATCH_KEYS.WAITLILST);
-  }
-
-  get showWaitlist() {
-    return !this.hideWaitlist;
   }
 
   handleChangeWaitlistStatus = () => {};
@@ -123,6 +113,10 @@ export class App extends React.Component {
     this._hasMountedApp = true;
     if (this.state.ready) {
       SplashScreen.hide();
+    } else {
+      isWaitlisted().then(waitlisted =>
+        this.setState({ ready: true, waitlisted })
+      );
     }
 
     Sentry.addBreadcrumb({
@@ -130,6 +124,12 @@ export class App extends React.Component {
       message: "App booted",
       level: Sentry.Severity.Info
     });
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.ready !== prevState.ready && this.state.ready) {
+      SplashScreen.hide();
+    }
   }
 
   onReceived(notification) {
@@ -153,7 +153,6 @@ export class App extends React.Component {
 
   componentWillUnmount() {
     this._hasMountedApp = false;
-    Settings.clearWatch(this.settingsWatcher);
     OneSignal.removeEventListener("received", this.onReceived);
     OneSignal.removeEventListener("opened", this.onOpened);
     OneSignal.removeEventListener("ids", this.onIds);
@@ -177,7 +176,7 @@ export class App extends React.Component {
 
     return (
       <View style={styles.wrap}>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content" backgroundColor="#000" />
         <SafeAreaProvider initialSafeAreaInsets={this.initialSafeAreaInsets}>
           <MaterialThemeProvider>
             <ApolloProvider client={this.state.client}>

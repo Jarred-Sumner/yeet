@@ -714,7 +714,8 @@ export class TextInput extends React.Component<Props> {
       styles.input,
       textInputTypeStylesheets[template].input,
       {
-        backgroundColor: format === PostFormat.post && backgroundColor,
+        backgroundColor:
+          format === PostFormat.post ? backgroundColor : undefined,
         minHeight,
         marginLeft:
           template === TextTemplate.comic
@@ -752,6 +753,9 @@ export class TextInput extends React.Component<Props> {
           ref={inputRef}
           style={inputStyles}
           multiline
+          scrollEnabled={false}
+          nestedScrollEnabled
+          listKey={block.id}
           // autoCorrect={
           //   {
           //     [TextTemplate.basic]: true,

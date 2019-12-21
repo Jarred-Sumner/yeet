@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Keyboard } from "react-native";
+import { Keyboard, Platform } from "react-native";
 import Animated, { Easing } from "react-native-reanimated";
 
 export class AnimatedKeyboardTracker extends React.Component {
@@ -35,6 +35,9 @@ export class AnimatedKeyboardTracker extends React.Component {
 
   subscribeToKeyboard = () => {
     this.isTracking = true;
+    if (Platform.OS === "android") {
+      Keyboard.addListener("keyboardDidShow", this.handleKeyboardDidShow);
+    }
     Keyboard.addListener("keyboardWillShow", this.handleKeyboardWillShow);
     Keyboard.addListener("keyboardDidHide", this.handleKeyboardDidHide);
     Keyboard.addListener(
@@ -66,6 +69,24 @@ export class AnimatedKeyboardTracker extends React.Component {
     if (this.props.onKeyboardHide) {
       this.props.onKeyboardHide(event, true);
     }
+
+    if (Platform.OS === "android") {
+      this.handleKeyboardAnimation(
+        false,
+        event.duration,
+        event.endCoordinates.height
+      );
+    }
+  };
+
+  handleKeyboardDidShow = event => {
+    if (Platform.OS === "android") {
+      this.handleKeyboardAnimation(
+        true,
+        event.duration,
+        event.endCoordinates.height
+      );
+    }
   };
 
   handleKeyboardWillShow = event => {
@@ -85,7 +106,7 @@ export class AnimatedKeyboardTracker extends React.Component {
   }
 
   animationFrame = -1;
-  handleKeyboardAnimation = (isShowing: boolean, duration, height = 0) => {
+  handleKeyboardAnimation = (isShowing: boolean, _duration, height = 0) => {
     const { keyboardVisibleValue, keyboardHeightValue } = this.props;
 
     const easing = Easing.elastic(0.5);
@@ -94,7 +115,13 @@ export class AnimatedKeyboardTracker extends React.Component {
       window.cancelAnimationFrame(this.animationFrame);
       this.animationFrame = -1;
     }
+
     this.animationFrame = window.requestAnimationFrame(() => {
+      const duration = Platform.select({
+        ios: _duration,
+        android: 100
+      });
+
       Animated.timing(keyboardVisibleValue, {
         duration,
         toValue: isShowing ? 1.0 : 0.0,
@@ -104,7 +131,9 @@ export class AnimatedKeyboardTracker extends React.Component {
       if (keyboardHeightValue) {
         Animated.timing(keyboardHeightValue, {
           duration,
-          toValue: isShowing ? height : 0.0,
+          toValue: isShowing
+            ? Platform.select({ ios: height, android: height })
+            : 0.0,
           easing
         }).start();
       }
@@ -113,6 +142,9 @@ export class AnimatedKeyboardTracker extends React.Component {
 
   unsubscribeToKeyboard = () => {
     Keyboard.removeListener("keyboardWillShow", this.handleKeyboardWillShow);
+    if (Platform.OS === "android") {
+      Keyboard.removeListener("keyboardDidShow", this.handleKeyboardDidShow);
+    }
     Keyboard.removeListener("keyboardDidHide", this.handleKeyboardDidHide);
     Keyboard.removeListener(
       "keyboardWillChangeFrame",

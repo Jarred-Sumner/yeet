@@ -19,7 +19,7 @@ export const handleSignIn = (user: CurrentUserQuery_currentUser) => {
     level: Sentry.Severity.Info
   });
 
-  analytics().setUserId(_id);
+  // analytics().setUserId(_id);
 };
 
 export const trackScreenTransition = (
@@ -38,6 +38,6 @@ export const trackScreenTransition = (
       level: Sentry.Severity.Info
     });
 
-    return analytics().setCurrentScreen(to);
+    // return analytics().setCurrentScreen(to);
   });
 };

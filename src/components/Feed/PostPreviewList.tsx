@@ -473,7 +473,6 @@ export const PostPreviewList = React.forwardRef(
         horizontal
         simultaneousHandlers={waitFor}
         style={scrollViewStyle}
-        removeClippedSubviews={false}
       >
         {children}
         {posts.slice(0, 4).map(renderPost)}

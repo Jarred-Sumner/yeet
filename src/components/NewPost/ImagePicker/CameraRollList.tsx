@@ -1,6 +1,6 @@
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Image as RNImage, StyleSheet, View } from "react-native";
+import { Image as RNImage, StyleSheet, View, Platform } from "react-native";
 import { BaseButton } from "react-native-gesture-handler";
 import Permissions, { PERMISSIONS, RESULTS } from "react-native-permissions";
 import Animated from "react-native-reanimated";
@@ -431,7 +431,10 @@ export class CameraRollList extends React.Component<Props, State> {
             flex: 1
           }}
           contentInsetAdjustmentBehavior="never"
-          removeClippedSubviews={false}
+          removeClippedSubviews={Platform.select({
+            ios: false,
+            android: true
+          })}
           onScrollBeginDrag={onScrollBeginDrag}
           scrollEventThrottle={1}
           overScrollMode="always"

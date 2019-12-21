@@ -34,6 +34,7 @@ import { COLORS, SPACING } from "../lib/styles";
 import { getPlaceholderUsername } from "../lib/usernames";
 import { UserContext } from "../components/UserContext";
 import { Compliance } from "../components/Compliance";
+import { setWaitlisted } from "../lib/Settings";
 
 const styles = StyleSheet.create({
   form: {
@@ -168,10 +169,7 @@ class RawSignUpPage extends React.Component {
       });
       this.setState({ isLoading: false });
 
-      Settings.set({
-        [WATCH_KEYS.WAITLILST]: true
-      });
-
+      setWaitlisted(false);
       this.props.navigation.push("Birthday", {
         onFinish: this.props.navigation.getParam("onFinish"),
         isOnboarding: true
@@ -246,7 +244,6 @@ class RawSignUpPage extends React.Component {
                   keyboardType="ascii-capable"
                   inputRef={this.usernameInputRef}
                   spellcheck={false}
-                  importantForAutofill
                   enablesReturnKeyAutomatically={false}
                   textContentType="username"
                   autoFocus
@@ -267,7 +264,6 @@ class RawSignUpPage extends React.Component {
                   blurOnSubmit={false}
                   keyboardType="email-address"
                   textContentType="emailAddress"
-                  importantForAutofill
                   enablesReturnKeyAutomatically={false}
                   returnKeyType="next"
                   inputRef={this.emailInputRef}
@@ -286,7 +282,6 @@ class RawSignUpPage extends React.Component {
                   name="password"
                   textContentType="none"
                   autoCorrect={false}
-                  importantForAutofill
                   blurOnSubmit={false}
                   enablesReturnKeyAutomatically={false}
                   error={props.touched.password && props.errors.password}
@@ -310,7 +305,6 @@ class RawSignUpPage extends React.Component {
                   autoCorrect={false}
                   enablesReturnKeyAutomatically={false}
                   // onSubmitEditing={props.handleSubmit}
-                  importantForAutofill
                   inputRef={this.passwordConfirmationInputRef}
                   returnKeyType="go"
                   error={

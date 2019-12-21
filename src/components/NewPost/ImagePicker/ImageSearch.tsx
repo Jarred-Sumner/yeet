@@ -17,7 +17,7 @@ import tinycolor from "tinycolor2";
 import { COLORS, SPACING } from "../../../lib/styles";
 import { IconSearch } from "../../Icon";
 import { SemiBoldText } from "../../Text";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "../../BlurView";
 import { TOP_Y } from "../../../../config";
 import { debounce } from "lodash";
 import { NetworkStatus } from "apollo-client";
@@ -258,7 +258,7 @@ class ImageSearchComponent extends React.Component<Props> {
           }
         ]}
       >
-        <BlurView blurType="extraDark" style={styles.blur} blurAmount={25}>
+        <BlurView blurType="dark" style={styles.blur} blurAmount={25}>
           <Animated.View
             style={[
               styles.content,
@@ -309,7 +309,6 @@ class ImageSearchComponent extends React.Component<Props> {
               enablesReturnKeyAutomatically
               onChangeText={this.debouncedChange}
               onSubmitEditing={onSubmit}
-              importantForAutofill={false}
               onFocus={this.handleFocus}
               onBlur={this.handleBlur}
               defaultValue={this.state.defaultQuery}

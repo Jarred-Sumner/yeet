@@ -3,7 +3,9 @@ import {
   Image,
   ImageStyle,
   ImageSourcePropType,
-  ImageProps
+  ImageProps,
+  Platform,
+  PixelRatio
 } from "react-native";
 
 export enum BitmapIconName {
@@ -132,12 +134,30 @@ const SIZES_BY_NAME = {
   }
 };
 
+const getAndroidImageDensity = () => {
+  const show3x = PixelRatio.get() > 2.5;
+  const show2x = PixelRatio.get() > 1.5;
+
+  if (show3x) {
+    return "@3x";
+  } else if (show2x) {
+    return "@2x";
+  } else {
+    return "";
+  }
+};
+
 export const getBitmapIconSource = (
   name: BitmapIconName
 ): ImageSourcePropType => {
+  const uri = Platform.select({
+    ios: name,
+    android: `asset:/custom/${name}${getAndroidImageDensity()}.png`
+  });
+
   const size = SIZES_BY_NAME[name] || {};
 
-  return { uri: name, ...size };
+  return { uri, ...size };
 };
 
 export const BitmapIconImage = ({

@@ -1,29 +1,23 @@
-import { View, StyleSheet } from "react-native";
 import * as React from "react";
-import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
+import { SafeAreaContext } from "react-native-safe-area-context";
+import { useNavigation } from "react-navigation-hooks";
+import { SCREEN_DIMENSIONS } from "../../../config";
 import { SPACING } from "../../lib/styles";
-import ImageSearch from "../NewPost/ImagePicker/ImageSearch";
+import { BlurView } from "../BlurView";
+import { BackButton, useBackButtonBehavior } from "../Button";
 import FilterBar, {
   LIST_HEADER_HEIGHT
 } from "../NewPost/ImagePicker/FilterBar";
-import Animated from "react-native-reanimated";
-import { SafeAreaView } from "react-navigation";
-import {
-  BackButton,
-  useBackButtonBehavior,
-  BackButtonBehavior
-} from "../Button";
-import { SafeAreaContext } from "react-native-safe-area-context";
-import { useNavigation } from "react-navigation-hooks";
-import { BlurView } from "@react-native-community/blur";
-import { CAROUSEL_BACKGROUND } from "../NewPost/PostHeader";
 
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
     alignItems: "flex-end",
     justifyContent: "flex-end",
-    flex: 0
+    flex: 0,
+    position: "relative"
   },
   header: {
     width: "100%",
@@ -32,7 +26,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.normal,
-
+    flex: 1,
+    height: "100%",
     top: 0,
     left: 0
   },
@@ -82,11 +77,12 @@ export const GalleryHeader = ({
 }) => {
   const navigation = useNavigation();
   const behavior = useBackButtonBehavior();
+  const viewRef = React.useRef(null);
 
   const { top, bottom } = React.useContext(SafeAreaContext);
 
   const content = (
-    <>
+    <View ref={viewRef}>
       <FilterBar
         value={routes[index].key}
         onChange={jumpTo}
@@ -97,16 +93,16 @@ export const GalleryHeader = ({
         position={position}
       />
       {showHeader && (
-        <View
-          style={[
-            styles.header,
-            { paddingTop: SPACING.half + top, width: filterBarInset }
-          ]}
-        >
-          <BackButton alwaysChevron size={14} behavior={behavior} />
+        <View style={[styles.header, { width: filterBarInset }]}>
+          <BackButton
+            color="white"
+            alwaysChevron
+            size={14}
+            behavior={behavior}
+          />
         </View>
       )}
-    </>
+    </View>
   );
 
   const containerStyles = [
@@ -123,7 +119,19 @@ export const GalleryHeader = ({
 
   if (showHeader) {
     return (
-      <BlurView blurType="extraDark" blurAmount={25} style={containerStyles}>
+      <BlurView
+        viewRef={viewRef}
+        blurType="dark"
+        blurAmount={25}
+        blurStyle={{
+          height: top + LIST_HEADER_HEIGHT,
+          width: SCREEN_DIMENSIONS.width,
+          top: 0,
+          left: 0,
+          right: 0
+        }}
+        style={containerStyles}
+      >
         {content}
       </BlurView>
     );

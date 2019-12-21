@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
       width: 0,
       height: 1
     },
+    overflow: "visible",
     borderRadius: 0,
     flexDirection: "row",
     justifyContent: "center",
@@ -83,6 +84,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     height: LIST_HEADER_HEIGHT,
     width: SCREEN_DIMENSIONS.width,
+    overflow: "visible",
     shadowRadius: 1,
     shadowColor: "#000",
     shadowOpacity: 0.25,

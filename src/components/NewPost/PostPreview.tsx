@@ -339,6 +339,7 @@ export const PostPreview = React.forwardRef(
         scrollEnabled={scrollEnabled}
         onScroll={onScroll}
         onLayout={onLayout}
+        nestedScrollEnabled
         scrollY={scrollY}
         topInsetValue={topInsetValue}
         keyboardShouldPersistTaps="always"

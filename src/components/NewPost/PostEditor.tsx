@@ -1,7 +1,7 @@
 import { connectActionSheet } from "@expo/react-native-action-sheet";
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Keyboard, StyleSheet, View, InputAccessoryView } from "react-native";
+import { Keyboard, StyleSheet, View } from "react-native";
 import {
   ScrollView,
   State as GestureState,
@@ -10,38 +10,36 @@ import {
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
-import tinycolor from "tinycolor2";
-import { IS_SIMULATOR, TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
 import { startExport } from "../../lib/Exporter";
 import {
-  YeetImageContainer,
-  YeetImageRect,
   ImageSourceType,
-  isVideo
+  isVideo,
+  YeetImageContainer,
+  YeetImageRect
 } from "../../lib/imageSearch";
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
-import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
 import { sendToast, ToastType } from "../Toast";
-import { isDeletePressed, FOOTER_HEIGHT } from "./EditorFooter";
-import { ImagePickerRoute } from "./ImagePicker";
+import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
+import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import {
   buildImageBlock,
   buildTextBlock,
   FocusType,
+  ImagePostBlock,
   isPlaceholderImageBlock,
   MAX_POST_HEIGHT,
   minImageWidthByFormat,
   PostBlockType,
   PostFormat,
+  PostLayout,
   POST_WIDTH,
   presetsByFormat,
-  PostLayout,
-  ImagePostBlock,
-  TextTemplate,
+  TextBorderType,
   TextPostBlock,
-  TextBorderType
+  TextTemplate
 } from "./NewPostFormat";
 import {
   buildEditableNode,
@@ -49,13 +47,13 @@ import {
   EditableNodeMap
 } from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
+import { TextInputToolbar } from "./TextInputToolbar";
 import {
   DEFAULT_TOOLBAR_BUTTON_TYPE,
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
-import { GallerySectionItem } from "./ImagePicker/FilterBar";
-import { TextInputToolbar } from "./TextInputToolbar";
+import { InputAccessoryView } from "../InputAccessoryView";
 
 const { block, cond, set, eq, sub } = Animated;
 

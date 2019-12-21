@@ -24,10 +24,7 @@ export const APP_VERSION = DeviceInfo.getVersion();
 export const TIMEZONE = DeviceInfo.getTimezone();
 
 const customFetch = (uri, options) => {
-  StatusBar.setNetworkActivityIndicatorVisible(true);
-
   return fetch(uri, options).then(response => {
-    StatusBar.setNetworkActivityIndicatorVisible(false);
     return response;
   });
 };

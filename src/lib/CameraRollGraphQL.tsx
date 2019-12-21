@@ -8,10 +8,33 @@ import {
   YeetImage,
   ImageSourceType
 } from "./imageSearch";
-import { uniqBy } from "lodash";
+import { uniqBy, capitalize } from "lodash";
 import { performSearch } from "./SearchResponse";
 import { downloadLink } from "./LinkDownloader";
 import Storage from "./Storage";
+import { Platform } from "react-native";
+import { check, PERMISSIONS, request, RESULTS } from "react-native-permissions";
+
+let _lastStatus = null;
+const ensureExternalStoragePermission = async () => {
+  if (_lastStatus) {
+    return _lastStatus;
+  }
+
+  if (Platform.OS === "android") {
+    let status = await check(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+
+    if (status === RESULTS.DENIED) {
+      status = await request(PERMISSIONS.ANDROID.READ_EXTERNAL_STORAGE);
+    }
+
+    _lastStatus = status;
+
+    return status;
+  }
+
+  return RESULTS.GRANTED;
+};
 
 const graphqlImageContainer = (
   image: YeetImageContainer
@@ -40,36 +63,62 @@ export default {
       const { assetType, first, mediaSubtypes, after } = args;
 
       const params = {
-        assetType: assetType,
+        assetType: capitalize(assetType),
         first: first ?? 0,
         mediaSubtypes,
         after
       };
 
-      const result = await CameraRoll.getPhotos(params);
+      try {
+        if (Platform.OS === "android") {
+          const status = await ensureExternalStoragePermission();
 
-      const id = `cameraroll_${[
-        params.assetType,
-        params.first,
-        mediaSubtypes,
-        after
-      ].join("/")}`;
+          if (status === RESULTS.UNAVAILABLE || status === RESULTS.BLOCKED) {
+            return {
+              __typename: "CameraRollResult",
+              page_info: {
+                __typename: "PageInfo",
+                limit: params.first,
+                start_cursor: 0,
+                end_cursor: null,
+                hasMore: false,
+                id: `cameraroll-pageinfo`
+              },
+              id: "cameraroll__empty",
+              data: []
+            };
+          }
+        }
+        const result = await CameraRoll.getPhotos(params);
+        const id = `cameraroll_${[
+          params.assetType,
+          params.first,
+          mediaSubtypes,
+          after
+        ].join("/")}`;
 
-      const response = {
-        __typename: "CameraRollResult",
-        page_info: {
-          __typename: "PageInfo",
-          ...result.page_info,
-          limit: params.first,
-          id: `${id}-pageinfo`
-        },
-        id,
-        data: result.edges.map(edge =>
-          graphqlImageContainer(imageContainerFromCameraRoll(edge))
-        )
-      };
+        const response = {
+          __typename: "CameraRollResult",
+          page_info: {
+            __typename: "PageInfo",
+            start_cursor: 0,
+            end_cursor: 0,
 
-      return response;
+            ...result.page_info,
+            limit: params.first,
+            id: `${id}-pageinfo`
+          },
+          id,
+          data: result.edges.map(edge =>
+            graphqlImageContainer(imageContainerFromCameraRoll(edge))
+          )
+        };
+
+        return response;
+      } catch (exception) {
+        console.error(exception);
+        throw exception;
+      }
     },
     resolveMedia: async (_, args = {}, { cache }) => {
       const { url } = args;
@@ -84,6 +133,22 @@ export default {
       }
     },
     recentImages: async (_, args = {}, { cache }) => {
+      const status = await ensureExternalStoragePermission();
+      if (status !== RESULTS.GRANTED) {
+        return {
+          __typename: "RecentImageSearchResponse",
+          id: "empty-recent",
+          data: [],
+          page_info: {
+            __typename: "PageInfo",
+            has_next_page: false,
+            offset: 0,
+            limit: 80,
+            id: `empty_-recent_pageinfo`
+          }
+        };
+      }
+
       const data = await Storage.getRecentlyUsed();
       const id = `recent/${data.map(({ uri }) => uri).join("-")}`;
       return {

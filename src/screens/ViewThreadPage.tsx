@@ -1,7 +1,7 @@
 // @flow
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import { Context } from "@expo/react-native-action-sheet/lib/typescript/context";
-import { BlurView } from "@react-native-community/blur";
+import { BlurView } from "../components/BlurView";
 import * as Sentry from "@sentry/react-native";
 import { NetworkStatus } from "apollo-client";
 import hoistNonReactStatics from "hoist-non-react-statics";

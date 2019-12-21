@@ -34,11 +34,13 @@ export const LETTER_SPACING_MAPPING = {
 // }
 
 export enum AndroidFontFamily {
-  regular = "ProximaNova-Regular",
-  thin = "Proxima Nova Thin",
-  semiBold = "Proxima Nova Semibold",
-  medium = "Proxima Nova Medium",
-  bold = "Proxima Nova Bold"
+  regular = "Inter",
+  thin = "Inter",
+  semiBold = "Inter",
+  medium = "Inter",
+  bold = "Inter",
+  extraBoldFont = "Inter",
+  black = "Inter"
 }
 
 export enum iOSFontFamily {

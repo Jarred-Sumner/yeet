@@ -12,7 +12,8 @@ import {
   FlatList as RNFlatList,
   StyleSheet,
   View,
-  RefreshControl
+  RefreshControl,
+  Platform
 } from "react-native";
 import {
   PanGestureHandler,
@@ -662,6 +663,10 @@ export class PostFlatList extends React.Component<Props, State> {
           simultaneousHandlers={this.simultaneousListHandlers}
           viewabilityConfig={this.viewabilityConfig}
           scrollEventThrottle={1}
+          removeClippedSubviews={Platform.select({
+            ios: false,
+            android: true
+          })}
           ListHeaderComponent={ThreadHeaderSpacer}
           maintainVisibleContentPosition={this.visibleContentPosition}
           scrollEnabled={scrollEnabled}
@@ -678,6 +683,7 @@ export class PostFlatList extends React.Component<Props, State> {
           initialScrollIndex={this.initialPostIndex}
           snapToOffsets={this.snapToOffsets}
           decelerationRate="fast"
+          overscrollMode="always"
           directionalLockEnabled
           snapToStart
           snapToEnd

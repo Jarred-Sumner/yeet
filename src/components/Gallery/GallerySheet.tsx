@@ -1,7 +1,7 @@
 import BottomSheet from "reanimated-bottom-sheet";
 import { View, StyleSheet, InteractionManager, Keyboard } from "react-native";
 import * as React from "react";
-import { BlurView } from "@react-native-community/blur";
+
 import GalleryTabView from "./GalleryTabView";
 import Animated, {
   Transitioning,
@@ -19,6 +19,8 @@ import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/FilterBar";
 import { MediaPlayerPauser } from "../MediaPlayer";
 import { YeetImageContainer } from "../../lib/imageSearch";
 import Storage from "../../lib/Storage";
+import { BlurView } from "../BlurView";
+import { BackHandler } from "react-native";
 
 const styles = StyleSheet.create({
   sheet: {
@@ -55,37 +57,68 @@ export class GallerySheet extends React.Component {
     };
   }
 
+  componentDidMount() {
+    BackHandler.addEventListener(
+      "hardwareBackPress",
+      this.handleBackButtonPressAndroid
+    );
+  }
+
+  handleBackButtonPressAndroid = () => {
+    if (this.state.show && this.props.show) {
+      this.props.onDismiss();
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  componentWillUnmount() {
+    BackHandler.removeEventListener(
+      "hardwareBackPress",
+      this.handleBackButtonPressAndroid
+    );
+  }
+
+  handleDismiss = () => {
+    const handle = InteractionManager.createInteractionHandle();
+    Keyboard.dismiss();
+    Animated.timing(this.dismissY, {
+      toValue: 0,
+      duration: 500,
+      easing: Easing.elastic(0.8)
+    }).start(() => {
+      this.isDismissingValue.setValue(0);
+
+      this.setState({ show: false }, () => {
+        this.scrollY.setValue(0);
+        InteractionManager.clearInteractionHandle(handle);
+      });
+    });
+  };
+
+  handleShow = () => {
+    const handle = InteractionManager.createInteractionHandle();
+
+    this.scrollY.setValue(0);
+    this.setState({ show: true }, () => {
+      Animated.timing(this.dismissY, {
+        toValue: SCREEN_DIMENSIONS.height * -1,
+        duration: 500,
+        easing: Easing.elastic(0.8)
+      }).start(() => {
+        this.isDismissingValue.setValue(0);
+        InteractionManager.clearInteractionHandle(handle);
+      });
+    });
+  };
+
   componentDidUpdate(prevProps) {
     if (this.props.show !== prevProps.show) {
       if (!this.props.show) {
-        const handle = InteractionManager.createInteractionHandle();
-        Keyboard.dismiss();
-        Animated.timing(this.dismissY, {
-          toValue: 0,
-          duration: 500,
-          easing: Easing.elastic(0.8)
-        }).start(() => {
-          this.isDismissingValue.setValue(0);
-
-          this.setState({ show: false }, () => {
-            this.scrollY.setValue(0);
-            InteractionManager.clearInteractionHandle(handle);
-          });
-        });
+        this.handleDismiss();
       } else if (this.props.show) {
-        const handle = InteractionManager.createInteractionHandle();
-
-        this.scrollY.setValue(0);
-        this.setState({ show: true }, () => {
-          Animated.timing(this.dismissY, {
-            toValue: SCREEN_DIMENSIONS.height * -1,
-            duration: 500,
-            easing: Easing.elastic(0.8)
-          }).start(() => {
-            this.isDismissingValue.setValue(0);
-            InteractionManager.clearInteractionHandle(handle);
-          });
-        });
+        this.handleShow();
       }
     }
   }
@@ -165,6 +198,8 @@ export class GallerySheet extends React.Component {
     height: this.height
   };
 
+  galleryTabView = React.createRef<View>();
+
   sheetStyles = [
     styles.sheet,
     {
@@ -218,8 +253,9 @@ export class GallerySheet extends React.Component {
           <Animated.View style={this.blurWrapperStyles}>
             <MediaPlayerPauser isHidden={!this.props.show}>
               <BlurView
-                blurType="extraDark"
+                blurType="dark"
                 blurAmount={25}
+                viewRef={this.galleryTabView}
                 style={this.blurStyle}
               >
                 <GalleryTabView
@@ -232,6 +268,7 @@ export class GallerySheet extends React.Component {
                   transparentSearch={this.props.transparentSearch}
                   onPress={this.handlePress}
                   isModal
+                  ref={this.galleryTabView}
                   keyboardVisibleValue={this.props.keyboardVisibleValue}
                   selectedIDs={getSelectedIDs(this.state.selectedImages)}
                   initialRoute={this.props.initialRoute}

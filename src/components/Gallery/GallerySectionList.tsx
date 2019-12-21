@@ -36,13 +36,9 @@ const CLIPBOARD_IMAGE_WIDTH = SCREEN_DIMENSIONS.width / 2;
 const CLIPBOARD_IMAGE_HEIGHT = 200;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1
-  },
   wrapper: {
-    flex: 1,
+    flex: 0,
     width: SCREEN_DIMENSIONS.width
-    // overflow: "hidden"
   },
   column: {},
   sectionSeparator: {
@@ -190,7 +186,7 @@ export const GallerySectionList = ({
     },
     fetchPolicy: "cache-and-network",
     returnPartialData: true,
-    errorPolicy: "all",
+    errorPolicy: "alll",
     notifyOnNetworkStatusChange: true
   });
 

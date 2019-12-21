@@ -1134,10 +1134,10 @@
     hey-listen "^1.0.8"
     style-value-types "^3.1.6"
 
-"@react-native-community/async-storage@^1.6.1":
-  version "1.6.1"
-  resolved "https://registry.yarnpkg.com/@react-native-community/async-storage/-/async-storage-1.6.1.tgz#19be07fc1d65c77bdeb20f46108ba12076aad1c5"
-  integrity sha512-1WA28xfdhG+unkTEk/lXnqI2izv6belo0CYw7UdvaeHm8TIYT6eTmIIdGR7oiCa2xSKEnaPQqRMH6h7gyLNbww==
+"@react-native-community/async-storage@^1.7.1":
+  version "1.7.1"
+  resolved "https://registry.yarnpkg.com/@react-native-community/async-storage/-/async-storage-1.7.1.tgz#ef2104d865de61ad91bba66613e57e689ff4e6a1"
+  integrity sha512-/oX/x+EU4xNaqIaC/epVKzO8XghzImPA7l8cLz3USEFmtFiXFjBbTeeIFjjEm/u4/cv38Wi1xMEa10PHIWygRg==
 
 "@react-native-community/blur@^3.3.1":
   version "3.3.1"
@@ -1319,7 +1319,7 @@
   resolved "https://registry.yarnpkg.com/@react-native-firebase/app-types/-/app-types-6.0.3.tgz#a420ac2b8f274e9c638d4ef36350b1d9abcc1403"
   integrity sha512-DphELbf5A6AuIPf1HIGFvfpaUlSIXdVlrSHisTHWLNpFP45lLmpD13Ak6oMamGDIxFMLjRQz3jkTR6pCjVk4NQ==
 
-"@react-native-firebase/app@^6.0.3":
+"@react-native-firebase/app@6.0.3":
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/@react-native-firebase/app/-/app-6.0.3.tgz#3c8b01587a374132fc0df14ebf2a24ae3369a992"
   integrity sha512-PQYcs16Mpdy+FLCYpepUiIrfzbMLS+wrDhvXOHhOJ8up15ak5wrepVWaHg+P0Bw9xI4gbq4zYy4bTh4ZMkBbzA==
@@ -2307,13 +2307,6 @@ apollo@2.19.0:
     tty "1.0.1"
     vscode-uri "1.0.6"
 
-appcenter-analytics@2.5.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/appcenter-analytics/-/appcenter-analytics-2.5.0.tgz#4d6ffe53ec6c933db014f35141248fb231c3d12c"
-  integrity sha512-KK8px+QjYsHM/bQvsbl4dLNQtkIaToI3Lezwzq0kPVs8kJfywZrE7ZxCVHF3Diqs2EUybqUNj0TDOTo3h8kw+w==
-  dependencies:
-    appcenter "2.5.0"
-
 appcenter-link-scripts@2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/appcenter-link-scripts/-/appcenter-link-scripts-2.5.0.tgz#b1d53c56c7ba5d0c6fccdca35c4f5e603400d237"
@@ -2326,7 +2319,7 @@ appcenter-link-scripts@2.5.0:
     which "1.2.11"
     xcode "2.0.0"
 
-appcenter@2.5.0, appcenter@^2.5.0:
+appcenter@^2.5.0:
   version "2.5.0"
   resolved "https://registry.yarnpkg.com/appcenter/-/appcenter-2.5.0.tgz#b0cb424eee698324d159b62d468172163d026cb9"
   integrity sha512-d79MJPUGM0to4fFCowBYCXAA5ayRGMvyACJikzeZfAsmI+Fkd17EyiD7hCP+sFwyWfy+/W9mwlngLiwPYzD+Ww==
@@ -7756,7 +7749,7 @@ open@^6.2.0:
   dependencies:
     is-wsl "^1.1.0"
 
-opencollective-postinstall@^2.0.0, opencollective-postinstall@^2.0.1, opencollective-postinstall@^2.0.2:
+opencollective-postinstall@^2.0.1, opencollective-postinstall@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/opencollective-postinstall/-/opencollective-postinstall-2.0.2.tgz#5657f1bede69b6e33a45939b061eb53d3c6c3a89"
   integrity sha512-pVOEP16TrAO2/fjej1IdOyupJY8KDUM1CvsaScRbw6oddvpQoOfGk4ywha0HKKVAD6RkW4x6Q+tNBwhf3Bgpuw==
@@ -8504,13 +8497,6 @@ react-native-background-upload@Jarred-Sumner/react-native-background-upload#c479
   version "5.1.0"
   resolved "https://codeload.github.com/Jarred-Sumner/react-native-background-upload/tar.gz/c479fdaa7e373e444cca25ceddefe13dc283857c"
 
-react-native-camera@^3.11.1:
-  version "3.11.1"
-  resolved "https://registry.yarnpkg.com/react-native-camera/-/react-native-camera-3.11.1.tgz#5c2851d8208f2aa47007bd123f6056aaf9c58e18"
-  integrity sha512-uzsGgXVKEh9PrOOOfYuFj9X/jnSv8i0b6upcsCkFVBtF7iIs/nED23ZSf2UTWsRH5LR07/yqA9PDebjh76hKVQ==
-  dependencies:
-    prop-types "^15.6.2"
-
 react-native-code-push@^5.7.0:
   version "5.7.0"
   resolved "https://registry.yarnpkg.com/react-native-code-push/-/react-native-code-push-5.7.0.tgz#38667c1ba5a5e1a6dd1b4271468c6ef6284b3ca4"
@@ -8539,6 +8525,11 @@ react-native-cronet@^0.4.0:
   resolved "https://registry.yarnpkg.com/react-native-cronet/-/react-native-cronet-0.4.0.tgz#74444494a42e1725d5bc9b23b1e6bdc42030e348"
   integrity sha512-wqonxqc8toFkslCT0m4tCVFxb7Wvwo1Me6FfYS+Tw0ZV9r5evYYfKMO2xtgDjQscx4pMxXi8HXtt+K12q7hjrA==
 
+react-native-default-preference@^1.4.1:
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/react-native-default-preference/-/react-native-default-preference-1.4.1.tgz#3baccbc50ff3eff57d0c86128239667203405f63"
+  integrity sha512-UHX8Hsgq2AwEI8SA1IkjU+u6y+Uroht0sCP70UVLhEZWyqRnn8elrcEjRSInWFNUwxSeFF/c7Tnf17fWFHZEcw==
+
 react-native-device-info@^2.3.2:
   version "2.3.2"
   resolved "https://registry.yarnpkg.com/react-native-device-info/-/react-native-device-info-2.3.2.tgz#db2b8f135aaf2515583e367ab791dcc7d2f0d14c"
@@ -8547,14 +8538,6 @@ react-native-device-info@^2.3.2:
 "react-native-fast-image@https://github.com/Jarred-Sumner/react-native-fast-image.git":
   version "7.0.2"
   resolved "https://github.com/Jarred-Sumner/react-native-fast-image.git#57a687e463a733c50fa73cfc9d149596e4895633"
-
-react-native-firebase@^5.5.6:
-  version "5.5.6"
-  resolved "https://registry.yarnpkg.com/react-native-firebase/-/react-native-firebase-5.5.6.tgz#17b34ec0d5dc39afaaf0e159fd160f6339e0f707"
-  integrity sha512-AdbpGwKEEiMFgaRar9WOPc8Li4sfxR//WOyNQzxYsQ1fpARC908j7feqy2gu73SLqk4wzIrnlfJWakOe0/Bclg==
-  dependencies:
-    opencollective-postinstall "^2.0.0"
-    prop-types "^15.7.2"
 
 react-native-formik@^1.7.7:
   version "1.7.7"
@@ -8619,6 +8602,19 @@ react-native-keyboard-aware-scroll-view@^0.9.1:
   dependencies:
     prop-types "^15.6.2"
     react-native-iphone-x-helper "^1.0.3"
+
+react-native-keyboard-input@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/react-native-keyboard-input/-/react-native-keyboard-input-6.0.0.tgz#db71ddc8f7c6fdb799b17b9ebdeb783c7ca55c08"
+  integrity sha512-dpmkLaLk1+hqYfsRFktB5z0UuJHvJSBCQG67o8MhHa9uOq01OSwMIQUujuOwnGwJ/iIzexZs7YaI2Yb6M34g5g==
+  dependencies:
+    lodash "^4.17.4"
+    react-native-keyboard-tracking-view "^5.5.0"
+
+react-native-keyboard-tracking-view@^5.5.0:
+  version "5.6.1"
+  resolved "https://registry.yarnpkg.com/react-native-keyboard-tracking-view/-/react-native-keyboard-tracking-view-5.6.1.tgz#287186f6ae6335baf83ad106c7779f68d1cc48c2"
+  integrity sha512-uud94SDB2ffGWQHb2ehCIxNi1lmSOQneZ/ro3Zb6Nu6yEh4ljqr1fbRco+pU1RWzaM73uS32A3vPu3NuXjPceA==
 
 react-native-linear-gradient@^2.5.6:
   version "2.5.6"
@@ -8805,9 +8801,10 @@ react-native-vector-icons@^6.6.0:
     prop-types "^15.6.2"
     yargs "^13.2.2"
 
-"react-native-video@https://github.com/blitzcrank/react-native-video.git#master":
-  version "5.0.1"
-  resolved "https://github.com/blitzcrank/react-native-video.git#0cfc73252c7fb2254d407bc628f1f1afb7f11e4f"
+react-native-video@^5.0.2:
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/react-native-video/-/react-native-video-5.0.2.tgz#8f07da0cd85a1d4b316d115f3786409efc9e39fb"
+  integrity sha512-zbItbMH0uZYkK7xFKa41+950QjoTrIl60bY1vAP7gxTn20HGHvHZRw28h9A5npK5T0QuWMAkn8twaGzqcDkTug==
   dependencies:
     keymirror "^0.1.1"
     prop-types "^15.5.10"

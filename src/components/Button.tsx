@@ -310,7 +310,7 @@ export const BackButton = ({
       size={size}
       type="shadow"
       onPress={handlePress}
-      // iconStyle={style}
+      iconStyle={style}
     />
   );
 };

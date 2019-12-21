@@ -1,7 +1,7 @@
 // import FastImage from "react-native-fast-image";
 import React from "react";
 import hoistNonReactStatics from "hoist-non-react-statics";
-import MediaPlayer, { MediaPlayerComponent, MediaSource } from "./MediaPlayer";
+import MediaPlayer, { MediaSource } from "./MediaPlayer";
 import { mediaSourceFromSource } from "../lib/imageSearch";
 import { ImageSourcePropType, ImageStyle } from "react-native";
 

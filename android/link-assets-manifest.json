@@ -1,0 +1,541 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/.DS_Store",
+      "sha1": "b8289f5541855f225af840110b81a27b6c065cb6"
+    },
+    {
+      "path": "assets/fonts/Inconsolata-Bold.ttf",
+      "sha1": "3de268caaee19809b2b24589ca5c65ee027397e0"
+    },
+    {
+      "path": "assets/fonts/Inter.var.ttf",
+      "sha1": "fcc78a006489320bcfd569ceebfec957e4abbb81"
+    },
+    {
+      "path": "assets/fonts/Minecrafter.Reg.ttf",
+      "sha1": "58bc893ea8723b145fd8a016bbccd9ece24dc3e9"
+    },
+    {
+      "path": "assets/fonts/Some Time Later.otf",
+      "sha1": "e9607938c469329216dc6670ea90b82cc2fe5af3"
+    },
+    {
+      "path": "assets/fonts/digistrip.ttf",
+      "sha1": "388df1b9c6e0844fc037879f8adf94e3471e2206"
+    },
+    {
+      "path": "assets/fonts/digistrip_b.ttf",
+      "sha1": "e8a14a3f77993d63ea1b48d34607df6e56d5a71b"
+    },
+    {
+      "path": "assets/fonts/digistrip_i.ttf",
+      "sha1": "419d59d5fc90eaece2481c75bcf0500dfec02609"
+    },
+    {
+      "path": "assets/fonts/iconfont.ttf",
+      "sha1": "7a8856be799ecb81c4eff3f83d6aa76c37096afc"
+    },
+    {
+      "path": "assets/bitmap-icons/.DS_Store",
+      "sha1": "df2fbeb1400acda0909a32c1cf6bf492f1121e07"
+    },
+    {
+      "path": "assets/bitmap-icons/DiscussButton.png",
+      "sha1": "c14631a48674c6454075b3b7d802353c4865794b"
+    },
+    {
+      "path": "assets/bitmap-icons/DiscussButton@2x.png",
+      "sha1": "eb956f5d13de05800e52d080cf03af807c5c13b7"
+    },
+    {
+      "path": "assets/bitmap-icons/DiscussButton@3x.png",
+      "sha1": "f709970eeaaad6aff40aef23650bad5160df64d1"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaMedia.png",
+      "sha1": "97dc7c7fc521e44912aa46f00ad49d513896d76a"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaMedia@2x.png",
+      "sha1": "b5ef5c952409baf0cf5c80bdd90a6d87509f923a"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaMedia@3x.png",
+      "sha1": "80208095e3fd1eaad62865557b7772384624d788"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaText.png",
+      "sha1": "8e7301acc4d349728f41b775632da97da36c50cc"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaText@2x.png",
+      "sha1": "f47050cef6b0c00984396155fcedb989e245bdf8"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalMediaText@3x.png",
+      "sha1": "87b0941efa30f70bb82481131c334247fd2b8a69"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalTextMedia.png",
+      "sha1": "f9a6a2033672ddd888771466438a6abbd4f50f9e"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalTextMedia@2x.png",
+      "sha1": "03d4eab50a0cbeb17a17a5971f5b9175f16067c2"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__horizontalTextMedia@3x.png",
+      "sha1": "3f5b4dd7a8796ac84b9010123fa872573296cd5a"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__media.png",
+      "sha1": "b2ed871909fe2a950da428a5b040a55ba0bcc5e1"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__media@2x.png",
+      "sha1": "cff9ac9515ed0c93ca92855f83c6dac0d102b60b"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__media@3x.png",
+      "sha1": "0374d6cc1f2f78490160cef03cdbf133dcf4bc13"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaMedia.png",
+      "sha1": "32229a1a06d582e8e24a5116f4bb99728c0942e2"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaMedia@2x.png",
+      "sha1": "a56724b5681d4176edf2c1dee0caf0ef4ce2a8e1"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaMedia@3x.png",
+      "sha1": "601464bd2d5e977d1096c31a8dd2100a1a5a8f0e"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaText.png",
+      "sha1": "9522c349e8de56af5a3e03636c7df7eef98e8c31"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaText@2x.png",
+      "sha1": "fc9ebd01f132677c77334836400d52bb7f0c6a10"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalMediaText@3x.png",
+      "sha1": "c0223d861b319258b4c7a5c0381e7dc488423e5c"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalTextMedia.png",
+      "sha1": "4db2e8da6659f4eeed2c87bd822249bf6aaf439b"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalTextMedia@2x.png",
+      "sha1": "901c9cd8b30d60974e11b23b984767cfa8ad4973"
+    },
+    {
+      "path": "assets/bitmap-icons/Format__verticalTextMedia@3x.png",
+      "sha1": "452e3525011d03842fa45793e525f7f3e6fa51f5"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addPhoto.png",
+      "sha1": "571a124aa6dc847987b5bc679f84ea04e1d30c59"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addPhoto@2x.png",
+      "sha1": "7f9f0beb5a9fb2ff06eed11f11b62d3658a30a1b"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addPhoto@3x.png",
+      "sha1": "ba42b01aaafc0231080f15b525dd3873a066d918"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addSticker.png",
+      "sha1": "7edc4bab025e370994b7b4cea5d89283fe7920f9"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addSticker@2x.png",
+      "sha1": "a25ed5865b0033384f960d2e0da5244b6092bf7d"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addSticker@3x.png",
+      "sha1": "89dab5b67d4937a2f9fc87a13aa21e67fb16ddbc"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addText.png",
+      "sha1": "2642202fb7f98b60fad8d1dc01783af6d8e0d29c"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addText@2x.png",
+      "sha1": "df0d0e85b3240f528f92bb99d391327aee345e2b"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__addText@3x.png",
+      "sha1": "bc35f9afff3d1279f6e705f55a8a731a2a3daf61"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__circlelCheckSelected.png",
+      "sha1": "36b721af5d619ef1513f360eb677530ab3287e66"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__circlelCheckSelected@2x.png",
+      "sha1": "19f9d4a0a0fcf056c43d44617302ae8ff886167a"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__circlelCheckSelected@3x.png",
+      "sha1": "f75922b89375732385bed77dc6f5db06f17fb8c1"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__next.png",
+      "sha1": "73670a524624282b571fe2b57c2b32508e9351da"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__next@2x.png",
+      "sha1": "c447c7e1c53cbcfd907eeb09dcc4d5cd400bbd57"
+    },
+    {
+      "path": "assets/bitmap-icons/Icon__next@3x.png",
+      "sha1": "6130445be82082462ea120cf31c4fbd8a002e2c4"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramPostFooter.png",
+      "sha1": "0bcefae359289180ea4ae9abd00df856c660d210"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramPostFooter@2x.png",
+      "sha1": "4650998d5f1a7d6f6c1f715109ea9c17aa273a55"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramPostFooter@3x.png",
+      "sha1": "95696bbd185ffef805e573a6883a8985748674d5"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramTabBar.png",
+      "sha1": "160a9d964d56b2aa7965815f1a58351acdc94fe1"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramTabBar@2x.png",
+      "sha1": "f34221afe6a5a36cdc26b11aa6d732869284f11f"
+    },
+    {
+      "path": "assets/bitmap-icons/InstagramTabBar@3x.png",
+      "sha1": "50e19ec9a975dd655c26591318acafef575a3bef"
+    },
+    {
+      "path": "assets/bitmap-icons/MiniPlus.png",
+      "sha1": "06108dc513af877d5fc2f57bada50f812b5630db"
+    },
+    {
+      "path": "assets/bitmap-icons/MiniPlus@2x.png",
+      "sha1": "a74e21b614c2fadd73b208e3fe58338b6bfb5a89"
+    },
+    {
+      "path": "assets/bitmap-icons/MiniPlus@3x.png",
+      "sha1": "918ee2bd975bc11dc0e5f384c614114c56e3dad1"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Instagram.png",
+      "sha1": "986b00eb50659a9e52576026aa9e736138975116"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Instagram@2x.png",
+      "sha1": "fa2bbf4ac0c41e244f09f0f39c1a51f7660c0383"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Instagram@3x.png",
+      "sha1": "6f100d46527f0edb8f366212cea93c95eccc359e"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__InstagramStory.png",
+      "sha1": "3aabb51344a94108b5d779ed9db83db6c2580cb3"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__InstagramStory@2x.png",
+      "sha1": "f2275b5e854505338f0d516de07a1fca74782120"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__InstagramStory@3x.png",
+      "sha1": "cc6208572e797d5ebebaa5a27ac3bb9d04770de1"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Snapchat.png",
+      "sha1": "d6e806feef8d17da7715d3b8d8f60579529154b0"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Snapchat@2x.png",
+      "sha1": "da9f81d3a394a991e9d043ff6e6b47bd6f97fb67"
+    },
+    {
+      "path": "assets/bitmap-icons/ShareCard__Snapchat@3x.png",
+      "sha1": "f7a8af00c22e8d2f4004224956ed9cf9b678f254"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Instagram.png",
+      "sha1": "e00f64178ffea91bd1a4db5812d3bc96b1f1d895"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Instagram@2x.png",
+      "sha1": "eb66ee50440b2d753523be545aae65a4d6997667"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Instagram@3x.png",
+      "sha1": "c4445b831ce30425e164e9e4ca40a631c132bd21"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Snapchat.png",
+      "sha1": "0584fec54b89c26cdf1ce4318bfc917700381bdc"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Snapchat@2x.png",
+      "sha1": "8800c0595bd01c8c4eaf2a137908f09a59311f0f"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialButton__Snapchat@3x.png",
+      "sha1": "ae6a6301be27dfdb84746184bdc13d38b705d469"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Instagram.png",
+      "sha1": "b919e56b3a1512b6dd055ad0bb470acbeec6624f"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Instagram@2x.png",
+      "sha1": "9cb8f706d1e94c23e01fc98d582b631c7b7d0dac"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Instagram@3x.png",
+      "sha1": "3e0992729d0946ab4f15bca75065b6dfe990f0d9"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Snapchat.png",
+      "sha1": "1e3335594403a48f938a4235b3ab1bf6aee021b0"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Snapchat@2x.png",
+      "sha1": "6cc2c1e33dc0b9af8cb7eb0581ca95cfcb1416f4"
+    },
+    {
+      "path": "assets/bitmap-icons/SocialLogo__Snapchat@3x.png",
+      "sha1": "d55946e41f44a662679fcd71b1edd656684dea12"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__classic.png",
+      "sha1": "ff3be29421d95ecc46602c693b89c8a5e5d96f72"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__classic@2x.png",
+      "sha1": "f2d1fdaab49d6a54761a299d5cf63cb0f213dfdb"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__classic@3x.png",
+      "sha1": "681c61207f54e20fad8bc25ca3495866197217a9"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__comic.png",
+      "sha1": "a84ed37ff12983a280f2bbb2a90a409dde6597dd"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__comic@2x.png",
+      "sha1": "5d33ce39cb148aba2c4610b64fe0c91d376bc2d5"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__comic@3x.png",
+      "sha1": "97fc4c29993719cf0e69d65e08c605b3b848f5e5"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__gary.png",
+      "sha1": "63e5f7e5b3085d7954cbd5f956635784e8ea13ff"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__gary@2x.png",
+      "sha1": "413f7aa2f2939c1ef68b7c96021c039d41eb74ab"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__gary@3x.png",
+      "sha1": "09485aa6f420b8450c73b2d8228f6d927b8009cd"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__monospace.png",
+      "sha1": "6c7f8a6b71d45407ae159584272a3bf2573377e5"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__monospace@2x.png",
+      "sha1": "3d2bcc914f6bcfd632ecbc3486090e5a5ccc1515"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__monospace@3x.png",
+      "sha1": "c9dfe535ebb48e3f06b13211a02aa5b0e3af114a"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__pixel.png",
+      "sha1": "5eda6197f91c43f6d63ff194e59fb5c7389473ce"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__pixel@2x.png",
+      "sha1": "08e5c5e48db6889331ddce449f867b834354d343"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__pixel@3x.png",
+      "sha1": "1396ff302294f925d270c4e60d1cfe1955764800"
+    },
+    {
+      "path": "assets/bitmap-icons/gif.png",
+      "sha1": "9c41e3ec7211fe60964da3e1c0da3a937ea5248b"
+    },
+    {
+      "path": "assets/bitmap-icons/gif@2x.png",
+      "sha1": "01f526ac51de34068a46e5e583e037656f0cdc66"
+    },
+    {
+      "path": "assets/bitmap-icons/gif@3x.png",
+      "sha1": "47dbea7ae9da2c241be734da08b8b9de517e5477"
+    },
+    {
+      "path": "assets/bitmap-icons/ios-marketing-1024x1024-1x.png",
+      "sha1": "67e43f0e75b494237715a85f338b02554de42dd1"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-20x20-1x.png",
+      "sha1": "b57ad58e38ef7c741555597cd1067ce3293473c3"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-20x20-2x.png",
+      "sha1": "c10b5b3481d5cd4fb3b6c017728df28c46e9e011"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-29x29-1x.png",
+      "sha1": "72645b72cc9bd387bb4f242fa6c208ae37503de1"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-29x29-2x.png",
+      "sha1": "f901d1ed3316e7ae902e46daa6b7574317cbcaeb"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-40x40-1x.png",
+      "sha1": "c10b5b3481d5cd4fb3b6c017728df28c46e9e011"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-40x40-2x.png",
+      "sha1": "66441a39329dbbbc86bea2445791d5e9bfa8380e"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-50x50-1x.png",
+      "sha1": "5092df7716c9a57fab9ad7566d89a0687588d987"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-50x50-2x.png",
+      "sha1": "21262e57fa5c0d9ae5e873c61f17acf68d817815"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-72x72-1x.png",
+      "sha1": "c3a500173564298b233d48bbef4e5eaf9a4e8bb3"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-72x72-2x.png",
+      "sha1": "b08363a14d2982b4a05b1a716f9d635a29eb4d4f"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-76x76-1x.png",
+      "sha1": "fc4c5dd3d56f07096ea79b5996fc09a9b691db96"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-76x76-2x.png",
+      "sha1": "af568e1800f1b5b40b237b670ff73393434b8514"
+    },
+    {
+      "path": "assets/bitmap-icons/ipad-83.5x83.5-2x.png",
+      "sha1": "f03ab6eb50ee4e6eb0b07ac1ec0e56d27517bf08"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-20x20-2x.png",
+      "sha1": "c10b5b3481d5cd4fb3b6c017728df28c46e9e011"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-20x20-3x.png",
+      "sha1": "406e4ee598e8ac8919cd345012a4f3436a70995f"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-29x29-1x.png",
+      "sha1": "72645b72cc9bd387bb4f242fa6c208ae37503de1"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-29x29-2x.png",
+      "sha1": "f901d1ed3316e7ae902e46daa6b7574317cbcaeb"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-29x29-3x.png",
+      "sha1": "6021d460dd73ce30a459aeb718388bac434a9dbb"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-40x40-2x.png",
+      "sha1": "66441a39329dbbbc86bea2445791d5e9bfa8380e"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-40x40-3x.png",
+      "sha1": "3939699d26547f12251306b172440c923a462b65"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-57x57-1x.png",
+      "sha1": "41612a334e004aa05956e4279a99e90aa31d0cdf"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-57x57-2x.png",
+      "sha1": "2bfd7e70ab7cc450178ca971c2c9e77acdb47e8f"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-60x60-2x.png",
+      "sha1": "3939699d26547f12251306b172440c923a462b65"
+    },
+    {
+      "path": "assets/bitmap-icons/iphone-60x60-3x.png",
+      "sha1": "553d00ddd88563b34dff5d10712d358c36881b47"
+    },
+    {
+      "path": "assets/bitmap-icons/logo.png",
+      "sha1": "d0edfef320ce205a3d739be2fb32adf42d4ff4e0"
+    },
+    {
+      "path": "assets/bitmap-icons/logo@2x.png",
+      "sha1": "7194e65cb5dd305c6850e147967bdd5d1cbce3dc"
+    },
+    {
+      "path": "assets/bitmap-icons/logo@3x.png",
+      "sha1": "ed447f5a7435c2b1a1f5c1aed92c35dc21ec73d5"
+    },
+    {
+      "path": "assets/bitmap-icons/new-post.png",
+      "sha1": "b2945551f582153e34f38d7c957c5048ef89b589"
+    },
+    {
+      "path": "assets/bitmap-icons/new-post@2x.png",
+      "sha1": "14b646b1bdca83e669663f17bfd00a002c12d8cd"
+    },
+    {
+      "path": "assets/bitmap-icons/new-post@3x.png",
+      "sha1": "6739b1200e71c177bca7b9be9a794fabfae78d73"
+    },
+    {
+      "path": "assets/bitmap-icons/splash-icon.png",
+      "sha1": "da0355458899c9913dddd10c2b780934e4b18ce5"
+    },
+    {
+      "path": "assets/bitmap-icons/splash-icon@2x.png",
+      "sha1": "dd0854d2933eea51a9a508b5fc9acea1aa251478"
+    },
+    {
+      "path": "assets/bitmap-icons/splash-icon@3x.png",
+      "sha1": "6465c3e48321748e9febf404c1da20ba9756466d"
+    },
+    {
+      "path": "assets/bitmap-icons/waitlist.png",
+      "sha1": "e8ed50ff96da264f8ac54f6f689b9931141beb47"
+    },
+    {
+      "path": "assets/bitmap-icons/waitlist@2x.png",
+      "sha1": "1675aacc4a788fb23e8673ca6b663189909f9457"
+    },
+    {
+      "path": "assets/bitmap-icons/waitlist@3x.png",
+      "sha1": "8368429b7bf89da51309177069478ad5551ea856"
+    }
+  ]
+}

@@ -172,6 +172,14 @@ target 'yeet' do
   pod 'Permission-Notifications', :path => "#{permissions_path}/Notifications.podspec"
   pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary.podspec"
 
+  pod 'RNFBApp', :path => '../node_modules/@react-native-firebase/app'
+
+
+  pod 'react-native-cameraroll', :path => '../node_modules/@react-native-community/cameraroll'
+
+
+  pod 'RNCAsyncStorage', :path => '../node_modules/@react-native-community/async-storage'
+
   target 'yeetTests' do
     inherit! :search_paths
 

@@ -306,6 +306,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
             ref={this.setFlatListRef}
             data={data}
             directionalLockEnabled
+            nestedScrollEnabled
+            bounces
+            listKey={this.props.listKey}
             // ListHeaderComponent={ListHeaderComponent}
             ListEmptyComponent={
               ListEmptyComponent ? this.renderListEmpty : undefined
@@ -605,6 +608,7 @@ export const SearchFilterList = ({
         isModal={isModal}
         ref={filterListRef}
         insetValue={insetValue}
+        listKey="recent"
         inset={_inset}
         ListHeaderComponent={ImageSearch}
         ListEmptyComponent={GallerySectionList}
@@ -763,6 +767,7 @@ export const GIFsFilterList = ({
         numColumns={GIF_COLUMN_COUNT}
         headerHeight={IMAGE_SEARCH_HEIGHT}
         scrollY={scrollY}
+        listKey="gifs"
         onEndReached={handleEndReached}
         isModal={isModal}
         insetValue={insetValue}
@@ -887,6 +892,7 @@ export const PhotosFilterList = ({
       data={data}
       onRefresh={photosQuery?.refetch}
       isFocused={isFocused}
+      listKey="photos"
       offset={offset}
       scrollY={scrollY}
       itemHeight={height}
@@ -1014,6 +1020,7 @@ export const VideosFilterList = ({
       isFocused={isFocused}
       offset={offset}
       onEndReached={handleEndReached}
+      listKey="videos"
       scrollY={scrollY}
       itemHeight={height}
       itemWidth={width}

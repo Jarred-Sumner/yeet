@@ -17,12 +17,12 @@ import {
 import TextInput from "../NewPost/Text/TextInput";
 import {
   View,
-  InputAccessoryView,
   StyleSheet,
   Keyboard,
   SegmentedControlIOSComponent
 } from "react-native";
 import { THREAD_HEADER_HEIGHT } from "../ThreadList/ThreadHeader";
+import { InputAccessoryView } from "../InputAccessoryView";
 import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
 import {
   ScrollView,
