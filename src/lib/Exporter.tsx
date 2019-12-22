@@ -8,19 +8,22 @@ import {
   PixelRatio,
   Alert
 } from "react-native";
+import { isEmpty } from "lodash";
 import {
   YeetImageRect,
   ImageSourceType,
   YeetImageContainer,
   ImageMimeType,
-  isVideo
+  isVideo,
+  imageContainerFromMediaSource
 } from "./imageSearch";
 import {
   PostBlockType,
   PostFormat,
   buildImageBlock,
   buildTextBlock,
-  TextTemplate
+  TextTemplate,
+  PostLayout
 } from "../components/NewPost/NewPostFormat";
 import {
   EditableNodeStaticPosition,
@@ -29,7 +32,7 @@ import {
   buildEditableNode
 } from "../components/NewPost/Node/BaseNode";
 import Bluebird from "bluebird";
-import { BoundsRect } from "./Rect";
+import { BoundsRect, scaleRectByFactor } from "./Rect";
 import { fromPairs } from "lodash";
 import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
@@ -124,6 +127,7 @@ const createExportableBlock = (
       contentId: block.value.id,
       viewTag: viewTag,
       frame,
+      config: block.config,
       value: { width, height, source, mimeType, uri, duration }
     };
   } else if (block.type === "text") {
@@ -135,7 +139,8 @@ const createExportableBlock = (
       contentId: block.id,
       id: block.id,
       frame,
-      value: block.value
+      value: block.value,
+      config: block.config
     };
   } else {
     return null;
@@ -396,35 +401,39 @@ export const convertImage = (
       uri: uri,
       source: ImageSourceType[image.source],
       duration: image.duration,
-      mimeType: ImageMimeType[image.mimeType],
-      asset: Image.resolveAssetSource({
-        width: image.width,
-        height: image.height,
-        uri
-      })
+      mimeType: image.mimeType
     }
   };
 };
 
-const convertExportableBlock = (block: ExportableBlock, assets: AssetMap) => {
+const convertExportableBlock = (
+  block: ExportableBlock,
+  assets: AssetMap,
+  scaleFactor: number = 1.0
+) => {
   if (block.type === "image") {
     return buildImageBlock({
       id: block.id,
       image: convertImage(block.value, assets),
-      dimensions: block.dimensions,
-      width: block.dimensions.width,
-      height: block.dimensions.height,
+      dimensions: scaleRectByFactor(scaleFactor, block.dimensions),
+      width: block.dimensions.width * scaleFactor,
+      height: block.dimensions.height * scaleFactor,
       autoInserted: false,
-      format: PostFormat[block.format]
+      format: PostFormat[block.format] || PostFormat.sticker,
+      layout: PostLayout[block.layout] || PostLayout.text
     });
   } else if (block.type === "text") {
     return buildTextBlock({
       id: block.id,
-      value: block.value,
+      value: isEmpty(block.value) ? "Tap to edit text" : block.value,
       placeholder: "",
       template: block.template,
       autoInserted: false,
-      format: PostFormat[block.format]
+      border: block.config?.border,
+      layout: block.config?.layout,
+      overrides: block.config?.overrides,
+      format: PostFormat[block.format] || PostFormat.sticker,
+      layout: PostLayout[block.layout] || PostLayout.text
     });
   } else {
     console.warn("Missing type", block.type);
@@ -434,30 +443,43 @@ const convertExportableBlock = (block: ExportableBlock, assets: AssetMap) => {
 
 export const convertExportedBlocks = (
   blocks: Array<ExportableBlock>,
-  assets: AssetMap
+  assets: AssetMap,
+  scaleFactor: number = 1
 ): Array<PostBlockType> => {
   return blocks
-    .map(block => convertExportableBlock(block, assets))
+    .map(block => convertExportableBlock(block, assets, scaleFactor))
     .filter(Boolean);
 };
 
 export const convertExportedNodes = (
   nodes: Array<ExportableNode>,
-  assets: AssetMap
+  assets: AssetMap,
+  scaleFactor: number = 1
 ): EditableNodeMap => {
   return fromPairs(
     nodes
       .map(node => {
-        const block = convertExportableBlock(node.block, assets);
+        const block = convertExportableBlock(node.block, assets, scaleFactor);
         if (!block) {
           return null;
         }
+
+        let { rotate, scale } = node.position;
+        const { x, y } = scaleRectByFactor(scaleFactor, {
+          x: node.position.x ?? 0,
+          y: node.position.y ?? 0
+        });
+
+        console.log({ x, y });
 
         return [
           block.id,
           buildEditableNode({
             block,
-            ...node.position
+            x,
+            y,
+            rotate,
+            scale
           })
         ];
       })

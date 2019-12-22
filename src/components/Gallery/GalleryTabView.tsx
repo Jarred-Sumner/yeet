@@ -11,7 +11,8 @@ import {
   GIFsFilterList,
   PhotosFilterList,
   VideosFilterList,
-  SearchFilterList
+  SearchFilterList,
+  MemesFilterList
 } from "./GalleryFilterList";
 import { GallerySectionList } from "./GallerySectionList";
 import { GalleryHeader } from "./GalleryHeader";
@@ -123,6 +124,25 @@ class GalleryTabViewComponent extends React.Component {
             scrollY={this.props.scrollY}
           />
         );
+
+      case GallerySectionItem.memes:
+        return (
+          <MemesFilterList
+            isFocused={currentRoute === GallerySectionItem.memes}
+            flatListRef={this.memesListRef}
+            simultaneousHandlers={this.simultaneousHandlers}
+            onPress={onPress}
+            onChangeFilter={jumpTo}
+            insetValue={this.props.insetValue}
+            offset={this.props.offset}
+            bottomInset={this.props.bottomInset}
+            selectedIDs={selectedIDs}
+            isModal={this.props.isModal}
+            inset={this.props.inset}
+            scrollY={this.props.scrollY}
+            keyboardVisibleValue={keyboardVisibleValue}
+          />
+        );
       case GallerySectionItem.photos:
         return (
           <PhotosFilterList
@@ -202,6 +222,9 @@ class GalleryTabViewComponent extends React.Component {
 
   position: Animated.Value<number>;
   initialLayout: { width: number; height: number };
+
+  containerStyle = [styles.container, this.initialLayout];
+
   onIndexChange = index =>
     this.setState({
       navigationState: { ...this.state.navigationState, index }
@@ -230,7 +253,7 @@ class GalleryTabViewComponent extends React.Component {
           ]
         }}
         sceneContainerStyle={styles.sceneContainer}
-        style={styles.container}
+        style={this.containerStyle}
         renderTabBar={this.renderTabBar}
         onIndexChange={this.onIndexChange}
         initialLayout={this.initialLayout}

@@ -5,6 +5,7 @@
   "scripts": {
     "forward-localhost": "adb -s 8CCX1MB42 reverse tcp:3000 tcp:3000",
     "forward-devserver": "adb -s 8CCX1MB42 reverse tcp:8081 tcp:8081",
+    "build-memes": "babel-node --config-file ./babel.config.js --extensions \".js\",\".jsx\",\".es6\",\".es\",\".tsx\"\".ts\" tasks/buildMemes.tsx",
     "forward": "yarn forward-localhost && yarn forward-devserver",
     "android": "react-native run-android",
     "assets": "react-native-asset -p .  --android-assets ./assets/fonts ./assets/bitmap-icons",
@@ -128,6 +129,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.5.5",
+    "@babel/node": "^7.7.7",
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.4.4",
     "@babel/plugin-proposal-optional-chaining": "^7.6.0",
     "@babel/preset-typescript": "^7.6.0",

@@ -1,47 +1,43 @@
+import useKeyboard from "@rnhooks/keyboard";
 import { NetworkStatus } from "apollo-client";
+import { memoize, uniqBy } from "lodash";
 import * as React from "react";
-import { useQuery, useApolloClient, useLazyQuery } from "react-apollo";
-import {
-  StyleSheet,
-  View,
-  RefreshControl,
-  KeyboardAvoidingView,
-  InteractionManager,
-  Keyboard
-} from "react-native";
+import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
+import { InteractionManager, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
 import CAMERA_ROLL_QUERY from "../../lib/CameraRollQuery.local.graphql";
-import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
 import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
 import {
   YeetImageContainer,
-  mediaSourceFromImage
+  imageContainerFromMediaSource,
+  ImageMimeType
 } from "../../lib/imageSearch";
+import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
 import { SPACING } from "../../lib/styles";
 import { FlatList } from "../FlatList";
-import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
-import { GalleryValue } from "./GallerySection";
-import GalleryItem, {
-  galleryItemResizeMode,
-  galleryItemMediaSource
-} from "./GalleryItem";
-import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
-import { uniqBy } from "lodash";
-import ImageSearch, {
-  IMAGE_SEARCH_HEIGHT,
-  ImageSearchContext
-} from "../NewPost/ImagePicker/ImageSearch";
-import { useDebouncedCallback } from "use-debounce";
-import useKeyboard from "@rnhooks/keyboard";
 import MediaPlayer from "../MediaPlayer";
-import Animated from "react-native-reanimated";
-import { GallerySectionList } from "./GallerySectionList";
+import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
+import ImageSearch, {
+  ImageSearchContext,
+  IMAGE_SEARCH_HEIGHT
+} from "../NewPost/ImagePicker/ImageSearch";
+import GalleryItem, { galleryItemMediaSource } from "./GalleryItem";
 import { TransparentToggle } from "./GallerySearchFilter";
-import useToggle from "../../lib/useToggle";
-import { memoize } from "lodash";
+import { GalleryValue } from "./GallerySection";
+import { GallerySectionList } from "./GallerySectionList";
+import POST_SEARCH_QUERY from "../../lib/PostSearchQuery.graphql";
+import {
+  PostSearchQuery,
+  PostSearchQueryVariables,
+  PostSearchQuery_searchPosts_data
+} from "../../lib/graphql/PostSearchQuery";
+import { PostFragment } from "../../lib/graphql/PostFragment";
 
 const COLUMN_COUNT = 3;
 const GIF_COLUMN_COUNT = 2;
+const MEMES_COLUMN_COUNT = 4;
 const COLUMN_GAP = 2;
 
 const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
@@ -49,13 +45,13 @@ const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexShrink: 0,
+    flexShrink: 1,
     width: SCREEN_DIMENSIONS.width,
-    overflow: "visible"
+    overflow: "hidden"
   },
   wrapper: {
     flex: 1,
-    flexShrink: 0,
+    flexShrink: 1,
     width: SCREEN_DIMENSIONS.width,
     overflow: "hidden"
   },
@@ -66,9 +62,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: COLUMN_GAP
   },
+  fourColumn: {
+    justifyContent: "space-evenly",
+    paddingRight: COLUMN_GAP
+  },
   item: {
-    marginRight: COLUMN_GAP,
-    flex: 1
+    marginRight: COLUMN_GAP
+  },
+  fourItem: {
+    marginLeft: COLUMN_GAP
   },
   header: {
     position: "absolute",
@@ -100,9 +102,25 @@ export const HORIZONTAL_ITEM_HEIGHT = 200;
 export const HORIZONTAL_ITEM_WIDTH =
   SCREEN_DIMENSIONS.width / GIF_COLUMN_COUNT - COLUMN_GAP * GIF_COLUMN_COUNT;
 
+export const MEMES_ITEM_WIDTH =
+  SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT -
+  COLUMN_GAP * MEMES_COLUMN_COUNT;
+export const MEMES_ITEM_HEIGHT =
+  SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT -
+  COLUMN_GAP * MEMES_COLUMN_COUNT;
+
+const getPaginatedLimit = (columnCount: number, height: number) => {
+  return (SCREEN_DIMENSIONS.height / height) * columnCount;
+};
+
+const getInitialLimit = (columnCount: number, height: number) => {
+  return getPaginatedLimit(columnCount, height) * 1.5;
+};
+
 class GalleryFilterListComponent extends React.Component<Props> {
   static defaultProps = {
-    headerHeight: 0
+    headerHeight: 0,
+    numColumns: COLUMN_COUNT
   };
   constructor(props) {
     super(props);
@@ -136,22 +154,29 @@ class GalleryFilterListComponent extends React.Component<Props> {
 
   flatListRef: FlatList | null = null;
 
-  handlePressColumn = (image: YeetImageContainer) => {
-    this.props.onPress(image);
+  handlePressColumn = (
+    image: YeetImageContainer,
+    post?: Partial<PostFragment>
+  ) => {
+    this.props.onPress(image, post);
   };
 
   renderColumn = ({ item, index }: { item: GalleryValue; index: number }) => {
     return (
-      <View style={styles.item}>
+      <View style={this.props.numColumns === 4 ? styles.fourItem : styles.item}>
         <GalleryItem
           image={item.image}
           width={this.props.itemWidth}
           height={this.props.itemHeight}
+          post={item.post}
           onPress={this.handlePressColumn}
           transparent={this.props.transparent}
           resizeMode={this.props.resizeMode}
           isSelected={this.props.selectedIDs.includes(item.image.id)}
-          paused={!this.props.isFocused}
+          paused={
+            !this.props.isFocused ||
+            item.image.image.mimeType === ImageMimeType.jpeg
+          }
           id={item.id}
         />
       </View>
@@ -160,11 +185,17 @@ class GalleryFilterListComponent extends React.Component<Props> {
 
   keyExtractor = item => item.id;
 
-  getItemLayout = (_data, index) => ({
-    length: this.props.itemHeight,
-    offset: this.props.itemHeight * index + index * this.props.itemHeight,
-    index
-  });
+  getItemLayout = (_data, index) => {
+    const length = this.props.itemHeight;
+    const offset =
+      this.props.itemHeight * Math.floor(index / this.props.numColumns);
+
+    return {
+      length,
+      offset,
+      index
+    };
+  };
 
   contentInset = {
     top: this.props.inset,
@@ -251,6 +282,8 @@ class GalleryFilterListComponent extends React.Component<Props> {
     { useNativeDriver: true }
   );
 
+  listStyle = [styles.container];
+
   render() {
     const {
       data,
@@ -260,7 +293,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
       onRefresh,
       hasNextPage = false,
       removeClippedSubviews,
-      numColumns = COLUMN_COUNT,
+      numColumns,
       onEndReached,
       simultaneousHandlers,
       ListHeaderComponent,
@@ -333,7 +366,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
             ItemSeparatorComponent={ItemSeparatorComponent}
             refreshing={networkStatus === NetworkStatus.refetch}
             keyboardDismissMode="on-drag"
-            style={styles.container}
+            style={this.listStyle}
             keyExtractor={this.keyExtractor}
             contentInsetAdjustmentBehavior="automatic"
             extraData={selectedIDs}
@@ -348,7 +381,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
             // }
             alwaysBounceVertical
             numColumns={numColumns}
-            columnWrapperStyle={styles.column}
+            columnWrapperStyle={
+              numColumns === 4 ? styles.fourColumn : styles.column
+            }
             scrollToOverflowEnabled
             renderItem={this.renderColumn}
             onEndReached={
@@ -391,6 +426,20 @@ const buildValue = memoize((data: Array<YeetImageContainer> = []) => {
   });
 });
 
+const buildPostValue = memoize(
+  (data: Array<PostSearchQuery_searchPosts_data> = []) => {
+    return (data || []).map(post => {
+      const { media, id } = post;
+
+      return {
+        image: imageContainerFromMediaSource(media, null),
+        post,
+        id
+      };
+    });
+  }
+);
+
 export const SearchFilterList = ({
   isFocused,
   inset,
@@ -418,8 +467,6 @@ export const SearchFilterList = ({
   client.addResolvers(CameraRollGraphQL);
 
   const skip = String(query).trim().length === 0 || !isFocused || !show;
-
-  console.log({ skip, show, isFocused });
 
   const imagesQuery = useQuery(IMAGE_SEARCH_QUERY, {
     errorPolicy: "all",
@@ -557,12 +604,13 @@ export const SearchFilterList = ({
       return;
     }
 
+    const limit = getPaginatedLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT);
     return imagesQuery.fetchMore({
       variables: {
         offset: imagesQuery.data.images.page_info.offset + 20,
         query,
         transparent,
-        limit: 20
+        limit
       },
       updateQuery: (
         previousResult,
@@ -572,10 +620,7 @@ export const SearchFilterList = ({
           ...fetchMoreResult,
           images: {
             ...fetchMoreResult.images,
-            data: uniqBy(
-              previousResult.images.data.concat(fetchMoreResult.images.data),
-              "id"
-            )
+            data: previousResult.images.data.concat(fetchMoreResult.images.data)
           }
         };
       }
@@ -614,6 +659,7 @@ export const SearchFilterList = ({
         ListEmptyComponent={GallerySectionList}
         stickyHeader={query.length > 0 || isKeyboardVisible}
         // removeClippedSubviews={isFocused}
+
         isFocused={isFocused}
         hasNextPage={
           imagesQuery?.data?.images?.page_info?.has_next_page ?? false
@@ -645,7 +691,8 @@ export const GIFsFilterList = ({
 
   const [loadGifs, gifsQuery] = useLazyQuery(GIFS_QUERY, {
     variables: {
-      query
+      query,
+      limit: getInitialLimit(GIF_COLUMN_COUNT, HORIZONTAL_ITEM_HEIGHT)
     },
     notifyOnNetworkStatusChange: true
   });
@@ -681,7 +728,8 @@ export const GIFsFilterList = ({
 
       return gifsQuery.refetch({
         variables: {
-          query: _query
+          query: _query,
+          limit: getInitialLimit(GIF_COLUMN_COUNT, HORIZONTAL_ITEM_HEIGHT)
         }
       });
     },
@@ -733,7 +781,7 @@ export const GIFsFilterList = ({
       variables: {
         offset: gifsQuery.data.gifs.page_info.offset,
         query,
-        limit: 20
+        limit: getPaginatedLimit(GIF_COLUMN_COUNT, HORIZONTAL_ITEM_HEIGHT)
       },
       updateQuery: (
         previousResult,
@@ -743,10 +791,7 @@ export const GIFsFilterList = ({
           ...fetchMoreResult,
           gifs: {
             ...fetchMoreResult.gifs,
-            data: uniqBy(
-              previousResult.gifs.data.concat(fetchMoreResult.gifs.data),
-              "id"
-            )
+            data: previousResult.gifs.data.concat(fetchMoreResult.gifs.data)
           }
         };
       }
@@ -778,6 +823,167 @@ export const GIFsFilterList = ({
         isFocused={isFocused}
         hasNextPage={gifsQuery?.data?.gifs?.page_info?.has_next_page ?? false}
         networkStatus={gifsQuery.networkStatus}
+      />
+    </ImageSearchContext.Provider>
+  );
+};
+
+export const MemesFilterList = ({
+  isFocused,
+  inset,
+  offset,
+  isModal,
+  insetValue,
+  keyboardVisibleValue,
+  scrollY,
+  ...otherProps
+}) => {
+  const [query, onChangeQuery] = React.useState("");
+  const [isKeyboardVisible] = useKeyboard();
+  const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
+
+  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
+
+  const [loadMemes, memesQuery] = useLazyQuery<
+    PostSearchQuery,
+    PostSearchQueryVariables
+  >(POST_SEARCH_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: {
+      query,
+      limit: getInitialLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT),
+      offset: 0
+    },
+    notifyOnNetworkStatusChange: true
+  });
+
+  React.useEffect(() => {
+    if (isFocused && typeof loadMemes === "function") {
+      loadMemes();
+    }
+
+    if (isFocused && insetValue) {
+      insetValue.setValue(_inset);
+    }
+  }, [loadMemes, isFocused, insetValue, _inset]);
+
+  const changeQuery = React.useCallback(
+    // function
+    (_query: string) => {
+      if (_query === query) {
+        return;
+      }
+
+      onChangeQuery(_query);
+      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
+
+      if (
+        !(
+          typeof memesQuery.refetch === "function" &&
+          memesQuery.networkStatus === NetworkStatus.ready
+        )
+      ) {
+        return;
+      }
+
+      return memesQuery.refetch({
+        variables: {
+          query: _query,
+          limit: getInitialLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT)
+        }
+      });
+    },
+    [onChangeQuery, memesQuery, hasTextValue]
+  );
+
+  const imageSearchContext = React.useMemo(() => {
+    return {
+      query,
+      scrollY,
+      additionalOffset: 4,
+      keyboardVisibleValue,
+      networkStatus: memesQuery?.networkStatus,
+      placeholder: "Search yeet",
+      hasTextValue: hasTextValue.current,
+      onChange: changeQuery
+    };
+  }, [
+    query,
+    scrollY,
+    keyboardVisibleValue,
+    hasTextValue,
+    changeQuery,
+    memesQuery?.networkStatus
+  ]);
+
+  const data = React.useMemo(() => {
+    return buildPostValue(memesQuery?.data?.searchPosts?.data);
+  }, [memesQuery?.data, memesQuery?.networkStatus]);
+
+  const handleEndReached = React.useCallback(() => {
+    const { networkStatus, loading } = memesQuery;
+
+    if (loading === true) {
+      return;
+    }
+
+    if (
+      !(
+        (memesQuery?.data?.searchPosts?.hasMore ?? false) &&
+        networkStatus !== NetworkStatus.fetchMore &&
+        typeof memesQuery?.fetchMore === "function"
+      )
+    ) {
+      return;
+    }
+
+    return memesQuery.fetchMore({
+      variables: {
+        query,
+        offset:
+          memesQuery?.data?.searchPosts?.offset +
+          memesQuery?.data?.searchPosts?.limit,
+        limit: getPaginatedLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT)
+      },
+      updateQuery: (previousResult, { fetchMoreResult }) => {
+        return {
+          ...fetchMoreResult,
+          searchPosts: {
+            ...fetchMoreResult.searchPosts,
+            data: previousResult.searchPosts.data.concat(
+              fetchMoreResult.searchPosts.data
+            )
+          }
+        };
+      }
+    });
+  }, [memesQuery?.networkStatus, memesQuery?.fetchMore, memesQuery?.data]);
+
+  return (
+    <ImageSearchContext.Provider value={imageSearchContext}>
+      <GalleryFilterListComponent
+        {...otherProps}
+        data={data}
+        offset={
+          isModal ? offset : (Math.abs(offset) + IMAGE_SEARCH_HEIGHT) * -1
+        }
+        onRefresh={memesQuery?.refetch}
+        itemHeight={MEMES_ITEM_HEIGHT}
+        itemWidth={MEMES_ITEM_WIDTH}
+        numColumns={MEMES_COLUMN_COUNT}
+        headerHeight={IMAGE_SEARCH_HEIGHT}
+        scrollY={scrollY}
+        listKey="memes"
+        onEndReached={handleEndReached}
+        isModal={isModal}
+        insetValue={insetValue}
+        inset={_inset}
+        ListHeaderComponent={ImageSearch}
+        stickyHeader={query.length > 0 || isKeyboardVisible}
+        // removeClippedSubviews={isFocused}
+        isFocused={isFocused}
+        hasNextPage={memesQuery?.data?.searchPosts?.hasMore ?? false}
+        networkStatus={memesQuery.networkStatus}
       />
     </ImageSearchContext.Provider>
   );

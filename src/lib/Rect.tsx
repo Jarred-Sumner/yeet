@@ -33,7 +33,8 @@ export const isTapInside = (
 
 export const scaleToWidth = (
   width: number,
-  dimensions: Partial<BoundsRect>
+  dimensions: Partial<BoundsRect>,
+  roundToNearestPixel = PixelRatio.roundToNearestPixel
 ): BoundsRect => {
   return {
     x:
@@ -45,15 +46,14 @@ export const scaleToWidth = (
       typeof dimensions.y === "number"
         ? (width / dimensions.width) * dimensions.y
         : 0,
-    height: PixelRatio.roundToNearestPixel(
-      (width / dimensions.width) * dimensions.height
-    )
+    height: roundToNearestPixel((width / dimensions.width) * dimensions.height)
   };
 };
 
 export const scaleToHeight = (
   height: number,
-  dimensions: Partial<BoundsRect>
+  dimensions: Partial<BoundsRect>,
+  roundToNearestPixel = PixelRatio.roundToNearestPixel
 ): BoundsRect => {
   return {
     x:
@@ -65,9 +65,7 @@ export const scaleToHeight = (
       typeof dimensions.y === "number"
         ? (height / dimensions.height) * dimensions.y
         : 0,
-    width: PixelRatio.roundToNearestPixel(
-      (height / dimensions.height) * dimensions.width
-    )
+    width: roundToNearestPixel((height / dimensions.height) * dimensions.width)
   };
 };
 

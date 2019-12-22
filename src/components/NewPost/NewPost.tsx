@@ -366,7 +366,7 @@ class RawNewPost extends React.Component<{}, State> {
             ios: !this.state.showGallery && !this.state.isKeyboardVisible,
             android: false
           })}
-          position={this.layoutIndexValue}
+sche          position={this.layoutIndexValue}
           gestureHandlerProps={{
             ref: this.pannerRef
           }}

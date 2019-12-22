@@ -9,10 +9,19 @@ import {
   DEFAULT_POST_FORMAT,
   PostFormat,
   PostLayout,
-  generateBlockId
+  generateBlockId,
+  POST_WIDTH
 } from "../components/NewPost/NewPostFormat";
-import { ContentExport, ExportData } from "../lib/Exporter";
+import {
+  ContentExport,
+  ExportData,
+  convertExportedBlocks,
+  convertExportedNodes
+} from "../lib/Exporter";
 import { ToastType, sendToast } from "../components/Toast";
+import { PostFragment } from "../lib/graphql/PostFragment";
+import { SCREEN_DIMENSIONS } from "../../config";
+import { MAX_CONTENT_HEIGHT } from "../components/Feed/PostPreviewList";
 
 const styles = StyleSheet.create({
   container: {
@@ -26,9 +35,23 @@ export class NewPostPage extends React.Component {
     super(props);
 
     const image = props.navigation.getParam("image");
+    const post: Partial<PostFragment> | null = props.navigation.getParam(
+      "post"
+    );
     const blockId = props.navigation.getParam("blockId");
 
-    if (image) {
+    if (post) {
+      const scaleFactor = (post.bounds.width ?? post.media.width) / POST_WIDTH;
+      const defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
+      const defaultNodes = convertExportedNodes(post.nodes, {}, scaleFactor);
+
+      this.state = {
+        defaultBlocks: defaultBlocks,
+        defaultLayout: post.layout,
+        defaultFormat: post.format,
+        defaultInlineNodes: defaultNodes
+      };
+    } else if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
 
       const imageBlock = buildImageBlock({
@@ -87,6 +110,11 @@ export class NewPostPage extends React.Component {
           navigation={this.props.navigation}
           defaultBlocks={this.state.defaultBlocks}
           onExport={this.handleExport}
+          defaultWidth={this.state.defaultWidth}
+          defaultHeight={this.state.defaultHeight}
+          defaultLayout={this.state.defaultLayout}
+          defaultFormat={this.state.defaultFormat}
+          defaultInlineNodes={this.state.defaultInlineNodes}
         />
       </View>
     );

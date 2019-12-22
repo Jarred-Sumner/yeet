@@ -105,7 +105,7 @@ export interface CreatePostThread {
 export interface CreatePostThreadVariables {
   mediaId: string;
   blocks?: JSON | null;
-  body: string;
+  body?: string | null;
   nodes?: JSON | null;
   format: string;
   autoplaySeconds?: number | null;
@@ -113,4 +113,6 @@ export interface CreatePostThreadVariables {
   colors: ColorsInputObject;
   postOffset?: number | null;
   postsCount?: number | null;
+  editToken?: string | null;
+  layout?: string | null;
 }

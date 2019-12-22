@@ -46,6 +46,7 @@ export enum ImageMimeType {
   png = "image/png",
   gif = "image/gif",
   jpg = "image/jpeg",
+  m3u8 = "video/mp4",
   jpeg = "image/jpeg",
   webp = "image/webp",
   mp4 = "video/mp4",
@@ -89,6 +90,7 @@ export const MIME_TYPE_MAPPING = {
   jpg: ImageMimeType.jpg,
   jpeg: ImageMimeType.jpeg,
   webp: ImageMimeType.webp,
+  m3u8: ImageMimeType.mp4,
   heic: ImageMimeType.heic,
   tiff: ImageMimeType.tiff,
   tif: ImageMimeType.tiff,
@@ -99,11 +101,15 @@ export const MIME_TYPE_MAPPING = {
 };
 
 export const mimeTypeFromFilename = (filename: string) => {
-  return MIME_TYPE_MAPPING[
-    extname(filename || ".")
-      .substring(1)
-      .toLowerCase()
-  ];
+  const ext = extname(filename || ".")
+    .substring(1)
+    .toLowerCase();
+
+  if (ext === "m3u8") {
+    return ImageMimeType.mp4;
+  }
+
+  return MIME_TYPE_MAPPING[ext];
 };
 
 export enum ImageSourceType {
@@ -468,7 +474,9 @@ export const mediaSourceFromImage = (
     ? container.preview ?? container.image
     : container.image;
 
-  const { width, height, uri: _url, mimeType, duration } = image;
+  const { width, height, uri: __url, mimeType, duration } = image;
+
+  const _url = __url ?? image.url;
 
   if (!mimeType) {
     throw Error(`Invalid mimetype for asset ${JSON.stringify(container)}`);

@@ -85,4 +85,6 @@ export interface CreatePostVariables {
   autoplaySeconds?: number | null;
   colors: ColorsInputObject;
   threadId: string;
+  editToken?: string | null;
+  layout?: string | null;
 }

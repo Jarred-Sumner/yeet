@@ -10,9 +10,11 @@ import * as React from "react";
 import GalleryItem from "./GalleryItem";
 import { SPACING } from "../../lib/styles";
 import { range } from "lodash";
+import { PostFragment } from "../../lib/graphql/PostFragment";
 
 export type GalleryValue = {
   image: YeetImageContainer;
+  post?: Partial<PostFragment>;
   id: string;
 };
 

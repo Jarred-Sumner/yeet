@@ -75,7 +75,7 @@ class RawImagePickerPage extends React.Component {
   handleKeyboardShow = () => this.setState({ isKeyboardVisible: true });
   handleKeyboardHide = () => this.setState({ isKeyboardVisible: false });
 
-  handlePickPhoto = (photo: YeetImageContainer) => {
+  handlePickPhoto = (photo: YeetImageContainer, post) => {
     const { selectedImages, selectMultiple } = this.state;
     sendLightFeedback();
     console.log(photo);
@@ -93,11 +93,11 @@ class RawImagePickerPage extends React.Component {
       this.setState({ selectedImages: _selectedImages });
     } else {
       console.log(_selectedImages);
-      this.handleFinish(_selectedImages);
+      this.handleFinish(_selectedImages, post);
     }
   };
 
-  handleFinish = _selectedImages => {
+  handleFinish = (_selectedImages, post) => {
     const selectedImages = isArray(_selectedImages)
       ? _selectedImages
       : this.state.selectedImages;
@@ -110,13 +110,14 @@ class RawImagePickerPage extends React.Component {
     });
 
     if (onChange) {
-      onChange(this.props.navigation.getParam("blockId"), photo);
+      onChange(this.props.navigation.getParam("blockId"), photo, post);
       this.goBack(true);
     } else {
       console.log(photo);
       this.props.navigation.navigate("NewPost", {
         image: photo,
-        blockId: this.state.blockId
+        blockId: this.state.blockId,
+        post
       });
     }
   };

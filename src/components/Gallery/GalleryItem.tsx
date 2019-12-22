@@ -67,6 +67,7 @@ export const GalleryItem = React.memo(
     resizeMode,
     transparent = false,
     id,
+    post,
     height,
     isSelected = false,
     width,
@@ -86,8 +87,20 @@ export const GalleryItem = React.memo(
     }, [image, width, height, galleryItemMediaSource]);
 
     const _onPress = React.useCallback(() => {
-      onPress(image);
-    }, [onPress, image]);
+      onPress(image, post);
+    }, [onPress, image, post]);
+
+    const sizeStyle = React.useMemo(() => ({ height, width }), [width, height]);
+
+    const viewStyle = React.useMemo(() => {
+      return [
+        transparent
+          ? photoCellStyles.transparentContainer
+          : photoCellStyles.container,
+        isSelected && photoCellStyles.selectedContainer,
+        sizeStyle
+      ];
+    }, [sizeStyle, isSelected, transparent]);
 
     // const onError = React.useCallback(() => {
     //   if (image.sourceType === ImageSourceType.giphy) {
@@ -107,15 +120,7 @@ export const GalleryItem = React.memo(
         exclusive={false}
         onPress={_onPress}
       >
-        <View
-          style={[
-            transparent
-              ? photoCellStyles.transparentContainer
-              : photoCellStyles.container,
-            isSelected && photoCellStyles.selectedContainer,
-            { width, height }
-          ]}
-        >
+        <View style={viewStyle}>
           <MediaPlayer
             sources={sources}
             muted
@@ -127,7 +132,7 @@ export const GalleryItem = React.memo(
             id={image.id}
             autoPlay={false}
             // onError={onError}
-            style={{ height, width }}
+            style={sizeStyle}
           />
 
           {image.image.duration > 0 && isVideo(image.preview.mimeType) && (

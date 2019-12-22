@@ -1,12 +1,11 @@
 import * as React from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
-import SafeAreaView, { getInset } from "react-native-safe-area-view";
-import tinycolor from "tinycolor2";
-import { COLORS } from "../../../lib/styles";
-import { SemiBoldText, BoldText } from "../../Text";
+import { StyleSheet, View } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
-import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
+import Animated from "react-native-reanimated";
+import tinycolor from "tinycolor2";
+import { SCREEN_DIMENSIONS } from "../../../../config";
+import { COLORS } from "../../../lib/styles";
+import { SemiBoldText } from "../../Text";
 
 export enum GallerySectionItem {
   clipboardImage = "clipboardImage",
@@ -38,10 +37,10 @@ export const FILTERS = [
     label: "SEARCH",
     value: "all"
   },
-  // {
-  //   label: FILTER_LABELS[GallerySectionItem.memes],
-  //   value: GallerySectionItem.memes
-  // },
+  {
+    label: FILTER_LABELS[GallerySectionItem.memes],
+    value: GallerySectionItem.memes
+  },
 
   {
     label: FILTER_LABELS[GallerySectionItem.photos],

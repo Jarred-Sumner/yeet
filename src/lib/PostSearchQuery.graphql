@@ -1,0 +1,40 @@
+query PostSearchQuery($offset: Int, $limit: Int, $query: String) {
+  searchPosts(offset: $offset, limit: $limit, query: $query) {
+    id
+
+    hasMore
+    limit
+    offset
+
+    data {
+      id
+
+      bounds {
+        x
+        y
+        width
+        height
+      }
+
+      blocks
+      nodes
+      format
+      layout
+
+      media {
+        id
+        width
+        height
+        pixelRatio
+        mimeType
+        duration
+
+        coverUrl
+        __typename
+
+        previewUrl
+        url
+      }
+    }
+  }
+}

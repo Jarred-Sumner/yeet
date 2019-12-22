@@ -344,7 +344,10 @@ class MediaSource : NSObject  {
     if (mediaSource == nil) {
       let coverURL = cover != nil ? URL(string: cover!) : nil
 
-      mediaSource = MediaSource(URL(string: uri)!, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL, audioURI != nil ? URL(string: audioURI!) : nil)
+      let url = URL(string: uri)!
+      let audioURL = audioURI != nil ? URL(string: audioURI!) : nil
+
+      mediaSource = MediaSource(url, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL, audioURL)
       cache.setObject(mediaSource!, forKey: cacheKey as NSString)
     }
 
