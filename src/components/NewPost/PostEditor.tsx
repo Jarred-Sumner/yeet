@@ -10,8 +10,7 @@ import {
 } from "react-native";
 import {
   ScrollView,
-  State as GestureState,
-  TextInput
+  State as GestureState
 } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
@@ -31,6 +30,7 @@ import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import { flatMap, flatten, debounce } from "lodash";
+
 import {
   buildImageBlock,
   buildTextBlock,
@@ -64,6 +64,7 @@ import { InputAccessoryView } from "../InputAccessoryView";
 import { findBlockById } from "../../lib/buildPost";
 import { isTapInside } from "../../lib/Rect";
 import { Rectangle } from "../../lib/Rectangle";
+import TextInput from "./Text/CustomTextInputComponent";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -474,7 +475,8 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     console.log(
       "BLUR",
-      RNTextInput.State.currentlyFocusedField(),
+      TextInput.State.currentlyFocusedField(),
+
       this.state.focusType,
       this.focusedNode,
       this.focusedBlock
@@ -494,6 +496,10 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleFocusBlock = (block: PostBlockType) => {
+    if (this.focusedBlock?.id === block.id) {
+      return;
+    }
+
     const focusType = this.props.inlineNodes[block.id]
       ? FocusType.absolute
       : FocusType.static;
@@ -508,6 +514,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       focusedBlockId: block.id,
       focusType
     });
+
+    console.log("foCUs", block.id, focusType);
   };
 
   clearFocus = () => {
@@ -518,12 +526,13 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.dismissKeyboard();
   };
 
+  get currentTextInput() {
+    return this._blockInputRefs.get(this.state.focusedBlockId)?.current;
+  }
+
   dismissKeyboard = () => {
-    const fieldNode = RNTextInput.State.currentlyFocusedField();
-    console.log(fieldNode, "DISMIS");
-    if (fieldNode) {
-      RNTextInput.State.blurTextInput(fieldNode);
-    }
+    this.currentTextInput?.blur();
+    console.log("BLUR");
   };
 
   handleSend = async () => {
@@ -630,6 +639,8 @@ class RawwPostEditor extends React.Component<Props, State> {
         return;
       }
     }
+
+    console.log("TAP BACKGROUND", x, y);
 
     this.handlePressBackground({ x, y, focusTypeValue, focusBlockValue });
   };

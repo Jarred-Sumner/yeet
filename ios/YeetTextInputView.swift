@@ -353,6 +353,11 @@ class YeetTextInputView : RCTMultilineTextInputView {
     backedTextInputView.textInputDelegate = self
     backedTextInputView.clipsToBounds = false
     textView.layer.masksToBounds = false
+
+    tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
+    self.addGestureRecognizer(tapRecognizer!)
+    self.textView.isSelectable = true
+    self.textView.isEditable = false
   }
 
   @objc (isSticker) var isSticker: Bool = false
@@ -368,24 +373,39 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
   override func didMoveToSuperview() {
     super.didMoveToSuperview()
-    self.tapRecognizer?.isEnabled = false
-    self.tapRecognizer = nil
+
+    self.updateTapGestureRecognizer()
+  }
+
+  override func didMoveToWindow() {
+    super.didMoveToWindow()
+    self.updateTapGestureRecognizer()
+  }
+
+  func updateTapGestureRecognizer() {
+
 
     if superview != nil && isSticker && movableView != nil {
       let movableView = self.movableView!
+
+      if let tapRecognizer = self.tapRecognizer {
+        if self.gestureRecognizers?.contains(tapRecognizer) ?? false {
+          self.removeGestureRecognizer(tapRecognizer)
+          self.tapRecognizer?.isEnabled = false
+           self.tapRecognizer = nil
+        } else if movableView.gestureRecognizers?.contains(tapRecognizer) ?? false{
+          movableView.removeGestureRecognizer(tapRecognizer)
+        }
+      }
       tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
       movableView.addGestureRecognizer(tapRecognizer!)
-    } else if superview != nil {
-      tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
-      self.addGestureRecognizer(tapRecognizer!)
+
     }
   }
 
 
   override func reactFocus() {
-    if isSticker {
-      self.enableSelection()
-    }
+    self.enableSelection()
 
     super.reactFocus()
   }
@@ -433,7 +453,11 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()
-    self.disableSelection()
+
+    if isSticker {
+      self.disableSelection()
+    }
+
     self.adjustFontSize(text: textView.text)
     self.drawHighlight()
 
@@ -476,15 +500,36 @@ class YeetTextInputView : RCTMultilineTextInputView {
   override func reactBlur() {
     super.reactBlur()
 
-    if isSticker {
+    let didResign = !textView.isFirstResponder
+
+    if didResign && isSticker {
       self.disableSelection()
     }
 
-    if self.textView.isFirstResponder && self.textView.canResignFirstResponder {
-      self.textView.resignFirstResponder()
+    tapRecognizer?.isEnabled = true
+  }
+
+  override func reactFocusIfNeeded() {
+    self.enableSelection()
+
+    if reactIsFocusNeeded || textView.reactIsFocusNeeded {
+      self.reactFocus()
     }
   }
 
+
+
+  override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+    let intended = super.hitTest(point, with: event)
+
+    if isSticker || textView.isFirstResponder {
+      return intended
+    } else if frame.contains(point) {
+      return self
+    } else {
+      return intended
+    }
+  }
 }
 
 

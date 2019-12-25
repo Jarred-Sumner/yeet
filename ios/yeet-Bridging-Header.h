@@ -35,6 +35,11 @@
 #import "FindContours.h"
 #import <XExtensionItem/XExtensionItem.h>
 
+@interface UIView(PrivateMtehods)
+  @property BOOL reactIsFocusNeeded;
+  - (void)didSetProps:(__unused NSArray<NSString *> *)changedProps;
+@end
+
 @interface RCTBaseTextInputView(PrivateMethods)
 
 - (void)enforceTextAttributesIfNeeded;

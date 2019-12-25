@@ -15,16 +15,24 @@ import React from "react";
 import NativeMethodsMixin from "react-native/Libraries/Renderer/shims/NativeMethodsMixin";
 import ReactNative from "react-native/Libraries/Renderer/shims/ReactNative";
 import TextAncestor from "react-native/Libraries/Text/TextAncestor";
-import TextInputState from "react-native/Libraries/Components/TextInput/TextInputState";
 import {
   requireNativeComponent,
-  UIManager,
   StyleSheet,
   Text,
   Platform,
-  TextInput as RNTextInput,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  findNodeHandle,
+  UIManager
 } from "react-native";
+import {
+  currentlyFocusedField,
+  focusTextInput,
+  blurTextInput,
+  focusField,
+  unregisterInput,
+  registerInput,
+  blurField
+} from "./TextInputState";
 
 let AndroidTextInput;
 let _RCTMultilineTextInputView;
@@ -172,15 +180,21 @@ const TextInput = createReactClass({
    * `NativeMethodsMixin` will look for this when invoking `setNativeProps`. We
    * make `this` look like an actual native component class.
    */
-  mixins: [NativeMethodsMixin],
+
+  statics: {
+    State: {
+      currentlyFocusedField: currentlyFocusedField,
+      focusTextInput: focusTextInput,
+      blurTextInput: blurTextInput
+    }
+  },
 
   /**
    * Returns `true` if the input is currently focused; `false` otherwise.
    */
   isFocused() {
     return (
-      RNTextInput.State.currentlyFocusedField() ===
-      ReactNative.findNodeHandle(this._inputRef)
+      currentlyFocusedField() === ReactNative.findNodeHandle(this._inputRef)
     );
   },
 
@@ -195,12 +209,19 @@ const TextInput = createReactClass({
     const tag = ReactNative.findNodeHandle(this._inputRef);
     if (tag != null) {
       // tag is null only in unit tests
-      TextInputState.registerInput(tag);
+      registerInput(tag);
     }
 
     if (this.props.autoFocus) {
       this._rafId = requestAnimationFrame(this.focus);
     }
+  },
+
+  focus() {
+    focusTextInput(ReactNative.findNodeHandle(this._inputRef));
+  },
+  blur() {
+    blurTextInput(ReactNative.findNodeHandle(this._inputRef));
   },
 
   componentWillUnmount() {
@@ -210,7 +231,7 @@ const TextInput = createReactClass({
     }
     const tag = ReactNative.findNodeHandle(this._inputRef);
     if (tag != null) {
-      TextInputState.unregisterInput(tag);
+      unregisterInput(tag);
     }
     if (this._rafId != null) {
       cancelAnimationFrame(this._rafId);
@@ -441,6 +462,11 @@ const TextInput = createReactClass({
   },
 
   _onFocus(event) {
+    const tag = findNodeHandle(this._inputRef);
+    if (!currentlyFocusedField(tag)) {
+      this.focus();
+    }
+
     if (this.props.onFocus) {
       this.props.onFocus(event);
     }
@@ -534,9 +560,8 @@ const TextInput = createReactClass({
   },
 
   _onBlur(event) {
-    // This is a hack to fix https://fburl.com/toehyir8
-    // @todo(rsnara) Figure out why this is necessary.
-    this.blur();
+    blurField(findNodeHandle(this._inputRef));
+
     if (this.props.onBlur) {
       this.props.onBlur(event);
     }
@@ -563,8 +588,6 @@ const styles = StyleSheet.create({
     paddingTop: 5
   }
 });
-
-TextInput.State = RNTextInput.State;
 
 export default TextInput;
 export { TextInput };

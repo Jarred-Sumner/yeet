@@ -48,7 +48,9 @@ const RawAnimatedTextInput = Animated.createAnimatedComponent(RNTextInput);
 const AnimatedTextInput = React.forwardRef((props, ref) => {
   const inputRef = React.useRef();
 
-  React.useImperativeHandle(ref, () => inputRef.current.getNode());
+  React.useImperativeHandle(ref, () => {
+    return inputRef?.current?.getNode();
+  });
 
   return <RawAnimatedTextInput ref={inputRef} {...props} />;
 }) as React.ComponentType<TextInputProps>;
@@ -760,7 +762,7 @@ export class TextInput extends React.Component<Props> {
       <View key={`${format}-${layout}`} style={containerStyles}>
         <TextInputComponent
           {...otherProps}
-          editable={format === PostFormat.post}
+          editable={false}
           selectable={format === PostFormat.post}
           ref={inputRef}
           style={inputStyles}
@@ -787,7 +789,7 @@ export class TextInput extends React.Component<Props> {
           // }
           spellCheck={false}
           adjustsFontSizeToFit
-          inputAccessoryViewID={editable ? `new-post-input` : undefined}
+          inputAccessoryViewID={`new-post-input`}
           minimumFontScale={0.4}
           selectionColor={selectionColor}
           template={template}
