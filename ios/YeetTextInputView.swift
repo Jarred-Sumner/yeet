@@ -80,6 +80,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
 //    }
 //  }
 
+  
 
   var lastHighlightKey: String? = nil
   func highlightKey(text: String?) -> String {
@@ -95,13 +96,15 @@ class YeetTextInputView : RCTMultilineTextInputView {
       self.highlightSubview.layer.addSublayer(self.highlightLayer)
     }
 
-    let box = self.highlightLayer.path?.boundingBox
-    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType)
 
-//    if box != self.highlightLayer.path?.boundingBox {
-//      self.setNeedsDisplay()
-//
-//    }
+
+
+
+    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear)
+
+
+
+
 
 //
 //
@@ -130,17 +133,24 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 
   }
+
+
   
 
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
-    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius")
+
+
+    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") || changedProps.contains("text")
     if (needsUpdateHighlight) {
-      DispatchQueue.main.async {
+      if Thread.isMainThread {
         self.updateHighlight()
-        
+      } else {
+        DispatchQueue.main.async {
+         self.updateHighlight()
+        }
       }
     }
 
@@ -178,6 +188,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
 //        self.textView.font = self.textAttributes?.effectiveFont()
 //      }
 //    }
+
+//    self.textView.sizeToFit()
   }
 
 
@@ -248,13 +260,73 @@ class YeetTextInputView : RCTMultilineTextInputView {
     }
   }
 
+  var textInputView : UIView {
+    return self.textView.textInputView
+  }
+
+  var hasSetContentScale = false
+  var textScale: CGFloat {
+    get {
+      return textInputView.contentScaleFactor
+    }
+
+    set (newValue) {
+      let oldValue = self.textScale
+      textInputView.contentScaleFactor = newValue
+
+      if self.textScale != oldValue {
+        self.updateTextScale()
+      }
+
+      hasSetContentScale = true
+    }
+
+  }
+
+  func updateTextScale() {
+    DispatchQueue.main.throttle(deadline: DispatchTime.now() + 0.1, context: self) { [weak self] in
+      self?._updateTextScale()
+    }
+
+  }
+
+  func _updateTextScale() {
+
+    self.textView.contentScaleFactor = self.textScale
+    let nativeScale = self.textScale * UIScreen.main.scale
+
+    textView.layer.contentsScale = nativeScale
+    highlightLayer.contentsScale = nativeScale
+    textInputView.layer.contentsScale = nativeScale
+
+    textInputView.layer.sublayers?.forEach { layer in
+      layer.contentsScale = nativeScale
+    }
+
+  }
+
+
+  var tapRecognizer: UITapGestureRecognizer? = nil
+
+  var rctTextView : RCTUITextView {
+    return self.backedTextInputView as! RCTUITextView
+  }
 
   var textView: UITextView {
     return self.backedTextInputView as! UITextView
   }
 
+  @objc(handleTap:)
+  func handleTap(_ gesture: UIGestureRecognizer) {
+    self.reactFocus()
+  }
+
+  var bridge: RCTBridge? = nil
+
   override init(bridge: RCTBridge) {
+    self.bridge = bridge
     super.init(bridge: bridge)
+
     self.highlightLayer = CAShapeLayer()
     self.highlightLayer.masksToBounds = false
     highlightSubview.clipsToBounds = false
@@ -281,27 +353,96 @@ class YeetTextInputView : RCTMultilineTextInputView {
     backedTextInputView.textInputDelegate = self
     backedTextInputView.clipsToBounds = false
     textView.layer.masksToBounds = false
+  }
 
+  @objc (isSticker) var isSticker: Bool = false
+
+  var movableViewTag: NSNumber? = nil
+  var movableView : MovableView? {
+    guard let tag = movableViewTag else {
+      return nil
+    }
+
+    return self.bridge?.uiManager.view(forReactTag: tag) as? MovableView
+  }
+
+  override func didMoveToSuperview() {
+    super.didMoveToSuperview()
+    self.tapRecognizer?.isEnabled = false
+    self.tapRecognizer = nil
+
+    if superview != nil && isSticker && movableView != nil {
+      let movableView = self.movableView!
+      tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
+      movableView.addGestureRecognizer(tapRecognizer!)
+    } else if superview != nil {
+      tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
+      self.addGestureRecognizer(tapRecognizer!)
+    }
+  }
+
+
+  override func reactFocus() {
+    if isSticker {
+      self.enableSelection()
+    }
+
+    super.reactFocus()
+  }
+
+  func enableSelection() {
+    self.textView.isSelectable = true
+    self.textView.isEditable = true
+  }
+
+  func disableSelection() {
+    self.textView.isSelectable = false
+    self.textView.isEditable = false
+  }
+
+  @objc(selectable) var isSelectable: Bool = true {
+    didSet {
+      self.textView.isSelectable = isSelectable
+    }
   }
 
   override func textInputDidBeginEditing() {
     super.textInputDidBeginEditing()
-    self.adjustFontSize(text: textView.text)
-    self.drawHighlight()
 
+    self.adjustFontSize(text: textView.text)
+    UIView.setAnimationsEnabled(false)
+    self.drawHighlight()
+    UIView.setAnimationsEnabled(true)
+
+    tapRecognizer?.isEnabled = false
+  }
+
+  func moveCursorToEnd() {
+    textView.selectedRange = endRange
+  }
+
+  var endRange: NSRange {
+    return NSMakeRange(textView.text.count, 0);
   }
 
   override func textInputDidReturn() {
+    UIView.setAnimationsEnabled(false)
     self.drawHighlight()
+    UIView.setAnimationsEnabled(true)
   }
 
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()
+    self.disableSelection()
     self.adjustFontSize(text: textView.text)
     self.drawHighlight()
 
-  }
+    if hasSetContentScale {
+      self.updateTextScale()
+    }
 
+    tapRecognizer?.isEnabled = true
+  }
 
 
   override func textInputShouldChangeText(in range: NSRange, replacementText string: String) -> Bool {
@@ -314,8 +455,10 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
       let newString = oldString.replacingCharacters(in: range, with: string)
       self.adjustFontSize(text: newString)
-      self.drawHighlight()
 
+      UIView.setAnimationsEnabled(false)
+      self.drawHighlight()
+      UIView.setAnimationsEnabled(true)
     }
 
     return shouldReject
@@ -325,8 +468,21 @@ class YeetTextInputView : RCTMultilineTextInputView {
     super.textInputDidChange()
 
     self.adjustFontSize(text: textView.text)
+    UIView.setAnimationsEnabled(false)
     self.drawHighlight()
+    UIView.setAnimationsEnabled(true)
+  }
 
+  override func reactBlur() {
+    super.reactBlur()
+
+    if isSticker {
+      self.disableSelection()
+    }
+
+    if self.textView.isFirstResponder && self.textView.canResignFirstResponder {
+      self.textView.resignFirstResponder()
+    }
   }
 
 }

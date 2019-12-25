@@ -14,6 +14,7 @@ import {
   preserveOffset,
   preserveMultiplicativeOffset
 } from "../../../lib/animations";
+import { TransformableViewComponent } from "./TransformableView";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -31,9 +32,11 @@ export const TransformableView = React.forwardRef((props, ref) => {
   const {
     translateX = 0,
     translateY = 0,
+    Component = TransformableViewComponent,
     onLayout,
     rotate = 0,
     zIndex,
+    inputRef,
     scale = 1.0,
     keyboardVisibleValue,
     bottom = undefined,
@@ -42,46 +45,53 @@ export const TransformableView = React.forwardRef((props, ref) => {
     children
   } = props;
 
+  const bottomContainerStyles = React.useMemo(
+    () => [
+      transformableStyles.bottomContainer,
+      {
+        opacity,
+        bottom,
+        zIndex,
+        transform: [
+          {
+            translateY
+          },
+          {
+            translateX
+          },
+          {
+            scale
+          },
+          {
+            rotate
+          }
+        ]
+      }
+    ],
+    [opacity, bottom, zIndex, translateY, translateX, scale, rotate]
+  );
+
   if (typeof bottom !== "undefined") {
     return (
-      <Animated.View
+      <Component
         ref={ref}
         onLayout={onLayout}
         shouldRasterizeIOS={rasterize}
-        needsOffscreenAlphaCompositing
-        style={[
-          transformableStyles.bottomContainer,
-          {
-            opacity,
-            bottom,
-            zIndex,
-            transform: [
-              {
-                translateY
-              },
-              {
-                translateX
-              },
-              {
-                scale
-              },
-              {
-                rotate
-              }
-            ]
-          }
-        ]}
+        needsOffscreenAlphaCompositing={rasterize}
+        inputRef={inputRef}
+        style={bottomContainerStyles}
       >
         {children}
-      </Animated.View>
+      </Component>
     );
   } else {
     return (
-      <Animated.View
+      <Component
         ref={ref}
         onLayout={onLayout}
         shouldRasterizeIOS={rasterize}
-        needsOffscreenAlphaCompositing
+        needsOffscreenAlphaCompositing={rasterize}
+        inputRef={inputRef}
         style={[
           transformableStyles.topContainer,
           {
@@ -105,7 +115,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
         ]}
       >
         {children}
-      </Animated.View>
+      </Component>
     );
   }
 });
@@ -150,6 +160,12 @@ type Props = {
   scale: Animated.Value<number>;
   keyboardVisibleValue: Animated.Value<number>;
 };
+
+const styles = StyleSheet.create({
+  gestureView: {
+    flex: 0
+  }
+});
 
 export class MovableNode extends Component<Props> {
   absoluteX = new Animated.Value(0);
@@ -204,12 +220,14 @@ export class MovableNode extends Component<Props> {
       { useNativeDriver: true }
     );
 
-    this.X = preserveOffset(this._X, this.panGestureState, props.x);
-    this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
+    this.X = Animated.round(
+      preserveOffset(this._X, this.panGestureState, props.x)
+    );
+    this.Y = Animated.round(
+      preserveOffset(this._Y, this.panGestureState, props.y)
+    );
 
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
-
-    console.log({ scale: props.scale, _scale: props.scaleLiteral });
 
     this.Z = Animated.min(
       preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
@@ -220,7 +238,10 @@ export class MovableNode extends Component<Props> {
       [
         {
           nativeEvent: ({ state }) =>
-            cond([eq(state, State.END)], [call([], this.props.onTap)])
+            cond(
+              [Animated.and(eq(state, State.END))],
+              [call([], this.props.onTap)]
+            )
         }
       ],
       { useNativeDriver: true }
@@ -247,16 +268,18 @@ export class MovableNode extends Component<Props> {
 
     this.bottomValue =
       props.keyboardHeightValue && props.isTextBlock
-        ? keyboardVisibleInterpolater(
-            this.keyboardVisibleFocusedValue,
-            0,
-            Animated.multiply(
-              Animated.sub(
-                SCREEN_DIMENSIONS.height,
-                props.keyboardHeightValue,
-                props.topInsetValue || 0
-              ),
-              -1
+        ? Animated.round(
+            keyboardVisibleInterpolater(
+              this.keyboardVisibleFocusedValue,
+              0,
+              Animated.multiply(
+                Animated.sub(
+                  SCREEN_DIMENSIONS.height,
+                  props.keyboardHeightValue,
+                  props.topInsetValue || 0
+                ),
+                -1
+              )
             )
           )
         : null;
@@ -325,64 +348,6 @@ export class MovableNode extends Component<Props> {
     State.UNDETERMINED
   );
 
-  setupHandlers(props) {
-    // this.X = props.x;
-    // this.Y = props.y;
-    // this.R = props.r;
-    // this.Z = props.scale;
-    // const offsetX = new Animated.Value(props.xLiteral);
-    // const offsetY = new Animated.Value(props.yLiteral);
-    // const offsetR = new Animated.Value(props.rLiteral);
-    // const offsetZ = new Animated.Value(props.scaleLiteral);
-    // this.handlePan = event(
-    //   [
-    //     {
-    //       nativeEvent: ({ translationX: x, translationY: y, state }) =>
-    //         block([
-    //           set(this.X, add(x, offsetX)),
-    //           set(this.Y, add(y, offsetY)),
-    //           cond(eq(state, State.END), [
-    //             set(offsetX, add(offsetX, x)),
-    //             set(offsetY, add(offsetY, y)),
-    //             positionUpdater
-    //           ])
-    //         ])
-    //     }
-    //   ],
-    //   { useNativeDriver: true }
-    // );
-    // this.handleRotate = event(
-    //   [
-    //     {
-    //       nativeEvent: ({ rotation: r, state }) =>
-    //         block([
-    //           set(this.R, add(r, offsetR)),
-    //           cond(eq(state, State.END), [
-    //             set(offsetR, add(offsetR, r)),
-    //             positionUpdater
-    //           ])
-    //         ])
-    //     }
-    //   ],
-    //   { useNativeDriver: true }
-    // );
-    // this.handleZoom = event(
-    //   [
-    //     {
-    //       nativeEvent: ({ scale: z, state }) =>
-    //         block([
-    //           cond(eq(state, State.ACTIVE), set(this.Z, multiply(z, offsetZ))),
-    //           cond(eq(state, State.END), [
-    //             set(offsetZ, multiply(offsetZ, z)),
-    //             positionUpdater
-    //           ])
-    //         ])
-    //     }
-    //   ],
-    //   { useNativeDriver: true }
-    // );
-  }
-
   _isMounted = true;
 
   updatePosition = coords => {
@@ -391,7 +356,6 @@ export class MovableNode extends Component<Props> {
     }
 
     const [x, y, rotate, scale, panGestureState, absoluteX, absoluteY] = coords;
-    // console.log({ x, y });
     this.props.onChangePosition({
       x,
       y,
@@ -408,11 +372,30 @@ export class MovableNode extends Component<Props> {
     this._isMounted = false;
   }
 
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.waitFor !== this.props.waitFor) {
+      this.tapGestureWaitFor = [
+        ...this.props.waitFor,
+        this.panRef,
+        this.rotationRef,
+        this.pinchRef
+      ];
+    }
+  }
+
   rotationRef = React.createRef();
   panRef = React.createRef();
   pinchRef = React.createRef();
   tapRef = React.createRef();
-  keyboardDirection = new Animated.Value(1);
+  panGestureHandlers = [this.rotationRef, this.pinchRef];
+  pinchGestureHandlers = [this.rotationRef, this.panRef];
+  rotationGestureHandlers = [this.pinchRef, this.panRef];
+  tapGestureWaitFor = [
+    ...this.props.waitFor,
+    this.panRef,
+    this.rotationRef,
+    this.pinchRef
+  ];
 
   render() {
     const {
@@ -425,6 +408,7 @@ export class MovableNode extends Component<Props> {
       waitFor = [],
       keyboardVisibleValue,
       keyboardHeightValue,
+      inputRef,
       extraPadding,
       isHidden
     } = this.props;
@@ -432,17 +416,13 @@ export class MovableNode extends Component<Props> {
     return (
       <>
         <TapGestureHandler
-          waitFor={[...waitFor, this.panRef, this.rotationRef, this.pinchRef]}
+          waitFor={this.tapGestureWaitFor}
           ref={this.tapRef}
           enabled={isDragEnabled}
           onGestureEvent={this.handleTap}
-          hitSlop={{
-            horizontal: extraPadding * -1,
-            vertical: extraPadding * -1
-          }}
           onHandlerStateChange={this.handleTap}
         >
-          <Animated.View style={{ flex: 0 }}>
+          <Animated.View style={styles.gestureView}>
             <Animated.Code
               exec={Animated.block([
                 Animated.onChange(
@@ -519,29 +499,29 @@ export class MovableNode extends Component<Props> {
               ref={this.panRef}
               enabled={isDragEnabled}
               waitFor={waitFor}
-              simultaneousHandlers={[this.rotationRef, this.pinchRef]}
+              simultaneousHandlers={this.panGestureHandlers}
               onGestureEvent={this.handlePan}
               onHandlerStateChange={this.handlePan}
             >
-              <Animated.View style={{ flex: 0 }}>
+              <Animated.View style={styles.gestureView}>
                 <PinchGestureHandler
                   ref={this.pinchRef}
                   enabled={isDragEnabled}
                   waitFor={waitFor}
-                  simultaneousHandlers={[this.rotationRef, this.panRef]}
+                  simultaneousHandlers={this.pinchGestureHandlers}
                   onGestureEvent={this.handleZoom}
                   onHandlerStateChange={this.handleZoom}
                 >
-                  <Animated.View style={{ flex: 0 }}>
+                  <Animated.View style={styles.gestureView}>
                     <RotationGestureHandler
                       ref={this.rotationRef}
                       enabled={isDragEnabled}
                       waitFor={waitFor}
-                      simultaneousHandlers={[this.pinchRef, this.panRef]}
+                      simultaneousHandlers={this.rotationGestureHandlers}
                       onGestureEvent={this.handleRotate}
                       onHandlerStateChange={this.handleRotate}
                     >
-                      <Animated.View style={{ flex: 0 }}>
+                      <Animated.View style={styles.gestureView}>
                         <TransformableView
                           ref={this.props.containerRef}
                           onLayout={this.handleLayout}
@@ -550,7 +530,9 @@ export class MovableNode extends Component<Props> {
                           translateX={this.translateX}
                           bottom={this.bottomValue}
                           keyboardVisibleValue={keyboardVisibleValue}
+                          inputRef={inputRef}
                           rotate={this.rotate}
+                          rasterize={false}
                           scale={this.scale}
                         >
                           {this.props.children}

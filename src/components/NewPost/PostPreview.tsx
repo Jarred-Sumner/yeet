@@ -19,12 +19,21 @@ import { Block } from "./Node/Block";
 import { getInset } from "react-native-safe-area-view";
 export const ScrollView = KeyboardAwareScrollView;
 
+const isTextBlock = (block: PostBlockType) => block.type === "text";
+
 const styles = StyleSheet.create({
-  horizontalList: { flexDirection: "row", flex: 1 },
-  verticalList: { flexDirection: "column", flex: 1 }
+  horizontalList: { flexDirection: "row", flex: 0 },
+  horizontalMultiList: { flexDirection: "row", flex: 1 },
+  verticalList: { flexDirection: "column", flex: 0 }
 });
 
-const BlockLayoutContainer = ({ layout, children }: { layout: PostLayout }) => {
+const BlockLayoutContainer = ({
+  layout,
+  multiList = false,
+  children
+}: {
+  layout: PostLayout;
+}) => {
   if (
     [
       PostLayout.horizontalMediaMedia,
@@ -32,14 +41,20 @@ const BlockLayoutContainer = ({ layout, children }: { layout: PostLayout }) => {
       PostLayout.horizontalTextMedia
     ].includes(layout)
   ) {
-    return <View style={styles.horizontalList}>{children}</View>;
+    return (
+      <View
+        style={multiList ? styles.horizontalMultiList : styles.horizontalList}
+      >
+        {children}
+      </View>
+    );
   } else {
     return <View style={styles.verticalList}>{children}</View>;
   }
 };
 
 type BlockListProps = {
-  blocks: Array<PostBlockType>;
+  blocks: Array<Array<PostBlockType>>;
   setBlockAtIndex: (block: PostBlockType, index: number) => void;
 };
 export const BlockList = ({
@@ -112,11 +127,31 @@ export const BlockList = ({
     ]
   );
 
-  return (
-    <BlockLayoutContainer layout={layout}>
-      {blocks.map(renderBlock)}
-    </BlockLayoutContainer>
+  const renderRow = React.useCallback(
+    (row: Array<PostBlockType>) => {
+      const rowKey = row.map(block => block.id).join(",");
+
+      let _layout = layout;
+      const isTextOnly = row.every(isTextBlock);
+      const isMultiList = isTextOnly && row.length > 1;
+      if (isTextOnly && isMultiList) {
+        _layout = PostLayout.horizontalTextMedia;
+      }
+
+      return (
+        <BlockLayoutContainer
+          multiList={isMultiList}
+          key={rowKey}
+          layout={_layout}
+        >
+          {row.map(renderBlock)}
+        </BlockLayoutContainer>
+      );
+    },
+    [renderBlock]
   );
+
+  return blocks.map(renderRow);
 };
 
 type EditableNodeListProps = {
@@ -177,45 +212,75 @@ export const EditableNodeList = ({
     [setBlockInputRef]
   );
 
-  return Object.values(inlineNodes).map(node => {
-    const { id } = node.block;
-    return (
-      <BaseNode
-        maxX={maxX}
-        minY={minY}
-        maxY={maxY}
-        scrollY={scrollY}
-        topInsetValue={topInsetValue}
-        containerRef={containerRef(id)}
-        onBlur={onBlurNode}
-        focusedBlockValue={focusedBlockValue}
-        disabled={focusedBlockId && focusedBlockId !== id}
-        waitFor={waitFor}
-        inputRef={handleSetBlockInputRef(id)}
-        onFocus={onFocus}
-        absoluteX={panX}
-        enableAutomaticScroll
-        absoluteY={panY}
-        focusTypeValue={focusTypeValue}
-        keyboardVisibleValue={keyboardVisibleValue}
-        keyboardHeightValue={keyboardHeightValue}
-        focusType={focusType}
-        key={id}
-        isFocused={focusedBlockId === id}
-        focusedBlockId={focusedBlockId}
-        onTap={onTapNode}
-        onPan={handlePan(id)}
-        format={format}
-        isHidden={
-          focusedBlockId &&
-          focusedBlockId !== id &&
-          focusType !== FocusType.panning
-        }
-        node={node}
-        onChange={onChangeNode}
-      />
-    );
-  });
+  const renderNode = React.useCallback(
+    (node: EditableNode) => {
+      const { id } = node.block;
+      return (
+        <BaseNode
+          maxX={maxX}
+          minY={minY}
+          maxY={maxY}
+          scrollY={scrollY}
+          topInsetValue={topInsetValue}
+          containerRef={containerRef(id)}
+          onBlur={onBlurNode}
+          focusedBlockValue={focusedBlockValue}
+          disabled={focusedBlockId && focusedBlockId !== id}
+          waitFor={waitFor}
+          inputRef={handleSetBlockInputRef(id)}
+          onFocus={onFocus}
+          absoluteX={panX}
+          enableAutomaticScroll
+          absoluteY={panY}
+          focusTypeValue={focusTypeValue}
+          keyboardVisibleValue={keyboardVisibleValue}
+          keyboardHeightValue={keyboardHeightValue}
+          focusType={focusType}
+          key={id}
+          isFocused={focusedBlockId === id}
+          focusedBlockId={focusedBlockId}
+          onTap={onTapNode}
+          onPan={handlePan(id)}
+          format={format}
+          isHidden={
+            focusedBlockId &&
+            focusedBlockId !== id &&
+            focusType !== FocusType.panning
+          }
+          node={node}
+          onChange={onChangeNode}
+        />
+      );
+    },
+    [
+      maxX,
+      minY,
+      maxY,
+      scrollY,
+      topInsetValue,
+      onBlurNode,
+      focusedBlockValue,
+      containerRef,
+      handleSetBlockInputRef,
+      handlePan,
+      focusedBlockId,
+      waitFor,
+      onFocus,
+      panX,
+      panY,
+      focusTypeValue,
+      keyboardVisibleValue,
+      keyboardHeightValue,
+      focusType,
+      focusedBlockId,
+      onTapNode,
+      format,
+      focusType,
+      onChangeNode
+    ]
+  );
+
+  return Object.values(inlineNodes).map(renderNode);
 };
 
 export const PostPreview = React.forwardRef(
@@ -323,9 +388,6 @@ export const PostPreview = React.forwardRef(
     //   });
     // }, [scrollRef.current, paddingTop]);
 
-    const GestureHandler = focusedBlockValue
-      ? TapGestureHandler
-      : LongPressGestureHandler;
     return (
       <ScrollView
         directionalLockEnabled
@@ -355,12 +417,14 @@ export const PostPreview = React.forwardRef(
         style={scrollViewStyle}
         contentContainerStyle={contentContainerStyle}
       >
-        <GestureHandler
+        <TapGestureHandler
           onHandlerStateChange={onTapBackground}
           onGestureEvent={onTapBackground}
+          shouldCancelWhenOutside
           waitFor={waitFor}
-          minDurationMs={150}
-          maxDist={9999}
+          maxDeltaX={10}
+          maxDeltaY={10}
+          maxDist={10}
         >
           <Animated.View ref={contentViewRef} style={contenViewStyle}>
             <BlockList
@@ -383,7 +447,7 @@ export const PostPreview = React.forwardRef(
 
             {children}
           </Animated.View>
-        </GestureHandler>
+        </TapGestureHandler>
       </ScrollView>
     );
   }

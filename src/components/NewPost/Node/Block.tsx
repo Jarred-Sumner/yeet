@@ -27,6 +27,7 @@ export const Block = React.forwardRef(
       scrollRef,
       gestureRef,
       onTap,
+      waitFor,
       disabled = false
     }: {
       block: PostBlock;
@@ -48,6 +49,7 @@ export const Block = React.forwardRef(
           block={block}
           maxX={maxX}
           onTap={onTap}
+          waitFor={waitFor}
           autoFocus={autoFocus}
           onOpenImagePicker={onOpenImagePicker}
           focusTypeValue={focusTypeValue}

@@ -6,6 +6,7 @@ mutation CreatePostThread(
   $body: String
   $nodes: JSON
   $format: String!
+  $strings: [String!]
   $autoplaySeconds: Int
   $bounds: RectangleInputObject!
   $colors: ColorsInputObject!
@@ -20,6 +21,7 @@ mutation CreatePostThread(
     nodes: $nodes
     body: $body
     format: $format
+    stringList: $strings
     autoplaySeconds: $autoplaySeconds
     bounds: $bounds
     colors: $colors

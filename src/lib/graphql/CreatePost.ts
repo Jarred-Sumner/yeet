@@ -81,6 +81,7 @@ export interface CreatePostVariables {
   blocks?: JSON | null;
   nodes?: JSON | null;
   format: string;
+  strings?: string[] | null;
   bounds: RectangleInputObject;
   autoplaySeconds?: number | null;
   colors: ColorsInputObject;

@@ -1,8 +1,9 @@
 import * as React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, ActivityIndicator } from "react-native";
 import { NewPost, DEFAULT_POST } from "../components/NewPost/NewPost";
 import { UserContext } from "../components/UserContext";
 import { useNavigation, useFocusState } from "react-navigation-hooks";
+import { flatten } from "lodash";
 import {
   buildImageBlock,
   minImageWidthByFormat,
@@ -10,7 +11,8 @@ import {
   PostFormat,
   PostLayout,
   generateBlockId,
-  POST_WIDTH
+  POST_WIDTH,
+  ImagePostBlock
 } from "../components/NewPost/NewPostFormat";
 import {
   ContentExport,
@@ -22,11 +24,16 @@ import { ToastType, sendToast } from "../components/Toast";
 import { PostFragment } from "../lib/graphql/PostFragment";
 import { SCREEN_DIMENSIONS } from "../../config";
 import { MAX_CONTENT_HEIGHT } from "../components/Feed/PostPreviewList";
+import { SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "black",
     flex: 1
+  },
+  spinner: {
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center"
   }
 });
 
@@ -35,21 +42,14 @@ export class NewPostPage extends React.Component {
     super(props);
 
     const image = props.navigation.getParam("image");
-    const post: Partial<PostFragment> | null = props.navigation.getParam(
+    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
       "post"
     );
     const blockId = props.navigation.getParam("blockId");
 
     if (post) {
-      const scaleFactor = (post.bounds.width ?? post.media.width) / POST_WIDTH;
-      const defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
-      const defaultNodes = convertExportedNodes(post.nodes, {}, scaleFactor);
-
       this.state = {
-        defaultBlocks: defaultBlocks,
-        defaultLayout: post.layout,
-        defaultFormat: post.format,
-        defaultInlineNodes: defaultNodes
+        isLoading: true
       };
     } else if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
@@ -65,10 +65,11 @@ export class NewPostPage extends React.Component {
       });
 
       this.state = {
-        defaultBlocks: [imageBlock]
+        defaultBlocks: [[imageBlock]],
+        isLoading: false
       };
     } else {
-      this.state = { defaultBlocks: undefined };
+      this.state = { defaultBlocks: undefined, isLoading: false };
     }
   }
 
@@ -92,7 +93,63 @@ export class NewPostPage extends React.Component {
     if (this.props.isFocused || this.props.isFocusing) {
       this.props.requireAuthentication();
     }
+
+    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
+      "post"
+    );
+
+    if (this.state.isLoading && post) {
+      this.loadPost();
+    }
   }
+
+  loadPost = async () => {
+    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
+      "post"
+    );
+
+    let scaleFactor = POST_WIDTH / (post.bounds.width ?? post.media.width);
+
+    let defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
+    const imageBlock = flatten(defaultBlocks).find(
+      image => image.type === "image"
+    ) as ImagePostBlock;
+
+    let xPadding = SPACING.half;
+    let yPadding = SPACING.half;
+
+    if (
+      imageBlock &&
+      imageBlock.format === PostFormat.post &&
+      imageBlock.config.dimensions.width !== POST_WIDTH &&
+      imageBlock.layout === PostLayout.media
+    ) {
+      scaleFactor = POST_WIDTH / imageBlock.value.image.width;
+
+      xPadding = SPACING.normal;
+      yPadding = SPACING.half;
+
+      defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
+    }
+
+    const defaultNodes = await convertExportedNodes(
+      post.nodes,
+      {},
+      scaleFactor,
+      xPadding,
+      yPadding,
+      post.bounds
+    );
+
+    this.setState({
+      defaultBlocks: defaultBlocks,
+      backgroundColor: post?.colors?.background || "black",
+      defaultLayout: post.layout,
+      defaultFormat: post.format,
+      defaultInlineNodes: defaultNodes,
+      isLoading: false
+    });
+  };
 
   componentDidUpdate(prevProps) {
     if (
@@ -106,16 +163,21 @@ export class NewPostPage extends React.Component {
   render() {
     return (
       <View style={styles.container}>
-        <NewPost
-          navigation={this.props.navigation}
-          defaultBlocks={this.state.defaultBlocks}
-          onExport={this.handleExport}
-          defaultWidth={this.state.defaultWidth}
-          defaultHeight={this.state.defaultHeight}
-          defaultLayout={this.state.defaultLayout}
-          defaultFormat={this.state.defaultFormat}
-          defaultInlineNodes={this.state.defaultInlineNodes}
-        />
+        {this.state.isLoading ? (
+          <ActivityIndicator size="large" style={styles.spinner} />
+        ) : (
+          <NewPost
+            navigation={this.props.navigation}
+            defaultBlocks={this.state.defaultBlocks}
+            onExport={this.handleExport}
+            backgroundColor={this.state.backgroundColor}
+            defaultWidth={this.state.defaultWidth}
+            defaultHeight={this.state.defaultHeight}
+            defaultLayout={this.state.defaultLayout}
+            defaultFormat={this.state.defaultFormat}
+            defaultInlineNodes={this.state.defaultInlineNodes}
+          />
+        )}
       </View>
     );
   }

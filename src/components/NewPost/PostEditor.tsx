@@ -1,7 +1,13 @@
 import { connectActionSheet } from "@expo/react-native-action-sheet";
 import CameraRoll from "@react-native-community/cameraroll";
 import * as React from "react";
-import { Keyboard, StyleSheet, View } from "react-native";
+import {
+  Keyboard,
+  StyleSheet,
+  View,
+  TextInput as RNTextInput,
+  UIManager
+} from "react-native";
 import {
   ScrollView,
   State as GestureState,
@@ -11,7 +17,7 @@ import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
-import { startExport } from "../../lib/Exporter";
+import { startExport, getEstimatedBounds } from "../../lib/Exporter";
 import {
   ImageSourceType,
   isVideo,
@@ -24,6 +30,7 @@ import { sendToast, ToastType } from "../Toast";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
+import { flatMap, flatten, debounce } from "lodash";
 import {
   buildImageBlock,
   buildTextBlock,
@@ -54,6 +61,9 @@ import {
   ToolbarType
 } from "./Toolbar";
 import { InputAccessoryView } from "../InputAccessoryView";
+import { findBlockById } from "../../lib/buildPost";
+import { isTapInside } from "../../lib/Rect";
+import { Rectangle } from "../../lib/Rectangle";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -61,7 +71,6 @@ export const HEADER_HEIGHT = 30 + SPACING.normal;
 
 const styles = StyleSheet.create({
   safeWrapper: {
-    backgroundColor: "black",
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
@@ -193,7 +202,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     };
 
     this._blockInputRefs = new Map([
-      ...props.post.blocks.map(({ id }) => [id, React.createRef()])
+      ...flatten(props.post.blocks).map(({ id }) => [id, React.createRef()])
     ]);
 
     if (IS_SIMULATOR) {
@@ -331,12 +340,30 @@ class RawwPostEditor extends React.Component<Props, State> {
         ...this.props.inlineNodes,
         [editableNode.block.id]: editableNode
       });
+
+      this.clearFocus();
     }
   };
 
   handleChangeBlock = (block: PostBlockType, index: number) => {
     const blocks = [...this.props.post.blocks];
-    blocks.splice(index, 1, block);
+
+    for (let rowIndex = 0; rowIndex < blocks.length; rowIndex = rowIndex + 1) {
+      const row = blocks[rowIndex];
+
+      for (
+        let blockIndex = 0;
+        blockIndex < row.length;
+        blockIndex = blockIndex + 1
+      ) {
+        const _block = row[blockIndex];
+
+        if (block.id === _block.id) {
+          row.splice(blockIndex, 1, _block);
+          break;
+        }
+      }
+    }
 
     this.props.onChange({
       ...this.props.post,
@@ -375,10 +402,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         [node.block.id]: node
       });
     } else if (this.state.focusType === FocusType.static) {
-      this.handleChangeBlock(
-        block,
-        this.props.post.blocks.findIndex(({ id }) => id === block.id)
-      );
+      this.handleChangeBlock(block);
     }
   };
 
@@ -393,8 +417,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
     const editableNode = buildEditableNode({
       block,
-      x,
-      y
+      x: x - SPACING.normal,
+      y: y + SPACING.normal
     });
 
     this.props.onChangeNodes({
@@ -425,9 +449,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         return;
       }
 
-      this.setState({ focusedBlockId: null, focusType: null });
-      this.focusedBlockValue.setValue(-1);
-      this.focusTypeValue.setValue(-1);
+      this.clearFocus();
     } else {
       if (node.block.type === "text") {
         this.setState({
@@ -441,42 +463,34 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBlur = () => {
-    const node = this.props.inlineNodes[this.state.focusedBlockId];
-
-    if (node) {
-      this.handleBlurNode(node);
-    } else {
-      const block = this.props.post.blocks.find(
-        ({ id }) => this.state.focusedBlockId === id
-      );
-      Keyboard.dismiss();
-      this.handleBlurBlock(block);
+    if (
+      this.state.focusType === FocusType.absolute ||
+      this.state.focusType === FocusType.panning
+    ) {
+      this.handleBlurNode(this.focusedNode);
+    } else if (this.focusedBlock) {
+      this.handleBlurBlock(this.focusedBlock);
     }
+
+    console.log(
+      "BLUR",
+      RNTextInput.State.currentlyFocusedField(),
+      this.state.focusType,
+      this.focusedNode,
+      this.focusedBlock
+    );
   };
 
   handleBlurNode = (node: EditableNode) => {
-    if (node) {
-      if (node.block.type === "text" && node.block.value.trim().length === 0) {
-        this.deleteNode(node.block.id);
-      } else {
-        this.props.onChangeNodes({
-          ...this.props.inlineNodes,
-          [node.block.id]: node
-        });
-        this.focusedBlockValue.setValue(-1);
-        this.focusTypeValue.setValue(-1);
-        this.setState({ focusedBlockId: null, focusType: null });
-      }
-    }
+    this.handleInlineNodeChange(node);
   };
 
   handleBlurBlock = (block: PostBlockType) => {
-    const index = this.props.post.blocks.findIndex(({ id }) => id === block.id);
+    if (block) {
+      this.handleChangeBlock(block);
+    }
 
-    this.handleChangeBlock(block, index);
-    this.setState({ focusType: null, focusedBlockId: null });
-    this.focusedBlockValue.setValue(-1);
-    this.focusTypeValue.setValue(-1);
+    this.clearFocus();
   };
 
   handleFocusBlock = (block: PostBlockType) => {
@@ -496,31 +510,22 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
-  handleDownload = async () => {
-    try {
-      const [snapshot, _] = await this.createSnapshot(false);
+  clearFocus = () => {
+    this.focusedBlockValue.setValue(-1);
+    this.focusTypeValue.setValue(-1);
+    this.setState({ focusedBlockId: null, focusType: null });
 
-      console.time("Camera Roll");
-      if (IS_SIMULATOR) {
-        return sendToast("Skipped save due to simulator", ToastType.success);
-      }
-      return CameraRoll.saveToCameraRoll(
-        snapshot.uri,
-        String(snapshot.type).includes("image") ? "photo" : "video"
-      ).then(
-        () => {
-          console.timeEnd("Camera Roll");
-          sendToast("Saved.", ToastType.success);
-        },
-        () => {
-          sendToast("Couldn't save.", ToastType.error);
-        }
-      );
-    } catch (exception) {
-      sendToast("Uh-oh. Please try again.", ToastType.error);
-      console.error(exception);
+    this.dismissKeyboard();
+  };
+
+  dismissKeyboard = () => {
+    const fieldNode = RNTextInput.State.currentlyFocusedField();
+    console.log(fieldNode, "DISMIS");
+    if (fieldNode) {
+      RNTextInput.State.blurTextInput(fieldNode);
     }
   };
+
   handleSend = async () => {
     console.log("Start sending");
     const [snapshot, data] = await this.createSnapshot(true);
@@ -576,12 +581,18 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   tapX = new Animated.Value(-1);
   tapY = new Animated.Value(-1);
+  tapYAbsolute = new Animated.Value(-1);
 
   tapGestureState = new Animated.Value(GestureState.UNDETERMINED);
   onTapBackground = Animated.event(
     [
       {
-        nativeEvent: { state: this.tapGestureState, x: this.tapX, y: this.tapY }
+        nativeEvent: {
+          state: this.tapGestureState,
+          x: this.tapX,
+          y: this.tapY,
+          absoluteY: this.tapYAbsolute
+        }
       }
     ],
     { useNativeDriver: true }
@@ -593,26 +604,41 @@ class RawwPostEditor extends React.Component<Props, State> {
   //   })
   // };
 
-  handleTapBackground = ([tapGestureState, x, y]) => {
-    const { focusedBlockId } = this.state;
+  handleTapBackground = async ([
+    tapGestureState,
+    x,
+    y,
+    focusTypeValue,
+    focusBlockValue,
+    keyboardHeightValue,
+    tapYAbsolute
+  ]) => {
+    const { focusedBlockId, focusType } = this.state;
 
-    this.handlePressBackground({ x, y });
+    if (focusedBlockId && focusType === FocusType.absolute) {
+      const _bounds = await getEstimatedBounds(
+        this._inlineNodeRefs.get(focusedBlockId)
+      );
+      const bounds = new Rectangle(
+        _bounds.x - SPACING.normal * 2,
+        _bounds.y - SPACING.normal,
+        _bounds.width + SPACING.normal * 3,
+        _bounds.height + SPACING.normal * 2
+      );
+
+      if (bounds.contains(new Rectangle(x, y, 1, 1))) {
+        return;
+      }
+    }
+
+    this.handlePressBackground({ x, y, focusTypeValue, focusBlockValue });
   };
 
-  handlePressDownBackground = ({
-    nativeEvent: { locationX: x, locationY: y }
-  }) => {
-    this.handlePressBackground({ x, y });
-  };
-
-  handlePressBackground = ({ x, y }) => {
-    if (this.state.focusType === null) {
+  handlePressBackground = ({ x, y, focusTypeValue, focusBlockValue }) => {
+    if (this.state.focusType === null && focusTypeValue === -1) {
       this.handleInsertText({ x, y });
     } else {
-      // Works around issue with blur
-      Keyboard.dismiss();
-      this.focusedBlockValue.setValue(-1);
-      this.focusTypeValue.setValue(-1);
+      this.dismissKeyboard();
     }
   };
 
@@ -707,11 +733,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
-    const blockIndex = this.props.post.blocks.findIndex(
-      block => block.id === blockId
-    );
-
-    const _block = this.props.post.blocks[blockIndex];
+    const _block = findBlockById(this.props.post.blocks, blockId);
 
     const minWidth = minImageWidthByFormat(_block.format);
 
@@ -725,19 +747,13 @@ class RawwPostEditor extends React.Component<Props, State> {
       format: _block.format
     });
 
-    const blocks = [...this.props.post.blocks];
-    blocks.splice(blockIndex, 1, block);
-
-    this.props.onChange({
-      ...this.props.post,
-      blocks
-    });
+    this.handleChangeBlock(block);
   };
 
   buttonRef = React.createRef();
   lastTappedBlockId = null;
   openImagePickerForPlaceholder = () => {
-    const block = this.props.post.blocks.find(isPlaceholderImageBlock);
+    const block = flatten(this.props.post.blocks).find(isPlaceholderImageBlock);
 
     if (!block) {
       return;
@@ -768,13 +784,20 @@ class RawwPostEditor extends React.Component<Props, State> {
     return ToolbarType.default;
   }
 
-  get focusedBlock() {
+  get focusedBlock(): PostBlockType | null {
     const { focusedBlockId, focusType } = this.state;
 
     const node = this.props.inlineNodes[focusedBlockId];
     return node
       ? node.block
-      : this.props.post.blocks.find(block => block.id === focusedBlockId);
+      : findBlockById(this.props.post.blocks, focusedBlockId);
+  }
+
+  get focusedNode() {
+    const { focusedBlockId, focusType } = this.state;
+
+    const node = this.props.inlineNodes[focusedBlockId];
+    return node;
   }
 
   handlePan = ({
@@ -823,8 +846,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       }
     }
   };
-
-  panToolbarClock = new Animated.Clock();
 
   handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
   hasPlaceholderImageBlocks = () =>
@@ -910,6 +931,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         y: 0
       }
     } = this.state;
+
     const sizeStyle = {
       width: bounds.width || POST_WIDTH,
       height: bounds.height || SCREEN_DIMENSIONS.height
@@ -921,7 +943,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           styles.wrapper,
           sizeStyle,
           {
-            backgroundColor: post.backgroundColor
+            backgroundColor: "black"
           }
         ]}
       >
@@ -966,7 +988,15 @@ class RawwPostEditor extends React.Component<Props, State> {
                     )
                   ),
                   Animated.call(
-                    [this.tapGestureState, this.tapX, this.tapY],
+                    [
+                      this.tapGestureState,
+                      this.tapX,
+                      this.tapY,
+                      this.focusTypeValue,
+                      this.focusedBlockValue,
+                      this.keyboardHeightValue,
+                      this.tapYAbsolute
+                    ],
                     this.handleTapBackground
                   )
                 )
@@ -982,6 +1012,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             styles.scrollContainer,
             {
               // maxHeight: MAX_POST_HEIGHT,
+              backgroundColor: post.backgroundColor,
               width: bounds.width
             }
           ]}
@@ -1085,7 +1116,6 @@ class RawwPostEditor extends React.Component<Props, State> {
             <ActiveLayer
               onBack={this.handleBack}
               onSend={this.handleSend}
-              onPressDownload={this.handleDownload}
               onChangeOverrides={this.handleChangeOverrides}
               onChangeBorderType={this.handleChangeBorderType}
               focusedBlock={this.focusedBlock}

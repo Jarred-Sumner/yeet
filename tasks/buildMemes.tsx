@@ -1397,7 +1397,17 @@ globalThis.__DEV__ = true;
 
 const path = require("path");
 const fs = require("fs");
-const { fromPairs, flatMap, isEmpty, uniq, compact } = require("lodash");
+const {
+  fromPairs,
+  flatMap,
+  first,
+  isEmpty,
+  uniq,
+  compact,
+  flatten,
+  get,
+  isArray
+} = require("lodash");
 
 const MEME_JSON_PATH = path.resolve(
   __dirname,
@@ -1430,6 +1440,19 @@ globalThis.SCREEN_DIMENSIONS = {
 };
 
 globalThis.TOP_Y = 24;
+
+const {
+  scaleToWidth: _scaleToWidth,
+  scaleToHeight: _scaleToHeight,
+  intersectRect,
+  scaleRectByFactor
+} = require(path.resolve(__dirname, "../src/lib/Rect.tsx"));
+
+const scaleToWidth = (width, dimensions) =>
+  _scaleToWidth(width, dimensions, value => value);
+
+const scaleToHeight = (width, dimensions) =>
+  _scaleToHeight(width, dimensions, value => value);
 
 const {
   buildImageBlock,
@@ -1482,28 +1505,179 @@ const OUTLINE_MAP = {
   "5": TextBorderType.solid
 };
 
-const normalizeFontSize = fontSize =>
-  Math.min(Math.max(parseInt(fontSize) * 5, 12), 72);
+const percentToPx = (value, size) => (parseInt(value) / 100.0) * size.width;
 
-const createExportableTextBlock = (entry, scaleFactor = 1.0) => {
+const normalizeFontSize = (fontSize, size) =>
+  Math.min(Math.max(parseInt(fontSize) * 5.5, 12), 72);
+
+const getLayout = (_textEntries, imageBlock, size, xPadding, yPadding) => {
+  const textEntries = _textEntries.map(entry => ({
+    ...entry,
+    rect: {
+      x: parseInt(entry.x),
+      y: parseInt(entry.y),
+      width: parseInt(entry.w),
+      height: parseInt(
+        entry.h ||
+          (entry.maxLines || 1) *
+            normalizeFontSize(entry.fontSize || "14", size)
+      )
+    }
+  }));
+
+  const isTrimmedImage =
+    imageBlock.dimensions.x > 2 || imageBlock.dimensions.y > 2;
+
+  const textBlockEntries = textEntries.filter(
+    ({ rect }) => !intersectRect(rect, imageBlock.dimensions)
+  );
+
+  const textNodes = textEntries
+    .filter(({ rect }) => intersectRect(rect, imageBlock.dimensions))
+    .map(entry => {
+      const block = createExportableTextBlock(entry, size);
+
+      return createExportableTextNode(
+        block,
+        entry,
+        1.0,
+        imageBlock,
+        size,
+        xPadding,
+        yPadding
+      );
+    });
+
+  if (textBlockEntries.length === 0 || !isTrimmedImage) {
+    return {
+      layout: PostLayout.media,
+      blocks: [[imageBlock]],
+      nodes: textNodes
+    };
+  }
+
+  const [
+    {
+      rect: { x, y }
+    }
+  ] = textBlockEntries;
+
+  const textPosition = {
+    horizontally: {
+      before: x < imageBlock.dimensions.x,
+      after: x > imageBlock.dimensions.x
+    },
+    vertically: {
+      before: y < imageBlock.dimensions.y,
+      after: y > imageBlock.dimensions.y
+    }
+  };
+
+  const _createExportableTextBlock = block =>
+    createExportableTextBlock(block, size);
+  const textBlocks = textBlockEntries.map(_createExportableTextBlock);
+
+  const hasMultipleTextInputs = textBlocks.length > 1;
+
+  if (!hasMultipleTextInputs && textPosition.vertically.before) {
+    return {
+      layout: PostLayout.textMedia,
+      blocks: [textBlocks, [imageBlock]],
+      nodes: textNodes
+    };
+  } else if (!hasMultipleTextInputs && textPosition.vertically.after) {
+    return {
+      layout: PostLayout.mediaText,
+      blocks: [[imageBlock], textBlocks],
+      nodes: textNodes
+    };
+  } else if (!hasMultipleTextInputs && textPosition.horizontally.before) {
+    return {
+      layout: PostLayout.horizontalTextMedia,
+      blocks: [[textBlocks[0], imageBlock]],
+      nodes: textNodes
+    };
+  } else if (!hasMultipleTextInputs && textPosition.horizontally.after) {
+    return {
+      layout: PostLayout.horizontalMediaText,
+      blocks: [[imageBlock, textBlocks[0]]],
+      nodes: textNodes
+    };
+  }
+
+  const isAllSameX =
+    uniq(textBlockEntries.map(({ rect: { x } }) => x)).length ===
+    textBlocks.length;
+
+  const isAllSameY =
+    uniq(textBlockEntries.map(({ rect: { y } }) => y)).length ===
+    textBlocks.length;
+
+  if (isAllSameX && textPosition.horizontally.before) {
+    return {
+      layout: PostLayout.horizontalTextMedia,
+      blocks: [textBlocks, [imageBlock]],
+      nodes: textNodes
+    };
+  } else if (isAllSameX && textPosition.horizontally.after) {
+    return {
+      layout: PostLayout.horizontalMediaText,
+      blocks: [textBlocks, [imageBlock]],
+      nodes: textNodes
+    };
+  } else if (isAllSameY && textPosition.vertically.after) {
+    return {
+      layout: PostLayout.verticalMediaText,
+      blocks: [textBlocks, [imageBlock]],
+      nodes: textNodes
+    };
+  } else if (isAllSameY && textPosition.vertically.before) {
+    return {
+      layout: PostLayout.verticalTextMedia,
+      blocks: [textBlocks, [imageBlock]],
+      nodes: textNodes
+    };
+  } else {
+    return {
+      layout: PostLayout.media,
+      blocks: [[imageBlock]],
+      nodes: textEntries.map(entry => {
+        const block = createExportableTextBlock(entry, size);
+
+        return createExportableTextNode(
+          block,
+          entry,
+          1.0,
+          imageBlock,
+          size,
+          xPadding,
+          yPadding
+        );
+      })
+    };
+  }
+};
+
+const createExportableTextBlock = (entry, size) => {
   const {
     text: id,
     x: _x,
     y: _y,
     w: _w,
-    fontSize: _fontSize,
+    fontSize: _fontSize = "14",
     align: _align,
-    colorIn: color,
+    colorIn: color = "#fff",
     colorOut: backgroundColor,
-    outline: _outline
+    maxLines: numberOfLines,
+    outline: _outline,
+    upperCase
   } = entry;
-  const fontSize = normalizeFontSize(_fontSize);
+  const fontSize = normalizeFontSize(_fontSize, size);
   const textAlign = ALIGN_MAP[_align];
   const border = OUTLINE_MAP[_outline];
   const template = TextTemplate.basic;
-  const x = _x * scaleFactor;
-  const y = _y * scaleFactor;
-  const width = _w * scaleFactor;
+
+  const width = _w ? percentToPx(_w, size) : undefined;
 
   return {
     type: "text",
@@ -1525,26 +1699,53 @@ const createExportableTextBlock = (entry, scaleFactor = 1.0) => {
         backgroundColor,
         color,
         fontSize,
+        textTransform: upperCase === "t" ? "uppercase" : undefined,
+        numberOfLines: numberOfLines ? parseInt(numberOfLines) : undefined,
+        maxWidth: width,
         textAlign
       }
     }
   };
 };
 
-const createExportableTextNode = (block, caption, scale = 1.0) => {
-  const { x: _x, y: _y } = caption;
-  const x = _x * scale;
-  const y = _y * scale;
+const createOldTextBlock = isTop => {
+  const id = isTop ? "top-text" : "bottom-text";
+
+  return {
+    type: "text",
+    format: PostFormat.sticker,
+    viewTag: -1,
+    layout: PostLayout.text,
+    template: TextTemplate.basic,
+    contentId: id,
+    id,
+    value: "",
+    frame: {
+      x: 0,
+      y: 0
+    },
+    config: {
+      border: TextBorderType.hidden,
+      overrides: {
+        textAlign: "center"
+      }
+    }
+  };
+};
+
+const createOldTextNode = (size, isTop) => {
+  const block = createOldTextBlock(isTop);
+  const y = isTop ? 16 : size.height - 16 - 32;
 
   return {
     block,
     frame: {
-      x,
-      y
+      x: 0,
+      y: 0
     },
     viewTag: -1,
     position: {
-      x,
+      x: 0,
       y,
       scale: 1.0,
       rotate: 0
@@ -1552,99 +1753,183 @@ const createExportableTextNode = (block, caption, scale = 1.0) => {
   };
 };
 
-const {
-  scaleToWidth: _scaleToWidth,
-  scaleToHeight: _scaleToHeight,
-  scaleRectByFactor
-} = require(path.resolve(__dirname, "../src/lib/Rect.tsx"));
+const createExportableTextNode = (
+  block,
+  caption,
+  _scale = 1.0,
+  imageBlock,
+  size,
+  xPadding = 0,
+  yPadding = 0
+) => {
+  const {
+    x: _x,
+    y: _y,
+    w: _width,
+    h,
+    maxLines,
+    fontSize,
+    rotation: _rotate
+  } = caption;
+  const x = Math.max(
+    0,
+    Math.min(
+      parseInt(_x) -
+        imageBlock.dimensions.x +
+        (size.width - imageBlock.dimensions.width) / 2 -
+        0,
+      imageBlock.dimensions.width
+    )
+  );
+  let y = Math.max(
+    normalizeFontSize(fontSize, size) * 1.5,
+    Math.min(
+      parseInt(_y) -
+        imageBlock.dimensions.y +
+        (size.height - imageBlock.dimensions.height),
+      imageBlock.dimensions.height
+    )
+  );
 
-const scaleToWidth = (width, dimensions) =>
-  _scaleToWidth(width, dimensions, value => value);
+  const width = parseInt(_width);
 
-const scaleToHeight = (width, dimensions) =>
-  _scaleToHeight(width, dimensions, value => value);
+  block.format = PostFormat.sticker;
+
+  let rotate = 0;
+
+  if (_rotate && typeof parseInt(_rotate) === "number") {
+    rotate = parseFloat(_rotate) * (Math.PI / 180);
+  }
+
+  return {
+    block,
+    frame: {
+      x: (width + x) / 2,
+      y
+    },
+    viewTag: -1,
+    position: {
+      x: (width + x) / 2,
+      y,
+      scale: 1.0,
+      rotate
+    }
+  };
+};
 
 const ARTICLES = ["a", "the", "and", "or", "but", "whence", "of"];
 
 const convertEntry = entry => {
-  const {
-    backgroundColor,
-    rectangle: _rectangle,
-    size: size
-  } = getMemeImageData(entry.imeSlike);
+  let { backgroundColor, rectangle: _rectangle, size } = getMemeImageData(
+    entry.imeSlike
+  );
+  let xPadding = 0;
+  let yPadding = 0;
+  if (_rectangle.x > 0 && _rectangle.x * 2 + _rectangle.width === size.width) {
+    xPadding = _rectangle.x;
+    size.x = 0;
 
-  const { isModernMeme = false } = entry;
+    _rectangle.x = 0;
+    _rectangle.width = size.width;
+  }
 
   if (
-    isModernMeme &&
-    typeof entry.captionList !== "undefined" &&
-    typeof entry.captionList.caption !== "undefined" &&
-    typeof entry.captionList.caption[0] !== "undefined"
+    _rectangle.y > 0 &&
+    _rectangle.y * 2 + _rectangle.height === size.height
   ) {
-    // const strings = [];
-    const strings = flatMap(entry.captionList.caption, caption => {
-      return caption.multiText.map === "function"
-        ? caption.multiText
-        : [caption.multiText];
-    })
-      .filter(entry => !isEmpty(entry.text))
-      .map(entry =>
-        entry.text
-          .trim()
-          .replace(/['"]+/gm, "")
+    yPadding = _rectangle.y;
+    size.y = 0;
+    _rectangle.y = 0;
+    _rectangle.height = size.height;
+  }
+
+  const { isModernMeme = false, searchTags = "" } = entry;
+  const keywords = uniq(
+    compact(
+      flatten(searchTags)
+        .join("")
+        .trim()
+        .split(" ")
+    )
+      .map(word =>
+        word
+          .toLowerCase()
+          .replace(/["']+/gm, "")
           .trim()
       )
-      .filter(text => !isEmpty(text));
+      .filter(text => !isEmpty(text))
+      .filter(text => !ARTICLES.includes(text))
+  );
 
-    const keywords = uniq(
-      compact(entry.searchTags.trim().split(" "))
-        .map(word =>
-          word
-            .toLowerCase()
-            .replace(/["']+/gm, "")
-            .trim()
-        )
-        .filter(text => !isEmpty(text))
-        .filter(text => !ARTICLES.includes(text))
+  const captionsList = get(entry, "captionList.caption");
+  const hasTextCaptions =
+    !!get(captionsList, "[0].multiText.text") ||
+    !!get(captionsList, "[0].multiText[0].text") ||
+    !!get(captionsList, "multiText[0].text") ||
+    !!get(captionsList, "multiText.text");
+
+  const hasAncientMemeCaptions =
+    !!get(captionsList, "[0].textUp") ||
+    !!get(captionsList, "textUp") ||
+    !!get(captionsList, "[0].textDown") ||
+    !!get(captionsList, "textDown");
+
+  const imageBlock = createExportableImageBlock(entry, _rectangle, _rectangle);
+
+  if (hasTextCaptions) {
+    const captions = flatten(
+      isArray(entry.captionList.caption)
+        ? [entry.captionList.caption[0].multiText]
+        : [entry.captionList.caption.multiText]
+    );
+    // const strings = [];
+    const strings = uniq(
+      isArray(entry.captionList.caption)
+        ? flatMap(entry.captionList.caption, caption => {
+            return caption.multiText;
+          })
+            .filter(entry => !isEmpty(entry.text))
+            .map(entry =>
+              entry.text
+                .trim()
+                .replace(/['"]+/gm, "")
+                .trim()
+            )
+            .filter(text => !isEmpty(text))
+        : []
     );
 
-    const textEntries =
-      typeof entry.captionList.caption[0].multiText.map === "function"
-        ? entry.captionList.caption[0].multiText
-        : [entry.captionList.caption[0].multiText];
+    const textEntries = captions;
 
-    let textBlocks = textEntries.map(caption =>
-      createExportableTextBlock(caption)
+    let { layout, blocks, nodes } = getLayout(
+      textEntries,
+      imageBlock,
+      size,
+      xPadding,
+      yPadding
     );
 
-    let blocks = [];
-    let nodes = [];
-    const imageBlock = createExportableImageBlock(
-      entry,
-      _rectangle,
-      _rectangle
+    blocks = blocks.map(blockList =>
+      blockList.map(block => ({
+        ...block,
+        format: PostFormat.post,
+        template: TextTemplate.post,
+        layout,
+        config: {
+          ...(block.config || {}),
+          overrides: {
+            ...get(block, "config.overrides", {}),
+            maxWidth: undefined,
+            fontSize: undefined
+          }
+        }
+      }))
     );
-
-    const isAbsolutePosition = _rectangle.x - 3 <= 0 || _rectangle.y - 3 <= 0;
-
-    if (isAbsolutePosition) {
-      blocks = [imageBlock];
-      nodes = textBlocks.map((block, index) =>
-        createExportableTextNode(block, textEntries[index], 1.0)
-      );
-    } else {
-      const [textBlock] = textBlocks;
-
-      blocks = [textBlock, imageBlock];
-
-      blocks.forEach(block => {
-        block.format = PostFormat.post;
-        block.layout = PostLayout.verticalTextMedia;
-      });
-    }
 
     const bounds = {
       ...size,
+      x: xPadding,
+      y: yPadding,
       maxX: size.width,
       maxY: size.height,
       minX: 0,
@@ -1655,8 +1940,67 @@ const convertEntry = entry => {
       blocks,
       nodes,
       backgroundColor,
+      layout,
+
       keywords,
       strings,
+      bounds,
+      source_url: getThumbnailUrl(entry),
+      rank: ORDERING.indexOf(String(entry.id))
+    };
+  } else if (hasAncientMemeCaptions) {
+    const strings = uniq(
+      flatMap(entry.captionList.caption, caption => {
+        return [caption.textUp, caption.textDown];
+      })
+    )
+      .filter(entry => !isEmpty(entry.text))
+      .map(entry =>
+        entry.text
+          .trim()
+          .replace(/['"]+/gm, "")
+          .trim()
+      )
+      .filter(text => !isEmpty(text));
+
+    const bounds = {
+      ...size,
+      x: 20,
+      y: 20,
+      maxX: size.width,
+      maxY: size.height,
+      minX: 0,
+      minY: 0
+    };
+
+    return {
+      blocks: [[imageBlock]],
+      nodes: [createOldTextNode(false, size), createOldTextBlock(true, size)],
+      backgroundColor,
+      layout: PostLayout.media,
+
+      keywords,
+      strings,
+      bounds,
+      source_url: getThumbnailUrl(entry),
+      rank: ORDERING.indexOf(String(entry.id))
+    };
+  } else if (typeof captionsList === "undefined") {
+    const bounds = {
+      ...size,
+      maxX: size.width,
+      maxY: size.height,
+      minX: 0,
+      minY: 0
+    };
+
+    return {
+      blocks: [[imageBlock]],
+      nodes: [],
+      backgroundColor,
+      layout: PostLayout.media,
+      keywords,
+      strings: [],
       bounds,
       source_url: getThumbnailUrl(entry),
       rank: ORDERING.indexOf(String(entry.id))
@@ -1674,4 +2018,4 @@ const posts = fromPairs(
     .filter(([id, entry]) => !!entry)
 );
 
-console.log(JSON.stringify(posts));
+console.log(JSON.stringify(posts, null, 2));

@@ -5,6 +5,7 @@ mutation CreatePost(
   $blocks: JSON
   $nodes: JSON
   $format: String!
+  $strings: [String!]
   $bounds: RectangleInputObject!
   $autoplaySeconds: Int
   $colors: ColorsInputObject!
@@ -16,6 +17,7 @@ mutation CreatePost(
     mediaId: $mediaId
     blocks: $blocks
     nodes: $nodes
+    stringList: $strings
     format: $format
     bounds: $bounds
     autoplaySeconds: $autoplaySeconds

@@ -470,6 +470,8 @@ PODS:
     - React
   - RNSVG (9.8.5):
     - React
+  - RNTextSize (4.0.0-rc.1):
+    - React
   - RNThumbnail (1.0.0):
     - React
   - RNVectorIcons (6.6.0):
@@ -589,6 +591,7 @@ DEPENDENCIES:
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
   - RNSharedElement (from `../node_modules/react-native-shared-element`)
   - RNSVG (from `../node_modules/react-native-svg`)
+  - RNTextSize (from `../node_modules/react-native-text-size/ios`)
   - RNThumbnail (from `../node_modules/react-native-thumbnail/ios`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
   - SBObjectiveCWrapper (from `https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git`)
@@ -800,6 +803,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-shared-element"
   RNSVG:
     :path: "../node_modules/react-native-svg"
+  RNTextSize:
+    :path: "../node_modules/react-native-text-size/ios"
   RNThumbnail:
     :path: "../node_modules/react-native-thumbnail/ios"
   RNVectorIcons:
@@ -935,6 +940,7 @@ SPEC CHECKSUMS:
   RNSentry: 2803ba8c8129dcf26b79e9b4d8c80168be6e4390
   RNSharedElement: a3ce1a9ac47351997b2ddc1e34682457c4da128d
   RNSVG: 78e0a8cc8e84c0406b0d6903312884e99f363fa2
+  RNTextSize: 7efa06531c6bb7ab6ed070b4ce0d1248cf06fcdf
   RNThumbnail: f5d3c6e18dd15213ce46e1f631be65d4c6fcb133
   RNVectorIcons: 0bb4def82230be1333ddaeee9fcba45f0b288ed4
   SBObjectiveCWrapper: 6f0387cfc006504d4ffe3bd4b14e61fb593150c3

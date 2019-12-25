@@ -320,10 +320,12 @@ class RawNewThreadPage extends React.Component<Props> {
 
     const { blocks, nodes, bounds, colors } = exportData;
 
-    const body = [...blocks, ...Object.values(nodes).map(node => node.block)]
+    const strings = [...blocks, ...Object.values(nodes).map(node => node.block)]
       .filter(block => block.type === "text")
       .map(block => String(block.value).trim())
-      .find(text => text.length > 0);
+      .filter(text => text.length > 0);
+
+    const body = strings[0];
 
     this.uploadTask = new PostUploadTask({
       contentExport,
@@ -331,6 +333,8 @@ class RawNewThreadPage extends React.Component<Props> {
       format,
       threadId,
       editToken,
+      strings,
+
       layout,
       body,
       type: threadId ? PostUploadTaskType.newPost : PostUploadTaskType.newThread

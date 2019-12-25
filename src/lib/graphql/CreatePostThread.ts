@@ -108,6 +108,7 @@ export interface CreatePostThreadVariables {
   body?: string | null;
   nodes?: JSON | null;
   format: string;
+  strings?: string[] | null;
   autoplaySeconds?: number | null;
   bounds: RectangleInputObject;
   colors: ColorsInputObject;

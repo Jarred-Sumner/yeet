@@ -515,6 +515,7 @@ export class PostUploadTask {
   post: PostFragment | null = null;
   postThread: CreatePostThread_createPostThread | null = null;
   status: PostUploadTaskStatus = PostUploadTaskStatus.waiting;
+  strings: Array<string> = [];
   type: PostUploadTaskType;
   editToken: string;
   layout: PostLayout;
@@ -557,6 +558,7 @@ export class PostUploadTask {
     format,
     threadId,
     body,
+    strings,
     client,
     onChange,
     onProgress,
@@ -568,6 +570,7 @@ export class PostUploadTask {
     exportData: ExportData;
     format: PostFormat;
     editToken: string;
+    strings: Array<string>;
     threadId: string | null;
     body: string | null;
     client: ApolloClient<InMemoryCache>;
@@ -580,6 +583,7 @@ export class PostUploadTask {
     this.format = format;
     this.threadId = threadId;
     this.body = body;
+    this.strings = strings;
 
     if (client) {
       this.client = client;
@@ -686,12 +690,14 @@ export class PostUploadTask {
     return this.client
       .mutate<CreatePost, CreatePostVariables>({
         mutation: CREATE_POST_MUTATION,
+        errorPolicy: "all",
         variables: {
           mediaId: this.task.requiredFile.mediaId,
           editToken: this.editToken,
           layout: this.layout,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
+          strings: this.strings,
           format: this.format,
           autoplaySeconds: this.contentExport.duration,
           bounds: this.exportData.bounds,
@@ -782,12 +788,14 @@ export class PostUploadTask {
     console.log("Posting thread", this);
     return this.client
       .mutate<CreatePostThread, CreatePostThreadVariables>({
+        errorPolicy: "all",
         mutation: CREATE_POST_THREAD_MUTATION,
         variables: {
           mediaId: this.task.requiredFile.mediaId,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
           editToken: this.editToken,
+          strings: this.strings,
           layout: this.layout,
           format: this.format,
           autoplaySeconds: this.contentExport.duration,
@@ -874,7 +882,7 @@ export class PostUploadTask {
           }
 
           if (!this.postThread || !this.post) {
-            this.status === PostUploadTaskStatus.error;
+            this.status = PostUploadTaskStatus.error;
           } else {
             this.updateStatus();
           }
@@ -887,7 +895,7 @@ export class PostUploadTask {
         },
         err => {
           console.error(err);
-          this.status === PostUploadTaskStatus.error;
+          this.status = PostUploadTaskStatus.error;
           this.onChange();
         }
       );

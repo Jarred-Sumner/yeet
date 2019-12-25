@@ -99,6 +99,18 @@ const cache = new InMemoryCache({
 const client = new ApolloClient({
   link: authLink.concat(httpLink).concat(errorLink),
   cache,
+  defaultOptions: {
+    watchQuery: {
+      fetchPolicy: "cache-and-network",
+      errorPolicy: "all"
+    },
+    query: {
+      errorPolicy: "all"
+    },
+    mutate: {
+      errorPolicy: "all"
+    }
+  },
   resolvers: {}
 });
 

@@ -7,7 +7,7 @@
 
 import * as React from "react";
 
-import createStackNavigator from "react-native-screens/createNativeStackNavigator";
+import __createStackNavigator from "react-native-screens/createNativeStackNavigator";
 import { createSwitchNavigator } from "react-navigation";
 // import { createStackNavigator } from "react-native-screens";
 import {
@@ -35,6 +35,13 @@ import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import NewThreadPage from "./src/screens/NewThreadPage";
 import WaitlistScreen from "./src/screens/WaitlistScreen";
 import { memoize } from "lodash";
+
+const IS_SCREENS_ENABLED = true;
+
+let createStackNavigator = _createStackNavigator;
+if (IS_SCREENS_ENABLED) {
+  createStackNavigator = __createStackNavigator;
+}
 
 const AuthStack = createStackNavigator(
   {

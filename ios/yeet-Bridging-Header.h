@@ -13,6 +13,7 @@
 #import <React/RCTScrollView.h>
 #import <React/UIView+React.h>
 #import <React/RCTUITextView.h>
+#import <React/RCTTextView.h>
 
 #import <React/RCTInputAccessoryView.h>
 #import <React/RCTInputAccessoryViewContent.h>
@@ -37,9 +38,15 @@
 @interface RCTBaseTextInputView(PrivateMethods)
 
 - (void)enforceTextAttributesIfNeeded;
+
 @property (nonatomic, assign) CGFloat preferredMaxLayoutWidth;
 @property (nonatomic, copy) RCTTextSelection *selection;
 
+@end
+
+@interface RCTTextView(PrivateMethods)
+  - (void)enableContextMenu;
+  - (void)disableContextMenu;
 @end
 
 
@@ -87,6 +94,12 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 
 @end
 
+@interface RCT_EXTERN_MODULE(MovableViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
+
+@end
+
 @interface RCT_EXTERN_MODULE(YeetTextInputViewManager, RCTMultilineTextInputViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
@@ -96,6 +109,9 @@ RCT_REMAP_VIEW_PROPERTY(borderType, borderTypeString, YeetTextInputBorder);
 RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
 
+
+RCT_EXPORT_VIEW_PROPERTY(isSticker, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(isSelectable, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(template, NSString);
 RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);

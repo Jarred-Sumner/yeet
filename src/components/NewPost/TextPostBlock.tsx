@@ -51,6 +51,10 @@ export class TextPostBlock extends React.Component<Props> {
 
   textInput = React.createRef<TextInput>();
 
+  get isTextPostBlock() {
+    return true;
+  }
+
   render() {
     const {
       block,

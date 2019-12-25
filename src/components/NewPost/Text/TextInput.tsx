@@ -8,7 +8,8 @@ import {
   TextInput as _RNTextInput,
   StyleProp,
   StyleSheetProperties,
-  TextInputProps
+  TextInputProps,
+  PixelRatio
 } from "react-native";
 import { isNumber } from "lodash";
 import {
@@ -16,7 +17,8 @@ import {
   GestureHandlerGestureEvent,
   State,
   BaseButton,
-  createNativeWrapper
+  createNativeWrapper,
+  NativeViewGestureHandler
 } from "react-native-gesture-handler";
 import tinycolor from "tinycolor2";
 import Animated, { Easing } from "react-native-reanimated";
@@ -41,9 +43,7 @@ import { SpeechBubble } from "./SpeechBubble";
 import { SCREEN_DIMENSIONS } from "../../../../config";
 const ZERO_WIDTH_SPACE = "​";
 
-const RawAnimatedTextInput = Animated.createAnimatedComponent(
-  createNativeWrapper(RNTextInput)
-);
+const RawAnimatedTextInput = Animated.createAnimatedComponent(RNTextInput);
 
 const AnimatedTextInput = React.forwardRef((props, ref) => {
   const inputRef = React.useRef();
@@ -99,7 +99,7 @@ const textInputStyles = {
         width: 1,
         height: 1
       },
-      textShadowRadius: 1
+      textShadowRadius: null
     }
   },
   [TextTemplate.basic]: {
@@ -117,10 +117,10 @@ const textInputStyles = {
       highlightInset: -6,
       highlightCornerRadius: 2,
       textShadowOffset: {
-        width: 1,
-        height: 1
+        width: StyleSheet.hairlineWidth,
+        height: StyleSheet.hairlineWidth
       },
-      textShadowRadius: 1
+      textShadowRadius: 0
     }
   },
   [TextTemplate.gary]: {
@@ -140,7 +140,7 @@ const textInputStyles = {
         width: 1,
         height: 1
       },
-      textShadowRadius: 5
+      textShadowRadius: StyleSheet.hairlineWidth
     }
   },
   [TextTemplate.comic]: {
@@ -166,7 +166,7 @@ const textInputStyles = {
         width: 0,
         height: 0
       },
-      textShadowRadius: 0
+      textShadowRadius: null
     }
   },
 
@@ -186,7 +186,7 @@ const textInputStyles = {
         width: 1,
         height: 1
       },
-      textShadowRadius: 1
+      textShadowRadius: StyleSheet.hairlineWidth
     }
   },
   [TextTemplate.terminal]: {
@@ -208,7 +208,7 @@ const textInputStyles = {
         width: 1,
         height: 1
       },
-      textShadowRadius: 1
+      textShadowRadius: StyleSheet.hairlineWidth
     }
   }
 };
@@ -221,6 +221,12 @@ const getTextShadow = memoize(
     border: TextBorderType,
     template: TextTemplate
   ) => {
+    if (border === TextBorderType.stroke || format === PostFormat.post) {
+      return {
+        textShadowRadius: null
+      };
+    }
+
     let _backgroundColor =
       backgroundColor === "transparent" ? null : backgroundColor;
 
@@ -241,11 +247,11 @@ const getTextShadow = memoize(
       }
     }
 
-    if (textShadowColor === "transparent" || format === PostFormat.post) {
+    if (textShadowColor === "transparent") {
       return {
         textShadowColor: "transparent",
         textShadowOffset: { width: 0, height: 0 },
-        textShadowRadius: 0
+        textShadowRadius: null
       };
     }
 
@@ -317,10 +323,11 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
+      ...FONT_STYLES.basic,
       textAlign:
         textInputStyles[TextTemplate.basic].presets.textAlign || "left",
       color: textInputStyles[TextTemplate.basic].presets.color,
-      fontWeight: "bold",
+
       textShadowColor:
         textInputStyles[TextTemplate.basic].presets.textShadowColor,
       textShadowOffset:
@@ -353,7 +360,7 @@ const textInputTypeStylesheets: {
       textAlign:
         textInputStyles[TextTemplate.comic].presets.textAlign || "left",
       color: textInputStyles[TextTemplate.comic].presets.color,
-      fontWeight: "bold",
+
       textShadowColor:
         textInputStyles[TextTemplate.comic].presets.textShadowColor,
       textShadowOffset:
@@ -372,9 +379,10 @@ const textInputTypeStylesheets: {
       backgroundColor: "transparent"
     },
     input: {
+      ...FONT_STYLES.post,
       textAlign: "left",
       backgroundColor: "transparent",
-      fontFamily: "Helvetica",
+
       marginTop: 0,
       paddingTop: 8,
       paddingBottom: 8,
@@ -382,7 +390,6 @@ const textInputTypeStylesheets: {
       textAlignVertical: "center",
       paddingRight: 8,
       color: textInputStyles[TextTemplate.post].presets.color,
-      fontWeight: "500",
       textShadowColor:
         textInputStyles[TextTemplate.post].presets.textShadowColor,
       textShadowOffset:
@@ -476,7 +483,13 @@ const styles = StyleSheet.create({
     flexWrap: "nowrap",
     paddingLeft: 0,
     paddingRight: 0,
-    paddingBottom: 0
+    paddingBottom: 0,
+    borderWidth: 0,
+    borderColor: "transparent",
+    borderRadius: 0,
+    overflow: "visible",
+    shadowOpacity: 0,
+    textShadowRadius: null
   }
 });
 
@@ -566,7 +579,6 @@ type Props = {
 
 export class TextInput extends React.Component<Props> {
   static defaultProps = {
-    type: PostFormat.screenshot,
     TextInputComponent: AnimatedTextInput
   };
   state = {
@@ -574,40 +586,22 @@ export class TextInput extends React.Component<Props> {
   };
 
   fontSizeValue: Animated.Value<number>;
-  constructor(props) {
-    super(props);
-
-    // this._value = new Animated.Value(props.text);
-  }
-
-  fontSizeClock = new Animated.Clock();
 
   getFontSizeValue = (props, text) => {
+    const fontSize = props.block?.config?.overrides?.fontSize;
+
+    if (typeof fontSize === "number") {
+      return fontSize;
+    }
+
     const fontSizes = textInputStyles[props.block.config.template].fontSizes;
     return fontSizes[getClosestNumber(text.length, Object.keys(fontSizes))];
   };
 
-  lastAnimationFrame = -1;
-
-  componentWillUnmount() {
-    if (this.lastAnimationFrame) {
-      window.cancelAnimationFrame(this.lastAnimationFrame);
-    }
-  }
   handleChange = text => {
-    if (this.lastAnimationFrame > -1) {
-      cancelAnimationFrame(this.lastAnimationFrame);
-    }
-
     this.props.onChangeValue(text);
 
     return true;
-  };
-
-  handleHandlerChange = (handler: GestureHandlerGestureEvent) => {
-    if (handler.nativeEvent.state === State.END) {
-      this.handlePressInside();
-    }
   };
 
   handleBlur = event => {
@@ -620,14 +614,6 @@ export class TextInput extends React.Component<Props> {
     this.setState({ isFocused: true });
   };
 
-  handlePressInside = () => {
-    this.props.focusedBlockValue.setValue(this.props.block.id.hashCode());
-    this.props.focusTypeValue.setValue(this.props.focusType);
-    this.props.inputRef && this.props.inputRef.current.focus();
-  };
-
-  handlePress = (isInside: boolean) => isInside && this.handlePressInside();
-
   render() {
     const {
       config: {
@@ -638,7 +624,9 @@ export class TextInput extends React.Component<Props> {
         overrides = {
           color: undefined,
           backgroundColor: undefined,
-          textAlign: undefined
+          textAlign: undefined,
+          textTransform: undefined,
+          maxWidth: undefined
         }
       },
       value,
@@ -652,6 +640,7 @@ export class TextInput extends React.Component<Props> {
       inputRef,
       onBlur,
       photoURL,
+      disabled,
       username,
       onLayout,
       focusType,
@@ -660,6 +649,7 @@ export class TextInput extends React.Component<Props> {
       maxX = SCREEN_DIMENSIONS.width,
       onFocus,
       block,
+      gestureRef,
       TextInputComponent
     } = this.props;
     const { isFocused } = this.state;
@@ -670,21 +660,22 @@ export class TextInput extends React.Component<Props> {
     if (focusType === FocusType.absolute && isFocused) {
       width = "100%";
       height = "100%";
-    } else if (
-      layout === PostLayout.horizontalMediaText ||
-      layout === PostLayout.horizontalTextMedia
-    ) {
-      width = "50%";
-    } else if (
-      layout === PostLayout.verticalMediaText ||
-      layout === PostLayout.verticalTextMedia
-    ) {
-      width = "100%";
+    } else if (format === PostFormat.post) {
+      if (
+        [
+          PostLayout.horizontalTextMedia,
+          PostLayout.horizontalMediaText
+        ].includes(layout)
+      ) {
+        width = "50%";
+      }
     }
 
     const backgroundColor = getTextBlockBackgroundColor(block);
     const color = getTextBlockColor(block);
     const textAlign = getTextBlockAlign(block);
+    const textTransform = overrides?.textTransform;
+    const maxWidth = overrides?.maxWidth;
 
     const textShadow = getTextShadow(
       backgroundColor,
@@ -721,37 +712,61 @@ export class TextInput extends React.Component<Props> {
           template === TextTemplate.comic
             ? Math.abs(highlightInset)
             : undefined,
-        textAlign,
-        borderWidth: 0,
-        borderColor: "transparent",
-        borderRadius: 0,
-        overflow: "visible",
-        shadowOpacity: 0,
-        color,
+        textAlign:
+          focusType === FocusType.absolute && isFocused ? "left" : textAlign,
 
-        flex: focusType === FocusType.absolute && isFocused ? 0 : 0,
+        color,
+        fontWeight: border === TextBorderType.stroke ? "600" : undefined,
+        textTransform,
+
+        flex:
+          focusType === FocusType.absolute && isFocused
+            ? -1
+            : {
+                [PostFormat.sticker]: 0,
+                [PostFormat.comment]: 0,
+                [PostFormat.post]: 0
+              }[format],
         width:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
         height:
           focusType === FocusType.absolute && isFocused ? "100%" : undefined,
 
         fontSize: this.getFontSizeValue(this.props, value),
-        ...textShadow
+        ...textShadow,
+        maxWidth: maxWidth
       }
     ];
-
+    let borderType = border;
+    let highlightColor = backgroundColor;
     const selectionColor = contrastingColor(backgroundColor);
+    let strokeColor =
+      TextBorderType.highlight === border ? "transparent" : color;
 
-    const borderType = border;
+    if (borderType === TextBorderType.stroke) {
+      strokeColor = backgroundColor;
+    }
+
+    // console.log({
+    //   borderType,
+    //   selectionColor,
+    //   highlightColor,
+    //   strokeColor,
+    //   color,
+    //   backgroundColor
+    // });
 
     const innerContent = (
       <View key={`${format}-${layout}`} style={containerStyles}>
         <TextInputComponent
           {...otherProps}
-          editable={editable}
-          pointerEvents={editable ? "auto" : "none"}
+          editable={format === PostFormat.post}
+          selectable={format === PostFormat.post}
           ref={inputRef}
           style={inputStyles}
+          isSticker={
+            format === PostFormat.sticker || format === PostFormat.comment
+          }
           multiline
           scrollEnabled={false}
           nestedScrollEnabled
@@ -778,11 +793,13 @@ export class TextInput extends React.Component<Props> {
           template={template}
           highlightInset={highlightInset}
           highlightCornerRadius={highlightCornerRadius}
-          strokeColor={
-            TextBorderType.highlight === borderType ? "transparent" : color
-          }
+          strokeColor={strokeColor}
           borderType={borderType}
-          strokeWidth={2}
+          strokeWidth={
+            borderType === TextBorderType.stroke
+              ? -1 * (PixelRatio.getFontScale() * 2)
+              : 2
+          }
           lengthPerLine={50}
           blurOnSubmit={false}
           fontSizeRange={textInputStyles[template].fontSizes}
@@ -792,14 +809,14 @@ export class TextInput extends React.Component<Props> {
           scrollEnabled={false}
           placeholder={placeholder}
           defaultValue={this.props.text}
-          highlightColor={backgroundColor}
+          highlightColor={highlightColor}
           onChangeText={this.handleChange}
           keyboardAppearance="dark"
           textContentType="none"
           autoFocus={false}
+          maxWidth={maxWidth}
         />
 
-        {editable && <View style={StyleSheet.absoluteFill}></View>}
         {format === PostFormat.comment ? (
           photoURL || username ? (
             <TextCommentAvatar
@@ -816,66 +833,52 @@ export class TextInput extends React.Component<Props> {
 
     if (format === PostFormat.sticker) {
       return (
-        <TapGestureHandler
-          enabled={editable && !this.state.isFocused}
-          ref={this.props.gestureRef}
-          onHandlerStateChange={this.handleHandlerChange}
-        >
-          <View>
-            {template == TextTemplate.comic && (
-              <>
-                <View
-                  style={{
-                    height: 40,
-                    width: "100%",
-                    marginLeft: Math.abs(highlightInset)
-                  }}
-                />
-              </>
-            )}
-
-            {innerContent}
-
-            {template === TextTemplate.comic && (
+        <View>
+          {template == TextTemplate.comic && (
+            <>
               <View
-                pointerEvents="none"
                 style={{
-                  opacity: String(this.props.text).length > 4 ? 1 : 0,
-                  alignItems: "center",
-                  top: 0,
-                  position: "absolute",
-                  left: 0,
-                  right: 0,
-                  zIndex: 1,
-                  transform: [
-                    {
-                      rotate: "-4deg"
-                    },
-                    { scale: -1 }
-                  ]
+                  height: 40,
+                  width: "100%",
+                  marginLeft: Math.abs(highlightInset)
                 }}
-              >
-                <SpeechBubble
-                  strokeColor={color}
-                  fillColor={backgroundColor}
-                  width={91 / 2}
-                  height={68 / 2}
-                />
-              </View>
-            )}
-          </View>
-        </TapGestureHandler>
+              />
+            </>
+          )}
+
+          {innerContent}
+
+          {template === TextTemplate.comic && (
+            <View
+              pointerEvents="none"
+              style={{
+                opacity: String(this.props.text).length > 4 ? 1 : 0,
+                alignItems: "center",
+                top: 0,
+                position: "absolute",
+                left: 0,
+                right: 0,
+                zIndex: 1,
+                transform: [
+                  {
+                    rotate: "-4deg"
+                  },
+                  { scale: -1 }
+                ]
+              }}
+            >
+              <SpeechBubble
+                strokeColor={color}
+                fillColor={backgroundColor}
+                width={91 / 2}
+                height={68 / 2}
+              />
+            </View>
+          )}
+        </View>
       );
     } else {
-      return (
-        <TapGestureHandler
-          enabled={editable && !this.state.isFocused}
-          ref={this.props.gestureRef}
-          onHandlerStateChange={this.handleHandlerChange}
-        >
-          {innerContent}
-        </TapGestureHandler>
-      );
+      return innerContent;
     }
   }
 }

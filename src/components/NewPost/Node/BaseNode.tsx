@@ -190,8 +190,6 @@ export class BaseNode extends React.Component<Props> {
     //   return null;
     // }
 
-    const EXTRA_PADDING = 15;
-
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}
@@ -208,6 +206,7 @@ export class BaseNode extends React.Component<Props> {
         absoluteY={absoluteY}
         containerRef={containerRef}
         topInsetValue={topInsetValue}
+        inputRef={inputRef}
         scrollY={scrollY}
         isTextBlock={block.type === "text"}
         onChangePosition={this.handleChangePosition}
@@ -228,13 +227,11 @@ export class BaseNode extends React.Component<Props> {
         minY={minY}
         maxY={maxY}
         onTap={this.handleTap}
-        extraPadding={EXTRA_PADDING}
+        extraPadding={0}
       >
         <View
           style={{
             flex: 0,
-            padding: EXTRA_PADDING,
-            margin: -1 * EXTRA_PADDING,
             maxWidth: maxX,
             overflow: "visible"
           }}
@@ -247,9 +244,10 @@ export class BaseNode extends React.Component<Props> {
             focusType={FocusType.absolute}
             gestureRef={this.gestureRef}
             autoFocus={autoFocus}
-            maxX={maxX - EXTRA_PADDING}
+            maxX={maxX}
             focusedBlockValue={focusedBlockValue}
             onFocus={onFocus}
+            waitFor={waitFor}
             onBlur={this.handleBlur}
             disabled={isDragEnabled || disabled}
           />

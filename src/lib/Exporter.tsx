@@ -8,7 +8,12 @@ import {
   PixelRatio,
   Alert
 } from "react-native";
-import { isEmpty } from "lodash";
+import { isEmpty, isArray, flatten } from "lodash";
+import rnTextSize, {
+  TSFontSpecs,
+  TSMeasureParams
+} from "react-native-text-size";
+
 import {
   YeetImageRect,
   ImageSourceType,
@@ -23,7 +28,9 @@ import {
   buildImageBlock,
   buildTextBlock,
   TextTemplate,
-  PostLayout
+  PostLayout,
+  POST_WIDTH,
+  CAROUSEL_HEIGHT
 } from "../components/NewPost/NewPostFormat";
 import {
   EditableNodeStaticPosition,
@@ -36,6 +43,8 @@ import { BoundsRect, scaleRectByFactor } from "./Rect";
 import { fromPairs } from "lodash";
 import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
+import { FONT_STYLES } from "./fonts";
+import { IS_DEVELOPMENT } from "../../config";
 
 const { YeetExporter } = NativeModules;
 
@@ -100,7 +109,7 @@ export type ExportableNode = {
 };
 
 export type ExportData = {
-  blocks: Array<ExportableBlock>;
+  blocks: Array<Array<ExportableBlock>>;
   nodes: Array<ExportableNode>;
   bounds: BoundsRect;
 };
@@ -167,7 +176,7 @@ const createExportableNode = (
   };
 };
 
-const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
+export const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
   new Promise((resolve, _reject) =>
     UIManager.measure(findNodeHandle(ref), (x, y, width, height) => {
       resolve({
@@ -180,7 +189,7 @@ const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
   );
 
 export const startExport = async (
-  _blocks: Array<PostBlockType>,
+  _blocks: Array<Array<PostBlockType>>,
   _nodes: EditableNodeMap,
   refs: Map<string, React.RefObject<View>>,
   ref: React.RefObject<ScrollView>,
@@ -225,33 +234,35 @@ export const startExport = async (
   const measureDuration = new Date().getTime() - measureTime;
   trace.putMetric("measure", measureDuration);
 
-  const blocks = _blocks.map(block => {
-    const blockRef = refs.get(block.id).current;
+  const blocks = _blocks.map(row =>
+    row.map(block => {
+      const blockRef = refs.get(block.id).current;
 
-    if (!blockRef) {
-      return null;
-    }
+      if (!blockRef) {
+        return null;
+      }
 
-    if (block.type === "image") {
-      if (isVideo(block.value.image.mimeType)) {
-        videoCount = videoCount + 1;
+      if (block.type === "image") {
+        if (isVideo(block.value.image.mimeType)) {
+          videoCount = videoCount + 1;
 
-        if (block.value.image.duration > 7.0) {
-          hasLongVideo = true;
+          if (block.value.image.duration > 7.0) {
+            hasLongVideo = true;
+          }
+        } else {
+          imageCount = imageCount + 1;
         }
       } else {
-        imageCount = imageCount + 1;
+        textCount = textCount + 1;
       }
-    } else {
-      textCount = textCount + 1;
-    }
 
-    return createExportableBlock(
-      block,
-      findNodeHandle(blockRef),
-      blockBoundsMap.get(block.id)
-    );
-  });
+      return createExportableBlock(
+        block,
+        findNodeHandle(blockRef),
+        blockBoundsMap.get(block.id)
+      );
+    })
+  );
 
   const nodes = [...Object.values(_nodes)].map(node => {
     const blockRef = refs.get(node.block.id).current;
@@ -291,7 +302,7 @@ export const startExport = async (
   trace.putMetric("textCount", textCount);
 
   const data: ExportData = {
-    blocks: blocks.filter(Boolean),
+    blocks: flatten(blocks).filter(Boolean),
     nodes: nodes.filter(Boolean),
     bounds: await getEstimatedBounds(ref.current),
     containerNode: findNodeHandle(ref.current)
@@ -358,7 +369,13 @@ export const startExport = async (
           }
         });
 
-        resolve([result, data]);
+        resolve([
+          result,
+          {
+            ...data,
+            blocks
+          }
+        ]);
       }
     );
   });
@@ -406,6 +423,18 @@ export const convertImage = (
   };
 };
 
+const sanitizeOverrides = (_overrides, scaleFactor) => {
+  const overrides = {
+    ..._overrides
+  };
+
+  if (typeof overrides.maxWidth === "number") {
+    overrides.maxWidth = overrides.maxWidth * scaleFactor;
+  }
+
+  return overrides;
+};
+
 const convertExportableBlock = (
   block: ExportableBlock,
   assets: AssetMap,
@@ -431,7 +460,7 @@ const convertExportableBlock = (
       autoInserted: false,
       border: block.config?.border,
       layout: block.config?.layout,
-      overrides: block.config?.overrides,
+      overrides: sanitizeOverrides(block.config?.overrides, scaleFactor),
       format: PostFormat[block.format] || PostFormat.sticker,
       layout: PostLayout[block.layout] || PostLayout.text
     });
@@ -447,42 +476,104 @@ export const convertExportedBlocks = (
   scaleFactor: number = 1
 ): Array<PostBlockType> => {
   return blocks
-    .map(block => convertExportableBlock(block, assets, scaleFactor))
+    .map(block => {
+      if (isArray(block)) {
+        return convertExportedBlocks(block, assets, scaleFactor);
+      } else {
+        return convertExportableBlock(block, assets, scaleFactor);
+      }
+    })
     .filter(Boolean);
 };
 
-export const convertExportedNodes = (
+const convertExportedNode = async (
+  node: ExportableNode,
+  assets: AssetMap,
+  scaleFactor: number = 1,
+  xPadding: number = 0,
+  yPadding: number = 0,
+  size: BoundsRect
+) => {
+  const block = convertExportableBlock(node.block, assets, scaleFactor);
+  if (!block) {
+    return null;
+  }
+
+  const _position = {
+    x: node.position.x ?? 0,
+    y: node.position.y ?? 0
+  };
+  let { rotate, scale } = node.position;
+  let { x, y } = scaleRectByFactor(scaleFactor, _position);
+
+  const { maxWidth, textAlign, fontSize, fontStyle = "normal" } =
+    block.config?.overrides ?? {};
+
+  const isRightOriented =
+    _position.x +
+      ((1 / scaleFactor) * block.config?.overrides?.maxWidth ?? 0) / 2 >
+    size.width / 2;
+  const isLeftOriented =
+    _position.x +
+      +(((1 / scaleFactor) * block.config?.overrides?.maxWidth ?? 0) / 2) <
+    size.width / 2;
+  const isTopOriented = _position.y < size.height / 2;
+  const isBottomOriented = _position.y > size.height / 2;
+
+  console.log({
+    isRightOriented,
+    isLeftOriented,
+    isTopOriented,
+    isBottomOriented
+  });
+
+  if (xPadding > 0 && size && isLeftOriented) {
+    x = Math.max(
+      xPadding,
+      Math.min(x - xPadding * 2, size.width - xPadding - maxWidth / 2)
+    );
+  } else if (xPadding > 0 && size && isRightOriented) {
+    x = Math.max(
+      xPadding,
+      Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2)
+    );
+  }
+
+  if (yPadding > 0 && size) {
+    y = Math.max(
+      yPadding,
+      Math.min(y + yPadding + fontSize, size.height - yPadding)
+    );
+  }
+
+  return [
+    block.id,
+    buildEditableNode({
+      block,
+      x,
+      y,
+      rotate,
+      scale
+    })
+  ];
+};
+
+export const convertExportedNodes = async (
   nodes: Array<ExportableNode>,
   assets: AssetMap,
-  scaleFactor: number = 1
-): EditableNodeMap => {
-  return fromPairs(
-    nodes
-      .map(node => {
-        const block = convertExportableBlock(node.block, assets, scaleFactor);
-        if (!block) {
-          return null;
-        }
-
-        let { rotate, scale } = node.position;
-        const { x, y } = scaleRectByFactor(scaleFactor, {
-          x: node.position.x ?? 0,
-          y: node.position.y ?? 0
-        });
-
-        console.log({ x, y });
-
-        return [
-          block.id,
-          buildEditableNode({
-            block,
-            x,
-            y,
-            rotate,
-            scale
-          })
-        ];
-      })
-      .filter(Boolean)
+  scaleFactor: number = 1,
+  xPadding: number = 0,
+  yPadding: number = 0,
+  size: BoundsRect
+): Promise<EditableNodeMap> => {
+  const convertedNodes = await Bluebird.map(
+    nodes,
+    node =>
+      convertExportedNode(node, assets, scaleFactor, xPadding, yPadding, size),
+    {
+      concurrency: 2
+    }
   );
+
+  return fromPairs(convertedNodes.filter(Boolean));
 };

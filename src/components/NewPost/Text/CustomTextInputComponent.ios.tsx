@@ -9,6 +9,7 @@
  */
 import createReactClass from "create-react-class";
 import warning from "fbjs/lib/warning";
+
 import invariant from "invariant";
 import React from "react";
 import NativeMethodsMixin from "react-native/Libraries/Renderer/shims/NativeMethodsMixin";
@@ -21,6 +22,7 @@ import {
   StyleSheet,
   Text,
   Platform,
+  TextInput as RNTextInput,
   TouchableWithoutFeedback
 } from "react-native";
 
@@ -157,13 +159,6 @@ const emptyFunctionThatReturnsTrue = () => true;
 
 const TextInput = createReactClass({
   displayName: "TextInput",
-  statics: {
-    State: {
-      currentlyFocusedField: TextInputState.currentlyFocusedField,
-      focusTextInput: TextInputState.focusTextInput,
-      blurTextInput: TextInputState.blurTextInput
-    }
-  },
   getDefaultProps() {
     return {
       allowFontScaling: true,
@@ -184,7 +179,7 @@ const TextInput = createReactClass({
    */
   isFocused() {
     return (
-      TextInputState.currentlyFocusedField() ===
+      RNTextInput.State.currentlyFocusedField() ===
       ReactNative.findNodeHandle(this._inputRef)
     );
   },
@@ -232,9 +227,7 @@ const TextInput = createReactClass({
   render() {
     let textInput;
     if (Platform.OS === "ios") {
-      textInput = UIManager.getViewManagerConfig("RCTVirtualText")
-        ? this._renderIOS()
-        : this._renderIOSLegacy();
+      textInput = this._renderIOS();
     } else if (Platform.OS === "android") {
       textInput = this._renderAndroid();
     }
@@ -373,7 +366,7 @@ const TextInput = createReactClass({
       props.style.unshift(styles.multilineInput);
     }
 
-    const textContainer = (
+    return (
       <RCTTextInputView
         ref={this._setNativeRef}
         {...props}
@@ -388,22 +381,6 @@ const TextInput = createReactClass({
         dataDetectorTypes={this.props.dataDetectorTypes}
         onScroll={this._onScroll}
       />
-    );
-
-    return (
-      <TouchableWithoutFeedback
-        onLayout={props.onLayout}
-        onPress={this._onPress}
-        rejectResponderTermination={props.rejectResponderTermination}
-        accessible={props.accessible}
-        accessibilityLabel={props.accessibilityLabel}
-        accessibilityRole={props.accessibilityRole}
-        accessibilityState={props.accessibilityState}
-        nativeID={this.props.nativeID}
-        testID={props.testID}
-      >
-        {textContainer}
-      </TouchableWithoutFeedback>
     );
   },
 
@@ -586,6 +563,8 @@ const styles = StyleSheet.create({
     paddingTop: 5
   }
 });
+
+TextInput.State = RNTextInput.State;
 
 export default TextInput;
 export { TextInput };

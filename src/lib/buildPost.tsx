@@ -2,6 +2,7 @@ import nanoid from "nanoid/non-secure";
 import { YeetImageContainer, YeetImageRect } from "./imageSearch";
 import { scaleRectToHeight, scaleRectToWidth } from "./Rect";
 import { SPACING } from "./styles";
+import { flatten } from "lodash";
 
 if (typeof globalThis.SCREEN_DIMENSIONS === "undefined") {
   var { SCREEN_DIMENSIONS, TOP_Y } = require("../../config");
@@ -119,8 +120,9 @@ export type ImagePostBlock = PostBlock & {
 export type PostBlockType = TextPostBlock | ImagePostBlock;
 
 export type NewPostType = {
-  blocks: Array<PostBlockType>;
+  blocks: Array<Array<PostBlockType>>;
   height: number;
+  backgroundColor?: string;
   width: number;
   format: PostFormat;
   layout: PostLayout;
@@ -289,25 +291,27 @@ export enum FocusType {
   static = 0
 }
 
-const blocksForFormat = (
+export const blocksForFormat = (
   format: PostFormat,
   layout: PostLayout,
   _blocks: Array<PostBlockType>
-): Array<PostBlockType> => {
-  let blocks = [..._blocks];
+): Array<Array<PostBlockType>> => {
+  let blocks = flatten(_blocks);
 
   if (format === PostFormat.comment) {
     return [
-      blocks.find(block => block.type === "text") ??
-        buildTextBlock({
-          value: "",
-          placeholder: "",
-          autoInserted: true,
-          id: generateBlockId(),
-          format: PostFormat.comment,
-          template: TextTemplate.comment,
-          layout
-        })
+      [
+        blocks.find(block => block.type === "text") ??
+          buildTextBlock({
+            value: "",
+            placeholder: "",
+            autoInserted: true,
+            id: generateBlockId(),
+            format: PostFormat.comment,
+            template: TextTemplate.comment,
+            layout
+          })
+      ]
     ];
   }
 
@@ -327,9 +331,12 @@ const blocksForFormat = (
         );
       }
 
-      return blocks.map(block =>
-        scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block)
-      );
+      return [
+        blocks.map(block => ({
+          ...scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block),
+          layout
+        }))
+      ];
     }
     case PostLayout.verticalMediaMedia: {
       blocks = blocks.filter(block => block.type === "image").slice(0, 2);
@@ -359,9 +366,9 @@ const blocksForFormat = (
         );
       }
 
-      return blocks.map(block =>
+      return blocks.map(block => [
         scaleImageBlockToWidth(VERTICAL_IMAGE_DIMENSIONS.width, block)
-      );
+      ]);
     }
     case PostLayout.verticalTextMedia: {
       const imageBlock =
@@ -388,8 +395,8 @@ const blocksForFormat = (
       textBlock.config.minHeight = null;
 
       return [
-        textBlock,
-        scaleImageBlockToWidth(VERTICAL_IMAGE_DIMENSIONS.width, imageBlock)
+        [textBlock],
+        [scaleImageBlockToWidth(VERTICAL_IMAGE_DIMENSIONS.width, imageBlock)]
       ];
     }
     case PostLayout.verticalMediaText: {
@@ -418,7 +425,7 @@ const blocksForFormat = (
 
       textBlock.config.minHeight = null;
 
-      return [imageBlock, textBlock];
+      return [[imageBlock], [textBlock]];
     }
     case PostLayout.horizontalMediaText: {
       const imageBlock = scaleImageBlockToWidth(
@@ -449,7 +456,7 @@ const blocksForFormat = (
 
       textBlock.config.minHeight = imageBlock.config.dimensions.maxY;
 
-      return [imageBlock, textBlock];
+      return [[imageBlock, textBlock]];
     }
     case PostLayout.horizontaTextText: {
       const textBlock: TextPostBlock =
@@ -497,7 +504,7 @@ const blocksForFormat = (
 
       textBlock.config.minHeight = imageBlock.config.dimensions.height;
 
-      return [textBlock, imageBlock];
+      return [[textBlock, imageBlock]];
     }
     case PostLayout.horizontalMediaMedia: {
       const firstImageBlock =
@@ -520,62 +527,87 @@ const blocksForFormat = (
           dimensions: HORIZONTAL_IMAGE_DIMENSIONS
         });
 
-      return [firstImageBlock, secondImageBlock].map(block =>
+      return [firstImageBlock, secondImageBlock].map(block => [
         scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block)
-      );
+      ]);
     }
     case PostLayout.media: {
       return [
-        scaleImageBlockToWidth(
-          POST_WIDTH,
-          blocks.find(block => block.type === "image") ??
-            buildImageBlock({
-              image: null,
-              autoInserted: true,
-              format,
-              layout,
-              dimensions: VERTICAL_IMAGE_DIMENSIONS
-            })
-        )
+        [
+          scaleImageBlockToWidth(
+            POST_WIDTH,
+            blocks.find(block => block.type === "image") ??
+              buildImageBlock({
+                image: null,
+                autoInserted: true,
+                format,
+                layout,
+                dimensions: VERTICAL_IMAGE_DIMENSIONS
+              })
+          )
+        ]
       ];
     }
     case PostLayout.text: {
       return [
-        blocks.find(block => block.type === "text") ??
-          buildTextBlock({
-            value: "",
-            placeholder: "Tap to edit text",
-            autoInserted: true,
-            format,
-            layout,
-            template: TextTemplate.post
-          })
+        [
+          blocks.find(block => block.type === "text") ??
+            buildTextBlock({
+              value: "",
+              placeholder: "Tap to edit text",
+              autoInserted: true,
+              format,
+              layout,
+              template: TextTemplate.post
+            })
+        ]
       ];
     }
   }
 };
 
+export const findBlockById = (
+  blocks: Array<Array<PostBlockType>>,
+  id: string
+) => {
+  for (let rowIndex = 0; rowIndex < blocks.length; rowIndex = rowIndex + 1) {
+    const row = blocks[rowIndex];
+
+    for (
+      let blockIndex = 0;
+      blockIndex < row.length;
+      blockIndex = blockIndex + 1
+    ) {
+      const _block = row[blockIndex];
+
+      if (_block.id === id) {
+        return _block;
+      }
+    }
+  }
+
+  return null;
+};
+
 export const buildPost = ({
   format,
   layout,
-  blocks: _blocks,
+  blocks,
   width,
+  backgroundColor,
   height
 }: {
   format: PostFormat;
   layout: PostLayout;
-  blocks: Array<PostBlockType>;
+  blocks: Array<Array<PostBlockType>>;
   width: number;
   height: number;
+  backgroundColor?: string;
 }): NewPostType => {
-  const blocks = blocksForFormat(format, layout, _blocks).map(block => ({
-    ...block,
-    layout
-  }));
-
   return {
     format,
     layout,
+    backgroundColor,
     width,
     blocks,
     height

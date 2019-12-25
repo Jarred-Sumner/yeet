@@ -170,22 +170,27 @@ export class GallerySheet extends React.Component {
     }
   ];
 
-  transitionStyles = [
+  midTransitionStyles = {
+    opacity: Animated.cond(Animated.eq(this.dismissY, 0), 0, 1),
+    transform: [
+      {
+        translateY: SCREEN_DIMENSIONS.height
+      },
+      {
+        translateY: this.dismissY
+      },
+      {
+        translateY: this.translateY
+      }
+    ]
+  };
+
+  transitionStyles = [styles.transition, this.midTransitionStyles];
+
+  disabledTransitionStyles = [
     styles.transition,
-    {
-      opacity: Animated.cond(Animated.eq(this.dismissY, 0), 0, 1),
-      transform: [
-        {
-          translateY: SCREEN_DIMENSIONS.height
-        },
-        {
-          translateY: this.dismissY
-        },
-        {
-          translateY: this.translateY
-        }
-      ]
-    }
+    this.midTransitionStyles,
+    { display: "none" }
   ];
 
   height =
@@ -212,7 +217,7 @@ export class GallerySheet extends React.Component {
     }
   ];
   render() {
-    const { onDismiss } = this.props;
+    const { onDismiss, isKeyboardVisible } = this.props;
 
     const { show } = this.state;
     const { height } = this;
@@ -221,7 +226,7 @@ export class GallerySheet extends React.Component {
       <>
         <Animated.View
           pointerEvents={show ? "auto" : "none"}
-          style={styles.sheetTransition}
+          style={this.transitionStyles}
         >
           <BaseButton enabled={show} onPress={onDismiss}>
             <Animated.View style={this.sheetStyles} />

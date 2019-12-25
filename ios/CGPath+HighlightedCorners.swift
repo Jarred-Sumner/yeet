@@ -16,7 +16,7 @@ extension UITextView {
 
   static fileprivate let minSize = " ".size(OfFont: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
 
-  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border) {
+  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor) {
     let textLayer = textView.layer
     let textContainerInset = textView.textContainerInset
 
@@ -48,6 +48,7 @@ extension UITextView {
       highlightLayer.cornerRadius = .zero
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .round
+      highlightLayer.isHidden = false
       
     } else if borderType == .solid {
       let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
@@ -57,6 +58,7 @@ extension UITextView {
       highlightLayer.cornerRadius = 0
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .miter
+      highlightLayer.isHidden = false
     } else if borderType == .ellipse {
       let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
 
@@ -64,6 +66,25 @@ extension UITextView {
       highlightLayer.cornerRadius = .zero
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .round
+      highlightLayer.isHidden = false
+    } else if borderType == .stroke {
+      highlightLayer.isHidden = true
+
+      let newString = NSMutableAttributedString(attributedString: textView.attributedText)
+      var typingAttrs = textView.typingAttributes
+
+
+      if newString.length > 0 {
+        var range = (newString.string as NSString).range(of: newString.string)
+        var attrs = newString.attributes(at: 0, effectiveRange: &range)
+        attrs[NSAttributedString.Key.strokeWidth] = strokeWidth
+        attrs[NSAttributedString.Key.strokeColor] = strokeColor
+
+        newString.setAttributes(attrs, range: range)
+
+        textView.attributedText = newString
+      }
+
     }
 
 

@@ -1,7 +1,7 @@
 import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
 import * as React from "react";
-import { StatusBar, StyleSheet, Platform } from "react-native";
+import { StatusBar, StyleSheet, Platform, View, TextInput } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState
@@ -17,6 +17,7 @@ import {
   YeetImageContainer,
   YeetImageRect
 } from "../../lib/imageSearch";
+
 import { scaleToWidth } from "../../lib/Rect";
 import { COLORS, SPACING } from "../../lib/styles";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
@@ -39,6 +40,7 @@ import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
 import nanoid from "nanoid/non-secure";
+import { blocksForFormat } from "../../lib/buildPost";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -57,6 +59,7 @@ type State = {
 };
 
 const styles = StyleSheet.create({
+  wrapper: { flex: 1 },
   title: {
     textAlign: "center",
     fontSize: 16,
@@ -67,8 +70,7 @@ const styles = StyleSheet.create({
   },
   transitionContainer: {
     width: POST_WIDTH,
-    height: SCREEN_DIMENSIONS.height,
-    backgroundColor: "black"
+    height: SCREEN_DIMENSIONS.height
   },
   transitioningView: { width: POST_WIDTH, height: SCREEN_DIMENSIONS.height },
   page: {
@@ -129,7 +131,7 @@ class RawNewPost extends React.Component<{}, State> {
   static defaultProps = {
     defaultFormat: PostFormat.post,
     defaultLayout: PostLayout.media,
-    defaultBlocks: [],
+    defaultBlocks: [[]],
     defaultInlineNodes: {},
     defaultBounds: DEFAULT_BOUNDS,
     threadId: null,
@@ -147,6 +149,7 @@ class RawNewPost extends React.Component<{}, State> {
       disableGallery: false,
       editToken: nanoid(),
       post: buildPost({
+        backgroundColor: props.backgroundColor,
         width: props.defaultWidth,
         height: props.defaultHeight,
         blocks: props.defaultBlocks,
@@ -206,7 +209,7 @@ class RawNewPost extends React.Component<{}, State> {
     image: YeetImageContainer,
     dimensions: YeetImageRect
   ) => {
-    const { format, layout } = this.state.post;
+    const { format, layout, backgroundColor } = this.state.post;
     const displaySize = scaleToWidth(POST_WIDTH, dimensions);
 
     return buildPost({
@@ -214,17 +217,20 @@ class RawNewPost extends React.Component<{}, State> {
       layout,
       width: displaySize.width,
       height: displaySize.height,
+      backgroundColor,
       blocks: [
-        buildImageBlock({
-          image,
-          dimensions,
-          autoInserted: true,
-          layout,
-          format,
-          width: displaySize.width,
-          height: displaySize.height,
-          required: true
-        })
+        [
+          buildImageBlock({
+            image,
+            dimensions,
+            autoInserted: true,
+            layout,
+            format,
+            width: displaySize.width,
+            height: displaySize.height,
+            required: true
+          })
+        ]
       ]
     });
   };
@@ -239,10 +245,15 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleChangeLayout = (layout: PostLayout) => {
-    const { format } = this.state.post;
+    const { format, backgroundColor } = this.state.post;
 
     this.setState({
-      post: buildPost({ format, layout, blocks: this.state.post.blocks })
+      post: buildPost({
+        format,
+        backgroundColor,
+        layout,
+        blocks: blocksForFormat(format, layout, this.state.post.blocks)
+      })
     });
 
     if (this.state.step === NewPostStep.choosePhoto) {
@@ -345,14 +356,20 @@ class RawNewPost extends React.Component<{}, State> {
   headerOffset = new Animated.Value(0);
   headerOpacity = new Animated.Value(0);
 
-  showKeyboard = () => this.setState({ isKeyboardVisible: true });
+  showKeyboard = () => {
+    this.setState({ isKeyboardVisible: true });
+  };
   hideKeyboard = () => this.setState({ isKeyboardVisible: false });
   handleBeforeExport = () => this.setState({ disableGallery: true });
 
   render() {
-    const { step, inlineNodes } = this.state;
+    const {
+      step,
+      inlineNodes,
+      post: { backgroundColor = "black" }
+    } = this.state;
     return (
-      <>
+      <View style={[styles.wrapper, { backgroundColor }]}>
         <AnimatedKeyboardTracker
           onKeyboardShow={this.showKeyboard}
           onKeyboardHide={this.hideKeyboard}
@@ -366,7 +383,7 @@ class RawNewPost extends React.Component<{}, State> {
             ios: !this.state.showGallery && !this.state.isKeyboardVisible,
             android: false
           })}
-sche          position={this.layoutIndexValue}
+          position={this.layoutIndexValue}
           gestureHandlerProps={{
             ref: this.pannerRef
           }}
@@ -385,7 +402,7 @@ sche          position={this.layoutIndexValue}
 
             <Animated.View
               key={this.state.post.layout}
-              style={styles.transitionContainer}
+              style={[styles.transitionContainer, { backgroundColor }]}
             >
               <MediaPlayerPauser isHidden={this.state.showGallery}>
                 <PostEditor
@@ -430,6 +447,7 @@ sche          position={this.layoutIndexValue}
             onDismiss={this.dismissGallery}
             post={this.state.post}
             onPress={this.handlePressGallery}
+            isKeyboardVisible={this.state.isKeyboardVisible}
             initialRoute={this.state.galleryFilter || "all"}
             autoFocus={!!this.state.galleryAutoFocus}
             transparentSearch={!!this.state.galleryTransparent}
@@ -437,7 +455,7 @@ sche          position={this.layoutIndexValue}
             keyboardHeightValue={this.keyboardHeightValue}
           />
         )}
-      </>
+      </View>
     );
   }
 

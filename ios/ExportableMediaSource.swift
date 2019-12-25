@@ -140,7 +140,13 @@ class ExportableImageSource : ExportableMediaSource {
     let height = NSNumber(value: size.height.native)
     let pixelRatio = NSNumber(value: screenshot.scale.native)
 
-    super.init(mediaSource: MediaSource.from(uri: "temp-screenshot://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: width, height: height, bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: pixelRatio, cover: nil))
+    var urlComponents = URLComponents()
+    urlComponents.scheme = "temp-screenshot"
+    urlComponents.host = "root"
+    urlComponents.path = "/\(id).png"
+
+
+    super.init(mediaSource: MediaSource.from(uri: urlComponents.url!.absoluteString, mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: width, height: height, bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: pixelRatio, cover: nil))
 
     self.view = view
     self.nodeView = nodeView

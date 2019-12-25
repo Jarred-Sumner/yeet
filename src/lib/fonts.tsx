@@ -6,13 +6,21 @@ export const MINECRAFT_FONT = "Minecrafter";
 export const COMIC_BOOK = "DigitalStrip";
 
 export const FONT_STYLES = StyleSheet.create({
+  post: {
+    fontFamily: "Helvetica",
+    fontWeight: "normal"
+  },
+  basic: {
+    fontFamily: "Helvetica",
+    fontWeight: "bold"
+  },
   spongebob: {
     fontFamily: SPONGEBOB_FONT,
     fontWeight: "normal"
   },
   comic: {
     fontFamily: COMIC_BOOK,
-    fontWeight: "normal"
+    fontWeight: "bold"
   },
   minecraft: {
     fontFamily: MINECRAFT_FONT,

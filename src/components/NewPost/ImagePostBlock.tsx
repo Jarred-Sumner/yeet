@@ -10,7 +10,8 @@ import {
 import Animated from "react-native-reanimated";
 import {
   mediaSourcesFromImage,
-  YeetImageContainer
+  YeetImageContainer,
+  isVideo
 } from "../../lib/imageSearch";
 import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
@@ -124,6 +125,7 @@ const MediaComponent = React.forwardRef(
         autoPlay
         id={id}
         borderRadius={borderRadius}
+        resizeMode={"aspectFill"}
         ref={ref}
         sources={sources}
         style={style}
