@@ -98,6 +98,7 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         if let _node = node {
            viewTag = _node["viewTag"].numberValue
             rect = CGRect.from(json: _node["frame"])
+          
          } else {
            viewTag = block["viewTag"].numberValue
           rect = CGRect.from(json: block["frame"])
@@ -126,6 +127,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
           let imageSource = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
           imageSource.nodeView = view
+          imageSource.containerView = containerNode
+          imageSource.view = YeetExporter.findTextInputView(view)
         
           dict[block["id"].stringValue] = imageSource
         } else if block["type"].stringValue == "image" || block["type"].stringValue == "video" {
@@ -133,9 +136,13 @@ class YeetExporter: NSObject, RCTBridgeModule  {
              return
            }
 
-            let mediaSource = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
-          SwiftyBeaver.info("HEre! \(block["id"].stringValue)")
-           dict[block["id"].stringValue] = mediaSource
+          let mediaSource = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
+          mediaSource?.containerView = containerNode
+          mediaSource?.view = mediaPlayer
+
+
+
+         dict[block["id"].stringValue] = mediaSource
         }
       }
       SwiftyBeaver.info("FIN")
@@ -183,6 +190,18 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
     } else {
       return nil;
+    }
+  }
+
+  static func findMovableView(_ view: UIView) -> MovableView? {
+    if type(of: view) == MovableView.self {
+      return view as! MovableView;
+    } else if type(of: view.superview) == MovableView.self {
+      return view.superview as! MovableView;
+    } else if view.superview != nil {
+      return YeetExporter.findMovableView(view.superview!)
+    } else {
+      return nil
     }
   }
 

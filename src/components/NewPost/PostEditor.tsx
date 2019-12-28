@@ -1,13 +1,7 @@
 import { connectActionSheet } from "@expo/react-native-action-sheet";
-import CameraRoll from "@react-native-community/cameraroll";
+import { flatten } from "lodash";
 import * as React from "react";
-import {
-  Keyboard,
-  StyleSheet,
-  View,
-  TextInput as RNTextInput,
-  UIManager
-} from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   ScrollView,
   State as GestureState
@@ -16,21 +10,21 @@ import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
-import { startExport, getEstimatedBounds } from "../../lib/Exporter";
+import { getEstimatedBounds, startExport } from "../../lib/Exporter";
 import {
   ImageSourceType,
   isVideo,
   YeetImageContainer,
   YeetImageRect
 } from "../../lib/imageSearch";
+import { Rectangle } from "../../lib/Rectangle";
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
-import { sendToast, ToastType } from "../Toast";
+import { InputAccessoryView } from "../InputAccessoryView";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
+import { isArray } from "lodash";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
-import { flatMap, flatten, debounce } from "lodash";
-
 import {
   buildImageBlock,
   buildTextBlock,
@@ -54,17 +48,14 @@ import {
   EditableNodeMap
 } from "./Node/BaseNode";
 import { EditableNodeList, PostPreview } from "./PostPreview";
+import TextInput from "./Text/CustomTextInputComponent";
 import { TextInputToolbar } from "./TextInputToolbar";
 import {
   DEFAULT_TOOLBAR_BUTTON_TYPE,
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
-import { InputAccessoryView } from "../InputAccessoryView";
-import { findBlockById } from "../../lib/buildPost";
-import { isTapInside } from "../../lib/Rect";
-import { Rectangle } from "../../lib/Rectangle";
-import TextInput from "./Text/CustomTextInputComponent";
+import { NewPostType } from "../../lib/buildPost";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -165,7 +156,7 @@ const Layer = ({
 };
 
 type Props = {
-  post: any;
+  post: NewPostType;
   inlineNodes: EditableNodeMap;
 };
 
@@ -178,17 +169,43 @@ type State = {
   bottomInset: number;
 };
 
-const DarkSheet = ({ opacity }) => (
+const DarkSheet = ({
+  opacity,
+  keyboardHeight,
+  width = SCREEN_DIMENSIONS.width,
+  height = SCREEN_DIMENSIONS.height
+}) => (
   <Animated.View
+    renderToHardwareTextureAndroid
+    shouldRasterizeIOS
     pointerEvents="none"
     style={[
-      StyleSheet.absoluteFill,
       {
-        backgroundColor: "rgba(0, 0, 0, 0.65)",
-        opacity
+        position: "absolute",
+        left: 0,
+        right: 0,
+        opacity,
+        bottom: keyboardHeight,
+        transform: [{ translateY: SPACING.double }]
       }
     ]}
-  />
+  >
+    <LinearGradient
+      // useAngle
+      width={width}
+      height={height}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      // angle={180}
+      // angleCenter={{ x: 0.0, y: 0.0 }}
+      locations={[0.0, 0.8, 1.0]}
+      colors={[
+        "rgba(0,0,0,0.65)",
+        "rgba(10,10,10,0.65)",
+        "rgba(45,45,45,0.65)"
+      ]}
+    />
+  </Animated.View>
 );
 
 class RawwPostEditor extends React.Component<Props, State> {
@@ -203,7 +220,10 @@ class RawwPostEditor extends React.Component<Props, State> {
     };
 
     this._blockInputRefs = new Map([
-      ...flatten(props.post.blocks).map(({ id }) => [id, React.createRef()])
+      ...Object.values(props.post.blocks).map(({ id }) => [
+        id,
+        React.createRef()
+      ])
     ]);
 
     if (IS_SIMULATOR) {
@@ -222,14 +242,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
   }
 
-  handleWillFocus = () => {
-    // this.scrollRef.current &&
-    //   this.scrollRef.current.getScrollResponder().scrollTo({
-    //     x: 0,
-    //     y: (presetsByFormat[this.props.post.format].paddingTop || 0) * -1,
-    //     animated: false
-    //   });
-  };
+  handleWillFocus = () => {};
 
   deleteNode = (id: string) => {
     this.props.onChangeNodes({
@@ -347,28 +360,12 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleChangeBlock = (block: PostBlockType, index: number) => {
-    const blocks = [...this.props.post.blocks];
-
-    for (let rowIndex = 0; rowIndex < blocks.length; rowIndex = rowIndex + 1) {
-      const row = blocks[rowIndex];
-
-      for (
-        let blockIndex = 0;
-        blockIndex < row.length;
-        blockIndex = blockIndex + 1
-      ) {
-        const _block = row[blockIndex];
-
-        if (block.id === _block.id) {
-          row.splice(blockIndex, 1, _block);
-          break;
-        }
-      }
-    }
-
     this.props.onChange({
       ...this.props.post,
-      blocks
+      blocks: {
+        ...this.props.post.blocks,
+        [block.id]: block
+      }
     });
   };
 
@@ -386,9 +383,9 @@ class RawwPostEditor extends React.Component<Props, State> {
         template,
         layout: __block.layout,
         format: __block.format,
-        minHeight: __block.config.minHeight,
-        overrides: __block.config.overrides,
-        placeholder: __block.config.placeholder,
+        minHeight: __block.config?.minHeight,
+        overrides: __block.config?.overrides,
+        placeholder: __block.config?.placeholder,
         id: __block.id,
         required: __block.required
       })
@@ -472,15 +469,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     } else if (this.focusedBlock) {
       this.handleBlurBlock(this.focusedBlock);
     }
-
-    console.log(
-      "BLUR",
-      TextInput.State.currentlyFocusedField(),
-
-      this.state.focusType,
-      this.focusedNode,
-      this.focusedBlock
-    );
   };
 
   handleBlurNode = (node: EditableNode) => {
@@ -532,7 +520,6 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   dismissKeyboard = () => {
     this.currentTextInput?.blur();
-    console.log("BLUR");
   };
 
   handleSend = async () => {
@@ -553,7 +540,13 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
 
     return startExport(
-      this.props.post.blocks,
+      this.props.post.positions.map(rows => {
+        if (isArray(rows)) {
+          return rows.map(id => this.props.post.blocks[id]);
+        } else {
+          return this.props.post.blocks[rows];
+        }
+      }),
       this.props.inlineNodes,
       this._blockInputRefs,
       this.contentViewRef,
@@ -744,7 +737,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
-    const _block = findBlockById(this.props.post.blocks, blockId);
+    const _block = this.props.post.blocks[blockId];
 
     const minWidth = minImageWidthByFormat(_block.format);
 
@@ -753,6 +746,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       id: blockId,
       layout: _block.layout,
       width: minWidth,
+      autoInserted: _block.autoInserted,
       height: image.image.height * (minWidth / image.image.width),
       dimensions,
       format: _block.format
@@ -764,7 +758,9 @@ class RawwPostEditor extends React.Component<Props, State> {
   buttonRef = React.createRef();
   lastTappedBlockId = null;
   openImagePickerForPlaceholder = () => {
-    const block = flatten(this.props.post.blocks).find(isPlaceholderImageBlock);
+    const block = Object.values(this.props.post.blocks).find(
+      isPlaceholderImageBlock
+    );
 
     if (!block) {
       return;
@@ -799,9 +795,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const { focusedBlockId, focusType } = this.state;
 
     const node = this.props.inlineNodes[focusedBlockId];
-    return node
-      ? node.block
-      : findBlockById(this.props.post.blocks, focusedBlockId);
+    return node ? node.block : this.props.post.blocks[focusedBlockId];
   }
 
   get focusedNode() {
@@ -860,7 +854,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleTapBlock = (blockId: string) => (this.lastTappedBlockId = blockId);
   hasPlaceholderImageBlocks = () =>
-    !!this.props.post.blocks.find(isPlaceholderImageBlock);
+    !!Object.values(this.props.post.blocks).find(isPlaceholderImageBlock);
 
   get panningNode() {
     const { focusedBlockId, focusType } = this.state;
@@ -1031,6 +1025,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           <PostPreview
             bounds={bounds}
             blocks={post.blocks}
+            positions={post.positions}
             paddingTop={(presets.paddingTop || 0) + this.props.yInset}
             paddingBottom={FOOTER_HEIGHT}
             inlineNodes={this.props.inlineNodes}
@@ -1070,6 +1065,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               opacity={this.props.controlsOpacityValue}
             >
               <DarkSheet
+                keyboardHeight={this.relativeKeyboardHeightValue}
                 opacity={Animated.cond(
                   Animated.eq(this.focusTypeValue, FocusType.absolute),
                   this.keyboardVisibleValue,

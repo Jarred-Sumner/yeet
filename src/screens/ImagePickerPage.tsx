@@ -69,8 +69,6 @@ class RawImagePickerPage extends React.Component {
     };
   }
 
-  componentDidMount() {}
-
   keyboardVisibleValue = new Animated.Value(0);
   handleKeyboardShow = () => this.setState({ isKeyboardVisible: true });
   handleKeyboardHide = () => this.setState({ isKeyboardVisible: false });
@@ -104,10 +102,7 @@ class RawImagePickerPage extends React.Component {
 
     const onChange = this.props.navigation.getParam("onChange");
 
-    const photo = selectedImages[0];
-    window.requestIdleCallback(() => {
-      Storage.insertRecentlyUsed(photo);
-    });
+    let photo = selectedImages[0];
 
     if (onChange) {
       onChange(this.props.navigation.getParam("blockId"), photo, post);
@@ -120,6 +115,12 @@ class RawImagePickerPage extends React.Component {
         post
       });
     }
+
+    let __photo = photo;
+    window.requestIdleCallback(() => {
+      Storage.insertRecentlyUsed(__photo);
+      __photo = null;
+    });
   };
 
   pressBack = () => this.goBack(false);

@@ -1,26 +1,24 @@
+import { NetworkStatus } from "apollo-client";
+import { debounce, Cancelable } from "lodash";
 import * as React from "react";
 import {
-  Keyboard,
-  StyleSheet,
-  View,
-  TextInput as RNTextInput,
   ActivityIndicator,
-  InteractionManager
+  StyleSheet,
+  TextInput as RNTextInput,
+  View,
+  InteractionManager,
+  Task,
+  findNodeHandle
 } from "react-native";
 import {
   BorderlessButton,
   TextInput as GestureTextInput
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { interpolateColor } from "react-native-redash";
-import tinycolor from "tinycolor2";
 import { COLORS, SPACING } from "../../../lib/styles";
+import { BlurView } from "../../BlurView";
 import { IconSearch } from "../../Icon";
 import { SemiBoldText } from "../../Text";
-import { BlurView } from "../../BlurView";
-import { TOP_Y } from "../../../../config";
-import { debounce } from "lodash";
-import { NetworkStatus } from "apollo-client";
 
 export const ImageSearchContext = React.createContext(null);
 const TextInput = Animated.createAnimatedComponent(GestureTextInput);
@@ -153,12 +151,24 @@ class ImageSearchComponent extends React.Component<Props> {
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
-  dismissKeyboard = () => {
-    this.textInputRef.current.getNode().blur();
+  stickerTranslateX =
+    this.props.rightActions &&
+    Animated.interpolate(this.props.keyboardVisibleValue, {
+      inputRange: [0, 1],
+      outputRange: [0, (CANCEL_WIDTH - SPACING.half) * -1],
+      extrapolate: Animated.Extrapolate.CLAMP
+    });
 
-    window.requestAnimationFrame(() => {
-      this.textInputRef.current.getNode().clear();
-      this.props.onChange("");
+  get textInput() {
+    return this.textInputRef?.current?.getNode();
+  }
+
+  dismissKeyboard = () => {
+    this.blur();
+
+    this.animationFrame = window.requestAnimationFrame(() => {
+      this.textInput?.clear();
+      this.props?.onChange("");
     });
   };
   state = { isFocused: false, defaultQuery: this.props.query };
@@ -190,11 +200,49 @@ class ImageSearchComponent extends React.Component<Props> {
     }
   }
 
+  componentWillUnmount() {
+    window.cancelAnimationFrame(this.animationFrame);
+    this.interactionTask?.cancel();
+    this.debouncedChange.cancel();
+  }
+
+  get textInputHandle() {
+    const input = this.textInput;
+
+    if (input) {
+      return findNodeHandle(input);
+    } else {
+      return null;
+    }
+  }
+
+  focus() {
+    if (!this.textInputHandle) {
+      return;
+    }
+
+    RNTextInput.State.focusTextInput(this.textInputHandle);
+  }
+
+  blur() {
+    if (!this.textInputHandle) {
+      return;
+    }
+
+    RNTextInput.State.blurTextInput(this.textInputHandle);
+  }
+
+  clear() {
+    this.textInput?.blur();
+  }
+
   autoFocus = () => {
-    this.textInputRef.current.getNode().focus();
+    this.focus();
     this.debouncedChange("");
     this.didAutoFocus = true;
   };
+
+  interactionTask: Cancelable | null = null;
 
   componentDidUpdate(prevProps) {
     if (
@@ -207,7 +255,10 @@ class ImageSearchComponent extends React.Component<Props> {
     } else if (!this.props.show && prevProps.show) {
       this.didAutoFocus = false;
       this.debouncedChange.cancel();
-      this.textInputRef.current.getNode().clear();
+
+      this.interactionTask = InteractionManager.runAfterInteractions(() => {
+        this.clear();
+      });
     }
   }
 
@@ -239,25 +290,7 @@ class ImageSearchComponent extends React.Component<Props> {
     const marginTop = (IMAGE_SEARCH_HEIGHT + offset - additionalOffset) * -1;
 
     return (
-      <Animated.View
-        style={[
-          styles.container,
-          {
-            // marginTop,
-            // transform: [
-            //   {
-            //     translateY: Animated.block([
-            //       Animated.interpolate(scrollY, {
-            //         inputRange: [-100, offset, 0],
-            //         outputRange: [additionalOffset, inset, inset],
-            //         extrapolate: Animated.Extrapolate.CLAMP
-            //       })
-            //     ])
-            //   }
-            // ]
-          }
-        ]}
-      >
+      <Animated.View style={styles.container}>
         <BlurView blurType="dark" style={styles.blur} blurAmount={25}>
           <Animated.View
             style={[
@@ -327,11 +360,7 @@ class ImageSearchComponent extends React.Component<Props> {
                   {
                     transform: [
                       {
-                        translateX: keyboardVisibleValue.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0, (CANCEL_WIDTH - SPACING.half) * -1],
-                          extrapolate: Animated.Extrapolate.CLAMP
-                        })
+                        translateX: this.stickerTranslateX
                       }
                     ]
                   }

@@ -13,14 +13,16 @@ import SwiftyBeaver
 import Promise
 import Photos
 
-enum MediaPlayerContentType {
-  case video
-  case image
-  case none
-}
+
 
 @objc(MediaPlayer)
-final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate {
+final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate, TransformableView {
+  enum MediaPlayerContentType {
+    case video
+    case image
+    case none
+  }
+
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
     guard mediaSource == source && source != nil else {
       return
@@ -455,14 +457,16 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
       let frame = CGRect(origin: .zero, size: self.bounds.size)
 
       if self.videoView == nil {
-        let videoView = YeetVideoView(frame: frame)
-        videoView.bounds = frame
+        let videoView = YeetVideoView(frame: reactContentFrame)
+        videoView.bounds = self.bounds
+        videoView.frame = reactContentFrame
         videoView.tag = self.videoViewTag
 
         self.addSubview(videoView)
+        self.updateScale()
       } else {
-        self.videoView!.frame = frame
-        self.videoView!.bounds = frame
+        videoView!.bounds = self.bounds
+        videoView!.frame = reactContentFrame
       }
 
       if let current = self.source as? TrackableVideoSource {
@@ -484,12 +488,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         imageView.tag = imageViewTag
 
         self.addSubview(imageView)
+        self.updateScale()
       }
       guard let imageView = self.imageView else {
         return
       }
 
-      imageView.frame = bounds
+      imageView.bounds = self.bounds
+      imageView.frame = reactContentFrame
 
       let imageSource = source as! TrackableImageSource?
 
@@ -515,6 +521,39 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   var canSendEvents: Bool {
     return bridge?.isValid ?? false && !halted && !invalidated
+  }
+
+  var hasSetContentScale = false
+  var scale: CGFloat = CGFloat(1) {
+    didSet {
+      if self.scale != oldValue {
+        self.updateScale()
+
+         hasSetContentScale = true
+      }
+    }
+
+  }
+
+  func updateScale() {
+    DispatchQueue.main.throttle(deadline: DispatchTime.now() + 0.1, context: self) { [weak self] in
+      self?._updateScale()
+    }
+  }
+
+  func _updateScale() {
+    let nativeScale = self.scale * UIScreen.main.scale
+    if let imageView = self.imageView {
+      imageView.contentScaleFactor = scale
+      imageView.layer.contentsScale = nativeScale
+    } else if let videoView = self.videoView {
+      videoView.contentScaleFactor = scale
+      videoView.coverView.contentScaleFactor = scale
+      videoView.coverView.layer.contentsScale = nativeScale
+      videoView.playerLayer.contentsScale = nativeScale
+    }
+
+
   }
 
 
@@ -580,7 +619,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   }
 
-  var _resizeMode: String = YeetImageViewResizeMode.aspectFit.rawValue;
+  var _resizeMode: String = YeetImageView.YeetImageViewResizeMode.aspectFit.rawValue;
 
      @objc(resizeMode)
      var resizeMode: String {

@@ -18,10 +18,12 @@ import {
   ContentExport,
   ExportData,
   convertExportedBlocks,
-  convertExportedNodes
+  convertExportedNodes,
+  guesstimateLayout
 } from "../lib/Exporter";
 import { ToastType, sendToast } from "../components/Toast";
 import { PostFragment } from "../lib/graphql/PostFragment";
+import { fromPairs, isArray } from "lodash";
 import { SCREEN_DIMENSIONS } from "../../config";
 import { MAX_CONTENT_HEIGHT } from "../components/Feed/PostPreviewList";
 import { SPACING } from "../lib/styles";
@@ -31,6 +33,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   spinner: {
+    marginTop: 150,
     justifyContent: "center",
     alignItems: "center",
     alignSelf: "center"
@@ -65,11 +68,18 @@ export class NewPostPage extends React.Component {
       });
 
       this.state = {
-        defaultBlocks: [[imageBlock]],
+        defaultBlocks: { [imageBlock.id]: imageBlock },
+        defaultPositions: [[imageBlock.id]],
+        thumbnail: null,
         isLoading: false
       };
     } else {
-      this.state = { defaultBlocks: undefined, isLoading: false };
+      this.state = {
+        defaultBlocks: undefined,
+        defaultPositions: {},
+        thumbnail: null,
+        isLoading: false
+      };
     }
   }
 
@@ -99,7 +109,18 @@ export class NewPostPage extends React.Component {
     );
 
     if (this.state.isLoading && post) {
-      this.loadPost();
+      this.loadPost().catch(err => {
+        console.error(err);
+
+        sendToast("Loading didn't work :(", ToastType.error);
+
+        this.setState({
+          defaultBlocks: undefined,
+          defaultPositions: {},
+          thumbnail: null,
+          isLoading: false
+        });
+      });
     }
   }
 
@@ -142,9 +163,19 @@ export class NewPostPage extends React.Component {
     );
 
     this.setState({
-      defaultBlocks: defaultBlocks,
+      defaultBlocks: fromPairs(
+        flatten(defaultBlocks).map(block => [block.id, block])
+      ),
+      defaultPositions: defaultBlocks.map(block => {
+        if (isArray(block)) {
+          return block.map(_block => _block.id);
+        } else {
+          return block.id;
+        }
+      }),
+      thumbnail: post.media.coverUrl,
       backgroundColor: post?.colors?.background || "black",
-      defaultLayout: post.layout,
+      defaultLayout: guesstimateLayout(post?.layout, defaultBlocks),
       defaultFormat: post.format,
       defaultInlineNodes: defaultNodes,
       isLoading: false
@@ -169,6 +200,8 @@ export class NewPostPage extends React.Component {
           <NewPost
             navigation={this.props.navigation}
             defaultBlocks={this.state.defaultBlocks}
+            defaultPositions={this.state.defaultPositions}
+            thumbnail={this.state.thumbnail}
             onExport={this.handleExport}
             backgroundColor={this.state.backgroundColor}
             defaultWidth={this.state.defaultWidth}

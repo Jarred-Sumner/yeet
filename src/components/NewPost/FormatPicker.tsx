@@ -1,5 +1,11 @@
 import * as React from "react";
-import { Dimensions, ImageProps, StyleSheet, View } from "react-native";
+import {
+  Dimensions,
+  ImageProps,
+  StyleSheet,
+  View,
+  PixelRatio
+} from "react-native";
 import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import Carousel from "react-native-snap-carousel";
@@ -16,10 +22,15 @@ import {
   BitmapIconFormatVerticalTextMedia
 } from "../BitmapIcon";
 import { CAROUSEL_HEIGHT, PostLayout } from "./NewPostFormat";
+import MediaPlayer from "../MediaPlayer/MediaPlayer";
+import Image from "../Image";
 
 const LIST_ITEM_HEIGHT = 46;
 const LIST_ITEM_WIDTH = 60;
 const SCREEN_WIDTH = Dimensions.get("screen").width;
+
+const BORDER_RADIUS = 4;
+const ICON_WIDTH = 39;
 
 const styles = StyleSheet.create({
   container: {
@@ -38,32 +49,36 @@ const styles = StyleSheet.create({
   },
 
   unselectedBorder: {
-    borderWidth: 2,
-    borderRadius: 4,
+    borderWidth: BORDER_RADIUS / 2,
+    borderRadius: BORDER_RADIUS,
     borderColor: "transparent",
     overflow: "hidden",
-    width: 37,
-    height: 39,
+    width: ICON_WIDTH - BORDER_RADIUS / 2,
+    height: ICON_WIDTH,
     margin: 1,
     backgroundColor: "rgba(0, 0, 0, 0.25)",
     ...StyleSheet.absoluteFillObject
   },
   selectedBorder: {
-    borderWidth: 2,
+    borderWidth: BORDER_RADIUS / 2,
     borderColor: COLORS.primary,
-    borderRadius: 4,
+    borderRadius: BORDER_RADIUS,
     overflow: "visible",
-    width: 39 - 4,
-    margin: 2,
-    height: 39 - 4,
+    width: ICON_WIDTH - BORDER_RADIUS,
+    margin: BORDER_RADIUS / 2,
+    height: ICON_WIDTH - BORDER_RADIUS,
     ...StyleSheet.absoluteFillObject
   },
   icon: {
-    width: 39,
-    height: 39,
+    width: ICON_WIDTH,
+    height: ICON_WIDTH,
     position: "relative"
   },
 
+  mediaIcon: {
+    flex: 1,
+    margin: BORDER_RADIUS
+  },
   item: {
     marginTop: TOP_Y,
     justifyContent: "center",
@@ -123,7 +138,12 @@ export const FORMATS: Array<PostLayoutData> = [
 
 const offsets = FORMATS.map(({ width }, index) => width * index);
 
-const FormatPickerListItem = ({ item: format, onPress, isSelected }) => {
+const FormatPickerListItem = ({
+  item: format,
+  onPress,
+  isSelected,
+  thumbnail
+}) => {
   const { Icon } = format;
 
   const handlePress = React.useCallback(() => {
@@ -137,7 +157,19 @@ const FormatPickerListItem = ({ item: format, onPress, isSelected }) => {
     >
       <Animated.View style={styles.item}>
         <View style={styles.icon}>
-          <Icon />
+          {thumbnail ? (
+            <Image
+              source={{
+                uri: thumbnail,
+                width: ICON_WIDTH * PixelRatio.get(),
+                height: ICON_WIDTH * PixelRatio.get()
+              }}
+              style={styles.mediaIcon}
+              borderRadius={2}
+            />
+          ) : (
+            <Icon />
+          )}
 
           <View
             style={isSelected ? styles.selectedBorder : styles.unselectedBorder}
@@ -159,6 +191,9 @@ export class FormatPicker extends React.PureComponent {
     return (
       <FormatPickerListItem
         key={item.value}
+        thumbnail={
+          item.value === this.props.defaultLayout ? this.props.thumbnail : null
+        }
         onPress={this.onPressItem}
         isSelected={this.props.value === item.value}
         item={item}

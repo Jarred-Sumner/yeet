@@ -73,45 +73,79 @@ export class GallerySheet extends React.Component {
     }
   };
 
+  dismissAnimation: Animated.BackwardCompatibleWrapper | null = null;
+  showAnimation: Animated.BackwardCompatibleWrapper | null = null;
+
   componentWillUnmount() {
     BackHandler.removeEventListener(
       "hardwareBackPress",
       this.handleBackButtonPressAndroid
     );
+
+    if (this.showHandle) {
+      InteractionManager.clearInteractionHandle(this.showHandle);
+    }
+
+    if (this.hideHandle) {
+      InteractionManager.clearInteractionHandle(this.hideHandle);
+    }
+
+    this.showAnimation?.stop();
+    this.dismissAnimation?.stop();
   }
 
   handleDismiss = () => {
-    const handle = InteractionManager.createInteractionHandle();
+    this.hideHandle = InteractionManager.createInteractionHandle();
     Keyboard.dismiss();
-    Animated.timing(this.dismissY, {
+
+    if (this.dismissAnimation) {
+      this.dismissAnimation.stop();
+    }
+
+    this.dismissAnimation = Animated.timing(this.dismissY, {
       toValue: 0,
       duration: 500,
       easing: Easing.elastic(0.8)
-    }).start(() => {
+    });
+
+    this.dismissAnimation.start(() => {
       this.isDismissingValue.setValue(0);
 
       this.setState({ show: false }, () => {
         this.scrollY.setValue(0);
-        InteractionManager.clearInteractionHandle(handle);
+        InteractionManager.clearInteractionHandle(this.hideHandle);
+        this.hideHandle = null;
+        this.dismissAnimation = null;
       });
     });
   };
 
   handleShow = () => {
-    const handle = InteractionManager.createInteractionHandle();
+    this.showHandle = InteractionManager.createInteractionHandle();
 
     this.scrollY.setValue(0);
     this.setState({ show: true }, () => {
-      Animated.timing(this.dismissY, {
+      if (this.showAnimation) {
+        this.showAnimation.stop();
+      }
+
+      this.showAnimation = Animated.timing(this.dismissY, {
         toValue: SCREEN_DIMENSIONS.height * -1,
         duration: 500,
         easing: Easing.elastic(0.8)
-      }).start(() => {
+      });
+
+      this.showAnimation.start(() => {
         this.isDismissingValue.setValue(0);
-        InteractionManager.clearInteractionHandle(handle);
+        InteractionManager.clearInteractionHandle(this.showHandle);
+        this.showHandle = null;
+        this.showAnimation = null;
       });
     });
   };
+
+  showHandle: number | null = null;
+  hideHandle: number | null = null;
 
   componentDidUpdate(prevProps) {
     if (this.props.show !== prevProps.show) {
@@ -148,10 +182,12 @@ export class GallerySheet extends React.Component {
   });
 
   handlePress = (photo: YeetImageContainer) => {
-    this.props.onPress(photo);
+    let _photo = photo;
+    this.props.onPress(_photo);
 
     window.requestIdleCallback(() => {
-      Storage.insertRecentlyUsed(photo);
+      Storage.insertRecentlyUsed(_photo);
+      _photo = null;
     });
   };
 

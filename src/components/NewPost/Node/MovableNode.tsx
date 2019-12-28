@@ -266,23 +266,22 @@ export class MovableNode extends Component<Props> {
       props.extraPadding || 15
     );
 
-    this.bottomValue =
-      props.keyboardHeightValue && props.isTextBlock
-        ? Animated.round(
-            keyboardVisibleInterpolater(
-              this.keyboardVisibleFocusedValue,
-              0,
-              Animated.multiply(
-                Animated.sub(
-                  SCREEN_DIMENSIONS.height,
-                  props.keyboardHeightValue,
-                  props.topInsetValue || 0
-                ),
-                -1
-              )
+    this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
+      ? Animated.round(
+          keyboardVisibleInterpolater(
+            this.keyboardVisibleFocusedValue,
+            0,
+            Animated.multiply(
+              Animated.sub(
+                SCREEN_DIMENSIONS.height,
+                props.keyboardHeightValue,
+                props.topInsetValue || 0
+              ),
+              -1
             )
           )
-        : null;
+        )
+      : null;
 
     this._translateY = keyboardVisibleInterpolater(
       this.keyboardVisibleFocusedValue,

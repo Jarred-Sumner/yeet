@@ -40,7 +40,7 @@ import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
 import nanoid from "nanoid/non-secure";
-import { blocksForFormat } from "../../lib/buildPost";
+import { layoutBlocksInPost } from "../../lib/buildPost";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -131,7 +131,8 @@ class RawNewPost extends React.Component<{}, State> {
   static defaultProps = {
     defaultFormat: PostFormat.post,
     defaultLayout: PostLayout.media,
-    defaultBlocks: [[]],
+    defaultBlocks: {},
+    defaultPositions: [],
     defaultInlineNodes: {},
     defaultBounds: DEFAULT_BOUNDS,
     threadId: null,
@@ -148,16 +149,10 @@ class RawNewPost extends React.Component<{}, State> {
       isKeyboardVisible: false,
       disableGallery: false,
       editToken: nanoid(),
-      post: buildPost({
-        backgroundColor: props.backgroundColor,
-        width: props.defaultWidth,
-        height: props.defaultHeight,
-        blocks: props.defaultBlocks,
-        format: props.defaultFormat,
-        layout: props.defaultLayout
-      }),
+      post: this.buildFromDefaults(props),
+
       defaultPhoto: null,
-      inlineNodes: props.defaultInlineNodes,
+      inlineNodes: { ...props.defaultInlineNodes },
 
       bounds: {
         ...props.defaultBounds,
@@ -166,6 +161,25 @@ class RawNewPost extends React.Component<{}, State> {
       }
     };
   }
+
+  buildFromDefaults = props => {
+    return buildPost({
+      backgroundColor: props.backgroundColor,
+      width: props.defaultWidth,
+      height: props.defaultHeight,
+      blocks: props.defaultBlocks,
+      positions: props.defaultPositions,
+      format: props.defaultFormat,
+      layout: props.defaultLayout
+    });
+  };
+
+  resetToDefault = () => {
+    this.setState({
+      inlineNodes: { ...this.props.defaultInlineNodes },
+      post: this.buildFromDefaults(this.props)
+    });
+  };
 
   handleChangePost = post => this.setState({ post });
 
@@ -212,26 +226,32 @@ class RawNewPost extends React.Component<{}, State> {
     const { format, layout, backgroundColor } = this.state.post;
     const displaySize = scaleToWidth(POST_WIDTH, dimensions);
 
+    const block = buildImageBlock({
+      image,
+      dimensions,
+      autoInserted: true,
+      layout,
+      format,
+      width: displaySize.width,
+      height: displaySize.height,
+      required: true
+    });
+
+    const [blocks, positions] = layoutBlocksInPost(
+      format,
+      layout,
+      { [block.id]: block },
+      [[block.id]]
+    );
+
     return buildPost({
       format,
       layout,
       width: displaySize.width,
       height: displaySize.height,
       backgroundColor,
-      blocks: [
-        [
-          buildImageBlock({
-            image,
-            dimensions,
-            autoInserted: true,
-            layout,
-            format,
-            width: displaySize.width,
-            height: displaySize.height,
-            required: true
-          })
-        ]
-      ]
+      blocks,
+      positions
     });
   };
 
@@ -245,14 +265,35 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleChangeLayout = (layout: PostLayout) => {
-    const { format, backgroundColor } = this.state.post;
+    const {
+      format,
+      backgroundColor,
+      blocks: _blocks,
+      positions: _positions
+    } = this.state.post;
+
+    if (
+      layout !== this.state.post.layout &&
+      this.props.defaultLayout === layout
+    ) {
+      this.resetToDefault();
+      return;
+    }
+
+    const [blocks, positions] = layoutBlocksInPost(
+      format,
+      layout,
+      _blocks,
+      _positions
+    );
 
     this.setState({
       post: buildPost({
         format,
         backgroundColor,
         layout,
-        blocks: blocksForFormat(format, layout, this.state.post.blocks)
+        blocks,
+        positions
       })
     });
 
@@ -303,7 +344,9 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   pannerRef = React.createRef<PanGestureHandler>();
-  layoutIndexValue = new Animated.Value(0);
+  layoutIndexValue = new Animated.Value(
+    Math.max(FORMATS.indexOf(this.props.defaultLayout), 0)
+  );
 
   openGalleryCallback: Function | null = null;
 
@@ -401,7 +444,6 @@ class RawNewPost extends React.Component<{}, State> {
             <StatusBar hidden showHideTransition="slide" />
 
             <Animated.View
-              key={this.state.post.layout}
               style={[styles.transitionContainer, { backgroundColor }]}
             >
               <MediaPlayerPauser isHidden={this.state.showGallery}>
@@ -432,6 +474,8 @@ class RawNewPost extends React.Component<{}, State> {
             <PostHeader
               position={this.layoutIndexValue}
               layout={this.state.post.layout}
+              defaultLayout={this.props.defaultLayout}
+              thumbnail={this.props.thumbnail}
               onChangeLayout={this.handleChangeLayout}
               ref={this.formatPickerRef}
               translateY={this.headerOffset}

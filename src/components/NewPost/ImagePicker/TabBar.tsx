@@ -1,12 +1,11 @@
+import chroma from "chroma-js";
 import * as React from "react";
-import { Dimensions, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import { RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import SafeAreaView, { getInset } from "react-native-safe-area-view";
-import tinycolor from "tinycolor2";
+import { SCREEN_DIMENSIONS } from "../../../../config";
 import { COLORS } from "../../../lib/styles";
 import { SemiBoldText } from "../../Text";
-import { RectButton } from "react-native-gesture-handler";
-import { TOP_Y, SCREEN_DIMENSIONS } from "../../../../config";
 
 export const LIST_HEADER_HEIGHT = 50;
 
@@ -26,9 +25,9 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   activeRow: {
-    backgroundColor: tinycolor(COLORS.primary)
-      .setAlpha(0.1)
-      .toString(),
+    backgroundColor: chroma(COLORS.primary)
+      .alpha(0.1)
+      .css(),
     opacity: 1
   },
   row: {
@@ -59,8 +58,8 @@ export const ListHeaderRow = ({ isActive = true, children, jumpTo, route }) => {
     <RectButton
       onPress={onPress}
       style={isActive ? [styles.row, styles.activeRow] : styles.row}
-      underlayColor={tinycolor(COLORS.primary)
-        .setAlpha(0.5)
+      underlayColor={chroma(COLORS.primary)
+        .alpha(0.5)
         .toString()}
     >
       <View>

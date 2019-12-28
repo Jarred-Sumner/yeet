@@ -67,7 +67,7 @@ export const Block = React.forwardRef(
       return (
         <ImagePostBlock
           onFocus={onFocus}
-          inputRef={ref}
+          ref={ref}
           onOpenImagePicker={onOpenImagePicker}
           onLayout={onLayout}
           onTap={onTap}

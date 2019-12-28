@@ -76,13 +76,23 @@ class RawReplyPage extends React.Component<{}, State> {
     const thread = navigation.getParam("thread");
     const threadId = navigation.getParam("threadId");
 
-    let blocks = undefined;
+    let blocks = {};
+    let positions = [];
     let nodes = undefined;
     let format = undefined;
     let bounds = undefined;
 
     if (post) {
-      blocks = convertExportedBlocks(post.blocks, post.attachments);
+      positions = convertExportedBlocks(post.blocks, post.attachments).map(
+        block => {
+          if (typeof block.length === "number") {
+            return block.map(_block => {
+              blocks[_block.id] = _block;
+              return _block.id;
+            });
+          }
+        }
+      );
       nodes = convertExportedNodes(post.nodes, post.attachments);
       format = PostFormat[post.format];
       bounds = post.bounds;
@@ -96,6 +106,7 @@ class RawReplyPage extends React.Component<{}, State> {
           defaultInlineNodes={nodes}
           defaultBlocks={blocks}
           defaultFormat={format}
+          defaultPositions={positions}
           defaultBounds={bounds}
           onExport={this.handleExport}
         />

@@ -74,10 +74,9 @@
 
 
 //  [[AVAudioSession sharedInstance] setMode:AVAudioSessionMode error:<#(NSError *__autoreleasing  _Nullable * _Nullable)#>]
-  SDImageLoadersManager.sharedManager.loaders = @[SDWebImageDownloader.sharedDownloader, SDWebImagePhotosLoader.sharedLoader];
   // Replace default manager's loader implementation
   SDWebImageManager.defaultImageLoader = SDImageLoadersManager.sharedManager;
-  SDWebImagePhotosLoader.sharedLoader.imageRequestOptions.deliveryMode = PHImageRequestOptionsDeliveryModeOpportunistic;
+
   if (!KTVHTTPCache.proxyIsRunning) {
     [KTVHTTPCache proxyStart:nil];
   }

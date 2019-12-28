@@ -16,7 +16,7 @@ extension UITextView {
 
   static fileprivate let minSize = " ".size(OfFont: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
 
-  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor) {
+  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor, originalFont: UIFont) {
     let textLayer = textView.layer
     let textContainerInset = textView.textContainerInset
 
@@ -67,7 +67,9 @@ extension UITextView {
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .round
       highlightLayer.isHidden = false
-    } else if borderType == .stroke {
+    }
+
+    if borderType == .stroke {
       highlightLayer.isHidden = true
 
       let newString = NSMutableAttributedString(attributedString: textView.attributedText)
@@ -80,11 +82,56 @@ extension UITextView {
         attrs[NSAttributedString.Key.strokeWidth] = strokeWidth
         attrs[NSAttributedString.Key.strokeColor] = strokeColor
 
+        let currentWeight = originalFont.weight
+
+
+        var chosenFont = originalFont
+        let possibleFonts = originalFont.otherVersions
+        for currentFont in possibleFonts {
+          if currentFont.weight.rawValue > currentWeight.rawValue && currentFont.isItalic == chosenFont.isItalic {
+            chosenFont = currentFont
+            break;
+          }
+        }
+
+        attrs[NSAttributedString.Key.font] = chosenFont
+
         newString.setAttributes(attrs, range: range)
 
         textView.attributedText = newString
       }
+    } else {
+      let newString = NSMutableAttributedString(attributedString: textView.attributedText)
+      if newString.length > 0 {
+        var range = (newString.string as NSString).range(of: newString.string)
+        var attrs = newString.attributes(at: 0, effectiveRange: &range)
 
+        var needsChange = false
+
+        if attrs.keys.contains(NSAttributedString.Key.strokeColor) {
+          attrs.removeValue(forKey: NSAttributedString.Key.strokeColor)
+          needsChange = true
+        }
+
+        if attrs.keys.contains(NSAttributedString.Key.strokeWidth) {
+          attrs.removeValue(forKey: NSAttributedString.Key.strokeWidth)
+          needsChange = true
+        }
+
+        if let setFont = attrs[NSAttributedString.Key.font] as? UIFont {
+          if setFont != originalFont {
+            attrs[NSAttributedString.Key.font] = originalFont
+            needsChange = true
+          }
+        }
+
+
+        if needsChange {
+          newString.setAttributes(attrs, range: range)
+          textView.attributedText = newString
+        }
+
+      }
     }
 
 
@@ -398,5 +445,29 @@ extension String {
 extension UIEdgeInsets {
   var negate : UIEdgeInsets {
     return UIEdgeInsets.init(top: top * -1, left: left * -1, bottom: bottom * -1, right: right * -1)
+  }
+}
+
+extension UIFont {
+    var weight: UIFont.Weight {
+        guard let weightNumber = traits[.weight] as? NSNumber else { return .regular }
+        let weightRawValue = CGFloat(weightNumber.doubleValue)
+        let weight = UIFont.Weight(rawValue: weightRawValue)
+        return weight
+    }
+
+    private var traits: [UIFontDescriptor.TraitKey: Any] {
+        return fontDescriptor.object(forKey: .traits) as? [UIFontDescriptor.TraitKey: Any]
+            ?? [:]
+    }
+
+  var isItalic: Bool {
+         return fontDescriptor.symbolicTraits.contains(.traitItalic)
+     }
+
+  var otherVersions: Array<UIFont> {
+    return UIFont.fontNames(forFamilyName: familyName).map { fontName in
+      return UIFont(name: fontName, size: self.pointSize)!
+    }
   }
 }

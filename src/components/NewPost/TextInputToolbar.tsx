@@ -17,7 +17,7 @@ import {
   BitmapIconTemplatePixel,
   BitmapIconTemplateMonospace
 } from "../BitmapIcon";
-import tinycolor from "tinycolor2";
+import chroma from "chroma-js";
 import { sendLightFeedback } from "../../lib/Vibration";
 
 const CONTAINER_HEIGHT = 40;
@@ -40,9 +40,9 @@ const styles = StyleSheet.create({
     paddingLeft: SPACING.half
   },
   selectedTemplate: {
-    backgroundColor: tinycolor(COLORS.primary)
-      .setAlpha(0.25)
-      .toString()
+    backgroundColor: chroma(COLORS.primary)
+      .alpha(0.25)
+      .css()
   },
   classicIcon: {
     height: 15,
@@ -59,9 +59,9 @@ const styles = StyleSheet.create({
   }
 });
 
-const UNDERLAY_COLOR = tinycolor(COLORS.primary)
-  .setAlpha(0.5)
-  .toString();
+const UNDERLAY_COLOR = chroma(COLORS.primary)
+  .alpha(0.5)
+  .css();
 
 const TemplateIcon = ({ template, ...otherProps }: Partial<ImageProps>) => {
   if (template === TextTemplate.basic || template === TextTemplate.post) {
@@ -149,37 +149,51 @@ export const TextInputToolbar = ({
   block: TextPostBlock;
   onChooseTemplate: Function;
 }) => {
+  if (block && block.type !== "text") {
+    return null;
+  }
+
+  const renderTemplate = React.useCallback(
+    template => {
+      const selectedTemplate = block.config?.template;
+      const isSelected = selectedTemplate === template;
+
+      return (
+        <TemplateOption
+          template={template}
+          key={`${template}-${isSelected}`}
+          isSelected={isSelected}
+          onPress={onChooseTemplate}
+        />
+      );
+    },
+    [block?.config?.template]
+  );
+
+  const insets = React.useMemo(
+    () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+    []
+  );
+  const offset = React.useMemo(() => ({ x: 0, y: 0 }), []);
+
   return (
     <ScrollView
       keyboardShouldPersistTaps="always"
       keyboardDismissMode="none"
       horizontal
-      scrollIndicatorInsets={{ top: 0, bottom: 0, left: 0, right: 0 }}
-      contentOffset={{ x: 0, y: 0 }}
+      scrollIndicatorInsets={insets}
+      contentOffset={offset}
       showsHorizontalScrollIndicator={false}
       shouldCancelWhenOutside
       alwaysBounceVertical={false}
       alwaysBounceHorizontal
       showsVerticalScrollIndicator={false}
       directionalLockEnabled
-      contentInset={{ top: 0, bottom: 0, left: 0, right: 0 }}
+      contentInset={insets}
       contentInsetAdjustmentBehavior="never"
       style={styles.container}
     >
-      {block &&
-        getSupportedTemplates(block).map(template => {
-          const selectedTemplate = block.config.template;
-          const isSelected = selectedTemplate === template;
-
-          return (
-            <TemplateOption
-              template={template}
-              key={`${template}-${isSelected}`}
-              isSelected={isSelected}
-              onPress={onChooseTemplate}
-            />
-          );
-        })}
+      {block && getSupportedTemplates(block).map(renderTemplate)}
     </ScrollView>
   );
 };

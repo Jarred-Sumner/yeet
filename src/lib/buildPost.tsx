@@ -66,6 +66,8 @@ export const minImageWidthByFormat = (format: PostFormat) => {
   }
 };
 
+export type PostBlockID = string;
+
 interface PostBlock {
   type: "text" | "image";
   required: boolean;
@@ -73,7 +75,7 @@ interface PostBlock {
   layout: PostLayout;
   config: {};
   autoInserted: boolean;
-  id: string;
+  id: PostBlockID;
 }
 
 export enum TextBorderType {
@@ -119,8 +121,12 @@ export type ImagePostBlock = PostBlock & {
 
 export type PostBlockType = TextPostBlock | ImagePostBlock;
 
+export type BlockMap = { [id: string]: PostBlockType };
+export type BlockPositionList = Array<Array<PostBlockID>>;
+
 export type NewPostType = {
-  blocks: Array<Array<PostBlockType>>;
+  blocks: BlockMap;
+  positions: BlockPositionList;
   height: number;
   backgroundColor?: string;
   width: number;
@@ -135,19 +141,36 @@ export const DEFAULT_FORMAT = PostFormat.post;
 
 export type ChangeBlockFunction = (change: PostBlockType) => void;
 
+const DEFAULT_TEMPLATE_BY_FORMAT = {
+  [PostFormat.comment]: TextTemplate.comment,
+  [PostFormat.sticker]: TextTemplate.basic,
+  [PostFormat.post]: TextTemplate.post
+};
+
+export const getDefaultTemplate = (template: string, format: PostFormat) => {
+  return TextTemplate[template] || DEFAULT_TEMPLATE_BY_FORMAT[format];
+};
+
+export const getDefaultBorder = (border: string, template: TextBorderType) => {
+  return TextBorderType[border] || DEFAULT_TEXT_BORDER_BY_TEMPLATE[template];
+};
+
 export const buildTextBlock = ({
   value,
   format,
   layout,
-  border,
+  border: _border,
   autoInserted,
   minHeight,
   placeholder,
   overrides = {},
-  template = TextTemplate.post,
+  template: _template,
   id = null,
   required = true
 }): TextPostBlock => {
+  const template = getDefaultTemplate(_template, format);
+  const border = getDefaultBorder(_border, template);
+
   return {
     type: "text",
     id: id ?? generateBlockId(),
@@ -160,7 +183,7 @@ export const buildTextBlock = ({
       placeholder,
       minHeight,
       overrides,
-      border: border || DEFAULT_TEXT_BORDER_BY_TEMPLATE[template],
+      border,
       template
     }
   };
@@ -271,8 +294,8 @@ export const presetsByFormat = {
     textTop: 0,
     paddingHorizontal: SPACING.normal,
     paddingVertical: SPACING.normal,
-    backgroundColor: "#000",
-    color: "white"
+    backgroundColor: "#fff",
+    color: "black"
   },
   [PostFormat.sticker]: {
     borderRadius: 8,
@@ -294,9 +317,10 @@ export enum FocusType {
 export const blocksForFormat = (
   format: PostFormat,
   layout: PostLayout,
-  _blocks: Array<PostBlockType>
+  _blocks: BlockMap,
+  positions: BlockPositionList
 ): Array<Array<PostBlockType>> => {
-  let blocks = flatten(_blocks);
+  let blocks = flatten(positions).map(position => _blocks[position]);
 
   if (format === PostFormat.comment) {
     return [
@@ -317,7 +341,13 @@ export const blocksForFormat = (
 
   switch (layout) {
     case PostLayout.horizontalMediaMedia: {
-      blocks = blocks.filter(block => block.type === "image").slice(0, 2);
+      blocks = blocks
+        .filter(block => block.type === "image")
+        .slice(0, 2)
+        .map(block => {
+          block.layout = layout;
+          return block;
+        });
 
       for (let i = blocks.length; i < 2; i++) {
         blocks.push(
@@ -339,7 +369,14 @@ export const blocksForFormat = (
       ];
     }
     case PostLayout.verticalMediaMedia: {
-      blocks = blocks.filter(block => block.type === "image").slice(0, 2);
+      blocks = blocks
+        .filter(block => block.type === "image")
+        .slice(0, 2)
+        .map(block => {
+          block.layout = layout;
+          block.format = format;
+          return block;
+        });
 
       let dimensions = VERTICAL_IMAGE_DIMENSIONS;
 
@@ -393,6 +430,9 @@ export const blocksForFormat = (
         });
 
       textBlock.config.minHeight = null;
+      textBlock.format = format;
+      textBlock.layout = layout;
+      imageBlock.layout = layout;
 
       return [
         [textBlock],
@@ -420,8 +460,13 @@ export const blocksForFormat = (
           autoInserted: true,
           format,
           layout,
+
           template: TextTemplate.post
         });
+
+      textBlock.format = format;
+      textBlock.layout = layout;
+      imageBlock.layout = layout;
 
       textBlock.config.minHeight = null;
 
@@ -451,10 +496,14 @@ export const blocksForFormat = (
           autoInserted: true,
           format,
           layout,
+
           template: TextTemplate.post
         });
 
       textBlock.config.minHeight = imageBlock.config.dimensions.maxY;
+      textBlock.format = format;
+      textBlock.layout = layout;
+      imageBlock.layout = layout;
 
       return [[imageBlock, textBlock]];
     }
@@ -471,6 +520,7 @@ export const blocksForFormat = (
         });
 
       textBlock.config.minHeight = imageBlock.config.dimensions.maxY;
+      imageBlock.layout = layout;
 
       return [imageBlock, textBlock];
     }
@@ -497,12 +547,15 @@ export const blocksForFormat = (
           value: "",
           placeholder: "Tap to edit text",
           autoInserted: true,
+          overrides: block.config.overrides,
           format,
           layout,
           template: TextTemplate.post
         });
 
       textBlock.config.minHeight = imageBlock.config.dimensions.height;
+      textBlock.layout = PostLayout.horizontalTextMedia;
+      imageBlock.layout = layout;
 
       return [[textBlock, imageBlock]];
     }
@@ -517,15 +570,20 @@ export const blocksForFormat = (
           dimensions: HORIZONTAL_IMAGE_DIMENSIONS
         });
 
+      firstImageBlock.layout = layout;
+
       const secondImageBlock =
         blocks.filter(block => block.type === "image")[1] ??
         buildImageBlock({
           image: null,
           autoInserted: true,
+
           format,
           layout,
           dimensions: HORIZONTAL_IMAGE_DIMENSIONS
         });
+
+      secondImageBlock.layout = layout;
 
       return [firstImageBlock, secondImageBlock].map(block => [
         scaleImageBlockToWidth(HORIZONTAL_IMAGE_DIMENSIONS.width, block)
@@ -540,6 +598,7 @@ export const blocksForFormat = (
               buildImageBlock({
                 image: null,
                 autoInserted: true,
+                overrides: block.config.overrides,
                 format,
                 layout,
                 dimensions: VERTICAL_IMAGE_DIMENSIONS
@@ -556,6 +615,7 @@ export const blocksForFormat = (
               value: "",
               placeholder: "Tap to edit text",
               autoInserted: true,
+              overrides: block.config.overrides,
               format,
               layout,
               template: TextTemplate.post
@@ -566,40 +626,38 @@ export const blocksForFormat = (
   }
 };
 
-export const findBlockById = (
-  blocks: Array<Array<PostBlockType>>,
-  id: string
-) => {
-  for (let rowIndex = 0; rowIndex < blocks.length; rowIndex = rowIndex + 1) {
-    const row = blocks[rowIndex];
+export const layoutBlocksInPost = (
+  format: PostFormat,
+  layout: PostLayout,
+  __blocks: BlockMap,
+  __positions: BlockPositionList
+): [BlockMap, BlockPositionList] => {
+  const blocks = {};
+  const _blocks = blocksForFormat(format, layout, __blocks, __positions);
 
-    for (
-      let blockIndex = 0;
-      blockIndex < row.length;
-      blockIndex = blockIndex + 1
-    ) {
-      const _block = row[blockIndex];
+  const positions = _blocks.map(row =>
+    row.map(block => {
+      blocks[block.id] = block;
+      return block.id;
+    })
+  );
 
-      if (_block.id === id) {
-        return _block;
-      }
-    }
-  }
-
-  return null;
+  return [blocks, positions];
 };
 
 export const buildPost = ({
   format,
   layout,
   blocks,
+  positions,
   width,
   backgroundColor,
   height
 }: {
   format: PostFormat;
   layout: PostLayout;
-  blocks: Array<Array<PostBlockType>>;
+  blocks: BlockMap;
+  positions: BlockPositionList;
   width: number;
   height: number;
   backgroundColor?: string;
@@ -608,6 +666,7 @@ export const buildPost = ({
     format,
     layout,
     backgroundColor,
+    positions,
     width,
     blocks,
     height

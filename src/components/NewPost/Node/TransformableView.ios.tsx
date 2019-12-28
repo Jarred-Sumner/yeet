@@ -12,6 +12,10 @@ const TransformableView = React.forwardRef(({ inputRef, ...props }, ref) => {
   let handle = null;
   if (handleRef?.isTextPostBlock) {
     handle = findNodeHandle(handleRef.textInput.current);
+  } else if (handleRef?.isImagePostBlock) {
+    handle = handleRef.imageHandle;
+
+    console.log(handleRef.imageRef.current, handle);
   }
 
   return <NativeTransformableView inputTag={handle} {...props} ref={ref} />;

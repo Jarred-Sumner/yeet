@@ -8,6 +8,13 @@
 
 import UIKit
 
+protocol TransformableView : UIView {
+  var scale: CGFloat {
+    get
+    set
+  }
+}
+
 @objc(MovableView)
 class MovableView: UIView, RCTUIManagerObserver {
   @objc(didSetProps:)
@@ -31,6 +38,22 @@ class MovableView: UIView, RCTUIManagerObserver {
   var textInput: YeetTextInputView? {
     if let tag = inputTag {
       return self.bridge?.uiManager?.view(forReactTag: tag) as? YeetTextInputView
+    } else {
+      return nil
+    }
+  }
+
+  var mediaPlayerView: MediaPlayer? {
+    if let tag = inputTag {
+      return self.bridge?.uiManager?.view(forReactTag: tag) as? MediaPlayer
+    } else {
+      return nil
+    }
+  }
+
+  var transformableView: TransformableView? {
+    if let tag = inputTag {
+      return self.bridge?.uiManager?.view(forReactTag: tag) as? TransformableView
     } else {
       return nil
     }
@@ -75,7 +98,7 @@ class MovableView: UIView, RCTUIManagerObserver {
   }
 
   func updateContentScale() {
-    guard let textInput = self.textInput else {
+    guard let transformableView = self.transformableView else {
       return
     }
 
@@ -87,9 +110,9 @@ class MovableView: UIView, RCTUIManagerObserver {
     )
 
 
-    if self.contentScaleFactor != scale || textInput.textScale != scale {
+    if self.contentScaleFactor != scale || transformableView.scale != scale {
       UIView.setAnimationsEnabled(false)
-      textInput.textScale = scale
+      transformableView.scale = scale
       layer.contentsScale = scale >= 1.0 ? scale * UIScreen.main.scale : scale * UIScreen.main.scale
       layer.rasterizationScale = layer.contentsScale
       self.contentScaleFactor = scale

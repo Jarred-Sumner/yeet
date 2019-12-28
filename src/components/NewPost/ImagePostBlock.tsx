@@ -1,7 +1,10 @@
-import { connectActionSheet } from "@expo/react-native-action-sheet";
+import {
+  connectActionSheet,
+  useActionSheet
+} from "@expo/react-native-action-sheet";
 import assert from "assert";
 import * as React from "react";
-import { StyleProp, StyleSheet, View } from "react-native";
+import { StyleProp, StyleSheet, View, findNodeHandle } from "react-native";
 import {
   LongPressGestureHandler,
   State as GestureState,
@@ -24,6 +27,8 @@ import {
   PostFormat,
   presetsByFormat
 } from "./NewPostFormat";
+import { PostLayout } from "../../lib/buildPost";
+import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 // import Image from "../Image";
 
 type Props = {
@@ -32,9 +37,6 @@ type Props = {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: "100%"
-  },
   placeholderGradient: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0
@@ -78,127 +80,139 @@ const stylesByFormat = {
   })
 };
 
-const MediaComponent = React.forwardRef(
-  (
-    {
-      source,
-      dimensions,
-      playDuration,
-      borderRadius,
-      usePreview,
-      layout,
-      scale = 1.0,
-      id,
-      style,
-      ...otherProps
-    }: {
-      source: YeetImageContainer;
-      dimensions: BoundsRect;
-      playDuration?: number | null;
-      style: StyleProp<any>;
-      scale: number;
-    },
-    ref
-  ) => {
-    const sources = React.useMemo(
-      () =>
-        mediaSourcesFromImage(
-          source,
-          scaleRectByFactor(scale, dimensions),
-          playDuration,
-          usePreview
-        ),
-      [
-        mediaSourcesFromImage,
+const stylesByLayout = {
+  [PostLayout.media]: StyleSheet.create({
+    image: {},
+    container: {}
+  }),
+  [PostLayout.horizontalMediaText]: StyleSheet.create({
+    image: {},
+    container: {
+      paddingHorizontal: SPACING.half,
+      paddingVertical: SPACING.half
+    }
+  }),
+  [PostLayout.horizontalMediaText]: StyleSheet.create({
+    image: {},
+    container: {
+      paddingHorizontal: SPACING.half,
+      paddingVertical: SPACING.half
+    }
+  })
+};
+
+const MediaComponent = ({
+  source,
+  dimensions,
+  playDuration,
+  borderRadius,
+  usePreview,
+  playerRef,
+  layout,
+  scale = 1.0,
+  id,
+  style,
+  ...otherProps
+}: {
+  source: YeetImageContainer;
+  dimensions: BoundsRect;
+  playDuration?: number | null;
+  style: StyleProp<any>;
+  scale: number;
+}) => {
+  const sources = React.useMemo(
+    () =>
+      mediaSourcesFromImage(
         source,
+        scaleRectByFactor(scale, dimensions),
         playDuration,
-        dimensions,
-        usePreview,
-        scale
-      ]
-    );
+        usePreview
+      ),
+    [mediaSourcesFromImage, source, playDuration, dimensions, usePreview, scale]
+  );
 
-    return (
-      <MediaPlayer
-        {...otherProps}
-        paused={false}
-        autoPlay
-        id={id}
-        borderRadius={borderRadius}
-        resizeMode={"aspectFill"}
-        ref={ref}
-        sources={sources}
-        style={style}
-      />
-    );
-  }
-);
+  return (
+    <MediaPlayer
+      {...otherProps}
+      paused={false}
+      autoPlay
+      id={id}
+      borderRadius={borderRadius}
+      resizeMode={"aspectFill"}
+      ref={playerRef}
+      sources={sources}
+      style={style}
+    />
+  );
+};
 
-const LibraryImage = React.forwardRef(
-  (
-    {
-      block,
-      usePreview,
-      scale = 1.0
-    }: { block: ImagePostBlockType; usePreview: boolean; scale: number },
-    ref
-  ) => {
-    return (
-      <MediaComponent
-        ref={ref}
-        source={block.value}
-        id={block.id}
-        layout={block.layout}
-        dimensions={block.config.dimensions}
-        usePreview={usePreview}
-        style={[
-          stylesByFormat[block.format].image,
-          {
-            width: block.config.dimensions.width,
-            height: block.config.dimensions.height
-          },
-          {
-            transform: block.value.image.transform
-          }
-        ]}
-      />
-    );
-  }
-);
+const LibraryImage = ({
+  block,
+  usePreview,
+  playerRef,
+  scale = 1.0
+}: {
+  block: ImagePostBlockType;
+  usePreview: boolean;
+  scale: number;
+}) => {
+  return (
+    <MediaComponent
+      playerRef={playerRef}
+      source={block.value}
+      id={block.id}
+      layout={block.layout}
+      dimensions={block.config.dimensions}
+      usePreview={usePreview}
+      style={[
+        stylesByFormat[block.format].image,
+        stylesByLayout[block.layout]?.image,
+        {
+          width: block.config.dimensions.width,
+          height: block.config.dimensions.height
+        },
+        {
+          transform: block.value.image.transform
+        }
+      ]}
+    />
+  );
+};
 
-const StickerImage = React.forwardRef(
-  (
-    {
-      block,
-      usePreview,
-      scale = 1.0
-    }: { block: ImagePostBlockType; usePreview: boolean; scale: number },
-    ref
-  ) => {
-    return (
-      <MediaComponent
-        ref={ref}
-        source={block.value}
-        usePreview={usePreview}
-        id={block.id}
-        layout={block.layout}
-        scale={scale}
-        dimensions={block.config.dimensions}
-        borderRadius={2}
-        style={[
-          stylesByFormat[block.format].image,
-          {
-            width: block.config.dimensions.width,
-            height: block.config.dimensions.height
-          },
-          {
-            transform: block.value.image.transform
-          }
-        ]}
-      />
-    );
-  }
-);
+const StickerImage = ({
+  block,
+  usePreview,
+  playerRef,
+  scale = 1.0
+}: {
+  block: ImagePostBlockType;
+  usePreview: boolean;
+  scale: number;
+}) => {
+  return (
+    <MediaComponent
+      playerRef={playerRef}
+      source={block.value}
+      usePreview={usePreview}
+      id={block.id}
+      layout={block.layout}
+      scale={scale}
+      dimensions={block.config.dimensions}
+      borderRadius={2}
+      style={[
+        stylesByFormat[block.format].image,
+        stylesByLayout[block.layout]?.image,
+        {
+          width: block.config.dimensions.width,
+          height: block.config.dimensions.height
+        },
+        {
+          transform: block.value.image.transform
+        }
+      ]}
+    />
+  );
+};
 
 class RawImagePostBlock extends React.Component<Props> {
   handleChangeImage = (photo: YeetImageContainer) => {
@@ -250,6 +264,37 @@ class RawImagePostBlock extends React.Component<Props> {
     { useNativeDriver: true }
   );
 
+  get boundsHandle() {
+    return findNodeHandle(this.containerRef.current);
+  }
+
+  get imageHandle() {
+    return this.imageRef.current.nativeNode;
+  }
+
+  get isTextPostBlock() {
+    return false;
+  }
+
+  get isImagePostBlock() {
+    return true;
+  }
+
+  updateImageRef = (mediaPlayer: MediaPlayerComponent | null) => {
+    const { inputRef } = this.props;
+
+    if (typeof inputRef === "function") {
+      inputRef(mediaPlayer);
+    } else if (typeof inputRef === "object") {
+      inputRef.current = mediaPlayer;
+    }
+
+    this.imageRef.current = mediaPlayer;
+  };
+
+  imageRef = React.createRef<MediaPlayerComponent>();
+  containerRef = React.createRef<View>();
+
   render() {
     const {
       block,
@@ -280,28 +325,31 @@ class RawImagePostBlock extends React.Component<Props> {
       return (
         <LongPressGestureHandler
           onGestureEvent={this.handleLongPress}
+          enabled={!this.props.disabled}
+          ref={this.props.gestureRef}
           onHandlerStateChange={this.handleLongPress}
         >
-          <Animated.View
-            onLayout={onLayout}
-            ref={inputRef}
+          <View
+            ref={this.containerRef}
             style={[
               styles.container,
               stylesByFormat[block.format].container,
-              sizeStyle,
+              stylesByLayout[block.layout]?.container,
               {
-                overflow: "hidden"
+                overflow: "hidden",
+                flex: 1
               }
             ]}
           >
             <ImageComponent
               block={block}
+              playerRef={this.updateImageRef}
               usePreview={usePreview}
               scale={scale}
             />
 
             {this.props.children}
-          </Animated.View>
+          </View>
         </LongPressGestureHandler>
       );
     } else {
@@ -309,7 +357,9 @@ class RawImagePostBlock extends React.Component<Props> {
         <TapGestureHandler
           maxDeltaX={5}
           maxDeltaY={5}
+          enabled={!this.props.disabled}
           maxDist={10}
+          ref={this.props.gestureRef}
           onGestureEvent={this.handleTapEvent}
           onHandlerStateChange={this.handleTapEvent}
         >
@@ -319,6 +369,7 @@ class RawImagePostBlock extends React.Component<Props> {
               styles.container,
               sizeStyle,
               stylesByFormat[block.format].container,
+              stylesByLayout[block.layout]?.container,
               {
                 overflow: "hidden"
               }
@@ -349,5 +400,8 @@ class RawImagePostBlock extends React.Component<Props> {
   }
 }
 
-export const ImagePostBlock = connectActionSheet(RawImagePostBlock);
+export const ImagePostBlock = React.forwardRef((props, ref) => {
+  const actionSheetProps = useActionSheet();
+  return <RawImagePostBlock {...actionSheetProps} {...props} ref={ref} />;
+});
 export default ImagePostBlock;

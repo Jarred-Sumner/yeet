@@ -172,6 +172,7 @@ target 'yeet' do
   pod 'Permission-Notifications', :path => "#{permissions_path}/Notifications.podspec"
   pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary.podspec"
 
+  pod 'SwiftyImageIO'
   pod 'RNFBApp', :path => '../node_modules/@react-native-firebase/app'
 
 

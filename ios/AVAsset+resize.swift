@@ -84,13 +84,15 @@ extension AVURLAsset {
     }
   }
 
-  func crop(to: CGRect, dest: URL) -> Promise<AVURLAsset> {
-    return AVURLAsset.crop(asset: self, to: to, dest: dest)
+  func crop(to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false) -> Promise<AVURLAsset> {
+    return AVURLAsset.crop(asset: self, to: to, dest: dest, exact: exact, type: type, loops: loops)
   }
 
   
 
-  static func crop(asset: AVURLAsset, to: CGRect, dest: URL) -> Promise<AVURLAsset> {
+  
+
+  static func crop(asset: AVURLAsset, to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false) -> Promise<AVURLAsset> {
       return Promise<AVURLAsset> { resolve, reject in
         let videoComposition = AVMutableVideoComposition()
         let composition = AVMutableComposition()
@@ -100,10 +102,14 @@ extension AVURLAsset {
           return
         }
 
+
+
         guard let track = composition.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid) else {
           reject(YeetError(.videoTrackError))
           return
         }
+
+
 
         do {
           try track.insertTimeRange(videoTrack.timeRange, of: videoTrack, at: .zero)
@@ -126,8 +132,9 @@ extension AVURLAsset {
 
         var _to = to
 
-        _to.width = ceil(_to.width / 16) * 16
-        _to.height = ceil(_to.height / 16) * 16
+        if !exact {
+          _to = _to.h264Friendly()
+        }
 
         let scaleX = to.width / _to.width
         let scaleY = to.height / _to.height
@@ -192,9 +199,9 @@ extension AVURLAsset {
 
         exportSession.videoComposition = videoComposition
         exportSession.outputURL = dest
-        exportSession.outputFileType = .mp4
+        exportSession.outputFileType = type.avFileType
         exportSession.timeRange = videoTrack.timeRange
-        
+
 
         exportSession.shouldOptimizeForNetworkUse = true
 

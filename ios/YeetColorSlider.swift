@@ -20,18 +20,8 @@ class YeetColorSliderView: UIView {
   @objc (onCancel) var onCancel: RCTBubblingEventBlock? = nil
   @objc (onPress) var onPress: RCTBubblingEventBlock? = nil
   @objc (inputRef) var inputRef: NSNumber? = nil {
-    didSet (newValue) {
+    willSet (newValue) {
       textColorObserver?.invalidate()
-
-      if newValue != nil {
-        guard let textInput = self.textInput else {
-          return
-        }
-
-        textColorObserver = textInput.textView.observe(\UITextView.textColor) { textView, _ in
-          self.colorSlider.color = textView.textColor ?? .white
-        }
-      }
     }
   }
   @objc (colorType) var colorType: String? = "textColor"
@@ -39,14 +29,26 @@ class YeetColorSliderView: UIView {
 
   var bridge: RCTBridge? = nil
 
-  @objc(color) var color: UIColor {
-    get {
-      return self.colorSlider.color
+  @objc(color) var color: UIColor = .black
+
+  override func didSetProps(_ changedProps: [String]!) {
+
+    if changedProps.contains("color") {
+      DispatchQueue.main.async { [weak self] in
+        guard let color = self?.color else {
+          return
+        }
+
+        guard let colorSlider = self?.colorSlider else {
+          return
+        }
+
+
+
+        colorSlider.color = color
+      }
     }
 
-    set (newValue) {
-      self.colorSlider.color = newValue
-    }
   }
 
   init(bridge: RCTBridge) {
@@ -70,21 +72,6 @@ class YeetColorSliderView: UIView {
   @objc(handleChange:)
   func handleChange(_ colorSlider: ColorSlider) {
     onChange?(["color": colorSlider.color.rgbaString])
-
-
-    guard let textInput = self.textInput else {
-      return
-    }
-
-    guard let textAttributes = textInput.textAttributes else {
-      return
-    }
-
-    let _textAttributes = textAttributes.copy(with: nil) as! RCTTextAttributes
-
-
-    _textAttributes.foregroundColor = colorSlider.color
-    textInput.textView.textColor = _textAttributes.effectiveForegroundColor()
   }
 
   var textInput: YeetTextInputView? {
@@ -97,18 +84,6 @@ class YeetColorSliderView: UIView {
 
   @objc(handleCancel:)
   func handleCancel(_ colorSlider: ColorSlider) {
-    guard let textInput = self.textInput else {
-      return
-    }
-
-    guard let textAttributes = textInput.textAttributes else {
-      return
-    }
-
-    textInput.textView.textColor = textAttributes.effectiveForegroundColor()
-
-    onCancel?(["color": textInput.textView.textColor])
-
 
   }
 

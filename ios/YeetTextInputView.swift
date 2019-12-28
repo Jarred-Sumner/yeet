@@ -11,7 +11,7 @@ import Foundation
 
 
 @objc(YeetTextInputView)
-class YeetTextInputView : RCTMultilineTextInputView {
+class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInvalidating {
   static var DEFAULT_HIGHLIGHT_CORNER_RADIUS = CGFloat(4)
   static var DEFAULT_HIGHLIGHT_INSET = CGFloat(2)
   static var DEFAULT_HIGHLIGHT_COLOR = UIColor.blue
@@ -69,7 +69,12 @@ class YeetTextInputView : RCTMultilineTextInputView {
   @objc(highlightInset)
   var highlightInset = CGFloat(YeetTextInputView.DEFAULT_HIGHLIGHT_INSET)
   var showHighlight: Bool {
-    return [.solid, .stroke, .highlight, .ellipse, .invert].contains(borderType)
+    if isSticker {
+      return [.solid, .stroke, .highlight, .ellipse, .invert].contains(borderType)
+    } else {
+      return [.solid, .stroke].contains(borderType)
+    }
+
   }
 
 //  override var intrinsicContentSize: CGSize {
@@ -80,6 +85,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
 //    }
 //  }
 
+
   
 
   var lastHighlightKey: String? = nil
@@ -89,6 +95,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
   func drawHighlight(async: Bool = false) {
     if (!showHighlight) {
+      self.highlightLayer.isHidden = true
+      self.enforceTextAttributesIfNeeded()
       return
     }
 
@@ -100,7 +108,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 
 
-    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear)
+    self.enforceTextAttributesIfNeeded()
+    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) )
 
 
 
@@ -158,11 +167,9 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 
   func updateHighlight() {
-    if (showHighlight) {
+
       self.drawHighlight()
-    } else {
-      self.removeHighlight()
-    }
+
   }
 
   func adjustFontSize(text: String) {
@@ -194,10 +201,11 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
 
   func removeHighlight() {
-    if self.highlightLayer.superlayer != nil {
-      self.highlightLayer.removeFromSuperlayer()
-      self.invalidateIntrinsicContentSize()
-    }
+    self.highlightLayer.isHidden = true
+  }
+
+  func invalidate() {
+    self.movableViewTag = nil
   }
 
   var highlightSubview = UIView()
@@ -206,9 +214,8 @@ class YeetTextInputView : RCTMultilineTextInputView {
     super.layoutSubviews()
 
     if self.highlightSubview.superview == nil {
-      if showHighlight {
-        highlightSubview.layer.addSublayer(highlightLayer)
-      }
+      highlightSubview.layer.addSublayer(highlightLayer)
+      highlightLayer.isHidden = !showHighlight
 
       self.backedTextInputView.insertSubview(highlightSubview, at: 0)
 
@@ -265,17 +272,17 @@ class YeetTextInputView : RCTMultilineTextInputView {
   }
 
   var hasSetContentScale = false
-  var textScale: CGFloat {
+  var scale: CGFloat {
     get {
       return textInputView.contentScaleFactor
     }
 
     set (newValue) {
-      let oldValue = self.textScale
+      let oldValue = self.scale
       textInputView.contentScaleFactor = newValue
 
-      if self.textScale != oldValue {
-        self.updateTextScale()
+      if self.scale != oldValue {
+        self.updateScale()
       }
 
       hasSetContentScale = true
@@ -283,17 +290,17 @@ class YeetTextInputView : RCTMultilineTextInputView {
 
   }
 
-  func updateTextScale() {
+  func updateScale() {
     DispatchQueue.main.throttle(deadline: DispatchTime.now() + 0.1, context: self) { [weak self] in
-      self?._updateTextScale()
+      self?._updateScale()
     }
 
   }
 
-  func _updateTextScale() {
+  func _updateScale() {
 
-    self.textView.contentScaleFactor = self.textScale
-    let nativeScale = self.textScale * UIScreen.main.scale
+    self.textView.contentScaleFactor = self.scale
+    let nativeScale = self.scale * UIScreen.main.scale
 
     textView.layer.contentsScale = nativeScale
     highlightLayer.contentsScale = nativeScale
@@ -368,8 +375,14 @@ class YeetTextInputView : RCTMultilineTextInputView {
       return nil
     }
 
+    guard self.bridge?.isValid ?? false else {
+      return nil
+    }
+
     return self.bridge?.uiManager.view(forReactTag: tag) as? MovableView
   }
+
+
 
   override func didMoveToSuperview() {
     super.didMoveToSuperview()
@@ -462,7 +475,7 @@ class YeetTextInputView : RCTMultilineTextInputView {
     self.drawHighlight()
 
     if hasSetContentScale {
-      self.updateTextScale()
+      self.updateScale()
     }
 
     tapRecognizer?.isEnabled = true

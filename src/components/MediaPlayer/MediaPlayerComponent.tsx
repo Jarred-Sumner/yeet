@@ -9,6 +9,7 @@ import { ImageMimeType, isVideo } from "../../lib/imageSearch";
 import { BoundsRect, DimensionsRect } from "../../lib/Rect";
 import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
 import { MediaPlayerStatus } from "./MediaPlayerContext";
+import memoizee from "memoizee";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
@@ -57,7 +58,7 @@ export type MediaPlayerProps = {
   onChangeItem?: ReactEventHandler<StatusEventData>;
 };
 
-const clean = (
+const _clean = (
   sources: Array<Partial<MediaSource | null>>
 ): Array<MediaSource> => {
   return sources
@@ -82,6 +83,8 @@ const clean = (
     });
 };
 
+const clean = memoizee(_clean);
+
 export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   static defaultProps = {
     autoPlay: false,
@@ -94,6 +97,10 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   };
 
   nativeRef = React.createRef();
+
+  get nativeNode() {
+    return findNodeHandle(this.nativeRef.current);
+  }
 
   static NativeModule = NativeModules["MediaPlayerViewManager"];
 
@@ -137,10 +144,6 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     MediaPlayerComponent.NativeModule?.stopCachingAll();
   }
 
-  get isVideoPlayer() {
-    return !!this.props.sources.find(source => isVideo(source.mimeType));
-  }
-
   componentWillUnmount() {
     // this1.reset();
   }
@@ -150,7 +153,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   };
 
   callNativeMethod = (name, args = null, nodeHandle?: number) => {
-    const _nodeHandle = nodeHandle ?? findNodeHandle(this);
+    const _nodeHandle = nodeHandle ?? this.nativeNode;
     return UIManager.dispatchViewManagerCommand(
       _nodeHandle,
       UIManager.getViewManagerConfig(VIEW_NAME).Commands[name],

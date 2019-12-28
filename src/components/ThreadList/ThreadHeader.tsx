@@ -1,46 +1,32 @@
 import * as React from "react";
-
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import {
+  BorderlessButton,
+  TouchableWithoutFeedback
+} from "react-native-gesture-handler";
 import Animated, {
-  TransitioningView,
+  Transition,
   Transitioning,
-  Transition
+  TransitioningView
 } from "react-native-reanimated";
-import SafeAreaView from "react-native-safe-area-view";
-import {
-  BackButton,
-  IconButton,
-  useBackButtonBehavior,
-  IconButtonEllipsis
-} from "../Button";
-import {
-  Text,
-  MediumText,
-  SemiBoldText,
-  LETTER_SPACING_MAPPING
-} from "../Text";
-import {
-  IconEllipsis,
-  IconClose,
-  IconDownload,
-  IconChevronLeft,
-  IconCheck
-} from "../Icon";
-import { SPACING, COLORS } from "../../lib/styles";
-import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
-import { BlurView } from "../BlurView";
-import tinycolor from "tinycolor2";
+import { useFocusState } from "react-navigation-hooks";
+import { TOP_Y } from "../../../config";
 import {
   MediaUploadContext,
   PostUploadTaskStatus
 } from "../../lib/MediaUploadTask";
+import { COLORS, SPACING } from "../../lib/styles";
+import { CurrentUserAvatar } from "../Avatar";
+import { BlurView } from "../BlurView";
+import { BackButton, useBackButtonBehavior } from "../Button";
+import { IconChevronLeft } from "../Icon";
 import { MediaUploadProgress } from "../MediaUploadProgress";
 import {
-  TouchableWithoutFeedback,
-  BorderlessButton
-} from "react-native-gesture-handler";
-import { useFocusState } from "react-navigation-hooks";
-import { CurrentUserAvatar } from "../Avatar";
+  LETTER_SPACING_MAPPING,
+  MediumText,
+  SemiBoldText,
+  Text
+} from "../Text";
 import { UserContext } from "../UserContext";
 
 export const THREAD_HEADER_HEIGHT = 34 + SPACING.normal;

@@ -101,6 +101,76 @@ struct ContentExportThumbnail {
 
 class ContentExport {
 
+  static func getCropScale(_ roundingRule: FloatingPointRoundingRule, _ multiple: CGFloat, _ contentsScale: CGFloat, _ cropWidth: CGFloat, _ cropHeight: CGFloat) -> CGFloat {
+    let maxIterations = 100;
+    var iterationCount = 0;
+    var cropScale: CGFloat = contentsScale
+    var cropRect = CGRect(origin: .zero, size: CGSize(width: cropWidth, height: cropHeight)).normalize(scale: cropScale)
+    while !cropRect.size.width.isMultiple(multiple, roundingRule) || !cropRect.size.height.isMultiple(16, roundingRule) {
+      if iterationCount > maxIterations {
+        return .zero;
+      }
+
+      if (cropWidth.toClosestMultiple(multiple, roundingRule) != cropWidth) {
+        cropScale = cropScale * (cropWidth.toClosestMultiple(multiple, roundingRule) / cropWidth)
+      }
+
+
+      if (cropHeight.toClosestMultiple(multiple, roundingRule) != cropHeight) {
+        cropScale = cropScale * (cropHeight.toClosestMultiple(multiple, roundingRule) / cropHeight)
+      }
+
+      cropRect = CGRect(origin: .zero, size: CGSize(width: cropWidth, height: cropHeight)).normalize(scale: cropScale )
+      iterationCount = iterationCount + 1
+    }
+
+    return cropScale
+  }
+
+  static func findCropScale(contentsScale: CGFloat, cropWidth: CGFloat, cropHeight: CGFloat) -> CGFloat? {
+    var possibleScales: [CGFloat] = [
+      getCropScale(.down, CGFloat(16), contentsScale, cropWidth, cropHeight),
+      getCropScale(.awayFromZero, CGFloat(16), contentsScale, cropWidth, cropHeight),
+      getCropScale(.toNearestOrAwayFromZero, CGFloat(16), contentsScale, cropWidth, cropHeight),
+      getCropScale(.toNearestOrEven, CGFloat(16), contentsScale, cropWidth, cropHeight),
+      getCropScale(.towardZero, CGFloat(16), contentsScale, cropWidth, cropHeight),
+      getCropScale(.up, CGFloat(16), contentsScale, cropWidth, cropHeight)
+    ].filter { (scale: CGFloat) -> Bool in
+      return scale > (contentsScale / 2) && scale < (contentsScale * 2)
+    }
+
+    if possibleScales.count == .zero {
+      possibleScales = [
+        getCropScale(.down, CGFloat(8), contentsScale, cropWidth, cropHeight),
+        getCropScale(.awayFromZero, CGFloat(8), contentsScale, cropWidth, cropHeight),
+        getCropScale(.toNearestOrAwayFromZero, CGFloat(8), contentsScale, cropWidth, cropHeight),
+        getCropScale(.toNearestOrEven, CGFloat(8), contentsScale, cropWidth, cropHeight),
+        getCropScale(.towardZero, CGFloat(8), contentsScale, cropWidth, cropHeight),
+        getCropScale(.up, CGFloat(8), contentsScale, cropWidth, cropHeight)
+      ].filter { (scale: CGFloat) -> Bool in
+        return scale > contentsScale / 2 && scale < contentsScale * 2
+      }
+    }
+
+    if possibleScales.count == .zero {
+      possibleScales = [
+        getCropScale(.down, CGFloat(4), contentsScale, cropWidth, cropHeight),
+        getCropScale(.awayFromZero, CGFloat(4), contentsScale, cropWidth, cropHeight),
+        getCropScale(.toNearestOrAwayFromZero, CGFloat(4), contentsScale, cropWidth, cropHeight),
+        getCropScale(.toNearestOrEven, CGFloat(4), contentsScale, cropWidth, cropHeight),
+        getCropScale(.towardZero, CGFloat(4), contentsScale, cropWidth, cropHeight),
+        getCropScale(.up, CGFloat(4), contentsScale, cropWidth, cropHeight)
+      ].filter { (scale: CGFloat) -> Bool in
+        return scale > contentsScale / 2 && scale < contentsScale * 2
+      }
+    }
+
+    let scale = possibleScales.sorted { (a: CGFloat, b: CGFloat) -> Bool in
+      return abs(a - contentsScale) < abs(b - contentsScale)
+    }
+
+    return scale.first
+  }
   
   static let CONVERT_PNG_TO_WEBP = true
 
@@ -191,68 +261,90 @@ class ContentExport {
     } else {
 
       let layer = CALayer()
-      let group = DispatchGroup()
-      group.enter()
 
-      DispatchQueue.main.async {
+
+      let workBlock = {
         let view =  image.nodeView!
-        layer.bounds = CGRect(origin: .zero, size: _frame.size)
-        layer.setRotatableFrame(frame: frame, rotation: rotation)
+        let containerView = image.containerView!
 
-        setupInnerLayer(layer: layer, block: block)
+        if let _ = view as? MovableView {
+          // MovableView might be offset by the wrong amount!
+//          let offset = _frame.normalize(scale: 1 / scale).origin
+//          let transform = CGAffineTransform.init(translationX: offset.x, y: offset.y).translatedBy(x: view.transform.translation().x, y: view.transform.translation().y).scaledBy(x: view.transform.scaleX, y: view.transform.scaleY)
 
-        let format: UIGraphicsImageRendererFormat
-        if #available(iOS 13.0, *) {
-          format = UIGraphicsImageRendererFormat.init(for: .current)
+          let bounds = _frame
+
+
+          Log.debug("""
+            Frame: \(_frame)
+            Bounds: \(bounds)
+
+            Frame origins
+              nodeView:  \(view.frame.origin)
+              view:      \(image.view?.frame.origin)
+              inputView: \(image.inputView?.frame.origin)
+              container: \(image.containerView?.frame.origin)
+            Origins
+              nodeView:  \(view.bounds.origin)
+              view:      \(image.view?.bounds.origin)
+              inputView: \(image.inputView?.bounds.origin)
+              container: \(image.containerView?.bounds.origin)
+            Insets
+              nodeView:  \(view.reactPaddingInsets)
+              view:      \(image.view?.reactPaddingInsets)
+              inputView: \(image.inputView?.reactPaddingInsets)
+              container: \(image.containerView?.reactPaddingInsets)
+            """)
+
+          layer.bounds = CGRect(origin: bounds.origin, size: bounds.size)
+          layer.setRotatableFrame(frame: layer.bounds, rotation: rotation)
         } else {
-          format = UIGraphicsImageRendererFormat.init()
+          layer.bounds = CGRect(origin: .zero, size: _frame.size)
+          layer.setRotatableFrame(frame: _frame, rotation: rotation)
         }
 
 
-        format.preferredRange = .standard
+        setupInnerLayer(layer: layer, block: block)
 
-
-        format.opaque = false
         layer.contentsGravity = .center
 
+        if !image.isVideo {
+          let _image = view.caSnapshot(scale: scale * CGFloat(block!.position.scale.doubleValue), isOpaque: false, layer: .default)!
+          let image = _image.cgImage!
+          layer.contents = image
+          Log.info("""
+            Bounds: \(view.bounds)
+            Content Scale: \(layer.contentsScale)
+            Frame: \(frame)
+            Type: \(block!.format.rawValue)
+            ID: \(block!.id)
+            Image: \(image.width)x\(image.height)
+          """)
+        }
 
-        let renderer = UIGraphicsImageRenderer.init(bounds: view.bounds, format: format)
 
-
-//        let _view =  block?.nodeFrame != nil ?  view.subviews.first! : view
-//
-//
-//        let _image = _view.caSnapshot(scale: scale * CGFloat(block!.position.scale.doubleValue), isOpaque: false, layer: .default)!
-
-        let _image = view.caSnapshot(scale: scale * CGFloat(block!.position.scale.doubleValue), isOpaque: false, layer: .default)!
-
-
-        let image = _image.cgImage!
-
-        layer.contents = image
         layer.isOpaque = false
         layer.masksToBounds = false
 
         layer.contentsScale = CGFloat(1)
 
 
-
-
-
-
-        Log.info("""
-          Bounds: \(view.bounds)
-          Content Scale: \(layer.contentsScale)
-          Frame: \(frame)
-          Image: \(image.width)x\(image.height)
-
-        """)
         layer.backgroundColor = UIColor.clear.cgColor
-
-        group.leave()
       }
 
-      group.wait()
+      if Thread.isMainThread {
+        workBlock()
+      } else {
+        let group = DispatchGroup()
+        group.enter()
+        DispatchQueue.main.async {
+          workBlock()
+          group.leave()
+        }
+
+        group.wait()
+      }
+
 
       return layer
     }
@@ -276,8 +368,8 @@ class ContentExport {
        maxY = frame.origin.y + frame.size.height
       }
 
-      if (frame.origin.y < minY) {
-       minY = frame.origin.y
+      if (max(frame.origin.y, 0) < minY) {
+       minY = max(frame.origin.y, 0)
       }
 
       let rotation = CGFloat(block.position.rotate.doubleValue)
@@ -333,12 +425,50 @@ class ContentExport {
   // 4. We take the video output...and crop it.
   static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil) -> Promise<ContentExport> {
     return Promise<ContentExport>(queue: VideoProducer.contentExportQueue) { resolve, reject in
-      let contentsScale = min(scale ?? UIScreen.main.scale, CGFloat(1.5))
+
+      var contentsScale = min(scale ?? UIScreen.main.scale, CGFloat(2))
+      var maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
+      var renderSize = CGSize(width: maxRenderBounds.width, height: .zero)
 
 
+      do {
+        var yOffset = CGFloat.zero
+        var xOffset = CGFloat.zero
+        var cropWidth = renderSize.width
+        var cropHeight = renderSize.height
+        var maxDuration = duration
 
-      let maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
-      var renderSize = CGSize(width: estimatedBounds.width, height: .zero)
+        for resource in resources {
+          if let block = resource.block {
+            let renderedFrame = block.maxRenderedFrame(scale: contentsScale, maxY: maxRenderBounds.height)
+            
+             let _cropWidth = min(
+               max(renderedFrame.origin.x + renderedFrame.size.width, cropWidth),
+               maxRenderBounds.width
+             )
+
+             let _cropHeight = min(
+               max(abs(renderedFrame.origin.y) + renderedFrame.size.height, cropHeight),
+               maxRenderBounds.height
+             )
+
+            if _cropWidth > cropWidth {
+              cropWidth = _cropWidth
+            }
+
+            if _cropHeight > cropHeight {
+              cropHeight = _cropHeight
+            }
+          }
+        }
+
+        if let scale = findCropScale(contentsScale: contentsScale, cropWidth: cropWidth, cropHeight: cropHeight) {
+          contentsScale = scale
+        }
+      }
+
+      maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
+      renderSize = CGSize(width: maxRenderBounds.width, height: .zero)
 
       var videoCount = 0
        var yOffset = CGFloat.zero
@@ -346,7 +476,6 @@ class ContentExport {
        var cropWidth = renderSize.width
        var cropHeight = renderSize.height
        var maxDuration = duration
-
 
       var videoYPositions: Dictionary<String, CGFloat> = [:]
       var lastVideoYPosition = CGFloat.zero
@@ -360,8 +489,8 @@ class ContentExport {
           if let block = resource.block {
             let frame = block.renderSizeFrame(scale: contentsScale)
 
-            let minY = min(frame.origin.y, yOffset)
-            let minX = min(frame.origin.x, xOffset)
+            let minY = max(min(frame.origin.y, yOffset), 0)
+            let minX = max(min(frame.origin.x, xOffset), 0)
 
             if minY < yOffset {
               yOffset = minY
@@ -371,17 +500,17 @@ class ContentExport {
               xOffset = minX
             }
 
-            let renderedFrame = block.maxRenderedFrame(scale: contentsScale)
+            let renderedFrame = block.maxRenderedFrame(scale: contentsScale, maxY: maxRenderBounds.height)
 
             let _cropWidth = min(
-              max(renderedFrame.topRight.x, cropWidth),
+              max(renderedFrame.origin.x + renderedFrame.size.width, cropWidth),
               maxRenderBounds.width
             )
 
             maxDuration = max(maxDuration, block.totalDuration)
 
             let _cropHeight = min(
-              max(renderedFrame.bottomCenter.y, cropHeight),
+              max(abs(renderedFrame.origin.y) + renderedFrame.size.height, cropHeight),
               maxRenderBounds.height
             )
 
@@ -429,19 +558,16 @@ class ContentExport {
       if renderSize.height == .zero {
         renderSize.height = cropHeight
       }
-      
+
 
       var minRenderWidth = abs(xOffset) + cropWidth
 
       var minRenderHeight = abs(yOffset) + cropHeight
 
-
-
-
-      var renderSizeScale = CGFloat(1)
       if minRenderWidth > renderSize.width {
         renderSize.width = minRenderWidth
       }
+
 
       if minRenderHeight > renderSize.height {
         renderSize.height = minRenderHeight
@@ -454,7 +580,7 @@ class ContentExport {
         renderSize.height = minRenderHeight
       }
 
-
+      renderSize.height = renderSize.height.rounded(.toNearestOrEven)
 
 
 
@@ -478,7 +604,7 @@ class ContentExport {
       parentLayer.isOpaque = false
 
 
-      if (type == ExportType.mp4) {
+      if (type.isVideo) {
         let startPrepTime = CACurrentMediaTime()
 
         let seconds = [maxDuration, duration, 3.0].max()!
@@ -591,14 +717,17 @@ class ContentExport {
                  }
                }
               let frame = (block.nodeFrame ?? block.frame).normalize(scale: contentsScale)
+
               let nodeView = video.nodeView!
+              let playerFrame = video.videoView!.playerLayer.videoRect
+              let nodeScale = nodeView.transform.scaleX
 
               let ___rect = AVMakeRect(aspectRatio: _asset.resolution, insideRect: CGRect(origin: .zero, size: frame.size))
 
               let scaleX = (___rect.width / _asset.resolution.width)
               let scaleY = (___rect.height / _asset.resolution.height)
 
-              var _videoTransform = CGAffineTransform
+              let _videoTransform = CGAffineTransform
                 .identity
                 .scaledBy(x: scaleX, y: scaleY)
 
@@ -608,49 +737,49 @@ class ContentExport {
 
               let videoRect = CGRect(origin: .zero, size: vidAsset.naturalSize).applying(layerTransform)
 
-              let videoLayer = CALayer()
+
               let interRect = videoContainerRect.intersection(videoRect)
-               videoLayer.contentsScale = scaleX
+
+              let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
+              layerInstruction.setTransform(layerTransform, at: .zero)
+              instruction.layerInstructions.append(layerInstruction)
+            track.preferredTransform = vidAsset.preferredTransform
+              track.naturalTimeScale = vidAsset.naturalTimeScale
+
+
+              if (CMTimeGetSeconds(layercomposition.frameDuration) > CMTimeGetSeconds(vidAsset.minFrameDuration)) {
+                layercomposition.frameDuration = vidAsset.minFrameDuration
+              }
+
+              let videoLayer = ContentExport.composeImageLayer(image: video, frame: CGRect(origin: .zero, size: ___rect.size), duration: 0, scale: CGFloat(block.position.scale.doubleValue), exportType: type, estimatedBounds: estimatedBounds, parentLayer: parentLayer)
+
+              let _layer = CALayer()
+              _layer.bounds = ___rect
+              _layer.frame = frame
+//              videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0)
+              videoLayer.bounds = ___rect
+              videoLayer.position = _layer.position
+
+              let contentsScaleRect = ___rect.applying(block.position.transform())
+              let contentsScaleFrame = frame.applying(block.position.transform())
+
+              if (___rect.x != .zero) {
+                videoLayer.contentsScale = contentsScaleFrame.width > contentsScaleRect.width ? contentsScaleFrame.width / contentsScaleRect.width : contentsScaleRect.width / contentsScaleFrame.width
+              } else if (___rect.y != .zero) {
+                videoLayer.contentsScale = contentsScaleFrame.height > contentsScaleRect.height ? contentsScaleFrame.height / contentsScaleRect.height : contentsScaleRect.height / contentsScaleFrame.height
+              }
 
 
 
-               let view = video.view
-
-
-
-                let layerInstruction = AVMutableVideoCompositionLayerInstruction(assetTrack: track)
-                layerInstruction.setTransform(layerTransform, at: .zero)
-                instruction.layerInstructions.append(layerInstruction)
-              track.preferredTransform = vidAsset.preferredTransform
-                track.naturalTimeScale = vidAsset.naturalTimeScale
-
-
-                if (CMTimeGetSeconds(layercomposition.frameDuration) > CMTimeGetSeconds(vidAsset.minFrameDuration)) {
-                  layercomposition.frameDuration = vidAsset.minFrameDuration
-                }
-
-
-
-              setupInnerLayer(layer: videoLayer, block: block)
 
               videoLayer.isGeometryFlipped = false
-              videoLayer.backgroundColor = UIColor.clear.cgColor
-              videoLayer.masksToBounds = false
+              videoLayer.setAffineTransform(block.position.transform())
 
 
               if self.SHOW_BORDERS {
                 videoLayer.borderWidth = CGFloat(2)
                 videoLayer.borderColor = UIColor.red.cgColor
               }
-
-
-
-              videoLayer.backgroundColor = UIColor.clear.cgColor
-
-              videoLayer.bounds = CGRect(origin: ___rect.origin, size: ___rect.size)
-              videoLayer.setRotatableFrame(frame: frame, rotation: CGFloat(block.position.rotate.doubleValue))
-
-
 
 
               let contentsRect = CGRect(
@@ -666,7 +795,6 @@ class ContentExport {
 
               videoLayer.contentsRect = contentsRect
 
-                videoLayer.contentsGravity = video.videoView!.playerLayer.videoGravity.contentsGravity
 
 
 
@@ -685,7 +813,6 @@ class ContentExport {
   Bounds diff:
   - translation \(videoTransform.translation())
   - Editor: \(frame)
-  - View: \(view?.bounds),\(view?.frame)
   - vidRect: \(videoRect)
   - Node: \(nodeView.bounds),\(nodeView.frame)
   - Node Transform: \(nodeView.transform)
@@ -754,10 +881,31 @@ class ContentExport {
           return
         }
 
+        var metadata = assetExport.metadata ?? []
+
+        if type == .mov {
+          var cameraID = AVMutableMetadataItem()
+          cameraID.identifier = .quickTimeMetadataCameraIdentifier
+          cameraID.keySpace = .quickTimeMetadata
+          cameraID.key = AVMetadataKey.quickTimeMetadataKeyCameraIdentifier as NSString
+          cameraID.value = "Made with yeet" as NSString
+          metadata.append(cameraID)
+        } else if type == .mp4 {
+
+           var cameraID = AVMutableMetadataItem()
+            cameraID.identifier = .iTunesMetadataDescription
+            cameraID.key = AVMetadataKey.iTunesMetadataKeyDescription as NSString
+            cameraID.keySpace = AVMetadataKeySpace.iTunes
+           cameraID.value = "Made with yeet" as NSString
+          metadata.append(cameraID)
+        }
+
+        assetExport.metadata = metadata
+
 
 
         let canSkipCrop = renderSize == cropRect.size && cropRect.origin == .zero
-        assetExport.outputFileType = AVFileType.mp4
+        assetExport.outputFileType = type.avFileType
         assetExport.outputURL = canSkipCrop ? url : VideoProducer.generateExportURL(type: type)
         assetExport.timeRange = vid_timerange
         assetExport.shouldOptimizeForNetworkUse = canSkipCrop
@@ -774,6 +922,7 @@ class ContentExport {
 //        if assetExport.estimatedOutputFileLength > 50000000 {
 //          assetExport.presetName = AVAssetExportPresetHighest
 //        }
+        
 
         assetExport.exportAsynchronously {
           VideoProducer.contentExportQueue.async {
@@ -801,7 +950,7 @@ Cropping video...
 
                   resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                 } else {
-                  fullAsset.crop(to: cropRect, dest: url).then(on: VideoProducer.contentExportQueue) { asset in
+                  fullAsset.crop(to: cropRect, dest: url, exact: true, type: type, loops: true).then(on: VideoProducer.contentExportQueue) { asset in
                     let resolution = asset.resolution ?? cropRect.size
                     var colors: UIImageColors? = nil
 
@@ -837,6 +986,7 @@ Cropping video...
 
          let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
 
+
         let thumbnailSize = ContentExportThumbnailSize
         let thumbnailImage = fullImage.sd_resizedImage(with: thumbnailSize, scaleMode: .aspectFill)
 
@@ -866,6 +1016,13 @@ Cropping video...
         imageData.write(to: url, atomically: true)
         thumbnailData.write(to: thumbnailUrl, atomically: true)
         let resolution = fullImage.size
+
+        SwiftyBeaver.info("""
+          Saved image.
+            To:    \(url)
+            Size:  \(resolution.width)x\(resolution.height)
+            Scale: \(contentsScale)
+        """)
 
 
         let thumbnail = ContentExportThumbnail(uri: thumbnailUrl.absoluteString, width: Double(thumbnailSize.width), height: Double(thumbnailSize.height), type: thumbnailType)
@@ -927,13 +1084,6 @@ extension UIColor {
 }
 
 
-extension CGAffineTransform {
-    init(from: CGRect, toRect to: CGRect) {
-        self.init(translationX: to.midX-from.midX, y: to.midY-from.midY)
-        self = self.scaledBy(x: to.width/from.width, y: to.height/from.height)
-    }
-}
-
 
 extension CALayer {
   func applyTransform(withScale scale: CGFloat, paddingScale: CGFloat, anchorPoint: CGPoint) {
@@ -947,12 +1097,7 @@ extension CALayer {
   }
 }
 
-extension CGFloat {
-    func roundedToScreenScale(_ rule: FloatingPointRoundingRule = .toNearestOrAwayFromZero) -> CGFloat {
-        let scale: CGFloat = 1.0 / UIScreen.main.scale
-        return scale * (self / scale).rounded(rule)
-    }
-}
+
 
 extension UIColor {
     convenience init(rgb:UInt, alpha:CGFloat = 1.0) {
@@ -964,50 +1109,6 @@ extension UIColor {
         )
     }
 }
-
-extension CGFloat {
-  func toClosestMultiple(_ of: CGFloat) -> CGFloat {
-     return floor(self / of) * of
-  }
-}
-
-extension CGSize {
-  func h264Friendly() -> CGSize {
-    let h264Width = abs(self.width.toClosestMultiple(CGFloat(16)))
-
-    return CGSize(
-      width: h264Width,
-      height: abs(floor((h264Width / width) * height))
-    )
-  }
-}
-
-extension CGRect {
-  func normalize(scale: CGFloat = CGFloat(1)) -> CGRect {
-    self.standardized.applying(.init(scaleX: scale, y: scale)).integral
-  }
-
-  func h264Friendly() -> CGRect {
-    let size = self.size.h264Friendly()
-
-//    let origin = CGPoint(
-//      x: self.origin.x + self.size.width - size.width,
-//      y: self.origin.y + self.size.height - size.height
-//    )
-
-    return CGRect(
-      origin: origin,
-      size: size
-      )
-//      size: CGSize(
-//        width: size.width - origin.x,
-//        height: size.height - origin.y
-//      )
-//    )
-  }
-}
-
-
 
 
 extension CALayer {
@@ -1050,45 +1151,6 @@ extension AVAsset {
   }
 }
 
-extension UIImage {
-  public func hasAlpha() -> Bool {
-    guard let alpha: CGImageAlphaInfo = self.cgImage?.alphaInfo else { return false }
-    return alpha == .first || alpha == .last || alpha == .premultipliedFirst || alpha == .premultipliedLast
-  }
-
-  func rotate(radians: Float) -> UIImage? {
-       var newSize = CGRect(origin: CGPoint.zero, size: self.size).applying(CGAffineTransform(rotationAngle: CGFloat(radians))).size
-       // Trim off the extremely small float value to prevent core graphics from rounding it up
-       newSize.width = floor(newSize.width)
-       newSize.height = floor(newSize.height)
-
-       UIGraphicsBeginImageContextWithOptions(newSize, !hasAlpha(), self.scale)
-       let context = UIGraphicsGetCurrentContext()!
-
-       // Move origin to middle
-       context.translateBy(x: newSize.width/2, y: newSize.height/2)
-       // Rotate around middle
-       context.rotate(by: CGFloat(radians))
-       // Draw the image at its center
-       self.draw(in: CGRect(x: -self.size.width/2, y: -self.size.height/2, width: self.size.width, height: self.size.height))
-
-       let newImage = UIGraphicsGetImageFromCurrentImageContext()
-       UIGraphicsEndImageContext()
-
-       return newImage
-   }
-}
-
-extension BinaryInteger {
-    var degreesToRadians: CGFloat { return CGFloat(self) * .pi / 180 }
-}
-
-extension FloatingPoint {
-    var degreesToRadians: Self { return self * .pi / 180 }
-    var radiansToDegrees: Self { return self * 180 / .pi }
-}
-
-
 extension AVLayerVideoGravity {
   var contentsGravity: CALayerContentsGravity {
 //    return .center
@@ -1102,274 +1164,3 @@ extension AVLayerVideoGravity {
   }
 }
 
-
-extension UIView {
-
-   public func snapshot(scale: CGFloat = 0, isOpaque: Bool = false, afterScreenUpdates: Bool = true) -> UIImage? {
-      UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, scale)
-      drawHierarchy(in: bounds, afterScreenUpdates: afterScreenUpdates)
-      let image = UIGraphicsGetImageFromCurrentImageContext()
-      UIGraphicsEndImageContext()
-      return image
-   }
-
-
-   public enum CASnapshotLayer: Int {
-      case `default`, presentation, model
-   }
-
-   /// The method drawViewHierarchyInRect:afterScreenUpdates: performs its operations on the GPU as much as possible
-   /// In comparison, the method renderInContext: performs its operations inside of your app’s address space and does
-   /// not use the GPU based process for performing the work.
-   /// https://stackoverflow.com/a/25704861/1418981
-   public func caSnapshot(scale: CGFloat = 0, isOpaque: Bool = false,
-                          layer layerToUse: CASnapshotLayer = .default) -> UIImage? {
-      var isSuccess = false
-      UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, scale)
-      if let context = UIGraphicsGetCurrentContext() {
-         isSuccess = true
-         switch layerToUse {
-         case .default:
-            layer.render(in: context)
-         case .model:
-            layer.model().render(in: context)
-         case .presentation:
-            layer.presentation()?.render(in: context)
-         }
-      }
-      let image = UIGraphicsGetImageFromCurrentImageContext()
-      UIGraphicsEndImageContext()
-      return isSuccess ? image : nil
-   }
-}
-
-
-extension UIImage {
-    func cropImageByAlpha() -> UIImage {
-        let cgImage = self.cgImage
-        let context = createARGBBitmapContextFromImage(inImage: cgImage!)
-        let height = cgImage!.height
-        let width = cgImage!.width
-
-        var rect: CGRect = CGRect(x: 0, y: 0, width: CGFloat(width), height: CGFloat(height))
-        context?.draw(cgImage!, in: rect)
-
-        let pixelData = self.cgImage!.dataProvider!.data
-        let data: UnsafePointer<UInt8> = CFDataGetBytePtr(pixelData)
-
-        var minX = width
-        var minY = height
-        var maxX: Int = 0
-        var maxY: Int = 0
-
-        //Filter through data and look for non-transparent pixels.
-        for y in 0..<height {
-            for x in 0..<width {
-                let pixelIndex = (width * y + x) * 4 /* 4 for A, R, G, B */
-
-                if data[Int(pixelIndex)] != 0 { //Alpha value is not zero pixel is not transparent.
-                    if (x < minX) {
-                        minX = x
-                    }
-                    if (x > maxX) {
-                        maxX = x
-                    }
-                    if (y < minY) {
-                        minY = y
-                    }
-                    if (y > maxY) {
-                        maxY = y
-                    }
-                }
-            }
-        }
-
-        rect = CGRect( x: CGFloat(minX), y: CGFloat(minY), width: CGFloat(maxX-minX), height: CGFloat(maxY-minY))
-        let imageScale:CGFloat = self.scale
-        let cgiImage = self.cgImage?.cropping(to: rect)
-        return UIImage(cgImage: cgiImage!, scale: imageScale, orientation: self.imageOrientation)
-    }
-
-    private func createARGBBitmapContextFromImage(inImage: CGImage) -> CGContext? {
-
-        let width = cgImage!.width
-        let height = cgImage!.height
-
-        let bitmapBytesPerRow = width * 4
-        let bitmapByteCount = bitmapBytesPerRow * height
-
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        if colorSpace == nil {
-            return nil
-        }
-
-        let bitmapData = malloc(bitmapByteCount)
-        if bitmapData == nil {
-            return nil
-        }
-
-        let context = CGContext (data: bitmapData, width: width, height: height, bitsPerComponent: 8, bytesPerRow: bitmapBytesPerRow, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
-
-        return context
-    }
-}
-
-extension CGRect {
-  /// Sets and returns top left corner
-  public var topLeft: CGPoint {
-    get { return origin }
-    set { origin = newValue }
-  }
-
-  /// Sets and returns top center point
-  public var topCenter: CGPoint {
-    get { return CGPoint(x: midX, y: minY) }
-    set { origin = CGPoint(x: newValue.x - width / 2,
-                           y: newValue.y) }
-  }
-
-  /// Returns top right corner
-  public var topRight: CGPoint {
-    get { return CGPoint(x: maxX, y: minY) }
-    set { origin = CGPoint(x: newValue.x - width,
-                           y: newValue.y) }
-  }
-
-  /// Returns center left point
-  public var centerLeft: CGPoint {
-    get { return CGPoint(x: minX, y: midY) }
-    set { origin = CGPoint(x: newValue.x,
-                           y: newValue.y - height / 2) }
-  }
-
-  /// Sets and returns center point
-  public var center: CGPoint {
-    get { return CGPoint(x: midX, y: midY) }
-    set { origin = CGPoint(x: newValue.x - width / 2,
-                           y: newValue.y - height / 2) }
-  }
-
-  /// Returns center right point
-  public var centerRight: CGPoint {
-    get { return CGPoint(x: maxX, y: midY) }
-    set { origin = CGPoint(x: newValue.x - width,
-                           y: newValue.y - height / 2) }
-  }
-
-  /// Returns bottom left corner
-  public var bottomLeft: CGPoint {
-    get { return CGPoint(x: minX, y: maxY) }
-    set { origin = CGPoint(x: newValue.x,
-                           y: newValue.y - height) }
-  }
-
-  /// Returns bottom center point
-  public var bottomCenter: CGPoint {
-    get { return CGPoint(x: midX, y: maxY) }
-    set { origin = CGPoint(x: newValue.x - width / 2,
-                           y: newValue.y - height) }
-  }
-
-  /// Returns bottom right corner
-  public var bottomRight: CGPoint {
-    get { return CGPoint(x: maxX, y: maxY) }
-    set { origin = CGPoint(x: newValue.x - width,
-                           y: newValue.y - height) }
-  }
-}
-
-// Exposed fields without indirection
-extension CGRect {
-  /// Returns origin x
-  public var x: CGFloat {
-    get { return origin.x }
-    set { origin.x = newValue }
-  }
-
-  /// Returns origin y
-  public var y: CGFloat {
-    get { return origin.y }
-    set { origin.y = newValue }
-  }
-
-  /// Returns size width
-  public var width: CGFloat {
-    get { return size.width } // normally built-in
-    set { size.width = newValue }
-  }
-
-  /// Returns size height
-  public var height: CGFloat {
-    get { return size.height } // normally built-in
-    set { size.height = newValue }
-  }
-}
-
-// Rectangle Properties
-extension CGRect {
-  /// Return rectangle's area
-  public var area: CGFloat { return width * height }
-
-  /// Return rectangle's diagonal extent
-  public var diagonalExtent: CGFloat { return hypot(width, height) }
-}
-
-// Moving Rects
-extension CGRect {
-
-  /// Returns rect translated to origin
-  public var zeroed: CGRect {
-    return CGRect(origin: .zero, size: size)
-  }
-
-  /// Constructs a rectangle around a center with the given size
-  public static func around(_ center: CGPoint, size: CGSize) -> CGRect {
-    var rect = CGRect(origin: .zero, size: size)
-    rect.center = center
-    return rect
-  }
-
-  /// Returns rect centered around point
-  func around(_ center: CGPoint) -> CGRect {
-    return CGRect.around(center, size: size)
-  }
-
-  /// Returns rect with coaligned centers
-  public func centered(in mainRect: CGRect) -> CGRect {
-    return CGRect.around(mainRect.center, size: size)
-  }
-
-}
-
-// Fitting and Filling
-extension CGRect {
-  /// Calculates the fitting aspect scale between a source size
-  /// and a destination rectangle
-  public func fittingAspect(of sourceSize: CGSize) -> CGFloat {
-    let scaleW = width / sourceSize.width
-    let scaleH = height / sourceSize.height
-    return fmin(scaleW, scaleH)
-  }
-
-  /// Calculates the filling aspect scale between a source size
-  /// and a destination rectangle
-  public func fillingAspect(of sourceSize: CGSize) -> CGFloat {
-    let scaleW = width / sourceSize.width
-    let scaleH = height / sourceSize.height
-    return fmax(scaleW, scaleH)
-  }
-
-  /// Fitting into a destination rectangle
-  public func fitting(_ destination: CGRect) -> CGRect {
-    let aspect = destination.fittingAspect(of: size)
-    let targetSize = CGSize(width: width * aspect, height: height * aspect)
-    return CGRect.around(destination.center, size: targetSize)
-  }
-
-  /// Filling a destination rectangle
-  public func filling(_ destination: CGRect) -> CGRect {
-    let aspect = destination.fillingAspect(of: size)
-    let targetSize = CGSize(width: width * aspect, height: height * aspect)
-    return CGRect.around(destination.center, size: targetSize)
-  }
-}

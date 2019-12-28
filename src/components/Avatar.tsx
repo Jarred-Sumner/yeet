@@ -4,7 +4,7 @@ import { buildImgSrc, normalizeFormat as getSize } from "../lib/imgUri";
 import { View, StyleSheet, StyleProp } from "react-native";
 import CircularProgressBar from "./PostList/CircularProgressBar";
 import { UserContext } from "./UserContext";
-import tinycolor from "tinycolor2";
+import chroma from "chroma-js";
 
 import { Avatar as PlaceholderAvatar } from "react-native-paper";
 
@@ -61,7 +61,7 @@ export const Avatar = React.forwardRef(
                 ).toUpperCase()
               : "HI"
           }
-          style={[style, { backgroundColor: tinycolor(color).toString() }]}
+          style={[style, { backgroundColor: chroma(color).css() }]}
         />
       );
     } else {

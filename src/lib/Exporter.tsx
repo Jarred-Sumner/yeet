@@ -45,6 +45,7 @@ import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
 import { FONT_STYLES } from "./fonts";
 import { IS_DEVELOPMENT } from "../../config";
+import { getDefaultBorder, getDefaultTemplate } from "./buildPost";
 
 const { YeetExporter } = NativeModules;
 
@@ -188,11 +189,36 @@ export const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
     })
   );
 
+const getEstimatedBoundsToContainer = (
+  ref: React.Ref<View>,
+  container: React.Ref<View>
+): Promise<BoundsRect> =>
+  new Promise((resolve, _reject) => {
+    let refHandle = ref?.boundsHandle ?? findNodeHandle(ref);
+
+    console.log(ref, ref?.boundsHandle);
+    console.log(ref, container);
+
+    UIManager.measureLayout(
+      refHandle,
+      findNodeHandle(container?.getNode() ?? container),
+      err => reject(err),
+      (x, y, width, height) => {
+        resolve({
+          x,
+          y,
+          width,
+          height
+        });
+      }
+    );
+  });
+
 export const startExport = async (
   _blocks: Array<Array<PostBlockType>>,
   _nodes: EditableNodeMap,
   refs: Map<string, React.RefObject<View>>,
-  ref: React.RefObject<ScrollView>,
+  ref: React.RefObject<View>,
   nodeRefs: Map<string, React.RefObject<View>>,
   isServerOnly: boolean
 ): Promise<[ContentExport, ExportData]> => {
@@ -208,9 +234,9 @@ export const startExport = async (
   const measureTime = new Date().getTime();
   await Bluebird.map(
     [...refs.entries()],
-    ([id, ref]) =>
-      ref.current &&
-      getEstimatedBounds(ref.current).then(bounds => {
+    ([id, _ref]) =>
+      _ref.current &&
+      getEstimatedBoundsToContainer(_ref.current, ref.current).then(bounds => {
         blockBoundsMap.set(id, bounds);
         return true;
       }),
@@ -221,9 +247,11 @@ export const startExport = async (
 
   await Bluebird.map(
     [...nodeRefs.entries()],
-    ([id, ref]) =>
-      ref &&
-      getEstimatedBounds(ref).then(bounds => {
+    ([id, _ref]) =>
+      _ref &&
+      getEstimatedBoundsToContainer(_ref, ref.current).then(bounds => {
+        console.log(id, bounds);
+
         inlinesBoundsMap.set(id, bounds);
         return true;
       }),
@@ -438,8 +466,11 @@ const sanitizeOverrides = (_overrides, scaleFactor) => {
 const convertExportableBlock = (
   block: ExportableBlock,
   assets: AssetMap,
-  scaleFactor: number = 1.0
+  scaleFactor: number = 1.0,
+  isSticker: Boolean = false
 ) => {
+  const format = isSticker ? PostFormat.sticker : PostFormat.post;
+
   if (block.type === "image") {
     return buildImageBlock({
       id: block.id,
@@ -448,20 +479,26 @@ const convertExportableBlock = (
       width: block.dimensions.width * scaleFactor,
       height: block.dimensions.height * scaleFactor,
       autoInserted: false,
-      format: PostFormat[block.format] || PostFormat.sticker,
+      format,
       layout: PostLayout[block.layout] || PostLayout.text
     });
   } else if (block.type === "text") {
+    const template = getDefaultTemplate(block.template, format);
+    const border = getDefaultBorder(
+      block.config?.border ?? block.border,
+      template
+    );
+
     return buildTextBlock({
       id: block.id,
-      value: isEmpty(block.value) ? "Tap to edit text" : block.value,
-      placeholder: "",
-      template: block.template,
+      value: isEmpty(block.value) ? "" : block.value,
+      placeholder: block.value || "Tap to edit text",
+      template: template,
       autoInserted: false,
-      border: block.config?.border,
+      border: border,
       layout: block.config?.layout,
       overrides: sanitizeOverrides(block.config?.overrides, scaleFactor),
-      format: PostFormat[block.format] || PostFormat.sticker,
+      format,
       layout: PostLayout[block.layout] || PostLayout.text
     });
   } else {
@@ -494,7 +531,7 @@ const convertExportedNode = async (
   yPadding: number = 0,
   size: BoundsRect
 ) => {
-  const block = convertExportableBlock(node.block, assets, scaleFactor);
+  const block = convertExportableBlock(node.block, assets, scaleFactor, true);
   if (!block) {
     return null;
   }
@@ -520,13 +557,6 @@ const convertExportedNode = async (
   const isTopOriented = _position.y < size.height / 2;
   const isBottomOriented = _position.y > size.height / 2;
 
-  console.log({
-    isRightOriented,
-    isLeftOriented,
-    isTopOriented,
-    isBottomOriented
-  });
-
   if (xPadding > 0 && size && isLeftOriented) {
     x = Math.max(
       xPadding,
@@ -544,6 +574,10 @@ const convertExportedNode = async (
       yPadding,
       Math.min(y + yPadding + fontSize, size.height - yPadding)
     );
+  }
+
+  if (block.type === "text" && isEmpty(block.value)) {
+    block.value = "Tap to edit text";
   }
 
   return [
@@ -576,4 +610,75 @@ export const convertExportedNodes = async (
   );
 
   return fromPairs(convertedNodes.filter(Boolean));
+};
+
+const isValidLayout = (
+  layout: PostLayout,
+  blocks: Array<Array<PostBlockType>>
+) => {
+  if (!PostLayout[layout]) {
+    return false;
+  }
+
+  const _blocks = flatten(blocks);
+
+  const blockTypes = _blocks.map(({ type }) => type);
+
+  if (
+    layout === PostLayout.media &&
+    (blocks.length > 1 || blockTypes[0] !== "image")
+  ) {
+    return false;
+  } else if (
+    [PostLayout.verticalTextMedia, PostLayout.horizontalTextMedia].includes(
+      layout
+    ) &&
+    (blocks.length > 2 || blockTypes[0] !== "text" || blockTypes[1] !== "image")
+  ) {
+    return false;
+  } else if (
+    [PostLayout.verticalMediaText, PostLayout.horizontalMediaText].includes(
+      layout
+    ) &&
+    (blocks.length > 2 || blockTypes[0] !== "image" || blockTypes[1] !== "text")
+  ) {
+    return false;
+  } else {
+    return true;
+  }
+};
+
+export const guesstimateLayout = (
+  _defaultLayout: PostLayout,
+  blocks: Array<Array<PostBlockType>>
+) => {
+  if (isValidLayout(_defaultLayout, blocks)) {
+    return _defaultLayout;
+  }
+  const _blocks = flatten(blocks);
+  const blockTypes = _blocks.map(({ type }) => type);
+
+  if (_blocks.length === 1) {
+    return PostLayout[_blocks[0]?.layout] || PostLayout.media;
+  } else if (_blocks.length === 2) {
+    const [firstRow, secondRow] = blocks;
+
+    const isOnlyImages = blockTypes.every(type => type === "image");
+
+    if (firstRow && secondRow && isOnlyImages) {
+      return PostLayout.verticalMediaMedia;
+    } else if (isOnlyImages) {
+      return PostLayout.horizontalMediaMedia;
+    } else if (!isOnlyImages && firstRow && secondRow) {
+      if (_blocks[0].type === "image") {
+        return PostLayout.verticalMediaText;
+      } else {
+        return PostLayout.verticalTextMedia;
+      }
+    } else {
+      return PostLayout.verticalTextMedia;
+    }
+  } else {
+    return PostLayout.media;
+  }
 };

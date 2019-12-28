@@ -8,19 +8,19 @@
 
 import Foundation
 import PINRemoteImage
-import SwiftyBeaver
 import Photos
 import Promise
-
-enum YeetImageViewResizeMode : String {
-  case aspectFit = "aspectFit"
-  case aspectFill = "aspectFill"
-}
-
-typealias ImageFetchCompletionBlock = (_ image: UIImage?) -> Void
+import UIKit
 
 @objc(YeetImageView)
 class YeetImageView : PINAnimatedImageView {
+  typealias ImageFetchCompletionBlock = (_ image: UIImage?) -> Void
+
+  enum YeetImageViewResizeMode : String {
+    case aspectFit = "aspectFit"
+    case aspectFill = "aspectFill"
+  }
+  
   @objc var sentOnLoadStart = false
   @objc var completed = false
   @objc var errored = false
@@ -40,8 +40,8 @@ class YeetImageView : PINAnimatedImageView {
         old?.hasLoaded = false
         old?.stop()
 
-        if let assetGenerator = imageGenerator {
-          assetGenerator.cancelAllCGImageGeneration()
+        if let videoCover = self.videoCover {
+          videoCover.stop()
         }
 
         if let imageRequestID = imageRequestID {
@@ -174,7 +174,7 @@ class YeetImageView : PINAnimatedImageView {
 
   @objc(source) var mediaSource: MediaSource? = nil
 
-  var _resizeMode: YeetImageViewResizeMode = .aspectFit
+  var _resizeMode: YeetImageView.YeetImageViewResizeMode = .aspectFit
   @objc(resizeMode)
   var resizeMode: String {
     get {
@@ -182,10 +182,10 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     set (newValue) {
-      if YeetImageViewResizeMode.aspectFill.rawValue == newValue {
+      if YeetImageView.YeetImageViewResizeMode.aspectFill.rawValue == newValue {
         _resizeMode = .aspectFill
         self.contentMode = .scaleAspectFill
-      } else if YeetImageViewResizeMode.aspectFit.rawValue == newValue {
+      } else if YeetImageView.YeetImageViewResizeMode.aspectFit.rawValue == newValue {
         _resizeMode = .aspectFit
         self.contentMode = .scaleAspectFit
       }
@@ -267,7 +267,7 @@ class YeetImageView : PINAnimatedImageView {
 
   }
 
-  var imageGenerator: AVAssetImageGenerator? = nil
+  var videoCover: MediaSourceVideoCover? = nil
 
   func handleImageResult(result: PINRemoteImageManagerResult, scale: CGFloat) {
     let success = self.image != nil || self.animatedImage != nil
@@ -312,28 +312,13 @@ class YeetImageView : PINAnimatedImageView {
           }
 
           let maximumSize = bounds.applying(self!.transform.concatenating(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale))).standardized.size
+          self?.videoCover = MediaSourceVideoCover(mediaSource: mediaSource, size: maximumSize)
 
-          DispatchQueue.global(qos: .background).async { [weak self] in
-            let imageGenerator = AVAssetImageGenerator(asset: _asset)
-            imageGenerator.maximumSize = maximumSize
-
-             imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: CMTime.zero)]) { [weak self] (time, cgImage, endTime, result, error) in
-               if error != nil {
-                 self?.handleLoad(success: false, error: error)
-                 return
-               }
-
-               guard let _cgImage = cgImage else {
-                 self?.handleLoad(success: false)
-                 return
-               }
-
-               self?.handleImageLoad(image: UIImage(cgImage: _cgImage), scale: CGFloat(1.0))
-             }
-
-             self?.imageGenerator = imageGenerator
+          self?.videoCover?.load().then(on: DispatchQueue.main) { [weak self] image in
+            self?.handleImageLoad(image: image, scale: CGFloat(1.0), async: false)
+          }.catch { error in
+            self?.handleImageLoad(image: nil, scale: CGFloat(1.0), error: error)
           }
-
         }
 
       }
@@ -584,8 +569,8 @@ class YeetImageView : PINAnimatedImageView {
       self.imageRequestID = nil
     }
 
-    imageGenerator?.cancelAllCGImageGeneration()
-    imageGenerator = nil
+    videoCover?.stop()
+    videoCover = nil
 
     self.isPlaybackPaused = true
   }
@@ -595,6 +580,6 @@ class YeetImageView : PINAnimatedImageView {
     self.reset()
     self.animatedImage?.clearCache()
     self.animatedImage = nil
-    imageGenerator?.cancelAllCGImageGeneration()
+    videoCover?.stop()
   }
 }

@@ -8,7 +8,7 @@ import {
   State
 } from "react-native-gesture-handler";
 import { SPACING, COLORS } from "../../lib/styles";
-import tinycolor from "tinycolor2";
+import chroma from "chroma-js";
 import { normalizeBackgroundColor } from "../Posts/CommentsViewer";
 
 export type ColorSwatch = {
@@ -99,9 +99,9 @@ const styles = StyleSheet.create({
 
 const ColorSwatchComponent = React.memo(
   ({ backgroundColor: _backgroundColor, color, size }: ColorSwatchProps) => {
-    const backgroundColor = tinycolor(_backgroundColor)
-      .setAlpha(1)
-      .toString();
+    const backgroundColor = chroma(_backgroundColor)
+      .alpha(1)
+      .css();
 
     const sizeStyle = React.useMemo(
       () => ({ width: size, height: size, borderRadius: size / 2 }),
@@ -143,9 +143,9 @@ export const SelectableColorSwatch = ({
 
   const selectedColor =
     backgroundColor && backgroundColor !== "transparent"
-      ? tinycolor(backgroundColor)
-          .setAlpha(0.5)
-          .toString()
+      ? chroma(backgroundColor)
+          .alpha(0.5)
+          .css()
       : COLORS.primaryDark;
 
   return (

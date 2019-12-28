@@ -1,12 +1,11 @@
 import * as React from "react";
-import { View, StyleSheet, TextInput as RNTextInput } from "react-native";
 import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
 import { TextInput } from "./Text/TextInput";
-import { throttle } from "lodash";
+import { View, findNodeHandle } from "react-native";
+import { PostFormat } from "../../lib/buildPost";
 
 type Props = {
   block: TextPostBlockType;
-  onChange: ChangeBlockFunction;
 };
 
 export class TextPostBlock extends React.Component<Props> {
@@ -21,6 +20,17 @@ export class TextPostBlock extends React.Component<Props> {
   componentDidMount() {
     if (this.props.autoFocus) {
       this.focus();
+    }
+  }
+
+  stickerRef = React.createRef<View>();
+  containerRef = React.createRef<View>();
+
+  get boundsHandle() {
+    if (this.props.block.format === PostFormat.post) {
+      return findNodeHandle(this.containerRef.current);
+    } else {
+      return findNodeHandle(this.stickerRef.current);
     }
   }
 
@@ -55,6 +65,10 @@ export class TextPostBlock extends React.Component<Props> {
     return true;
   }
 
+  get isImagePostBlock() {
+    return false;
+  }
+
   render() {
     const {
       block,
@@ -73,6 +87,8 @@ export class TextPostBlock extends React.Component<Props> {
         editable={!disabled}
         block={block}
         maxX={maxX}
+        stickerRef={this.stickerRef}
+        blockRef={this.containerRef}
         inputRef={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}

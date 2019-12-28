@@ -1,32 +1,18 @@
+import { useActionSheet } from "@expo/react-native-action-sheet";
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  ActivityIndicator,
-  Easing,
-  StyleProp
-} from "react-native";
-import Animated, { Transitioning, Transition } from "react-native-reanimated";
-import { SemiBoldText, LETTER_SPACING_MAPPING } from "./Text";
-import { SPACING, COLORS } from "../lib/styles";
-import {
-  BorderlessButton,
-  TouchableHighlight,
-  RectButton
-} from "react-native-gesture-handler";
-import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
-import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-import tinycolor from "tinycolor2";
+import { StyleProp, StyleSheet, View } from "react-native";
+import { BorderlessButton, RectButton } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import { COLORS, SPACING } from "../lib/styles";
+import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import {
-  IconBack,
-  IconClose,
-  IconArrowleft,
   IconChevronLeft,
+  IconClose,
   IconEllipsis,
   IconEllipsisAlt
 } from "./Icon";
-import { useActionSheet } from "@expo/react-native-action-sheet";
+import { LETTER_SPACING_MAPPING, SemiBoldText } from "./Text";
 
 const styles = StyleSheet.create({
   color_primaryColor: {
@@ -133,6 +119,7 @@ export const IconButton = ({
   type = "plain",
   backgroundColor,
   borderColor,
+  borderWidth = 1,
   style,
   iconStyle,
   color = "white",
@@ -219,7 +206,7 @@ export const IconButton = ({
               height: containerSize,
               borderRadius: borderRadius ?? containerSize / 2,
               borderColor,
-              borderWidth: borderColor ? 1 : undefined,
+              borderWidth: borderColor ? borderWidth : undefined,
               opacity
             }}
           />

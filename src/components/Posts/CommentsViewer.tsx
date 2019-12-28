@@ -1,41 +1,25 @@
+import { memoize } from "lodash";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import {
-  TouchableHighlight,
-  TouchableWithoutFeedback,
-  BaseButton
-} from "react-native-gesture-handler";
-import LinearGradient from "react-native-linear-gradient";
+import { BaseButton } from "react-native-gesture-handler";
 import Animated, {
   Transition,
   Transitioning,
   TransitioningView
 } from "react-native-reanimated";
-import { SCREEN_DIMENSIONS } from "../../../config";
-import { PostFragment } from "../../lib/graphql/PostFragment";
-import { scaleToWidth } from "../../lib/Rect";
-import { SPACING, COLORS } from "../../lib/styles";
-import { Avatar, CurrentUserAvatar } from "../Avatar";
-import { IconButtonEllipsis } from "../Button";
-import MediaPlayer from "../MediaPlayer";
-import { SemiBoldText, MediumText, Text } from "../Text";
-import { LikeCountButton } from "../ThreadList/LikeCountButton";
-import VIEW_COMMENTS_QUERY from "../../lib/ViewComments.graphql";
-import { useLazyQuery } from "react-apollo";
+import chroma from "chroma-js";
 import { CommentFragment } from "../../lib/graphql/CommentFragment";
-import tinycolor from "tinycolor2";
-import { memoize } from "lodash";
-import { MovableNode, TransformableView } from "../NewPost/Node/MovableNode";
-import { CommentComposer } from "./CommentComposer";
-import TextInput from "../NewPost/Text/TextInput";
+import { Avatar, CurrentUserAvatar } from "../Avatar";
 import {
   buildTextBlock,
   PostFormat,
-  TextTemplate,
-  TextBorderType
+  TextBorderType,
+  TextTemplate
 } from "../NewPost/NewPostFormat";
+import { TransformableView } from "../NewPost/Node/MovableNode";
+import TextInput from "../NewPost/Text/TextInput";
+import { Text } from "../Text";
 import { UserContext } from "../UserContext";
-import { useNavigation } from "react-navigation-hooks";
 
 const AVATAR_SIZE = 22;
 
@@ -51,9 +35,9 @@ const styles = StyleSheet.create({
 });
 
 const _normalizedBackgroundColor = (color: string) =>
-  tinycolor(color)
-    .setAlpha(0.15)
-    .toString();
+  chroma(color)
+    .alpha(0.15)
+    .css();
 
 export const normalizeBackgroundColor = memoize(_normalizedBackgroundColor);
 

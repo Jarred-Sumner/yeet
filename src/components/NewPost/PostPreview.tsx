@@ -17,6 +17,8 @@ import {
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import { getInset } from "react-native-safe-area-view";
+import { currentlyFocusedField } from "./Text/TextInputState";
+import { BlockMap, BlockPositionList, PostBlockID } from "../../lib/buildPost";
 export const ScrollView = KeyboardAwareScrollView;
 
 const isTextBlock = (block: PostBlockType) => block.type === "text";
@@ -54,7 +56,8 @@ const BlockLayoutContainer = ({
 };
 
 type BlockListProps = {
-  blocks: Array<Array<PostBlockType>>;
+  blocks: BlockMap;
+  positions: BlockPositionList;
   setBlockAtIndex: (block: PostBlockType, index: number) => void;
 };
 export const BlockList = ({
@@ -62,6 +65,7 @@ export const BlockList = ({
   setBlockAtIndex,
   setBlockInputRef,
   focusType,
+  positions,
   disabled,
   focusedBlockValue,
   layout,
@@ -88,7 +92,9 @@ export const BlockList = ({
   );
 
   const renderBlock = React.useCallback(
-    (block: PostBlockType, index: number) => {
+    (blockId: string, index: number) => {
+      const block = blocks[blockId];
+
       return (
         <Block
           onLayout={onLayout}
@@ -117,6 +123,7 @@ export const BlockList = ({
       onLayout,
       focusedBlockValue,
       onOpenImagePicker,
+      positions,
       focusType,
       onChangePhoto,
       onTap,
@@ -128,22 +135,12 @@ export const BlockList = ({
   );
 
   const renderRow = React.useCallback(
-    (row: Array<PostBlockType>) => {
-      const rowKey = row.map(block => block.id).join(",");
-
-      let _layout = layout;
-      const isTextOnly = row.every(isTextBlock);
-      const isMultiList = isTextOnly && row.length > 1;
-      if (isTextOnly && isMultiList) {
-        _layout = PostLayout.horizontalTextMedia;
-      }
+    (row: Array<PostBlockID>) => {
+      console.log(row);
+      const rowKey = row.join("-");
 
       return (
-        <BlockLayoutContainer
-          multiList={isMultiList}
-          key={rowKey}
-          layout={_layout}
-        >
+        <BlockLayoutContainer multiList={false} key={rowKey} layout={layout}>
           {row.map(renderBlock)}
         </BlockLayoutContainer>
       );
@@ -151,7 +148,7 @@ export const BlockList = ({
     [renderBlock]
   );
 
-  return blocks.map(renderRow);
+  return positions.map(renderRow);
 };
 
 type EditableNodeListProps = {
@@ -315,6 +312,7 @@ export const PostPreview = React.forwardRef(
       scrollEnabled,
       onBlur,
       onOpenImagePicker,
+      positions,
       focusTypeValue,
       topInsetValue,
       contentViewRef,
@@ -363,7 +361,6 @@ export const PostPreview = React.forwardRef(
     const contentContainerStyle = React.useMemo(
       () => [
         {
-          position: "relative",
           backgroundColor
         }
       ],
@@ -372,6 +369,7 @@ export const PostPreview = React.forwardRef(
 
     const contenViewStyle = React.useMemo(
       () => ({
+        position: "relative",
         minHeight:
           layout && typeof layout.height === "number"
             ? layout.height - paddingTop
@@ -399,6 +397,7 @@ export const PostPreview = React.forwardRef(
         defaultPosition={initialOffset}
         contentOffset={initialOffset}
         scrollEnabled={scrollEnabled}
+        getFocusedField={currentlyFocusedField}
         onScroll={onScroll}
         onLayout={onLayout}
         nestedScrollEnabled
@@ -430,6 +429,7 @@ export const PostPreview = React.forwardRef(
             <BlockList
               setBlockInputRef={setBlockInputRef}
               blocks={blocks}
+              positions={positions}
               layout={postLayout}
               onFocus={onFocus}
               focusTypeValue={focusTypeValue}

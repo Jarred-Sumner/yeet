@@ -1,46 +1,52 @@
 import euclideanDistance from "euclidean-distance";
 import * as React from "react";
-import { Dimensions, StyleSheet, View, TextInput } from "react-native";
+import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { interpolateColor } from "react-native-redash";
-import { getInset } from "react-native-safe-area-view";
+import { SafeAreaContext } from "react-native-safe-area-context";
+import chroma from "chroma-js";
+import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { COLORS, SPACING } from "../../lib/styles";
+import { BitmapIconNext } from "../BitmapIcon";
 import { IconButton } from "../Button";
+import ColorSlider from "../ColorSlider";
 import {
-  IconDownload,
-  IconSend,
-  IconTrash,
   IconClose,
-  IconJustifyLeft,
   IconJustifyCenter,
+  IconJustifyLeft,
   IconJustifyRight,
-  IconText
+  IconText,
+  IconTrash
 } from "../Icon";
 import {
-  MAX_POST_HEIGHT,
   CAROUSEL_HEIGHT,
   FocusType,
+  PostFormat,
   TextBorderType,
-  TextTemplate,
-  PostFormat
+  TextTemplate
 } from "./NewPostFormat";
-import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
-import { BitmapIconNext } from "../BitmapIcon";
 import { CAROUSEL_BACKGROUND } from "./PostHeader";
-import { ToolbarType } from "./Toolbar";
-import { SafeAreaContext } from "react-native-safe-area-context";
-import ColorSlider from "../ColorSlider";
-import { useToggle } from "../../lib/useToggle";
 import {
-  getTextBlockColor,
-  getTextBlockBackgroundColor,
+  getDenormalizedBackgroundColor,
   getTextBlockAlign,
-  contrastingColor,
-  getDenormalizedColor,
-  getDenormalizedBackgroundColor
+  getTextBlockBackgroundColor,
+  getTextBlockColor,
+  getDenormalizedColor
 } from "./Text/TextInput";
-import { SelectableColorSwatch } from "./ColorSwatch";
-import tinycolor from "tinycolor2";
+import { ToolbarType } from "./Toolbar";
+import {
+  invertColor,
+  isTooDark,
+  getDarkColor,
+  isTooLight,
+  getLightColor,
+  isColorLight,
+  isColorDark,
+  isColorNeutral,
+  getNeutralColor
+} from "../../lib/colors";
+import TextInput from "./Text/CustomTextInputComponent";
+import { BoldText } from "../Text";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -48,6 +54,20 @@ const styles = StyleSheet.create({
   footerSide: {
     flexDirection: "row",
     alignItems: "center"
+  },
+  colorSlider: {
+    height: 220,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
+    overflow: "visible",
+    flex: 0,
+    width: 20,
+    marginRight: SPACING.normal,
+    transform: [
+      {
+        translateY: SPACING.double
+      }
+    ]
   },
   leftHeaderSide: {
     paddingLeft: SPACING.normal
@@ -66,6 +86,17 @@ const styles = StyleSheet.create({
 
     width: 60,
     height: "100%"
+  },
+  textSidebar: {
+    top: CAROUSEL_HEIGHT,
+    right: 0,
+    overflow: "visible",
+    width: 100,
+    alignItems: "flex-end",
+    justifyContent: "space-between"
+  },
+  bottomButtons: {
+    paddingRight: 12
   },
   container: {
     shadowRadius: StyleSheet.hairlineWidth,
@@ -132,86 +163,81 @@ const BorderTypeButton = ({
 }) => {
   const { border, template } = block.config;
 
-  let iconType = "shadow";
+  let iconType = "fill";
   const Icon = IconText;
   const containerColor = getTextBlockBackgroundColor(block);
   const color = getTextBlockColor(block);
   let nextValue;
-  let containerSize = 28;
-  let iconSize = 14;
-  let borderRadius = undefined;
+  let containerSize = 36;
+  let iconSize = 18;
+  let borderRadius = 4;
+  let borderWidth = 2;
 
-  const willFlipColors =
-    template === TextTemplate.comic || block.format === PostFormat.post;
+  const willFlipColors = template === TextTemplate.comic;
 
   if (willFlipColors) {
-    borderRadius = 1;
+    borderRadius = 4;
     iconType = "fill";
   } else if (border === TextBorderType.hidden) {
-    borderRadius = 2;
+    borderRadius = 4;
+    iconType = "fill";
   } else if (
     border === TextBorderType.solid ||
     border === TextBorderType.highlight ||
     border === TextBorderType.invert
   ) {
     iconType = "fill";
-    borderRadius = 2;
+    borderRadius = 4;
   }
 
   const handleChange = React.useCallback(() => {
-    const shouldFlipColors =
-      template === TextTemplate.comic || block.format === PostFormat.post;
-    let backgroundColor = getDenormalizedBackgroundColor(block);
+    const shouldFlipColors = template === TextTemplate.comic;
+    let backgroundColor = getTextBlockBackgroundColor(block);
     let color = getTextBlockColor(block);
 
-    const isTooDark =
-      tinycolor(backgroundColor).isDark() && tinycolor(color).isDark();
-    const isTooLight =
-      tinycolor(backgroundColor).isLight() && tinycolor(color).isLight();
+    let supportedTypes = [];
+    if (block.format === PostFormat.post) {
+      supportedTypes = [TextBorderType.hidden, TextBorderType.invert];
+    } else {
+      supportedTypes = [
+        TextBorderType.highlight,
+        TextBorderType.invert,
+        TextBorderType.stroke,
+        TextBorderType.hidden
+      ];
+    }
 
     if (shouldFlipColors) {
-      if (isTooDark) {
-        color = "#fff";
-      } else if (isTooLight) {
-        color = "#000";
-      }
       onChange(border, {
         ...block.config.overrides,
         color: backgroundColor,
         backgroundColor: color
       });
-    } else if (border === TextBorderType.hidden) {
-      if (isTooDark) {
-        backgroundColor = "#fff";
-      } else if (isTooLight) {
-        backgroundColor = "#000";
-      }
+    } else {
+      let currentIndex = supportedTypes.indexOf(border);
+      const nextType = supportedTypes[currentIndex + 1] ?? supportedTypes[0];
 
-      onChange(TextBorderType.highlight, {
-        ...block.config.overrides,
-        backgroundColor,
-        color
+      onChange(nextType, {
+        ...block.config.overrides
       });
-    } else if (border === TextBorderType.highlight) {
-      if (isTooDark) {
-        backgroundColor = "#fff";
-      } else if (isTooLight) {
-        backgroundColor = "#000";
-      }
-
-      onChange(TextBorderType.invert, {
-        ...block.config.overrides,
-        color,
-        backgroundColor
-      });
-    } else if (border === TextBorderType.invert) {
-      onChange(TextBorderType.hidden);
     }
-  }, [containerColor, color, block, template, border, onChange]);
+  }, [
+    containerColor,
+    color,
+    block,
+    block.format,
+    block?.config?.overrides,
+    block?.config?.overrides?.backgroundColor,
+    template,
+    border,
+    onChange
+  ]);
 
   return (
     <Animated.View
       style={{
+        width: 40,
+        alignItems: "flex-end",
         transform: [
           {
             scale: Animated.interpolate(opacity, {
@@ -222,6 +248,27 @@ const BorderTypeButton = ({
         ]
       }}
     >
+      <BoldText
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        style={{
+          fontSize: 10,
+          textTransform: "uppercase",
+          textAlign: "center",
+          marginBottom: SPACING.half
+        }}
+      >
+        {
+          {
+            [TextBorderType.stroke]: "OUTLINE",
+            [TextBorderType.solid]: "FILL",
+            [TextBorderType.ellipse]: "CIRCLE",
+            [TextBorderType.hidden]: "PLAIN",
+            [TextBorderType.invert]: "SWAP",
+            [TextBorderType.highlight]: "FILL"
+          }[border]
+        }
+      </BoldText>
       <IconButton
         type={iconType}
         color={color}
@@ -231,6 +278,7 @@ const BorderTypeButton = ({
         borderColor={color}
         backgroundColor={containerColor}
         Icon={Icon}
+        borderWidth={borderWidth}
         onPress={handleChange}
       />
     </Animated.View>
@@ -293,17 +341,14 @@ export const TextHeader = ({
     ({ nativeEvent: { color } }) => {
       const backgroundColor = getTextBlockBackgroundColor(block);
 
-      const isTooDark =
-        tinycolor(backgroundColor).isDark() && tinycolor(color).isDark();
-      const isTooLight =
-        tinycolor(backgroundColor).isLight() && tinycolor(color).isLight();
-
       let overides = { ...block.config.overrides, color };
 
-      if (isTooDark) {
-        overides.backgroundColor = "white";
-      } else if (isTooLight) {
-        overides.backgroundColor = "black";
+      if (isColorLight(color)) {
+        overides.backgroundColor = getDarkColor(color);
+      } else if (isColorDark(color)) {
+        overides.backgroundColor = getLightColor(color);
+      } else if (isColorNeutral(color)) {
+        overides.backgroundColor = getNeutralColor(color);
       }
 
       onChangeOverrides(overides);
@@ -336,13 +381,7 @@ export const TextHeader = ({
           />
         </View>
 
-        <View style={[styles.footerSide, styles.centerHeaderSide]}>
-          <BorderTypeButton
-            opacity={opacity}
-            block={block}
-            onChange={onChangeBorderType}
-          />
-        </View>
+        <View style={[styles.footerSide, styles.centerHeaderSide]}></View>
 
         <View style={[styles.footerSide, styles.rightHeaderSide]}>
           {focusType === FocusType.static && (
@@ -354,37 +393,27 @@ export const TextHeader = ({
         pointerEvents="box-none"
         style={[
           styles.sidebar,
+          styles.textSidebar,
           {
-            top: CAROUSEL_HEIGHT,
-            right: 0,
-            overflow: "visible",
-            width: 100,
-            alignItems: "flex-end",
-
-            height: Animated.sub(height, top + CAROUSEL_HEIGHT)
+            height: height
           }
         ]}
       >
         <ColorSlider
-          color={color}
+          color={getDenormalizedColor(block)}
           onPress={onChangeColor}
           inputRef={TextInput.State.currentlyFocusedField()}
           colorType={"textColor"}
-          style={{
-            height: 220,
-            justifyContent: "flex-end",
-            alignItems: "flex-end",
-            overflow: "visible",
-            flex: 0,
-            width: 20,
-            marginRight: SPACING.normal,
-            transform: [
-              {
-                translateY: SPACING.double
-              }
-            ]
-          }}
+          style={styles.colorSlider}
         />
+
+        <View style={styles.bottomButtons}>
+          <BorderTypeButton
+            opacity={opacity}
+            block={block}
+            onChange={onChangeBorderType}
+          />
+        </View>
       </Animated.View>
     </Animated.View>
   );

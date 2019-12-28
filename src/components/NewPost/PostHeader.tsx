@@ -114,7 +114,18 @@ const BackButtonLayer = () => {
 };
 
 export const PostHeader = React.forwardRef(
-  ({ layout, position, opacity, translateY = 0, onChangeLayout }, ref) => {
+  (
+    {
+      layout,
+      position,
+      opacity,
+      translateY = 0,
+      onChangeLayout,
+      defaultLayout,
+      thumbnail
+    },
+    ref
+  ) => {
     return (
       <Animated.View
         style={[
@@ -138,6 +149,8 @@ export const PostHeader = React.forwardRef(
           <FormatPicker
             value={layout}
             ref={ref}
+            defaultLayout={defaultLayout}
+            thumbnail={thumbnail}
             position={position}
             onChangeLayout={onChangeLayout}
           />

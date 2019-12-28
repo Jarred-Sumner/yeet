@@ -190,6 +190,8 @@ export class BaseNode extends React.Component<Props> {
     //   return null;
     // }
 
+    console.log({ minX, minY, paddingTop: this.props.paddingTop });
+
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}

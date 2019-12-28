@@ -229,19 +229,18 @@ class GalleryFilterListComponent extends React.Component<Props> {
 
   static stickerHeaderIndices = [0];
   // https://github.com/facebook/react-native/issues/26610
-  static scrollIndicatorInsets = { right: 1 };
+  static scrollIndicatorInsets = { right: 1, left: 0, top: 0, bottom: 0 };
   handleScroll = this.props.scrollY
     ? Animated.event(
         [
           {
-            nativeEvent: {
-              contentOffset: {
-                y: this.props.scrollY
-              },
-              contentInset: {
-                top: this.props.insetValue
-              }
-            }
+            nativeEvent: ({ contentOffset: { y }, contentInset: { top } }) =>
+              Animated.block([
+                Animated.set(this.props.scrollY, y),
+                this.props.insetValue
+                  ? Animated.set(this.props.insetValue, top)
+                  : 0
+              ])
           }
         ],
         { useNativeDriver: true }
@@ -266,21 +265,17 @@ class GalleryFilterListComponent extends React.Component<Props> {
       });
   };
 
-  onScrollBeginDrag = Animated.event(
-    [
-      {
-        nativeEvent: {
-          // contentOffset: {
-          //   y: this.props.scrollY
-          // },
-          contentInset: {
-            top: this.props.insetValue
-          }
+  onScrollBeginDrag =
+    this.props.insetValue &&
+    Animated.event(
+      [
+        {
+          nativeEvent: ({ contentInset: { top } }) =>
+            Animated.block([Animated.set(this.props.insetValue, top)])
         }
-      }
-    ],
-    { useNativeDriver: true }
-  );
+      ],
+      { useNativeDriver: true }
+    );
 
   listStyle = [styles.container];
 
@@ -459,8 +454,6 @@ export const SearchFilterList = ({
   const [isKeyboardVisible] = useKeyboard();
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
 
-  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
-
   const filterListRef = React.useRef();
 
   const client = useApolloClient();
@@ -512,7 +505,7 @@ export const SearchFilterList = ({
       const task = InteractionManager.runAfterInteractions(() => {
         changeTransparent(defaultTransparent);
         onChangeQuery("");
-        filterListRef.current && filterListRef.current.scrollTop(false);
+        filterListRef.current?.scrollTop(false);
         setData([]);
       });
 
@@ -526,19 +519,10 @@ export const SearchFilterList = ({
     // function
     (_query: string) => {
       onChangeQuery(_query);
-      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
-      filterListRef.current && filterListRef.current.scrollTop();
-    },
-    [
-      onChangeQuery,
-      imagesQuery,
-      hasTextValue,
 
-      setData,
-      transparent,
-      isFocused,
-      show
-    ]
+      filterListRef.current?.scrollTop();
+    },
+    [onChangeQuery, imagesQuery, setData, transparent, isFocused, show]
   );
 
   const toggleTransparent = React.useCallback(
@@ -547,7 +531,7 @@ export const SearchFilterList = ({
         return;
       }
       changeTransparent(value);
-      filterListRef.current && filterListRef.current.scrollTop();
+      filterListRef.current?.scrollTop();
     },
     [changeTransparent, query, isFocused]
   );
@@ -568,7 +552,7 @@ export const SearchFilterList = ({
       networkStatus: imagesQuery?.loading
         ? NetworkStatus.loading
         : imagesQuery?.networkStatus,
-      hasTextValue: hasTextValue.current,
+
       onChange: changeQuery
     };
   }, [
@@ -577,7 +561,7 @@ export const SearchFilterList = ({
     scrollY,
     keyboardVisibleValue,
     show,
-    hasTextValue,
+
     autoFocus,
     changeQuery,
     toggleTransparent,
@@ -684,8 +668,6 @@ export const GIFsFilterList = ({
   const [isKeyboardVisible] = useKeyboard();
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
 
-  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
-
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
 
@@ -715,7 +697,6 @@ export const GIFsFilterList = ({
       }
 
       onChangeQuery(_query);
-      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
 
       if (
         !(
@@ -733,7 +714,7 @@ export const GIFsFilterList = ({
         }
       });
     },
-    [onChangeQuery, gifsQuery, hasTextValue]
+    [onChangeQuery, gifsQuery]
   );
 
   const imageSearchContext = React.useMemo(() => {
@@ -744,14 +725,14 @@ export const GIFsFilterList = ({
       keyboardVisibleValue,
       networkStatus: gifsQuery?.networkStatus,
       placeholder: "Search GIPHY",
-      hasTextValue: hasTextValue.current,
+
       onChange: changeQuery
     };
   }, [
     query,
     scrollY,
     keyboardVisibleValue,
-    hasTextValue,
+
     changeQuery,
     gifsQuery?.networkStatus
   ]);
@@ -842,8 +823,6 @@ export const MemesFilterList = ({
   const [isKeyboardVisible] = useKeyboard();
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
 
-  const hasTextValue = React.useRef(new Animated.Value(query.length > 0));
-
   const [loadMemes, memesQuery] = useLazyQuery<
     PostSearchQuery,
     PostSearchQueryVariables
@@ -875,7 +854,6 @@ export const MemesFilterList = ({
       }
 
       onChangeQuery(_query);
-      hasTextValue.current.setValue(_query.length > 0 ? 1 : 0);
 
       if (
         !(
@@ -893,7 +871,7 @@ export const MemesFilterList = ({
         }
       });
     },
-    [onChangeQuery, memesQuery, hasTextValue]
+    [onChangeQuery, memesQuery]
   );
 
   const imageSearchContext = React.useMemo(() => {
@@ -904,14 +882,14 @@ export const MemesFilterList = ({
       keyboardVisibleValue,
       networkStatus: memesQuery?.networkStatus,
       placeholder: "Search yeet",
-      hasTextValue: hasTextValue.current,
+
       onChange: changeQuery
     };
   }, [
     query,
     scrollY,
     keyboardVisibleValue,
-    hasTextValue,
+
     changeQuery,
     memesQuery?.networkStatus
   ]);

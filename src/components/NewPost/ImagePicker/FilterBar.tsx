@@ -2,7 +2,7 @@ import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import tinycolor from "tinycolor2";
+import chroma from "chroma-js";
 import { SCREEN_DIMENSIONS } from "../../../../config";
 import { COLORS } from "../../../lib/styles";
 import { SemiBoldText } from "../../Text";
@@ -154,9 +154,9 @@ export const ListHeaderRow = ({
       style={
         isActive ? [styles.row, styles.activeRow, width] : [styles.row, width]
       }
-      underlayColor={tinycolor(COLORS.primary)
-        .setAlpha(0.5)
-        .toString()}
+      underlayColor={chroma(COLORS.primary)
+        .alpha(0.5)
+        .css()}
     >
       <View>
         <SemiBoldText style={styles.headerText}>{children}</SemiBoldText>

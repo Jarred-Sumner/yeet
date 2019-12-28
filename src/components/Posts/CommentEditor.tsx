@@ -1,67 +1,56 @@
+import { sample } from "lodash";
 import * as React from "react";
-import BaseNode, {
-  EditableNode,
-  buildEditableNode
-} from "../NewPost/Node/BaseNode";
-import Animated, {
-  TransitioningView,
-  Transitioning,
-  Transition
-} from "react-native-reanimated";
+import { useMutation } from "react-apollo";
+import { Keyboard, StyleSheet, View } from "react-native";
 import {
-  buildTextBlock,
-  PostFormat,
-  FocusType,
-  TextTemplate
-} from "../NewPost/NewPostFormat";
-import TextInput from "../NewPost/Text/TextInput";
-import {
-  View,
-  StyleSheet,
-  Keyboard,
-  SegmentedControlIOSComponent
-} from "react-native";
-import { THREAD_HEADER_HEIGHT } from "../ThreadList/ThreadHeader";
-import { InputAccessoryView } from "../InputAccessoryView";
-import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
-import {
-  ScrollView,
   BorderlessButton,
-  TapGestureHandler,
-  State as GestureState
+  ScrollView,
+  State as GestureState,
+  TapGestureHandler
 } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
-import { IconButton } from "../Button";
-import {
-  IconChevronRight,
-  IconStopwatch,
-  IconHourglass,
-  IconCircleCheckmark,
-  IconCheckmark,
-  IconCheck,
-  IconClose
-} from "../Icon";
-import { COLORS, SPACING } from "../../lib/styles";
-import {
-  ColorSwatch,
-  SelectableColorSwatch,
-  COMMENT_COLORS,
-  colorSwatchKey
-} from "../NewPost/ColorSwatch";
-import { sample } from "lodash";
-import tinycolor from "tinycolor2";
-import { BoldText, Text } from "../Text";
-import { DurationPicker } from "../DurationPicker";
+import Animated, {
+  Transition,
+  Transitioning,
+  TransitioningView
+} from "react-native-reanimated";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import CREATE_COMMENT_MUTATION from "../../lib/createCommentMutation.graphql";
-import { useMutation } from "react-apollo";
 import {
   createCommentMutation as CreateCommentMutation,
   createCommentMutationVariables as CreateCommentMutationVariables
 } from "../../lib/graphql/createCommentMutation";
-import { sendSuccessNotification } from "../../lib/Vibration";
-import Alert from "../../lib/Alert";
-import { sendToast, ToastType } from "../Toast";
 import { ImageMimeType, isVideo } from "../../lib/imageSearch";
+import { COLORS, SPACING } from "../../lib/styles";
+import { sendSuccessNotification } from "../../lib/Vibration";
+import { IconButton } from "../Button";
+import { DurationPicker } from "../DurationPicker";
+import {
+  IconCheck,
+  IconChevronRight,
+  IconClose,
+  IconHourglass,
+  IconStopwatch
+} from "../Icon";
+import { InputAccessoryView } from "../InputAccessoryView";
+import {
+  ColorSwatch,
+  colorSwatchKey,
+  COMMENT_COLORS,
+  SelectableColorSwatch
+} from "../NewPost/ColorSwatch";
+import {
+  buildTextBlock,
+  FocusType,
+  PostFormat,
+  TextTemplate
+} from "../NewPost/NewPostFormat";
+import BaseNode, {
+  buildEditableNode,
+  EditableNode
+} from "../NewPost/Node/BaseNode";
+import { BoldText, Text } from "../Text";
+import { sendToast, ToastType } from "../Toast";
 
 const NEXT_BUTTON_WIDTH = 60;
 const TOOLBAR_HEIGHT = 64;

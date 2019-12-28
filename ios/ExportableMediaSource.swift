@@ -14,6 +14,7 @@ class ExportableMediaSource {
   var mediaSource: MediaSource
   var view: UIView? = nil
   var nodeView: UIView? = nil
+  var containerView: UIView? = nil
 
   open var duration: NSNumber {
     return mediaSource.duration
@@ -205,6 +206,10 @@ extension ExportableMediaSource {
 
   var mediaPlayerView: MediaPlayer? {
     return self.view as? MediaPlayer ?? self.nodeView as? MediaPlayer
+  }
+
+  var inputView: YeetTextInputView? {
+    return self.view as? YeetTextInputView ?? self.nodeView as? YeetTextInputView
   }
 
   var image: ExportableImageSource? {

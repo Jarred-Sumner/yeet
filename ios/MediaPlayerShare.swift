@@ -11,6 +11,7 @@ import Photos
 import SCSDKCreativeKit
 
 class MediaPlayerShare: NSObject {
+  static let snapchatApi = SCSDKSnapAPI()
   enum Network : String {
     case instagram = "instagram"
     case instagramStory = "instagramStory"
@@ -114,14 +115,12 @@ class MediaPlayerShare: NSObject {
 
       case .snapchat:
 
-        let api = SCSDKSnapAPI()
+
 
         if isImage {
          let snap = SCSDKPhotoSnapContent(snapPhoto: SCSDKSnapPhoto(imageUrl: path))
-
-
           DispatchQueue.main.async {
-            api.startSending(snap) { error in
+            snapchatApi.startSending(snap) { error in
               if error != nil {
                 Log.error("sned photo error \(error))")
               }
@@ -131,7 +130,7 @@ class MediaPlayerShare: NSObject {
           let snap = SCSDKVideoSnapContent(snapVideo: SCSDKSnapVideo(videoUrl: path))
 
           DispatchQueue.main.async {
-            api.startSending(snap) { error in
+            snapchatApi.startSending(snap) { error in
               if error != nil {
                 Log.error("sned video error \(error))")
               }

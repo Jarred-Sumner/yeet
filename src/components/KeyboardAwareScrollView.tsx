@@ -89,6 +89,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     extraScrollHeight: ScrollIntoViewDefaultOptions.extraScrollHeight,
     enableResetScrollToCoords:
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
+    getFocusedField: TextInput.State.currentlyFocusedField,
     keyboardOpeningTime: ScrollIntoViewDefaultOptions.keyboardOpeningTime,
     viewIsInsideTabBar: ScrollIntoViewDefaultOptions.viewIsInsideTabBar,
     enableOnAndroid: ScrollIntoViewDefaultOptions.enableOnAndroid,
@@ -232,7 +233,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         keyboardSpace -= _KAM_DEFAULT_TAB_BAR_HEIGHT;
       }
       this.setState({ keyboardSpace });
-      const currentlyFocusedField = TextInput.State.currentlyFocusedField();
+      const currentlyFocusedField = this.props.getFocusedField();
       const responder = this.getScrollResponder();
       if (!currentlyFocusedField || !responder) {
         return;
@@ -376,7 +377,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
   };
 
   update = () => {
-    const currentlyFocusedField = TextInput.State.currentlyFocusedField();
+    const currentlyFocusedField = this.props.getFocusedField();
     const responder = this.getScrollResponder();
 
     if (!currentlyFocusedField || !responder) {

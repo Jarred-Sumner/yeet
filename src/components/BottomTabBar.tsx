@@ -18,7 +18,7 @@ import {
 import { BAR_HEIGHT } from "./ThreadList/Seekbar";
 import { AuthState, UserContext } from "./UserContext";
 import { SemiBoldText, BoldText, MediumText, Text } from "./Text";
-import tinyColor from "tinycolor2";
+import chroma from "chroma-js";
 
 export const TAB_BAR_HEIGHT = 56.5;
 export const TAB_BAR_OFFSET = TAB_BAR_HEIGHT + BOTTOM_Y;
@@ -68,9 +68,9 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: tinyColor("#fa3e3e")
+    backgroundColor: chroma("#fa3e3e")
       .darken(25)
-      .toRgbString(),
+      .css(),
     position: "absolute",
     top: -6,
     right: -6,

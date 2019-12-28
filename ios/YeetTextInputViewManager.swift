@@ -21,8 +21,7 @@ class YeetTextInputViewManager: RCTMultilineTextInputViewManager {
 
   
   @objc(requiresMainQueueSetup)
-  private func requiresMainQueueSetup() -> Bool {
-    
+  static override func requiresMainQueueSetup() -> Bool {
     return true
   }
 
