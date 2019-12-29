@@ -220,8 +220,22 @@ class ContentExport {
         if !image.isVideo {
           let _image = view.caSnapshot(scale: scale * CGFloat(block!.position.scale.doubleValue), isOpaque: false, layer: .default)!
           let image = _image.cgImage!
+
+          let widthErrorMargin = (layer.bounds.width / scale - view.bounds.width).rounded(.toNearestOrEven)
+          let heightErrorMargin = (layer.bounds.height / scale - view.bounds.height).rounded(.toNearestOrEven)
+
+          if abs(widthErrorMargin) > 1 {
+            layer.position.x = layer.position.x + widthErrorMargin * scale * -0.5
+          }
+
+          if abs(heightErrorMargin) > 1 {
+            layer.position.y = layer.position.y + heightErrorMargin * scale * -0.5
+          }
+
+
           layer.contents = image
           Log.info("""
+
             Bounds: \(view.bounds)
             Content Scale: \(layer.contentsScale)
             Frame: \(frame)
@@ -230,6 +244,7 @@ class ContentExport {
             Image: \(image.width)x\(image.height)
           """)
         }
+
 
 
         layer.isOpaque = false
@@ -311,7 +326,7 @@ class ContentExport {
 
     if let block = block {
       layer.cornerRadius = CGFloat(block.dimensions.cornerRadius.doubleValue * block.position.scale.doubleValue)
-      layer.setAffineTransform(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue)))
+      layer.setAffineTransform(layer.affineTransform().concatenating(CGAffineTransform.init(rotationAngle: CGFloat(block.position.rotate.doubleValue))))
     }
   }
 
