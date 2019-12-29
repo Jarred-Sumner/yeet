@@ -32,6 +32,7 @@ export enum BitmapIconName {
   templateGary = "Template__gary",
   templateComic = "Template__comic",
   templateClassic = "Template__classic",
+  templateBigWords = "Template__bigWords",
   shareCardInstagram = "ShareCard__Instagram",
   shareCardInstagramStory = "ShareCard__InstagramStory",
   shareCardSnapchat = "ShareCard__Snapchat",
@@ -51,6 +52,10 @@ const SIZES_BY_NAME = {
   [BitmapIconName.templateComic]: {
     width: 107,
     height: 50
+  },
+  [BitmapIconName.templateBigWords]: {
+    width: 65,
+    height: 21
   },
   [BitmapIconName.templateGary]: {
     width: 47,
@@ -363,6 +368,17 @@ export const BitmapIconTemplateClassic = ({
     {...otherProps}
     style={style}
     name={BitmapIconName.templateClassic}
+  />
+);
+
+export const BitmapIconTemplateBigWords = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    style={style}
+    name={BitmapIconName.templateBigWords}
   />
 );
 

@@ -4,6 +4,7 @@ export const SPONGEBOB_FONT = "Some Time Later";
 export const INCONSOLATA_FONT = "Inconsolata";
 export const MINECRAFT_FONT = "Minecrafter";
 export const COMIC_BOOK = "DigitalStrip";
+export const IMPACT_FONT = "Impact";
 
 export const FONT_STYLES = StyleSheet.create({
   post: {
@@ -13,6 +14,10 @@ export const FONT_STYLES = StyleSheet.create({
   basic: {
     fontFamily: "Helvetica",
     fontWeight: "bold"
+  },
+  bigWords: {
+    fontFamily: "Impact",
+    fontWeight: "normal"
   },
   spongebob: {
     fontFamily: SPONGEBOB_FONT,

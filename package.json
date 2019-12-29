@@ -8,7 +8,7 @@
     "build-memes": "babel-node --config-file ./babel.config.js --extensions \".js\",\".jsx\",\".es6\",\".es\",\".tsx\"\".ts\" tasks/buildMemes.tsx",
     "forward": "yarn forward-localhost && yarn forward-devserver",
     "android": "react-native run-android",
-    "assets": "react-native-asset -p .  --android-assets ./assets/fonts ./assets/bitmap-icons",
+    "assets": "react-native-asset -p .  --ios-assets ./assets/fonts  --android-assets ./assets/fonts ./assets/bitmap-icons",
     "pregraphql:schema": "rimraf src/lib/graphql-schema.json",
     "graphql:schema": "apollo client:download-schema --endpoint=http://localhost:3000/graphql src/lib/graphql-schema.json",
     "pregraphql:types": "yarn graphql:schema && rimraf src/lib/graphql && mkdir src/lib/graphql",

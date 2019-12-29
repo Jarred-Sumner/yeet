@@ -58,6 +58,28 @@ export const textInputPresets = {
       textShadowRadius: 0
     }
   },
+  [TextTemplate.bigWords]: {
+    fontSizes: {
+      "0": 24,
+      "8": 24,
+      "12": 24,
+      "24": 24
+    },
+    presets: {
+      backgroundColor: "#000",
+      color: "#fff",
+      textShadowColor: "rgba(51,51,51, 0.25)",
+      placeholderColor: "#ccc",
+      textAlign: "center",
+      highlightInset: -6,
+      highlightCornerRadius: 2,
+      textShadowOffset: {
+        width: StyleSheet.hairlineWidth,
+        height: StyleSheet.hairlineWidth
+      },
+      textShadowRadius: 0
+    }
+  },
   [TextTemplate.gary]: {
     fontSizes: {
       "0": 48,

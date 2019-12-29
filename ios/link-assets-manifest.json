@@ -1,0 +1,45 @@
+{
+  "migIndex": 1,
+  "data": [
+    {
+      "path": "assets/fonts/.DS_Store",
+      "sha1": "b8289f5541855f225af840110b81a27b6c065cb6"
+    },
+    {
+      "path": "assets/fonts/Impact.otf",
+      "sha1": "e37e1b188d8d96bb35c46ce22da621a12883121b"
+    },
+    {
+      "path": "assets/fonts/Inconsolata-Bold.ttf",
+      "sha1": "3de268caaee19809b2b24589ca5c65ee027397e0"
+    },
+    {
+      "path": "assets/fonts/Inter.var.ttf",
+      "sha1": "fcc78a006489320bcfd569ceebfec957e4abbb81"
+    },
+    {
+      "path": "assets/fonts/Minecrafter.Reg.ttf",
+      "sha1": "58bc893ea8723b145fd8a016bbccd9ece24dc3e9"
+    },
+    {
+      "path": "assets/fonts/Some Time Later.otf",
+      "sha1": "e9607938c469329216dc6670ea90b82cc2fe5af3"
+    },
+    {
+      "path": "assets/fonts/digistrip.ttf",
+      "sha1": "388df1b9c6e0844fc037879f8adf94e3471e2206"
+    },
+    {
+      "path": "assets/fonts/digistrip_b.ttf",
+      "sha1": "e8a14a3f77993d63ea1b48d34607df6e56d5a71b"
+    },
+    {
+      "path": "assets/fonts/digistrip_i.ttf",
+      "sha1": "419d59d5fc90eaece2481c75bcf0500dfec02609"
+    },
+    {
+      "path": "assets/fonts/iconfont.ttf",
+      "sha1": "7a8856be799ecb81c4eff3f83d6aa76c37096afc"
+    }
+  ]
+}

@@ -94,23 +94,17 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   func drawHighlight(async: Bool = false) {
-    if (!showHighlight) {
-      self.highlightLayer.isHidden = true
-      self.enforceTextAttributesIfNeeded()
-      return
-    }
-
     if (self.highlightLayer.superlayer == nil) {
       self.highlightSubview.layer.addSublayer(self.highlightLayer)
     }
 
 
-
-
-
     self.enforceTextAttributesIfNeeded()
     UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) )
 
+    if (!showHighlight) {
+      self.highlightLayer.isHidden = true
+    }
 
 
 
@@ -152,7 +146,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
 
 
-    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") || changedProps.contains("text")
+    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") || changedProps.contains("text") || changedProps.contains("template")
     if (needsUpdateHighlight) {
       if Thread.isMainThread {
         self.updateHighlight()
@@ -226,11 +220,13 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   enum TextTemplate : String {
+    case basic = "basic"
     case post = "post"
     case comment = "comment"
-    case basic = "basic"
-    case momsSpaghetti = "momsSpaghetti"
-    case sarcasticText = "sarcasticText"
+    case comic = "comic"
+    case gary = "gary"
+    case terminal = "terminal"
+    case pickaxe = "pickaxe"
   }
 
   var textTemplate: TextTemplate = .post

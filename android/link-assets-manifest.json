@@ -6,6 +6,10 @@
       "sha1": "b8289f5541855f225af840110b81a27b6c065cb6"
     },
     {
+      "path": "assets/fonts/Impact.otf",
+      "sha1": "e37e1b188d8d96bb35c46ce22da621a12883121b"
+    },
+    {
       "path": "assets/fonts/Inconsolata-Bold.ttf",
       "sha1": "3de268caaee19809b2b24589ca5c65ee027397e0"
     },
@@ -316,6 +320,18 @@
     {
       "path": "assets/bitmap-icons/SocialLogo__Snapchat@3x.png",
       "sha1": "d55946e41f44a662679fcd71b1edd656684dea12"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__bigWords.png",
+      "sha1": "d6a086bb8e0502c1c12687f20704a04da35b52d4"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__bigWords@2x.png",
+      "sha1": "4726686e482d676bf26a90b02a2b5cf2fccb19dd"
+    },
+    {
+      "path": "assets/bitmap-icons/Template__bigWords@3x.png",
+      "sha1": "ad4f4c4cc14255f513f2b8faf774baecfc88f872"
     },
     {
       "path": "assets/bitmap-icons/Template__classic.png",

@@ -196,9 +196,6 @@ const getEstimatedBoundsToContainer = (
   new Promise((resolve, _reject) => {
     let refHandle = ref?.boundsHandle ?? findNodeHandle(ref);
 
-    console.log(ref, ref?.boundsHandle);
-    console.log(ref, container);
-
     UIManager.measureLayout(
       refHandle,
       findNodeHandle(container?.getNode() ?? container),

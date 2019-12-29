@@ -139,6 +139,7 @@ const BASE_OVERLAY_STYLE = {
 const textInputTypeStylesheets: {
   [style: TextTemplate]: {
     container: StyleProp<View>;
+    sticker?: StyleProp<View>;
     input: StyleProp<_RNTextInput>;
   };
 } = {
@@ -182,9 +183,37 @@ const textInputTypeStylesheets: {
       ...BASE_OVERLAY_STYLE
     }
   }),
+  [TextTemplate.bigWords]: StyleSheet.create({
+    container: {
+      backgroundColor: "rgba(0, 0, 0, 0)"
+    },
+    input: {
+      ...FONT_STYLES.bigWords,
+      textAlign: textInputPresets[TextTemplate.bigWords].presets.textAlign,
+      color: textInputPresets[TextTemplate.bigWords].presets.color,
+
+      textShadowColor:
+        textInputPresets[TextTemplate.bigWords].presets.textShadowColor,
+      textShadowOffset:
+        textInputPresets[TextTemplate.bigWords].presets.textShadowOffset,
+
+      textShadowRadius:
+        textInputPresets[TextTemplate.bigWords].presets.textShadowRadius
+    },
+    stickerInput: {
+      ...BASE_OVERLAY_STYLE
+    }
+  }),
   [TextTemplate.comic]: StyleSheet.create({
     container: {
       backgroundColor: "rgba(0, 0, 0, 0)"
+    },
+    sticker: {
+      position: "relative",
+      paddingLeft: Math.abs(
+        textInputPresets[TextTemplate.comic].presets.highlightInset
+      ),
+      paddingTop: 40
     },
     input: {
       ...FONT_STYLES.comic,
@@ -544,7 +573,9 @@ export const TextInput = ({
   const selectionColor = contrastingColor(backgroundColor);
   let strokeColor = "rgba(0, 0, 0, 0)";
 
-  if (borderType === TextBorderType.stroke) {
+  if (template === TextTemplate.comic) {
+    strokeColor = color;
+  } else if (borderType === TextBorderType.stroke) {
     strokeColor =
       fontSize >= 18 ? getStrokeColor(color) : contrastingColor(color);
   }
@@ -568,10 +599,7 @@ export const TextInput = ({
       {
         backgroundColor: format === PostFormat.post ? backgroundColor : null,
         minHeight,
-        marginLeft:
-          template === TextTemplate.comic
-            ? Math.abs(highlightInset)
-            : undefined,
+
         textAlign,
         color,
         textTransform,
@@ -579,7 +607,10 @@ export const TextInput = ({
         ...textShadow,
         maxWidth
       },
-      isFocused && focusType === FocusType.absolute && styles.absoluteFocused
+      isFocused && focusType === FocusType.absolute && styles.absoluteFocused,
+      template === TextTemplate.comic && {
+        textAlign: "center"
+      }
     ],
     [
       styles.input,
@@ -681,19 +712,13 @@ export const TextInput = ({
 
   if (format === PostFormat.sticker) {
     return (
-      <View ref={stickerRef}>
-        {template == TextTemplate.comic && (
-          <>
-            <View
-              style={{
-                height: 40,
-                width: "100%",
-                marginLeft: Math.abs(highlightInset)
-              }}
-            />
-          </>
-        )}
-
+      <View
+        pointerEvents={
+          focusType === FocusType.absolute && !isFocused ? "none" : "auto"
+        }
+        style={textInputTypeStylesheets[template]?.sticker}
+        ref={stickerRef}
+      >
         {innerContent}
 
         {template === TextTemplate.comic && (
@@ -716,7 +741,7 @@ export const TextInput = ({
             }}
           >
             <SpeechBubble
-              strokeColor={color}
+              strokeColor={strokeColor}
               fillColor={backgroundColor}
               width={91 / 2}
               height={68 / 2}

@@ -36,6 +36,7 @@ export enum PostFormat {
 export enum TextTemplate {
   basic = "basic",
   post = "post",
+  bigWords = "bigWords",
   comment = "comment",
   comic = "comic",
   gary = "gary",

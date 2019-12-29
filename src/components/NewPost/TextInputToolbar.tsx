@@ -15,7 +15,8 @@ import {
   BitmapIconTemplateComic,
   BitmapIconTemplateGary,
   BitmapIconTemplatePixel,
-  BitmapIconTemplateMonospace
+  BitmapIconTemplateMonospace,
+  BitmapIconTemplateBigWords
 } from "../BitmapIcon";
 import chroma from "chroma-js";
 import { sendLightFeedback } from "../../lib/Vibration";
@@ -84,6 +85,8 @@ const TemplateIcon = ({ template, ...otherProps }: Partial<ImageProps>) => {
     return <BitmapIconTemplateGary resizeMode="contain" {...otherProps} />;
   } else if (template === TextTemplate.pickaxe) {
     return <BitmapIconTemplatePixel resizeMode="contain" {...otherProps} />;
+  } else if (template === TextTemplate.bigWords) {
+    return <BitmapIconTemplateBigWords resizeMode="contain" {...otherProps} />;
   } else if (template === TextTemplate.terminal) {
     return (
       <BitmapIconTemplateMonospace
@@ -133,9 +136,9 @@ const getSupportedTemplates = (block: TextPostBlock): Array<TextTemplate> => {
     return [
       TextTemplate.basic,
       TextTemplate.terminal,
+      TextTemplate.bigWords,
       TextTemplate.comic,
       TextTemplate.gary,
-
       TextTemplate.pickaxe
     ];
   }
