@@ -7,100 +7,8 @@ import SDWebImage
 import UIImageColors
 import SwiftyBeaver
 import Promise
-import NextLevelSessionExporter
-
-
-typealias ExportableSlice = (Array<AVAssetTrack>, Array<ExportableBlock>)
-
-class ContentExportError : NSError {
-  enum ErrorCode : Int {
-    case exportCancelled = -1
-    case insertVideoTrackFailed = -2
-    case resourceMissingBlock = -3
-    case assetUnplayable = -4
-    case videoTrackUnplayable = -5
-    case renderSizeIsZero = -6
-    case failedToCreateExportSession = -7
-    case videoMissingFromResource = -8
-    case unknownError = 0
-
-  }
-
-  static let ERROR_MESAGES: [ErrorCode : String] = [
-    ErrorCode.unknownError: "Something went wrong. Please try again.",
-    ErrorCode.videoMissingFromResource: "Something went wrong. Please try again.",
-    ErrorCode.insertVideoTrackFailed: "Something went wrong. Please try again.",
-    ErrorCode.resourceMissingBlock: "Something went wrong. Please try again.",
-    ErrorCode.assetUnplayable: "One of the videos might be broken. Please try again.",
-    ErrorCode.videoTrackUnplayable: "One of the videos might be broken. Please try again.",
-    ErrorCode.renderSizeIsZero: "Can't save an empty screen.",
-    ErrorCode.failedToCreateExportSession: "Can't export an empty screen.",
-  ]
-
-  let errorCode: ErrorCode
-
-
-  required init?(coder: NSCoder) {
-    fatalError()
-  }
-
-  override var localizedDescription: String {
-    return ContentExportError.ERROR_MESAGES[self.errorCode] ?? "Something went wrong. Please try again."
-  }
-
-  init(_ errorCode: ErrorCode, userInfo: [String: Any]? = nil) {
-    self.errorCode = errorCode
-
-    super.init(domain: "com.codeblogcorp.ContentExportError", code: errorCode.rawValue,  userInfo: userInfo)
-  }
-}
-
-fileprivate let ContentExportThumbnailSize = CGSize(width: 80, height: 80)
-
-struct ContentExportThumbnail {
-  let uri: String
-  let width: Double
-  let height: Double
-  let type: ExportType
-
-  init?(asset: AVURLAsset) {
-    let imageGenerator = AVAssetImageGenerator(asset: asset)
-    imageGenerator.maximumSize = ContentExportThumbnailSize.applying(CGAffineTransform.init(scaleX: CGFloat(2), y: CGFloat(2)))
-
-     do {
-       let cgImage = try imageGenerator.copyCGImage(at: .zero, actualTime: nil)
-       let image = UIImage(cgImage: cgImage).sd_resizedImage(with: ContentExportThumbnailSize, scaleMode: .aspectFill)!
-       let data = image.jpegData(compressionQuality: 0.9)!
-
-       let thumbnailUrl = VideoProducer.generateExportURL(type: .jpg)
-       try data.write(to: thumbnailUrl)
-
-       self.init(uri: thumbnailUrl.absoluteString, width: Double(image.size.width), height:  Double(image.size.height), type: .jpg)
-     } catch {
-      return nil
-     }
-  }
-
-
-  init(uri: String, width: Double, height: Double, type: ExportType) {
-    self.uri = uri
-    self.width = width
-    self.height = height
-    self.type = type
-  }
-
-  func dictionaryValue() -> Dictionary<String, Any> {
-    return [
-      "uri": self.uri as NSString,
-      "width": NSNumber(value: self.width),
-      "height": NSNumber(value: self.height),
-      "type": type.rawValue,
-    ]
-  }
-}
 
 class ContentExport {
-
   static func getCropScale(_ roundingRule: FloatingPointRoundingRule, _ multiple: CGFloat, _ contentsScale: CGFloat, _ cropWidth: CGFloat, _ cropHeight: CGFloat) -> CGFloat {
     let maxIterations = 100;
     var iterationCount = 0;
@@ -302,6 +210,7 @@ class ContentExport {
           layer.bounds = CGRect(origin: .zero, size: _frame.size)
           layer.setRotatableFrame(frame: _frame, rotation: rotation)
         }
+
 
 
         setupInnerLayer(layer: layer, block: block)
@@ -987,7 +896,7 @@ Cropping video...
          let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
 
 
-        let thumbnailSize = ContentExportThumbnailSize
+        let thumbnailSize = ContentExportThumbnail.size
         let thumbnailImage = fullImage.sd_resizedImage(with: thumbnailSize, scaleMode: .aspectFill)
 
         let imageData: NSData

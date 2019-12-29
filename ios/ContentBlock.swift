@@ -116,6 +116,8 @@ class ContentBlock {
         let offset = nodeFrame.origin
         transform = CGAffineTransform.init(translationX: offset.x, y: offset.y).translatedBy(x: view.transform.translation().x, y: view.transform.translation().y).scaledBy(x: view.transform.scaleX, y: view.transform.scaleY)
 
+        
+
         self.nodeFrame = view.bounds.applying(transform)
       } else {
         let offset = view.frame.origin
