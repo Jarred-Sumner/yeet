@@ -25,7 +25,7 @@ import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
 import { InputAccessoryView } from "../InputAccessoryView";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
-import { isArray } from "lodash";
+import { isArray, memoize } from "lodash";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import {
@@ -226,6 +226,11 @@ class RawwPostEditor extends React.Component<Props, State> {
       ])
     ]);
 
+    this.postPreviewHandlers = [
+      this.scrollRef,
+      ...this._blockInputRefs.values()
+    ];
+
     if (IS_SIMULATOR) {
       // this.state.inlineNodes.set(IMAGE_NODE_FIXTUER.block.id, {
       //   ...IMAGE_NODE_FIXTUER,
@@ -257,6 +262,11 @@ class RawwPostEditor extends React.Component<Props, State> {
     if (this._blockInputRefs.has(id)) {
       this._blockInputRefs.delete(id);
     }
+
+    this.postPreviewHandlers = [
+      this.scrollRef,
+      ...this._blockInputRefs.values()
+    ];
 
     if (this.state.focusedBlockId === id) {
       this.setState({ focusedBlockId: null, focusType: null });
@@ -304,6 +314,11 @@ class RawwPostEditor extends React.Component<Props, State> {
             this.handleAppendBlock(block);
 
             this._blockInputRefs.set(block.id, React.createRef());
+            this.postPreviewHandlers = [
+              this.scrollRef,
+              ...this._blockInputRefs.values()
+            ];
+
             this.focusTypeValue.setValue(FocusType.static);
             this.focusedBlockValue.setValue(block.id.hashCode());
             this.setState(
@@ -313,6 +328,10 @@ class RawwPostEditor extends React.Component<Props, State> {
               },
               () => {
                 this._blockInputRefs.get(block.id).current.focus();
+                this.postPreviewHandlers = [
+                  this.scrollRef,
+                  ...this._blockInputRefs.values()
+                ];
               }
             );
           } else if (buttonIndex === 1) {
@@ -332,6 +351,10 @@ class RawwPostEditor extends React.Component<Props, State> {
             this._blockInputRefs.set(block.id, React.createRef());
             this.handleAppendBlock(block);
             this.handleOpenImagePicker(block, false);
+            this.postPreviewHandlers = [
+              this.scrollRef,
+              ...this._blockInputRefs.values()
+            ];
           }
         }
       );
@@ -426,6 +449,12 @@ class RawwPostEditor extends React.Component<Props, State> {
     this._blockInputRefs.set(block.id, React.createRef());
     this.focusTypeValue.setValue(FocusType.absolute);
     this.focusedBlockValue.setValue(block.id.hashCode());
+
+    this.postPreviewHandlers = [
+      this.scrollRef,
+      ...this._blockInputRefs.values()
+    ];
+
     this.setState({
       focusedBlockId: block.id,
       focusType: FocusType.absolute
@@ -567,6 +596,11 @@ class RawwPostEditor extends React.Component<Props, State> {
       ref = React.createRef<TextInput>();
       this._blockInputRefs.set(id, ref);
     }
+
+    this.postPreviewHandlers = [
+      this.scrollRef,
+      ...this._blockInputRefs.values()
+    ];
 
     return ref;
   };
@@ -718,6 +752,11 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
     this._blockInputRefs.set(block.id, React.createRef());
+    this.postPreviewHandlers = [
+      this.scrollRef,
+      ...this._blockInputRefs.values()
+    ];
+
     this.props.onChangeNodes({
       ...this.props.inlineNodes,
       [block.id]: editableNode
@@ -930,6 +969,26 @@ class RawwPostEditor extends React.Component<Props, State> {
     0
   );
 
+  getPostContainerStyle = memoize((backgroundColor, width) => {
+    return [
+      styles.safeWrapper,
+      styles.scrollContainer,
+      {
+        backgroundColor,
+        width
+      }
+    ];
+  });
+
+  get postContainerStyle() {
+    return this.getPostContainerStyle(
+      this.props.post,
+      this.state.bounds?.width || POST_WIDTH
+    );
+  }
+
+  postPreviewHandlers = [this.scrollRef, ...this._blockInputRefs.values()];
+
   render() {
     const { post } = this.props;
     const presets = presetsByFormat[post.format];
@@ -949,7 +1008,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     };
 
     return (
-      <Animated.View
+      <View
         style={[
           styles.wrapper,
           sizeStyle,
@@ -1017,18 +1076,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           ])}
         />
 
-        <Animated.View
-          onLayout={this.updateBounds}
-          style={[
-            styles.safeWrapper,
-            styles.scrollContainer,
-            {
-              // maxHeight: MAX_POST_HEIGHT,
-              backgroundColor: post.backgroundColor,
-              width: bounds.width
-            }
-          ]}
-        >
+        <View onLayout={this.updateBounds} style={this.postContainerStyle}>
           <PostPreview
             bounds={bounds}
             blocks={post.blocks}
@@ -1055,7 +1103,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             onFocus={this.handleFocusBlock}
             onOpenImagePicker={this.handleOpenImagePicker}
             onChangePhoto={this.handleChangeImageBlockPhoto}
-            waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+            waitFor={this.postPreviewHandlers}
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
             onBlur={this.handleBlurBlock}
@@ -1089,7 +1137,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 keyboardHeightValue={this.relativeKeyboardHeightValue}
-                waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+                waitFor={this.postPreviewHandlers}
                 focusType={this.state.focusType}
                 minX={bounds.x}
                 minY={bounds.y}
@@ -1134,7 +1182,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               inputRef={this._blockInputRefs[this.state.focusedBlockId]}
               panY={this.panY}
               isPageModal={this.props.isReply}
-              waitFor={[this.scrollRef, ...this._blockInputRefs.values()]}
+              waitFor={this.postPreviewHandlers}
               width={sizeStyle.width}
               height={sizeStyle.height}
               relativeHeight={this.relativeKeyboardHeightValue}
@@ -1156,7 +1204,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               nodeListRef={this.nodeListRef}
             ></ActiveLayer>
           </Layer>
-        </Animated.View>
+        </View>
 
         <InputAccessoryView nativeID="new-post-input">
           <TextInputToolbar
@@ -1164,7 +1212,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             block={this.focusedBlock}
           />
         </InputAccessoryView>
-      </Animated.View>
+      </View>
     );
   }
 }
