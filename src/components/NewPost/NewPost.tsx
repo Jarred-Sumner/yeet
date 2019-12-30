@@ -508,8 +508,6 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   handleSubmit = (contentExport: ContentExport, data: ExportData) => {
-    // this.pauser.current.pausePlayers();
-
     return this.props.onExport(
       contentExport,
       data,

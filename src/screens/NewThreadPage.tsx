@@ -32,7 +32,7 @@ import { scaleToWidth } from "../lib/Rect";
 import { SPACING, COLORS } from "../lib/styles";
 import { NavigationStackProp } from "react-navigation-stack";
 
-const SHOW_SNAPCHAT = false;
+const SHOW_SNAPCHAT = true;
 
 const ITEM_SEPARATOR_WIDTH = 32;
 
@@ -144,6 +144,7 @@ const PostPreviewItem = React.forwardRef((props: PostPreviewItemProps, ref) => {
     onPress,
     width,
     height,
+    paused,
     isVisible,
     footerAction,
     position,
@@ -155,6 +156,118 @@ const PostPreviewItem = React.forwardRef((props: PostPreviewItemProps, ref) => {
   const maxStoryHeight = height;
 
   const storyScale = Math.max(maxStoryHeight / imageSize.height, 1.0);
+  const storyMargin = StyleSheet.hairlineWidth;
+
+  const heightValue = React.useRef(
+    Animated.interpolate(position, {
+      inputRange: [
+        INSTAGRAM_POST_POSITION,
+        INSTAGRAM_STORY_POSITION,
+        SNAPCHAT_POSITION
+      ],
+      outputRange: [
+        MAX_INSTAGRAM_POST_HEIGHT,
+        height - storyMargin,
+        height - storyMargin
+      ],
+      extrapolate: Animated.Extrapolate.CLAMP
+    })
+  );
+
+  const topValue = React.useRef(
+    Animated.interpolate(position, {
+      inputRange: [
+        INSTAGRAM_POST_POSITION,
+        INSTAGRAM_STORY_POSITION,
+        SNAPCHAT_POSITION
+      ],
+      outputRange: [
+        CONTENT_CONTAINER_TOP + 38,
+        CONTENT_CONTAINER_TOP + storyMargin,
+        CONTENT_CONTAINER_TOP + storyMargin
+      ],
+      extrapolate: Animated.Extrapolate.CLAMP
+    })
+  );
+
+  const translateXValue = React.useRef(
+    Animated.interpolate(position, {
+      inputRange: [
+        INSTAGRAM_POST_POSITION,
+        INSTAGRAM_STORY_POSITION,
+        SNAPCHAT_POSITION
+      ],
+      outputRange: [
+        8 + 32,
+        8 + 32 + SHARE_CARD_WIDTH + ITEM_SEPARATOR_WIDTH,
+        8 + 32 + (SHARE_CARD_WIDTH + ITEM_SEPARATOR_WIDTH) * 2
+      ],
+      extrapolate: Animated.Extrapolate.CLAMP
+    })
+  );
+
+  const translateYValue = React.useRef(
+    Animated.interpolate(position, {
+      inputRange: [
+        INSTAGRAM_POST_POSITION,
+        INSTAGRAM_STORY_POSITION,
+        SNAPCHAT_POSITION
+      ],
+      outputRange: [(imageSize.height - MAX_INSTAGRAM_POST_HEIGHT) / 2, 0, 0],
+      extrapolate: Animated.Extrapolate.CLAMP
+    })
+  );
+
+  const scaleValue = React.useRef(
+    Animated.interpolate(position, {
+      inputRange: [
+        INSTAGRAM_POST_POSITION,
+        INSTAGRAM_STORY_POSITION,
+        SNAPCHAT_POSITION
+      ],
+      outputRange: [
+        1,
+        Math.min(maxStoryHeight / imageSize.height, 1),
+        Math.min(maxStoryHeight / imageSize.height, 1)
+      ],
+      extrapolate: Animated.Extrapolate.CLAMP
+    })
+  );
+
+  const previewContainerStyle = React.useMemo(
+    () => [
+      styles.previewContainer,
+      {
+        width,
+        height: heightValue.current,
+        overflow: "hidden",
+        top: topValue.current,
+
+        transform: [
+          {
+            translateX: translateXValue.current
+          }
+        ]
+      }
+    ],
+    [styles.previewContainer, width, heightValue, topValue, translateXValue]
+  );
+
+  const mediaPlayerStyle = React.useMemo(
+    () => ({
+      width: imageSize.width,
+      height: imageSize.height,
+      transform: [
+        {
+          translateY: translateYValue.current
+        },
+        {
+          scale: scaleValue.current
+        }
+      ]
+    }),
+    [imageSize.width, imageSize.height, translateYValue, scaleValue]
+  );
 
   const source = React.useMemo(
     () => [
@@ -177,105 +290,16 @@ const PostPreviewItem = React.forwardRef((props: PostPreviewItemProps, ref) => {
     [contentExport, imageSize]
   );
 
-  const storyMargin = StyleSheet.hairlineWidth;
-
   return (
-    <Animated.View
-      style={[
-        styles.previewContainer,
-        {
-          width,
-          height: Animated.interpolate(position, {
-            inputRange: [
-              INSTAGRAM_POST_POSITION,
-              INSTAGRAM_STORY_POSITION,
-              SNAPCHAT_POSITION
-            ],
-            outputRange: [
-              MAX_INSTAGRAM_POST_HEIGHT,
-              height - storyMargin,
-              height - storyMargin
-            ],
-            extrapolate: Animated.Extrapolate.CLAMP
-          }),
-          overflow: "hidden",
-          top: Animated.interpolate(position, {
-            inputRange: [
-              INSTAGRAM_POST_POSITION,
-              INSTAGRAM_STORY_POSITION,
-              SNAPCHAT_POSITION
-            ],
-            outputRange: [
-              CONTENT_CONTAINER_TOP + 38,
-              CONTENT_CONTAINER_TOP + storyMargin,
-              CONTENT_CONTAINER_TOP + storyMargin
-            ],
-            extrapolate: Animated.Extrapolate.CLAMP
-          }),
-
-          transform: [
-            {
-              translateX: Animated.interpolate(position, {
-                inputRange: [
-                  INSTAGRAM_POST_POSITION,
-                  INSTAGRAM_STORY_POSITION,
-                  SNAPCHAT_POSITION
-                ],
-                outputRange: [
-                  8 + 32,
-                  8 + 32 + SHARE_CARD_WIDTH + ITEM_SEPARATOR_WIDTH,
-                  8 + 32 + (SHARE_CARD_WIDTH + ITEM_SEPARATOR_WIDTH) * 2
-                ],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            }
-          ]
-        }
-      ]}
-    >
+    <Animated.View style={previewContainerStyle}>
       <AnimatedMediaPlayer
         ref={ref}
-        style={{
-          width: imageSize.width,
-          height: imageSize.height,
-          transform: [
-            {
-              translateY: Animated.interpolate(position, {
-                inputRange: [
-                  INSTAGRAM_POST_POSITION,
-                  INSTAGRAM_STORY_POSITION,
-                  SNAPCHAT_POSITION
-                ],
-                outputRange: [
-                  (imageSize.height - MAX_INSTAGRAM_POST_HEIGHT) / 2,
-                  0,
-                  0
-                ],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            },
-            {
-              scale: Animated.interpolate(position, {
-                inputRange: [
-                  INSTAGRAM_POST_POSITION,
-                  INSTAGRAM_STORY_POSITION,
-                  SNAPCHAT_POSITION
-                ],
-                outputRange: [
-                  1,
-                  Math.min(maxStoryHeight / imageSize.height, 1),
-                  Math.min(maxStoryHeight / imageSize.height, 1)
-                ],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            }
-          ]
-        }}
+        style={mediaPlayerStyle}
         sources={source}
         autoPlay
         isActive
         borderRadius={0}
-        paused={false}
+        paused={paused}
       />
     </Animated.View>
   );
@@ -413,6 +437,30 @@ class RawNewThreadPage extends React.Component<Props> {
     this.setState({ showDone: true });
   };
 
+  instagramPostLayout = false;
+  handleInstagramPostLayout = () => {
+    this.instagramPostLayout = true;
+    this.maybeFinishedLayout();
+  };
+  instagramShareLayout = false;
+  handleInstagramShareLayout = () => {
+    this.instagramShareLayout = true;
+    this.maybeFinishedLayout();
+  };
+  snapchatLayout = false;
+  handleSnapchatLayout = () => {
+    this.snapchatLayout = true;
+    this.maybeFinishedLayout();
+  };
+
+  maybeFinishedLayout = () =>
+    this.setState({
+      didMeasure:
+        !!this.instagramPostLayout &&
+        !!this.instagramShareLayout &&
+        !!this.snapchatLayout
+    });
+
   render() {
     const { body, contentExport, exportData } = this.props;
 
@@ -454,28 +502,40 @@ class RawNewThreadPage extends React.Component<Props> {
           onScroll={this.handleScroll}
           contentOffset={this.contentOffset}
           contentContainerStyle={styles.contentContainer}
-          style={styles.scroll}
+          style={[
+            styles.scroll,
+            {
+              opacity: this.state.didMeasure ? 1 : 0
+            }
+          ]}
         >
-          <PostPreviewItem
-            contentExport={contentExport}
-            width={SHARE_CARD_WIDTH}
-            ref={this.mediaPlayerRef}
-            height={SHARE_CARD_HEIGHT}
-            position={this.position}
-          />
+          {this.state.didMeasure && (
+            <PostPreviewItem
+              contentExport={contentExport}
+              width={SHARE_CARD_WIDTH}
+              ref={this.mediaPlayerRef}
+              height={SHARE_CARD_HEIGHT}
+              position={this.position}
+            />
+          )}
           <ItemSeparatorComponent />
           <InstagramShareNetwork
+            onLayoutComplete={this.handleInstagramPostLayout}
             contentExportHeight={Math.min(
               scaleToWidth(SHARE_CARD_WIDTH, contentExport).height,
               MAX_INSTAGRAM_POST_HEIGHT
             )}
           />
           <ItemSeparatorComponent />
-          <InstagramStoryShareNetwork />
+          <InstagramStoryShareNetwork
+            onLayoutComplete={this.handleInstagramShareLayout}
+          />
           {SHOW_SNAPCHAT && (
             <>
               <ItemSeparatorComponent />
-              <SnapchatShareNetwork />
+              <SnapchatShareNetwork
+                onLayoutComplete={this.handleSnapchatLayout}
+              />
             </>
           )}
           <ItemSeparatorComponent />

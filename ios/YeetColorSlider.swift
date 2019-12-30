@@ -56,6 +56,8 @@ class YeetColorSliderView: UIView {
     super.init(frame: .zero)
     isUserInteractionEnabled = true
 
+//    colorSlider.gradientView.whiteInset = 0.2
+//    colorSlider.gradientView.blackInset = 0.2
     colorSlider.addTarget(self, action: #selector(YeetColorSliderView.handleChange(_:)), for: .valueChanged)
     colorSlider.addTarget(self, action: #selector(YeetColorSliderView.handlePress(_:)), for: .touchUpInside)
     colorSlider.addTarget(self, action: #selector(YeetColorSliderView.handleCancel(_:)), for: .touchCancel)
@@ -84,16 +86,13 @@ class YeetColorSliderView: UIView {
 
   @objc(handleCancel:)
   func handleCancel(_ colorSlider: ColorSlider) {
-
+    onPress?(["color": colorSlider.color.rgbaString])
   }
 
   @objc(handlePressDown:)
   func handlePress(_ colorSlider: ColorSlider) {
     onPress?(["color": colorSlider.color.rgbaString])
   }
-
-
-
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")

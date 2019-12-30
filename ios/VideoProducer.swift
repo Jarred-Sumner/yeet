@@ -116,7 +116,7 @@ class VideoProducer {
 
   static let contentExportQueue = DispatchQueue.init(label: "com.codeblogcorp.ContentExportQueue", qos: .background, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
 
-  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil) -> Promise<ContentExport> {
+  func start(estimatedBounds: CGRect, isServerOnly: Bool = false, exportURL: URL? = nil, scale: CGFloat? = nil, task: ContentExportTask) -> Promise<ContentExportResult> {
     let isDigital = self.isDigitalOnly
 
 
@@ -138,7 +138,7 @@ class VideoProducer {
     let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
 
-    return ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale)
+    return ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale, task: task)
   }
 
 

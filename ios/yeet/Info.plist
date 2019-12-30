@@ -92,7 +92,7 @@
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to use your location</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
+	<string/>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your microphone</string>
 	<key>NSMotionUsageDescription</key>
@@ -107,7 +107,6 @@
 	<string>Some description</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Impact.otf</string>
 		<string>iconfont.ttf</string>
 		<string>AntDesign.ttf</string>
 		<string>Entypo.ttf</string>
@@ -132,6 +131,7 @@
 		<string>digistrip_b.ttf</string>
 		<string>digistrip_i.ttf</string>
 		<string>digistrip.ttf</string>
+		<string>Impact.otf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

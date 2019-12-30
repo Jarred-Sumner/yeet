@@ -31,7 +31,9 @@ import {
   getTextBlockAlign,
   getTextBlockBackgroundColor,
   getTextBlockColor,
-  getDenormalizedColor
+  getDenormalizedColor,
+  getBorderType,
+  getSupportedBorderTypes
 } from "./Text/TextInput";
 import { ToolbarType } from "./Toolbar";
 import {
@@ -87,11 +89,28 @@ const styles = StyleSheet.create({
     width: 60,
     height: "100%"
   },
+  borderButtonContainer: {
+    width: 40,
+    display: "flex",
+    alignItems: "flex-end"
+  },
+  disabledBorderButtonContainer: {
+    width: 40,
+    display: "none",
+    alignItems: "flex-end"
+  },
+  borderButtonLabel: {
+    fontSize: 10,
+    textTransform: "uppercase",
+    textAlign: "center",
+    marginBottom: SPACING.half
+  },
   textSidebar: {
-    top: CAROUSEL_HEIGHT,
     right: 0,
     overflow: "visible",
     width: 100,
+    paddingTop: CAROUSEL_HEIGHT,
+    height: SCREEN_DIMENSIONS.height,
     alignItems: "flex-end",
     justifyContent: "space-between"
   },
@@ -161,7 +180,8 @@ const BorderTypeButton = ({
   block: TextPostBlock;
   onChange;
 }) => {
-  const { border, template } = block.config;
+  const { template } = block.config;
+  const border = getBorderType(block);
 
   let iconType = "fill";
   const Icon = IconText;
@@ -190,22 +210,12 @@ const BorderTypeButton = ({
     borderRadius = 4;
   }
 
+  const supportedTypes = getSupportedBorderTypes(block);
+
   const handleChange = React.useCallback(() => {
     const shouldFlipColors = template === TextTemplate.comic;
     let backgroundColor = getTextBlockBackgroundColor(block);
     let color = getTextBlockColor(block);
-
-    let supportedTypes = [];
-    if (block.format === PostFormat.post) {
-      supportedTypes = [TextBorderType.hidden, TextBorderType.invert];
-    } else {
-      supportedTypes = [
-        TextBorderType.highlight,
-        TextBorderType.invert,
-        TextBorderType.stroke,
-        TextBorderType.hidden
-      ];
-    }
 
     if (shouldFlipColors) {
       onChange(border, {
@@ -224,6 +234,7 @@ const BorderTypeButton = ({
   }, [
     containerColor,
     color,
+    supportedTypes,
     block,
     block.format,
     block?.config?.overrides,
@@ -234,29 +245,17 @@ const BorderTypeButton = ({
   ]);
 
   return (
-    <Animated.View
-      style={{
-        width: 40,
-        alignItems: "flex-end",
-        transform: [
-          {
-            scale: Animated.interpolate(opacity, {
-              inputRange: [0, 0.5, 1],
-              outputRange: [0, 0.25, 1.0]
-            })
-          }
-        ]
-      }}
+    <View
+      style={
+        supportedTypes.length > 1
+          ? styles.borderButtonContainer
+          : styles.disabledBorderButtonContainer
+      }
     >
       <BoldText
         numberOfLines={1}
         adjustsFontSizeToFit
-        style={{
-          fontSize: 10,
-          textTransform: "uppercase",
-          textAlign: "center",
-          marginBottom: SPACING.half
-        }}
+        style={styles.borderButtonLabel}
       >
         {
           {
@@ -281,7 +280,7 @@ const BorderTypeButton = ({
         borderWidth={borderWidth}
         onPress={handleChange}
       />
-    </Animated.View>
+    </View>
   );
 };
 
@@ -365,12 +364,27 @@ export const TextHeader = ({
     [onChangeOverrides, block]
   );
 
+  const textSidebarStyles = React.useMemo(
+    () => [
+      styles.sidebar,
+      styles.textSidebar,
+      {
+        paddingBottom: height
+      }
+    ],
+    [height, styles.sidebar, styles.textSidebar]
+  );
+
+  const textHeaderStyle = React.useMemo(
+    () => [styles.container, styles.header, { paddingTop: top }],
+    [styles.container, styles.header, top]
+  );
+
+  const opacityStyle = React.useMemo(() => ({ opacity }), [opacity]);
+
   return (
-    <Animated.View style={{ opacity: opacity }}>
-      <Animated.View
-        pointerEvents="box-none"
-        style={[styles.container, styles.header, { paddingTop: top }]}
-      >
+    <Animated.View style={opacityStyle}>
+      <Animated.View pointerEvents="box-none" style={textHeaderStyle}>
         <View style={[styles.footerSide, styles.leftHeaderSide]}>
           <IconButton
             Icon={IconClose}
@@ -389,16 +403,7 @@ export const TextHeader = ({
           )}
         </View>
       </Animated.View>
-      <Animated.View
-        pointerEvents="box-none"
-        style={[
-          styles.sidebar,
-          styles.textSidebar,
-          {
-            height: height
-          }
-        ]}
-      >
+      <Animated.View pointerEvents="box-none" style={textSidebarStyles}>
         <ColorSlider
           color={getDenormalizedColor(block)}
           onPress={onChangeColor}
@@ -409,8 +414,8 @@ export const TextHeader = ({
 
         <View style={styles.bottomButtons}>
           <BorderTypeButton
-            opacity={opacity}
             block={block}
+            opacity={opacity}
             onChange={onChangeBorderType}
           />
         </View>

@@ -1,4 +1,7 @@
-import { connectActionSheet } from "@expo/react-native-action-sheet";
+import {
+  connectActionSheet,
+  useActionSheet
+} from "@expo/react-native-action-sheet";
 import { flatten } from "lodash";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
@@ -56,6 +59,7 @@ import {
   ToolbarType
 } from "./Toolbar";
 import { NewPostType } from "../../lib/buildPost";
+import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -69,6 +73,12 @@ const styles = StyleSheet.create({
     width: POST_WIDTH,
     flex: 1,
     position: "relative"
+  },
+  darkSheetStyle: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    transform: [{ translateY: SPACING.double }]
   },
   container: {
     width: POST_WIDTH
@@ -99,22 +109,6 @@ enum LayerZIndex {
   footer = 4,
   inlineNodes = 5
 }
-
-const MiddleSheet = ({ width, height }) => {
-  return (
-    <LinearGradient
-      // useAngle
-      width={width}
-      height={height}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      // angle={180}
-      // angleCenter={{ x: 0.0, y: 0.0 }}
-      locations={[0.0, 0.8, 1.0]}
-      colors={["rgba(0,0,0,0)", "rgba(0,0,0,0)", "rgba(0,0,0,0.25)"]}
-    />
-  );
-};
 
 const Layer = ({
   zIndex,
@@ -169,44 +163,50 @@ type State = {
   bottomInset: number;
 };
 
+const DarkSheetGradient = React.memo(({ width, height }) => (
+  <LinearGradient
+    // useAngle
+    width={width}
+    height={height}
+    start={{ x: 0, y: 0 }}
+    end={{ x: 0, y: 1 }}
+    // angle={180}
+    // angleCenter={{ x: 0.0, y: 0.0 }}
+    locations={[0.0, 0.8, 1.0]}
+    colors={["rgba(0,0,0,0.65)", "rgba(10,10,10,0.65)", "rgba(45,45,45,0.65)"]}
+  />
+));
+
 const DarkSheet = ({
   opacity,
   keyboardHeight,
   width = SCREEN_DIMENSIONS.width,
   height = SCREEN_DIMENSIONS.height
-}) => (
-  <Animated.View
-    renderToHardwareTextureAndroid
-    shouldRasterizeIOS
-    pointerEvents="none"
-    style={[
+}) => {
+  const containerStyle = React.useMemo(
+    () => [
+      styles.darkSheetStyle,
       {
-        position: "absolute",
-        left: 0,
-        right: 0,
+        width,
+        height,
         opacity,
-        bottom: keyboardHeight,
-        transform: [{ translateY: SPACING.double }]
+        bottom: keyboardHeight
       }
-    ]}
-  >
-    <LinearGradient
-      // useAngle
-      width={width}
-      height={height}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 0, y: 1 }}
-      // angle={180}
-      // angleCenter={{ x: 0.0, y: 0.0 }}
-      locations={[0.0, 0.8, 1.0]}
-      colors={[
-        "rgba(0,0,0,0.65)",
-        "rgba(10,10,10,0.65)",
-        "rgba(45,45,45,0.65)"
-      ]}
-    />
-  </Animated.View>
-);
+    ],
+    [styles.darkSheetStyle, opacity, keyboardHeight]
+  );
+
+  return (
+    <Animated.View
+      renderToHardwareTextureAndroid
+      shouldRasterizeIOS
+      pointerEvents="none"
+      style={containerStyle}
+    >
+      <DarkSheetGradient width={width} height={height} />
+    </Animated.View>
+  );
+};
 
 class RawwPostEditor extends React.Component<Props, State> {
   constructor(props) {
@@ -924,6 +924,12 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
   };
 
+  darkSheetOpacityValue = Animated.cond(
+    Animated.eq(this.focusTypeValue, FocusType.absolute),
+    this.keyboardVisibleValue,
+    0
+  );
+
   render() {
     const { post } = this.props;
     const presets = presetsByFormat[post.format];
@@ -980,6 +986,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 ])
               ])
             ),
+
             // Ignore background taps when keyboard is showing/hiding
             Animated.onChange(
               this.tapGestureState,
@@ -1066,11 +1073,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             >
               <DarkSheet
                 keyboardHeight={this.relativeKeyboardHeightValue}
-                opacity={Animated.cond(
-                  Animated.eq(this.focusTypeValue, FocusType.absolute),
-                  this.keyboardVisibleValue,
-                  0
-                )}
+                opacity={this.darkSheetOpacityValue}
               />
               <EditableNodeList
                 inlineNodes={this.props.inlineNodes}
@@ -1166,5 +1169,17 @@ class RawwPostEditor extends React.Component<Props, State> {
   }
 }
 
-export const PostEditor = connectActionSheet(RawwPostEditor);
+export const PostEditor = props => {
+  const { showActionSheetWithOptions } = useActionSheet();
+  const { pausePlayers, unpausePlayers } = React.useContext(MediaPlayerContext);
+
+  return (
+    <RawwPostEditor
+      {...props}
+      showActionSheetWithOptions={showActionSheetWithOptions}
+      pausePlayers={pausePlayers}
+      unpausePlayers={unpausePlayers}
+    />
+  );
+};
 export default PostEditor;

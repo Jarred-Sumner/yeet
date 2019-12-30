@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     height: SHARE_CARD_HEIGHT,
     width: SHARE_CARD_WIDTH
   },
+  overlayStyle: { width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT },
   background: {
     width: SHARE_CARD_WIDTH,
     height: SHARE_CARD_HEIGHT,
@@ -91,64 +92,86 @@ const styles = StyleSheet.create({
   }
 });
 
-const InstagramPostOverlay = ({ translateY = 0, x, y, height }) => {
+const InstagramPostOverlay = React.memo(({ translateY = 0, height }) => {
+  const footerStyles = React.useMemo(
+    () => [
+      styles.instagramFooterContainer,
+      styles.instagramFooter,
+      { transform: [{ translateY: 38 }, { translateY }] }
+    ],
+    [styles.instagramFooterContainer, styles.instagramFooter, translateY]
+  );
+
+  const containerStyle = React.useMemo(
+    () => ({ height: height - 1, overflow: "hidden" }),
+    [height]
+  );
+
   return (
     <>
-      <View style={{ height: height - 1, overflow: "hidden" }}>
+      <View style={containerStyle}>
         <BitmapIconInstagramPostFooter
           resizeMode="contain"
-          style={[
-            styles.instagramFooterContainer,
-            styles.instagramFooter,
-            { transform: [{ translateY: 38 }, { translateY }] }
-          ]}
+          style={footerStyles}
         />
       </View>
       <BitmapIconInstagramTabBar
         resizeMode="cover"
-        style={[
-          styles.instagramTabBar,
-          {
-            transform: []
-          }
-        ]}
+        style={styles.instagramTabBar}
       />
     </>
   );
-};
+});
 
 const ShareNetwork = ({
   Logo,
   Overlay,
   backgroundStyle,
-  overlayProps = {}
+  onLayoutComplete,
+  overlayProps: { translateY = 0 } = {}
 }) => {
   const { onLayout, width, height, x, y } = useLayout();
+  const handleLayout = React.useCallback(
+    (...layoutArgs) => {
+      onLayout.apply(this, layoutArgs);
+      typeof onLayoutComplete === "function" && onLayoutComplete(...layoutArgs);
+    },
+    [onLayoutComplete, onLayout]
+  );
+
+  const overlayContainerStyle = React.useMemo(
+    () => [
+      styles.overlay,
+      {
+        display: typeof width === "number" ? "flex" : "none",
+        width,
+        height,
+        top: y,
+        left: x
+      }
+    ],
+    [width, height, y, x, styles.overlay]
+  );
+
+  const backgroundStyles = React.useMemo(
+    () => [styles.background, backgroundStyle],
+    [styles.background, backgroundStyle]
+  );
 
   return (
     <>
-      <Animated.View onLayout={onLayout} style={[styles.container]}>
-        <View style={[styles.background, backgroundStyle]} />
+      <Animated.View onLayout={handleLayout} style={styles.container}>
+        <View style={backgroundStyles} />
       </Animated.View>
 
-      <Animated.View
-        style={[
-          styles.overlay,
-          {
-            width,
-            height,
-            top: y,
-            left: x
-          }
-        ]}
-      >
+      <Animated.View style={overlayContainerStyle}>
         <Logo resizeMode="contain" style={styles.logo} />
         <Overlay
-          {...overlayProps}
+          translateY={translateY}
           x={x}
           y={y}
           height={height}
-          style={{ width: SHARE_CARD_WIDTH, height: SHARE_CARD_HEIGHT }}
+          style={styles.overlayStyle}
           resizeMode="contain"
         />
       </Animated.View>
@@ -156,9 +179,14 @@ const ShareNetwork = ({
   );
 };
 
-export const InstagramShareNetwork = ({ onPress, contentExportHeight = 0 }) => (
+export const InstagramShareNetwork = ({
+  onPress,
+  contentExportHeight = 0,
+  onLayoutComplete
+}) => (
   <ShareNetwork
     Overlay={InstagramPostOverlay}
+    onLayoutComplete={onLayoutComplete}
     overlayProps={{
       translateY: contentExportHeight
     }}
@@ -167,17 +195,19 @@ export const InstagramShareNetwork = ({ onPress, contentExportHeight = 0 }) => (
   ></ShareNetwork>
 );
 
-export const InstagramStoryShareNetwork = ({ onPress }) => (
+export const InstagramStoryShareNetwork = ({ onPress, onLayoutComplete }) => (
   <ShareNetwork
     Overlay={BitmapIconShareCardInstagramStory}
+    onLayoutComplete={onLayoutComplete}
     backgroundStyle={styles.darkBackground}
     Logo={BitmapIconSocialLogoInstagram}
   />
 );
 
-export const SnapchatShareNetwork = ({ onPress }) => (
+export const SnapchatShareNetwork = ({ onPress, onLayoutComplete }) => (
   <ShareNetwork
     Overlay={BitmapIconShareCardSnapchat}
+    onLayoutComplete={onLayoutComplete}
     backgroundStyle={styles.darkBackground}
     Logo={BitmapIconSocialLogoSnapchat}
   />

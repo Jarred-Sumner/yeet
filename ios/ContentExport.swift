@@ -7,6 +7,7 @@ import SDWebImage
 import UIImageColors
 import SwiftyBeaver
 import Promise
+import JGProgressHUD
 
 class ContentExport {
   static func getCropScale(_ roundingRule: FloatingPointRoundingRule, _ multiple: CGFloat, _ contentsScale: CGFloat, _ cropWidth: CGFloat, _ cropHeight: CGFloat) -> CGFloat {
@@ -100,44 +101,6 @@ class ContentExport {
     animation.beginTime = AVCoreAnimationBeginTimeAtZero
 
     return animation
-  }
-
-  let url: URL
-  let resolution: CGSize
-  let type: ExportType
-  let duration: TimeInterval
-  let colors: UIImageColors?
-  var thumbnail: ContentExportThumbnail? = nil
-
-  init(url: URL, resolution: CGSize, type: ExportType, duration: TimeInterval, colors: UIImageColors?, thumbnail: ContentExportThumbnail? = nil) {
-    self.url = url
-    self.resolution = resolution
-    self.type = type
-    self.duration = duration
-    self.colors = colors
-    self.thumbnail = thumbnail
-  }
-
-  func dictionaryValue() -> [String: Any] {
-    return [
-      "uri": url.absoluteString as NSString,
-      "width": NSNumber(value: Double(resolution.width)),
-      "height": NSNumber(value: Double(resolution.height)),
-      "type": NSString(string: type.rawValue),
-      "duration": NSNumber(value: Double(duration)),
-      "thumbnail": thumbnail?.dictionaryValue() ?? [
-        "uri": url.absoluteString as NSString,
-        "width": NSNumber(value: Double(resolution.width)),
-        "height": NSNumber(value: Double(resolution.height)),
-        "type": NSString(string: type.rawValue),
-      ],
-      "colors": [
-        "background": colors?.background.rgbaString,
-        "primary": colors?.primary.rgbaString,
-        "secondary": colors?.secondary.rgbaString,
-        "detail": colors?.detail.rgbaString,
-        ] as [String: String?]
-    ]
   }
 
 
@@ -276,9 +239,10 @@ class ContentExport {
 
   }
 
-  static func composeAnimationLayer(parentLayer: CALayer, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, contentsScale: CGFloat, exportType: ExportType) -> (CGRect) {
+  static func composeAnimationLayer(parentLayer: CALayer, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, contentsScale: CGFloat, exportType: ExportType, task: ContentExportTask? = nil) -> (CGRect) {
     var maxY = CGFloat(0)
     var minY = estimatedBounds.size.height
+    task?.addComposeProgress(resourceCount: Int64(resources.count))
     resources.forEach { resource in
       guard let block = resource.block else {
         return
@@ -300,6 +264,7 @@ class ContentExport {
       let layer = composeImageLayer(image: image, frame: frame, duration: duration, block: block, scale: contentsScale, exportType: exportType, rotation: rotation, estimatedBounds: estimatedBounds, parentLayer: parentLayer)
 
 
+      task?.incrementCompose()
       parentLayer.addSublayer(layer)
 
 
@@ -347,8 +312,8 @@ class ContentExport {
   //    - and we scale the video from it's natural size to whatever frame.size says it should be
   // 3. AVAssetExportSession does it's magic.
   // 4. We take the video output...and crop it.
-  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil) -> Promise<ContentExport> {
-    return Promise<ContentExport>(queue: VideoProducer.contentExportQueue) { resolve, reject in
+  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil, task: ContentExportTask) -> Promise<ContentExportResult> {
+    return Promise<ContentExportResult>(queue: VideoProducer.contentExportQueue) { resolve, reject in
 
       var contentsScale = min(scale ?? UIScreen.main.scale, CGFloat(2))
       var maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
@@ -527,8 +492,9 @@ class ContentExport {
       parentLayer.masksToBounds = false
       parentLayer.isOpaque = false
 
-
       if (type.isVideo) {
+        task.addComposeProgress(resourceCount: Int64(resources.count))
+
         let startPrepTime = CACurrentMediaTime()
 
         let seconds = [maxDuration, duration, 3.0].max()!
@@ -754,6 +720,8 @@ class ContentExport {
           } else if (isImage) {
             let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: parentLayer.bounds, duration: seconds, resources: [resource], contentsScale: contentsScale, exportType: type)
           }
+
+          task.incrementCompose()
         }
 
         parentLayer.backgroundColor = UIColor.clear.cgColor
@@ -826,9 +794,9 @@ class ContentExport {
 
         assetExport.metadata = metadata
 
-
-
         let canSkipCrop = renderSize == cropRect.size && cropRect.origin == .zero
+
+        task.addExportSession(exportSession: assetExport, needsCrop: !canSkipCrop)
         assetExport.outputFileType = type.avFileType
         assetExport.outputURL = canSkipCrop ? url : VideoProducer.generateExportURL(type: type)
         assetExport.timeRange = vid_timerange
@@ -846,7 +814,8 @@ class ContentExport {
 //        if assetExport.estimatedOutputFileLength > 50000000 {
 //          assetExport.presetName = AVAssetExportPresetHighest
 //        }
-        
+
+
 
         assetExport.exportAsynchronously {
           VideoProducer.contentExportQueue.async {
@@ -872,9 +841,9 @@ Cropping video...
 
 
 
-                  resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
+                  resolve(ContentExportResult(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                 } else {
-                  fullAsset.crop(to: cropRect, dest: url, exact: true, type: type, loops: true).then(on: VideoProducer.contentExportQueue) { asset in
+                  fullAsset.crop(to: cropRect, dest: url, exact: true, type: type, loops: true, task: task).then(on: VideoProducer.contentExportQueue) { asset in
                     let resolution = asset.resolution ?? cropRect.size
                     var colors: UIImageColors? = nil
 
@@ -883,7 +852,7 @@ Cropping video...
                     let timeSpentExporting = CACurrentMediaTime() - startExportTime
                     SwiftyBeaver.info("Video Export completed\nResolution:\(Int(resolution.width))x\(Int(resolution.height))\nDuration: \(seconds)\nPath: \(url.absoluteString)\nAVAssetExportSession took \(timeSpentExporting)s")
 
-                    resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
+                    resolve(ContentExportResult(url: url, resolution: resolution, type: type, duration: duration, colors: colors, thumbnail: thumbnail))
                   }
                 }
 
@@ -906,10 +875,11 @@ Cropping video...
 
       } else {
         parentLayer.isGeometryFlipped = false
-        let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale, exportType: type)
+        let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale, exportType: type, task: task)
 
+        task.startImageBuild()
          let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
-
+        task.incrementImageBuild()
 
         let thumbnailSize = ContentExportThumbnail.size
         let thumbnailImage = fullImage.sd_resizedImage(with: thumbnailSize, scaleMode: .aspectFill)
@@ -935,9 +905,14 @@ Cropping video...
           thumbnailType = .jpg
         }
 
+        task.incrementImageBuild()
+
         let thumbnailUrl = VideoProducer.generateExportURL(type: thumbnailType)
 
         imageData.write(to: url, atomically: true)
+
+        task.incrementImageBuild()
+
         thumbnailData.write(to: thumbnailUrl, atomically: true)
         let resolution = fullImage.size
 
@@ -951,7 +926,8 @@ Cropping video...
 
         let thumbnail = ContentExportThumbnail(uri: thumbnailUrl.absoluteString, width: Double(thumbnailSize.width), height: Double(thumbnailSize.height), type: thumbnailType)
 
-        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: nil, thumbnail: thumbnail))
+        task.incrementImageBuild()
+        resolve(ContentExportResult(url: url, resolution: resolution, type: type, duration: duration, colors: nil, thumbnail: thumbnail))
 
 //        resolve(ContentExport(url: url, resolution: resolution, type: type, duration: duration, colors: fullImage.getColors()))
       }
@@ -1032,6 +1008,31 @@ extension UIColor {
             alpha: CGFloat(alpha)
         )
     }
+
+  static func addColor(_ color1: UIColor, with color2: UIColor) -> UIColor {
+      var (r1, g1, b1, a1) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+      var (r2, g2, b2, a2) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+
+      color1.getRed(&r1, green: &g1, blue: &b1, alpha: &a1)
+      color2.getRed(&r2, green: &g2, blue: &b2, alpha: &a2)
+
+      // add the components, but don't let them go above 1.0
+      return UIColor(red: min(r1 + r2, 1), green: min(g1 + g2, 1), blue: min(b1 + b2, 1), alpha: (a1 + a2) / 2)
+  }
+
+  static func multiplyColor(_ color: UIColor, by multiplier: CGFloat) -> UIColor {
+      var (r, g, b, a) = (CGFloat(0), CGFloat(0), CGFloat(0), CGFloat(0))
+      color.getRed(&r, green: &g, blue: &b, alpha: &a)
+      return UIColor(red: r * multiplier, green: g * multiplier, blue: b * multiplier, alpha: a)
+  }
+
+  static func +(color1: UIColor, color2: UIColor) -> UIColor {
+      return addColor(color1, with: color2)
+  }
+
+  static func *(color: UIColor, multiplier: Double) -> UIColor {
+      return multiplyColor(color, by: CGFloat(multiplier))
+  }
 }
 
 

@@ -84,15 +84,15 @@ extension AVURLAsset {
     }
   }
 
-  func crop(to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false) -> Promise<AVURLAsset> {
-    return AVURLAsset.crop(asset: self, to: to, dest: dest, exact: exact, type: type, loops: loops)
+  func crop(to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false, task: ContentExportTask? = nil) -> Promise<AVURLAsset> {
+    return AVURLAsset.crop(asset: self, to: to, dest: dest, exact: exact, type: type, loops: loops, task: task)
   }
 
   
 
   
 
-  static func crop(asset: AVURLAsset, to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false) -> Promise<AVURLAsset> {
+  static func crop(asset: AVURLAsset, to: CGRect, dest: URL, exact: Bool = false, type: ExportType = ExportType.mp4, loops: Bool = false, task: ContentExportTask? = nil) -> Promise<AVURLAsset> {
       return Promise<AVURLAsset> { resolve, reject in
         let videoComposition = AVMutableVideoComposition()
         let composition = AVMutableComposition()
@@ -202,6 +202,7 @@ extension AVURLAsset {
         exportSession.outputFileType = type.avFileType
         exportSession.timeRange = videoTrack.timeRange
 
+        task?.addCropExportSession(exportSession: exportSession)
 
         exportSession.shouldOptimizeForNetworkUse = true
 

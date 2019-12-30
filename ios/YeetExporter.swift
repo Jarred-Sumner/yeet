@@ -10,6 +10,7 @@ import UIKit
 import SwiftyJSON
 import SwiftyBeaver
 import Promise
+import JGProgressHUD
 
 @objc(YeetExporter)
 class YeetExporter: NSObject, RCTBridgeModule  {
@@ -21,10 +22,116 @@ class YeetExporter: NSObject, RCTBridgeModule  {
   var bridge: RCTBridge!
 
   var producer: VideoProducer? = nil
+  var hud: JGProgressHUD? = nil
+  var task: ContentExportTask? = nil
+  var taskStepObserver: NSKeyValueObservation? = nil
+  var taskProgressObserver: NSKeyValueObservation? = nil
+
+  func dismissHUD(success: Bool, error: Error? = nil) {
+    guard let hud = self.hud else {
+      return
+    }
+
+    if success {
+      let successView = JGProgressHUDSuccessIndicatorView()
+      hud.indicatorView = successView
+      hud.backgroundColor = hud.backgroundColor! + UIColor(red: CGFloat(0), green: CGFloat(0.15), blue: CGFloat(0), alpha: 0.0)
+
+      hud.textLabel.text = "Created"
+      hud.detailTextLabel.text = "Share your content"
+
+      hud.dismiss(afterDelay: 1.0, animated: true)
+      self.hud = nil
+      self.taskProgressObserver?.invalidate()
+      self.taskStepObserver?.invalidate()
+    } else {
+      hud.textLabel.text = "Something broke."
+      hud.detailTextLabel.text = error?.localizedDescription ?? "Please try again."
+      let errorView = JGProgressHUDErrorIndicatorView()
+      hud.backgroundColor = hud.backgroundColor! + UIColor(red: CGFloat(0.1), green: CGFloat(0), blue: CGFloat(0), alpha: 0.0)
+      hud.indicatorView = errorView
+      hud.dismiss(afterDelay: error != nil ? 10.0 : 3, animated: true)
+      self.hud = nil
+      self.taskProgressObserver?.invalidate()
+      self.taskStepObserver?.invalidate()
+    }
+
+  }
+
+  func updateHUD() {
+    guard let hud = self.hud else {
+      return
+    }
+
+    guard bridge.isValid else {
+      return
+    }
+
+    if hud.superview == nil {
+      self.hud = nil
+      return
+    }
+
+    if let task = task {
+      hud.textLabel.text = task.step.rawValue
+      hud.detailTextLabel.text = task.detailLabel
+    }
+  }
+
+  func displayHUD(task: ContentExportTask, tag: NSNumber) {
+    guard self.bridge.isValid ?? false else {
+      return
+    }
+
+    guard let view = self.bridge.uiManager.view(forReactTag: tag) else {
+      return
+    }
+
+    guard let task = self.task else {
+      return
+    }
+
+    if let _hud = self.hud {
+      _hud.dismiss()
+    }
+
+
+    let hud = JGProgressHUD(style: .dark)
+    hud.backgroundColor = UIColor(white: 0, alpha: 0.9)
+    hud.indicatorView = JGProgressHUDRingIndicatorView()
+
+    hud.textLabel.text = task.step.rawValue
+    hud.detailTextLabel.text = task.detailLabel
+
+    let vc = view.reactViewController()
+    let _view = vc?.navigationController?.view ?? vc!.view
+    hud.show(in: _view!, animated: true)
+
+    self.taskProgressObserver = task.totalProgress.observe(\Progress.fractionCompleted) { [weak hud, weak self] progress, change in
+      if Thread.isMainThread {
+        hud?.setProgress(Float(progress.fractionCompleted), animated: true)
+        self?.updateHUD()
+      } else {
+        DispatchQueue.main.async { [weak self] in
+          hud?.setProgress(Float(progress.fractionCompleted), animated: true)
+          self?.updateHUD()
+        }
+      }
+
+    }
+
+    self.hud = hud
+
+  }
+
+  func hideHud() {
+
+  }
 
   @objc(startExport:isServerOnly:callback:)
   func startExport(data: String, isServerOnly: Bool, callback: @escaping RCTResponseSenderBlock) -> Void {
-    autoreleasepool {
+
+      var task: ContentExportTask? = ContentExportTask()
       guard let dataObject = data.data(using: .utf8) else {
         callback([YeetError.init(code: .genericError, userInfo: nil)])
         return
@@ -35,8 +142,25 @@ class YeetExporter: NSObject, RCTBridgeModule  {
         return
       }
 
+      let containerTag = exportData["containerNode"].numberValue
+
+      let workItem =  DispatchWorkItem { [weak task, weak self] in
+        guard let _task = task else {
+          return
+        }
+
+        guard !_task.totalProgress.isFinished else {
+          return
+        }
+
+        self?.task = task
+        self?.displayHUD(task: task!, tag: containerTag)
+      }
+
+      DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.1, execute: workItem)
+
       let start = CACurrentMediaTime()
-      self.getImages(data: exportData).then { images in
+      self.getImages(data: exportData, task: task!).then { images in
         let producer = VideoProducer(data: exportData, images: images)
         self.producer = producer
 
@@ -44,14 +168,30 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
         let bounds = CGRect(x: CGFloat(boundsDict["x"]!.doubleValue), y: CGFloat(boundsDict["y"]!.doubleValue), width: CGFloat(boundsDict["width"]!.doubleValue), height: CGFloat(boundsDict["height"]!.doubleValue))
 
-        producer.start(estimatedBounds: bounds, isServerOnly: isServerOnly, scale: UIScreen.main.scale).then(on: DispatchQueue.main) { export in
+
+        producer.start(estimatedBounds: bounds, isServerOnly: isServerOnly, scale: UIScreen.main.scale, task: task!).then(on: DispatchQueue.main) { [weak self] export in
             SwiftyBeaver.info("Completed ContentExport in \(CACurrentMediaTime() - start)")
 
             callback([nil, export.dictionaryValue()])
-          }.catch { error in
+            self?.dismissHUD(success: true)
+
+            task = nil
+            self?.task = nil
+            self?.taskProgressObserver?.invalidate()
+            self?.taskStepObserver?.invalidate()
+
+
+            workItem.cancel()
+          }.catch { [weak self] error in
             callback([error, nil])
+            task = nil
+            self?.dismissHUD(success: false, error: error)
+            self?.task = nil
+            self?.taskProgressObserver?.invalidate()
+            self?.taskStepObserver?.invalidate()
+
+            workItem.cancel()
           }
-      }
 
     }
 
@@ -73,13 +213,15 @@ class YeetExporter: NSObject, RCTBridgeModule  {
     return false
   }
 
-  func getImages(data: JSON) -> Promise<Dictionary<String, ExportableMediaSource>> {
+  func getImages(data: JSON, task: ContentExportTask) -> Promise<Dictionary<String, ExportableMediaSource>> {
     let nodeBlocks = data["nodes"].arrayValue.map { node in
       return node["block"]
     }
 
     var allBlocks = data["blocks"].arrayValue
     allBlocks.append(contentsOf: nodeBlocks)
+
+    task.addComposeProgress(resourceCount: Int64(allBlocks.count))
 
     return Promise<Dictionary<String, (UIView, CGRect)>>.init(queue: .main) { resolve, reject in
       var views: Dictionary<String, (UIView, CGRect)> = [:]
@@ -144,6 +286,8 @@ class YeetExporter: NSObject, RCTBridgeModule  {
 
          dict[block["id"].stringValue] = mediaSource
         }
+
+        task.incrementCompose()
       }
       SwiftyBeaver.info("FIN")
 

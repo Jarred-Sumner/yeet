@@ -74,17 +74,6 @@ export class BaseNode extends React.Component<Props> {
     minY: 0
   };
 
-  handleDrag = ({ nativeEvent }) => {
-    console.log(nativeEvent);
-  };
-  handleDragStop = ({ nativeEvent }) => {
-    console.log(nativeEvent);
-  };
-
-  handleSnap = ({ nativeEvent }) => {
-    console.log(nativeEvent);
-  };
-
   handleTap = () => this.props.onTap(this.props.node);
 
   componentDidUpdate(prevProps) {

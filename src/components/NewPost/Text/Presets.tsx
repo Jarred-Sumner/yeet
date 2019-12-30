@@ -162,10 +162,10 @@ export const textInputPresets = {
       textAlign: "left",
       highlightCornerRadius: 2,
       textShadowOffset: {
-        width: 1,
-        height: 1
+        width: StyleSheet.hairlineWidth,
+        height: StyleSheet.hairlineWidth
       },
-      textShadowRadius: StyleSheet.hairlineWidth
+      textShadowRadius: 0
     }
   }
 };

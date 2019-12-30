@@ -8,7 +8,7 @@ export const IMPACT_FONT = "Impact";
 
 export const FONT_STYLES = StyleSheet.create({
   post: {
-    fontFamily: "Helvetica",
+    fontFamily: "Arial",
     fontWeight: "normal"
   },
   basic: {
@@ -25,7 +25,7 @@ export const FONT_STYLES = StyleSheet.create({
   },
   comic: {
     fontFamily: COMIC_BOOK,
-    fontWeight: "bold"
+    fontWeight: "normal"
   },
   minecraft: {
     fontFamily: MINECRAFT_FONT,

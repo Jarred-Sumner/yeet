@@ -32,9 +32,9 @@ import { SpeechBubble } from "./SpeechBubble";
 import { textInputPresets } from "./Presets";
 import { invertColor, getStrokeColor, isColorDark } from "../../../lib/colors";
 
-const RawAnimatedTextInput = React.memo(
-  Animated.createAnimatedComponent(RNTextInput)
-);
+const __RNTextInput = React.memo(RNTextInput);
+
+const RawAnimatedTextInput = Animated.createAnimatedComponent(__RNTextInput);
 
 const AnimatedTextInput = React.forwardRef((props, ref) => {
   const inputRef = React.useRef();
@@ -69,7 +69,8 @@ const getTextShadow = (
 ) => {
   // if (border === TextBorderType.stroke || format === PostFormat.post) {
   return {
-    textShadowRadius: null
+    textShadowRadius: null,
+    textShadowColor: "rgba(0, 0, 0, 0)"
   };
   // }
 
@@ -213,17 +214,21 @@ const textInputTypeStylesheets: {
       paddingLeft: Math.abs(
         textInputPresets[TextTemplate.comic].presets.highlightInset
       ),
+      paddingRight: Math.abs(
+        textInputPresets[TextTemplate.comic].presets.highlightInset
+      ),
       paddingTop: 40
     },
     input: {
       ...FONT_STYLES.comic,
       borderRadius: 0,
       paddingLeft: 0,
-      paddingRight: 12,
+      paddingRight: 0,
       paddingVertical: 0,
       paddingHorizontal: 0,
       paddingTop: 0,
-      paddingBottom: 12,
+      paddingBottom: 0,
+      justifyContent: "center",
 
       overflow: "visible",
       backgroundColor:
@@ -304,6 +309,7 @@ const textInputTypeStylesheets: {
       paddingTop: SPACING.normal,
       paddingBottom: SPACING.normal,
       paddingLeft: SPACING.half,
+      textAlignVertical: "center",
       paddingRight: SPACING.half,
       textAlign:
         textInputPresets[TextTemplate.terminal].presets.textAlign || "left",
@@ -316,7 +322,9 @@ const textInputTypeStylesheets: {
         textInputPresets[TextTemplate.terminal].presets.textShadowRadius
     },
     stickerInput: {
-      ...BASE_OVERLAY_STYLE
+      ...BASE_OVERLAY_STYLE,
+      paddingTop: 0,
+      paddingBottom: 0
     }
   }),
   [TextTemplate.gary]: StyleSheet.create({
@@ -347,7 +355,8 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 0,
     flexShrink: 0,
-    position: "relative"
+    position: "relative",
+    overflow: "visible"
   },
   input: {
     marginTop: 0,
@@ -432,14 +441,64 @@ export const getTextBlockBackgroundColor = (block: TextPostBlock) => {
   }
 };
 
+export const getBorderType = (block: TextPostBlock): TextBorderType => {
+  const { template, overrides = {}, border } = block.config;
+
+  if (template === TextTemplate.comic) {
+    if (border === TextBorderType.invert) {
+      return border;
+    } else {
+      return TextBorderType.solid;
+    }
+  } else if (template === TextTemplate.bigWords) {
+    return TextBorderType.stroke;
+  } else {
+    return border;
+  }
+};
+
+export const getSupportedBorderTypes = (
+  block: TextPostBlock
+): Array<TextBorderType> => {
+  if (block.format === PostFormat.post) {
+    return [TextBorderType.hidden, TextBorderType.invert];
+  } else if (block.config.template === TextTemplate.bigWords) {
+    return [TextBorderType.highlight];
+  } else {
+    return [
+      TextBorderType.highlight,
+      TextBorderType.invert,
+      TextBorderType.stroke,
+      TextBorderType.hidden
+    ];
+  }
+};
+
 export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
   const { template, overrides = {}, border } = block.config;
+
+  if (template === TextTemplate.bigWords || template === TextTemplate.comic) {
+    return "center";
+  }
 
   return (
     overrides?.textAlign ||
     textInputPresets[block.config.template].textAlign ||
     "left"
   );
+};
+
+const getStrokeWidth = (block: TextPostBlock) => {
+  const border = getBorderType(block);
+  const { template } = block.config;
+
+  if (template === TextTemplate.bigWords) {
+    return 4;
+  } else if (border === TextBorderType.stroke) {
+    return 3;
+  } else {
+    return 0;
+  }
 };
 
 const getClosestNumber = (goal, counts) =>
@@ -485,7 +544,6 @@ export const TextInput = ({
         [PostFormat.comment]: TextTemplate.comment,
         [PostFormat.sticker]: TextTemplate.basic
       }[block.format],
-      border,
       overrides = {
         color: undefined,
         backgroundColor: undefined,
@@ -499,6 +557,8 @@ export const TextInput = ({
     format,
     id
   } = block;
+
+  const border = getBorderType(block);
 
   const { presets, fontSizes } = textInputPresets[template];
 
@@ -534,8 +594,8 @@ export const TextInput = ({
   let height = undefined;
 
   if (focusType === FocusType.absolute && isFocused) {
-    width = "100%";
-    height = "100%";
+    // width = "100%";
+    // height = "100%";
   } else if (format === PostFormat.post) {
     if (
       [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
@@ -564,8 +624,6 @@ export const TextInput = ({
     [backgroundColor, color, format, border, template]
   );
 
-  const highlightInset = presets.highlightInset ?? 0;
-
   const highlightCornerRadius = presets.highlightCornerRadius ?? 0;
 
   let borderType = border;
@@ -578,7 +636,15 @@ export const TextInput = ({
   } else if (borderType === TextBorderType.stroke) {
     strokeColor =
       fontSize >= 18 ? getStrokeColor(color) : contrastingColor(color);
+    highlightColor = color;
   }
+
+  const strokeWidth = getStrokeWidth(block);
+
+  const highlightInset =
+    border === TextBorderType.stroke
+      ? strokeWidth * -1
+      : presets.highlightInset ?? 0;
 
   const containerStyles = React.useMemo(
     () => [
@@ -607,10 +673,10 @@ export const TextInput = ({
         ...textShadow,
         maxWidth
       },
-      isFocused && focusType === FocusType.absolute && styles.absoluteFocused,
-      template === TextTemplate.comic && {
-        textAlign: "center"
-      }
+      isFocused && focusType === FocusType.absolute && styles.absoluteFocused
+      // template === TextTemplate.comic && {
+      //   textAlign: "center"
+      // }
     ],
     [
       styles.input,
@@ -638,18 +704,6 @@ export const TextInput = ({
     ]
   );
 
-  if (isFocused) {
-    console.log({
-      border,
-      highlightColor,
-      highlightInset,
-      strokeColor,
-      color,
-      backgroundColor,
-      textShadow
-    });
-  }
-
   const innerContent = (
     <View ref={blockRef} key={`${format}-${layout}`} style={containerStyles}>
       <TextInputComponent
@@ -674,11 +728,7 @@ export const TextInput = ({
         highlightCornerRadius={highlightCornerRadius}
         strokeColor={strokeColor}
         borderType={borderType}
-        strokeWidth={
-          borderType === TextBorderType.stroke
-            ? (fontSize >= 16 ? -2 : -1) * PixelRatio.get()
-            : 2
-        }
+        strokeWidth={strokeWidth}
         lengthPerLine={50}
         blurOnSubmit={false}
         fontSizeRange={textInputPresets[template].fontSizes}
@@ -729,8 +779,9 @@ export const TextInput = ({
               alignItems: "center",
               top: 0,
               position: "absolute",
-              left: 0,
-              right: 0,
+              alignSelf: "center",
+              // left: 0,
+              // right: 0,
               zIndex: 1,
               transform: [
                 {

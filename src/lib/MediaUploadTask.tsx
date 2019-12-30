@@ -602,7 +602,6 @@ export class PostUploadTask {
   }
 
   handleProgress = throttle((progress: number, mediaUpload: MediaUpload) => {
-    console.log(progress);
     typeof this.onProgress === "function" &&
       this.onProgress(progress, mediaUpload, this);
   }, 100);

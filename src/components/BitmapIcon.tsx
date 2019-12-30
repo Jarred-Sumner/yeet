@@ -165,17 +165,19 @@ export const getBitmapIconSource = (
   return { uri, ...size };
 };
 
-export const BitmapIconImage = ({
-  name,
-  style,
-  source,
-  ...otherProps
-}: {
-  name: BitmapIconName;
-  style?: ImageStyle;
-  source?: ImageSourcePropType;
-}) => (
-  <Image {...otherProps} source={getBitmapIconSource(name)} style={style} />
+export const BitmapIconImage = React.memo(
+  ({
+    name,
+    style,
+    source,
+    ...otherProps
+  }: {
+    name: BitmapIconName;
+    style?: ImageStyle;
+    source?: ImageSourcePropType;
+  }) => (
+    <Image {...otherProps} source={getBitmapIconSource(name)} style={style} />
+  )
 );
 
 export const BitmapIconNewPost = ({

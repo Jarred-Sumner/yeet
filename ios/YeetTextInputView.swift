@@ -11,7 +11,7 @@ import Foundation
 
 
 @objc(YeetTextInputView)
-class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInvalidating {
+class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInvalidating, RCTUIManagerObserver {
   static var DEFAULT_HIGHLIGHT_CORNER_RADIUS = CGFloat(4)
   static var DEFAULT_HIGHLIGHT_INSET = CGFloat(2)
   static var DEFAULT_HIGHLIGHT_COLOR = UIColor.blue
@@ -105,9 +105,6 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     if (!showHighlight) {
       self.highlightLayer.isHidden = true
     }
-
-
-
 
 //
 //
@@ -217,6 +214,11 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     self.updateHighlight()
     self.adjustFontSize(text: textView.text)
+
+    if textView.text.count > 0 {
+      self.textView.sizeToFit()
+    }
+
   }
 
   enum TextTemplate : String {
@@ -330,8 +332,11 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.bridge = bridge
     super.init(bridge: bridge)
 
+    bridge.uiManager.observerCoordinator.add(self)
+
     self.highlightLayer = CAShapeLayer()
     self.highlightLayer.masksToBounds = false
+    self.clipsToBounds = false
     highlightSubview.clipsToBounds = false
     highlightSubview.isOpaque = false
 
@@ -356,10 +361,12 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     backedTextInputView.textInputDelegate = self
     backedTextInputView.clipsToBounds = false
     textView.layer.masksToBounds = false
+    textView.layoutManager.allowsNonContiguousLayout = true
 
     tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
     self.addGestureRecognizer(tapRecognizer!)
     self.textView.isSelectable = true
+    self.textView.isScrollEnabled = false
     self.textView.isEditable = false
   }
 
@@ -377,6 +384,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     return self.bridge?.uiManager.view(forReactTag: tag) as? MovableView
   }
+
 
 
 

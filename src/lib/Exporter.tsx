@@ -247,8 +247,6 @@ export const startExport = async (
     ([id, _ref]) =>
       _ref &&
       getEstimatedBoundsToContainer(_ref, ref.current).then(bounds => {
-        console.log(id, bounds);
-
         inlinesBoundsMap.set(id, bounds);
         return true;
       }),
@@ -335,24 +333,6 @@ export const startExport = async (
 
   if (process.env.NODE_ENV !== "production") {
     console.log(JSON.stringify(data));
-  }
-
-  if (hasLongVideo && imageCount + videoCount + textCount > 1) {
-    await new Promise((resolve, reject) => {
-      Alert.alert(
-        "Creating your video will be kinda slow.",
-        "Mixing multiple videos/images longer than 7s is hard for computers. You'll need to leave the app running while this is ongoing.",
-        [
-          { text: "Okay", onPress: () => resolve() },
-          {
-            text: "Cancel",
-            onPress: () => reject(),
-            style: "cancel"
-          }
-        ],
-        { cancelable: false }
-      );
-    });
   }
 
   return new Promise((resolve, reject) => {

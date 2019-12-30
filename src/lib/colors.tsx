@@ -54,10 +54,22 @@ export const isTooLight = (color: string, backgroundColor: string) => {
 };
 
 export const getDarkColor = (color: string) => {
+  const colorLuminance = chroma(color).luminance();
+
+  if (colorLuminance > 0.9) {
+    return "rgb(0, 0, 0)";
+  }
+
   return chroma.scale([color, "black"], "rgb").colors(8)[6];
 };
 
 export const getLightColor = (color: string) => {
+  const colorLuminance = chroma(color).luminance();
+
+  if (colorLuminance < 0.1) {
+    return "rgb(255, 255, 255)";
+  }
+
   return chroma.scale([color, "white"], "rgb").colors(8)[6];
 };
 
