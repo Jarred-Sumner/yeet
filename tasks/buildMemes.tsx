@@ -8,6 +8,8 @@ require("@babel/register")({
   ignore: ["react-native"]
 });
 
+const slugify = require("slugify");
+
 const ORDERING = [
   "748",
   "1264",
@@ -1406,7 +1408,8 @@ const {
   compact,
   flatten,
   get,
-  isArray
+  isArray,
+  map
 } = require("lodash");
 
 const MEME_JSON_PATH = path.resolve(
@@ -1474,8 +1477,8 @@ const createExportableImageBlock = (entry, scaledImageSize, imageSize) => {
       maxX: scaledImageSize.width,
       maxY: scaledImageSize.height
     },
-    id: entry.imeSlike,
-    contentId: entry.imeSlike,
+    id: normalizeID(entry.imeSlike),
+    contentId: normalizeID(entry.imeSlike),
     viewTag: -1,
     layout: PostLayout.text,
     frame: imageSize,
@@ -1507,8 +1510,19 @@ const OUTLINE_MAP = {
 
 const percentToPx = (value, size) => (parseInt(value) / 100.0) * size.width;
 
-const normalizeFontSize = (fontSize, size) =>
-  Math.min(Math.max(parseInt(fontSize) * 5.5, 12), 72);
+const normalizeFontSize = (fontSize, size) => {
+  return (
+    {
+      "1": 14,
+      "2": 16,
+      "3": 18,
+      "4": 18,
+      "5": 24,
+      "6": 24,
+      "7": 32
+    }[fontSize] || 18
+  );
+};
 
 const getLayout = (_textEntries, imageBlock, size, xPadding, yPadding) => {
   const textEntries = _textEntries.map(entry => ({
@@ -1519,8 +1533,7 @@ const getLayout = (_textEntries, imageBlock, size, xPadding, yPadding) => {
       width: parseInt(entry.w),
       height: parseInt(
         entry.h ||
-          (entry.maxLines || 1) *
-            normalizeFontSize(entry.fontSize || "14", size)
+          (entry.maxLines || 1) * normalizeFontSize(entry.fontSize || "3", size)
       )
     }
   }));
@@ -1685,8 +1698,8 @@ const createExportableTextBlock = (entry, size) => {
     viewTag: -1,
     layout: PostLayout.text,
     template,
-    contentId: id,
-    id,
+    contentId: normalizeID(id),
+    id: normalizeID(id),
     value: "",
     frame: {
       x: 0,
@@ -1708,15 +1721,20 @@ const createExportableTextBlock = (entry, size) => {
   };
 };
 
+const normalizeID = text => slugify(text);
+
+const TOP_TEXT_ID = "top-text";
+const BOTTOM_TEXT_ID = "bottom-text";
+
 const createOldTextBlock = isTop => {
-  const id = isTop ? "top-text" : "bottom-text";
+  const id = isTop ? TOP_TEXT_ID : BOTTOM_TEXT_ID;
 
   return {
     type: "text",
     format: PostFormat.sticker,
     viewTag: -1,
     layout: PostLayout.text,
-    template: TextTemplate.basic,
+    template: TextTemplate.bigWords,
     contentId: id,
     id,
     value: "",
@@ -1725,9 +1743,11 @@ const createOldTextBlock = isTop => {
       y: 0
     },
     config: {
-      border: TextBorderType.hidden,
+      border: TextBorderType.stroke,
       overrides: {
-        textAlign: "center"
+        textAlign: "center",
+        color: "white",
+        backgroundColor: "black"
       }
     }
   };
@@ -1741,7 +1761,8 @@ const createOldTextNode = (size, isTop) => {
     block,
     frame: {
       x: 0,
-      y: 0
+      y: 0,
+      width: size.width
     },
     viewTag: -1,
     position: {
@@ -1877,11 +1898,32 @@ const convertEntry = entry => {
   const imageBlock = createExportableImageBlock(entry, _rectangle, _rectangle);
 
   if (hasTextCaptions) {
-    const captions = flatten(
-      isArray(entry.captionList.caption)
-        ? [entry.captionList.caption[0].multiText]
-        : [entry.captionList.caption.multiText]
-    );
+    let captions = [];
+
+    if (isArray(entry.captionList.caption)) {
+      entry.captionList.caption.forEach(list => {
+        if (isArray(list.multiText)) {
+          if (list.multiText.length > captions.length) {
+            captions = list.multiText;
+          }
+        } else if (
+          typeof list.multiText === "object" &&
+          captions.length === 0
+        ) {
+          captions = [list.multiText];
+        }
+      });
+    } else {
+      const list = entry.captionList.caption;
+      if (isArray(list.multiText)) {
+        if (list.multiText.length > captions.length) {
+          captions = list.multiText;
+        }
+      } else if (typeof list.multiText === "object" && captions.length === 0) {
+        captions = [list.multiText];
+      }
+    }
+
     // const strings = [];
     const strings = uniq(
       isArray(entry.captionList.caption)
@@ -1898,6 +1940,34 @@ const convertEntry = entry => {
             .filter(text => !isEmpty(text))
         : []
     );
+
+    const exampleList = isArray(entry.captionList.caption)
+      ? map(entry.captionList.caption, "multiText")
+      : [[entry.captionList.caption.multiText]];
+
+    const examples = {};
+
+    exampleList.forEach((_rows, index) => {
+      const rows = isArray(_rows) ? _rows : [_rows];
+
+      const ids = captions.map(entry => normalizeID(entry.text));
+
+      rows.map(captionGroup => {
+        if (isArray(captionGroup)) {
+          return normalizeID(captionGroup[0].text);
+        } else {
+          return normalizeID(captionGroup.text);
+        }
+      });
+
+      rows.forEach((row, _index) => {
+        if (!examples[ids[_index]]) {
+          examples[ids[_index]] = [];
+        }
+
+        examples[ids[_index]].push(row.text);
+      });
+    });
 
     const textEntries = captions;
 
@@ -1941,6 +2011,7 @@ const convertEntry = entry => {
       nodes,
       backgroundColor,
       layout,
+      examples,
 
       keywords,
       strings,
@@ -1951,16 +2022,28 @@ const convertEntry = entry => {
   } else if (hasAncientMemeCaptions) {
     const strings = uniq(
       flatMap(entry.captionList.caption, caption => {
-        return [caption.textUp, caption.textDown];
+        let up = caption.textUp;
+
+        if (typeof up === "object") {
+          up = up._text;
+        }
+
+        let down = caption.textDown;
+
+        if (typeof down === "object") {
+          down = down._text;
+        }
+
+        return [up, down];
       })
     )
-      .filter(entry => !isEmpty(entry.text))
-      .map(entry =>
-        entry.text
+      .filter(text => !isEmpty(text))
+      .map(text => {
+        return text
           .trim()
           .replace(/['"]+/gm, "")
-          .trim()
-      )
+          .trim();
+      })
       .filter(text => !isEmpty(text));
 
     const bounds = {
@@ -1973,12 +2056,43 @@ const convertEntry = entry => {
       minY: 0
     };
 
+    const examples = {
+      [TOP_TEXT_ID]: [],
+      [BOTTOM_TEXT_ID]: []
+    };
+
+    uniq(
+      map(entry.captionList.caption, caption => {
+        let up = caption.textUp;
+
+        if (typeof up === "object") {
+          up = up._text;
+        }
+
+        let down = caption.textDown;
+
+        if (typeof down === "object") {
+          down = down._text;
+        }
+
+        return [up, down];
+      })
+    ).forEach(([topTextExample, bottomTextExample]) => {
+      if (!isEmpty(topTextExample)) {
+        examples[TOP_TEXT_ID].push(topTextExample);
+      }
+
+      if (!isEmpty(bottomTextExample)) {
+        examples[BOTTOM_TEXT_ID].push(bottomTextExample);
+      }
+    });
+
     return {
       blocks: [[imageBlock]],
       nodes: [createOldTextNode(false, size), createOldTextBlock(true, size)],
       backgroundColor,
       layout: PostLayout.media,
-
+      examples,
       keywords,
       strings,
       bounds,
@@ -1997,6 +2111,7 @@ const convertEntry = entry => {
     return {
       blocks: [[imageBlock]],
       nodes: [],
+      examples: {},
       backgroundColor,
       layout: PostLayout.media,
       keywords,
