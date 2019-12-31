@@ -95,10 +95,10 @@
 		8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEF9871D096D405696E59228 /* digistrip_i.ttf */; };
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
 		AAB429CFB78E4321BFA32461 /* Impact.otf in Resources */ = {isa = PBXBuildFile; fileRef = A10799C78F3242539F062971 /* Impact.otf */; };
-		BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */; };
 		D6199777328941FA86FF2ED7 /* digistrip.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C343AA0F86574D3F9E225BA8 /* digistrip.ttf */; };
 		E89FAC1D34B2BB6AE4FD5D29 /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */; };
 		FE241F33283D4841987A11D3 /* digistrip_b.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C65AC7FEA2B148D09473E95D /* digistrip_b.ttf */; };
+		1C80F2C3BF254D3F999A4179 /* iconfont.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 630165D01D2746D8AC1650A3 /* iconfont.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -151,7 +151,6 @@
 		27B596F270594285B7208411 /* Proxima Nova Semibold.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Proxima Nova Semibold.otf"; path = "../assets/fonts/Proxima Nova Semibold.otf"; sourceTree = "<group>"; };
 		29C4A578EBD74A5FAA67663F /* FontAwesome5_Brands.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Brands.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Brands.ttf"; sourceTree = "<group>"; };
 		2B5EF1418C52406596EC0DA0 /* SimpleLineIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = SimpleLineIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/SimpleLineIcons.ttf"; sourceTree = "<group>"; };
-		2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = iconfont.ttf; path = ../assets/fonts/iconfont.ttf; sourceTree = "<group>"; };
 		305010FE8F30417A9DC89FE8 /* Waltograph.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Waltograph.otf; path = ../assets/fonts/Waltograph.otf; sourceTree = "<group>"; };
 		30FD9E05B5164CACA7A8F920 /* Pods-yeet-Tests-yeetTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-Tests-yeetTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-Tests-yeetTests/Pods-yeet-Tests-yeetTests.release.xcconfig"; sourceTree = "<group>"; };
 		37AC0AB0DC534C909626091D /* FontAwesome5_Solid.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome5_Solid.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome5_Solid.ttf"; sourceTree = "<group>"; };
@@ -295,6 +294,7 @@
 		F468F36F44933D26EB631F78 /* Pods-yeet-tvOS.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOS.debug.xcconfig"; path = "Target Support Files/Pods-yeet-tvOS/Pods-yeet-tvOS.debug.xcconfig"; sourceTree = "<group>"; };
 		F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-OneSignalNotificationServiceExtension.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FB9130AC28034BA49643E52B /* MaterialCommunityIcons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = MaterialCommunityIcons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/MaterialCommunityIcons.ttf"; sourceTree = "<group>"; };
+		630165D01D2746D8AC1650A3 /* iconfont.ttf */ = {isa = PBXFileReference; name = "iconfont.ttf"; path = "../assets/fonts/iconfont.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -595,7 +595,6 @@
 		BC9D094B62654EA694D643FB /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				2FCE1000D6CF44479E8DCDFF /* iconfont.ttf */,
 				0F2C14404E3D43D286E8A252 /* Proxima Nova Bold.otf */,
 				9A5A9068C3B94F099E9F2DF5 /* Proxima Nova Medium.ttf */,
 				27B596F270594285B7208411 /* Proxima Nova Semibold.otf */,
@@ -629,6 +628,7 @@
 				DEF9871D096D405696E59228 /* digistrip_i.ttf */,
 				C343AA0F86574D3F9E225BA8 /* digistrip.ttf */,
 				A10799C78F3242539F062971 /* Impact.otf */,
+				630165D01D2746D8AC1650A3 /* iconfont.ttf */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -757,7 +757,6 @@
 				831F27B7237902A2005E18FF /* AppCenter-Config.plist in Resources */,
 				83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
-				BD0D2CE30B5B498BB0801042 /* iconfont.ttf in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */,
 				2F12B1B071DA42ED8B99C43C /* Inconsolata-Bold.ttf in Resources */,
@@ -767,6 +766,7 @@
 				8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */,
 				D6199777328941FA86FF2ED7 /* digistrip.ttf in Resources */,
 				AAB429CFB78E4321BFA32461 /* Impact.otf in Resources */,
+				1C80F2C3BF254D3F999A4179 /* iconfont.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

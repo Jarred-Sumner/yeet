@@ -107,7 +107,6 @@
 	<string>Some description</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>iconfont.ttf</string>
 		<string>AntDesign.ttf</string>
 		<string>Entypo.ttf</string>
 		<string>EvilIcons.ttf</string>
@@ -132,6 +131,7 @@
 		<string>digistrip_i.ttf</string>
 		<string>digistrip.ttf</string>
 		<string>Impact.otf</string>
+		<string>iconfont.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

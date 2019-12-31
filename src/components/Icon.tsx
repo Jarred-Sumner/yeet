@@ -13,6 +13,12 @@ export enum IconName {
   arrowLeft = "arrow-left",
   back = "back",
   background = "background",
+  die1 = "die1",
+  die2 = "die2",
+  die3 = "die3",
+  die4 = "die4",
+  die5 = "die5",
+  die6 = "die6",
   camera = "camera",
   cameraroll = "cameraroll",
   cut = "cut",
@@ -242,3 +248,10 @@ export const IconJustifyLeft = props => (
 export const IconJustifyRight = props => (
   <Icon name={IconName.justifyRight} {...props} />
 );
+
+export const IconDie1 = props => <Icon name={IconName.die1} {...props} />;
+export const IconDie2 = props => <Icon name={IconName.die2} {...props} />;
+export const IconDie3 = props => <Icon name={IconName.die3} {...props} />;
+export const IconDie4 = props => <Icon name={IconName.die4} {...props} />;
+export const IconDie5 = props => <Icon name={IconName.die5} {...props} />;
+export const IconDie6 = props => <Icon name={IconName.die6} {...props} />;
