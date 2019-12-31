@@ -131,7 +131,14 @@ export class NewPostPage extends React.Component {
 
     let scaleFactor = POST_WIDTH / (post.bounds.width ?? post.media.width);
 
-    let defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
+    const examples = post.examples ?? {};
+
+    let defaultBlocks = convertExportedBlocks(
+      post.blocks,
+      {},
+      scaleFactor,
+      examples
+    );
     const imageBlock = flatten(defaultBlocks).find(
       image => image.type === "image"
     ) as ImagePostBlock;
@@ -150,7 +157,12 @@ export class NewPostPage extends React.Component {
       xPadding = SPACING.normal;
       yPadding = SPACING.half;
 
-      defaultBlocks = convertExportedBlocks(post.blocks, {}, scaleFactor);
+      defaultBlocks = convertExportedBlocks(
+        post.blocks,
+        {},
+        scaleFactor,
+        examples
+      );
     }
 
     const defaultNodes = await convertExportedNodes(
@@ -159,7 +171,8 @@ export class NewPostPage extends React.Component {
       scaleFactor,
       xPadding,
       yPadding,
-      post.bounds
+      post.bounds,
+      examples
     );
 
     this.setState({
@@ -178,6 +191,7 @@ export class NewPostPage extends React.Component {
       defaultLayout: guesstimateLayout(post?.layout, defaultBlocks),
       defaultFormat: post.format,
       defaultInlineNodes: defaultNodes,
+      examples,
       isLoading: false
     });
   };

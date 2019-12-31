@@ -8,7 +8,7 @@ import {
   PixelRatio,
   Alert
 } from "react-native";
-import { isEmpty, isArray, flatten } from "lodash";
+import { isEmpty, isArray, flatten, uniq } from "lodash";
 import rnTextSize, {
   TSFontSpecs,
   TSMeasureParams
@@ -45,7 +45,7 @@ import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
 import { FONT_STYLES } from "./fonts";
 import { IS_DEVELOPMENT } from "../../config";
-import { getDefaultBorder, getDefaultTemplate } from "./buildPost";
+import { getDefaultBorder, getDefaultTemplate, ExampleMap } from "./buildPost";
 
 const { YeetExporter } = NativeModules;
 
@@ -444,7 +444,8 @@ const convertExportableBlock = (
   block: ExportableBlock,
   assets: AssetMap,
   scaleFactor: number = 1.0,
-  isSticker: Boolean = false
+  isSticker: Boolean = false,
+  examples: ExampleMap = {}
 ) => {
   const format = isSticker ? PostFormat.sticker : PostFormat.post;
 
@@ -466,9 +467,30 @@ const convertExportableBlock = (
       template
     );
 
+    const uniqueExamples = uniq(
+      examples[block.id]?.filter(
+        text => typeof text === "string" && text.trim().length > 0
+      ) ?? []
+    );
+
+    let value = block.value;
+
+    if (typeof value !== "string" || value.trim().length === 0) {
+      value = "";
+    }
+
+    if (
+      value === "" &&
+      isArray(examples[block.id]) &&
+      examples[block.id].length > 1 &&
+      uniqueExamples.length === 1
+    ) {
+      value = uniqueExamples[0];
+    }
+
     return buildTextBlock({
       id: block.id,
-      value: isEmpty(block.value) ? "" : block.value,
+      value,
       placeholder: block.value || "Tap to edit text",
       template: template,
       autoInserted: false,
@@ -487,14 +509,15 @@ const convertExportableBlock = (
 export const convertExportedBlocks = (
   blocks: Array<ExportableBlock>,
   assets: AssetMap,
-  scaleFactor: number = 1
+  scaleFactor: number = 1,
+  examples: ExampleMap = {}
 ): Array<PostBlockType> => {
   return blocks
     .map(block => {
       if (isArray(block)) {
-        return convertExportedBlocks(block, assets, scaleFactor);
+        return convertExportedBlocks(block, assets, scaleFactor, examples);
       } else {
-        return convertExportableBlock(block, assets, scaleFactor);
+        return convertExportableBlock(block, assets, scaleFactor, examples);
       }
     })
     .filter(Boolean);
@@ -506,11 +529,36 @@ const convertExportedNode = async (
   scaleFactor: number = 1,
   xPadding: number = 0,
   yPadding: number = 0,
-  size: BoundsRect
+  size: BoundsRect,
+  examples: ExampleMap = {}
 ) => {
-  const block = convertExportableBlock(node.block, assets, scaleFactor, true);
+  const block = convertExportableBlock(
+    node.block,
+    assets,
+    scaleFactor,
+    true,
+    examples
+  );
   if (!block) {
     return null;
+  }
+
+  if (block.type === "text" && isEmpty(block.value)) {
+    const uniqueExamples = uniq(
+      examples[block.id].filter(
+        text => typeof text === "string" && text.trim().length > 0
+      )
+    );
+
+    if (
+      examples[block.id].length > 1 &&
+      uniqueExamples.length < examples[block.id].length &&
+      uniqueExamples.length === 1
+    ) {
+      block.value = uniqueExamples[0].trim();
+    } else {
+      block.value = "Tap to add text";
+    }
   }
 
   const _position = {
@@ -534,6 +582,13 @@ const convertExportedNode = async (
   const isTopOriented = _position.y < size.height / 2;
   const isBottomOriented = _position.y > size.height / 2;
 
+  if (yPadding > 0 && size) {
+    y = Math.max(
+      yPadding,
+      Math.min(y + yPadding + fontSize, size.height - yPadding)
+    );
+  }
+
   if (xPadding > 0 && size && isLeftOriented) {
     x = Math.max(
       xPadding,
@@ -544,17 +599,6 @@ const convertExportedNode = async (
       xPadding,
       Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2)
     );
-  }
-
-  if (yPadding > 0 && size) {
-    y = Math.max(
-      yPadding,
-      Math.min(y + yPadding + fontSize, size.height - yPadding)
-    );
-  }
-
-  if (block.type === "text" && isEmpty(block.value)) {
-    block.value = "Tap to edit text";
   }
 
   return [
@@ -575,12 +619,21 @@ export const convertExportedNodes = async (
   scaleFactor: number = 1,
   xPadding: number = 0,
   yPadding: number = 0,
-  size: BoundsRect
+  size: BoundsRect,
+  examples: ExampleMap = {}
 ): Promise<EditableNodeMap> => {
   const convertedNodes = await Bluebird.map(
     nodes,
     node =>
-      convertExportedNode(node, assets, scaleFactor, xPadding, yPadding, size),
+      convertExportedNode(
+        node,
+        assets,
+        scaleFactor,
+        xPadding,
+        yPadding,
+        size,
+        examples
+      ),
     {
       concurrency: 2
     }

@@ -35,6 +35,7 @@ export interface PostSearchQuery_searchPosts_data {
   nodes: JSON;
   format: string;
   layout: string | null;
+  examples: JSON;
   media: PostSearchQuery_searchPosts_data_media;
 }
 
