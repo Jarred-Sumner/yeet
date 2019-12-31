@@ -209,7 +209,7 @@ const DarkSheet = ({
 };
 
 class RawwPostEditor extends React.Component<Props, State> {
-  constructor(props) {
+  constructor(props: Props) {
     super(props);
     this.state = {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
@@ -222,7 +222,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     this._blockInputRefs = new Map([
       ...Object.values(props.post.blocks).map(({ id }) => [
         id,
-        React.createRef()
+        React.createRef<View>()
       ])
     ]);
 
@@ -586,7 +586,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   blankResizeRef = React.createRef();
   _inlineNodeRefs = new Map();
-  _blockInputRefs = new Map<string, React.RefObject<TextInput>>();
+  _blockInputRefs: Map<string, React.MutableRefObject<TextInput>>;
 
   setBlockInputRef = (id: string): React.MutableRefObject<TextInput> => {
     let ref;
@@ -987,7 +987,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     );
   }
 
-  postPreviewHandlers = [this.scrollRef, ...this._blockInputRefs.values()];
+  postPreviewHandlers = [];
 
   render() {
     const { post } = this.props;
