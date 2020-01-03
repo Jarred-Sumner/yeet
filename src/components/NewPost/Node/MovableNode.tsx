@@ -15,6 +15,7 @@ import {
   preserveMultiplicativeOffset
 } from "../../../lib/animations";
 import { TransformableViewComponent } from "./TransformableView";
+import { FocusType } from "../../../lib/buildPost";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -34,6 +35,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
     translateY = 0,
     Component = TransformableViewComponent,
     onLayout,
+    onTransform,
+    onTransformLayout,
     rotate = 0,
     zIndex,
     inputRef,
@@ -78,7 +81,9 @@ export const TransformableView = React.forwardRef((props, ref) => {
         onLayout={onLayout}
         shouldRasterizeIOS={rasterize}
         needsOffscreenAlphaCompositing={rasterize}
+        onTransformLayout={onTransformLayout}
         inputRef={inputRef}
+        onTransform={onTransform}
         style={bottomContainerStyles}
       >
         {children}
@@ -91,6 +96,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
         onLayout={onLayout}
         shouldRasterizeIOS={rasterize}
         needsOffscreenAlphaCompositing={rasterize}
+        onTransform={onTransform}
+        onTransformLayout={onTransformLayout}
         inputRef={inputRef}
         style={[
           transformableStyles.topContainer,
@@ -174,6 +181,31 @@ export class MovableNode extends Component<Props> {
   constructor(props) {
     super(props);
 
+    this.panGestureState = new Animated.Value(State.UNDETERMINED);
+    this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
+    this.rotationGestureState = new Animated.Value(State.UNDETERMINED);
+    this.isDoneGesturingValue = Animated.cond(
+      Animated.and(
+        Animated.eq(this.panGestureState, State.END),
+        Animated.eq(this.scaleGestureState, State.END),
+        Animated.eq(this.rotationGestureState, State.END)
+      ),
+      1,
+      0
+    );
+    this.isCurrentlyGesturingValue = Animated.cond(
+      Animated.or(
+        Animated.eq(this.panGestureState, State.ACTIVE),
+        Animated.eq(this.panGestureState, State.BEGAN),
+        Animated.eq(this.scaleGestureState, State.ACTIVE),
+        Animated.eq(this.scaleGestureState, State.BEGAN),
+        Animated.eq(this.rotationGestureState, State.ACTIVE),
+        Animated.eq(this.rotationGestureState, State.BEGAN)
+      ),
+      1,
+      0
+    );
+
     this._X = new Animated.Value(props.xLiteral);
     this._Y = new Animated.Value(props.yLiteral);
     this._R = new Animated.Value(props.rLiteral);
@@ -226,9 +258,7 @@ export class MovableNode extends Component<Props> {
     this.Y = Animated.round(
       preserveOffset(this._Y, this.panGestureState, props.y)
     );
-
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
-
     this.Z = Animated.min(
       preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
       props.maxScale || 100
@@ -337,16 +367,10 @@ export class MovableNode extends Component<Props> {
   R: Animated.Value<number>;
   _Z: Animated.Value<number>;
   Z: Animated.Value<number>;
-  panGestureState: Animated.Value<State> = new Animated.Value(
-    State.UNDETERMINED
-  );
-  scaleGestureState: Animated.Value<State> = new Animated.Value(
-    State.UNDETERMINED
-  );
-  rotationGestureState: Animated.Value<State> = new Animated.Value(
-    State.UNDETERMINED
-  );
-
+  panGestureState: Animated.Value<State>;
+  scaleGestureState: Animated.Value<State>;
+  rotationGestureState: Animated.Value<State>;
+  isDoneGesturingValue: Animated.Value<State>;
   _isMounted = true;
 
   updatePosition = coords => {
@@ -359,13 +383,64 @@ export class MovableNode extends Component<Props> {
       x,
       y,
       scale,
-      rotate,
-      absoluteX,
-      absoluteY,
-      isPanning:
-        panGestureState === State.ACTIVE || panGestureState === State.BEGAN
+      rotate
     });
   };
+
+  startUpdatePosition = ([absoluteX, absoluteY]) => {
+    if (!this._isMounted) {
+      return;
+    }
+
+    this.props.onChangePosition({
+      x: this.props.xLiteral,
+      y: this.props.yLiteral,
+      scale: this.props.scaleLiteral,
+      rotate: this.props.rLiteral,
+      absoluteX,
+      absoluteY,
+      isPanning: true
+    });
+  };
+
+  handleLayoutTransform = ({ nativeEvent: { layout, from } }) => {};
+
+  // handleLayoutTransform = ({
+  //   nativeEvent: { layout, from }
+  // }: {
+  //   nativeEvent: { layout: BoundsRect; from: BoundsRect };
+  // }) => {
+  //   let adjustments = {
+  //     x: 0,
+  //     y: 0
+  //   };
+
+  //   const newMaxY = layout.y + layout.height;
+  //   const newMaxX = layout.x + layout.width;
+  //   const oldMaxY = from.y + from.height;
+  //   const oldMaxX = from.x + from.width;
+
+  //   if (layout.y < 0) {
+  //     adjustments.y = (Math.abs(layout.y) - Math.abs(from.y)) / -2;
+  //   }
+
+  //   if (adjustments.x !== 0 || adjustments.y !== 0) {
+  //     this.panGestureState.setValue(State.ACTIVE);
+  //     window.requestAnimationFrame(() => {
+  //       if (adjustments.x !== 0) {
+  //         this._X.setValue(this.props.xLiteral + adjustments.x);
+  //       }
+
+  //       if (adjustments.y !== 0) {
+  //         this._Y.setValue(this.props.yLiteral + adjustments.y);
+  //       }
+
+  //       this.panGestureState.setValue(State.END);
+  //     });
+  //   }
+
+  //   console.log({ adjustments, from, layout });
+  // };
 
   componentWillUnmount() {
     this._isMounted = false;
@@ -396,6 +471,15 @@ export class MovableNode extends Component<Props> {
     this.pinchRef
   ];
 
+  handlePanChange = ([absoluteX, absoluteY, panGestureState]) => {
+    this.props.onPan({
+      absoluteX,
+      absoluteY,
+      isPanning:
+        panGestureState === State.ACTIVE || panGestureState === State.BEGAN
+    });
+  };
+
   render() {
     const {
       x,
@@ -403,6 +487,8 @@ export class MovableNode extends Component<Props> {
       scale,
       r,
       isDragEnabled,
+      isPanning,
+      isOtherNodeFocused,
       focusedBlockValue,
       waitFor = [],
       keyboardVisibleValue,
@@ -425,48 +511,29 @@ export class MovableNode extends Component<Props> {
             <Animated.Code
               exec={Animated.block([
                 Animated.onChange(
-                  this.panGestureState,
-                  Animated.call(
-                    [
-                      this.X,
-                      this.Y,
-                      this.R,
-                      this.Z,
-                      this.panGestureState,
-                      this.absoluteX,
-                      this.absoluteY
-                    ],
-                    this.updatePosition
+                  this.isDoneGesturingValue,
+                  Animated.cond(
+                    Animated.eq(this.isDoneGesturingValue, 1),
+                    Animated.call(
+                      [
+                        this.X,
+                        this.Y,
+                        this.R,
+                        this.Z,
+                        this.panGestureState,
+                        this.absoluteX,
+                        this.absoluteY
+                      ],
+                      this.updatePosition
+                    )
                   )
                 ),
                 Animated.onChange(
-                  this.rotationGestureState,
+                  this.isCurrentlyGesturingValue,
+
                   Animated.call(
-                    [
-                      this.X,
-                      this.Y,
-                      this.R,
-                      this.Z,
-                      this.panGestureState,
-                      this.absoluteX,
-                      this.absoluteY
-                    ],
-                    this.updatePosition
-                  )
-                ),
-                Animated.onChange(
-                  this.scaleGestureState,
-                  Animated.call(
-                    [
-                      this.X,
-                      this.Y,
-                      this.R,
-                      this.Z,
-                      this.panGestureState,
-                      this.absoluteX,
-                      this.absoluteY
-                    ],
-                    this.updatePosition
+                    [this.absoluteX, this.absoluteY, this.panGestureState],
+                    this.handlePanChange
                   )
                 ),
                 Animated.onChange(
@@ -523,12 +590,12 @@ export class MovableNode extends Component<Props> {
                       <Animated.View style={styles.gestureView}>
                         <TransformableView
                           ref={this.props.containerRef}
-                          onLayout={this.handleLayout}
-                          opacity={isHidden ? 0 : 1}
+                          opacity={isHidden ? 0 : isOtherNodeFocused ? 0.9 : 1}
                           translateY={this.translateY}
                           translateX={this.translateX}
                           bottom={this.bottomValue}
                           keyboardVisibleValue={keyboardVisibleValue}
+                          onTransformLayout={this.handleLayoutTransform}
                           inputRef={inputRef}
                           rotate={this.rotate}
                           rasterize={false}

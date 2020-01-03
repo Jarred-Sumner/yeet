@@ -1468,7 +1468,7 @@ const {
 const createExportableImageBlock = (entry, scaledImageSize, imageSize) => {
   return {
     type: "image",
-    format: PostFormat.sticker,
+    format: PostFormat.post,
     dimensions: {
       x: scaledImageSize.x,
       y: scaledImageSize.y,
@@ -1480,7 +1480,7 @@ const createExportableImageBlock = (entry, scaledImageSize, imageSize) => {
     id: normalizeID(entry.imeSlike),
     contentId: normalizeID(entry.imeSlike),
     viewTag: -1,
-    layout: PostLayout.text,
+    layout: PostLayout.media,
     frame: imageSize,
     value: {
       width: imageSize.width,
@@ -1508,7 +1508,7 @@ const OUTLINE_MAP = {
   "5": TextBorderType.solid
 };
 
-const percentToPx = (value, size) => (parseInt(value) / 100.0) * size.width;
+const percentToPx = (value, size) => (parseFloat(value) / 100.0) * size.width;
 
 const normalizeFontSize = (fontSize, size) => {
   return (
@@ -1793,22 +1793,24 @@ const createExportableTextNode = (
     rotation: _rotate
   } = caption;
   const x = Math.max(
-    0,
+    xPadding,
     Math.min(
       parseInt(_x) -
         imageBlock.dimensions.x +
         (size.width - imageBlock.dimensions.width) / 2 -
-        0,
-      imageBlock.dimensions.width
+        block.config.overrides.maxWidth / 2 -
+        xPadding,
+      imageBlock.dimensions.width - xPadding * 2
     )
   );
   let y = Math.max(
-    normalizeFontSize(fontSize, size) * 1.5,
+    normalizeFontSize(fontSize, size) * 1.5 + yPadding,
     Math.min(
       parseInt(_y) -
         imageBlock.dimensions.y +
-        (size.height - imageBlock.dimensions.height),
-      imageBlock.dimensions.height
+        (size.height - imageBlock.dimensions.height) +
+        yPadding,
+      imageBlock.dimensions.height - yPadding * 2
     )
   );
 
@@ -1825,12 +1827,12 @@ const createExportableTextNode = (
   return {
     block,
     frame: {
-      x: (width + x) / 2,
+      x,
       y
     },
     viewTag: -1,
     position: {
-      x: (width + x) / 2,
+      x,
       y,
       scale: 1.0,
       rotate
@@ -1844,8 +1846,8 @@ const convertEntry = entry => {
   let { backgroundColor, rectangle: _rectangle, size } = getMemeImageData(
     entry.imeSlike
   );
-  let xPadding = 0;
-  let yPadding = 0;
+  let xPadding = 20;
+  let yPadding = 20;
   if (_rectangle.x > 0 && _rectangle.x * 2 + _rectangle.width === size.width) {
     xPadding = _rectangle.x;
     size.x = 0;
@@ -2002,8 +2004,8 @@ const convertEntry = entry => {
       y: yPadding,
       maxX: size.width,
       maxY: size.height,
-      minX: 0,
-      minY: 0
+      minX: xPadding,
+      minY: yPadding
     };
 
     return {

@@ -10,6 +10,8 @@ mutation CreatePostThread(
   $autoplaySeconds: Int
   $bounds: RectangleInputObject!
   $colors: ColorsInputObject!
+  $examples: JSON
+  $remixId: ID
   $postOffset: Int = 0
   $postsCount: Int = 2
   $editToken: String
@@ -20,6 +22,8 @@ mutation CreatePostThread(
     blocks: $blocks
     nodes: $nodes
     body: $body
+    remixId: $remixId
+    examples: $examples
     format: $format
     stringList: $strings
     autoplaySeconds: $autoplaySeconds

@@ -52,7 +52,8 @@ export class NewPostPage extends React.Component {
 
     if (post) {
       this.state = {
-        isLoading: true
+        isLoading: true,
+        remixId: post?.id
       };
     } else if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
@@ -70,6 +71,8 @@ export class NewPostPage extends React.Component {
       this.state = {
         defaultBlocks: { [imageBlock.id]: imageBlock },
         defaultPositions: [[imageBlock.id]],
+        examples: {},
+        remixId: null,
         thumbnail: null,
         isLoading: false
       };
@@ -77,6 +80,8 @@ export class NewPostPage extends React.Component {
       this.state = {
         defaultBlocks: undefined,
         defaultPositions: {},
+        remixId: null,
+        examples: {},
         thumbnail: null,
         isLoading: false
       };
@@ -90,9 +95,11 @@ export class NewPostPage extends React.Component {
     layout: PostLayout,
     editToken: string
   ) => {
+    const remixId = this.state.remixId;
     this.props.navigation.navigate("NewThread", {
       contentExport,
       exportData,
+      remixId,
       format,
       layout,
       editToken
@@ -125,6 +132,7 @@ export class NewPostPage extends React.Component {
   }
 
   loadPost = async () => {
+    const { userId } = this.props;
     const post: Partial<PostFragment> | null = this.props.navigation.getParam(
       "post"
     );
@@ -143,8 +151,8 @@ export class NewPostPage extends React.Component {
       image => image.type === "image"
     ) as ImagePostBlock;
 
-    let xPadding = SPACING.half;
-    let yPadding = SPACING.half;
+    let xPadding = post.bounds.x * scaleFactor;
+    let yPadding = post.bounds.y * scaleFactor;
 
     if (
       imageBlock &&
@@ -154,8 +162,8 @@ export class NewPostPage extends React.Component {
     ) {
       scaleFactor = POST_WIDTH / imageBlock.value.image.width;
 
-      xPadding = SPACING.normal;
-      yPadding = SPACING.half;
+      xPadding = post.bounds.x * scaleFactor;
+      yPadding = post.bounds.y * scaleFactor;
 
       defaultBlocks = convertExportedBlocks(
         post.blocks,
@@ -176,6 +184,7 @@ export class NewPostPage extends React.Component {
     );
 
     this.setState({
+      remixId: post.id,
       defaultBlocks: fromPairs(
         flatten(defaultBlocks).map(block => [block.id, block])
       ),
@@ -215,6 +224,7 @@ export class NewPostPage extends React.Component {
             navigation={this.props.navigation}
             defaultBlocks={this.state.defaultBlocks}
             defaultPositions={this.state.defaultPositions}
+            examples={this.state.examples}
             thumbnail={this.state.thumbnail}
             onExport={this.handleExport}
             backgroundColor={this.state.backgroundColor}
@@ -239,6 +249,7 @@ export default pageProps => {
       {...pageProps}
       requireAuthentication={userContext.requireAuthentication}
       authState={userContext.authState}
+      userId={userContext.userId}
       isFocused={isFocused}
       isFocusing={isFocusing}
     />

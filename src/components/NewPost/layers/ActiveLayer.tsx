@@ -155,6 +155,10 @@ const Footer = ({
   onSend,
   onDelete,
   opacity,
+  hasExamples,
+  exampleCount,
+  onPressExample,
+  exampleIndex,
   waitFor,
   panX,
   toolbar,
@@ -168,6 +172,10 @@ const Footer = ({
         panX={panX}
         panY={panY}
         toolbar={toolbar}
+        hasExamples={hasExamples}
+        exampleIndex={exampleIndex}
+        exampleCount={exampleCount}
+        onPressExample={onPressExample}
         onPressSend={onSend}
       />
     );
@@ -195,10 +203,13 @@ export const ActiveLayer = ({
   onSend,
   inputRef,
   relativeHeight,
+  onPressExample,
   isPageModal,
   focusedBlock,
   onDelete,
   activeButton,
+  exampleCount = 0,
+  exampleIndex = -1,
   focusType,
   onBack,
   keyboardVisibleOpacity,
@@ -237,6 +248,10 @@ export const ActiveLayer = ({
           onDelete={onDelete}
           panX={panX}
           panY={panY}
+          hasExamples={exampleCount > 0}
+          exampleCount={exampleCount}
+          exampleIndex={exampleIndex}
+          onPressExample={onPressExample}
           onSend={onSend}
           toolbar={
             <Toolbar

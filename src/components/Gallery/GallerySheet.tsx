@@ -264,7 +264,7 @@ export class GallerySheet extends React.Component {
           pointerEvents={show ? "auto" : "none"}
           style={this.transitionStyles}
         >
-          <BaseButton enabled={show} onPress={onDismiss}>
+          <BaseButton onPress={onDismiss}>
             <Animated.View style={this.sheetStyles} />
           </BaseButton>
         </Animated.View>

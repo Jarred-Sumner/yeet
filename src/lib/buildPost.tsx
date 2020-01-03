@@ -375,9 +375,11 @@ export const blocksForFormat = (
         .filter(block => block.type === "image")
         .slice(0, 2)
         .map(block => {
-          block.layout = layout;
-          block.format = format;
-          return block;
+          return {
+            ...block,
+            layout,
+            format
+          };
         });
 
       let dimensions = VERTICAL_IMAGE_DIMENSIONS;
@@ -410,26 +412,28 @@ export const blocksForFormat = (
       ]);
     }
     case PostLayout.verticalTextMedia: {
-      const imageBlock =
-        blocks.find(block => block.type === "image") ??
-        buildImageBlock({
-          image: null,
-          autoInserted: true,
-          format,
-          layout,
-          dimensions: VERTICAL_IMAGE_DIMENSIONS
-        });
+      let imageBlock = {
+        ...(blocks.find(block => block.type === "image") ??
+          buildImageBlock({
+            image: null,
+            autoInserted: true,
+            format,
+            layout,
+            dimensions: VERTICAL_IMAGE_DIMENSIONS
+          }))
+      };
 
-      const textBlock =
-        blocks.find(block => block.type === "text") ??
-        buildTextBlock({
-          value: "",
-          placeholder: "Tap to edit text",
-          autoInserted: true,
-          format,
-          layout,
-          template: TextTemplate.post
-        });
+      let textBlock = {
+        ...(blocks.find(block => block.type === "text") ??
+          buildTextBlock({
+            value: "",
+            placeholder: "Tap to edit text",
+            autoInserted: true,
+            format,
+            layout,
+            template: TextTemplate.post
+          }))
+      };
 
       textBlock.config.minHeight = null;
       textBlock.format = format;
@@ -444,27 +448,32 @@ export const blocksForFormat = (
     case PostLayout.verticalMediaText: {
       const imageBlock = scaleImageBlockToWidth(
         VERTICAL_IMAGE_DIMENSIONS.width,
-        blocks.find(block => block.type === "image") ??
-          buildImageBlock({
-            image: null,
+        Object.assign(
+          {},
+          blocks.find(block => block.type === "image") ??
+            buildImageBlock({
+              image: null,
+              autoInserted: true,
+              format,
+              layout,
+              dimensions: VERTICAL_IMAGE_DIMENSIONS
+            })
+        )
+      );
+
+      const textBlock = Object.assign(
+        {},
+        blocks.find(block => block.type === "text") ??
+          buildTextBlock({
+            value: "",
+            placeholder: "Tap to edit text",
             autoInserted: true,
             format,
             layout,
-            dimensions: VERTICAL_IMAGE_DIMENSIONS
+
+            template: TextTemplate.post
           })
       );
-
-      const textBlock =
-        blocks.find(block => block.type === "text") ??
-        buildTextBlock({
-          value: "",
-          placeholder: "Tap to edit text",
-          autoInserted: true,
-          format,
-          layout,
-
-          template: TextTemplate.post
-        });
 
       textBlock.format = format;
       textBlock.layout = layout;
@@ -477,17 +486,20 @@ export const blocksForFormat = (
     case PostLayout.horizontalMediaText: {
       const imageBlock = scaleImageBlockToWidth(
         HORIZONTAL_IMAGE_DIMENSIONS.width,
-        blocks.find(block => block.type === "image") ??
-          buildImageBlock({
-            image: null,
-            autoInserted: true,
-            format,
-            layout,
-            dimensions: {
-              width: MAX_BLOCK_WIDTH / 2,
-              height: MAX_BLOCK_WIDTH
-            }
-          })
+        Object.assign(
+          {},
+          blocks.find(block => block.type === "image") ??
+            buildImageBlock({
+              image: null,
+              autoInserted: true,
+              format,
+              layout,
+              dimensions: {
+                width: MAX_BLOCK_WIDTH / 2,
+                height: MAX_BLOCK_WIDTH
+              }
+            })
+        )
       );
 
       const textBlock: TextPostBlock =

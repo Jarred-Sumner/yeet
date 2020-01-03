@@ -13,7 +13,7 @@ import Promise
 class ExportableMediaSource {
   var mediaSource: MediaSource
   var view: UIView? = nil
-  var nodeView: UIView? = nil
+  var nodeView: MovableView? = nil
   var containerView: UIView? = nil
 
   open var duration: NSNumber {
@@ -64,7 +64,7 @@ class ExportableVideoSource : ExportableMediaSource {
     }
   }
 
-  init(mediaSource: MediaSource, asset: AVAsset, playerItem: AVPlayerItem, view: UIView? = nil, nodeView: UIView? = nil) {
+  init(mediaSource: MediaSource, asset: AVAsset, playerItem: AVPlayerItem, view: UIView? = nil, nodeView: MovableView? = nil) {
     self.asset = asset
     self.playerItem = playerItem
 
@@ -121,7 +121,7 @@ class ExportableImageSource : ExportableMediaSource {
   }
 
 
-  init(mediaSource: MediaSource, animatedImage: PINCachedAnimatedImage?, staticImage: UIImage?, view: UIView? = nil, nodeView: UIView? = nil)  {
+  init(mediaSource: MediaSource, animatedImage: PINCachedAnimatedImage?, staticImage: UIImage?, view: UIView? = nil, nodeView: MovableView? = nil)  {
     self.animatedImage = animatedImage
     self.staticImage = staticImage
 
@@ -132,7 +132,7 @@ class ExportableImageSource : ExportableMediaSource {
     self.nodeView = nodeView
   }
 
-  init(screenshot: UIImage, id: String, view: UIView? = nil, nodeView: UIView? = nil) {
+  init(screenshot: UIImage, id: String, view: UIView? = nil, nodeView: MovableView? = nil) {
     staticImage = screenshot
     animatedImage = nil
 
@@ -153,7 +153,7 @@ class ExportableImageSource : ExportableMediaSource {
     self.nodeView = nodeView
   }
 
-  init(thumbnail: UIImage, id: String, view: UIView? = nil, nodeView: UIView? = nil) {
+  init(thumbnail: UIImage, id: String, view: UIView? = nil, nodeView: MovableView? = nil) {
 
 
     staticImage = thumbnail
@@ -162,12 +162,12 @@ class ExportableImageSource : ExportableMediaSource {
     super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale), cover: nil))
 
     self.view = view
-    self.nodeView = nodeView
+    
   }
 }
 
 extension ExportableMediaSource {
-  static func from(mediaPlayer: MediaPlayer, nodeView: UIView?) -> ExportableMediaSource? {
+  static func from(mediaPlayer: MediaPlayer, nodeView: MovableView?) -> ExportableMediaSource? {
     guard let current = mediaPlayer.source else {
       return nil
     }

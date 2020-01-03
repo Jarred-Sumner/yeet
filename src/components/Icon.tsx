@@ -28,6 +28,7 @@ export enum IconName {
   movie = "movie",
   justifyAll = "justifyall",
   justifyCenter = "justifycenter",
+  dice = "dice",
   justifyLeft = "justifyleft",
   justifyRight = "justifyright",
   checkmark = "checkmark",
@@ -255,3 +256,4 @@ export const IconDie3 = props => <Icon name={IconName.die3} {...props} />;
 export const IconDie4 = props => <Icon name={IconName.die4} {...props} />;
 export const IconDie5 = props => <Icon name={IconName.die5} {...props} />;
 export const IconDie6 = props => <Icon name={IconName.die6} {...props} />;
+export const IconDice = props => <Icon name={IconName.dice} {...props} />;

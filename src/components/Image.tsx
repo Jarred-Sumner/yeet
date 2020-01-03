@@ -4,9 +4,11 @@ import hoistNonReactStatics from "hoist-non-react-statics";
 import MediaPlayer, { MediaSource } from "./MediaPlayer";
 import { mediaSourceFromSource } from "../lib/imageSearch";
 import { ImageSourcePropType, ImageStyle } from "react-native";
+import { MediaPlayerResizeMode } from "./MediaPlayer/MediaPlayerComponent";
 
 type BaseProps = {
   style: ImageStyle;
+  resizeMode: MediaPlayerResizeMode;
   borderRadius?: number;
 };
 

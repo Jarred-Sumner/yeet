@@ -40,7 +40,8 @@ import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
 import nanoid from "nanoid/non-secure";
-import { layoutBlocksInPost } from "../../lib/buildPost";
+import { layoutBlocksInPost, ExampleMap } from "../../lib/buildPost";
+import TextPostBlock from "./TextPostBlock";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -128,11 +129,28 @@ const DEFAULT_BOUNDS = {
 };
 
 class RawNewPost extends React.Component<{}, State> {
+  static getExampleCount(examples: ExampleMap = {}) {
+    if (!examples) {
+      return 0;
+    }
+
+    let maxCount = 0;
+
+    Object.entries(examples).forEach(([key, list]) => {
+      if (list.length > maxCount) {
+        maxCount = list.length;
+      }
+    });
+
+    return maxCount;
+  }
+
   static defaultProps = {
     defaultFormat: PostFormat.post,
     defaultLayout: PostLayout.media,
     defaultBlocks: {},
     defaultPositions: [],
+    examples: {},
     defaultInlineNodes: {},
     defaultBounds: DEFAULT_BOUNDS,
     threadId: null,
@@ -147,8 +165,13 @@ class RawNewPost extends React.Component<{}, State> {
     this.state = {
       showGallery: false,
       isKeyboardVisible: false,
-      disableGallery: false,
+      disableGallery: true,
       editToken: nanoid(),
+      exampleIndex: -1,
+      exampleCount: isEmpty(props.examples)
+        ? 0
+        : RawNewPost.getExampleCount(props.examples),
+
       post: this.buildFromDefaults(props),
 
       defaultPhoto: null,
@@ -161,6 +184,73 @@ class RawNewPost extends React.Component<{}, State> {
       }
     };
   }
+
+  componentDidMount() {
+    window.requestIdleCallback(() => {
+      this.setState({ disableGallery: false });
+    });
+  }
+
+  handlePressExample = () => {
+    const { exampleIndex: _exampleIndex, exampleCount } = this.state;
+
+    if (exampleCount < 1) {
+      return;
+    }
+
+    const exampleIndex = Math.max(0, _exampleIndex + 1) % exampleCount;
+
+    const inlineNodes = { ...this.state.inlineNodes };
+    const blocks = { ...this.state.post.blocks };
+
+    for (const [id, contentList] of Object.entries(this.props.examples)) {
+      let string = contentList[
+        Math.min(exampleIndex, contentList.length - 1)
+      ] as string;
+
+      const block: TextPostBlock = inlineNodes[id]
+        ? { ...inlineNodes[id].block }
+        : { ...blocks[id] };
+      if (block && block.type === "text") {
+        block.value = string;
+
+        if (inlineNodes[id]) {
+          inlineNodes[id].block = block;
+        } else {
+          blocks[block] = block;
+        }
+      }
+    }
+
+    const {
+      backgroundColor,
+      defaultWidth,
+      defaultHeight,
+      defaultBlock,
+      defaultPositions,
+      defaultFormat,
+      defaultLayout
+    } = this.props;
+
+    this.setState(
+      {
+        exampleIndex,
+        post: buildPost({
+          backgroundColor,
+          width: defaultWidth,
+          height: defaultHeight,
+          blocks,
+          positions: defaultPositions,
+          format: defaultFormat,
+          layout: defaultLayout
+        }),
+        inlineNodes
+      },
+      () => {
+        this.postEditor.current.resetText();
+      }
+    );
+  };
 
   buildFromDefaults = props => {
     return buildPost({
@@ -398,6 +488,7 @@ class RawNewPost extends React.Component<{}, State> {
   keyboardHeightValue = new Animated.Value<number>(0);
   headerOffset = new Animated.Value(0);
   headerOpacity = new Animated.Value(0);
+  postEditor = React.createRef<View>();
 
   showKeyboard = () => {
     this.setState({ isKeyboardVisible: true });
@@ -451,6 +542,10 @@ class RawNewPost extends React.Component<{}, State> {
                   bounds={this.state.bounds}
                   post={this.state.post}
                   onBack={this.handleBack}
+                  exampleCount={this.state.exampleCount}
+                  exampleIndex={this.state.exampleIndex}
+                  onPressExample={this.handlePressExample}
+                  ref={this.postEditor}
                   keyboardVisibleValue={this.keyboardVisibleValue}
                   keyboardHeightValue={this.keyboardHeightValue}
                   headerOffset={this.headerOffset}

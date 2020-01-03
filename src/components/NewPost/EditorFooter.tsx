@@ -16,7 +16,14 @@ import {
   IconJustifyLeft,
   IconJustifyRight,
   IconText,
-  IconTrash
+  IconTrash,
+  IconDie1,
+  IconDie2,
+  IconDie3,
+  IconDie4,
+  IconDice,
+  IconDie5,
+  IconDie6
 } from "../Icon";
 import {
   CAROUSEL_HEIGHT,
@@ -117,33 +124,41 @@ const styles = StyleSheet.create({
   bottomButtons: {
     paddingRight: 12
   },
+  wrapper: {
+    position: "absolute",
+    left: 0,
+    right: 0
+  },
+  subfooter: {
+    paddingHorizontal: SPACING.normal,
+    flexDirection: "row",
+    paddingBottom: SPACING.normal
+  },
   container: {
-    shadowRadius: StyleSheet.hairlineWidth,
-    shadowOffset: {
-      width: 0,
-      height: -1
-    },
-    shadowColor: "rgb(0, 0, 30)",
-    shadowOpacity: 0.8,
+    // shadowRadius: StyleSheet.hairlineWidth,
+    // shadowOffset: {
+    //   width: 0,
+    //   height: -1
+    // },
+    // shadowColor: "rgb(0, 0, 30)",
+    // shadowOpacity: 0.8,
 
     justifyContent: "space-between",
     width: "100%",
+    overflow: "visible",
     flexDirection: "row",
     paddingRight: SPACING.normal,
-    position: "absolute",
-    left: 0,
-    right: 0,
     backgroundColor: CAROUSEL_BACKGROUND
+  },
+  footerContainer: {
+    paddingTop: SPACING.half,
+    paddingBottom: BOTTOM_Y
   },
   header: {
     height: CAROUSEL_HEIGHT,
     top: 0
   },
   footer: {
-    paddingTop: SPACING.half,
-    paddingBottom: BOTTOM_Y,
-    height: FOOTER_HEIGHT,
-
     bottom: 0
   }
 });
@@ -376,7 +391,12 @@ export const TextHeader = ({
   );
 
   const textHeaderStyle = React.useMemo(
-    () => [styles.container, styles.header, { paddingTop: top }],
+    () => [
+      styles.wrapper,
+      styles.container,
+      styles.header,
+      { paddingTop: top }
+    ],
     [styles.container, styles.header, top]
   );
 
@@ -456,23 +476,81 @@ export const EditorHeader = ({
   }
 };
 
+const getExampleDiceIcon = (count: number, offset: number) => {
+  const diceNumber = Math.min(count, 5) - Math.max(offset, -1);
+
+  if (diceNumber === 5) {
+    return IconDie6;
+  } else if (diceNumber === 4) {
+    return IconDie5;
+  } else if (diceNumber === 3) {
+    return IconDie4;
+  } else if (diceNumber === 2) {
+    return IconDie2;
+  } else if (diceNumber === 1) {
+    return IconDie2;
+  } else {
+    return IconDie1;
+  }
+};
+
+const ExampleCountButton = ({ onPress, exampleCount, exampleIndex }) => {
+  // const DiceIcon = getExampleDiceIcon(exampleCount, exampleIndex);
+
+  return (
+    <IconButton
+      onPress={onPress}
+      type="fill"
+      size={36}
+      containerSize={48}
+      borderRadius={24}
+      borderWidth={1}
+      Icon={IconDice}
+      color="white"
+      backgroundColor={"rgba(0, 0, 0, 0.75)"}
+      borderColor="transparent"
+    />
+  );
+};
+
 export const EditorFooter = ({
   onPressDownload,
+  exampleCount,
+  exampleIndex,
   onPressSend,
+  onPressExample,
+  hasExamples = false,
   waitFor,
   toolbar
-}) => (
-  <View pointerEvents="box-none" style={[styles.container, styles.footer]}>
-    {toolbar}
+}) => {
+  return (
+    <View pointerEvents="box-none" style={[styles.wrapper, styles.footer]}>
+      {hasExamples && (
+        <View pointerEvents="box-none" style={styles.subfooter}>
+          <ExampleCountButton
+            exampleCount={exampleCount}
+            exampleIndex={exampleIndex}
+            onPress={onPressExample}
+          />
+        </View>
+      )}
 
-    <View
-      pointerEvents="box-none"
-      style={[styles.footerSide, styles.footerSideRight]}
-    >
-      <NextButton onPress={onPressSend} waitFor={waitFor} />
+      <View
+        pointerEvents="box-none"
+        style={[styles.container, styles.footerContainer]}
+      >
+        {toolbar}
+
+        <View
+          pointerEvents="box-none"
+          style={[styles.footerSide, styles.footerSideRight]}
+        >
+          <NextButton onPress={onPressSend} waitFor={waitFor} />
+        </View>
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
 const DELETE_SIZE = 26;
 const MID_Y_DELETE_BUTTON =
@@ -567,7 +645,13 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
   return (
     <View
       pointerEvents="none"
-      style={[styles.container, styles.footer, styles.footerCenter]}
+      style={[
+        styles.wrapper,
+        styles.container,
+        styles.footer,
+        styles.footerContainer,
+        styles.footerCenter
+      ]}
     >
       <Animated.Code
         exec={Animated.block([

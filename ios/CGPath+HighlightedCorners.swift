@@ -16,22 +16,25 @@ extension UITextView {
 
   static fileprivate let minSize = " ".size(OfFont: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
 
-  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor, originalFont: UIFont) {
+  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor, originalFont: UIFont, canAdjustInset: Bool) {
     let textLayer = textView.layer
     let textContainerInset = textView.textContainerInset
 
-    if (strokeWidth != .zero && textView.textContainerInset.top < strokeWidth) {
-      textView.textContainerInset.top = textView.textContainerInset.top + strokeWidth
+    if canAdjustInset {
+      if (strokeWidth != .zero && textView.textContainerInset.top < strokeWidth) {
+        textView.textContainerInset.top = textView.textContainerInset.top + strokeWidth
+      }
+
+      if (strokeWidth != .zero && textView.textContainerInset.bottom < strokeWidth) {
+        textView.textContainerInset.bottom = textView.textContainerInset.bottom + strokeWidth
+      }
+
+      if strokeWidth == .zero && (textView.textContainerInset.top != .zero || textView.textContainerInset.bottom != .zero) {
+        textView.textContainerInset.top = 0
+        textView.textContainerInset.bottom = 0
+      }
     }
 
-    if (strokeWidth != .zero && textView.textContainerInset.bottom < strokeWidth) {
-      textView.textContainerInset.bottom = textView.textContainerInset.bottom + strokeWidth
-    }
-
-    if strokeWidth == .zero && (textView.textContainerInset.top != .zero || textView.textContainerInset.bottom != .zero) {
-      textView.textContainerInset.top = 0
-      textView.textContainerInset.bottom = 0
-    }
 
     var layout = textView.layoutManager
   
@@ -498,3 +501,4 @@ extension UIFont {
     }
   }
 }
+

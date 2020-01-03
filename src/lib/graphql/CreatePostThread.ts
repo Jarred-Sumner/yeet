@@ -112,6 +112,8 @@ export interface CreatePostThreadVariables {
   autoplaySeconds?: number | null;
   bounds: RectangleInputObject;
   colors: ColorsInputObject;
+  examples?: JSON | null;
+  remixId?: string | null;
   postOffset?: number | null;
   postsCount?: number | null;
   editToken?: string | null;

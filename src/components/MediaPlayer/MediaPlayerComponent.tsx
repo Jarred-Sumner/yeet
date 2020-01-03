@@ -38,6 +38,8 @@ type ProgressEventData = StatusEventData & {
   interval: number;
 };
 
+export type MediaPlayerResizeMode = "aspectFill" | "aspectFit";
+
 export type MediaPlayerProps = {
   autoPlay: boolean;
   sources: Array<MediaSource>;
@@ -47,7 +49,7 @@ export type MediaPlayerProps = {
   style: StyleProp<any>;
   prefetch?: boolean;
   muted?: boolean;
-  resizeMode: "aspectFill" | "aspectFit";
+  resizeMode: MediaPlayerResizeMode;
   onEnd?: ReactEventHandler<StatusEventData>;
   onLoad?: ReactEventHandler<StatusEventData>;
   onPlay?: ReactEventHandler<StatusEventData>;

@@ -4,7 +4,7 @@ import {
 } from "@expo/react-native-action-sheet";
 import { flatten } from "lodash";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, findNodeHandle } from "react-native";
 import {
   ScrollView,
   State as GestureState
@@ -60,6 +60,9 @@ import {
 } from "./Toolbar";
 import { NewPostType } from "../../lib/buildPost";
 import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
+import { MarginView } from "./Node/MarginView";
+import { AnimatedEvent } from "./Node/createAnimatedTransformableViewComponent";
+import { createAnimatedEvent } from "./Node/createAnimatedEvent";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -190,10 +193,10 @@ const DarkSheet = ({
         width,
         height,
         opacity,
-        bottom: keyboardHeight
+        top: 0
       }
     ],
-    [styles.darkSheetStyle, opacity, keyboardHeight]
+    [styles.darkSheetStyle, opacity, height, keyboardHeight]
   );
 
   return (
@@ -203,7 +206,16 @@ const DarkSheet = ({
       pointerEvents="none"
       style={containerStyle}
     >
-      <DarkSheetGradient width={width} height={height} />
+      <Animated.View
+        style={{
+          transform: [
+            { translateY: keyboardHeight },
+            { translateY: height * -1 }
+          ]
+        }}
+      >
+        <DarkSheetGradient width={width} height={height} />
+      </Animated.View>
     </Animated.View>
   );
 };
@@ -268,11 +280,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       ...this._blockInputRefs.values()
     ];
 
-    if (this.state.focusedBlockId === id) {
-      this.setState({ focusedBlockId: null, focusType: null });
-      this.focusedBlockValue.setValue(-1);
-      this.focusTypeValue.setValue(-1);
-    }
+    this.clearFocus();
   };
 
   componentWillUnmount() {}
@@ -455,10 +463,15 @@ class RawwPostEditor extends React.Component<Props, State> {
       ...this._blockInputRefs.values()
     ];
 
-    this.setState({
-      focusedBlockId: block.id,
-      focusType: FocusType.absolute
-    });
+    this.setState(
+      {
+        focusedBlockId: block.id,
+        focusType: FocusType.absolute
+      },
+      () => {
+        this._blockInputRefs.get(block.id)?.current?.focus();
+      }
+    );
   };
 
   nodeListRef = React.createRef();
@@ -468,7 +481,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       return;
     }
 
-    const { focusedBlockId } = this.state;
+    const { focusedBlockId, focusType } = this.state;
 
     if (focusedBlockId === node.block.id) {
       if (node.block.type === "text" && node.block.value.trim().length === 0) {
@@ -477,15 +490,20 @@ class RawwPostEditor extends React.Component<Props, State> {
       }
 
       this.clearFocus();
-    } else {
-      if (node.block.type === "text") {
-        this.setState({
-          focusedBlockId: node.block.id,
-          focusType: FocusType.absolute
-        });
-        this.focusedBlockValue.setValue(node.block.id.hashCode());
-        this.focusTypeValue.setValue(FocusType.absolute);
-      }
+    } else if (
+      (focusType === -1 ||
+        focusType === FocusType.panning ||
+        !focusedBlockId) &&
+      node.block.type === "text"
+    ) {
+      const blockId = node.block.id;
+      this._blockInputRefs.get(blockId).current?.focus();
+
+      console.warn("FOCUs", blockId);
+
+      this.handleFocusBlock(node.block);
+
+      return false;
     }
   };
 
@@ -501,11 +519,22 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBlurNode = (node: EditableNode) => {
+    console.trace();
+
+    console.log("BLUR", {
+      id: node.block.id,
+      value: node.block.value
+    });
+
     this.handleInlineNodeChange(node);
   };
 
   handleBlurBlock = (block: PostBlockType) => {
     if (block) {
+      console.log("BLUR", {
+        id: block.id,
+        value: block.value
+      });
       this.handleChangeBlock(block);
     }
 
@@ -525,14 +554,13 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.focusTypeValue.setValue(focusType);
 
     if (block.type === "text") {
+      this._blockInputRefs.get(block.id).current?.focus();
     }
 
     this.setState({
       focusedBlockId: block.id,
       focusType
     });
-
-    console.log("foCUs", block.id, focusType);
   };
 
   clearFocus = () => {
@@ -844,6 +872,20 @@ class RawwPostEditor extends React.Component<Props, State> {
     return node;
   }
 
+  resetText = () => {
+    for (const entry of this._blockInputRefs.entries()) {
+      const [id, ref] = entry;
+      const block =
+        this.props.post.blocks[id] ?? this.props.inlineNodes[id]?.block;
+
+      if (!block || block.type !== "text") {
+        continue;
+      }
+
+      ref.current.setNativeProps({ text: block.value });
+    }
+  };
+
   handlePan = ({
     blockId,
     isPanning,
@@ -880,13 +922,9 @@ class RawwPostEditor extends React.Component<Props, State> {
         this.deleteNode(blockId);
         sendLightFeedback();
       } else {
-        this.setState({
-          focusedBlockId: null,
-          focusType: null
+        window.requestAnimationFrame(() => {
+          this.clearFocus();
         });
-
-        this.focusedBlockValue.setValue(-1);
-        this.focusTypeValue.setValue(-1);
       }
     }
   };
@@ -988,6 +1026,29 @@ class RawwPostEditor extends React.Component<Props, State> {
   }
 
   postPreviewHandlers = [];
+  postBottomY = new Animated.Value<number>(0);
+  velocityX = new Animated.Value<number>(0);
+  velocityY = new Animated.Value<number>(0);
+  currentX = new Animated.Value<number>(0);
+  currentY = new Animated.Value<number>(0);
+  currentWidth = new Animated.Value<number>(0);
+  currentHeight = new Animated.Value<number>(0);
+
+  onTransform = Animated.event(
+    [
+      {
+        nativeEvent: {
+          layout: {
+            width: this.currentWidth,
+            height: this.currentHeight,
+            x: this.currentX,
+            y: this.currentY
+          }
+        }
+      }
+    ],
+    { useNativeDriver: true }
+  );
 
   render() {
     const { post } = this.props;
@@ -1095,6 +1156,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             contentViewRef={this.contentViewRef}
             backgroundColor={post.backgroundColor || "#000"}
             focusedBlockValue={this.focusedBlockValue}
+            bottomY={this.postBottomY}
             onTapBackground={this.onTapBackground}
             scrollY={this.props.scrollY}
             ref={this.scrollRef}
@@ -1134,6 +1196,9 @@ class RawwPostEditor extends React.Component<Props, State> {
                 panY={this.panY}
                 scrollY={this.props.scrollY}
                 topInsetValue={this.topInsetValue}
+                velocityX={this.velocityX}
+                onTransform={this.onTransform}
+                velocityY={this.velocityY}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 keyboardHeightValue={this.relativeKeyboardHeightValue}
@@ -1142,6 +1207,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 minX={bounds.x}
                 minY={bounds.y}
                 maxX={sizeStyle.width}
+                bottomY={this.postBottomY}
                 onFocus={this.handleFocusBlock}
                 maxY={sizeStyle.height}
                 onTapNode={this.handleTapNode}
@@ -1150,19 +1216,23 @@ class RawwPostEditor extends React.Component<Props, State> {
                 onChangeNode={this.handleInlineNodeChange}
                 onPan={this.handlePan}
               />
+              <MarginView
+                minX={10}
+                absoluteX={this.panX}
+                absoluteY={this.panY}
+                velocityX={this.velocityX}
+                velocityY={this.velocityY}
+                minY={10}
+                focusType={this.state.focusType}
+                bottom={this.postBottomY}
+                focusTypeValue={this.focusTypeValue}
+                x={this.currentX}
+                y={this.currentY}
+                width={this.currentWidth}
+                height={this.currentHeight}
+              />
             </Layer>
           </PostPreview>
-
-          {/* <Layer
-            zIndex={LayerZIndex.sheet}
-            width={sizeStyle.width}
-            isFrozen
-            opacity={this.props.controlsOpacityValue}
-            pointerEvents="none"
-            height={sizeStyle.height}
-          >
-            <MiddleSheet width={sizeStyle.width} height={sizeStyle.height} />
-          </Layer> */}
 
           <Layer
             isShown
@@ -1196,6 +1266,9 @@ class RawwPostEditor extends React.Component<Props, State> {
               blur={this.handleBlur}
               focusType={this.state.focusType}
               onChangeFooterHeight={this.handleChangeBottomInset}
+              exampleCount={this.props.exampleCount}
+              exampleIndex={this.props.exampleIndex}
+              onPressExample={this.props.onPressExample}
               toolbarType={this.toolbarType}
               isNodeFocused={this.state.focusType === FocusType.absolute}
               activeButton={this.state.activeButton}
@@ -1209,6 +1282,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         <InputAccessoryView nativeID="new-post-input">
           <TextInputToolbar
             onChooseTemplate={this.handleChangeTemplate}
+            focusType={this.state.focusType}
             block={this.focusedBlock}
           />
         </InputAccessoryView>
@@ -1217,17 +1291,18 @@ class RawwPostEditor extends React.Component<Props, State> {
   }
 }
 
-export const PostEditor = props => {
+export const PostEditor = React.forwardRef((props, ref) => {
   const { showActionSheetWithOptions } = useActionSheet();
   const { pausePlayers, unpausePlayers } = React.useContext(MediaPlayerContext);
 
   return (
     <RawwPostEditor
       {...props}
+      ref={ref}
       showActionSheetWithOptions={showActionSheetWithOptions}
       pausePlayers={pausePlayers}
       unpausePlayers={unpausePlayers}
     />
   );
-};
+});
 export default PostEditor;

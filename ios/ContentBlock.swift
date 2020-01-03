@@ -67,6 +67,8 @@ class ContentBlock {
     return frame
   }
 
+  
+
   func scaledFrame(scale: CGFloat = CGFloat(1)) -> CGRect {
     let frame = (self.nodeFrame ?? self.frame)
 
@@ -112,19 +114,49 @@ class ContentBlock {
 
       var transform: CGAffineTransform = .identity
 
-      if image.inputView != nil {
+//      if image.inputView != nil {
         let offset = nodeFrame.origin
         transform = CGAffineTransform.init(translationX: offset.x, y: offset.y).translatedBy(x: view.transform.translation().x, y: view.transform.translation().y).scaledBy(x: view.transform.scaleX, y: view.transform.scaleY)
 
+
+      var inset: UIEdgeInsets = .zero
+      if let inputView = image.inputView {
+        inputView.layoutIfNeeded()
+        var stickerContainer: UIView? = nil
+        var inputContainer: UIView? = nil
+        var lastView: UIView? = inputView.reactSuperview()
+        var remainingSearch = 10
+
+
+        while (stickerContainer == nil && remainingSearch > 0 && lastView != nil)
+        {
+          if lastView?.nativeID == "inputContainer" {
+            inputContainer = lastView!
+            inset = lastView!.reactCompoundInsets
+          }
+
+          if lastView?.nativeID == "stickerContainer" {
+            stickerContainer = lastView!
+          } else {
+            lastView = lastView?.reactSuperview()
+            remainingSearch -= 1
+          }
+        }
+
+        self.nodeFrame = view.bounds.inset(by: inset).applying(transform)
         
-
-        self.nodeFrame = view.bounds.applying(transform)
-      } else {
-        let offset = view.frame.origin
-        transform = CGAffineTransform.init(translationX: offset.x, y: offset.y).translatedBy(x: view.transform.translation().x, y: view.transform.translation().y).scaledBy(x: view.transform.scaleX, y: view.transform.scaleY)
-
+      }   else {
+        Log.debug("""
+          scale: \(view.transform.scaleX), \(view.transform.scaleY)
+          offset: \(offset)
+          translation: \(view.transform.translation())
+          nodeFrame: \(nodeFrame)
+        """)
         self.nodeFrame = view.frame
       }
+
+
+
 
 
 
@@ -214,5 +246,34 @@ class ContentBlock {
     )
 
   }
+
+}
+
+public extension UIEdgeInsets {
+
+    /// SwifterSwift: Add all the properties of two `UIEdgeInsets` to create their addition.
+    ///
+    /// - Parameters:
+    ///   - lhs: The left-hand expression
+    ///   - rhs: The right-hand expression
+    /// - Returns: A new `UIEdgeInsets` instance where the values of `lhs` and `rhs` are added together.
+    static func + (_ lhs: UIEdgeInsets, _ rhs: UIEdgeInsets) -> UIEdgeInsets {
+        return UIEdgeInsets(top: lhs.top + rhs.top,
+                            left: lhs.left + rhs.left,
+                            bottom: lhs.bottom + rhs.bottom,
+                            right: lhs.right + rhs.right)
+    }
+
+    /// SwifterSwift: Add all the properties of two `UIEdgeInsets` to the left-hand instance.
+    ///
+    /// - Parameters:
+    ///   - lhs: The left-hand expression to be mutated
+    ///   - rhs: The right-hand expression
+    static func += (_ lhs: inout UIEdgeInsets, _ rhs: UIEdgeInsets) {
+        lhs.top += rhs.top
+        lhs.left += rhs.left
+        lhs.bottom += rhs.bottom
+        lhs.right += rhs.right
+    }
 
 }

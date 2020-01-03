@@ -48,6 +48,7 @@ import {
   ListProfilePosts,
   ListProfilePostsVariables
 } from "./graphql/ListProfilePosts";
+import { ExampleMap } from "./buildPost";
 
 type PresignResponse = {
   signedUrl: string;
@@ -551,6 +552,9 @@ export class PostUploadTask {
     this.onChange(this);
   };
 
+  examples: ExampleMap;
+  remixId: string | null = null;
+
   constructor({
     contentExport,
     exportData,
@@ -561,6 +565,8 @@ export class PostUploadTask {
     strings,
     client,
     onChange,
+    remixId = null,
+    examples = {},
     onProgress,
     type,
     layout
@@ -572,6 +578,8 @@ export class PostUploadTask {
     editToken: string;
     strings: Array<string>;
     threadId: string | null;
+    examples: ExampleMap;
+    remixId: string | null;
     body: string | null;
     client: ApolloClient<InMemoryCache>;
     type: PostUploadTaskType;
@@ -581,6 +589,8 @@ export class PostUploadTask {
     this.contentExport = contentExport;
     this.exportData = exportData;
     this.format = format;
+    this.examples = examples;
+    this.remixId = remixId;
     this.threadId = threadId;
     this.body = body;
     this.strings = strings;
@@ -592,6 +602,8 @@ export class PostUploadTask {
     this.type = type;
     this.onChange = onChange;
     this.onProgress = onProgress;
+
+    console.log("CHECK CHECK 123");
 
     this.task = MediaUploadTask.fromExport({
       contentExport,
@@ -689,13 +701,15 @@ export class PostUploadTask {
     return this.client
       .mutate<CreatePost, CreatePostVariables>({
         mutation: CREATE_POST_MUTATION,
-        errorPolicy: "all",
+        errorPolicy: "ignore",
         variables: {
           mediaId: this.task.requiredFile.mediaId,
           editToken: this.editToken,
           layout: this.layout,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
+          examples: this.examples,
+          remixId: this.remixId,
           strings: this.strings,
           format: this.format,
           autoplaySeconds: this.contentExport.duration,
@@ -785,6 +799,7 @@ export class PostUploadTask {
 
   createPostThread = () => {
     console.log("Posting thread", this);
+
     return this.client
       .mutate<CreatePostThread, CreatePostThreadVariables>({
         errorPolicy: "all",
@@ -793,6 +808,8 @@ export class PostUploadTask {
           mediaId: this.task.requiredFile.mediaId,
           blocks: this.exportData.blocks,
           nodes: this.exportData.nodes,
+          examples: this.examples,
+          remixId: this.remixId,
           editToken: this.editToken,
           strings: this.strings,
           layout: this.layout,

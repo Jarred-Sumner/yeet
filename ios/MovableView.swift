@@ -13,6 +13,11 @@ protocol TransformableView : UIView {
     get
     set
   }
+
+  var movableViewTag: NSNumber? {
+    get
+    set
+  }
 }
 
 @objc(MovableView)
@@ -21,17 +26,76 @@ class MovableView: UIView, RCTUIManagerObserver {
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
-    if changedProps.contains("inputTag") || changedProps.contains("shouldRasterizeIOS") || changedProps.contains("inputTag") {
+
+    if changedProps.contains("onTransform") {
+      self.sendTransformedLayout()
+    }
+
+    if changedProps.contains("inputTag") || changedProps.contains("shouldRasterizeIOS")  {
       if Thread.isMainThread {
         self.updateContentScale()
-        self.textInput?.movableViewTag = self.reactTag
+        self.transformableView?.movableViewTag = self.reactTag
       } else {
         DispatchQueue.main.async { [weak self] in
           self?.updateContentScale()
-          self?.textInput?.movableViewTag = self?.reactTag
+          self?.transformableView?.movableViewTag = self?.reactTag
         }
       }
     }
+  }
+
+  @objc(onTransformLayout) var onTransformLayout: RCTDirectEventBlock? = nil
+
+  func handleLayoutTransform(_ previousRect: CGRect) -> Void {
+    guard self.onTransformLayout != nil else {
+      return
+    }
+
+    let _rect = transformRect
+
+    guard _rect != previousRect else {
+      return
+    }
+
+    onTransformLayout!([
+      "layout": [
+        "x": _rect.x,
+        "y": _rect.y,
+        "width": _rect.width,
+        "height": _rect.height,
+      ],
+      "from": [
+        "x": previousRect.x,
+        "y": previousRect.y,
+        "width": previousRect.width,
+        "height": previousRect.height,
+      ],
+    ])
+  }
+
+  private var contentContainerTag: NSNumber? = nil
+
+  var contentContainerView: UIView? {
+    if contentContainerTag != nil {
+      return bridge?.uiManager.view(forReactTag: contentContainerTag!)
+    }
+
+    var _current: UIView? = superview
+
+    for _ in 0...10 {
+      if _current == nil {
+        return nil
+      }
+
+      if _current?.nativeID == "content-container" {
+        contentContainerTag = _current?.reactTag
+        return _current
+      } else {
+        _current = _current?.superview
+      }
+    }
+
+    return nil
   }
 
   var transformObserver: NSKeyValueObservation? = nil
@@ -71,9 +135,11 @@ class MovableView: UIView, RCTUIManagerObserver {
     transformObserver = self.layer.observe(\CALayer.transform) { view, changes in
        if Thread.isMainThread {
          self.updateContentScale()
+        self.sendTransformedLayout()
        } else {
          DispatchQueue.main.async { [weak self] in
            self?.updateContentScale()
+            self?.sendTransformedLayout()
          }
        }
     }
@@ -87,7 +153,70 @@ class MovableView: UIView, RCTUIManagerObserver {
   @objc(inputTag)
   var inputTag: NSNumber? = nil
 
+  @objc(onTransform) var onTransform: RCTDirectEventBlock? = nil
+  @objc(transformedLayoutEventThrottleMs) var transformedLayoutEventThrottleMs: Int = Int(10)
 
+  var shouldSendTransform: Bool {
+    guard bridge?.isValid ?? false else {
+      return false
+    }
+
+    guard isAttached else {
+      return false
+    }
+
+    guard transformableView != nil else {
+      return false
+    }
+
+    guard self.onTransform != nil else {
+      return false
+    }
+
+    return true
+  }
+
+
+  var transformRect: CGRect {
+    let transform = CGAffineTransform.init(scaleX: self.transform.scaleX, y: self.transform.scaleY).rotated(by: self.transform.rotationRadians())
+    var _rect = CGRect(origin: frame.origin, size: transformableView!.reactContentFrame.size.applying(transform))
+    let origin = frame.origin
+
+    if let inputView = self.textInput {
+      _rect = CGRect(origin: .zero, size: inputView.textView.contentSize).insetBy(dx: inputView.frame.origin.x * -1, dy: inputView.frame.origin.y * -1).inset(by: inputView.textView.textContainerInset).applying(transform)
+      _rect.origin.x += origin.x
+      _rect.origin.y += origin.y
+    }
+
+    return _rect
+  }
+
+  func _sendTransformedLayout() {
+    guard shouldSendTransform else {
+      return
+    }
+
+    let _rect = transformRect
+
+    onTransform!([
+      "layout": [
+        "x": _rect.x,
+        "y": _rect.y,
+        "width": _rect.width,
+        "height": _rect.height,
+      ],
+    ])
+  }
+
+  func sendTransformedLayout() {
+    guard shouldSendTransform else {
+      return
+    }
+
+    DispatchQueue.main.throttle(deadline: DispatchTime.now() + Double(Double(transformedLayoutEventThrottleMs) / 1000.0)) { [weak self] in
+      self?._sendTransformedLayout()
+    }
+  }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
@@ -95,7 +224,11 @@ class MovableView: UIView, RCTUIManagerObserver {
 
   override func layoutSubviews() {
     super.layoutSubviews()
+
+    self.sendTransformedLayout()
   }
+
+  @objc (onMaybeNeedsAdjustment) var onMaybeNeedsAdjustment: RCTDirectEventBlock? = nil
 
   func updateContentScale() {
     guard let transformableView = self.transformableView else {
@@ -124,18 +257,20 @@ class MovableView: UIView, RCTUIManagerObserver {
       }
       UIView.setAnimationsEnabled(true)
     }
-
-
-
   }
 
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     var frame = self.bounds
     let scale = max(self.layer.affineTransform().scaleX, self.layer.affineTransform().scaleY)
 
-    if textInput?.textView.isFirstResponder ?? false {
-      return super.hitTest(point, with: event)
+    if let textInput = self.textInput {
+      if textInput.textView.isFirstResponder {
+        return super.hitTest(point, with: event)
+      } else if textInput.pointerEvents == .none {
+        return nil
+      }
     }
+
 
     if scale > 1.25 {
       frame = frame.insetBy(dx: -5, dy: -5)

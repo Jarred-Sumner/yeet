@@ -20,8 +20,7 @@
 #import <React/RCTTextAttributes.h>
 #import <React/RCTTextSelection.h>
 #import <React/RCTUIManagerObserverCoordinator.h>
-#import <REANode.h>
-#import <REAValueNode.h>
+
 #import <React/RCTInvalidating.h>
 #import <DVURLAsset.h>
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
@@ -37,6 +36,8 @@
 
 @interface UIView(PrivateMtehods)
   @property BOOL reactIsFocusNeeded;
+  - (void)dirtyLayout;
+  - (void)clearLayout;
   - (void)didSetProps:(__unused NSArray<NSString *> *)changedProps;
 @end
 
@@ -102,6 +103,8 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 @interface RCT_EXTERN_MODULE(MovableViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(onTransform, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onTransformLayout, RCTDirectEventBlock);
 
 @end
 
@@ -113,6 +116,7 @@ RCT_EXPORT_VIEW_PROPERTY(strokeWidth, CGFloat);
 RCT_REMAP_VIEW_PROPERTY(borderType, borderTypeString, YeetTextInputBorder);
 RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(singleFocus, BOOL);
 
 
 RCT_EXPORT_VIEW_PROPERTY(isSticker, BOOL);

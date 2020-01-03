@@ -17,6 +17,7 @@ import {
   SnapchatShareNetwork
 } from "../components/Share/ShareNetwork";
 import { FontFamily } from "../components/Text";
+import { fromPairs } from "lodash";
 import {
   NewThreadHeader,
   THREAD_HEADER_HEIGHT
@@ -338,16 +339,28 @@ class RawNewThreadPage extends React.Component<Props> {
       format,
       layout,
       editToken,
+      remixId,
       setPostUploadTask,
       threadId = null
     } = this.props;
 
     const { blocks, nodes, bounds, colors } = exportData;
 
+    const examples = new Map();
+
     const strings = [...blocks, ...Object.values(nodes).map(node => node.block)]
       .filter(block => block.type === "text")
-      .map(block => String(block.value).trim())
-      .filter(text => text.length > 0);
+      .map(block => {
+        const trimmed = String(block.value).trim();
+
+        if (trimmed.length > 0) {
+          examples.set(block.id, [block.value]);
+          return trimmed;
+        } else {
+          return null;
+        }
+      })
+      .filter(Boolean);
 
     const body = strings[0];
 
@@ -356,8 +369,10 @@ class RawNewThreadPage extends React.Component<Props> {
       exportData,
       format,
       threadId,
+      examples: fromPairs([...examples.entries()]),
       editToken,
       strings,
+      remixId,
 
       layout,
       body,
@@ -561,6 +576,7 @@ export const NewThreadPage = props => {
   const layout = useNavigationParam("layout");
   const threadId = useNavigationParam("threadId");
   const editToken = useNavigationParam("editToken");
+  const remixId = useNavigationParam("remixId");
   const backKey = useNavigationParam("backKey");
   const navigation = useNavigation();
   const { setPostUploadTask } = React.useContext(MediaUploadContext);
@@ -589,6 +605,7 @@ export const NewThreadPage = props => {
       contentExport={contentExport}
       exportData={exportData}
       editToken={editToken}
+      remixId={remixId}
       layout={layout}
       backKey={backKey}
       format={format}

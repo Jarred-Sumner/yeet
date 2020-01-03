@@ -25,5 +25,4 @@ class YeetTextInputViewManager: RCTMultilineTextInputViewManager {
     return true
   }
 
-
 }

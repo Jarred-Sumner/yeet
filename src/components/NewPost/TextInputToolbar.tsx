@@ -1,25 +1,20 @@
+import chroma from "chroma-js";
 import * as React from "react";
-import { View, StyleSheet, ImageProps } from "react-native";
-import { TextPostBlock, PostFormat, TextTemplate } from "./NewPostFormat";
+import { ImageProps, ScrollView, StyleSheet } from "react-native";
+import { RectButton } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { COLORS, SPACING } from "../../lib/styles";
+import { sendLightFeedback } from "../../lib/Vibration";
 import {
-  ScrollView,
-  BorderlessButton,
-  RectButton
-} from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
-import { MediumText } from "../Text";
-import {
+  BitmapIconTemplateBigWords,
   BitmapIconTemplateClassic,
   BitmapIconTemplateComic,
   BitmapIconTemplateGary,
-  BitmapIconTemplatePixel,
   BitmapIconTemplateMonospace,
-  BitmapIconTemplateBigWords
+  BitmapIconTemplatePixel
 } from "../BitmapIcon";
-import chroma from "chroma-js";
-import { sendLightFeedback } from "../../lib/Vibration";
+import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
 
 const CONTAINER_HEIGHT = 40;
 
@@ -144,59 +139,62 @@ const getSupportedTemplates = (block: TextPostBlock): Array<TextTemplate> => {
   }
 };
 
-export const TextInputToolbar = ({
-  block,
-  scrollRef,
-  onChooseTemplate
-}: {
-  block: TextPostBlock;
-  onChooseTemplate: Function;
-}) => {
-  if (block && block.type !== "text") {
-    return null;
+export const TextInputToolbar = React.memo(
+  ({
+    block,
+    scrollRef,
+    focusType,
+    onChooseTemplate
+  }: {
+    block: TextPostBlock;
+    onChooseTemplate: Function;
+  }) => {
+    if (!block || block.type !== "text") {
+      return null;
+    }
+
+    const renderTemplate = React.useCallback(
+      template => {
+        const selectedTemplate = block.config?.template;
+        const isSelected = selectedTemplate === template;
+
+        return (
+          <TemplateOption
+            template={template}
+            key={`${template}-${isSelected}`}
+            isSelected={isSelected}
+            onPress={onChooseTemplate}
+          />
+        );
+      },
+      [block?.config?.template]
+    );
+
+    const insets = React.useMemo(
+      () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+      []
+    );
+    const offset = React.useMemo(() => ({ x: 0, y: 0 }), []);
+
+    return (
+      <ScrollView
+        keyboardShouldPersistTaps="always"
+        keyboardDismissMode="none"
+        horizontal
+        scrollIndicatorInsets={insets}
+        contentOffset={offset}
+        showsHorizontalScrollIndicator={false}
+        shouldCancelWhenOutside
+        alwaysBounceVertical={false}
+        alwaysBounceHorizontal
+        showsVerticalScrollIndicator={false}
+        directionalLockEnabled
+        contentInset={insets}
+        contentInsetAdjustmentBehavior="never"
+        style={styles.container}
+      >
+        {block && getSupportedTemplates(block).map(renderTemplate)}
+      </ScrollView>
+    );
   }
-
-  const renderTemplate = React.useCallback(
-    template => {
-      const selectedTemplate = block.config?.template;
-      const isSelected = selectedTemplate === template;
-
-      return (
-        <TemplateOption
-          template={template}
-          key={`${template}-${isSelected}`}
-          isSelected={isSelected}
-          onPress={onChooseTemplate}
-        />
-      );
-    },
-    [block?.config?.template]
-  );
-
-  const insets = React.useMemo(
-    () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
-    []
-  );
-  const offset = React.useMemo(() => ({ x: 0, y: 0 }), []);
-
-  return (
-    <ScrollView
-      keyboardShouldPersistTaps="always"
-      keyboardDismissMode="none"
-      horizontal
-      scrollIndicatorInsets={insets}
-      contentOffset={offset}
-      showsHorizontalScrollIndicator={false}
-      shouldCancelWhenOutside
-      alwaysBounceVertical={false}
-      alwaysBounceHorizontal
-      showsVerticalScrollIndicator={false}
-      directionalLockEnabled
-      contentInset={insets}
-      contentInsetAdjustmentBehavior="never"
-      style={styles.container}
-    >
-      {block && getSupportedTemplates(block).map(renderTemplate)}
-    </ScrollView>
-  );
-};
+);

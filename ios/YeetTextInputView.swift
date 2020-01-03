@@ -16,6 +16,8 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   static var DEFAULT_HIGHLIGHT_INSET = CGFloat(2)
   static var DEFAULT_HIGHLIGHT_COLOR = UIColor.blue
 
+
+
   @objc(fontSizeRange)
   var fontSizeRange: Dictionary<String, Int> = [:] {
     didSet {
@@ -86,7 +88,10 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 //  }
 
 
-  
+
+  var textInset: UIEdgeInsets {
+    return UIEdgeInsets.init(top: highlightInset + reactPaddingInsets.top + strokeWidth, left: highlightInset + reactPaddingInsets.left + strokeWidth, bottom: highlightInset + reactPaddingInsets.bottom + strokeWidth, right: highlightInset + reactPaddingInsets.right + strokeWidth )
+  }
 
   var lastHighlightKey: String? = nil
   func highlightKey(text: String?) -> String {
@@ -100,11 +105,14 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
 
     self.enforceTextAttributesIfNeeded()
-    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: UIEdgeInsets.init(top: highlightInset, left: highlightInset, bottom: highlightInset, right: highlightInset), radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) )
+    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: textInset, radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) , canAdjustInset: isSticker)
 
-    if (!showHighlight) {
+
+    if !showHighlight {
       self.highlightLayer.isHidden = true
     }
+
+
 
 //
 //
@@ -134,26 +142,54 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
   }
 
-
-  
-
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
 
 
-    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") || changedProps.contains("text") || changedProps.contains("template")
+
+    let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") ||  changedProps.contains("template")
+
+    let forceLayout = changedProps.contains("highlightInset") || changedProps.contains("template") || changedProps.contains("strokeWidth") || changedProps.contains("borderTypeString")
     if (needsUpdateHighlight) {
       if Thread.isMainThread {
         self.updateHighlight()
+//        if forceLayout {
+//          self.setNeedsLayout()
+//        }
       } else {
-        DispatchQueue.main.async {
-         self.updateHighlight()
+        DispatchQueue.main.async { [weak self] in
+         self?.updateHighlight()
+//          if forceLayout {
+//            self?.setNeedsLayout()
+//          }
         }
       }
     }
 
+    if (changedProps.contains("text") && !textView.isFirstResponder) {
+      let _oldString = attributedText?.string
+
+      DispatchQueue.main.async { [weak self] in
+        guard let text = self?.attributedText
+          else {
+          return
+        }
+
+        guard _oldString != text.string else {
+          return
+        }
+
+        self?.textView.attributedText = text
+        self?.setNeedsLayout()
+        self?.layoutIfNeeded()
+
+        if let _rect = self?.lastTransformRect {
+          self?.movableView?.handleLayoutTransform(_rect)
+        }
+      }
+    }
   }
 
 
@@ -196,12 +232,19 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   func invalidate() {
+    bridge?.uiManager.observerCoordinator.remove(self)
+    
     self.movableViewTag = nil
+
+    self.bridge = nil
+
   }
 
   var highlightSubview = UIView()
 
+
   override func layoutSubviews() {
+    let _transformRect = movableView?.transformRect
     super.layoutSubviews()
 
     if self.highlightSubview.superview == nil {
@@ -211,18 +254,28 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
       self.backedTextInputView.insertSubview(highlightSubview, at: 0)
 
     }
-
     self.updateHighlight()
     self.adjustFontSize(text: textView.text)
 
-    if textView.text.count > 0 {
-      self.textView.sizeToFit()
+    if isSticker && textView.text.count > 0 {
+      textView.sizeToFit()
+      textView.invalidateIntrinsicContentSize()
     }
 
+    if _transformRect != movableView?.transformRect {
+      self.lastTransformRect = _transformRect
+
+
+      if !self.textView.isFirstResponder && _transformRect != nil {
+        self.movableView?.handleLayoutTransform(_transformRect!)
+      }
+
+    }
   }
 
   enum TextTemplate : String {
     case basic = "basic"
+    case bigWords = "bigWords"
     case post = "post"
     case comment = "comment"
     case comic = "comic"
@@ -332,6 +385,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.bridge = bridge
     super.init(bridge: bridge)
 
+
     bridge.uiManager.observerCoordinator.add(self)
 
     self.highlightLayer = CAShapeLayer()
@@ -368,7 +422,18 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.textView.isSelectable = true
     self.textView.isScrollEnabled = false
     self.textView.isEditable = false
+
   }
+
+  @objc(handleInputBlur:)
+  func handleInputBlur(notification: NSNotification) {
+  }
+
+  @objc(handleInputFocus:)
+  func handleInputFocus(notification: NSNotification) {
+  }
+
+  var lastTransformRect: CGRect? = nil
 
   @objc (isSticker) var isSticker: Bool = false
 
@@ -387,21 +452,35 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
 
 
+  @objc (singleFocus) var isSingleFocus: Bool = false
 
   override func didMoveToSuperview() {
     super.didMoveToSuperview()
 
     self.updateTapGestureRecognizer()
+    if isDetached && YeetTextInputView.focusedReactTag == reactTag {
+      YeetTextInputView.focusedReactTag = nil
+    } else if isAttached && textView.isFirstResponder && YeetTextInputView.focusedReactTag != reactTag {
+      YeetTextInputView.focusedReactTag = reactTag
+    }
   }
 
   override func didMoveToWindow() {
     super.didMoveToWindow()
     self.updateTapGestureRecognizer()
+
+    if isDetached && YeetTextInputView.focusedReactTag == reactTag {
+      YeetTextInputView.focusedReactTag = nil
+    } else if isAttached && textView.isFirstResponder && YeetTextInputView.focusedReactTag != reactTag {
+      YeetTextInputView.focusedReactTag = reactTag
+    }
+
+    if isDetached && bridge?.isValid ?? false {
+      bridge?.uiManager.observerCoordinator.remove(self)
+    }
   }
 
   func updateTapGestureRecognizer() {
-
-
     if superview != nil && isSticker && movableView != nil {
       let movableView = self.movableView!
 
@@ -416,12 +495,17 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
       }
       tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
       movableView.addGestureRecognizer(tapRecognizer!)
-
     }
   }
 
+  static var focusedReactTag: NSNumber? = nil
 
   override func reactFocus() {
+    guard !textView.isFirstResponder else {
+      self.reactIsFocusNeeded = false
+      return
+    }
+
     self.enableSelection()
 
     super.reactFocus()
@@ -443,6 +527,42 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     }
   }
 
+  override func textInputShouldBeginEditing() -> Bool {
+    enableSelection()
+    let should = super.textInputShouldBeginEditing()
+
+    if should {
+      YeetTextInputView.focusedReactTag = reactTag
+    }
+    return should
+  }
+
+  private var _pointerEvents: RCTPointerEvents = .unspecified
+
+  override var pointerEvents: RCTPointerEvents {
+    get {
+      return _pointerEvents
+    }
+
+    set (newValue) {
+      _pointerEvents = newValue
+
+      if (pointerEvents == .none) {
+         self.accessibilityViewIsModal = false
+       }
+    }
+  }
+
+  override func textInputShouldEndEditing() -> Bool {
+    let shouldEnd = super.textInputShouldEndEditing()
+
+    if shouldEnd {
+      Log.debug("SHOULd END?? WHY?? \(shouldEnd)")
+    }
+
+    return shouldEnd
+  }
+
   override func textInputDidBeginEditing() {
     super.textInputDidBeginEditing()
 
@@ -452,6 +572,24 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     UIView.setAnimationsEnabled(true)
 
     tapRecognizer?.isEnabled = false
+
+
+    YeetTextInputView.focusedReactTag = reactTag
+
+    if self.onStartEditing != nil {
+      DispatchQueue.main.async { [weak self] in
+        guard self?.bridge?.isValid ?? false else {
+          return
+        }
+
+        if let onStartEditing = self?.onStartEditing {
+          onStartEditing([
+            "tag": self?.reactTag!,
+            "value": self?.textView.text!,
+          ])
+        }
+      }
+    }
   }
 
   func moveCursorToEnd() {
@@ -483,8 +621,34 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     }
 
     tapRecognizer?.isEnabled = true
+
+    if (YeetTextInputView.focusedReactTag == reactTag) {
+      YeetTextInputView.focusedReactTag = nil
+    }
+
+
+    if self.onEndEditing != nil {
+      DispatchQueue.main.async { [weak self] in
+        guard self?.bridge?.isValid ?? false else {
+          return
+        }
+
+        if let onEndEditing = self?.onEndEditing {
+          onEndEditing([
+            "tag": self?.reactTag!,
+            "value": self?.textView.text!,
+          ])
+        }
+      }
+    }
+
   }
 
+  @objc(onStartEditing)
+  var onStartEditing: RCTDirectEventBlock? = nil
+
+  @objc(onEndEditing)
+  var onEndEditing: RCTDirectEventBlock? = nil
 
   override func textInputShouldChangeText(in range: NSRange, replacementText string: String) -> Bool {
     let shouldReject = super.textInputShouldChangeText(in: range, replacementText: string)
@@ -516,14 +680,19 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
   override func reactBlur() {
     super.reactBlur()
-
     let didResign = !textView.isFirstResponder
+
+    tapRecognizer?.isEnabled = true
 
     if didResign && isSticker {
       self.disableSelection()
+
+      if YeetTextInputView.focusedReactTag == reactTag {
+        YeetTextInputView.focusedReactTag = nil
+      }
     }
 
-    tapRecognizer?.isEnabled = true
+
   }
 
   override func reactFocusIfNeeded() {
@@ -539,12 +708,20 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     let intended = super.hitTest(point, with: event)
 
-    if isSticker || textView.isFirstResponder {
+    if (YeetTextInputView.focusedReactTag != nil && !textView.isFirstResponder && intended != nil && isSingleFocus) || pointerEvents == .none {
+      return nil
+    } else if (isSticker || textView.isFirstResponder) {
       return intended
     } else if frame.contains(point) {
       return self
     } else {
       return intended
+    }
+  }
+
+  deinit {
+    if YeetTextInputView.focusedReactTag == reactTag {
+      YeetTextInputView.focusedReactTag = nil
     }
   }
 }
@@ -560,4 +737,9 @@ extension RCTConvert {
 
     return YeetTextInputView.Border.init(rawValue: border)?.rawValue ?? YeetTextInputView.Border.hidden.rawValue
   }
+}
+
+
+extension Notification.Name {
+    static let onAdjustYeetTextInput = Notification.Name("onAdjustYeetTextInput")
 }

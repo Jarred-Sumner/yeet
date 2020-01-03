@@ -1,8 +1,8 @@
 import * as React from "react";
-import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
-import { TextInput } from "./Text/TextInput";
-import { View, findNodeHandle } from "react-native";
+import { findNodeHandle, View } from "react-native";
 import { PostFormat } from "../../lib/buildPost";
+import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
+import { TextInput, getHighlightInset } from "./Text/TextInput";
 
 type Props = {
   block: TextPostBlockType;
@@ -15,12 +15,6 @@ export class TextPostBlock extends React.Component<Props> {
     this.state = {
       text: props.block.value || ""
     };
-  }
-
-  componentDidMount() {
-    if (this.props.autoFocus) {
-      this.focus();
-    }
   }
 
   stickerRef = React.createRef<View>();
@@ -44,20 +38,27 @@ export class TextPostBlock extends React.Component<Props> {
     this.props.onBlur({ ...this.props.block, value: this.state.text });
   };
 
+  get input() {
+    return this.textInput.current;
+  }
+
   focus = () => {
-    if (!this.textInput.current.isFocused()) {
-      this.textInput.current.focus();
-    }
+    console.log(this.input);
+
+    this.input.focus();
   };
 
   blur = () => {
-    if (this.textInput.current.isFocused()) {
-      this.textInput.current.blur();
+    if (this.input.isFocused()) {
+      this.input.blur();
     }
   };
 
-  setNativeProps = (...args) =>
-    this.textInput.current.setNativeProps.call(this.textInput.current, args);
+  get textInputHandle() {
+    return findNodeHandle(this.input);
+  }
+
+  setNativeProps = props => this.input.setNativeProps(props);
 
   textInput = React.createRef<TextInput>();
 
@@ -79,8 +80,14 @@ export class TextPostBlock extends React.Component<Props> {
       gestureRef,
       focusTypeValue,
       focusType,
+      isFocused,
       focusedBlockValue
     } = this.props;
+
+    const isSticker =
+      block.format === PostFormat.sticker ||
+      block.format === PostFormat.comment ||
+      this.props.isSticker;
 
     return (
       <TextInput
@@ -89,12 +96,12 @@ export class TextPostBlock extends React.Component<Props> {
         maxX={maxX}
         stickerRef={this.stickerRef}
         blockRef={this.containerRef}
+        isSticker={isSticker}
         inputRef={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}
         focusType={focusType}
         gestureRef={gestureRef}
-        onLayout={onLayout}
         text={this.state.text}
         onBlur={this.handleBlur}
         onFocus={this.handleFocus}

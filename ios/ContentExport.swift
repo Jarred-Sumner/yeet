@@ -135,7 +135,7 @@ class ContentExport {
 
 
       let workBlock = {
-        let view =  image.nodeView!
+        let view =  image.nodeView ?? image.view!
         let containerView = image.containerView!
 
         if let _ = view as? MovableView {
@@ -181,19 +181,23 @@ class ContentExport {
         layer.contentsGravity = .center
 
         if !image.isVideo {
-          let _image = view.caSnapshot(scale: scale * CGFloat(block!.position.scale.doubleValue), isOpaque: false, layer: .default)!
+          let _scale = scale
+          let _image = view.caSnapshot(scale: scale * view.contentScaleFactor, isOpaque: false, layer: .default)!
           let image = _image.cgImage!
 
-          let widthErrorMargin = (layer.bounds.width / scale - view.bounds.width).rounded(.toNearestOrEven)
-          let heightErrorMargin = (layer.bounds.height / scale - view.bounds.height).rounded(.toNearestOrEven)
+          if block!.type == .text {
+            let widthErrorMargin = (layer.bounds.width / _scale - view.bounds.width).rounded(.toNearestOrEven)
+            let heightErrorMargin = (layer.bounds.height / _scale - view.bounds.height).rounded(.toNearestOrEven)
 
-          if abs(widthErrorMargin) > 1 {
-            layer.position.x = layer.position.x + widthErrorMargin * scale * -0.5
+            if abs(widthErrorMargin) > 1 {
+              layer.position.x = layer.position.x + widthErrorMargin * scale * -0.5
+            }
+
+            if abs(heightErrorMargin) > 1 {
+              layer.position.y = layer.position.y + heightErrorMargin * scale * -0.5
+            }
           }
 
-          if abs(heightErrorMargin) > 1 {
-            layer.position.y = layer.position.y + heightErrorMargin * scale * -0.5
-          }
 
 
           layer.contents = image
@@ -315,7 +319,7 @@ class ContentExport {
   static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil, task: ContentExportTask) -> Promise<ContentExportResult> {
     return Promise<ContentExportResult>(queue: VideoProducer.contentExportQueue) { resolve, reject in
 
-      var contentsScale = min(scale ?? UIScreen.main.scale, CGFloat(2))
+      var contentsScale = min(scale ?? UIScreen.main.scale, type.isVideo ? CGFloat(1.5) : CGFloat(2.0))
       var maxRenderBounds = estimatedBounds.normalize(scale: contentsScale)
       var renderSize = CGSize(width: maxRenderBounds.width, height: .zero)
 
@@ -878,7 +882,7 @@ Cropping video...
         let _ = composeAnimationLayer(parentLayer: parentLayer, estimatedBounds: estimatedBounds, duration: duration, resources: resources, contentsScale: contentsScale, exportType: type, task: task)
 
         task.startImageBuild()
-         let fullImage = UIImage.image(from: parentLayer)!.sd_croppedImage(with: cropRect)!
+        let fullImage = parentLayer.snapshot(scale: 1.0)!.sd_croppedImage(with: cropRect)!
         task.incrementImageBuild()
 
         let thumbnailSize = ContentExportThumbnail.size
@@ -936,22 +940,6 @@ Cropping video...
 
 }
 
-private extension UIImage {
-  class func image(from layer: CALayer) -> UIImage? {
-    UIGraphicsBeginImageContextWithOptions(layer.bounds.size,
-                                           layer.isOpaque, UIScreen.main.scale)
-
-    defer { UIGraphicsEndImageContext() }
-
-    // Don't proceed unless we have context
-    guard let context = UIGraphicsGetCurrentContext() else {
-      return nil
-    }
-
-    layer.render(in: context)
-    return UIGraphicsGetImageFromCurrentImageContext()
-  }
-}
 
 extension UIColor {
   var rgbComponents:(red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {

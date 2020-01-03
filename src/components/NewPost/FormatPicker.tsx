@@ -159,6 +159,7 @@ const FormatPickerListItem = ({
         <View style={styles.icon}>
           {thumbnail ? (
             <Image
+              resizeMode="aspectFill"
               source={{
                 uri: thumbnail,
                 width: ICON_WIDTH * PixelRatio.get(),

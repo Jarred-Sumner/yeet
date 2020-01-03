@@ -105,6 +105,16 @@ export const pxBoundsToPoint = (rect: Partial<BoundsRect>, ratio: number) => {
   };
 };
 
+export const pcCoordsToPx = (
+  { x, y }: { x: number; y; number },
+  size: Partial<BoundsRect>
+) => {
+  return {
+    x: PixelRatio.getPixelSizeForLayoutSize(x * size.width),
+    y: PixelRatio.getPixelSizeForLayoutSize(y * size.height)
+  };
+};
+
 export function intersectRect(r1: BoundsRect, r2: BoundsRect) {
   return !(
     r2.x > r1.width + r1.x ||

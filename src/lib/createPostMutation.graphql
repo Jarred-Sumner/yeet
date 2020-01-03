@@ -9,6 +9,8 @@ mutation CreatePost(
   $bounds: RectangleInputObject!
   $autoplaySeconds: Int
   $colors: ColorsInputObject!
+  $examples: JSON
+  $remixId: ID
   $threadId: ID!
   $editToken: String
   $layout: String
@@ -23,6 +25,8 @@ mutation CreatePost(
     autoplaySeconds: $autoplaySeconds
     threadId: $threadId
     colors: $colors
+    remixId: $remixId
+    examples: $examples
     editToken: $editToken
     layout: $layout
   ) {

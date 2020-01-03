@@ -22,6 +22,7 @@ export const Block = React.forwardRef(
       usePreview,
       annotations,
       inputAccessoryView,
+      isSticker = false,
       scale,
       focusedBlockValue,
       scrollRef,
@@ -45,6 +46,7 @@ export const Block = React.forwardRef(
           disabled={disabled}
           onLayout={onLayout}
           focusType={focusType}
+          isSticker={isSticker}
           scale={scale}
           block={block}
           maxX={maxX}
@@ -69,6 +71,7 @@ export const Block = React.forwardRef(
           onFocus={onFocus}
           ref={ref}
           onOpenImagePicker={onOpenImagePicker}
+          isSticker={isSticker}
           onLayout={onLayout}
           onTap={onTap}
           onChangePhoto={onChangePhoto}

@@ -189,7 +189,7 @@ export const getEstimatedBounds = (ref: React.Ref<View>): Promise<BoundsRect> =>
     })
   );
 
-const getEstimatedBoundsToContainer = (
+export const getEstimatedBoundsToContainer = (
   ref: React.Ref<View>,
   container: React.Ref<View>
 ): Promise<BoundsRect> =>
@@ -529,9 +529,11 @@ const convertExportedNode = async (
   scaleFactor: number = 1,
   xPadding: number = 0,
   yPadding: number = 0,
-  size: BoundsRect,
+  _size: BoundsRect,
   examples: ExampleMap = {}
 ) => {
+  const size = scaleRectByFactor(scaleFactor, _size);
+
   const block = convertExportableBlock(
     node.block,
     assets,

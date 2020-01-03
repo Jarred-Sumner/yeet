@@ -1,10 +1,12 @@
 import * as React from "react";
-import { View } from "react-native";
+import { View, LayoutChangeEvent } from "react-native";
 import Animated from "react-native-reanimated";
-import { PostBlock, FocusType, presetsByFormat } from "../NewPostFormat";
+import { FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
 import { getTextBlockAlign } from "../Text/TextInput";
+import { PostBlockType } from "../../../lib/buildPost";
+import { DimensionsRect } from "../../../lib/Rect";
 
 export type EditableNodeStaticPosition = {
   y: number;
@@ -21,7 +23,7 @@ export type EditableNodePosition = EditableNodeStaticPosition & {
 };
 
 export interface EditableNode {
-  block: PostBlock;
+  block: PostBlockType;
   position: EditableNodePosition;
 }
 
@@ -76,12 +78,6 @@ export class BaseNode extends React.Component<Props> {
 
   handleTap = () => this.props.onTap(this.props.node);
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.isFocused !== this.props.isFocused) {
-      this.autoFocus();
-    }
-  }
-
   autoFocus = () => {
     this.props.focusType === FocusType.absolute &&
       this.props.inputRef.current.focus &&
@@ -108,21 +104,10 @@ export class BaseNode extends React.Component<Props> {
     });
   };
 
-  handleChangePosition = ({
-    x,
-    y,
-    scale,
-    rotate,
-    isPanning,
-    absoluteX,
-    absoluteY
-  }) => {
+  handlePan = ({ isPanning, absoluteX, absoluteY }) =>
     this.props.onPan({ isPanning, x: absoluteX, y: absoluteY });
 
-    if (this.props.isFocused) {
-      return;
-    }
-
+  handleChangePosition = ({ x, y, scale, rotate }) => {
     this.props.onChange({
       ...this.props.node,
       position: {
@@ -135,8 +120,8 @@ export class BaseNode extends React.Component<Props> {
     });
   };
 
-  bottomOffsetValue = new Animated.Value(0);
   gestureRef = React.createRef();
+  blockLayout: DimensionsRect | null = null;
 
   render() {
     const { block, position } = this.props.node;
@@ -149,6 +134,7 @@ export class BaseNode extends React.Component<Props> {
       maxY,
       minX,
       minY,
+      onTransform,
       containerRef,
       disabled,
       focusedBlockValue,
@@ -166,6 +152,14 @@ export class BaseNode extends React.Component<Props> {
       format,
       topInsetValue,
       maxScale,
+      currentX,
+      currentY,
+      currentWidth,
+      velocityX,
+      velocityY,
+      currentScale,
+      currentRotate,
+      currentHeight,
       scrollY,
       inputAccessoryView,
       keyboardHeightValue
@@ -179,7 +173,10 @@ export class BaseNode extends React.Component<Props> {
     //   return null;
     // }
 
-    console.log({ minX, minY, paddingTop: this.props.paddingTop });
+    const width =
+      typeof block.config?.overrides?.maxWidth === "number"
+        ? block.config?.overrides?.maxWidth
+        : undefined;
 
     return (
       <MovableNode
@@ -190,17 +187,26 @@ export class BaseNode extends React.Component<Props> {
         x={position.animatedX}
         y={position.animatedY}
         r={position.animatedRotate}
+        velocityX={velocityX}
+        isPanning={isFocused && focusType === FocusType.panning}
+        velocityY={velocityY}
+        onTransform={onTransform}
         scaleLiteral={position.scale}
         isHidden={!!isHidden}
+        isOtherNodeFocused={!isFocused && focusType === FocusType.panning}
         maxScale={maxScale}
         absoluteX={absoluteX}
         absoluteY={absoluteY}
+        focusTypeValue={focusTypeValue}
         containerRef={containerRef}
         topInsetValue={topInsetValue}
         inputRef={inputRef}
+        maxWidth={block.config?.overrides?.maxWidth || -1}
         scrollY={scrollY}
         isTextBlock={block.type === "text"}
+        hasValue={block.type === "text" ? block.value.length > 0 : false}
         onChangePosition={this.handleChangePosition}
+        onPan={this.handlePan}
         textAlign={block.type === "text" ? getTextBlockAlign(block) : "left"}
         yLiteral={position.y}
         xLiteral={position.x}
@@ -220,29 +226,22 @@ export class BaseNode extends React.Component<Props> {
         onTap={this.handleTap}
         extraPadding={0}
       >
-        <View
-          style={{
-            flex: 0,
-            maxWidth: maxX,
-            overflow: "visible"
-          }}
-        >
-          <Block
-            ref={inputRef}
-            block={block}
-            onChange={this.handleChangeBlock}
-            focusTypeValue={focusTypeValue}
-            focusType={FocusType.absolute}
-            gestureRef={this.gestureRef}
-            autoFocus={autoFocus}
-            maxX={maxX}
-            focusedBlockValue={focusedBlockValue}
-            onFocus={onFocus}
-            waitFor={waitFor}
-            onBlur={this.handleBlur}
-            disabled={isDragEnabled || disabled}
-          />
-        </View>
+        <Block
+          ref={inputRef}
+          block={block}
+          onChange={this.handleChangeBlock}
+          focusTypeValue={focusTypeValue}
+          focusType={focusType}
+          isSticker
+          gestureRef={this.gestureRef}
+          autoFocus={autoFocus}
+          maxX={maxX}
+          focusedBlockValue={focusedBlockValue}
+          onFocus={onFocus}
+          waitFor={waitFor}
+          onBlur={this.handleBlur}
+          disabled={isDragEnabled || disabled}
+        />
       </MovableNode>
     );
   }

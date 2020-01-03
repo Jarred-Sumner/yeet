@@ -85,6 +85,8 @@ export interface CreatePostVariables {
   bounds: RectangleInputObject;
   autoplaySeconds?: number | null;
   colors: ColorsInputObject;
+  examples?: JSON | null;
+  remixId?: string | null;
   threadId: string;
   editToken?: string | null;
   layout?: string | null;

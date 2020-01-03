@@ -167,6 +167,10 @@ class MediaUploadProgressComponent extends React.Component<Props> {
       hideIcon
     } = this.props;
 
+    if (status === PostUploadTaskStatus.cancelled) {
+      return null;
+    }
+
     const hasPosted = !!postUploadTask?.post;
 
     return (

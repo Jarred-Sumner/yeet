@@ -13,6 +13,11 @@ const {
   proc,
   stopClock,
   add,
+  diff,
+  lessThan,
+  greaterThan,
+  abs,
+  min,
   eq,
   sub,
   block,
@@ -222,3 +227,35 @@ export const sheetOpacity = Animated.proc(
       })
     )
 );
+
+export const moving = (
+  position: Animated.Node<number>,
+  minPositionDelta = 1e-3,
+  emptyFrameThreshold = 5
+) => {
+  const delta = diff(position);
+  const noMovementFrames = new Value(0);
+  return cond(
+    lessThan(abs(delta), minPositionDelta),
+    [
+      set(noMovementFrames, add(noMovementFrames, 1)),
+      not(greaterThan(noMovementFrames, emptyFrameThreshold))
+    ],
+    [set(noMovementFrames, 0), 1]
+  );
+};
+
+export const snapPoint = (
+  value: Animated.Adaptable<number>,
+  velocity: Animated.Adaptable<number>,
+  points: Animated.Adaptable<number>[]
+) => {
+  const point = add(value, multiply(0.2, velocity));
+  const diffPoint = (p: Animated.Adaptable<number>) => abs(sub(point, p));
+  const deltas = points.map(p => diffPoint(p));
+  const minDelta = min(...deltas);
+  return points.reduce(
+    (acc, p) => cond(eq(diffPoint(p), minDelta), p, acc),
+    new Value()
+  );
+};

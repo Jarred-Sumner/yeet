@@ -268,7 +268,10 @@ class YeetExporter: NSObject, RCTBridgeModule  {
           }
 
           let imageSource = ExportableImageSource.init(screenshot: screenshot, id: block["id"].stringValue)
-          imageSource.nodeView = view
+          if type(of: view) == MovableView.self {
+            imageSource.nodeView = view  as! MovableView
+          }
+
           imageSource.containerView = containerNode
           imageSource.view = YeetExporter.findTextInputView(view)
         
@@ -278,8 +281,13 @@ class YeetExporter: NSObject, RCTBridgeModule  {
              return
            }
 
-          let mediaSource = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView: view)
+          let mediaSource = ExportableMediaSource.from(mediaPlayer: mediaPlayer, nodeView:nil)
           mediaSource?.containerView = containerNode
+
+          if type(of: view) == MovableView.self {
+            mediaSource?.nodeView = view  as! MovableView
+          }
+
           mediaSource?.view = mediaPlayer
 
 

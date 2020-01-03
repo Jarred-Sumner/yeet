@@ -27,24 +27,21 @@ import {
   TextPostBlock,
   TextTemplate
 } from "../NewPostFormat";
-import { TextInput as RNTextInput } from "./CustomTextInputComponent";
+import { TextInput as __RNTextInput } from "./CustomTextInputComponent";
 import { SpeechBubble } from "./SpeechBubble";
 import { textInputPresets } from "./Presets";
 import { invertColor, getStrokeColor, isColorDark } from "../../../lib/colors";
+import {
+  NativeViewGestureHandler,
+  createNativeWrapper
+} from "react-native-gesture-handler";
 
-const __RNTextInput = React.memo(RNTextInput);
+const RNTextInput = __RNTextInput;
 
-const RawAnimatedTextInput = Animated.createAnimatedComponent(__RNTextInput);
-
-const AnimatedTextInput = React.forwardRef((props, ref) => {
-  const inputRef = React.useRef();
-
-  React.useImperativeHandle(ref, () => {
-    return inputRef?.current?.getNode();
-  });
-
-  return <RawAnimatedTextInput ref={inputRef} {...props} />;
-}) as React.ComponentType<TextInputProps>;
+// const RNTextInput = createNativeWrapper(, {
+//   disallowInterruption: true,
+//   shouldCancelWhenOutside: true
+// });
 
 export const contrastingColor = memoize((color: string) => {
   if (isColorDark(color)) {
@@ -67,29 +64,19 @@ const getTextShadow = (
   border: TextBorderType,
   template: TextTemplate
 ) => {
-  // if (border === TextBorderType.stroke || format === PostFormat.post) {
-  return {
-    textShadowRadius: null,
-    textShadowColor: "rgba(0, 0, 0, 0)"
-  };
-  // }
+  if (format === PostFormat.post || border !== TextBorderType.hidden) {
+    return {
+      textShadowRadius: null,
+      textShadowColor: "rgba(0, 0, 0, 0)"
+    };
+  }
 
-  let _backgroundColor =
-    backgroundColor === "rgba(0, 0, 0, 0)" ? null : backgroundColor;
+  let textShadowColor = "rgb(0, 0, 0)";
 
-  let textShadowColor: string = "rgba(0, 0, 0, 0)";
-  if (format === PostFormat.comment) {
-    if (isColorDark(color || _backgroundColor)) {
-      textShadowColor = "rgba(255, 255, 255, 0.25)";
-    } else {
-      textShadowColor = "rgba(0, 0, 0, 0.25)";
-    }
-  } else if (border === TextBorderType.hidden) {
-    if (isColorDark(color || _backgroundColor)) {
-      textShadowColor = "rgba(255, 255, 255, 0.95)";
-    } else {
-      textShadowColor = "rgba(0, 0, 0, 0.95)";
-    }
+  if (isColorDark(color)) {
+    textShadowColor = "rgba(255, 255, 255, 1.0)";
+  } else {
+    textShadowColor = "rgba(0, 0, 0, 1.0)";
   }
 
   if (textShadowColor === "rgba(0, 0, 0, 0)") {
@@ -107,17 +94,7 @@ const getTextShadow = (
     height: 0
   };
 
-  let textShadowRadius = presets.textShadowRadius ?? 0;
-
-  if (
-    (border === TextBorderType.hidden || border === TextBorderType.highlight) &&
-    !presets.textShadowRadius
-  ) {
-    textShadowRadius = 2;
-    // textShadowOffset = {
-    //   width
-    // }
-  }
+  let textShadowRadius = presets.textShadowRadius ?? StyleSheet.hairlineWidth;
 
   return {
     textShadowColor,
@@ -260,8 +237,8 @@ const textInputTypeStylesheets: {
       backgroundColor: "rgba(0, 0, 0, 0)",
 
       marginTop: 0,
-      paddingTop: SPACING.normal,
-      paddingBottom: SPACING.normal,
+      paddingTop: 0,
+      paddingBottom: 0,
       paddingLeft: 8,
       textAlignVertical: "center",
       paddingRight: 8,
@@ -281,10 +258,10 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.minecraft,
-      paddingLeft: SPACING.half,
-      paddingRight: SPACING.half,
-      paddingTop: SPACING.normal,
-      paddingBottom: SPACING.normal,
+      paddingLeft: 0,
+      paddingRight: 0,
+      paddingTop: 0,
+      paddingBottom: 0,
       textAlign:
         textInputPresets[TextTemplate.pickaxe].presets.textAlign || "left",
       textShadowColor:
@@ -306,11 +283,9 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.monospace,
-      paddingTop: SPACING.normal,
-      paddingBottom: SPACING.normal,
-      paddingLeft: SPACING.half,
+      paddingLeft: 0,
       textAlignVertical: "center",
-      paddingRight: SPACING.half,
+      paddingRight: 0,
       textAlign:
         textInputPresets[TextTemplate.terminal].presets.textAlign || "left",
       textShadowColor:
@@ -359,21 +334,15 @@ const styles = StyleSheet.create({
     overflow: "visible"
   },
   input: {
-    marginTop: 0,
-    marginLeft: 0,
     flexGrow: 0,
     flex: 0,
     flexShrink: 0,
-    marginRight: 0,
+
     backgroundColor: "rgba(0, 0, 0, 0)",
-    marginBottom: 0,
-    paddingVertical: 0,
-    paddingHorizontal: 0,
+
     paddingTop: 0,
-    flexWrap: "nowrap",
-    paddingLeft: 0,
-    paddingRight: 0,
-    paddingBottom: 0,
+    flexWrap: "wrap",
+
     borderWidth: 0,
     borderColor: "rgba(0, 0, 0, 0)",
     borderRadius: 0,
@@ -382,12 +351,32 @@ const styles = StyleSheet.create({
     textShadowRadius: null
   },
   absoluteFocused: {
+    maxWidth: SCREEN_DIMENSIONS.width - SPACING.double - 30,
     width: SCREEN_DIMENSIONS.width - SPACING.double - 30,
     height: "100%",
-    flex: 0,
-    textAlign: "left"
+    flex: 1
+    // textAlign: "left"
   }
 });
+
+const formatStylesheets = {
+  [PostFormat.post]: StyleSheet.create({
+    container: {},
+    input: {
+      paddingBottom: SPACING.normal,
+      paddingTop: SPACING.normal,
+      paddingVertical: SPACING.normal
+    }
+  }),
+  [PostFormat.sticker]: StyleSheet.create({
+    container: {},
+    input: {}
+  }),
+  [PostFormat.comment]: StyleSheet.create({
+    container: {},
+    input: {}
+  })
+};
 
 export const getDenormalizedColor = (block: TextPostBlock) => {
   const { template, overrides = {} } = block.config;
@@ -491,14 +480,40 @@ export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
 const getStrokeWidth = (block: TextPostBlock) => {
   const border = getBorderType(block);
   const { template } = block.config;
+  const presets = textInputPresets[template];
 
   if (template === TextTemplate.bigWords) {
-    return 4;
+    return PixelRatio.get() * 2;
   } else if (border === TextBorderType.stroke) {
-    return 3;
+    return PixelRatio.get() * 2;
   } else {
-    return 0;
+    return (presets.highlightInset ?? 0) * -1;
   }
+};
+
+const getFontSize = (block: TextPostBlock) => {
+  const { fontSize } = block.config.overrides;
+
+  if (typeof fontSize === "number") {
+    return fontSize;
+  }
+
+  const { template } = block.config;
+
+  const fontSizes = textInputPresets[template].fontSizes;
+
+  return getClosestNumber(block.value?.length ?? 0, Object.values(fontSizes));
+};
+
+export const getHighlightInset = (block: TextPostBlock) => {
+  const border = getBorderType(block);
+  const { template } = block.config;
+
+  const presets = textInputPresets[template].presets;
+
+  return border === TextBorderType.stroke
+    ? getStrokeWidth(block) * -1
+    : presets.highlightInset ?? 0;
 };
 
 const getClosestNumber = (goal, counts) =>
@@ -519,6 +534,7 @@ export const TextInput = ({
   inputRef,
   onBlur,
   photoURL,
+  onContentSizeChange,
   disabled,
   blockRef,
   stickerRef,
@@ -526,6 +542,7 @@ export const TextInput = ({
   onLayout,
   focusType,
   onChangeValue,
+  isSticker,
   onTapAvatar,
   text,
   focusTypeValue,
@@ -533,7 +550,7 @@ export const TextInput = ({
   onFocus,
   block,
   gestureRef,
-  TextInputComponent = AnimatedTextInput
+  TextInputComponent = RNTextInput
 }) => {
   const {
     config: {
@@ -554,17 +571,20 @@ export const TextInput = ({
     },
     value,
     layout,
-    format,
     id
   } = block;
+
+  let format = block.format;
+  if (isSticker && block.format === PostFormat.post) {
+    format = PostFormat.sticker;
+  }
 
   const border = getBorderType(block);
 
   const { presets, fontSizes } = textInputPresets[template];
 
-  const fontSize =
-    overrides?.fontSize ??
-    getClosestNumber(text.length, Object.values(fontSizes));
+  const fontSize = getFontSize(block);
+
   const [isFocused, setFocused] = React.useState(false);
 
   const handleBlur = React.useCallback(
@@ -641,21 +661,26 @@ export const TextInput = ({
 
   const strokeWidth = getStrokeWidth(block);
 
-  const highlightInset =
-    border === TextBorderType.stroke
-      ? strokeWidth * -1
-      : presets.highlightInset ?? 0;
-
+  const highlightInset = getHighlightInset(block);
   const containerStyles = React.useMemo(
     () => [
       styles.container,
       textInputTypeStylesheets[template].container,
+      formatStylesheets[format].container,
       {
         height,
         width
       }
     ],
-    [template, width, height, styles.container, textInputTypeStylesheets]
+    [
+      template,
+      format,
+      width,
+      height,
+      styles.container,
+      textInputTypeStylesheets,
+      formatStylesheets
+    ]
   );
 
   const inputStyles = React.useMemo(
@@ -666,14 +691,20 @@ export const TextInput = ({
         backgroundColor: format === PostFormat.post ? backgroundColor : null,
         minHeight,
 
+        marginLeft: Math.abs(highlightInset),
+        marginRight: Math.abs(highlightInset),
+        marginTop: Math.abs(highlightInset),
+        marginBottom: Math.abs(highlightInset),
+
         textAlign,
         color,
         textTransform,
         fontSize,
-        ...textShadow,
-        maxWidth
+        ...textShadow
+        // maxWidth,
       },
-      isFocused && focusType === FocusType.absolute && styles.absoluteFocused
+      isFocused && focusType === FocusType.absolute && styles.absoluteFocused,
+      formatStylesheets[format].input
       // template === TextTemplate.comic && {
       //   textAlign: "center"
       // }
@@ -683,6 +714,7 @@ export const TextInput = ({
       template,
       minHeight,
       textAlign,
+      formatStylesheets,
       textInputTypeStylesheets[template].input,
       textInputTypeStylesheets[template],
       presets,
@@ -704,18 +736,34 @@ export const TextInput = ({
     ]
   );
 
+  let pointerEvents = "auto";
+  if (isSticker && focusType === FocusType.static) {
+    pointerEvents = "none";
+  } else if (!isSticker && focusType === FocusType.absolute) {
+    pointerEvents = "none";
+  } else if (isSticker && focusType === FocusType.absolute && !isFocused) {
+    pointerEvents = "none";
+  }
+
   const innerContent = (
-    <View ref={blockRef} key={`${format}-${layout}`} style={containerStyles}>
+    <View
+      nativeID="inputContainer"
+      ref={blockRef}
+      key={`${format}-${layout}`}
+      style={containerStyles}
+    >
       <TextInputComponent
-        editable={false}
-        selectable={format === PostFormat.post}
+        pointerEvents={pointerEvents}
+        editable={true}
+        selectable={
+          format === PostFormat.post && focusType !== FocusType.absolute
+        }
         ref={inputRef}
         style={inputStyles}
-        isSticker={
-          format === PostFormat.sticker || format === PostFormat.comment
-        }
+        isSticker={isSticker}
         multiline
         scrollEnabled={false}
+        singleFocus
         nestedScrollEnabled
         listKey={block.id}
         spellCheck={false}
@@ -729,6 +777,7 @@ export const TextInput = ({
         strokeColor={strokeColor}
         borderType={borderType}
         strokeWidth={strokeWidth}
+        onContentSizeChange={onContentSizeChange}
         lengthPerLine={50}
         blurOnSubmit={false}
         fontSizeRange={textInputPresets[template].fontSizes}
@@ -738,6 +787,7 @@ export const TextInput = ({
         scrollEnabled={false}
         placeholder={placeholder}
         defaultValue={text}
+        onLayout={onLayout}
         highlightColor={highlightColor}
         onChangeText={handleChangeText}
         keyboardAppearance="dark"
@@ -763,10 +813,8 @@ export const TextInput = ({
   if (format === PostFormat.sticker) {
     return (
       <View
-        pointerEvents={
-          focusType === FocusType.absolute && !isFocused ? "none" : "auto"
-        }
         style={textInputTypeStylesheets[template]?.sticker}
+        nativeID="stickerContainer"
         ref={stickerRef}
       >
         {innerContent}

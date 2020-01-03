@@ -299,7 +299,9 @@ const TextInput = createReactClass({
           ref={this._setNativeRef}
           {...props}
           onFocus={this._onFocus}
+          onStartEditing={this._onFocus}
           onBlur={this._onBlur}
+          onEndEditing={this._onBlur}
           onChange={this._onChange}
           onSelectionChange={this._onSelectionChange}
           onSelectionChangeShouldSetResponder={emptyFunctionThatReturnsTrue}
@@ -339,6 +341,8 @@ const TextInput = createReactClass({
           onFocus={this._onFocus}
           onBlur={this._onBlur}
           onChange={this._onChange}
+          onStartEditing={this._onFocus}
+          onEndEditing={this._onBlur}
           onContentSizeChange={this.props.onContentSizeChange}
           onSelectionChange={this._onSelectionChange}
           onTextInput={this._onTextInput}
@@ -462,10 +466,9 @@ const TextInput = createReactClass({
   },
 
   _onFocus(event) {
-    const tag = findNodeHandle(this._inputRef);
-    if (!currentlyFocusedField(tag)) {
-      this.focus();
-    }
+    const tag = event.nativeEvent.target;
+
+    focusTextInput(tag);
 
     if (this.props.onFocus) {
       this.props.onFocus(event);
@@ -480,6 +483,10 @@ const TextInput = createReactClass({
     if (this.props.editable || this.props.editable === undefined) {
       this.focus();
     }
+  },
+
+  setNativeProps(nativeProps) {
+    ReactNative.setNativeProps(this._inputRef, nativeProps);
   },
 
   _onChange(event) {

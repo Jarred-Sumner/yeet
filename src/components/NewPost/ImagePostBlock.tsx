@@ -337,7 +337,7 @@ class RawImagePostBlock extends React.Component<Props> {
               stylesByLayout[block.layout]?.container,
               {
                 overflow: "hidden",
-                flex: 1
+                flex: 0
               }
             ]}
           >

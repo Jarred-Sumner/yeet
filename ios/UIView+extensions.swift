@@ -47,3 +47,25 @@ extension UIView {
       return isSuccess ? image : nil
    }
 }
+
+extension CALayer {
+  func snapshot(scale: CGFloat = 0, isOpaque: Bool = false,
+                layerToUse: UIView.CASnapshotLayer = .default) -> UIImage? {
+     var isSuccess = false
+     UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, scale)
+     if let context = UIGraphicsGetCurrentContext() {
+        isSuccess = true
+        switch layerToUse {
+        case .default:
+           render(in: context)
+        case .model:
+           model().render(in: context)
+        case .presentation:
+           presentation()?.render(in: context)
+        }
+     }
+     let image = UIGraphicsGetImageFromCurrentImageContext()
+     UIGraphicsEndImageContext()
+     return isSuccess ? image : nil
+  }
+}

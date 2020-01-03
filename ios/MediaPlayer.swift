@@ -111,6 +111,19 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     self.isInitialMount = false
   }
 
+  var movableViewTag: NSNumber? = nil
+  var movableView : MovableView? {
+    guard let tag = movableViewTag else {
+      return nil
+    }
+
+    guard self.bridge?.isValid ?? false else {
+      return nil
+    }
+
+    return self.bridge?.uiManager.view(forReactTag: tag) as? MovableView
+  }
+
 
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
@@ -279,6 +292,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         }
         source = TrackableMediaSource.source(first, bounds: bounds)
         source?.alwaysLoop = true
+
+       
       } else {
         if let source = source as? TrackableVideoSource {
           source.player?.pause()
@@ -286,7 +301,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         }
         source = nil
       }
-
     }
   }
 
@@ -360,10 +374,9 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
       if !bridge.isValid {
         self?.invalidate()
       }
+
+
     }
-
-
-    bridge?.uiManager.observerCoordinator.add(self)
   }
 
 
@@ -851,6 +864,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   @objc(invalidate)
   func invalidate() {
     invalidated = true
+    bridgeObserver?.invalidate()
+    bridgeObserver = nil
   }
 
   @objc(didMoveToWindow)
@@ -941,6 +956,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   deinit {
     source?.stop()
+    bridgeObserver?.invalidate()
     Log.debug("DEINIT \(source?.mediaSource.id)-\(id)")
 
     if let videoSource = self.videoSource {

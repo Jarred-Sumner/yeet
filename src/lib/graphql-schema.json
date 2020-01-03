@@ -2972,6 +2972,16 @@
                 "defaultValue": null
               },
               {
+                "name": "examples",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "JSON",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
                 "name": "threadId",
                 "description": null,
                 "type": {
@@ -3124,6 +3134,16 @@
               },
               {
                 "name": "nodes",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "JSON",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
+                "name": "examples",
                 "description": null,
                 "type": {
                   "kind": "SCALAR",

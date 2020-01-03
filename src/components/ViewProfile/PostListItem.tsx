@@ -18,15 +18,12 @@ const INSTRINSIC_WIDTH =
   SCREEN_DIMENSIONS.width / POST_LIST_ITEM_COLUMN_COUNT -
   SPACING.normal / POST_LIST_ITEM_COLUMN_COUNT;
 
-const {
-  width: POST_LIST_ITEM_WIDTH,
-  height: _POST_LIST_ITEM_HEIGHT
-} = scaleToWidth(INSTRINSIC_WIDTH, {
+const { width: POST_LIST_ITEM_WIDTH } = scaleToWidth(INSTRINSIC_WIDTH, {
   width: SCREEN_DIMENSIONS.width,
   height: MAX_POST_HEIGHT
 });
 
-export const POST_LIST_ITEM_HEIGHT = _POST_LIST_ITEM_HEIGHT - SPACING.normal;
+export const POST_LIST_ITEM_HEIGHT = POST_LIST_ITEM_WIDTH;
 export { POST_LIST_ITEM_WIDTH };
 
 const styles = StyleSheet.create({
@@ -106,16 +103,10 @@ export const PostListItem = ({
   showName = POST_LIST_ITEM_COLUMN_COUNT < 3,
   showProfile = false
 }: Props) => {
-  const { y, width, height: _height } = scaleToWidth(
+  const { y, width, height: height } = scaleToWidth(
     POST_LIST_ITEM_WIDTH,
     post.bounds
   );
-  const { height: __height } = scaleToWidth(POST_LIST_ITEM_WIDTH, {
-    width: post.media.width,
-    height: post.media.height
-  });
-
-  const height = _height > __height ? __height : _height;
 
   const source = React.useMemo(() => {
     const uri = buildImgSrc(post.media.previewUrl, width, height);
@@ -125,7 +116,7 @@ export const PostListItem = ({
       width,
       height
     };
-  }, [post.media]);
+  }, [post.media, width, height]);
   const handlePress = React.useCallback(() => {
     return onPress(post);
   }, [post.id, onPress]);
@@ -146,7 +137,7 @@ export const PostListItem = ({
             height,
             transform: [{ translateY: y }]
           }}
-          resizeMode="cover"
+          resizeMode="aspectFill"
           animated={isVisible}
         />
 
