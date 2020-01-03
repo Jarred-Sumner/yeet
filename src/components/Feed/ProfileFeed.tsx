@@ -23,11 +23,15 @@ const styles = StyleSheet.create({
   },
   side: {
     flexDirection: "row",
-    alignItems: "center"
+    alignItems: "center",
+    flex: 1
   },
   right: {
     alignItems: "center",
-    justifyContent: "flex-end"
+    justifyContent: "flex-end",
+    flexShrink: 1,
+    flexGrow: 0,
+    minWidth: 50
   },
   timestamp: {
     color: "rgb(107, 107, 107)",
@@ -61,10 +65,17 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     textAlignVertical: "center",
-    marginLeft: SPACING.normal * 0.75
+    flex: 1,
+    paddingLeft: SPACING.normal * 0.75
   },
+  bodyTextContainer: {
+    flex: 1,
+    flexDirection: "row"
+  },
+  ellipsis: {},
   bodyText: {
-    fontSize: 16
+    fontSize: 16,
+    flex: 1
   }
 });
 
@@ -132,7 +143,7 @@ export const ProfileFeedComponent = ({
             <View style={styles.bodyTextContainer}>
               <MediumText
                 style={styles.bodyText}
-                adjustsSizeToFit
+                ellipsizeMode="tail"
                 numberOfLines={1}
               >
                 {body}
@@ -144,14 +155,16 @@ export const ProfileFeedComponent = ({
 
       <View style={[styles.side, styles.right]}>
         {showEllipsis && (
-          <IconButton
-            Icon={IconEllipsis}
-            size={6}
-            containerSize={23}
-            type="shadow"
-            color={"#999"}
-            onPress={onPressEllipsis}
-          />
+          <View style={styles.ellipsis}>
+            <IconButton
+              Icon={IconEllipsis}
+              size={6}
+              containerSize={23}
+              type="shadow"
+              color={"#999"}
+              onPress={onPressEllipsis}
+            />
+          </View>
         )}
       </View>
     </Animated.View>

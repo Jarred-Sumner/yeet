@@ -3,32 +3,18 @@ import { sum } from "lodash";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import {
-  BaseButton,
   ScrollView,
-  LongPressGestureHandler,
   TouchableWithoutFeedback
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { PostListItemFragment } from "../../lib/graphql/PostListItemFragment";
-import {
-  ViewThreads_postThreads,
-  ViewThreads_postThreads_data
-} from "../../lib/graphql/ViewThreads";
-import { scaleToWidth } from "../../lib/Rect";
-import { SPACING, COLORS } from "../../lib/styles";
-import MediaPlayer, { MediaPlayerComponent } from "../MediaPlayer";
-import { MediumText } from "../Text";
-import { ACTION_BAR_HEIGHT, ContentActionBar } from "./ContentActionBar";
-import {
-  PostPreviewList,
-  POST_LIST_HEIGHT,
-  POST_LIST_WIDTH,
-  postPreviewListHeight
-} from "./PostPreviewList";
-import { ProfileFeedComponent, PROFILE_FEED_HEIGHT } from "./ProfileFeed";
-import { SCREEN_DIMENSIONS } from "../../../config";
+import { ViewThreads_postThreads_data } from "../../lib/graphql/ViewThreads";
+import { COLORS, SPACING } from "../../lib/styles";
 import { IconChevronRight } from "../Icon";
-import { getContentSize, MAX_CONTENT_HEIGHT } from "./FeedList";
+import { MediaPlayerComponent } from "../MediaPlayer";
+import { MediumText } from "../Text";
+import { MAX_CONTENT_HEIGHT } from "./FeedList";
+import { PostPreviewList, postPreviewListHeight } from "./PostPreviewList";
+import { ProfileFeedComponent, PROFILE_FEED_HEIGHT } from "./ProfileFeed";
 
 const POST_COUNT_BAR = 20 + SPACING.normal * 2;
 // const POST_COUNT_BAR = SPACING.normal;
@@ -103,7 +89,7 @@ type State = {
   height: number;
 };
 
-class FeedListItemComponent extends React.PureComponent<Props, State> {
+class FeedListItemComponent extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
@@ -188,7 +174,7 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
 
     return (
       <TouchableWithoutFeedback onLongPress={this.handleLongPress}>
-        <Animated.View style={[{ height, width }, styles.container]}>
+        <View style={[{ height, width }, styles.container]}>
           <ProfileFeedComponent
             profile={op}
             createdAt={thread.createdAt}
@@ -230,63 +216,10 @@ class FeedListItemComponent extends React.PureComponent<Props, State> {
               </Animated.View>
             </TouchableWithoutFeedback>
           </View>
-        </Animated.View>
+        </View>
       </TouchableWithoutFeedback>
     );
   }
 }
 
-export const FeedListItem = ({
-  thread,
-  height,
-  firstVisibleItem,
-  secondVisibleItem,
-  width,
-  hashId,
-  isVisible,
-  ...otherProps
-}) => {
-  // const isVisibleNode = React.useRef(new Animated.Value(0));
-  // const [isVisible, setVisible] = React.useState(false);
-
-  // const updateIsVisible = React.useCallback(
-  //   ([isVisibleValue]) => {
-  //     setVisible(isVisibleValue === 0 ? false : true);
-  //   },
-  //   [setVisible]
-  // );
-
-  // Animated.useCode(
-  //   () =>
-  //     Animated.block([
-  //       Animated.set(
-  //         isVisibleNode.current,
-  //         Animated.or(
-  //           Animated.eq(firstVisibleItem, hashId),
-  //           Animated.eq(secondVisibleItem, hashId)
-  //         )
-  //       ),
-  //       Animated.onChange(
-  //         isVisibleNode.current,
-  //         Animated.call([isVisibleNode.current], updateIsVisible)
-  //       )
-  //     ]),
-  //   [
-  //     firstVisibleItem,
-  //     secondVisibleItem,
-  //     hashId,
-  //     isVisibleNode,
-  //     updateIsVisible
-  //   ]
-  // );
-
-  return (
-    <FeedListItemComponent
-      {...otherProps}
-      thread={thread}
-      height={height}
-      width={width}
-      isVisible={isVisible}
-    />
-  );
-};
+export const FeedListItem = React.memo(FeedListItemComponent);

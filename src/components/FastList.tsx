@@ -1,9 +1,13 @@
-// @flow
-
-import * as React from "react";
-// $FlowFixMe
-import { Animated, View, ScrollView } from "react-native";
 import lodash from "lodash";
+import * as React from "react";
+import {
+  Animated,
+  ScrollView,
+  View,
+  ViewStyle,
+  NativeScrollEvent,
+  LayoutChangeEvent
+} from "react-native";
 
 type HeaderHeight = number | (() => number);
 type FooterHeight = number | (() => number);
@@ -11,190 +15,51 @@ type SectionHeight = number | ((section: number) => number);
 type RowHeight = number | ((section: number, row?: number) => number);
 type SectionFooterHeight = number | ((section: number) => number);
 
-export const FastListItemTypes = {
-  SPACER: 0,
-  HEADER: 1,
-  FOOTER: 2,
-  SECTION: 3,
-  ROW: 4,
-  SECTION_FOOTER: 5
-};
-
-type FastListItemType = $Values<typeof FastListItemTypes>;
-
-export type FastListItem = {
-  type: FastListItemType,
-  key: number,
-  layoutY: number,
-  layoutHeight: number,
-  section: number,
-  row: number,
-  ...
-};
-
-export type ScrollEvent = {
-  nativeEvent: $ReadOnly<{|
-    contentInset: $ReadOnly<{|
-      bottom: number,
-      left: number,
-      right: number,
-      top: number
-    |}>,
-    contentOffset: $ReadOnly<{|
-      y: number,
-      x: number
-    |}>,
-    contentSize: $ReadOnly<{|
-      height: number,
-      width: number
-    |}>,
-    layoutMeasurement: $ReadOnly<{|
-      height: number,
-      width: number
-    |}>,
-    targetContentOffset?: $ReadOnly<{|
-      y: number,
-      x: number
-    |}>,
-    velocity?: $ReadOnly<{|
-      y: number,
-      x: number
-    |}>,
-    zoomScale?: number,
-    responderIgnoreScroll?: boolean
-  |}>,
-  ...
-};
-
-export type LayoutEvent = {
-  nativeEvent: $ReadOnly<{|
-    layout: $ReadOnly<{|
-      x: number,
-      y: number,
-      width: number,
-      height: number
-    |}>
-  |}>,
-  ...
-};
-
-/**
- * FastListItemRecycler is used to recycle FastListItem objects between recomputations
- * of the list. By doing this we ensure that components maintain their keys and avoid
- * reallocations.
- */
-class FastListItemRecycler {
-  static _LAST_KEY: number = 0;
-
-  _items: { [FastListItemType]: { [string]: FastListItem, ... }, ... } = {};
-  _pendingItems: { [FastListItemType]: Array<FastListItem>, ... } = {};
-
-  constructor(items: Array<FastListItem>) {
-    items.forEach(item => {
-      const { type, section, row } = item;
-      const [items] = this._itemsForType(type);
-      items[`${type}:${section}:${row}`] = item;
-    });
-  }
-
-  _itemsForType(
-    type: FastListItemType
-  ): [{ [string]: FastListItem, ... }, Array<FastListItem>] {
-    return [
-      this._items[type] || (this._items[type] = {}),
-      this._pendingItems[type] || (this._pendingItems[type] = [])
-    ];
-  }
-
-  get(
-    type: FastListItemType,
-    layoutY: number,
-    layoutHeight: number,
-    section: number = 0,
-    row: number = 0
-  ): FastListItem {
-    const [items, pendingItems] = this._itemsForType(type);
-    return this._get(
-      type,
-      layoutY,
-      layoutHeight,
-      section,
-      row,
-      items,
-      pendingItems
-    );
-  }
-
-  _get(
-    type: FastListItemType,
-    layoutY: number,
-    layoutHeight: number,
-    section: number,
-    row: number,
-    items: { [string]: FastListItem, ... },
-    pendingItems: Array<FastListItem>
-  ) {
-    const itemKey = `${type}:${section}:${row}`;
-    let item = items[itemKey];
-    if (item == null) {
-      item = { type, key: -1, layoutY, layoutHeight, section, row };
-      pendingItems.push(item);
-    } else {
-      item.layoutY = layoutY;
-      item.layoutHeight = layoutHeight;
-      delete items[itemKey];
-    }
-    return item;
-  }
-
-  fill() {
-    lodash.forEach(FastListItemTypes, type => {
-      const [items, pendingItems] = this._itemsForType(type);
-      this._fill(items, pendingItems);
-    });
-  }
-
-  _fill(
-    items: { [string]: FastListItem, ... },
-    pendingItems: Array<FastListItem>
-  ) {
-    let index = 0;
-
-    lodash.forEach(items, ({ key }) => {
-      const item = pendingItems[index];
-      if (item == null) {
-        return false;
-      }
-      item.key = key;
-      index++;
-    });
-
-    for (; index < pendingItems.length; index++) {
-      pendingItems[index].key = ++FastListItemRecycler._LAST_KEY;
-    }
-
-    pendingItems.length = 0;
-  }
+export enum FastListItemType {
+  spacer = 0,
+  header = 1,
+  footer = 2,
+  section = 3,
+  row = 4,
+  sectionFooter = 5
 }
 
-type FastListComputerProps = {|
-  headerHeight: HeaderHeight,
-  footerHeight: FooterHeight,
-  sectionHeight: SectionHeight,
-  rowHeight: RowHeight,
-  sectionFooterHeight: SectionFooterHeight,
-  sections: Array<number>,
-  insetTop: number,
-  insetBottom: number
-|};
+const FastListItemTypes = [
+  FastListItemType.spacer,
+  FastListItemType.header,
+  FastListItemType.footer,
+  FastListItemType.section,
+  FastListItemType.row,
+  FastListItemType.sectionFooter
+];
 
-class FastListComputer {
+interface FastListComputerProps {
   headerHeight: HeaderHeight;
   footerHeight: FooterHeight;
   sectionHeight: SectionHeight;
   rowHeight: RowHeight;
   sectionFooterHeight: SectionFooterHeight;
-  sections: Array<number>;
+  sections: number[];
+  insetTop: number;
+  insetBottom: number;
+}
+
+export type FastListItem = {
+  type: FastListItemType;
+  key: number;
+  layoutY: number;
+  layoutHeight: number;
+  section: number;
+  row: number;
+};
+
+export class FastListComputer {
+  headerHeight: HeaderHeight;
+  footerHeight: FooterHeight;
+  sectionHeight: SectionHeight;
+  rowHeight: RowHeight;
+  sectionFooterHeight: SectionFooterHeight;
+  sections: number[];
   insetTop: number;
   insetBottom: number;
   uniform: boolean;
@@ -252,17 +117,16 @@ class FastListComputer {
   compute(
     top: number,
     bottom: number,
-    prevItems: Array<FastListItem>
+    prevItems: FastListItem[]
   ): {
-    height: number,
-    items: Array<FastListItem>,
-    ...
+    height: number;
+    items: FastListItem[];
   } {
     const { sections } = this;
 
     let height = this.insetTop;
     let spacerHeight = height;
-    let items = [];
+    let items = [] as FastListItem[];
 
     const recycler = new FastListItemRecycler(prevItems);
 
@@ -290,7 +154,7 @@ class FastListComputer {
       if (spacerHeight > 0) {
         items.push(
           recycler.get(
-            FastListItemTypes.SPACER,
+            FastListItemType.spacer,
             item.layoutY - spacerHeight,
             spacerHeight,
             item.section,
@@ -309,7 +173,7 @@ class FastListComputer {
     if (headerHeight > 0) {
       layoutY = height;
       if (isVisible(headerHeight)) {
-        push(recycler.get(FastListItemTypes.HEADER, layoutY, headerHeight));
+        push(recycler.get(FastListItemType.header, layoutY, headerHeight));
       }
     }
 
@@ -329,7 +193,7 @@ class FastListComputer {
       if (
         section > 1 &&
         items.length > 0 &&
-        items[items.length - 1].type === FastListItemTypes.SECTION
+        items[items.length - 1].type === FastListItemType.section
       ) {
         const spacerLayoutHeight = items.reduce((totalHeight, item, i) => {
           if (i !== items.length - 1) {
@@ -339,7 +203,7 @@ class FastListComputer {
         }, 0);
         const prevSection = items[items.length - 1];
         const spacer = recycler.get(
-          FastListItemTypes.SPACER,
+          FastListItemType.spacer,
           0,
           spacerLayoutHeight,
           prevSection.section,
@@ -351,7 +215,7 @@ class FastListComputer {
       if (isBelowVisibility(sectionHeight)) {
         push(
           recycler.get(
-            FastListItemTypes.SECTION,
+            FastListItemType.section,
             layoutY,
             sectionHeight,
             section
@@ -366,7 +230,7 @@ class FastListComputer {
           if (isVisible(rowHeight)) {
             push(
               recycler.get(
-                FastListItemTypes.ROW,
+                FastListItemType.row,
                 layoutY,
                 rowHeight,
                 section,
@@ -382,7 +246,7 @@ class FastListComputer {
           if (isVisible(rowHeight)) {
             push(
               recycler.get(
-                FastListItemTypes.ROW,
+                FastListItemType.row,
                 layoutY,
                 rowHeight,
                 section,
@@ -399,7 +263,7 @@ class FastListComputer {
         if (isVisible(sectionFooterHeight)) {
           push(
             recycler.get(
-              FastListItemTypes.SECTION_FOOTER,
+              FastListItemType.sectionFooter,
               layoutY,
               sectionFooterHeight,
               section
@@ -413,7 +277,7 @@ class FastListComputer {
     if (footerHeight > 0) {
       layoutY = height;
       if (isVisible(footerHeight)) {
-        push(recycler.get(FastListItemTypes.FOOTER, layoutY, footerHeight));
+        push(recycler.get(FastListItemType.footer, layoutY, footerHeight));
       }
     }
 
@@ -423,7 +287,7 @@ class FastListComputer {
     if (spacerHeight > 0) {
       items.push(
         recycler.get(
-          FastListItemTypes.SPACER,
+          FastListItemType.spacer,
           height - spacerHeight,
           spacerHeight,
           sections.length
@@ -443,9 +307,8 @@ class FastListComputer {
     targetSection: number,
     targetRow: number
   ): {
-    scrollTop: number,
-    sectionHeight: number,
-    ...
+    scrollTop: number;
+    sectionHeight: number;
   } {
     const { sections, insetTop } = this;
     let scrollTop = insetTop + this.getHeightForHeader();
@@ -480,7 +343,9 @@ class FastListComputer {
           }
         }
       }
-      if (!foundRow) scrollTop += this.getHeightForSectionFooter(section);
+      if (!foundRow) {
+        scrollTop += this.getHeightForSectionFooter(section);
+      }
       section += 1;
     }
 
@@ -491,6 +356,120 @@ class FastListComputer {
   }
 }
 
+/**
+ * FastListItemRecycler is used to recycle FastListItem objects between
+ * recomputations of the list. By doing this we ensure that components
+ * maintain their keys and avoid reallocations.
+ */
+export class FastListItemRecycler {
+  static _LAST_KEY: number = 0;
+
+  items: {
+    [key: number]: {
+      [key: string]: FastListItem;
+    };
+  } = {};
+  pendingItems: {
+    [key: number]: FastListItem[];
+  } = {};
+
+  constructor(items: FastListItem[]) {
+    items.forEach(item => {
+      const { type, section, row } = item;
+      const [itemsForType] = this.itemsForType(type);
+      itemsForType[`${type}:${section}:${row}`] = item;
+    });
+  }
+
+  itemsForType(
+    type: FastListItemType
+  ): [
+    {
+      [key: string]: FastListItem;
+    },
+    FastListItem[]
+  ] {
+    return [
+      this.items[type] || (this.items[type] = {}),
+      this.pendingItems[type] || (this.pendingItems[type] = [])
+    ];
+  }
+
+  get(
+    type: FastListItemType,
+    layoutY: number,
+    layoutHeight: number,
+    section: number = 0,
+    row: number = 0
+  ): FastListItem {
+    const [items, pendingItems] = this.itemsForType(type);
+    return this._get(
+      type,
+      layoutY,
+      layoutHeight,
+      section,
+      row,
+      items,
+      pendingItems
+    );
+  }
+
+  _get(
+    type: FastListItemType,
+    layoutY: number,
+    layoutHeight: number,
+    section: number,
+    row: number,
+    items: {
+      [key: string]: FastListItem;
+    },
+    pendingItems: FastListItem[]
+  ) {
+    const itemKey = `${type}:${section}:${row}`;
+    let item = items[itemKey];
+    if (item == null) {
+      item = { type, key: -1, layoutY, layoutHeight, section, row };
+      pendingItems.push(item);
+    } else {
+      item.layoutY = layoutY;
+      item.layoutHeight = layoutHeight;
+      delete items[itemKey];
+    }
+    return item;
+  }
+
+  fill() {
+    lodash.forEach(FastListItemTypes, type => {
+      const [items, pendingItems] = this.itemsForType(type);
+      this._fill(items, pendingItems);
+    });
+  }
+
+  _fill(
+    items: {
+      [key: string]: FastListItem;
+    },
+    pendingItems: FastListItem[]
+  ) {
+    let index = 0;
+
+    lodash.forEach(items, ({ key }) => {
+      const item = pendingItems[index];
+      if (item == null) {
+        return false;
+      }
+      item.key = key;
+      index++;
+    });
+
+    for (; index < pendingItems.length; index++) {
+      pendingItems[index].key = ++FastListItemRecycler._LAST_KEY;
+    }
+
+    pendingItems.length = 0;
+  }
+}
+
 const FastListSectionRenderer = ({
   layoutY,
   layoutHeight,
@@ -498,15 +477,14 @@ const FastListSectionRenderer = ({
   scrollTopValue,
   children
 }: {
-  layoutY: number,
-  layoutHeight: number,
-  nextSectionLayoutY?: number,
-  scrollTopValue: Animated.Value,
-  children: React.Node,
-  ...
-}): React.Node => {
-  const inputRange: Array<number> = [-1, 0];
-  const outputRange: Array<number> = [0, 0];
+  layoutY: number;
+  layoutHeight: number;
+  nextSectionLayoutY?: number;
+  scrollTopValue: Animated.Value;
+  children: React.ReactElement<{ style?: ViewStyle }>;
+}) => {
+  const inputRange: number[] = [-1, 0];
+  const outputRange: number[] = [0, 0];
 
   inputRange.push(layoutY);
   outputRange.push(0);
@@ -529,7 +507,9 @@ const FastListSectionRenderer = ({
   return (
     <Animated.View
       style={[
-        child.props.style,
+        React.isValidElement(child) && child.props.style
+          ? child.props.style
+          : undefined,
         {
           zIndex: 10,
           height: layoutHeight,
@@ -537,9 +517,10 @@ const FastListSectionRenderer = ({
         }
       ]}
     >
-      {React.cloneElement(child, {
-        style: { flex: 1 }
-      })}
+      {React.isValidElement(child) &&
+        React.cloneElement(child, {
+          style: { flex: 1 }
+        })}
     </Animated.View>
   );
 };
@@ -548,56 +529,61 @@ const FastListItemRenderer = ({
   layoutHeight: height,
   children
 }: {
-  layoutHeight: number,
-  children?: React.Node,
-  ...
-}): React.Node => <View style={{ height }}>{children}</View>;
+  layoutHeight: number;
+  children?: React.ReactNode;
+}) => <View style={{ height }}>{children}</View>;
 
-export type FastListProps = {
-  renderActionSheetScrollViewWrapper?: React.Node => React.Node,
-  actionSheetScrollRef?: { current: ?React.Node, ... },
-  onScroll?: (event: ScrollEvent) => any,
-  onScrollEnd?: (event: ScrollEvent) => any,
-  onLayout?: (event: LayoutEvent) => any,
-  renderHeader: () => ?React.Element<any>,
-  renderFooter: () => ?React.Element<any>,
-  renderSection: (section: number) => ?React.Element<any>,
-  renderRow: (section: number, row: number) => ?React.Element<any>,
-  renderSectionFooter: (section: number) => ?React.Element<any>,
-  renderAccessory?: (list: FastList) => React.Node,
-  renderEmpty?: () => ?React.Element<any>,
-  headerHeight: HeaderHeight,
-  footerHeight: FooterHeight,
-  sectionHeight: SectionHeight,
-  sectionFooterHeight: SectionFooterHeight,
-  rowHeight: RowHeight,
-  sections: Array<number>,
-  insetTop: number,
-  insetBottom: number,
-  scrollTopValue?: Animated.Value,
+export interface FastListProps {
+  renderActionSheetScrollViewWrapper?: (
+    wrapper: React.ReactNode
+  ) => React.ReactNode;
+  actionSheetScrollRef?: { current: React.ReactNode | null | undefined };
+  onScroll?: (event: NativeScrollEvent) => any;
+  onScrollEnd?: (event: NativeScrollEvent) => any;
+  onLayout?: (event: LayoutChangeEvent) => any;
+  renderHeader: () => React.ReactElement<any> | null | undefined;
+  renderFooter: () => React.ReactElement<any> | null | undefined;
+  renderSection: (
+    section: number
+  ) => React.ReactElement<any> | null | undefined;
+  renderRow: (
+    section: number,
+    row: number
+  ) => React.ReactElement<any> | null | undefined;
+  renderSectionFooter: (
+    section: number
+  ) => React.ReactElement<any> | null | undefined;
+  renderAccessory?: (list: FastList) => React.ReactNode;
+  renderEmpty?: () => React.ReactElement<any> | null | undefined;
+  headerHeight: HeaderHeight;
+  footerHeight: FooterHeight;
+  sectionHeight: SectionHeight;
+  sectionFooterHeight: SectionFooterHeight;
+  rowHeight: RowHeight;
+  sections: number[];
+  insetTop: number;
+  insetBottom: number;
+  scrollTopValue?: Animated.Value;
   contentInset: {
-    top?: number,
-    left?: number,
-    right?: number,
-    bottom?: number,
-    ...
-  },
-  ...
-};
+    top?: number;
+    left?: number;
+    right?: number;
+    bottom?: number;
+  };
+}
 
-type FastListState = {
-  batchSize: number,
-  blockStart: number,
-  blockEnd: number,
-  height: number,
-  items: Array<FastListItem>,
-  ...
-};
+interface FastListState {
+  batchSize: number;
+  blockStart: number;
+  blockEnd: number;
+  height?: number;
+  items?: FastListItem[];
+}
 
-function computeBlock(
+const computeBlock = (
   containerHeight: number,
   scrollTop: number
-): $Shape<FastListState> {
+): FastListState => {
   if (containerHeight === 0) {
     return {
       batchSize: 0,
@@ -610,7 +596,7 @@ function computeBlock(
   const blockStart = batchSize * blockNumber;
   const blockEnd = blockStart + batchSize;
   return { batchSize, blockStart, blockEnd };
-}
+};
 
 function getFastListState(
   {
@@ -623,8 +609,8 @@ function getFastListState(
     insetTop,
     insetBottom
   }: FastListProps,
-  { batchSize, blockStart, blockEnd, items: prevItems }: $Shape<FastListState>
-): any {
+  { batchSize, blockStart, blockEnd, items: prevItems }: FastListState
+): FastListState {
   if (batchSize === 0) {
     return {
       batchSize,
@@ -649,12 +635,11 @@ function getFastListState(
     batchSize,
     blockStart,
     blockEnd,
-    // $FlowFixMe
-    ...(computer.compute(
+    ...computer.compute(
       blockStart - batchSize,
       blockEnd + batchSize,
       prevItems || []
-    ): any) // $FlowFixMe
+    )
   };
 }
 
@@ -681,8 +666,8 @@ export default class FastList extends React.PureComponent<
   scrollTop: number = 0;
   scrollTopValue: Animated.Value =
     this.props.scrollTopValue || new Animated.Value(0);
-  scrollTopValueAttachment: ?{ detach: () => void, ... };
-  scrollView: { current: ?ScrollView, ... } = React.createRef();
+  scrollTopValueAttachment: { detach: () => void } | null | undefined;
+  scrollView: { current: ScrollView | null | undefined } = React.createRef();
 
   state = getFastListState(
     this.props,
@@ -693,8 +678,8 @@ export default class FastList extends React.PureComponent<
     return getFastListState(props, state);
   }
 
-  getItems(): Array<FastListItem> {
-    return this.state.items;
+  getItems(): FastListItem[] {
+    return this.state.items || [];
   }
 
   isVisible = (layoutY: number): boolean => {
@@ -707,7 +692,7 @@ export default class FastList extends React.PureComponent<
   scrollToLocation = (
     section: number,
     row: number,
-    animated?: boolean = true
+    animated: boolean = true
   ) => {
     const scrollView = this.scrollView.current;
     if (scrollView != null) {
@@ -771,7 +756,7 @@ export default class FastList extends React.PureComponent<
     }
   };
 
-  handleLayout = (event: LayoutEvent) => {
+  handleLayout = (event: LayoutChangeEvent) => {
     const { nativeEvent } = event;
     const { contentInset } = this.props;
 
@@ -794,6 +779,7 @@ export default class FastList extends React.PureComponent<
       onLayout(event);
     }
   };
+
   /**
    * FastList only re-renders when items change which which does not happen with
    * every scroll event. Since an accessory might depend on scroll position this
@@ -804,7 +790,9 @@ export default class FastList extends React.PureComponent<
     if (renderAccessory != null) {
       this.forceUpdate();
     }
-    onScrollEnd && onScrollEnd(event);
+    if (onScrollEnd) {
+      onScrollEnd(event);
+    }
   };
 
   renderItems() {
@@ -817,28 +805,30 @@ export default class FastList extends React.PureComponent<
       renderEmpty
     } = this.props;
 
-    const { items } = this.state;
+    const { items = [] } = this.state;
 
     if (renderEmpty != null && this.isEmpty()) {
       return renderEmpty();
     }
 
-    const sectionLayoutYs = [];
+    const sectionLayoutYs = [] as number[];
     items.forEach(({ type, layoutY }) => {
-      if (type === FastListItemTypes.SECTION) {
+      if (type === FastListItemType.section) {
         sectionLayoutYs.push(layoutY);
       }
     });
-    const children = [];
+
+    const children = [] as JSX.Element[];
     items.forEach(({ type, key, layoutY, layoutHeight, section, row }) => {
       switch (type) {
-        case FastListItemTypes.SPACER: {
-          children.push(
+        case FastListItemType.spacer: {
+          const child = (
             <FastListItemRenderer key={key} layoutHeight={layoutHeight} />
           );
+          children.push(child);
           break;
         }
-        case FastListItemTypes.HEADER: {
+        case FastListItemType.header: {
           const child = renderHeader();
           if (child != null) {
             children.push(
@@ -849,7 +839,7 @@ export default class FastList extends React.PureComponent<
           }
           break;
         }
-        case FastListItemTypes.FOOTER: {
+        case FastListItemType.footer: {
           const child = renderFooter();
           if (child != null) {
             children.push(
@@ -860,7 +850,7 @@ export default class FastList extends React.PureComponent<
           }
           break;
         }
-        case FastListItemTypes.SECTION: {
+        case FastListItemType.section: {
           sectionLayoutYs.shift();
           const child = renderSection(section);
           if (child != null) {
@@ -878,7 +868,7 @@ export default class FastList extends React.PureComponent<
           }
           break;
         }
-        case FastListItemTypes.ROW: {
+        case FastListItemType.row: {
           const child = renderRow(section, row);
           if (child != null) {
             children.push(
@@ -889,7 +879,7 @@ export default class FastList extends React.PureComponent<
           }
           break;
         }
-        case FastListItemTypes.SECTION_FOOTER: {
+        case FastListItemType.sectionFooter: {
           const child = renderSectionFooter(section);
           if (child != null) {
             children.push(
@@ -908,6 +898,7 @@ export default class FastList extends React.PureComponent<
 
   componentDidMount() {
     if (this.scrollView.current != null) {
+      // @ts-ignore: Types for React Native doesn't include attachNativeEvent
       this.scrollTopValueAttachment = Animated.attachNativeEvent(
         this.scrollView.current,
         "onScroll",
@@ -930,8 +921,8 @@ export default class FastList extends React.PureComponent<
 
   isEmpty = () => {
     const { sections } = this.props;
-    const length = sections.reduce((length, rowLength) => {
-      return length + rowLength;
+    const length = sections.reduce((total, rowLength) => {
+      return total + rowLength;
     }, 0);
     return length === 0;
   };
@@ -950,6 +941,7 @@ export default class FastList extends React.PureComponent<
       actionSheetScrollRef,
       renderActionSheetScrollViewWrapper,
       renderEmpty,
+
       /* eslint-enable no-unused-vars */
       ...props
     } = this.props;
@@ -968,6 +960,8 @@ export default class FastList extends React.PureComponent<
         }}
         removeClippedSubviews={false}
         scrollEventThrottle={16}
+        automaticallyAdjustContentInsets={false}
+        contentInsetAdjustmentBehavior="never"
         onScroll={this.handleScroll}
         onLayout={this.handleLayout}
         onMomentumScrollEnd={this.handleScrollEnd}

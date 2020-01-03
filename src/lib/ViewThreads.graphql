@@ -20,12 +20,31 @@ query ViewThreads($after: ID, $limit: Int, $postsCount: Int, $offset: Int) {
       }
 
       posts(offset: 0, limit: $postsCount) {
-        offset
-        limit
-        hasMore
         id
+
         data {
-          ...PostListItemFragment
+          id
+          threadId
+          commentsCount
+          autoplaySeconds
+
+          profile {
+            id
+            photoURL
+            username
+          }
+
+          media {
+            id
+            width
+            height
+            pixelRatio
+            mimeType
+            __typename
+
+            previewUrl
+            url
+          }
         }
       }
     }

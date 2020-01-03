@@ -40,6 +40,9 @@ import {
 } from "../../lib/MediaUploadTask";
 import { MediaUploadProgress } from "../MediaUploadProgress";
 import { throttle } from "lodash";
+import FastList from "../FastList";
+import { useSafeArea } from "react-native-safe-area-context";
+import { TAB_BAR_HEIGHT } from "../BottomTabBar";
 
 const ITEM_SEPARATOR_HEIGHT = SPACING.half;
 
@@ -58,8 +61,12 @@ type Props = {
 const ITEM_WIDTH = SCREEN_DIMENSIONS.width;
 
 const styles = StyleSheet.create({
-  list: {
+  screen: {
     flex: 1
+  },
+  list: {
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height
   },
   separator: {
     height: 1,
@@ -158,7 +165,7 @@ class FeedListComponent extends React.Component<Props, State> {
       <FeedListItem
         thread={thread}
         hashId={thread.id.hashCode()}
-        isVisible={!!this.state.visibleIDs[thread.id]}
+        isVisible
         height={height}
         width={ITEM_WIDTH}
         onPressPost={this.props.onPressPost}
@@ -200,7 +207,7 @@ class FeedListComponent extends React.Component<Props, State> {
 
     this.props.fetchMore({
       variables: {
-        offset: this.props.offset
+        offset: this.props.threads.length
       },
       updateQuery: (
         previousResult: ViewThreads,
@@ -227,7 +234,7 @@ class FeedListComponent extends React.Component<Props, State> {
   flatListRef = React.createRef<RNFlatList>();
 
   componentDidMount() {
-    this.flatListRef.current.flashScrollIndicators();
+    // this.flatListRef.current.flashScrollIndicators();
   }
 
   componentDidUpdate(prevProps) {
@@ -266,12 +273,33 @@ class FeedListComponent extends React.Component<Props, State> {
   };
 
   scrollToTop = () => {
-    this.flatListRef.current.scrollToOffset({
-      offset: TOP_Y * -1,
-      animated: true,
-      viewPosition: 0
-    });
+    this.flatListRef.current.scrollToLocation(0, 0, true);
     this.handleRefresh();
+  };
+
+  getTotalHeight = (section: number) => {
+    if (section === 0) {
+      return sum(
+        this.props.threads
+          .slice(0, this.props.threads.length)
+          .map(row => getItemHeight(row, ITEM_WIDTH))
+      );
+    } else {
+      return 0;
+    }
+  };
+
+  handleRenderRow = (section: number, row: number) => {
+    return this.renderItem({
+      index: row,
+      item: this.props.threads[row]
+    });
+  };
+
+  getRowHeight = (section: number, row?: number) => {
+    const thread = this.props.threads[section];
+
+    return getItemHeight(thread, ITEM_WIDTH);
   };
 
   render() {
@@ -283,6 +311,11 @@ class FeedListComponent extends React.Component<Props, State> {
       loading,
       refetch,
       error,
+      insetTop,
+      contentInset,
+      sections,
+
+      contentOffset,
       initialLoad,
       showMediaUpload,
       onPressProfile,
@@ -290,53 +323,80 @@ class FeedListComponent extends React.Component<Props, State> {
     } = this.props;
 
     return (
-      <FlatList
-        {...otherProps}
-        keyboardShouldPersistTaps="always"
-        keyboardDismissMode="interactive"
-        contentInsetAdjustmentBehavior="never"
-        directionalLockEnabled
-        scrollToOverflowEnabled
-        removeClippedSubviews={Platform.select({
-          ios: false,
-          android: true
-        })}
-        vertical
-        viewabilityConfig={this.viewabilityConfig}
-        data={threads}
-        extraData={this.state.visibleIDs}
-        onRefresh={this.handleRefresh}
-        renderItem={this.renderItem}
-        ItemSeparatorComponent={ItemSeparatorComponent}
-        ListHeaderComponent={showMediaUpload ? MediaUploadProgress : null}
-        keyExtractor={this.keyExtractor}
-        initialNumToRender={6}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={this.handleRefresh}
-            tintColor="white"
-          />
-        }
-        onViewableItemsChanged={this.onViewableItemsChanged}
-        style={styles.list}
-        refreshing={refreshing}
-        ref={this.flatListRef}
-        getItemLayout={this.getItemLayout}
-        onEndReached={this.handleEndReached}
-      />
+      <View style={styles.screen}>
+        <FastList
+          contentInset={contentInset}
+          contentOffset={contentOffset}
+          insetTop={insetTop}
+          renderRow={this.handleRenderRow}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={this.handleRefresh}
+              tintColor="white"
+            />
+          }
+          headerHeight={0}
+          style={styles.list}
+          insetBottom={ITEM_SEPARATOR_HEIGHT}
+          onScrollEnd={this.handleEndReached}
+          footerHeight={0}
+          rowHeight={this.getRowHeight}
+          // sectionHeight={this.getTotalHeight}
+          sections={sections}
+        />
+      </View>
     );
+
+    // return (
+    //   <FlatList
+    //     {...otherProps}
+    //     keyboardShouldPersistTaps="always"
+    //     keyboardDismissMode="interactive"
+    //     contentInsetAdjustmentBehavior="never"
+    //     directionalLockEnabled
+    //     scrollToOverflowEnabled
+    //     removeClippedSubviews={Platform.select({
+    //       ios: false,
+    //       android: true
+    //     })}
+    //     vertical
+    //     viewabilityConfig={this.viewabilityConfig}
+    //     data={threads}
+    //     extraData={this.state.visibleIDs}
+    //     onRefresh={this.handleRefresh}
+    //     renderItem={this.renderItem}
+    //     ItemSeparatorComponent={ItemSeparatorComponent}
+    //     ListHeaderComponent={showMediaUpload ? MediaUploadProgress : null}
+    //     keyExtractor={this.keyExtractor}
+    //     initialNumToRender={6}
+    //     refreshControl={
+    //       <RefreshControl
+    //         refreshing={refreshing}
+    //         onRefresh={this.handleRefresh}
+    //         tintColor="white"
+    //       />
+    //     }
+    //     onViewableItemsChanged={this.onViewableItemsChanged}
+    //     style={styles.list}
+    //     refreshing={refreshing}
+    //     ref={this.flatListRef}
+    //     getItemLayout={this.getItemLayout}
+    //     onEndReached={this.handleEndReached}
+    //   />
+    // );
   }
 }
 
 export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
+  const { top, bottom } = useSafeArea();
   const threadsQuery = useQuery<ViewThreads, ViewThreadsVariables>(
     VIEW_THREADS_QUERY,
     {
       notifyOnNetworkStatusChange: true,
       fetchPolicy: "cache-and-network",
       variables: {
-        limit: 20,
+        limit: 10,
         postsCount: 4
       }
     }
@@ -353,12 +413,19 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
     setPostUploadTask(null);
   }, [setPostUploadTask]);
 
+  const sections = React.useMemo(() => {
+    return [threads.length];
+  }, [threads, threads.length]);
+
   return (
     <FeedListComponent
       {...props}
-      threads={[...threads]}
+      threads={threads}
       ref={ref}
-      offset={threadsQuery?.data?.postThreads.offset}
+      offset={threadsQuery?.data?.postThreads.offset ?? 0}
+      contentInset={{ top, bottom: bottom + TAB_BAR_HEIGHT, left: 0, right: 0 }}
+      contentOffset={{ y: top * -1, x: 0 }}
+      insetTop={0}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}
       refetch={threadsQuery?.refetch}
@@ -367,6 +434,7 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
       isFocused={isFocused}
       clearPostUploadTask={clearPostUploadTask}
       postUploadStatus={showMediaUpload ? status : undefined}
+      sections={sections}
       loading={[
         NetworkStatus.loading,
         NetworkStatus.setVariables,

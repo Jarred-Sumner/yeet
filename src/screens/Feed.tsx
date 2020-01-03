@@ -1,52 +1,37 @@
 // @flow
 import {
   ActionSheetOptions,
-  connectActionSheet,
   useActionSheet
 } from "@expo/react-native-action-sheet";
+import * as Sentry from "@sentry/react-native";
 import * as React from "react";
-import { StyleSheet, View, InteractionManager } from "react-native";
-import { NavigationState, withNavigation } from "react-navigation";
+import { useMutation } from "react-apollo";
+import { StyleSheet, View } from "react-native";
+import { NavigationProp } from "react-navigation";
+import { useNavigation } from "react-navigation-hooks";
+import { NavigationStackProp } from "react-navigation-stack";
+import { BOTTOM_Y, TOP_Y, SCREEN_DIMENSIONS } from "../../config";
 import {
   BottomTabBar,
   TAB_BAR_HEIGHT,
   TAB_BAR_OFFSET
 } from "../components/BottomTabBar";
 import { FeedList } from "../components/Feed/FeedList";
-import {
-  ViewThreads_postThreads_data,
-  ViewThreads_postThreads_data_posts_data
-} from "../lib/graphql/ViewThreads";
-import { useNavigation } from "react-navigation-hooks";
-import { NavigationProp } from "react-navigation";
-import { NavigationStackProp } from "react-navigation-stack";
-import { postElementId } from "../lib/ElementTransition";
-import {
-  MediaPlayerPauser,
-  MediaPlayerContext
-} from "../components/MediaPlayer";
-import { TOP_Y, BOTTOM_Y } from "../../config";
-import { UserContext } from "../components/UserContext";
 import { ModalContext } from "../components/ModalContext";
-import Alert from "../lib/Alert";
+import { NewThreadButton } from "../components/ThreadList/NewThreadButton";
 import { sendToast, ToastType } from "../components/Toast";
+import { UserContext } from "../components/UserContext";
 import DELETE_POST_THREAD_MUTATION from "../lib/DeletePostThreadMutation.graphql";
-import { useMutation } from "react-apollo";
+import { postElementId } from "../lib/ElementTransition";
 import {
   DeletePostThreadMutation,
   DeletePostThreadMutationVariables
 } from "../lib/graphql/DeletePostThreadMutation";
-import * as Sentry from "@sentry/react-native";
-import { IconButton } from "../components/Button";
 import {
-  IconCircleAddAlt,
-  IconCircleAdd,
-  IconAdd,
-  IconPlus
-} from "../components/Icon";
-import { COLORS, SPACING } from "../lib/styles";
-import { NewThreadButton } from "../components/ThreadList/NewThreadButton";
-import { CommentFragment } from "../lib/graphql/CommentFragment";
+  ViewThreads_postThreads_data,
+  ViewThreads_postThreads_data_posts_data
+} from "../lib/graphql/ViewThreads";
+import { SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -68,6 +53,7 @@ const styles = StyleSheet.create({
   },
   page: {
     flex: 1,
+    height: SCREEN_DIMENSIONS.height,
     backgroundColor: "#000"
   }
 });

@@ -285,7 +285,7 @@ const ListItem = ({
 
   const {
     profile,
-    media: { previewUrl, width: rawWidth, height: rawHeight, coverUrl }
+    media: { previewUrl, width: rawWidth, height: rawHeight, url }
   } = post;
 
   const imageSize = scaleToWidth(width, post.media);
@@ -295,7 +295,7 @@ const ListItem = ({
   const mimeType = isVideoPost ? "image/gif" : post.media.mimeType;
   const uri = isVideoPost
     ? buildImgSrc(previewUrl, imageSize.width, imageSize.height)
-    : coverUrl;
+    : url;
 
   const source = React.useMemo(
     () => ({
