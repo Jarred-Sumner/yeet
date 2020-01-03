@@ -80,8 +80,12 @@ const styles = StyleSheet.create({
   darkSheetStyle: {
     position: "absolute",
     left: 0,
-    right: 0,
-    transform: [{ translateY: SPACING.double }]
+    right: 0
+  },
+  darkSheetContent: {
+    opacity: 0.75,
+    backgroundColor: "#090909",
+    flex: 1
   },
   container: {
     width: POST_WIDTH
@@ -166,20 +170,6 @@ type State = {
   bottomInset: number;
 };
 
-const DarkSheetGradient = React.memo(({ width, height }) => (
-  <LinearGradient
-    // useAngle
-    width={width}
-    height={height}
-    start={{ x: 0, y: 0 }}
-    end={{ x: 0, y: 1 }}
-    // angle={180}
-    // angleCenter={{ x: 0.0, y: 0.0 }}
-    locations={[0.0, 0.8, 1.0]}
-    colors={["rgba(0,0,0,0.65)", "rgba(10,10,10,0.65)", "rgba(45,45,45,0.65)"]}
-  />
-));
-
 const DarkSheet = ({
   opacity,
   keyboardHeight,
@@ -192,8 +182,7 @@ const DarkSheet = ({
       {
         width,
         height,
-        opacity,
-        top: 0
+        opacity
       }
     ],
     [styles.darkSheetStyle, opacity, height, keyboardHeight]
@@ -206,16 +195,7 @@ const DarkSheet = ({
       pointerEvents="none"
       style={containerStyle}
     >
-      <Animated.View
-        style={{
-          transform: [
-            { translateY: keyboardHeight },
-            { translateY: height * -1 }
-          ]
-        }}
-      >
-        <DarkSheetGradient width={width} height={height} />
-      </Animated.View>
+      <View style={styles.darkSheetContent}></View>
     </Animated.View>
   );
 };

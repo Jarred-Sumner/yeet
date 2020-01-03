@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Keyboard, Platform } from "react-native";
 import Animated, { Easing } from "react-native-reanimated";
+import { runTiming } from "react-native-redash";
 
 export class AnimatedKeyboardTracker extends React.Component {
   constructor(props) {
@@ -12,6 +13,7 @@ export class AnimatedKeyboardTracker extends React.Component {
   }
   static defaultProps = {
     keyboardVisibleValue: null,
+    keyboardHeightValue: null,
     enabled: true,
     onKeyboardHide: () => {},
     onKeyboardShow: () => {}
@@ -46,8 +48,6 @@ export class AnimatedKeyboardTracker extends React.Component {
     );
     Keyboard.addListener("keyboardWillHide", this.handleKeyboardWillHide);
   };
-
-  keyboardVisibleValue = this.props.keyboardVisibleValue;
 
   handleKeyboardWillChangeFrame = evt => {
     this.props.onKeyboardWillChangeFrame &&
@@ -106,36 +106,37 @@ export class AnimatedKeyboardTracker extends React.Component {
   }
 
   animationFrame = -1;
+
+  keyboardHeightClock = new Animated.Clock();
+  keyboardOpacityClock = new Animated.Clock();
+  _keyboardVisibleValue = new Animated.Value(0);
+  _durationValue = new Animated.Value(300);
+  _keyboardHeightValue = new Animated.Value(0);
+
   handleKeyboardAnimation = (isShowing: boolean, _duration, height = 0) => {
     const { keyboardVisibleValue, keyboardHeightValue } = this.props;
 
-    const easing = Easing.elastic(0.5);
+    const easing = Easing.linear;
 
     if (this.animationFrame > -1) {
       window.cancelAnimationFrame(this.animationFrame);
       this.animationFrame = -1;
     }
 
+    const duration = Platform.select({
+      ios: _duration,
+      android: 100
+    });
+
+    this._durationValue.setValue(duration);
+
     this.animationFrame = window.requestAnimationFrame(() => {
-      const duration = Platform.select({
-        ios: _duration,
-        android: 100
-      });
+      if (this.props.keyboardVisibleValue) {
+        this._keyboardVisibleValue.setValue(isShowing ? 1.0 : 0.0);
+      }
 
-      Animated.timing(keyboardVisibleValue, {
-        duration,
-        toValue: isShowing ? 1.0 : 0.0,
-        easing
-      }).start();
-
-      if (keyboardHeightValue) {
-        Animated.timing(keyboardHeightValue, {
-          duration,
-          toValue: isShowing
-            ? Platform.select({ ios: height, android: height })
-            : 0.0,
-          easing
-        }).start();
+      if (this.props.keyboardHeightValue) {
+        this._keyboardHeightValue.setValue(isShowing ? height : 0);
       }
     });
   };
@@ -155,6 +156,61 @@ export class AnimatedKeyboardTracker extends React.Component {
   };
 
   render() {
-    return null;
+    if (this.props.keyboardVisibleValue && this.props.keyboardHeightValue) {
+      return (
+        <Animated.Code
+          exec={Animated.block([
+            Animated.set(
+              this.props.keyboardVisibleValue,
+              runTiming(this.keyboardOpacityClock, this._keyboardVisibleValue, {
+                duration: this._durationValue,
+                toValue: this._keyboardVisibleValue,
+                easing: Easing.elastic(0.5)
+              })
+            ),
+            Animated.set(
+              this.props.keyboardHeightValue,
+              runTiming(this.keyboardHeightClock, this._keyboardHeightValue, {
+                duration: this._durationValue,
+                toValue: this._keyboardHeightValue,
+                easing: Easing.elastic(0.5)
+              })
+            )
+          ])}
+        />
+      );
+    } else if (this.props.keyboardVisibleValue) {
+      return (
+        <Animated.Code
+          exec={Animated.block([
+            Animated.set(
+              this.props.keyboardVisibleValue,
+              runTiming(this.keyboardOpacityClock, this._keyboardVisibleValue, {
+                duration: this._durationValue,
+                toValue: this._keyboardVisibleValue,
+                easing: Easing.elastic(0.5)
+              })
+            )
+          ])}
+        />
+      );
+    } else if (this.props.keyboardHeightValue) {
+      return (
+        <Animated.Code
+          exec={Animated.block([
+            Animated.set(
+              this.props.keyboardHeightValue,
+              runTiming(this.keyboardHeightClock, this._keyboardHeightValue, {
+                duration: this._durationValue,
+                toValue: this._keyboardHeightValue,
+                easing: Easing.elastic(0.5)
+              })
+            )
+          ])}
+        />
+      );
+    } else {
+      return null;
+    }
   }
 }
