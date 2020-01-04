@@ -16,7 +16,7 @@ extension UITextView {
 
   static fileprivate let minSize = " ".size(OfFont: UIFont.systemFont(ofSize: UIFont.smallSystemFontSize))
 
-  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor, originalFont: UIFont, canAdjustInset: Bool) {
+  static func setHighlightPath(textView: UITextView, inset: UIEdgeInsets, radius: CGFloat, highlightLayer: CAShapeLayer, borderType: YeetTextInputView.Border, strokeWidth: CGFloat, strokeColor: UIColor, originalFont: UIFont, canAdjustInset: Bool) -> CGRect {
     let textLayer = textView.layer
     let textContainerInset = textView.textContainerInset
 
@@ -65,16 +65,32 @@ extension UITextView {
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .round
       highlightLayer.isHidden = false
+      highlightLayer.lineWidth = .zero
+      highlightLayer.strokeColor = UIColor.clear.cgColor
       
     } else if borderType == .solid {
-      let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
-      
+       let bezier = UIBezierPath()
 
-      highlightLayer.path = CGPath(roundedRect: rect, cornerWidth: radius, cornerHeight: radius, transform: nil)
+       layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, currentRange, stop) in
+          let _bezier = UIBezierPath(rect: usedRect)
+          bezier.append(_bezier)
+          bezier.close()
+       }
+
+      bezier.close()
+
+      var bounds = bezier.bounds.inset(by: inset).insetBy(dx: strokeWidth * -1, dy: strokeWidth * -1)
+      bounds.height += strokeWidth * 2
+      bounds.width += strokeWidth * 2
+
+      highlightLayer.path = CGPath(roundedRect: bounds, cornerWidth: radius, cornerHeight: radius, transform: nil)
       highlightLayer.cornerRadius = 0
       highlightLayer.masksToBounds = false
+      highlightLayer.strokeColor = strokeColor.cgColor
+      highlightLayer.lineWidth = strokeWidth
       highlightLayer.lineJoin = .miter
       highlightLayer.isHidden = false
+      
     } else if borderType == .ellipse {
       let rect = layout.boundingRect(forGlyphRange: range, in: textView.textContainer).inset(by: inset)
 
@@ -82,7 +98,10 @@ extension UITextView {
       highlightLayer.cornerRadius = .zero
       highlightLayer.masksToBounds = false
       highlightLayer.lineJoin = .round
+
       highlightLayer.isHidden = false
+      highlightLayer.lineWidth = .zero
+      highlightLayer.strokeColor = UIColor.clear.cgColor
     }
 
     if borderType == .stroke {
@@ -175,6 +194,17 @@ extension UITextView {
 
         highlightLayer.path = CGPath(rect: rect, transform: nil)
       }
+    }
+
+    if highlightLayer.isHidden || highlightLayer.path == nil {
+      var _rect = CGRect.zero
+      layout.enumerateEnclosingRects(forGlyphRange: range, withinSelectedGlyphRange: range, in: textView.textContainer) { rect, _ in
+        _rect = rect
+      }
+
+      return _rect
+    } else {
+      return highlightLayer.path!.boundingBoxOfPath.inset(by: textView.textContainerInset)
     }
 
   }

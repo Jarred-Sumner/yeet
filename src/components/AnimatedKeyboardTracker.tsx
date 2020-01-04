@@ -188,7 +188,7 @@ export class AnimatedKeyboardTracker extends React.Component {
               runTiming(this.keyboardOpacityClock, this._keyboardVisibleValue, {
                 duration: this._durationValue,
                 toValue: this._keyboardVisibleValue,
-                easing: Easing.elastic(0.5)
+                easing: Easing.ease
               })
             )
           ])}
@@ -203,7 +203,7 @@ export class AnimatedKeyboardTracker extends React.Component {
               runTiming(this.keyboardHeightClock, this._keyboardHeightValue, {
                 duration: this._durationValue,
                 toValue: this._keyboardHeightValue,
-                easing: Easing.elastic(0.5)
+                easing: Easing.linear
               })
             )
           ])}

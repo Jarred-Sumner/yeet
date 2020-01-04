@@ -757,7 +757,11 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
       do {
         try AVAudioSession.sharedInstance().setCategory(AVAudioSession.Category.playback, mode: AVAudioSession.Mode.default, options: .mixWithOthers)
-        try AVAudioSession.sharedInstance().setActive(true)
+        #if DEBUG
+
+        #else
+          try AVAudioSession.sharedInstance().setActive(true)
+        #endif
       } catch {
 
       }

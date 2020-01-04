@@ -1,5 +1,10 @@
 import * as React from "react";
-import { View, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import {
+  View,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  findNodeHandle
+} from "react-native";
 import {
   LongPressGestureHandler,
   TapGestureHandler
@@ -19,6 +24,7 @@ import { Block } from "./Node/Block";
 import { getInset } from "react-native-safe-area-view";
 import { currentlyFocusedField } from "./Text/TextInputState";
 import { BlockMap, BlockPositionList, PostBlockID } from "../../lib/buildPost";
+import { BlurView } from "@react-native-community/blur";
 export const ScrollView = KeyboardAwareScrollView;
 
 const isTextBlock = (block: PostBlockType) => block.type === "text";
@@ -353,6 +359,8 @@ export const PostPreview = React.forwardRef(
       [bottomY]
     );
 
+    const blockContainerRef = React.useRef(null);
+
     const enableCenter = false;
 
     React.useImperativeHandle(ref, () => scrollRef.current);
@@ -456,7 +464,7 @@ export const PostPreview = React.forwardRef(
             ref={contentViewRef}
             style={contenViewStyle}
           >
-            <View onLayout={onContentViewLayout}>
+            <View ref={blockContainerRef} onLayout={onContentViewLayout}>
               <BlockList
                 setBlockInputRef={setBlockInputRef}
                 blocks={blocks}

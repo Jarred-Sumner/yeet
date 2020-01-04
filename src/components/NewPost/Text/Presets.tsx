@@ -50,7 +50,7 @@ export const textInputPresets = {
       color: "#fff",
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "#ccc",
-      highlightInset: -6,
+      highlightInset: -4,
       highlightCornerRadius: 2,
       textShadowOffset: {
         width: StyleSheet.hairlineWidth,
@@ -113,9 +113,9 @@ export const textInputPresets = {
       textAlign: "center",
       color: "black",
       borderRadius: 0,
-      highlightInset: -12,
+      highlightInset: -10,
 
-      highlightCornerRadius: 4,
+      highlightCornerRadius: 2,
 
       textShadowColor: "transparent",
       placeholderColor: "white",

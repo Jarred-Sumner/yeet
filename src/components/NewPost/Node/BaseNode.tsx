@@ -178,6 +178,10 @@ export class BaseNode extends React.Component<Props> {
         ? block.config?.overrides?.maxWidth
         : undefined;
 
+    const paddingTop = Number(
+      this.props.paddingTop || presetsByFormat[format].textTop
+    );
+
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}
@@ -218,9 +222,7 @@ export class BaseNode extends React.Component<Props> {
         scale={position.animatedScale}
         minX={minX}
         maxX={maxX}
-        paddingTop={Number(
-          this.props.paddingTop || presetsByFormat[format].textTop
-        )}
+        paddingTop={paddingTop}
         minY={minY}
         maxY={maxY}
         onTap={this.handleTap}
@@ -233,6 +235,7 @@ export class BaseNode extends React.Component<Props> {
           focusTypeValue={focusTypeValue}
           focusType={focusType}
           isSticker
+          paddingTop={paddingTop}
           gestureRef={this.gestureRef}
           autoFocus={autoFocus}
           maxX={maxX}

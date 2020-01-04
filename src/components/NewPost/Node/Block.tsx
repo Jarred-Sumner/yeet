@@ -16,6 +16,7 @@ export const Block = React.forwardRef(
       maxX,
       inputRef,
       focusType,
+      paddingTop,
       focusTypeValue,
       onChangePhoto,
       autoFocus,
@@ -60,6 +61,7 @@ export const Block = React.forwardRef(
           focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
           onChange={onChange}
+          paddingTop={paddingTop}
           onBlur={onBlur}
           onFocus={onFocus}
           annotations={annotations}

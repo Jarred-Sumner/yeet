@@ -43,8 +43,6 @@ export class TextPostBlock extends React.Component<Props> {
   }
 
   focus = () => {
-    console.log(this.input);
-
     this.input.focus();
   };
 
@@ -81,6 +79,7 @@ export class TextPostBlock extends React.Component<Props> {
       focusTypeValue,
       focusType,
       isFocused,
+      paddingTop,
       focusedBlockValue
     } = this.props;
 
@@ -92,6 +91,7 @@ export class TextPostBlock extends React.Component<Props> {
     return (
       <TextInput
         editable={!disabled}
+        paddingTop={paddingTop}
         block={block}
         maxX={maxX}
         stickerRef={this.stickerRef}

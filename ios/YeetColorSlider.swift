@@ -13,8 +13,10 @@ import Foundation
 
 @objc (YeetColorSliderView)
 class YeetColorSliderView: UIView {
-  var colorSlider : ColorSlider = ColorSlider(orientation: .vertical, previewSide: .left)
+
   var textColorObserver : NSKeyValueObservation? = nil
+
+  @objc(horizontal) var horizontal: Bool = true
 
   @objc (onChange) var onChange: RCTBubblingEventBlock? = nil
   @objc (onCancel) var onCancel: RCTBubblingEventBlock? = nil
@@ -25,6 +27,7 @@ class YeetColorSliderView: UIView {
     }
   }
   @objc (colorType) var colorType: String? = "textColor"
+  var colorSlider : ColorSlider = ColorSlider(orientation: .horizontal, previewSide: .top)
 
 
   var bridge: RCTBridge? = nil
@@ -44,6 +47,9 @@ class YeetColorSliderView: UIView {
         }
 
 
+        guard colorSlider.color != color else {
+          return
+        }
 
         colorSlider.color = color
       }
@@ -73,6 +79,10 @@ class YeetColorSliderView: UIView {
 
   @objc(handleChange:)
   func handleChange(_ colorSlider: ColorSlider) {
+    guard colorSlider.color != color else {
+      return
+    }
+
     onChange?(["color": colorSlider.color.rgbaString])
   }
 
@@ -86,11 +96,19 @@ class YeetColorSliderView: UIView {
 
   @objc(handleCancel:)
   func handleCancel(_ colorSlider: ColorSlider) {
+    guard colorSlider.color != color else {
+      return
+    }
+
     onPress?(["color": colorSlider.color.rgbaString])
   }
 
   @objc(handlePressDown:)
   func handlePress(_ colorSlider: ColorSlider) {
+    guard colorSlider.color != color else {
+      return
+    }
+
     onPress?(["color": colorSlider.color.rgbaString])
   }
 

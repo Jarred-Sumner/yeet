@@ -35,6 +35,7 @@ import {
   NativeViewGestureHandler,
   createNativeWrapper
 } from "react-native-gesture-handler";
+import { POST_WIDTH } from "../../../lib/buildPost";
 
 const RNTextInput = __RNTextInput;
 
@@ -145,8 +146,7 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.basic,
-      textAlign:
-        textInputPresets[TextTemplate.basic].presets.textAlign || "left",
+
       color: textInputPresets[TextTemplate.basic].presets.color,
 
       textShadowColor:
@@ -167,7 +167,6 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.bigWords,
-      textAlign: textInputPresets[TextTemplate.bigWords].presets.textAlign,
       color: textInputPresets[TextTemplate.bigWords].presets.color,
 
       textShadowColor:
@@ -187,14 +186,20 @@ const textInputTypeStylesheets: {
       backgroundColor: "rgba(0, 0, 0, 0)"
     },
     sticker: {
-      position: "relative",
       paddingLeft: Math.abs(
         textInputPresets[TextTemplate.comic].presets.highlightInset
       ),
       paddingRight: Math.abs(
         textInputPresets[TextTemplate.comic].presets.highlightInset
       ),
-      paddingTop: 40
+
+      paddingBottom: Math.abs(
+        textInputPresets[TextTemplate.comic].presets.highlightInset
+      ),
+      paddingTop:
+        24 +
+        Math.abs(textInputPresets[TextTemplate.comic].presets.highlightInset) -
+        PixelRatio.get()
     },
     input: {
       ...FONT_STYLES.comic,
@@ -210,8 +215,7 @@ const textInputTypeStylesheets: {
       overflow: "visible",
       backgroundColor:
         textInputPresets[TextTemplate.comic].presets.backgroundColor,
-      textAlign:
-        textInputPresets[TextTemplate.comic].presets.textAlign || "left",
+
       color: textInputPresets[TextTemplate.comic].presets.color,
 
       textShadowColor:
@@ -233,7 +237,6 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.post,
-      textAlign: "left",
       backgroundColor: "rgba(0, 0, 0, 0)",
 
       marginTop: 0,
@@ -262,8 +265,7 @@ const textInputTypeStylesheets: {
       paddingRight: 0,
       paddingTop: 0,
       paddingBottom: 0,
-      textAlign:
-        textInputPresets[TextTemplate.pickaxe].presets.textAlign || "left",
+
       textShadowColor:
         textInputPresets[TextTemplate.basic].presets.textShadowColor,
       textShadowOffset:
@@ -286,8 +288,7 @@ const textInputTypeStylesheets: {
       paddingLeft: 0,
       textAlignVertical: "center",
       paddingRight: 0,
-      textAlign:
-        textInputPresets[TextTemplate.terminal].presets.textAlign || "left",
+
       textShadowColor:
         textInputPresets[TextTemplate.terminal].presets.textShadowColor,
       textShadowOffset:
@@ -310,8 +311,7 @@ const textInputTypeStylesheets: {
       ...FONT_STYLES.spongebob,
       paddingLeft: SPACING.half,
       paddingRight: SPACING.half,
-      textAlign:
-        textInputPresets[TextTemplate.gary].presets.textAlign || "left",
+
       textShadowColor:
         textInputPresets[TextTemplate.gary].presets.textShadowColor,
       textShadowOffset:
@@ -328,15 +328,12 @@ const textInputTypeStylesheets: {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 0,
-    flexShrink: 0,
+    flex: 0,
     position: "relative",
     overflow: "visible"
   },
   input: {
-    flexGrow: 0,
     flex: 0,
-    flexShrink: 0,
 
     backgroundColor: "rgba(0, 0, 0, 0)",
 
@@ -351,9 +348,6 @@ const styles = StyleSheet.create({
     textShadowRadius: null
   },
   absoluteFocused: {
-    maxWidth: SCREEN_DIMENSIONS.width - SPACING.double - 30,
-    width: SCREEN_DIMENSIONS.width - SPACING.double - 30,
-    height: "100%",
     flex: 1
     // textAlign: "left"
   }
@@ -362,18 +356,25 @@ const styles = StyleSheet.create({
 const formatStylesheets = {
   [PostFormat.post]: StyleSheet.create({
     container: {},
+    focusedContainer: {},
+    sticker: {},
     input: {
       paddingBottom: SPACING.normal,
       paddingTop: SPACING.normal,
-      paddingVertical: SPACING.normal
+      paddingVertical: SPACING.normal,
+      flex: 1
     }
   }),
   [PostFormat.sticker]: StyleSheet.create({
     container: {},
+    sticker: {},
+    focusedSticker: {},
     input: {}
   }),
   [PostFormat.comment]: StyleSheet.create({
     container: {},
+    sticker: {},
+    focusedContainer: {},
     input: {}
   })
 };
@@ -473,21 +474,27 @@ export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
   return (
     overrides?.textAlign ||
     textInputPresets[block.config.template].textAlign ||
-    "left"
+    {
+      [PostFormat.post]: "left",
+      [PostFormat.sticker]: "center",
+      [PostFormat.comment]: "left"
+    }[block.format]
   );
 };
 
 const getStrokeWidth = (block: TextPostBlock) => {
   const border = getBorderType(block);
   const { template } = block.config;
-  const presets = textInputPresets[template];
+  const presets = textInputPresets[template].presets;
 
   if (template === TextTemplate.bigWords) {
     return PixelRatio.get() * 2;
   } else if (border === TextBorderType.stroke) {
     return PixelRatio.get() * 2;
+  } else if (template === TextTemplate.comic) {
+    return PixelRatio.get();
   } else {
-    return (presets.highlightInset ?? 0) * -1;
+    return 0;
   }
 };
 
@@ -501,8 +508,21 @@ const getFontSize = (block: TextPostBlock) => {
   const { template } = block.config;
 
   const fontSizes = textInputPresets[template].fontSizes;
+  const _borderType = getBorderType(block);
 
-  return getClosestNumber(block.value?.length ?? 0, Object.values(fontSizes));
+  const size = getClosestNumber(
+    block.value?.length ?? 0,
+    Object.values(fontSizes)
+  );
+
+  if (
+    _borderType === TextBorderType.stroke &&
+    template !== TextTemplate.bigWords
+  ) {
+    return size * 1.25;
+  } else {
+    return size;
+  }
 };
 
 export const getHighlightInset = (block: TextPostBlock) => {
@@ -543,6 +563,7 @@ export const TextInput = ({
   focusType,
   onChangeValue,
   isSticker,
+  paddingTop,
   onTapAvatar,
   text,
   focusTypeValue,
@@ -667,6 +688,9 @@ export const TextInput = ({
       styles.container,
       textInputTypeStylesheets[template].container,
       formatStylesheets[format].container,
+      isFocused &&
+        focusType === FocusType.absolute &&
+        textInputTypeStylesheets[template].focusedContainer,
       {
         height,
         width
@@ -679,7 +703,9 @@ export const TextInput = ({
       height,
       styles.container,
       textInputTypeStylesheets,
-      formatStylesheets
+      formatStylesheets,
+      isFocused,
+      focusType
     ]
   );
 
@@ -687,6 +713,7 @@ export const TextInput = ({
     () => [
       styles.input,
       textInputTypeStylesheets[template].input,
+      formatStylesheets[format].input,
       {
         backgroundColor: format === PostFormat.post ? backgroundColor : null,
         minHeight,
@@ -704,7 +731,12 @@ export const TextInput = ({
         // maxWidth,
       },
       isFocused && focusType === FocusType.absolute && styles.absoluteFocused,
-      formatStylesheets[format].input
+      isFocused &&
+        focusType === FocusType.absolute &&
+        {
+          // paddingTop
+        }
+
       // template === TextTemplate.comic && {
       //   textAlign: "center"
       // }
@@ -714,6 +746,7 @@ export const TextInput = ({
       template,
       minHeight,
       textAlign,
+      paddingTop,
       formatStylesheets,
       textInputTypeStylesheets[template].input,
       textInputTypeStylesheets[template],
@@ -765,9 +798,12 @@ export const TextInput = ({
         scrollEnabled={false}
         singleFocus
         nestedScrollEnabled
+        width={width ?? POST_WIDTH}
+        height={height}
+        maxWidth={maxWidth ?? POST_WIDTH}
+        fontSize={fontSize}
         listKey={block.id}
         spellCheck={false}
-        adjustsFontSizeToFit
         inputAccessoryViewID={`new-post-input`}
         minimumFontScale={0.4}
         selectionColor={selectionColor}
@@ -775,6 +811,7 @@ export const TextInput = ({
         highlightInset={highlightInset}
         highlightCornerRadius={highlightCornerRadius}
         strokeColor={strokeColor}
+        adjustsSizeToFit={!isFocused}
         borderType={borderType}
         strokeWidth={strokeWidth}
         onContentSizeChange={onContentSizeChange}
@@ -813,7 +850,13 @@ export const TextInput = ({
   if (format === PostFormat.sticker) {
     return (
       <View
-        style={textInputTypeStylesheets[template]?.sticker}
+        style={[
+          textInputTypeStylesheets[template]?.sticker,
+          formatStylesheets[format].sticker,
+          isFocused &&
+            focusType === FocusType.absolute &&
+            formatStylesheets[format].focusedSticker
+        ]}
         nativeID="stickerContainer"
         ref={stickerRef}
       >
@@ -825,7 +868,7 @@ export const TextInput = ({
             style={{
               opacity: String(text).length > 4 ? 1 : 0,
               alignItems: "center",
-              top: 0,
+              top: isFocused ? 3 : 1 + 2,
               position: "absolute",
               alignSelf: "center",
               // left: 0,
@@ -835,7 +878,11 @@ export const TextInput = ({
                 {
                   rotate: "-4deg"
                 },
-                { scale: -1 }
+                { scale: -1 },
+
+                {
+                  translateY: StyleSheet.hairlineWidth
+                }
               ]
             }}
           >

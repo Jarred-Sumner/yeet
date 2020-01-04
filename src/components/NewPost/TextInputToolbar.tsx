@@ -6,6 +6,7 @@ import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { COLORS, SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
+import { useLayout } from "react-native-hooks";
 import {
   BitmapIconTemplateBigWords,
   BitmapIconTemplateClassic,
@@ -15,6 +16,26 @@ import {
   BitmapIconTemplatePixel
 } from "../BitmapIcon";
 import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
+import { BorderTypeButton, TextAlignmentButton } from "./EditorFooter";
+import { ColorSlider } from "../ColorSlider";
+import { View } from "react-native";
+import {
+  getTextBlockColor,
+  getTextBlockBackgroundColor
+} from "./Text/TextInput";
+import {
+  invertColor,
+  isTooDark,
+  getDarkColor,
+  isTooLight,
+  getLightColor,
+  isColorLight,
+  isColorDark,
+  isColorNeutral,
+  getNeutralColor
+} from "../../lib/colors";
+import { buildTextBlock, FocusType } from "../../lib/buildPost";
+import { InputAccessoryView } from "../InputAccessoryView";
 
 const CONTAINER_HEIGHT = 40;
 
@@ -22,23 +43,63 @@ const styles = StyleSheet.create({
   container: {
     height: CONTAINER_HEIGHT,
     marginTop: SPACING.normal,
+    flexDirection: "row",
     width: SCREEN_DIMENSIONS.width,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "rgba(255, 255, 255, 0.15)",
-    backgroundColor: "rgba(25, 25, 25, 0.85)"
+    paddingHorizontal: SPACING.normal
+  },
+  staticWrapper: {
+    backgroundColor: "rgba(0, 0, 0, 0.75)"
+  },
+  spacer: {
+    marginLeft: SPACING.half,
+    marginRight: SPACING.normal,
+    width: 1,
+    marginTop: SPACING.half,
+    marginBottom: SPACING.half,
+    borderRadius: 8,
+    overflow: "hidden",
+    flex: 0,
+    backgroundColor: "white",
+    opacity: 0.25
+  },
+  bottomContainer: {
+    width: SCREEN_DIMENSIONS.width,
+    flexDirection: "row",
+    paddingVertical: SPACING.normal
+  },
+  bottomButton: {
+    marginRight: SPACING.normal,
+    alignItems: "center",
+    flex: 0,
+    justifyContent: "center"
+  },
+  colorSlider: {
+    flex: 1,
+    height: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center"
+  },
+  colorSliderContainer: {
+    flex: 1,
+    flexDirection: "row",
+    paddingLeft: SPACING.normal
   },
   template: {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
-    height: CONTAINER_HEIGHT,
+    height: 32,
+    borderWidth: 1,
+    borderRadius: 2,
+    overflow: "hidden",
+    borderColor: "rgba(255, 255, 255, 0.25)",
     paddingRight: SPACING.half,
-    paddingLeft: SPACING.half
+    paddingLeft: SPACING.half,
+    marginRight: SPACING.half
   },
   selectedTemplate: {
-    backgroundColor: chroma(COLORS.primary)
-      .alpha(0.25)
-      .css()
+    borderColor: "white"
   },
   classicIcon: {
     height: 15,
@@ -102,7 +163,7 @@ const TemplateOption = ({ template, isSelected = false, onPress }) => {
     <RectButton
       exclusive
       disallowInterruption={false}
-      underlayColor={UNDERLAY_COLOR}
+      underlayColor="transparent"
       activeOpacity={1}
       shouldActivateOnStart={false}
       shouldCancelWhenOutside
@@ -123,6 +184,10 @@ const TemplateOption = ({ template, isSelected = false, onPress }) => {
 };
 
 const getSupportedTemplates = (block: TextPostBlock): Array<TextTemplate> => {
+  if (!block) {
+    return [];
+  }
+
   if (block.format === PostFormat.comment) {
     return [TextTemplate.comment];
   } else if (block.format === PostFormat.post) {
@@ -139,23 +204,23 @@ const getSupportedTemplates = (block: TextPostBlock): Array<TextTemplate> => {
   }
 };
 
-export const TextInputToolbar = React.memo(
+const RawTextInputToolbar = React.memo(
   ({
     block,
     scrollRef,
+    onChooseTemplate,
     focusType,
-    onChooseTemplate
+    onLayout,
+    onChangeOverrides,
+    onChangeBorderType
   }: {
     block: TextPostBlock;
     onChooseTemplate: Function;
   }) => {
-    if (!block || block.type !== "text") {
-      return null;
-    }
+    const selectedTemplate = block?.config?.template ?? TextTemplate.basic;
 
     const renderTemplate = React.useCallback(
       template => {
-        const selectedTemplate = block.config?.template;
         const isSelected = selectedTemplate === template;
 
         return (
@@ -167,34 +232,157 @@ export const TextInputToolbar = React.memo(
           />
         );
       },
-      [block?.config?.template]
+      [selectedTemplate, onChooseTemplate]
     );
 
     const insets = React.useMemo(
-      () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+      () => ({
+        top: 0,
+        bottom: 0,
+        left: SPACING.normal,
+        right: SPACING.normal
+      }),
       []
     );
-    const offset = React.useMemo(() => ({ x: 0, y: 0 }), []);
+    const offset = React.useMemo(() => ({ x: insets.left * -1, y: 0 }), [
+      insets
+    ]);
 
+    const _overrides = block?.config?.overrides ?? {};
+
+    const onChangeColor = React.useCallback(
+      ({ nativeEvent: { color } }) => {
+        let overides = { ..._overrides, color };
+
+        if (isColorLight(color)) {
+          overides.backgroundColor = getDarkColor(color);
+        } else if (isColorDark(color)) {
+          overides.backgroundColor = getLightColor(color);
+        } else if (isColorNeutral(color)) {
+          overides.backgroundColor = getNeutralColor(color);
+        }
+
+        onChangeOverrides(overides);
+      },
+      [
+        onChangeOverrides,
+        _overrides,
+
+        isColorLight,
+        getDarkColor,
+        isColorDark,
+        getLightColor,
+        isColorNeutral,
+        getNeutralColor
+      ]
+    );
+
+    const onChangeTextAlign = React.useCallback(
+      textAlign => {
+        const overrides = { ..._overrides, textAlign };
+
+        onChangeOverrides(overrides);
+      },
+      [onChangeOverrides, _overrides]
+    );
+
+    const color = block ? getTextBlockColor(block) : "rgb(255, 255, 255)";
     return (
-      <ScrollView
-        keyboardShouldPersistTaps="always"
-        keyboardDismissMode="none"
-        horizontal
-        scrollIndicatorInsets={insets}
-        contentOffset={offset}
-        showsHorizontalScrollIndicator={false}
-        shouldCancelWhenOutside
-        alwaysBounceVertical={false}
-        alwaysBounceHorizontal
-        showsVerticalScrollIndicator={false}
-        directionalLockEnabled
-        contentInset={insets}
-        contentInsetAdjustmentBehavior="never"
-        style={styles.container}
+      <View
+        onLayout={onLayout}
+        pointerEvents={block ? "auto" : "none"}
+        style={
+          focusType === FocusType.static ? styles.staticWrapper : styles.wrapper
+        }
       >
-        {block && getSupportedTemplates(block).map(renderTemplate)}
-      </ScrollView>
+        <View style={styles.container}>
+          <View style={styles.bottomButton}>
+            <BorderTypeButton block={block} onChange={onChangeBorderType} />
+          </View>
+
+          <View style={styles.bottomButton}>
+            <TextAlignmentButton
+              block={block}
+              opacity={1}
+              onChange={onChangeTextAlign}
+            />
+          </View>
+
+          <View style={styles.spacer} />
+
+          <View style={styles.colorSliderContainer}>
+            <ColorSlider
+              style={styles.colorSlider}
+              color={color}
+              onPress={onChangeColor}
+            />
+          </View>
+        </View>
+
+        <ScrollView
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
+          horizontal
+          scrollIndicatorInsets={insets}
+          contentOffset={offset}
+          showsHorizontalScrollIndicator={false}
+          shouldCancelWhenOutside
+          alwaysBounceVertical={false}
+          alwaysBounceHorizontal
+          showsVerticalScrollIndicator={false}
+          directionalLockEnabled
+          contentInset={insets}
+          contentInsetAdjustmentBehavior="never"
+          style={styles.bottomContainer}
+        >
+          {getSupportedTemplates(block).map(renderTemplate)}
+        </ScrollView>
+      </View>
     );
   }
 );
+
+export const TextInputToolbar = ({
+  block,
+  scrollRef,
+  focusType,
+  onChooseTemplate,
+  onChangeOverrides,
+  onChangeBorderType,
+  nativeID
+}) => {
+  const [{ height, width }, setLayout] = React.useState({
+    height: undefined,
+    width: SCREEN_DIMENSIONS.width
+  });
+
+  const handleChangeLayout = React.useCallback(
+    ({
+      nativeEvent: {
+        layout: { width, height }
+      }
+    }) => {
+      setLayout({ width, height });
+    },
+    [setLayout]
+  );
+
+  const accessoryViewStyle = React.useMemo(
+    () => ({ height: height ? height : undefined, width }),
+    [height, width]
+  );
+
+  return (
+    <InputAccessoryView nativeID={nativeID} style={accessoryViewStyle}>
+      <RawTextInputToolbar
+        block={block}
+        scrollRef={scrollRef}
+        focusType={focusType}
+        onChooseTemplate={onChooseTemplate}
+        onLayout={handleChangeLayout}
+        onChangeOverrides={onChangeOverrides}
+        onChangeBorderType={onChangeBorderType}
+      />
+    </InputAccessoryView>
+  );
+};

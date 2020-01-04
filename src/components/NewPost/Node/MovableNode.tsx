@@ -293,7 +293,7 @@ export class MovableNode extends Component<Props> {
     this._translateX = keyboardVisibleInterpolater(
       this.keyboardVisibleFocusedValue,
       this.X,
-      props.extraPadding || 15
+      0
     );
 
     this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
@@ -316,7 +316,7 @@ export class MovableNode extends Component<Props> {
     this._translateY = keyboardVisibleInterpolater(
       this.keyboardVisibleFocusedValue,
       this.Y,
-      props.paddingTop
+      0
     );
 
     this._scale = keyboardVisibleInterpolater(

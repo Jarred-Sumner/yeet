@@ -55,7 +55,8 @@ import {
   getNeutralColor
 } from "../../lib/colors";
 import TextInput from "./Text/CustomTextInputComponent";
-import { BoldText } from "../Text";
+import { BoldText, SemiBoldText } from "../Text";
+import { BaseButton, BorderlessButton } from "react-native-gesture-handler";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -97,13 +98,12 @@ const styles = StyleSheet.create({
     height: "100%"
   },
   borderButtonContainer: {
-    width: 40,
     display: "flex",
     alignItems: "flex-end"
   },
   disabledBorderButtonContainer: {
     width: 40,
-    display: "none",
+    opacity: 0.1,
     alignItems: "flex-end"
   },
   borderButtonLabel: {
@@ -150,6 +150,16 @@ const styles = StyleSheet.create({
     paddingRight: SPACING.normal,
     backgroundColor: CAROUSEL_BACKGROUND
   },
+  doneButton: {
+    paddingLeft: SPACING.normal,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  doneButtonLabel: {
+    fontSize: 18,
+    color: "white"
+  },
   footerContainer: {
     paddingTop: SPACING.half,
     paddingBottom: BOTTOM_Y
@@ -187,7 +197,7 @@ const NextButton = ({ onPress, waitFor }) => {
   );
 };
 
-const BorderTypeButton = ({
+export const BorderTypeButton = ({
   block,
   opacity,
   onChange
@@ -195,13 +205,18 @@ const BorderTypeButton = ({
   block: TextPostBlock;
   onChange;
 }) => {
-  const { template } = block.config;
-  const border = getBorderType(block);
+  const { template = TextTemplate.basic } = block?.config ?? {};
+  const border = block ? getBorderType(block) : TextBorderType.hidden;
+  const overrides = React.useMemo(() => block?.config?.overrides ?? {}, [
+    block
+  ]);
 
   let iconType = "fill";
   const Icon = IconText;
-  const containerColor = getTextBlockBackgroundColor(block);
-  const color = getTextBlockColor(block);
+  const backgroundColor = block
+    ? getTextBlockBackgroundColor(block)
+    : "rgb(0, 0, 0)";
+  const color = block ? getTextBlockColor(block) : "rgb(255, 255, 255)";
   let nextValue;
   let containerSize = 36;
   let iconSize = 18;
@@ -225,16 +240,17 @@ const BorderTypeButton = ({
     borderRadius = 4;
   }
 
-  const supportedTypes = getSupportedBorderTypes(block);
+  const supportedTypes = React.useMemo(
+    () => (block ? getSupportedBorderTypes(block) : []),
+    [block]
+  );
 
   const handleChange = React.useCallback(() => {
     const shouldFlipColors = template === TextTemplate.comic;
-    let backgroundColor = getTextBlockBackgroundColor(block);
-    let color = getTextBlockColor(block);
 
     if (shouldFlipColors) {
       onChange(border, {
-        ...block.config.overrides,
+        ...overrides,
         color: backgroundColor,
         backgroundColor: color
       });
@@ -243,17 +259,15 @@ const BorderTypeButton = ({
       const nextType = supportedTypes[currentIndex + 1] ?? supportedTypes[0];
 
       onChange(nextType, {
-        ...block.config.overrides
+        ...overrides
       });
     }
   }, [
-    containerColor,
+    backgroundColor,
     color,
     supportedTypes,
     block,
-    block.format,
-    block?.config?.overrides,
-    block?.config?.overrides?.backgroundColor,
+    overrides,
     template,
     border,
     onChange
@@ -267,22 +281,6 @@ const BorderTypeButton = ({
           : styles.disabledBorderButtonContainer
       }
     >
-      <BoldText
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        style={styles.borderButtonLabel}
-      >
-        {
-          {
-            [TextBorderType.stroke]: "OUTLINE",
-            [TextBorderType.solid]: "FILL",
-            [TextBorderType.ellipse]: "CIRCLE",
-            [TextBorderType.hidden]: "PLAIN",
-            [TextBorderType.invert]: "SWAP",
-            [TextBorderType.highlight]: "FILL"
-          }[border]
-        }
-      </BoldText>
       <IconButton
         type={iconType}
         color={color}
@@ -290,7 +288,8 @@ const BorderTypeButton = ({
         containerSize={containerSize}
         size={iconType === "shadow" ? containerSize * 0.75 : iconSize}
         borderColor={color}
-        backgroundColor={containerColor}
+        backgroundColor={backgroundColor}
+        enabled={!!block}
         Icon={Icon}
         borderWidth={borderWidth}
         onPress={handleChange}
@@ -299,14 +298,14 @@ const BorderTypeButton = ({
   );
 };
 
-const TextAlignmentButton = ({
+export const TextAlignmentButton = ({
   block,
   onChange
 }: {
   block: TextPostBlock;
   onChange;
 }) => {
-  const textAlign = getTextBlockAlign(block);
+  const textAlign = block ? getTextBlockAlign(block) : "center";
 
   let Icon;
   let nextValue;
@@ -351,34 +350,6 @@ export const TextHeader = ({
   const color = getTextBlockColor(block);
   const backgroundColor = getTextBlockBackgroundColor(block);
 
-  const onChangeColor = React.useCallback(
-    ({ nativeEvent: { color } }) => {
-      const backgroundColor = getTextBlockBackgroundColor(block);
-
-      let overides = { ...block.config.overrides, color };
-
-      if (isColorLight(color)) {
-        overides.backgroundColor = getDarkColor(color);
-      } else if (isColorDark(color)) {
-        overides.backgroundColor = getLightColor(color);
-      } else if (isColorNeutral(color)) {
-        overides.backgroundColor = getNeutralColor(color);
-      }
-
-      onChangeOverrides(overides);
-    },
-    [onChangeOverrides, block]
-  );
-
-  const onChangeTextAlign = React.useCallback(
-    textAlign => {
-      const overrides = { ...block.config.overrides, textAlign };
-
-      onChangeOverrides(overrides);
-    },
-    [onChangeOverrides, block]
-  );
-
   const textSidebarStyles = React.useMemo(
     () => [
       styles.sidebar,
@@ -405,39 +376,16 @@ export const TextHeader = ({
   return (
     <Animated.View style={opacityStyle}>
       <Animated.View pointerEvents="box-none" style={textHeaderStyle}>
-        <View style={[styles.footerSide, styles.leftHeaderSide]}>
-          <IconButton
-            Icon={IconClose}
-            onPress={onBack}
-            type="shadow"
-            size={18}
-            color="#fff"
-          />
-        </View>
+        <View style={[styles.footerSide, styles.leftHeaderSide]}></View>
 
         <View style={[styles.footerSide, styles.centerHeaderSide]}></View>
 
         <View style={[styles.footerSide, styles.rightHeaderSide]}>
-          {focusType === FocusType.static && (
-            <TextAlignmentButton block={block} onChange={onChangeTextAlign} />
-          )}
-        </View>
-      </Animated.View>
-      <Animated.View pointerEvents="box-none" style={textSidebarStyles}>
-        <ColorSlider
-          color={getDenormalizedColor(block)}
-          onPress={onChangeColor}
-          inputRef={TextInput.State.currentlyFocusedField()}
-          colorType={"textColor"}
-          style={styles.colorSlider}
-        />
-
-        <View style={styles.bottomButtons}>
-          <BorderTypeButton
-            block={block}
-            opacity={opacity}
-            onChange={onChangeBorderType}
-          />
+          <BorderlessButton onPress={onBack}>
+            <View style={styles.doneButton}>
+              <SemiBoldText style={styles.doneButtonLabel}>Done</SemiBoldText>
+            </View>
+          </BorderlessButton>
         </View>
       </Animated.View>
     </Animated.View>

@@ -45,7 +45,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   var border: Border = .hidden
 
   @objc(highlightLayer)
-  var highlightLayer = CAShapeLayer()
+  var highlightLayer: CAShapeLayer
 
   @objc(highlightColor)
   var highlightColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR {
@@ -93,6 +93,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     return UIEdgeInsets.init(top: highlightInset + reactPaddingInsets.top + strokeWidth, left: highlightInset + reactPaddingInsets.left + strokeWidth, bottom: highlightInset + reactPaddingInsets.bottom + strokeWidth, right: highlightInset + reactPaddingInsets.right + strokeWidth )
   }
 
+
   var lastHighlightKey: String? = nil
   func highlightKey(text: String?) -> String {
     return "\(String(describing: text))-\(highlightInset)-\(highlightCornerRadius)-\(highlightColor)"
@@ -105,11 +106,17 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
 
     self.enforceTextAttributesIfNeeded()
-    UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: textInset, radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) , canAdjustInset: isSticker)
+    var _textRect = textRect
+    textRect = UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: textInset, radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) , canAdjustInset: isSticker)
+
 
 
     if !showHighlight {
       self.highlightLayer.isHidden = true
+    }
+
+    if textRect != _textRect {
+      self.rctTextView.setSelectedTextRange(rctTextView.selectedTextRange, notifyDelegate: false)
     }
 
 
@@ -151,19 +158,24 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") ||  changedProps.contains("template")
 
-    let forceLayout = changedProps.contains("highlightInset") || changedProps.contains("template") || changedProps.contains("strokeWidth") || changedProps.contains("borderTypeString")
+    let forceLayout = changedProps.contains("template") || changedProps.contains("borderType") || changedProps.contains("highlightInset") || changedProps.contains("strokeWidth")
+
     if (needsUpdateHighlight) {
       if Thread.isMainThread {
-        self.updateHighlight()
-//        if forceLayout {
-//          self.setNeedsLayout()
-//        }
+        if forceLayout {
+          self.setNeedsLayout()
+          self.layoutIfNeeded()
+        } else {
+          self.updateHighlight()
+        }
       } else {
         DispatchQueue.main.async { [weak self] in
-         self?.updateHighlight()
-//          if forceLayout {
-//            self?.setNeedsLayout()
-//          }
+          if forceLayout {
+            self?.setNeedsLayout()
+            self?.layoutIfNeeded()
+          } else {
+            self?.updateHighlight()
+          }
         }
       }
     }
@@ -258,8 +270,29 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.adjustFontSize(text: textView.text)
 
     if isSticker && textView.text.count > 0 {
-      textView.sizeToFit()
-      textView.invalidateIntrinsicContentSize()
+
+      var _rect = bounds.inset(by: textInset.negate).inset(by: reactPaddingInsets)
+      var size = textView.sizeThatFits(_rect.size)
+      var offset = _rect.origin
+      let alignment = textView.textAlignment
+
+      if textView.isFirstResponder {
+        offset.x = 16
+        size.width -= abs(offset.x) * 2
+      }
+
+
+      if textView.isFirstResponder {
+        textView.contentOffset = CGPoint(x: offset.x * -1, y: .zero)
+        textView.contentInset = UIEdgeInsets(top: textView.contentInset.top, left: offset.x, bottom: textView.contentInset.bottom, right: offset.x)
+        bridge?.uiManager.setIntrinsicContentSize(size, for: self)
+      } else {
+        textView.contentOffset = .zero
+        textView.contentInset = .zero
+        let size = textView.sizeThatFits(bounds.inset(by: textInset.negate).inset(by: reactPaddingInsets).size)
+        bridge?.uiManager.setIntrinsicContentSize(size, for: self)
+
+      }
     }
 
     if _transformRect != movableView?.transformRect {
@@ -356,6 +389,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     textView.layer.contentsScale = nativeScale
     highlightLayer.contentsScale = nativeScale
     textInputView.layer.contentsScale = nativeScale
+    highlightLayer.contentsScale = nativeScale
 
     textInputView.layer.sublayers?.forEach { layer in
       layer.contentsScale = nativeScale
@@ -383,12 +417,17 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
   override init(bridge: RCTBridge) {
     self.bridge = bridge
+    highlightLayer = CAShapeLayer()
     super.init(bridge: bridge)
 
 
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShowNotification(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShowNotification(notification:)), name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHideNotification(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+
     bridge.uiManager.observerCoordinator.add(self)
 
-    self.highlightLayer = CAShapeLayer()
+    highlightLayer.contentsScale = UIScreen.main.scale
     self.highlightLayer.masksToBounds = false
     self.clipsToBounds = false
     highlightSubview.clipsToBounds = false
@@ -460,8 +499,6 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.updateTapGestureRecognizer()
     if isDetached && YeetTextInputView.focusedReactTag == reactTag {
       YeetTextInputView.focusedReactTag = nil
-    } else if isAttached && textView.isFirstResponder && YeetTextInputView.focusedReactTag != reactTag {
-      YeetTextInputView.focusedReactTag = reactTag
     }
   }
 
@@ -471,8 +508,6 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     if isDetached && YeetTextInputView.focusedReactTag == reactTag {
       YeetTextInputView.focusedReactTag = nil
-    } else if isAttached && textView.isFirstResponder && YeetTextInputView.focusedReactTag != reactTag {
-      YeetTextInputView.focusedReactTag = reactTag
     }
 
     if isDetached && bridge?.isValid ?? false {
@@ -499,6 +534,8 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   static var focusedReactTag: NSNumber? = nil
+
+  var firstResponderObservation: NSKeyValueObservation? = nil
 
   override func reactFocus() {
     guard !textView.isFirstResponder else {
@@ -529,12 +566,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
   override func textInputShouldBeginEditing() -> Bool {
     enableSelection()
-    let should = super.textInputShouldBeginEditing()
-
-    if should {
-      YeetTextInputView.focusedReactTag = reactTag
-    }
-    return should
+    return super.textInputShouldBeginEditing()
   }
 
   private var _pointerEvents: RCTPointerEvents = .unspecified
@@ -553,18 +585,61 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     }
   }
 
+  var hasEdited = true
+
+
   override func textInputShouldEndEditing() -> Bool {
     let shouldEnd = super.textInputShouldEndEditing()
 
-    if shouldEnd {
-      Log.debug("SHOULd END?? WHY?? \(shouldEnd)")
-    }
 
     return shouldEnd
   }
 
+  var managesSize: Bool {
+    return isSticker
+  }
+
+  var isKeyvoardVisible = false
+
+  @objc(keyboardWillShowNotification:)
+  func keyboardWillShowNotification(notification: NSNotification) {
+    guard textView.isFirstResponder else {
+      return
+    }
+
+    guard managesSize else {
+      return
+    }
+
+    let notif = KeyboardNotification(notification)
+    
+     let offset = (UIScreen.main.bounds.width - bounds.width) / 2
+
+
+    if self.textTemplate == .comic {
+      self.bridge?.uiManager.setSize(CGSize(width: UIScreen.main.bounds.width, height: CGFloat.greatestFiniteMagnitude), for: self)
+      updateHighlight()
+      self.setNeedsLayout()
+    } else {
+      UIView.animate(notif, animations: {
+        self.frame.origin.x = 0
+      }, completion: { isFinished in
+        if isFinished && self.textView.isFirstResponder {
+          self.bridge?.uiManager.setSize(CGSize(width: UIScreen.main.bounds.width, height: CGFloat.greatestFiniteMagnitude), for: self)
+        }
+      })
+
+    }
+
+    isKeyvoardVisible = true
+  }
+
   override func textInputDidBeginEditing() {
     super.textInputDidBeginEditing()
+
+
+
+
 
     self.adjustFontSize(text: textView.text)
     UIView.setAnimationsEnabled(false)
@@ -606,6 +681,8 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     UIView.setAnimationsEnabled(true)
   }
 
+
+
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()
 
@@ -622,9 +699,8 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     tapRecognizer?.isEnabled = true
 
-    if (YeetTextInputView.focusedReactTag == reactTag) {
-      YeetTextInputView.focusedReactTag = nil
-    }
+
+    YeetTextInputView.focusedReactTag = nil
 
 
     if self.onEndEditing != nil {
@@ -686,13 +762,12 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     if didResign && isSticker {
       self.disableSelection()
-
-      if YeetTextInputView.focusedReactTag == reactTag {
-        YeetTextInputView.focusedReactTag = nil
-      }
     }
 
 
+    if didResign && YeetTextInputView.focusedReactTag == reactTag {
+      YeetTextInputView.focusedReactTag = nil
+    }
   }
 
   override func reactFocusIfNeeded() {
@@ -704,13 +779,19 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
 
+  var textRect = CGRect.zero
+
+
+
 
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     let intended = super.hitTest(point, with: event)
 
-    if (YeetTextInputView.focusedReactTag != nil && !textView.isFirstResponder && intended != nil && isSingleFocus) || pointerEvents == .none {
+    Log.debug("FOCUSED TAG \(YeetTextInputView.focusedReactTag)")
+
+    if (YeetTextInputView.focusedReactTag != nil && YeetTextInputView.focusedReactTag != reactTag && !textView.isFirstResponder && intended != nil && isSingleFocus) || pointerEvents == .none {
       return nil
-    } else if (isSticker || textView.isFirstResponder) {
+    } else if textView.isFirstResponder {
       return intended
     } else if frame.contains(point) {
       return self
@@ -720,6 +801,11 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   deinit {
+
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+
     if YeetTextInputView.focusedReactTag == reactTag {
       YeetTextInputView.focusedReactTag = nil
     }

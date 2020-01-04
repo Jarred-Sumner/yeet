@@ -63,6 +63,7 @@ import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
 import { MarginView } from "./Node/MarginView";
 import { AnimatedEvent } from "./Node/createAnimatedTransformableViewComponent";
 import { createAnimatedEvent } from "./Node/createAnimatedEvent";
+import { BlurView } from "@react-native-community/blur";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -84,7 +85,6 @@ const styles = StyleSheet.create({
   },
   darkSheetContent: {
     opacity: 0.75,
-    backgroundColor: "#090909",
     flex: 1
   },
   container: {
@@ -195,7 +195,7 @@ const DarkSheet = ({
       pointerEvents="none"
       style={containerStyle}
     >
-      <View style={styles.darkSheetContent}></View>
+      <View style={styles.darkSheetContent} />
     </Animated.View>
   );
 };
@@ -479,8 +479,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       const blockId = node.block.id;
       this._blockInputRefs.get(blockId).current?.focus();
 
-      console.warn("FOCUs", blockId);
-
       this.handleFocusBlock(node.block);
 
       return false;
@@ -499,22 +497,11 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBlurNode = (node: EditableNode) => {
-    console.trace();
-
-    console.log("BLUR", {
-      id: node.block.id,
-      value: node.block.value
-    });
-
     this.handleInlineNodeChange(node);
   };
 
   handleBlurBlock = (block: PostBlockType) => {
     if (block) {
-      console.log("BLUR", {
-        id: block.id,
-        value: block.value
-      });
       this.handleChangeBlock(block);
     }
 
@@ -682,7 +669,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handlePressBackground = ({ x, y, focusTypeValue, focusBlockValue }) => {
     if (this.state.focusType === null && focusTypeValue === -1) {
-      this.handleInsertText({ x, y });
+      this.handlePressToolbarButton(ToolbarButtonType.text);
     } else {
       this.dismissKeyboard();
     }
@@ -1149,7 +1136,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
             onBlur={this.handleBlurBlock}
-            focusType={FocusType.static}
+            focusType={this.state.focusType}
             setBlockInputRef={this.setBlockInputRef}
             onChangeNode={this.handleInlineNodeChange}
             setBlockAtIndex={this.handleChangeBlock}
@@ -1164,7 +1151,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               <DarkSheet
                 keyboardHeight={this.relativeKeyboardHeightValue}
                 opacity={this.darkSheetOpacityValue}
-              />
+              ></DarkSheet>
               <EditableNodeList
                 inlineNodes={this.props.inlineNodes}
                 format={post.format}
@@ -1224,8 +1211,6 @@ class RawwPostEditor extends React.Component<Props, State> {
             <ActiveLayer
               onBack={this.handleBack}
               onSend={this.handleSend}
-              onChangeOverrides={this.handleChangeOverrides}
-              onChangeBorderType={this.handleChangeBorderType}
               focusedBlock={this.focusedBlock}
               keyboardVisibleOpacity={this.keyboardVisibleValue}
               panX={this.panX}
@@ -1259,13 +1244,15 @@ class RawwPostEditor extends React.Component<Props, State> {
           </Layer>
         </View>
 
-        <InputAccessoryView nativeID="new-post-input">
-          <TextInputToolbar
-            onChooseTemplate={this.handleChangeTemplate}
-            focusType={this.state.focusType}
-            block={this.focusedBlock}
-          />
-        </InputAccessoryView>
+        <TextInputToolbar
+          nativeID="new-post-input"
+          onChooseTemplate={this.handleChangeTemplate}
+          focusType={this.state.focusType}
+          block={this.focusedBlock}
+          onChangeOverrides={this.handleChangeOverrides}
+          focusType={this.state.focusType}
+          onChangeBorderType={this.handleChangeBorderType}
+        />
       </View>
     );
   }

@@ -261,6 +261,7 @@ class MovableView: UIView, RCTUIManagerObserver {
 
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     var frame = self.bounds
+    var _point = point
     let scale = max(self.layer.affineTransform().scaleX, self.layer.affineTransform().scaleY)
 
     if let textInput = self.textInput {
@@ -268,18 +269,19 @@ class MovableView: UIView, RCTUIManagerObserver {
         return super.hitTest(point, with: event)
       } else if textInput.pointerEvents == .none {
         return nil
+      } else {
+//        frame = textInput.textRect.inset(by: textInput.textInset)
+//        _point = self.convert(point, to: textInput.textView)
       }
     }
 
 
     if scale > 1.25 {
       frame = frame.insetBy(dx: -5, dy: -5)
-    } else if frame.width < 40 || frame.height < 40 {
-      frame = frame.insetBy(dx: -30, dy: -30)
     } else {
       frame = frame.insetBy(dx: -10, dy: -10)
     }
 
-     return frame.contains(point) ? self : nil;
+     return frame.contains(_point) ? self : nil;
    }
 }

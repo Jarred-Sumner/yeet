@@ -1,6 +1,5 @@
 import * as React from "react";
 import { NativeColorSlider } from "./NativeColorSlider";
-import Animated from "react-native-reanimated";
 
-export const ColorSlider = Animated.createAnimatedComponent(NativeColorSlider);
+export const ColorSlider = React.memo(NativeColorSlider);
 export default ColorSlider;
