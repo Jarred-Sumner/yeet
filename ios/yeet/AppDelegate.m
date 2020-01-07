@@ -67,6 +67,8 @@
 
   [FIRPerformance sharedInstance].dataCollectionEnabled = false;
   [FIRPerformance sharedInstance].instrumentationEnabled = false;
+  [[UITextField appearance] setKeyboardAppearance:UIKeyboardAppearanceDark];
+  
 
   if (![[[[NSUserDefaults standardUserDefaults] dictionaryRepresentation] allKeys] containsObject:@"HIDE_WAITLIST"]) {
     [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"HIDE_WAITLIST"];
