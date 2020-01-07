@@ -92,7 +92,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
       self.highlightLayer.isHidden = true
     }
 
-    if textRect != _textRect {
+    if textRect != _textRect && textView.isFirstResponder {
       self.rctTextView.setSelectedTextRange(rctTextView.selectedTextRange, notifyDelegate: false)
     }
   }
@@ -295,6 +295,13 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     return self.backedTextInputView as! UITextView
   }
 
+  var canFocus: Bool {
+    guard pointerEvents != .none else {
+      return false
+    }
+
+    return !isSticker || (isSticker && editableClone)
+  }
   @objc(handleTap:)
   func handleTap(_ gesture: UIGestureRecognizer) {
     self.reactFocus()
@@ -337,6 +344,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     self.textView.isScrollEnabled = false
     self.textView.isEditable = false
 
+    textView.keyboardAppearance = .dark
   }
 
   var lastTransformRect: CGRect? = nil
@@ -432,6 +440,9 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   override func textInputShouldBeginEditing() -> Bool {
+    guard canFocus else {
+      return false
+    }
     enableSelection()
     return super.textInputShouldBeginEditing()
   }
