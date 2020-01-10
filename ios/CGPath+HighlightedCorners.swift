@@ -196,13 +196,18 @@ extension UITextView {
       }
     }
 
-    if highlightLayer.isHidden || highlightLayer.path == nil {
-      var _rect = CGRect.zero
-      layout.enumerateEnclosingRects(forGlyphRange: range, withinSelectedGlyphRange: range, in: textView.textContainer) { rect, _ in
-        _rect = rect
-      }
+    if highlightLayer.isHidden || highlightLayer.path?.isEmpty ?? true {
+      let bezier = UIBezierPath()
 
-      return _rect
+       layout.enumerateLineFragments(forGlyphRange: range) { (_, usedRect, _, currentRange, stop) in
+          let _bezier = UIBezierPath(rect: usedRect)
+          bezier.append(_bezier)
+          bezier.close()
+       }
+
+      bezier.close()
+
+      return bezier.bounds
     } else {
       return highlightLayer.path!.boundingBoxOfPath.inset(by: textView.textContainerInset)
     }

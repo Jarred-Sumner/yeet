@@ -517,7 +517,13 @@ export const convertExportedBlocks = (
       if (isArray(block)) {
         return convertExportedBlocks(block, assets, scaleFactor, examples);
       } else {
-        return convertExportableBlock(block, assets, scaleFactor, examples);
+        return convertExportableBlock(
+          block,
+          assets,
+          scaleFactor,
+          false,
+          examples
+        );
       }
     })
     .filter(Boolean);

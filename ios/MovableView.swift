@@ -228,6 +228,10 @@ class MovableView: UIView, RCTUIManagerObserver {
     self.sendTransformedLayout()
   }
 
+  @objc(unfocusedBottom)
+  var unfocusedBottom: NSNumber? = nil
+
+
   @objc (onMaybeNeedsAdjustment) var onMaybeNeedsAdjustment: RCTDirectEventBlock? = nil
 
   func updateContentScale() {

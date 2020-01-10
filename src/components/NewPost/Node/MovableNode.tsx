@@ -6,7 +6,7 @@ import {
   State,
   TapGestureHandler
 } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
+import Animated, { Transitioning } from "react-native-reanimated";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
 import { StyleSheet } from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../../config";
@@ -24,8 +24,7 @@ const transformableStyles = StyleSheet.create({
     top: 0
   },
   bottomContainer: {
-    position: "absolute",
-    left: 0
+    position: "absolute"
   }
 });
 
@@ -38,6 +37,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     onTransform,
     onTransformLayout,
     rotate = 0,
+    unfocusedBottom,
     zIndex,
     inputRef,
     scale = 1.0,
@@ -54,14 +54,15 @@ export const TransformableView = React.forwardRef((props, ref) => {
       {
         opacity,
         bottom,
+        left: translateX,
         zIndex,
         transform: [
-          {
-            translateY
-          },
-          {
-            translateX
-          },
+          // {
+          //   translateY
+          // },
+          // {
+          //   translateX
+          // },
           {
             scale
           },
@@ -84,6 +85,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
         onTransformLayout={onTransformLayout}
         inputRef={inputRef}
         onTransform={onTransform}
+        unfocusedBottom={unfocusedBottom}
         style={bottomContainerStyles}
       >
         {children}
@@ -97,6 +99,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
         shouldRasterizeIOS={rasterize}
         needsOffscreenAlphaCompositing={rasterize}
         onTransform={onTransform}
+        unfocusedBottom={unfocusedBottom}
         onTransformLayout={onTransformLayout}
         inputRef={inputRef}
         style={[
@@ -154,6 +157,13 @@ const keyboardVisibleInterpolater = Animated.proc(
     })
 );
 
+const keyboardVisibleCond = Animated.proc((keyboardVisibleValue, start, end) =>
+  Animated.cond(Animated.eq(keyboardVisibleValue, 1), end, start)
+);
+
+const fixedSizeInterpolator = (fixedSize, yes, no) =>
+  fixedSize === 1 ? yes : no;
+
 type Props = {
   xLiteral: number;
   yLiteral: number;
@@ -171,6 +181,25 @@ type Props = {
 const styles = StyleSheet.create({
   gestureView: {
     flex: 0
+  },
+  childGestureView: {
+    position: "relative",
+    flex: 0
+  },
+  overlaySheet: {
+    zIndex: 0,
+    position: "absolute",
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(12, 0, 12, 0.75)"
+  },
+  lowerGestureView: {
+    flex: 0,
+    zIndex: -1
   }
 });
 
@@ -180,6 +209,8 @@ export class MovableNode extends Component<Props> {
 
   constructor(props) {
     super(props);
+
+    const fixedSizeValue = props.isFixedSize ? 1 : 0;
 
     this.panGestureState = new Animated.Value(State.UNDETERMINED);
     this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
@@ -268,9 +299,8 @@ export class MovableNode extends Component<Props> {
       [
         {
           nativeEvent: ({ state }) =>
-            cond(
-              [Animated.and(eq(state, State.END))],
-              [call([], this.props.onTap)]
+            Animated.block(
+              cond([eq(state, State.END)], [call([], this.props.onTap)])
             )
         }
       ],
@@ -284,64 +314,77 @@ export class MovableNode extends Component<Props> {
       eq(props.focusedBlockValue, this.blockId)
     );
 
-    this.keyboardVisibleFocusedValue = Animated.cond(
-      eq(this.isFocusedValue, 1),
-      props.keyboardVisibleValue,
-      0
-    );
+    this.keyboardVisibleFocusedValue = Animated.block([
+      Animated.cond(
+        eq(this.isFocusedValue, 1),
+        [props.keyboardVisibleValue],
+        [0]
+      )
+    ]);
 
-    this._translateX = keyboardVisibleInterpolater(
+    this._translateX = keyboardVisibleCond(
       this.keyboardVisibleFocusedValue,
       this.X,
       0
     );
 
-    this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
-      ? Animated.round(
-          keyboardVisibleInterpolater(
-            this.keyboardVisibleFocusedValue,
-            0,
-            Animated.multiply(
-              Animated.sub(
-                SCREEN_DIMENSIONS.height,
-                props.keyboardHeightValue,
-                props.topInsetValue || 0
-              ),
-              -1
-            )
-          )
-        )
-      : null;
-
-    this._translateY = keyboardVisibleInterpolater(
+    this.overlayOpacity = keyboardVisibleInterpolater(
       this.keyboardVisibleFocusedValue,
-      this.Y,
-      0
-    );
-
-    this._scale = keyboardVisibleInterpolater(
-      this.keyboardVisibleFocusedValue,
-      this.Z,
+      0,
       1
     );
 
-    this._rotate = keyboardVisibleInterpolater(
-      this.keyboardVisibleFocusedValue,
+    // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
+    //   ? keyboardVisibleInterpolater(
+    //       this.keyboardVisibleFocusedValue,
+    //       0,
+    //       Animated.multiply(
+    //         Animated.sub(
+    //           SCREEN_DIMENSIONS.height,
+    //           props.keyboardHeightValue,
+    //           props.topInsetValue
+    //         ),
+    //         -1
+    //       )
+    //     )
+    //   : 0;
+    //  = 0;
+
+    this.unfocusedBottomValue = Animated.multiply(this.Y, -1);
+
+    this.bottomValue = fixedSizeInterpolator(
+      fixedSizeValue,
+      this.unfocusedBottomValue,
+      keyboardVisibleInterpolater(
+        props.keyboardVisibleValue,
+        this.unfocusedBottomValue,
+        Animated.add(Animated.multiply(props.keyboardHeightValue, -1), 120)
+      )
+    );
+
+    this._scale = fixedSizeInterpolator(
+      fixedSizeValue,
+      this.Z,
+      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this.Z, 1)
+    );
+
+    this._rotate = fixedSizeInterpolator(
+      fixedSizeValue,
       Animated.concat(this.R, "rad"),
-      Animated.concat(0, "rad")
+      keyboardVisibleCond(
+        this.keyboardVisibleFocusedValue,
+        Animated.concat(this.R, "rad"),
+        Animated.concat(0, "rad")
+      )
     );
 
-    this.translateX = Animated.cond(
-      this.isFocusedValue,
-      this._translateX,
-      this.X
+    this.translateX = fixedSizeInterpolator(
+      fixedSizeValue,
+      this.X,
+      keyboardVisibleInterpolater(props.keyboardVisibleValue, this.X, 0)
     );
 
-    this.translateY = Animated.cond(
-      this.isFocusedValue,
-      this._translateY,
-      this.Y
-    );
+    this.translateY = 0;
 
     this.scale = Animated.cond(this.isFocusedValue, this._scale, this.Z);
     this.rotate = Animated.cond(
@@ -403,7 +446,9 @@ export class MovableNode extends Component<Props> {
     });
   };
 
-  handleLayoutTransform = ({ nativeEvent: { layout, from } }) => {};
+  handleLayoutTransform = ({ nativeEvent: { layout, from } }) => {
+    console.log({ layout, from });
+  };
 
   // handleLayoutTransform = ({
   //   nativeEvent: { layout, from }
@@ -500,6 +545,59 @@ export class MovableNode extends Component<Props> {
 
     return (
       <>
+        <Animated.Code
+          exec={Animated.block([
+            Animated.onChange(
+              this.isDoneGesturingValue,
+              Animated.cond(
+                Animated.eq(this.isDoneGesturingValue, 1),
+                Animated.call(
+                  [
+                    this.X,
+                    this.Y,
+                    this.R,
+                    this.Z,
+                    this.panGestureState,
+                    this.absoluteX,
+                    this.absoluteY
+                  ],
+                  this.updatePosition
+                )
+              )
+            ),
+            Animated.onChange(
+              this.isCurrentlyGesturingValue,
+
+              Animated.call(
+                [this.absoluteX, this.absoluteY, this.panGestureState],
+                this.handlePanChange
+              )
+            ),
+            Animated.onChange(
+              this.absoluteX,
+              Animated.set(this.props.absoluteX, this.absoluteX)
+            ),
+            Animated.onChange(
+              this.absoluteY,
+              Animated.set(this.props.absoluteY, this.absoluteY)
+            ),
+            Animated.cond(
+              Animated.and(
+                Animated.greaterThan(this.props.keyboardVisibleValue, 0),
+                Animated.eq(focusedBlockValue, this.blockId)
+              ),
+              [set(this.wasFocused, 1)]
+            ),
+            Animated.cond(
+              Animated.and(
+                Animated.eq(this.props.keyboardVisibleValue, 0),
+                Animated.eq(focusedBlockValue, -1)
+              ),
+              [set(this.wasFocused, 0)]
+            )
+          ])}
+        />
+
         <TapGestureHandler
           waitFor={this.tapGestureWaitFor}
           ref={this.tapRef}
@@ -507,60 +605,9 @@ export class MovableNode extends Component<Props> {
           onGestureEvent={this.handleTap}
           onHandlerStateChange={this.handleTap}
         >
-          <Animated.View style={styles.gestureView}>
-            <Animated.Code
-              exec={Animated.block([
-                Animated.onChange(
-                  this.isDoneGesturingValue,
-                  Animated.cond(
-                    Animated.eq(this.isDoneGesturingValue, 1),
-                    Animated.call(
-                      [
-                        this.X,
-                        this.Y,
-                        this.R,
-                        this.Z,
-                        this.panGestureState,
-                        this.absoluteX,
-                        this.absoluteY
-                      ],
-                      this.updatePosition
-                    )
-                  )
-                ),
-                Animated.onChange(
-                  this.isCurrentlyGesturingValue,
-
-                  Animated.call(
-                    [this.absoluteX, this.absoluteY, this.panGestureState],
-                    this.handlePanChange
-                  )
-                ),
-                Animated.onChange(
-                  this.absoluteX,
-                  Animated.set(this.props.absoluteX, this.absoluteX)
-                ),
-                Animated.onChange(
-                  this.absoluteY,
-                  Animated.set(this.props.absoluteY, this.absoluteY)
-                ),
-                Animated.cond(
-                  Animated.and(
-                    Animated.greaterThan(this.props.keyboardVisibleValue, 0),
-                    Animated.eq(focusedBlockValue, this.blockId)
-                  ),
-                  [set(this.wasFocused, 1)]
-                ),
-                Animated.cond(
-                  Animated.and(
-                    Animated.eq(this.props.keyboardVisibleValue, 0),
-                    Animated.eq(focusedBlockValue, -1)
-                  ),
-                  [set(this.wasFocused, 0)]
-                )
-              ])}
-            />
-
+          <Animated.View
+            style={isHidden ? styles.lowerGestureView : styles.gestureView}
+          >
             <PanGestureHandler
               ref={this.panRef}
               enabled={isDragEnabled}
@@ -579,6 +626,16 @@ export class MovableNode extends Component<Props> {
                   onHandlerStateChange={this.handleZoom}
                 >
                   <Animated.View style={styles.gestureView}>
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[
+                        styles.overlaySheet,
+                        {
+                          opacity: this.overlayOpacity
+                        }
+                      ]}
+                    />
+
                     <RotationGestureHandler
                       ref={this.rotationRef}
                       enabled={isDragEnabled}
@@ -587,13 +644,14 @@ export class MovableNode extends Component<Props> {
                       onGestureEvent={this.handleRotate}
                       onHandlerStateChange={this.handleRotate}
                     >
-                      <Animated.View style={styles.gestureView}>
+                      <Animated.View style={styles.childGestureView}>
                         <TransformableView
                           ref={this.props.containerRef}
-                          opacity={isHidden ? 0 : isOtherNodeFocused ? 0.9 : 1}
+                          opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
                           translateY={this.translateY}
                           translateX={this.translateX}
                           bottom={this.bottomValue}
+                          unfocusedBottom={this.unfocusedBottomValue}
                           keyboardVisibleValue={keyboardVisibleValue}
                           onTransformLayout={this.handleLayoutTransform}
                           inputRef={inputRef}

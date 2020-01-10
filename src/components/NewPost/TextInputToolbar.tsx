@@ -48,7 +48,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal
   },
   staticWrapper: {
-    backgroundColor: "rgba(0, 0, 0, 0.75)"
+    backgroundColor: "rgba(0, 0, 0, 0.75)",
+    height: 120
+  },
+  wrapper: {
+    height: 120
   },
   spacer: {
     marginLeft: SPACING.half,
@@ -356,17 +360,6 @@ export const TextInputToolbar = ({
     width: SCREEN_DIMENSIONS.width
   });
 
-  const handleChangeLayout = React.useCallback(
-    ({
-      nativeEvent: {
-        layout: { width, height }
-      }
-    }) => {
-      setLayout({ width, height });
-    },
-    [setLayout]
-  );
-
   const accessoryViewStyle = React.useMemo(
     () => ({ height: height ? height : undefined, width }),
     [height, width]
@@ -379,7 +372,6 @@ export const TextInputToolbar = ({
         scrollRef={scrollRef}
         focusType={focusType}
         onChooseTemplate={onChooseTemplate}
-        onLayout={handleChangeLayout}
         onChangeOverrides={onChangeOverrides}
         onChangeBorderType={onChangeBorderType}
       />

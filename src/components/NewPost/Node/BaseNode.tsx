@@ -120,6 +120,8 @@ export class BaseNode extends React.Component<Props> {
     });
   };
 
+  handleFinishEditing = ({ startSize, endSize, block }) => {};
+
   gestureRef = React.createRef();
   blockLayout: DimensionsRect | null = null;
 
@@ -154,6 +156,7 @@ export class BaseNode extends React.Component<Props> {
       maxScale,
       currentX,
       currentY,
+      keyboardHeight,
       currentWidth,
       velocityX,
       velocityY,
@@ -182,11 +185,13 @@ export class BaseNode extends React.Component<Props> {
       this.props.paddingTop || presetsByFormat[format].textTop
     );
 
+    const isFixedSize = typeof block?.config?.overrides?.maxWidth === "number";
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}
         disabled={disabled}
         focusedBlockValue={focusedBlockValue}
+        isFixedSize={isFixedSize}
         blockId={block.id}
         x={position.animatedX}
         y={position.animatedY}
@@ -215,6 +220,7 @@ export class BaseNode extends React.Component<Props> {
         yLiteral={position.y}
         xLiteral={position.x}
         rLiteral={position.rotate}
+        keyboardHeight={keyboardHeight}
         keyboardVisibleValue={keyboardVisibleValue}
         keyboardHeightValue={keyboardHeightValue}
         waitFor={[...waitFor, this.gestureRef]}
@@ -232,11 +238,13 @@ export class BaseNode extends React.Component<Props> {
           ref={inputRef}
           block={block}
           onChange={this.handleChangeBlock}
+          onFinishEditing={this.handleFinishEditing}
           focusTypeValue={focusTypeValue}
           focusType={focusType}
           isSticker
           paddingTop={paddingTop}
           gestureRef={this.gestureRef}
+          isFocused={isFocused}
           autoFocus={autoFocus}
           maxX={maxX}
           focusedBlockValue={focusedBlockValue}

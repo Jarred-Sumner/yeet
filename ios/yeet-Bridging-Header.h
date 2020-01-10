@@ -103,6 +103,7 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 @interface RCT_EXTERN_MODULE(MovableViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(unfocusedBottom, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(onTransform, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onTransformLayout, RCTDirectEventBlock);
 
@@ -119,6 +120,8 @@ RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(singleFocus, BOOL);
 
 
+RCT_EXPORT_VIEW_PROPERTY(maxContentWidth, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(onFinishEditing, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(isSticker, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(isSelectable, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(template, NSString);

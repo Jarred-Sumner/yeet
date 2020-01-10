@@ -1505,7 +1505,7 @@ const OUTLINE_MAP = {
   "2": TextBorderType.stroke,
   "3": TextBorderType.stroke,
   "4": TextBorderType.stroke,
-  "5": TextBorderType.solid
+  "5": TextBorderType.hidden
 };
 
 const percentToPx = (value, size) => (parseFloat(value) / 100.0) * size.width;
@@ -1586,8 +1586,15 @@ const getLayout = (_textEntries, imageBlock, size, xPadding, yPadding) => {
     }
   };
 
-  const _createExportableTextBlock = block =>
-    createExportableTextBlock(block, size);
+  const _createExportableTextBlock = block => {
+    const _block = createExportableTextBlock(block, size);
+    _block.format = PostFormat.post;
+    _block.template = TextTemplate.post;
+    _block.config.border = TextBorderType.hidden;
+
+    return _block;
+  };
+
   const textBlocks = textBlockEntries.map(_createExportableTextBlock);
 
   const hasMultipleTextInputs = textBlocks.length > 1;

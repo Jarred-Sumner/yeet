@@ -30,12 +30,14 @@ export class TextPostBlock extends React.Component<Props> {
 
   handleChange = text => {
     this.setState({ text });
+    // this.props.onChange({ ...this.props.block, value: text });
   };
 
   handleFocus = () => this.props.onFocus(this.props.block);
 
-  handleBlur = () => {
-    this.props.onBlur({ ...this.props.block, value: this.state.text });
+  handleBlur = ({ nativeEvent: { text } }) => {
+    this.setState({ text });
+    this.props.onBlur({ ...this.props.block, value: text });
   };
 
   get input() {
@@ -46,7 +48,19 @@ export class TextPostBlock extends React.Component<Props> {
     this.input.focus();
   };
 
+  handleFinishEditing = ({
+    nativeEvent: { text: value, startSize, endSize }
+  }) => {
+    this.props.onFinishEditing &&
+      this.props.onFinishEditing({
+        block: { ...this.props.block, value },
+        startSize,
+        endSize
+      });
+  };
+
   blur = () => {
+    console.trace();
     if (this.input.isFocused()) {
       this.input.blur();
     }
@@ -95,11 +109,13 @@ export class TextPostBlock extends React.Component<Props> {
         block={block}
         maxX={maxX}
         stickerRef={this.stickerRef}
+        isBlockFocused={isFocused}
         blockRef={this.containerRef}
         isSticker={isSticker}
         inputRef={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}
+        onFinishEditing={this.handleFinishEditing}
         focusType={focusType}
         gestureRef={gestureRef}
         text={this.state.text}

@@ -90,4 +90,13 @@ extension UIView {
       completion: completion
     )
   }
+
+  static func transition(_ n: KeyboardNotification, with: UIView, animations: @escaping () -> Void, completion: ((_ finished: Bool) -> Void)? = nil) {
+    var opts = UIView.AnimationOptions(rawValue: UInt(n.animationCurve << 16))
+    opts.insert(.allowUserInteraction)
+    opts.insert(.layoutSubviews)
+    opts.insert(.beginFromCurrentState)
+
+    UIView.transition(with: with, duration: n.animationDuration, options: opts, animations: animations, completion: completion)
+  }
 }

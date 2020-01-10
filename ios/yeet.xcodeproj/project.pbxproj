@@ -20,6 +20,7 @@
 		71ECD59CC2AB421FAD08E4D2 /* Minecrafter.Reg.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 060D7AEC046145849DBFF338 /* Minecrafter.Reg.ttf */; };
 		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
 		830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */; };
+		830554E123C6F024008D8BD1 /* YeetTextInputShadowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 830554E023C6F024008D8BD1 /* YeetTextInputShadowView.m */; };
 		8311793623B1861100EA8CB2 /* MovableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311793523B1861100EA8CB2 /* MovableView.swift */; };
 		8311793823B1889500EA8CB2 /* MovableViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311793723B1889500EA8CB2 /* MovableViewManager.swift */; };
 		8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */; };
@@ -171,6 +172,8 @@
 		6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Webcomic Bros.ttf"; path = "../assets/fonts/Webcomic Bros.ttf"; sourceTree = "<group>"; };
 		830303C62324AD8C00BD2260 /* ExportableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableImage.swift; sourceTree = "<group>"; };
 		830418642345AAEE007C9E5A /* EnableWebpDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnableWebpDecoder.h; sourceTree = "<group>"; };
+		830554DF23C6F024008D8BD1 /* YeetTextInputShadowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetTextInputShadowView.h; sourceTree = "<group>"; };
+		830554E023C6F024008D8BD1 /* YeetTextInputShadowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YeetTextInputShadowView.m; sourceTree = "<group>"; };
 		8311793523B1861100EA8CB2 /* MovableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovableView.swift; sourceTree = "<group>"; };
 		8311793723B1889500EA8CB2 /* MovableViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovableViewManager.swift; sourceTree = "<group>"; };
 		8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableMediaSource.swift; sourceTree = "<group>"; };
@@ -422,6 +425,8 @@
 				83E34D1D23442467001321C0 /* MediaFrameView.swift */,
 				83161E892344282800C271F3 /* MediaFrameViewManager.swift */,
 				83E45AC5234197D80091D443 /* YeetImageView.swift */,
+				830554DF23C6F024008D8BD1 /* YeetTextInputShadowView.h */,
+				830554E023C6F024008D8BD1 /* YeetTextInputShadowView.m */,
 				83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */,
 				83E45AC72341A6F60091D443 /* YeetVideoView.swift */,
 				8336FE53236EC6050076F8AA /* VideoPool.swift */,
@@ -1031,6 +1036,7 @@
 				83B0CACB23B6F7300010DC66 /* ExportType.swift in Sources */,
 				83B0CACD23B6F7490010DC66 /* MimeType.swift in Sources */,
 				8366FB2E239F000F00F73311 /* YeetColorSlider.swift in Sources */,
+				830554E123C6F024008D8BD1 /* YeetTextInputShadowView.m in Sources */,
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
 				833867E523B6F4630054778D /* UIView+extensions.swift in Sources */,
 				83161E8A2344282800C271F3 /* MediaFrameViewManager.swift in Sources */,

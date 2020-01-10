@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Keyboard, Platform } from "react-native";
+import { Keyboard, Platform, LayoutAnimation } from "react-native";
 import Animated, { Easing } from "react-native-reanimated";
 import { runTiming } from "react-native-redash";
 
@@ -112,6 +112,11 @@ export class AnimatedKeyboardTracker extends React.Component {
   _keyboardVisibleValue = new Animated.Value(0);
   _durationValue = new Animated.Value(300);
   _keyboardHeightValue = new Animated.Value(0);
+  lastShowingHeight = 0;
+  lastHidingHeight = 0;
+  lastShownAt: number = 0;
+  lastHiddenAt: number = 0;
+  lastDuration = 250;
 
   handleKeyboardAnimation = (isShowing: boolean, _duration, height = 0) => {
     const { keyboardVisibleValue, keyboardHeightValue } = this.props;
@@ -128,9 +133,41 @@ export class AnimatedKeyboardTracker extends React.Component {
       android: 100
     });
 
+    const time = new Date().getTime();
+    const lastShownDiff = time - this.lastShownAt;
+    const lastHiddenDiff = time - this.lastHiddenAt;
+
+    const isShowingHeightDifferent =
+      isShowing &&
+      (this.lastShowingHeight !== height ||
+        lastShownDiff > this.lastDuration * 3);
+    const isHidingHeightDifferent =
+      !isShowing &&
+      (this.lastHidingHeight !== height ||
+        lastHiddenDiff > this.lastDuration * 3);
+
+    const needsAnimation = isShowingHeightDifferent || isHidingHeightDifferent;
+    if (!needsAnimation) {
+      return;
+    }
+
+    LayoutAnimation.configureNext({
+      type: LayoutAnimation.Types.keyboard,
+      duration
+    });
+
+    this.lastDuration = duration;
+    if (isShowing) {
+      this.lastShowingHeight = height;
+      this.lastShownAt = time;
+    } else if (!isShowing) {
+      this.lastHiddenAt = time;
+      this.lastHidingHeight = height;
+    }
+
     this._durationValue.setValue(duration);
 
-    this.animationFrame = window.requestAnimationFrame(() => {
+    let animationFrame = window.requestAnimationFrame(() => {
       if (this.props.keyboardVisibleValue) {
         this._keyboardVisibleValue.setValue(isShowing ? 1.0 : 0.0);
       }
@@ -138,7 +175,14 @@ export class AnimatedKeyboardTracker extends React.Component {
       if (this.props.keyboardHeightValue) {
         this._keyboardHeightValue.setValue(isShowing ? height : 0);
       }
+
+      if (animationFrame === this.animationFrame) {
+        this.animationFrame = null;
+        animationFrame = null;
+      }
     });
+
+    this.animationFrame = animationFrame;
   };
 
   unsubscribeToKeyboard = () => {
@@ -165,17 +209,25 @@ export class AnimatedKeyboardTracker extends React.Component {
               runTiming(this.keyboardOpacityClock, this._keyboardVisibleValue, {
                 duration: this._durationValue,
                 toValue: this._keyboardVisibleValue,
-                easing: Easing.elastic(0.5)
+                easing: Easing.linear
               })
             ),
+            // Animated.set(
+            //   this.props.keyboardVisibleValue,
+            //   this._keyboardVisibleValue
+            // ),
             Animated.set(
               this.props.keyboardHeightValue,
-              runTiming(this.keyboardHeightClock, this._keyboardHeightValue, {
-                duration: this._durationValue,
-                toValue: this._keyboardHeightValue,
-                easing: Easing.elastic(0.5)
-              })
+              this._keyboardHeightValue
             )
+            // Animated.set(
+            //   this.props.keyboardHeightValue,
+            //   runTiming(this.keyboardHeightClock, this._keyboardHeightValue, {
+            //     duration: this._durationValue,
+            //     toValue: this._keyboardHeightValue,
+            //     easing: Easing.linear
+            //   })
+            // )
           ])}
         />
       );
@@ -188,7 +240,7 @@ export class AnimatedKeyboardTracker extends React.Component {
               runTiming(this.keyboardOpacityClock, this._keyboardVisibleValue, {
                 duration: this._durationValue,
                 toValue: this._keyboardVisibleValue,
-                easing: Easing.ease
+                easing: Easing.linear
               })
             )
           ])}
@@ -205,6 +257,10 @@ export class AnimatedKeyboardTracker extends React.Component {
                 toValue: this._keyboardHeightValue,
                 easing: Easing.linear
               })
+            ),
+            Animated.set(
+              this.props.keyboardHeightValue,
+              this._keyboardHeightValue
             )
           ])}
         />

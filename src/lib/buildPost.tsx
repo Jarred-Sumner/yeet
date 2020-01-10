@@ -659,6 +659,14 @@ export const layoutBlocksInPost = (
   return [blocks, positions];
 };
 
+export const isFixedSizeBlock = (block: PostBlock) => {
+  if (block.type === "image") {
+    return true;
+  }
+
+  return typeof block?.config?.overrides?.maxWidth === "number";
+};
+
 export const buildPost = ({
   format,
   layout,

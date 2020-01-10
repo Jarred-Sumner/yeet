@@ -58,7 +58,7 @@ import {
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
-import { NewPostType } from "../../lib/buildPost";
+import { NewPostType, isFixedSizeBlock } from "../../lib/buildPost";
 import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
 import { MarginView } from "./Node/MarginView";
 import { AnimatedEvent } from "./Node/createAnimatedTransformableViewComponent";
@@ -274,8 +274,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.handleInsertPhoto(undefined, "all", true, true, true);
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
-        x: POST_WIDTH / 2,
-        y: MAX_POST_HEIGHT / 2
+        x: 0,
+        y: 150
       });
     } else if (activeButton === ToolbarButtonType.plus) {
       const options = ["Text", "Image", "Cancel"];
@@ -365,8 +365,6 @@ class RawwPostEditor extends React.Component<Props, State> {
         ...this.props.inlineNodes,
         [editableNode.block.id]: editableNode
       });
-
-      this.clearFocus();
     }
   };
 
@@ -531,11 +529,12 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   clearFocus = () => {
-    this.focusedBlockValue.setValue(-1);
-    this.focusTypeValue.setValue(-1);
-    this.setState({ focusedBlockId: null, focusType: null });
-
     this.dismissKeyboard();
+
+    this.setState({ focusedBlockId: null, focusType: null }, () => {
+      this.focusedBlockValue.setValue(-1);
+      this.focusTypeValue.setValue(-1);
+    });
   };
 
   get currentTextInput() {
@@ -671,7 +670,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     if (this.state.focusType === null && focusTypeValue === -1) {
       this.handlePressToolbarButton(ToolbarButtonType.text);
     } else {
-      this.dismissKeyboard();
+      this.clearFocus();
     }
   };
 
@@ -928,31 +927,43 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
   handleShowKeyboard = (event, hasHappened) => {
-    // hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
+    isFixedSizeBlock(this.focusedBlock) &&
+      hasHappened &&
+      this.scrollRef.current.handleKeyboardEvent(event);
     // if (this.state.focusType === FocusType.absolute) {
-    //   this.scrollToTop();
+    // this.scrollToTop();
     // }
   };
   handleHideKeyboard = (event, hasHappened) => {
-    // this.scrollRef.current.handleKeyboardEvent(event);
-    // hasHappened && this.scrollRef.current.resetKeyboardSpace();
+    this.scrollRef.current.handleKeyboardEvent(event);
+    hasHappened && this.scrollRef.current.resetKeyboardSpace();
   };
   handleChangeFrame = event => {
-    // this.scrollRef.current.handleKeyboardEvent(event);
+    this.scrollRef.current.handleKeyboardEvent(event);
   };
 
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
   handleChangeOverrides = overrides => {
-    const _block: TextPostBlock = { ...this.focusedBlock };
-
-    _block.config.overrides = { ..._block.config.overrides, ...overrides };
+    const _block: TextPostBlock = {
+      ...this.focusedBlock,
+      config: {
+        ...this.focusedBlock.config,
+        overrides: { ...this.focusedBlock.config.overrides, ...overrides }
+      }
+    };
 
     this.handleChangeFocusedBlock(_block);
   };
 
   handleChangeBorderType = (border: TextBorderType, overrides: Object) => {
-    const block = { ...this.focusedBlock } as TextPostBlock;
-    block.config.border = border;
+    let block = {
+      ...this.focusedBlock,
+      config: {
+        ...this.focusedBlock.config,
+        overrides: { ...this.focusedBlock.config.overrides, ...overrides },
+        border
+      }
+    };
 
     if (overrides) {
       block.config.overrides = overrides;
@@ -961,7 +972,9 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBack = () => {
-    if (this.state.focusType !== null) {
+    if (this.state.focusType === FocusType.absolute) {
+      this.clearFocus();
+    } else if (this.state.focusType !== null) {
       this.handleBlur();
     } else {
       this.props.onBack();
@@ -1169,6 +1182,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 keyboardHeightValue={this.relativeKeyboardHeightValue}
+                keyboardHeight={this.props.keyboardHeight}
                 waitFor={this.postPreviewHandlers}
                 focusType={this.state.focusType}
                 minX={bounds.x}

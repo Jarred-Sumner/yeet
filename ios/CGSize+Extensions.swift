@@ -23,6 +23,13 @@ extension CGSize {
     )
   }
 
+  func dictionaryValue() -> [String: Any] {
+    return [
+      "width": width,
+      "height": height
+    ]
+  }
+
   var h264FriendlyScale: Int {
     let h264Width = abs(self.width.toClosestMultiple(CGFloat(16)))
     let h264Height = abs(self.height.toClosestMultiple(CGFloat(16)))

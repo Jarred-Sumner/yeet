@@ -131,6 +131,7 @@ export const BlockList = ({
       focusedBlockValue,
       onOpenImagePicker,
       positions,
+      blocks,
       focusType,
       onChangePhoto,
       onTap,
@@ -142,7 +143,7 @@ export const BlockList = ({
   );
 
   const renderRow = React.useCallback(
-    (row: Array<PostBlockID>) => {
+    (row: Array<PostBlockID>, index: number) => {
       const rowKey = row.join("-");
 
       return (
@@ -174,6 +175,7 @@ export const EditableNodeList = ({
   onChangeNode,
   onTapNode,
   velocityX,
+  keyboardHeight,
   velocityY,
   onTransform,
   maxX,
@@ -248,6 +250,7 @@ export const EditableNodeList = ({
           focusTypeValue={focusTypeValue}
           keyboardVisibleValue={keyboardVisibleValue}
           keyboardHeightValue={keyboardHeightValue}
+          keyboardHeight={keyboardHeight}
           focusType={focusType}
           key={id}
           isFocused={focusedBlockId === id}
@@ -271,6 +274,7 @@ export const EditableNodeList = ({
       bottom,
       maxY,
       scrollY,
+      keyboardHeight,
       topInsetValue,
       onBlurNode,
       focusedBlockValue,

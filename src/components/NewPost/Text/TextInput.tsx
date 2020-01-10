@@ -35,7 +35,11 @@ import {
   NativeViewGestureHandler,
   createNativeWrapper
 } from "react-native-gesture-handler";
-import { POST_WIDTH } from "../../../lib/buildPost";
+import {
+  POST_WIDTH,
+  MAX_POST_HEIGHT,
+  isFixedSizeBlock
+} from "../../../lib/buildPost";
 
 const RNTextInput = __RNTextInput;
 
@@ -348,8 +352,19 @@ const styles = StyleSheet.create({
     textShadowRadius: null
   },
   absoluteFocused: {
-    flex: 1
+    // flex: 1
     // textAlign: "left"
+  },
+  fixedSizeBorder: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: COLORS.secondaryOpacity,
+    borderStyle: "dashed",
+    position: "absolute",
+    zIndex: -1,
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0
   }
 });
 
@@ -559,8 +574,10 @@ export const TextInput = ({
   blockRef,
   stickerRef,
   username,
+  isBlockFocused: isFocused,
   onLayout,
   focusType,
+  onFinishEditing,
   onChangeValue,
   isSticker,
   paddingTop,
@@ -587,7 +604,8 @@ export const TextInput = ({
         backgroundColor: undefined,
         textAlign: undefined,
         textTransform: undefined,
-        maxWidth: undefined
+        maxWidth: undefined,
+        numberOfLines: undefined
       }
     },
     value,
@@ -606,22 +624,18 @@ export const TextInput = ({
 
   const fontSize = getFontSize(block);
 
-  const [isFocused, setFocused] = React.useState(false);
-
   const handleBlur = React.useCallback(
     event => {
       onBlur && onBlur(event);
-      setFocused(false);
     },
-    [onBlur, setFocused]
+    [onBlur]
   );
 
   const handleFocus = React.useCallback(
     event => {
       onFocus && onFocus(event);
-      setFocused(true);
     },
-    [onFocus, setFocused]
+    [onFocus]
   );
 
   const handleChangeText = React.useCallback(
@@ -631,12 +645,15 @@ export const TextInput = ({
     [onChangeValue]
   );
 
+  const maxWidth = overrides?.maxWidth;
+  const isFixedSize = isFixedSizeBlock(block);
+  const highlightInset = getHighlightInset(block);
+
   let width = undefined;
   let height = undefined;
 
-  if (focusType === FocusType.absolute && isFocused) {
-    // width = "100%";
-    // height = "100%";
+  if (focusType === FocusType.absolute && isFocused && !isFixedSize) {
+    width = POST_WIDTH - highlightInset * 2;
   } else if (format === PostFormat.post) {
     if (
       [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
@@ -658,7 +675,6 @@ export const TextInput = ({
 
   const textAlign = getTextBlockAlign(block);
   const textTransform = overrides?.textTransform;
-  const maxWidth = overrides?.maxWidth;
 
   const textShadow = React.useMemo(
     () => getTextShadow(backgroundColor, color, format, border, template),
@@ -682,16 +698,12 @@ export const TextInput = ({
 
   const strokeWidth = getStrokeWidth(block);
 
-  const highlightInset = getHighlightInset(block);
   const containerStyles = React.useMemo(
     () => [
       styles.container,
       textInputTypeStylesheets[template].container,
       formatStylesheets[format].container,
-      isFocused &&
-        focusType === FocusType.absolute &&
-        textInputTypeStylesheets[template].focusedContainer,
-      {
+      !isSticker && {
         height,
         width
       }
@@ -701,6 +713,7 @@ export const TextInput = ({
       format,
       width,
       height,
+      isSticker,
       styles.container,
       textInputTypeStylesheets,
       formatStylesheets,
@@ -729,13 +742,7 @@ export const TextInput = ({
         fontSize,
         ...textShadow
         // maxWidth,
-      },
-      isFocused && focusType === FocusType.absolute && styles.absoluteFocused,
-      isFocused &&
-        focusType === FocusType.absolute &&
-        {
-          // paddingTop
-        }
+      }
 
       // template === TextTemplate.comic && {
       //   textAlign: "center"
@@ -769,6 +776,8 @@ export const TextInput = ({
     ]
   );
 
+  const isKeyboardFocused = isFocused && focusType === FocusType.absolute;
+
   let pointerEvents = "auto";
   if (isSticker && focusType === FocusType.static) {
     pointerEvents = "none";
@@ -797,10 +806,14 @@ export const TextInput = ({
         multiline
         scrollEnabled={false}
         singleFocus
+        numberOfLines={overrides.numberOfLines ?? null}
+        width={maxWidth ?? width}
+        // maxWidth={maxWidth ?? POST_WIDTH}
+        // minWidth={isSticker ? 40 : undefined}
+        maxContentWidth={maxWidth}
+        height={typeof height === "number" ? height : undefined}
+        onFinishEditing={onFinishEditing}
         nestedScrollEnabled
-        width={width ?? POST_WIDTH}
-        height={height}
-        maxWidth={maxWidth ?? POST_WIDTH}
         fontSize={fontSize}
         listKey={block.id}
         spellCheck={false}
@@ -811,7 +824,6 @@ export const TextInput = ({
         highlightInset={highlightInset}
         highlightCornerRadius={highlightCornerRadius}
         strokeColor={strokeColor}
-        adjustsSizeToFit={!isFocused}
         borderType={borderType}
         strokeWidth={strokeWidth}
         onContentSizeChange={onContentSizeChange}
@@ -830,7 +842,6 @@ export const TextInput = ({
         keyboardAppearance="dark"
         textContentType="none"
         autoFocus={false}
-        maxWidth={maxWidth}
       />
 
       {format === PostFormat.comment ? (
@@ -853,13 +864,14 @@ export const TextInput = ({
         style={[
           textInputTypeStylesheets[template]?.sticker,
           formatStylesheets[format].sticker,
-          isFocused &&
-            focusType === FocusType.absolute &&
-            formatStylesheets[format].focusedSticker
+          isKeyboardFocused && formatStylesheets[format].focusedSticker
         ]}
         nativeID="stickerContainer"
         ref={stickerRef}
       >
+        {isFixedSize && isKeyboardFocused && (
+          <View pointerEvents="none" style={styles.fixedSizeBorder} />
+        )}
         {innerContent}
 
         {template === TextTemplate.comic && (
@@ -868,7 +880,7 @@ export const TextInput = ({
             style={{
               opacity: String(text).length > 4 ? 1 : 0,
               alignItems: "center",
-              top: isFocused ? 3 : 1 + 2,
+              top: 3,
               position: "absolute",
               alignSelf: "center",
               // left: 0,

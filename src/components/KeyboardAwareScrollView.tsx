@@ -13,6 +13,7 @@ import {
 import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
 
 const ScrollView = Animated.createAnimatedComponent(GestureScrollView);
 
@@ -73,7 +74,7 @@ const ScrollIntoViewDefaultOptions = {
     // getNode() permit to support Animated.ScrollView automatically
     // see https://github.com/facebook/react-native/issues/19650
     // see https://stackoverflow.com/questions/42051368/scrollto-is-undefined-on-animated-scrollview/48786374
-    if (ref.getNode) {
+    if (ref?.getNode) {
       return ref.getNode();
     } else {
       return ref;
@@ -89,7 +90,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     extraScrollHeight: ScrollIntoViewDefaultOptions.extraScrollHeight,
     enableResetScrollToCoords:
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
-    getFocusedField: TextInput.State.currentlyFocusedField,
+    getFocusedField: currentlyFocusedField,
     keyboardOpeningTime: ScrollIntoViewDefaultOptions.keyboardOpeningTime,
     viewIsInsideTabBar: ScrollIntoViewDefaultOptions.viewIsInsideTabBar,
     enableOnAndroid: ScrollIntoViewDefaultOptions.enableOnAndroid,
@@ -141,10 +142,8 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
   }
 
   getScrollResponder = () => {
-    return (
-      this._rnkasv_keyboardView &&
-      this._rnkasv_keyboardView.getScrollResponder()
-    );
+    console.log(this._rnkasv_keyboardView?.getScrollResponder());
+    return this._rnkasv_keyboardView?.getScrollResponder();
   };
 
   scrollToPosition = (x, y, animated = true) => {
@@ -172,18 +171,18 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     if (keyboardOpeningTime === undefined) {
       keyboardOpeningTime = this.props.keyboardOpeningTime || 0;
     }
-    // setTimeout(() => {
-    if (!this.mountedComponent) {
-      return;
-    }
-    const responder = this.getScrollResponder();
-    responder &&
-      responder.scrollResponderScrollNativeHandleToKeyboard(
-        reactNode,
-        extraHeight,
-        true
-      );
-    // }, keyboardOpeningTime);
+    setTimeout(() => {
+      if (!this.mountedComponent) {
+        return;
+      }
+      const responder = this.getScrollResponder();
+      responder &&
+        responder.scrollResponderScrollNativeHandleToKeyboard(
+          reactNode,
+          extraHeight,
+          true
+        );
+    }, keyboardOpeningTime);
   };
 
   scrollIntoView = async (element, options = {}) => {
@@ -371,6 +370,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     this._rnkasv_keyboardView = ref
       ? ScrollIntoViewDefaultOptions.extractNativeRef(ref)
       : ref;
+
     if (this.props.innerRef) {
       this.props.innerRef(this._rnkasv_keyboardView);
     }

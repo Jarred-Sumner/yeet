@@ -217,7 +217,7 @@ class RawNewPost extends React.Component<{}, State> {
         if (inlineNodes[id]) {
           inlineNodes[id].block = block;
         } else {
-          blocks[block] = block;
+          blocks[id] = block;
         }
       }
     }
@@ -490,10 +490,17 @@ class RawNewPost extends React.Component<{}, State> {
   headerOpacity = new Animated.Value(0);
   postEditor = React.createRef<View>();
 
-  showKeyboard = () => {
-    this.setState({ isKeyboardVisible: true });
+  showKeyboard = event => {
+    const {
+      endCoordinates: { height: keyboardHeight = 0 }
+    } = event;
+    this.postEditor?.current?.handleShowKeyboard(event, true);
+    this.setState({ isKeyboardVisible: true, keyboardHeight });
   };
-  hideKeyboard = () => this.setState({ isKeyboardVisible: false });
+  hideKeyboard = event => {
+    this.postEditor?.current?.handleHideKeyboard(event, true);
+    this.setState({ isKeyboardVisible: false, keyboardHeight: 0 });
+  };
   handleBeforeExport = () => this.setState({ disableGallery: true });
 
   render() {
@@ -548,6 +555,7 @@ class RawNewPost extends React.Component<{}, State> {
                   ref={this.postEditor}
                   keyboardVisibleValue={this.keyboardVisibleValue}
                   keyboardHeightValue={this.keyboardHeightValue}
+                  keyboardHeight={this.state.keyboardHeight ?? 0}
                   headerOffset={this.headerOffset}
                   headerOpacity={this.headerOpacity}
                   navigation={this.props.navigation}
