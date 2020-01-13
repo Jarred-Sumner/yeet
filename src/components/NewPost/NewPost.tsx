@@ -486,6 +486,8 @@ class RawNewPost extends React.Component<{}, State> {
   };
   keyboardVisibleValue = new Animated.Value<number>(0);
   keyboardHeightValue = new Animated.Value<number>(0);
+  animatedKeyboardVisibleValue = new Animated.Value<number>(0);
+  animatedKeyboardHeightValue = new Animated.Value<number>(0);
   headerOffset = new Animated.Value(0);
   headerOpacity = new Animated.Value(0);
   postEditor = React.createRef<View>();
@@ -516,6 +518,8 @@ class RawNewPost extends React.Component<{}, State> {
           onKeyboardHide={this.hideKeyboard}
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
+          animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
+          animatedKeyboardHeightValue={this.animatedKeyboardHeightValue}
         />
 
         <Panner
@@ -555,6 +559,10 @@ class RawNewPost extends React.Component<{}, State> {
                   ref={this.postEditor}
                   keyboardVisibleValue={this.keyboardVisibleValue}
                   keyboardHeightValue={this.keyboardHeightValue}
+                  animatedKeyboardVisibleValue={
+                    this.animatedKeyboardVisibleValue
+                  }
+                  animatedKeyboardHeightValue={this.animatedKeyboardHeightValue}
                   keyboardHeight={this.state.keyboardHeight ?? 0}
                   headerOffset={this.headerOffset}
                   headerOpacity={this.headerOpacity}

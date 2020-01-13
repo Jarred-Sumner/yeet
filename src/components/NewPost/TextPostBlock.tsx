@@ -89,6 +89,7 @@ export class TextPostBlock extends React.Component<Props> {
       inputRef,
       disabled,
       maxX,
+      onContentSizeChange,
       gestureRef,
       focusTypeValue,
       focusType,
@@ -112,11 +113,12 @@ export class TextPostBlock extends React.Component<Props> {
         isBlockFocused={isFocused}
         blockRef={this.containerRef}
         isSticker={isSticker}
-        inputRef={this.textInput}
+        ref={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}
         onFinishEditing={this.handleFinishEditing}
         focusType={focusType}
+        onContentSizeChange={onContentSizeChange}
         gestureRef={gestureRef}
         text={this.state.text}
         onBlur={this.handleBlur}

@@ -21,6 +21,9 @@
 		830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830303C62324AD8C00BD2260 /* ExportableImage.swift */; };
 		830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */; };
 		830554E123C6F024008D8BD1 /* YeetTextInputShadowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 830554E023C6F024008D8BD1 /* YeetTextInputShadowView.m */; };
+		830554E323C8187E008D8BD1 /* YeetTextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830554E223C8187E008D8BD1 /* YeetTextView.swift */; };
+		830554E523C84369008D8BD1 /* YeetTextAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 830554E423C84369008D8BD1 /* YeetTextAttributes.swift */; };
+		830554E823C858A2008D8BD1 /* _RCTUITextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 830554E723C858A2008D8BD1 /* _RCTUITextView.m */; };
 		8311793623B1861100EA8CB2 /* MovableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311793523B1861100EA8CB2 /* MovableView.swift */; };
 		8311793823B1889500EA8CB2 /* MovableViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8311793723B1889500EA8CB2 /* MovableViewManager.swift */; };
 		8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */; };
@@ -81,6 +84,7 @@
 		83B0CADB23B6F8000010DC66 /* ContentBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CADA23B6F8000010DC66 /* ContentBlock.swift */; };
 		83CC6C47235FB68000772285 /* ContentExportTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CC6C46235FB68000772285 /* ContentExportTest.swift */; };
 		83D49B7023B71EB400820D57 /* MediaSourceVideoCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D49B6F23B71EB400820D57 /* MediaSourceVideoCover.swift */; };
+		83D57E3A23CBC797002178AC /* UIView+keyboardAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */; };
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
 		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
 		83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */; };
@@ -174,6 +178,11 @@
 		830418642345AAEE007C9E5A /* EnableWebpDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnableWebpDecoder.h; sourceTree = "<group>"; };
 		830554DF23C6F024008D8BD1 /* YeetTextInputShadowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetTextInputShadowView.h; sourceTree = "<group>"; };
 		830554E023C6F024008D8BD1 /* YeetTextInputShadowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YeetTextInputShadowView.m; sourceTree = "<group>"; };
+		830554E223C8187E008D8BD1 /* YeetTextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextView.swift; sourceTree = "<group>"; };
+		830554E423C84369008D8BD1 /* YeetTextAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextAttributes.swift; sourceTree = "<group>"; };
+		830554E623C858A2008D8BD1 /* _RCTUITextView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = _RCTUITextView.h; sourceTree = "<group>"; };
+		830554E723C858A2008D8BD1 /* _RCTUITextView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = _RCTUITextView.m; sourceTree = "<group>"; };
+		830554E923C861F5008D8BD1 /* YeetTextEnums.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetTextEnums.h; sourceTree = "<group>"; };
 		8311793523B1861100EA8CB2 /* MovableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovableView.swift; sourceTree = "<group>"; };
 		8311793723B1889500EA8CB2 /* MovableViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MovableViewManager.swift; sourceTree = "<group>"; };
 		8313ACE02346AAD3003108B6 /* TrackableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableMediaSource.swift; sourceTree = "<group>"; };
@@ -256,6 +265,7 @@
 		83B0CADA23B6F8000010DC66 /* ContentBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlock.swift; sourceTree = "<group>"; };
 		83CC6C46235FB68000772285 /* ContentExportTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportTest.swift; sourceTree = "<group>"; };
 		83D49B6F23B71EB400820D57 /* MediaSourceVideoCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourceVideoCover.swift; sourceTree = "<group>"; };
+		83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+keyboardAnimation.swift"; sourceTree = "<group>"; };
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
 		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
 		83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaQueuePlayer.swift; sourceTree = "<group>"; };
@@ -542,6 +552,12 @@
 			children = (
 				83470518232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift */,
 				8347051D232B0912004B2FF7 /* YeetTextInputView.swift */,
+				830554E223C8187E008D8BD1 /* YeetTextView.swift */,
+				83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */,
+				830554E423C84369008D8BD1 /* YeetTextAttributes.swift */,
+				830554E623C858A2008D8BD1 /* _RCTUITextView.h */,
+				830554E723C858A2008D8BD1 /* _RCTUITextView.m */,
+				830554E923C861F5008D8BD1 /* YeetTextEnums.h */,
 				8347051F232B0C47004B2FF7 /* YeetTextInputViewManager.swift */,
 				83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */,
 				83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */,
@@ -994,6 +1010,7 @@
 				83EF944F23B81CFF00EC37CF /* ContentExportThumbnail.swift in Sources */,
 				833867E123B6F3FC0054778D /* CGRect+extensions.swift in Sources */,
 				8341A1EB238E1D8F00632E88 /* Log.swift in Sources */,
+				830554E323C8187E008D8BD1 /* YeetTextView.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */,
@@ -1008,6 +1025,7 @@
 				83E3E82E23B985F4007AC944 /* ContentExportResult.swift in Sources */,
 				83356DF523A8671300943381 /* MediaPlayerShare.swift in Sources */,
 				83EF944D23B81CB700EC37CF /* ContentExportError.swift in Sources */,
+				830554E823C858A2008D8BD1 /* _RCTUITextView.m in Sources */,
 				83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
@@ -1025,6 +1043,7 @@
 				83B0CAD723B6F7C40010DC66 /* YeetImage.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
 				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
+				83D57E3A23CBC797002178AC /* UIView+keyboardAnimation.swift in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
 				8311793623B1861100EA8CB2 /* MovableView.swift in Sources */,
 				8349A29923579C0200795FAA /* YeetCompositor.swift in Sources */,
@@ -1040,6 +1059,7 @@
 				8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */,
 				833867E523B6F4630054778D /* UIView+extensions.swift in Sources */,
 				83161E8A2344282800C271F3 /* MediaFrameViewManager.swift in Sources */,
+				830554E523C84369008D8BD1 /* YeetTextAttributes.swift in Sources */,
 				83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */,
 				836A61A823BC4EB6001CF427 /* UIViewScreensExtension.swift in Sources */,
 				83470519232AF9C8004B2FF7 /* CGPath+HighlightedCorners.swift in Sources */,

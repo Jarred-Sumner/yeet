@@ -350,11 +350,16 @@ export const TextInputToolbar = ({
   block,
   scrollRef,
   focusType,
+  children,
   onChooseTemplate,
   onChangeOverrides,
   onChangeBorderType,
   nativeID
 }) => {
+  if (block && block.type === "image") {
+    return null;
+  }
+
   const [{ height, width }, setLayout] = React.useState({
     height: undefined,
     width: SCREEN_DIMENSIONS.width
@@ -367,6 +372,7 @@ export const TextInputToolbar = ({
 
   return (
     <InputAccessoryView nativeID={nativeID} style={accessoryViewStyle}>
+      {children}
       <RawTextInputToolbar
         block={block}
         scrollRef={scrollRef}

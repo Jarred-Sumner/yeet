@@ -79,7 +79,7 @@
     "react-native-fast-image": "https://github.com/Jarred-Sumner/react-native-fast-image.git",
     "react-native-formik": "^1.7.7",
     "react-native-fs": "^2.16.1",
-    "react-native-gesture-handler": "1.5.0",
+    "react-native-gesture-handler": "1.5.3",
     "react-native-haptic-feedback": "^1.8.2",
     "react-native-hooks": "^0.9.0",
     "react-native-image-picker": "1.1.0",

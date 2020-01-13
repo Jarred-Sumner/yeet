@@ -85,6 +85,15 @@ extension CGRect {
                            y: newValue.y - height / 2) }
   }
 
+  func dictionaryValue() -> [String: Any] {
+     return [
+        "x": x,
+       "y": y,
+       "width": width,
+       "height": height
+     ]
+   }
+
   /// Returns bottom left corner
   public var bottomLeft: CGPoint {
     get { return CGPoint(x: minX, y: maxY) }

@@ -450,7 +450,7 @@ PODS:
     - RNFBApp
   - RNFS (2.16.2):
     - React
-  - RNGestureHandler (1.5.0):
+  - RNGestureHandler (1.5.3):
     - React
   - RNInAppBrowser (3.3.3):
     - React
@@ -937,7 +937,7 @@ SPEC CHECKSUMS:
   RNFBApp: 92ae594c85e82e1e68434049b2a37e1f584cf8b9
   RNFBPerf: 57050d2e6a5fa373afff618acbd4fafd16714a08
   RNFS: 0d4191b1052bef9ce70deff00a5b4169c62bbd9b
-  RNGestureHandler: a4ddde1ffc6e590c8127b8b7eabfdade45475c74
+  RNGestureHandler: 02905abe54e1f6e59c081a10b4bd689721e17aa6
   RNInAppBrowser: 0800f17fd7ed9fc503eb68e427befebb41ee719b
   RNPermissions: 86932e45b170515f71f76751bc9fa055910b049f
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
@@ -967,6 +967,6 @@ SPEC CHECKSUMS:
   XExtensionItem: 12959ad75ca5d6174bda1c1d596853fd0b0817e4
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: a4d62ec1a688a3005c44454bc87a7f3ce6105481
+PODFILE CHECKSUM: e226178925ec50e5e5f70a9d7fbea5ea8aea9e49
 
 COCOAPODS: 1.8.4

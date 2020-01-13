@@ -1,18 +1,15 @@
-import {
-  connectActionSheet,
-  useActionSheet
-} from "@expo/react-native-action-sheet";
-import { flatten } from "lodash";
+import { useActionSheet } from "@expo/react-native-action-sheet";
+import { debounce, isArray, memoize } from "lodash";
 import * as React from "react";
-import { StyleSheet, View, findNodeHandle } from "react-native";
+import { StyleSheet, View } from "react-native";
 import {
   ScrollView,
   State as GestureState
 } from "react-native-gesture-handler";
-import LinearGradient from "react-native-linear-gradient";
 import Animated from "react-native-reanimated";
 import { NavigationEvents } from "react-navigation";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
+import { isFixedSizeBlock, NewPostType } from "../../lib/buildPost";
 import { getEstimatedBounds, startExport } from "../../lib/Exporter";
 import {
   ImageSourceType,
@@ -23,9 +20,8 @@ import {
 import { Rectangle } from "../../lib/Rectangle";
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback } from "../../lib/Vibration";
-import { InputAccessoryView } from "../InputAccessoryView";
+import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
-import { isArray, memoize } from "lodash";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import {
@@ -50,6 +46,7 @@ import {
   EditableNode,
   EditableNodeMap
 } from "./Node/BaseNode";
+import { MarginView } from "./Node/MarginView";
 import { EditableNodeList, PostPreview } from "./PostPreview";
 import TextInput from "./Text/CustomTextInputComponent";
 import { TextInputToolbar } from "./TextInputToolbar";
@@ -58,12 +55,6 @@ import {
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
-import { NewPostType, isFixedSizeBlock } from "../../lib/buildPost";
-import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
-import { MarginView } from "./Node/MarginView";
-import { AnimatedEvent } from "./Node/createAnimatedTransformableViewComponent";
-import { createAnimatedEvent } from "./Node/createAnimatedEvent";
-import { BlurView } from "@react-native-community/blur";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -242,11 +233,6 @@ class RawwPostEditor extends React.Component<Props, State> {
   handleWillFocus = () => {};
 
   deleteNode = (id: string) => {
-    this.props.onChangeNodes({
-      ...this.props.inlineNodes,
-      [id]: undefined
-    });
-
     if (this._inlineNodeRefs.has(id)) {
       this._inlineNodeRefs.delete(id);
     }
@@ -259,6 +245,11 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.scrollRef,
       ...this._blockInputRefs.values()
     ];
+
+    this.props.onChangeNodes({
+      ...this.props.inlineNodes,
+      [id]: undefined
+    });
 
     this.clearFocus();
   };
@@ -424,8 +415,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
     const editableNode = buildEditableNode({
       block,
-      x: x - SPACING.normal,
-      y: y + SPACING.normal
+      x,
+      y
     });
 
     this.props.onChangeNodes({
@@ -433,6 +424,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       [block.id]: editableNode
     });
     this._blockInputRefs.set(block.id, React.createRef());
+
     this.focusTypeValue.setValue(FocusType.absolute);
     this.focusedBlockValue.setValue(block.id.hashCode());
 
@@ -474,11 +466,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         !focusedBlockId) &&
       node.block.type === "text"
     ) {
-      const blockId = node.block.id;
-      this._blockInputRefs.get(blockId).current?.focus();
-
       this.handleFocusBlock(node.block);
-
       return false;
     }
   };
@@ -507,25 +495,32 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleFocusBlock = (block: PostBlockType) => {
-    if (this.focusedBlock?.id === block.id) {
-      return;
-    }
-
     const focusType = this.props.inlineNodes[block.id]
       ? FocusType.absolute
       : FocusType.static;
 
+    if (
+      this.focusedBlock?.id === block.id &&
+      this.state.focusType === focusType
+    ) {
+      return;
+    }
+
     this.focusedBlockValue.setValue(block.id.hashCode());
     this.focusTypeValue.setValue(focusType);
 
-    if (block.type === "text") {
-      this._blockInputRefs.get(block.id).current?.focus();
-    }
-
-    this.setState({
-      focusedBlockId: block.id,
-      focusType
-    });
+    this.setState(
+      {
+        focusedBlockId: block.id,
+        focusType
+      },
+      () => {
+        console.log("GO");
+        if (block.type === "text") {
+          this._blockInputRefs.get(block.id).current?.focus();
+        }
+      }
+    );
   };
 
   clearFocus = () => {
@@ -538,7 +533,11 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   get currentTextInput() {
-    return this._blockInputRefs.get(this.state.focusedBlockId)?.current;
+    if (this.focusedBlock?.type === "text") {
+      return this._blockInputRefs.get(this.state.focusedBlockId)?.current;
+    } else {
+      return null;
+    }
   }
 
   dismissKeyboard = () => {
@@ -606,6 +605,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   scrollRef = React.createRef<ScrollView>();
   keyboardVisibleValue = this.props.keyboardVisibleValue;
   keyboardHeightValue = this.props.keyboardHeightValue;
+  animatedKeyboardVisibleValue = this.props.animatedKeyboardVisibleValue;
+  animatedKeyboardHeightValue = this.props.animatedKeyboardHeightValue;
   focusedBlockValue = new Animated.Value<number>(-1);
   focusTypeValue = new Animated.Value<FocusType | -1>(-1);
 
@@ -983,7 +984,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   darkSheetOpacityValue = Animated.cond(
     Animated.eq(this.focusTypeValue, FocusType.absolute),
-    this.keyboardVisibleValue,
+    this.animatedKeyboardVisibleValue,
     0
   );
 
@@ -1181,6 +1182,8 @@ class RawwPostEditor extends React.Component<Props, State> {
                 velocityY={this.velocityY}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
+                keyboardHeightValue={this.relativeKeyboardHeightValue}
+                animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
                 keyboardHeightValue={this.relativeKeyboardHeightValue}
                 keyboardHeight={this.props.keyboardHeight}
                 waitFor={this.postPreviewHandlers}

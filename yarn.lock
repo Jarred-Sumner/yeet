@@ -8243,10 +8243,10 @@ react-native-fs@^2.16.1:
     base-64 "^0.1.0"
     utf8 "^3.0.0"
 
-react-native-gesture-handler@1.5.0:
-  version "1.5.0"
-  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-1.5.0.tgz#df7dc5285c152e0656db70f55200fa632c4f45af"
-  integrity sha512-YUOXHsGLajK1cFReQ4Xh0H9GUTxDW9cUZEVu1q+dVqur2urSKi63KklAFB2l8Neob9nl1E/w0c5hGcBP9FMCIA==
+react-native-gesture-handler@1.5.3:
+  version "1.5.3"
+  resolved "https://registry.yarnpkg.com/react-native-gesture-handler/-/react-native-gesture-handler-1.5.3.tgz#191b44701fab7ba54c27a2438cb5eaa252666e66"
+  integrity sha512-y2/jw0uHAQtEPR02PHAah6tdMymrVtZFoHqjlEWdhK807w2sgU5CySYINK/nOTczd+zB4GMX+9euA3VfbGJ5aA==
   dependencies:
     hammerjs "^2.0.8"
     hoist-non-react-statics "^2.3.1"

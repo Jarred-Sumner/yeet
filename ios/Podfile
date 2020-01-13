@@ -143,6 +143,7 @@ target 'yeet' do
 #   pod 'RNReanimated',
 #       path: '../node_modules/react-native-reanimated', modular_headers: false
 
+  
   pod 'react-native-config',
       path: '../node_modules/react-native-config', modular_headers: false
 

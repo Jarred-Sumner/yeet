@@ -176,6 +176,7 @@ export const EditableNodeList = ({
   onTapNode,
   velocityX,
   keyboardHeight,
+  animatedKeyboardVisibleValue,
   velocityY,
   onTransform,
   maxX,
@@ -245,6 +246,7 @@ export const EditableNodeList = ({
           inputRef={handleSetBlockInputRef(id)}
           onFocus={onFocus}
           absoluteX={panX}
+          animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
           enableAutomaticScroll
           absoluteY={panY}
           focusTypeValue={focusTypeValue}
@@ -283,6 +285,7 @@ export const EditableNodeList = ({
       handlePan,
       focusedBlockId,
       waitFor,
+      animatedKeyboardVisibleValue,
       velocityX,
       velocityY,
       onTransform,

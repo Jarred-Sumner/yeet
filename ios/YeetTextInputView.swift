@@ -11,108 +11,32 @@ import Foundation
 
 
 @objc(YeetTextInputView)
-class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInvalidating, RCTUIManagerObserver {
-  static var DEFAULT_HIGHLIGHT_CORNER_RADIUS = CGFloat(4)
-  static var DEFAULT_HIGHLIGHT_INSET = CGFloat(2)
-  static var DEFAULT_HIGHLIGHT_COLOR = UIColor.blue
+class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidating, RCTUIManagerObserver {
+  override var backedTextInputView: UIView & RCTBackedTextInputViewProtocol {
+    return textView
+  }
 
   @objc(fontSizeRange)
   var fontSizeRange: Dictionary<String, Int> = [:]
 
-  @objc(strokeColor)
-  var strokeColor: UIColor? = nil {
-    didSet {
-      highlightLayer.strokeColor = self.strokeColor?.cgColor
-    }
-  }
+  func didMountSticker() {
+    if textView.isFirstResponder {
 
-  enum Border : String {
-    case stroke = "stroke"
-    case ellipse = "ellipse"
-    case solid = "solid"
-    case hidden = "hidden"
-    case invert = "invert"
-    case highlight = "highlight"
-  }
-
-  var border: Border = .hidden
-
-  @objc(highlightLayer)
-  var highlightLayer: CAShapeLayer
-
-  @objc(highlightColor)
-  var highlightColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR {
-    didSet {
-      highlightLayer.fillColor = self.highlightColor.cgColor
-    }
-  }
-
-  @objc(highlightCornerRadius)
-  var highlightCornerRadius = YeetTextInputView.DEFAULT_HIGHLIGHT_CORNER_RADIUS {
-    didSet {
-      highlightLayer.cornerRadius = self.highlightCornerRadius
-    }
-  }
-
-  @objc(strokeWidth)
-  var strokeWidth: CGFloat = 0.0 {
-    didSet {
-      highlightLayer.lineWidth = strokeWidth
-      if oldValue != strokeWidth {
-//        textView.textContainerInset.top -= oldValue
-//        textView.textContainerInset.bottom -= oldValue
-      }
-    }
-  }
-
-  @objc(highlightInset)
-  var highlightInset = CGFloat(YeetTextInputView.DEFAULT_HIGHLIGHT_INSET)
-  var showHighlight: Bool {
-    if isSticker {
-      return [.solid, .stroke, .highlight, .ellipse, .invert].contains(borderType)
-    } else {
-      return [.solid, .stroke].contains(borderType)
     }
   }
 
 
-  var textInset: UIEdgeInsets {
-    return UIEdgeInsets.init(top: highlightInset + reactPaddingInsets.top + strokeWidth, left: highlightInset + reactPaddingInsets.left + strokeWidth, bottom: highlightInset + reactPaddingInsets.bottom + strokeWidth, right: highlightInset + reactPaddingInsets.right + strokeWidth )
-  }
-
-  func drawHighlight(async: Bool = false) {
-    if (self.highlightLayer.superlayer == nil) {
-      self.highlightSubview.layer.addSublayer(self.highlightLayer)
-    }
-
-
-    self.enforceTextAttributesIfNeeded()
-    var _textRect = textRect
-    textRect = UITextView.setHighlightPath(textView: self.textView as! UITextView, inset: textInset, radius: self.highlightCornerRadius, highlightLayer: self.highlightLayer, borderType: self.borderType, strokeWidth: strokeWidth, strokeColor: strokeColor ?? UIColor.clear, originalFont: backedTextInputView.reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: CGFloat(16), weight: .regular) , canAdjustInset: isSticker)
-
-
-
-    if !showHighlight {
-      self.highlightLayer.isHidden = true
-    }
-
-    if textRect != _textRect && textView.isFirstResponder {
-      self.rctTextView.setSelectedTextRange(rctTextView.selectedTextRange, notifyDelegate: false)
-    }
-  }
 
   var isInitialMount = true
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
+    if isInitialMount && isSticker {
+      DispatchQueue.main.async { [weak self] in
+        self?.didMountSticker()
+      }
 
-//    if changedProps.contains("maxContentWidth") {
-//      textView.preferredMaxLayoutWidth = maxContentWidth?.cgFloatValue
-//    }
-    if isInitialMount && isSticker && !hasText && textView.isFirstResponder && !isFixedSize {
-//      bridge?.uiManager.setSize(CGSize(width: UIScreen.main.bounds.width, height: .greatestFiniteMagnitude), for: self)
-//      self.textView.invalidateIntrinsicContentSize()
     }
 
     let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") ||  changedProps.contains("template") || changedProps.contains("textAlign")
@@ -121,54 +45,21 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
     if (needsUpdateHighlight) {
       if Thread.isMainThread {
-        if forceLayout {
-          self.setNeedsLayout()
-          self.layoutIfNeeded()
-        } else {
-          self.updateHighlight()
-        }
+        self.setNeedsLayout()
+        self.layoutIfNeeded()
       } else {
         DispatchQueue.main.async { [weak self] in
-          if forceLayout {
-            self?.setNeedsLayout()
-            self?.layoutIfNeeded()
-          } else {
-            self?.updateHighlight()
-          }
+
+          self?.setNeedsLayout()
+          self?.layoutIfNeeded()
+
         }
       }
 
       isInitialMount = false
     }
 
-    if (changedProps.contains("text") && !textView.isFirstResponder) {
-      let _oldString = attributedText?.string
 
-      DispatchQueue.main.async { [weak self] in
-        guard let text = self?.attributedText
-          else {
-          return
-        }
-
-        guard _oldString != text.string else {
-          return
-        }
-
-        self?.textView.attributedText = text
-        self?.setNeedsLayout()
-        self?.layoutIfNeeded()
-
-        if let _rect = self?.lastTransformRect {
-          self?.movableView?.handleLayoutTransform(_rect)
-        }
-      }
-    }
-  }
-
-
-
-  func updateHighlight() {
-    self.drawHighlight()
   }
 
   func invalidate() {
@@ -180,156 +71,45 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
   }
 
-  var highlightSubview = UIView()
-  static var horizontalFocusOffset = CGFloat(16);
 
   private var size = CGSize.zero
   override func layoutSubviews() {
-    let _transformRect = movableView?.transformRect
     super.layoutSubviews()
-
-    if self.highlightSubview.superview == nil {
-      highlightSubview.layer.addSublayer(highlightLayer)
-      highlightLayer.isHidden = !showHighlight
-      self.backedTextInputView.insertSubview(highlightSubview, at: 0)
-    }
-
-
-
-    if isSticker && hasText {
-
-      var boundsSize = CGSize(width: max(bounds.width, _maxContentWidth), height: bounds.height)
-
-      var _rect = CGRect(origin: bounds.origin, size: boundsSize).inset(by: textInset.negate).inset(by: reactPaddingInsets)
-      var size = textView.sizeThatFits(_rect.size)
-      var offset = _rect.origin
-      let textAlign = textView.textAlignment
-
-      if textView.isFirstResponder {
-        offset.x = YeetTextInputView.horizontalFocusOffset
-        if textAlign == .right {
-          offset.x -= textInset.left - textInset.right
-        }
-//        size.width -= abs(offset.x) * 2
-      }
-
-      if textView.isFirstResponder && !isFixedSize {
-        textView.contentOffset.x = offset.x
-        textView.contentInset = UIEdgeInsets(top: textView.contentInset.top, left: offset.x, bottom: textView.contentInset.bottom, right: offset.x)
-
-        self.bridge?.uiManager.setIntrinsicContentSize(size, for: self)
-
-//        textView.invalidateIntrinsicContentSize()
-//        textView.setNeedsLayout()
-//        textView.layoutIfNeeded()
-
-        self.size = boundsSize
-      } else if hasText && !isFixedSize {
-        textView.contentOffset = .zero
-        textView.contentInset = .zero
-
-        self.bridge?.uiManager.setIntrinsicContentSize(size, for: self)
-      }
-    }
-
-    self.updateHighlight()
-
-    if _transformRect != movableView?.transformRect {
-      self.lastTransformRect = _transformRect
-
-      if !self.textView.isFirstResponder && _transformRect != nil {
-        self.movableView?.handleLayoutTransform(_transformRect!)
-      }
-
-    }
   }
 
+  
+
+  @objc(yeetTextAttributes)
+  var yeetTextAttributes : YeetTextAttributes {
+    get {
+      return textView.yeetTextAttributes
+    }
+
+    set (newValue) {
+      textView.yeetTextAttributes = newValue
+    }
+  }
   var hasText : Bool { attributedText?.length ?? 0 > 0 }
-
-  enum TextTemplate : String {
-    case basic = "basic"
-    case bigWords = "bigWords"
-    case post = "post"
-    case comment = "comment"
-    case comic = "comic"
-    case gary = "gary"
-    case terminal = "terminal"
-    case pickaxe = "pickaxe"
-  }
-
-  var textTemplate: TextTemplate = .post
-
-
-  @objc(borderTypeString)
-  var borderTypeString: String = "hidden" {
-    didSet {
-      self.borderType = Border.init(rawValue: borderTypeString) ?? .hidden
-    }
-  }
-
-  var borderType: Border = .hidden
-
-  @objc(template)
-  var template: String = "post" {
-    didSet {
-      self.textTemplate = TextTemplate(rawValue: template) ?? .post
-    }
-  }
 
   var textInputView : UIView {
     return self.textView.textInputView
   }
 
-  var hasSetContentScale = false
+  
+
   var scale: CGFloat {
-    get {
-      return textInputView.contentScaleFactor
-    }
-
+    get { textView.scale }
     set (newValue) {
-      let oldValue = self.scale
-      textInputView.contentScaleFactor = newValue
-
-      if self.scale != oldValue {
-        self.updateScale()
+      guard movableView?.canUpdateContentScale ?? true else {
+        return
       }
 
-      hasSetContentScale = true
-    }
-
-  }
-
-  func updateScale() {
-    DispatchQueue.main.throttle(deadline: DispatchTime.now() + 0.1, context: self) { [weak self] in
-      self?._updateScale()
-    }
-
-  }
-
-  func _updateScale() {
-    self.textView.contentScaleFactor = self.scale
-    let nativeScale = self.scale * UIScreen.main.scale
-
-    textView.layer.contentsScale = nativeScale
-    highlightLayer.contentsScale = nativeScale
-    textInputView.layer.contentsScale = nativeScale
-    highlightLayer.contentsScale = nativeScale
-
-    textInputView.layer.sublayers?.forEach { layer in
-      layer.contentsScale = nativeScale
+      textView.scale = newValue
     }
   }
-
 
   var tapRecognizer: UITapGestureRecognizer? = nil
-
-  var rctTextView : RCTUITextView {
-    return self.backedTextInputView as! RCTUITextView
-  }
-
-  var textView: UITextView {
-    return self.backedTextInputView as! UITextView
-  }
+ @objc(textView) dynamic var textView: YeetTextView
 
   var canFocus: Bool {
     return true
@@ -346,59 +126,58 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
   var bridge: RCTBridge? = nil
   var isShowingKeyboard: Bool = false
+  var isManagingSize: Bool = false
+  lazy var centerXConstraint = NSLayoutConstraint(
+    // object that we want to constrain
+    item: textView,
+    // the attribute of the item we want to constraint
+    attribute: NSLayoutConstraint.Attribute.centerX,
+    // how we want to relate this item with another item so most likely its parent view
+    relatedBy: NSLayoutConstraint.Relation.equal,
+    // this is the item that we are setting up the relationship with
+    toItem: self,
+    attribute: NSLayoutConstraint.Attribute.centerX,
+    // How much I want the CenterX of BlueView to Differ from the CenterX of the self
+    multiplier: 1.0,
+    constant: 0
+  )
+
 
   override init(bridge: RCTBridge) {
-    self.bridge = bridge
-    highlightLayer = CAShapeLayer()
+    
+    textView = YeetTextView(frame: .zero)
+
     super.init(bridge: bridge)
 
+    self.bridge = bridge
+    self.blurOnSubmit = false
+    textView.frame = bounds
+    textView.textInputDelegate = self
+    textView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+//    textView.translatesAutoresizingMaskIntoConstraints = true
+    textView.contentInsetAdjustmentBehavior = .never
+    textView.contentCompressionResistancePriority(for: .horizontal)
 
-    NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
 
-    textView.translatesAutoresizingMaskIntoConstraints = false
+    textView.observe(\YeetTextView.yeetTextAttributes) { [weak self] (textView, change) in
+      self?.updateLocalData()
+    }
+
+    self.addSubview(textView)
+
     let safeArea = safeAreaLayoutGuide
-    NSLayoutConstraint.activate([
-        textView.topAnchor.constraint(equalTo: safeArea.topAnchor),
-        textView.leadingAnchor.constraint(equalTo: safeArea.leadingAnchor),
-        textView.trailingAnchor.constraint(equalTo: safeArea.trailingAnchor),
-//        textView.widthAnchor.constraint(equalTo: widthAnchor),
-    ])
-
-    bridge.uiManager.observerCoordinator.add(self)
-
-    highlightLayer.contentsScale = UIScreen.main.scale
-    self.highlightLayer.masksToBounds = false
-    self.clipsToBounds = false
-    highlightSubview.clipsToBounds = false
-    highlightSubview.isOpaque = false
-
-    self.highlightLayer.isOpaque = false
-//    self.highl
     
-    self.highlightLayer.edgeAntialiasingMask = CAEdgeAntialiasingMask(rawValue: 15)
-    self.highlightLayer.allowsEdgeAntialiasing = true
-    self.highlightLayer.cornerRadius = YeetTextInputView.DEFAULT_HIGHLIGHT_CORNER_RADIUS
-    self.highlightLayer.lineCap = .round
-    self.highlightLayer.lineJoin = .bevel
-
-    self.highlightLayer.fillColor = YeetTextInputView.DEFAULT_HIGHLIGHT_COLOR.cgColor
-    backedTextInputView.textInputDelegate = self
-    backedTextInputView.clipsToBounds = false
-    textView.layer.masksToBounds = false
-    textView.layoutManager.allowsNonContiguousLayout = true
+    NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+    bridge.uiManager.observerCoordinator.add(self)
+    self.clipsToBounds = false
 
     tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
     self.addGestureRecognizer(tapRecognizer!)
-    self.textView.isSelectable = true
-    self.textView.isScrollEnabled = false
-    self.textView.isEditable = false
-
-    textView.keyboardAppearance = .dark
   }
 
-  var lastTransformRect: CGRect? = nil
 
-  @objc (isSticker) var isSticker: Bool = false
+
+  
 
   var movableViewTag: NSNumber? = nil
   var movableView : MovableView? {
@@ -439,6 +218,9 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     }
   }
 
+  var isSticker : Bool { get { textView.isSticker }}
+
+
   func updateTapGestureRecognizer() {
     if superview != nil && isSticker && movableView != nil {
       let movableView = self.movableView!
@@ -457,12 +239,136 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     }
   }
 
-  static var focusedReactTag: NSNumber? = nil
+
+  @objc(focusedReactTag) static var focusedReactTag: NSNumber? = nil {
+    didSet {
+      var userInfo: [String: NSNumber] = [:]
+
+
+      if (oldValue != self.focusedReactTag) {
+        if oldValue != nil {
+          userInfo["oldValue"] = oldValue!
+        }
+
+        if self.focusedReactTag != nil {
+          userInfo["newValue"] = focusedReactTag!
+        }
+      }
+
+      if !userInfo.isEmpty {
+        NotificationCenter.default.post(name: .onChangeTextInputFocus, object: nil, userInfo: userInfo)
+      }
+
+    }
+  }
+
+  func textInputReactSetFrame(_ frame: CGRect, _ _animator: UIViewPropertyAnimator? = nil) {
+    guard isSticker else {
+      super.yeetReactSetFrame(frame)
+      return
+    }
+
+    guard !isFixedSize else {
+      super.yeetReactSetFrame(frame)
+      return
+    }
+
+    guard let animator = _animator else {
+      super.yeetReactSetFrame(frame)
+      return
+    }
+
+
+    Log.debug("""
+      Set frame!
+        To:   \(frame)
+        From: \(self.frame)
+    """)
+    let position = CGPoint(x: frame.midX, y: frame.midY)
+    let bounds = CGRect(origin: .zero, size: frame.size)
+    let placeholder = UIView()
+    placeholder.center = position
+    placeholder.bounds = bounds
+    placeholder.transform = layer.affineTransform()
+
+    var sizeTranslation: CGAffineTransform = .identity
+    let isGrowing = placeholder.frame.width > self.frame.width
+    let isShrinking = placeholder.frame.width < self.frame.width
+
+    var xMultiplier = CGFloat(1)
+
+    let textAlign = textView.textAlignment
+    if textAlign == .center {
+      xMultiplier = -2
+    } else if textAlign == .right {
+      xMultiplier = 2
+    } else if textAlign == .left {
+      xMultiplier = -2
+    }
+
+    var sign = CGFloat(1)
+    if isGrowing {
+      sign = CGFloat(-1)
+    }
+
+    xMultiplier = xMultiplier * sign
+
+    if textAlign == .center {
+      sizeTranslation = CGAffineTransform.init(translationX: .zero, y: (self.frame.height - placeholder.frame.height) / 2)
+
+//      if isGrowing {
+//        sizeTranslation = sizeTranslation.translatedBy(x: frame.width * -0.5 , y: .zero)
+//      } else if isShrinking {
+//        sizeTranslation = sizeTranslation.translatedBy(x: frame.width 0, y: .zero)
+//      }
+    } else if isGrowing {
+      sizeTranslation = CGAffineTransform.init(translationX: (self.frame.width - placeholder.frame.width) / xMultiplier, y: (self.frame.height - placeholder.frame.height) / 2)
+    } else if isShrinking {
+      sizeTranslation = CGAffineTransform.init(translationX: (placeholder.frame.width - self.frame.width) / xMultiplier, y: (placeholder.frame.height - self.frame.height) / -2)
+    }
+
+    let originalNeedsDisplayOnBoundsChange = self.layer.needsDisplayOnBoundsChange
+    let originalContentMode = self.contentMode
+    let originalClipsToBounds = self.clipsToBounds
+    let originalContentOffset = self.textView.contentOffset
+
+//    self.layer.needsDisplayOnBoundsChange = true
+//    self.contentMode = .redraw
+//    self.clipsToBounds = false
+
+    let newOffset = textView.contentOffset.applying(sizeTranslation.inverted())
+
+    animator.addAnimations { [unowned self] in
+      self.center = position.applying(sizeTranslation)
+      self.layoutIfNeeded()
+    }
+
+    animator.addCompletion { [unowned self] state in
+      self.yeetReactSetFrame(frame)
+
+      if state == .end {
+       self.contentMode = originalContentMode
+      self.clipsToBounds = originalClipsToBounds
+       self.layer.needsDisplayOnBoundsChange = originalNeedsDisplayOnBoundsChange
+     }
+    }
+
+    movableView?.incrementReadyCount()
+  }
+
+  override func reactSetFrame(_ frame: CGRect) {
+    self.textInputReactSetFrame(frame, movableView?.animator)
+  }
 
   var firstResponderObservation: NSKeyValueObservation? = nil
 
   override func reactFocus() {
     guard !textView.isFirstResponder else {
+      self.reactIsFocusNeeded = false
+      return
+    }
+
+    guard YeetTextInputView.focusedReactTag != reactTag else {
       self.reactIsFocusNeeded = false
       return
     }
@@ -500,6 +406,13 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     return willBegin
   }
 
+  override func textInputDidReturn() {
+    super.textInputDidReturn()
+
+    self.textView.drawHighlight()
+    self.setNeedsLayout()
+  }
+
   private var _pointerEvents: RCTPointerEvents = .unspecified
 
   override var pointerEvents: RCTPointerEvents {
@@ -530,22 +443,25 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     return isSticker
   }
 
+
+
   override func textInputDidBeginEditing() {
     super.textInputDidBeginEditing()
 
-//    UIView.setAnimationsEnabled(false)
-    self.drawHighlight()
-//    UIView.setAnimationsEnabled(true)
-
+    textView.drawHighlight(true)
     tapRecognizer?.isEnabled = false
     YeetTextInputView.focusedReactTag = reactTag
 
-    NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    if isSticker {
+
+    }
 
 
-    self.textView.setNeedsLayout()
-    self.textView.setNeedsDisplay()
-    self.textView.layoutIfNeeded()
+    if isSticker {
+      NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
+
 
     if self.onStartEditing != nil {
       DispatchQueue.main.async { [weak self] in
@@ -556,63 +472,93 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
         if let onStartEditing = self?.onStartEditing {
           onStartEditing([
             "tag": self?.reactTag!,
-            "value": self?.textView.text!,
+            "value": self?.attributedText?.string,
           ])
         }
       }
     }
+
+    movableView?.setNeedsLayout()
   }
 
-  func moveCursorToEnd() {
-    textView.selectedRange = endRange
-  }
 
-  var endRange: NSRange {
-    return NSMakeRange(textView.text.count, 0);
-  }
-
-  override func textInputDidReturn() {
-//    UIView.setAnimationsEnabled(false)
-    self.drawHighlight()
-//    UIView.setAnimationsEnabled(true)
-  }
 
   @objc(onFinishEditing)
   var onFinishEditing: RCTDirectEventBlock? = nil
 
+  override func enforceTextAttributesIfNeeded() {
+    super.enforceTextAttributesIfNeeded()
+    self.textView.drawHighlight()
+  }
+
+  override func updateLocalData() {
+    self.enforceTextAttributesIfNeeded()
+    textView.yeetTextAttributes.attributedText = attributedText
+    if let font = textAttributes?.effectiveFont() {
+      textView.yeetTextAttributes.font = font
+    }
+    bridge?.uiManager.setLocalData(textView.yeetTextAttributes.copy(), for: self)
+  }
+
   override func textInputDidEndEditing() {
     super.textInputDidEndEditing()
 
+    textView.drawHighlight(true)
+
+
+
     if isSticker {
       self.disableSelection()
-    }
 
-
-    self.drawHighlight()
-
-    if hasSetContentScale {
-      self.updateScale()
     }
 
     tapRecognizer?.isEnabled = true
 
-    YeetTextInputView.focusedReactTag = nil
 
-    if self.onFinishEditing != nil {
-      onFinishEditing!([
-        "value": self.textView.text ?? "",
-        "startSize": self.beforeEditSize.dictionaryValue(),
-        "endSize": self.editEndSize.dictionaryValue(),
-      ])
+
+//    YeetTextInputView.focusedReactTag = nil
+
+    if onFinishEditing != nil {
+      DispatchQueue.main.async { [weak self] in
+        guard self?.bridge?.isValid ?? false else {
+          return
+        }
+
+        guard let onFinishEditing = self?.onFinishEditing else {
+         return
+       }
+
+        guard let startSize = self?.beforeEditSize.dictionaryValue() else {
+          return
+        }
+
+        guard let endSize = self?.editEndSize.dictionaryValue() else {
+          return
+        }
+
+        let text = self?.text ?? ""
+
+        onFinishEditing([
+          "value": text,
+          "startSize": startSize,
+          "endSize": endSize,
+        ])
+      }
     }
 
   }
 
-  var hasFillColor : Bool {
-    return [Border.solid, Border.highlight, Border.invert].contains(borderType)
+
+  var textRect : CGRect {
+    return textView.textRect
   }
   var originalFrame = CGRect.zero
   var originalTransform = CGAffineTransform.identity
+
+
+  static var horizontalFocusOffset = CGFloat(16)
+  var keyboardNotification: KeyboardNotification? = nil
+  var sentWillShowKeyboard = false
 
   @objc(handleKeyboardWillShow:)
   func handleKeyboardWillShow(notif: NSNotification) {
@@ -640,165 +586,204 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
       return
     }
 
-    guard isShowingKeyboard == false else {
+    guard sentWillShowKeyboard == false else {
       return
     }
 
-    let keyboard = KeyboardNotification(notif)
-
-
-    var size = CGSize(width: UIScreen.main.bounds.width, height: .greatestFiniteMagnitude)
-    self.bridge?.uiManager.setSize(size, for: self)
-
-    UIView.setAnimationsEnabled(false)
-
-    let containerView = movableView.superview!
+    keyboardNotification = KeyboardNotification(notif)
+    movableView.animator = keyboardNotification!.createPropertyAnimator()
     isShowingKeyboard = true
+    sentWillShowKeyboard = true
 
-    var origin = keyboard.frameEndForView(view: containerView).topLeft
-    let trans = movableView.layer.affineTransform()
-    let bounds = self.bounds
-    let textRect = self.textRect
-    let textInset = self.textInset
-
-    let textContainerInset = self.textView.textContainerInset
-
-    let height = max(self.textRect.size.height, self.bounds.height)
-    beforeEditSize = CGSize(width: self.bounds.width, height: height)
-    hideYOffset = movableView.frame.y - movableView.unfocusedBottom!.cgFloatValue
-
-
-    originalFrame = movableView.frame
-    originalTransform = trans
-
-//    var size = CGSize(width: UIScreen.main.bounds.width, height: .greatestFiniteMagnitude)
-
-    self.bridge?.uiManager.setSize(size, for: self)
-
-
-
-    self.isOpaque = false
-    self.superview?.isOpaque = false
-
-    var container: UIView? = UIView()
-
-    container!.frame = CGRect(origin: movableView.frame.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
-    container!.bounds = CGRect(origin: movableView.bounds.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
-
-    let usedRect = self.textView.layoutManager.usedRect(for: self.textView.textContainer)
-//    origin.y -= textRect.height
-    Log.debug("""
-      textInset: \(textInset)
-      trans: \(trans.translation())
-      padding: \(reactPaddingInsets)
-      scale: \(trans.scaleXY())
-      usedRect: \(usedRect)
-      rotation: \(trans.rotationRadians())
-      frame: \(movableView.frame)
-      origin: \(movableView.frame.origin)
-      bounds: \(self.bounds)
-      compoundINset: \(reactCompoundInsets)
-      textRect: \(textRect)
-      textContainerInset: \(textView.textContainerInset)
-    """)
-
-    var snapshotView = movableView.subviews.first!
-    var boundsRect = snapshotView.bounds
-
-
-
-    var resizableSnapshot: UIView? = snapshotView.resizableSnapshotView(from: snapshotView.bounds, afterScreenUpdates: false, withCapInsets: textInset)!
-    resizableSnapshot?.bounds = snapshotView.bounds
-    resizableSnapshot?.transform = trans
-
-    container!.frame.origin.y -= resizableSnapshot!.frame.origin.y
-    container!.frame.origin.x -= resizableSnapshot!.frame.origin.x
-    container!.frame.origin.y -= resizableSnapshot!.bounds.origin.y
-    container!.frame.origin.x -= resizableSnapshot!.bounds.origin.x
-
-    origin.y -= container!.frame.height
-    origin.x = YeetTextInputView.horizontalFocusOffset
-    origin.x -= textRect.x
-    movableView.alpha = 0
-
-//    resizableSnapshot?.backgroundColor = UIColor.init(red: 0.25, green: 0, blue: 0, alpha: 0.1)
-//    movableView.backgroundColor = UIColor.init(red: 0, green: 0, blue: 0.25, alpha: 0.1)
-
-
-
-    container!.addSubview(resizableSnapshot!)
-    movableView.superview!.addSubview(container!)
-    let textAlign = textView.textAlignment
-
-
-    movableView.setNeedsLayout()
-    movableView.layoutIfNeeded()
-
-
-
-    UIView.setAnimationsEnabled(true)
-    let template = self.textTemplate
-
-    let hasFillColor = self.hasFillColor
-
-    UIView.animate(keyboard, animations: {
-      container?.frame = CGRect(origin: origin, size: container!.frame.size)
-
-
-      var position = CGPoint.zero
-
-      if hasFillColor {
-        if template == .comic {
-          position.y = (container!.frame.height - bounds.height) / 2 + textInset.top + (textContainerInset.top / 2)
-        } else {
-          position.y = container!.frame.height - bounds.height - textInset.top - textRect.y
-
-          if template != .basic {
-            position.y += textInset.top
-          }
-        }
-
-        if textAlign == .left {
-          position.x = textRect.x
-        } else if textAlign == .right {
-          position.x =  (container!.bounds.width - textRect.width)
-          position.x += textInset.left
-          position.x += textInset.right
-          position.x -= origin.x
-          position.x -= textRect.x
-        } else if textAlign == .center {
-          position.x = (container!.bounds.width - textRect.width) / 2 - origin.x
-        }
-      } else {
-        position.y = container!.frame.height - bounds.height
-
-        if template != .basic {
-          position.y += textInset.top
-          position.y += 1
-        }
-
-        if textAlign == .left {
-          position.x = textRect.x * -1
-        } else if textAlign == .right {
-          position.x =  container!.bounds.width - YeetTextInputView.horizontalFocusOffset - textRect.width - origin.x
-        // This works for:
-          // position.x = (container!.bounds.width - usedRect.width) / 2 - origin.x + usedRect.x
-        // - borderType hidden
-        // - borderType stroke
-        } else if textAlign == .center {
-          position.x = (container!.bounds.width - usedRect.width) / 2 - origin.x + usedRect.x
-        }
+    NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidShowNotification, object: nil, queue: .main) { [weak self] notification in
+      guard let this = self else {
+        return
       }
 
-      resizableSnapshot!.transform = .identity
-      resizableSnapshot!.frame.origin = position
-    }, completion: {_ in
-      movableView.alpha = 1
-      container?.removeFromSuperview()
-      resizableSnapshot?.removeFromSuperview()
-      container = nil
-      resizableSnapshot = nil
-    })
+      this.keyboardNotification = nil
+      this.isShowingKeyboard = false
+      this.sentWillShowKeyboard = false
+      NotificationCenter.default.removeObserver(this, name: UIResponder.keyboardDidShowNotification, object: nil)
+
+      if this.movableView?.animator?.state == UIViewAnimatingState.active {
+        this.movableView?.animator?.stopAnimation(false)
+      }
+
+      this.movableView?.animator = nil
+    }
+
+
+
+//
+//    let containerView = movableView.superview!
+//    isShowingKeyboard = true
+//
+//    var origin = keyboard.frameEndForView(view: containerView).topLeft
+//    let trans = movableView.layer.affineTransform()
+//    let bounds = self.bounds
+//    var textRect = self.textRect
+//    textRect.origin.x = 0
+//    let textInset = self.textInset
+//
+//    let textContainerInset = self.textView.textContainerInset
+//
+//    let height = max(self.textRect.size.height, self.bounds.height)
+//    beforeEditSize = CGSize(width: self.bounds.width, height: self.bounds.height)
+//    hideYOffset = movableView.frame.y - movableView.unfocusedBottom!.cgFloatValue
+//
+//
+//    originalFrame = movableView.frame
+//    originalTransform = trans
+//
+////    var size = CGSize(width: UIScreen.main.bounds.width, height: .greatestFiniteMagnitude)
+//
+//
+//
+//
+//
+//    self.isOpaque = false
+//    self.superview?.isOpaque = false
+//
+//    var container: UIView? = UIView()
+//
+//    container!.frame = CGRect(origin: movableView.frame.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
+//    container!.bounds = CGRect(origin: movableView.bounds.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
+//
+//    let usedRect = textRect
+////    origin.y -= textRect.height
+//    Log.debug("""
+//      textInset: \(textInset)
+//      trans: \(trans.translation())
+//      padding: \(reactPaddingInsets)
+//      scale: \(trans.scaleXY())
+//      usedRect: \(usedRect)
+//      rotation: \(trans.rotationRadians())
+//      frame: \(movableView.frame)
+//      origin: \(movableView.frame.origin)
+//      bounds: \(self.bounds)
+//      compoundINset: \(reactCompoundInsets)
+//      textRect: \(textRect)
+//      textContainerInset: \(textView.textContainerInset)
+//    """)
+//
+//    let snapshotView = movableView.subviews.first!
+//
+//
+//
+//
+//    var resizableSnapshot: UIView? = snapshotView.resizableSnapshotView(from: snapshotView.bounds, afterScreenUpdates: false, withCapInsets: textInset)!
+//    resizableSnapshot?.bounds = snapshotView.bounds
+//    resizableSnapshot?.transform = trans
+//
+//    let caretRect = managesSize ? CGRect.zero : textView.caretRect(for: textView.endOfDocument)
+//    container!.frame.origin.y -= resizableSnapshot!.frame.origin.y
+//    container!.frame.origin.x -= resizableSnapshot!.frame.origin.x
+//    container!.frame.origin.y -= resizableSnapshot!.bounds.origin.y
+//    container!.frame.origin.x -= resizableSnapshot!.bounds.origin.x
+//
+//
+//    origin.y -= container!.frame.height
+//
+//
+//
+//
+//
+////    textRect.x += YeetTextInputView.horizontalFocusOffset
+//    movableView.alpha = 0
+//
+////    resizableSnapshot?.backgroundColor = UIColor.init(red: 0.25, green: 0, blue: 0, alpha: 0.1)
+////    movableView.backgroundColor = UIColor.init(red: 0, green: 0, blue: 0.25, alpha: 0.1)
+//
+//
+//
+//    container!.addSubview(resizableSnapshot!)
+//    movableView.superview!.addSubview(container!)
+//    let textAlign = textView.textAlignment
+//
+//
+//    origin.x =  YeetTextInputView.horizontalFocusOffset - textRect.x
+//
+//
+//
+//    movableView.setNeedsLayout()
+//    movableView.layoutIfNeeded()
+//
+//    UIView.setAnimationsEnabled(true)
+//    let template = textView.textTemplate
+//
+//    let hasFillColor = textView.hasFillColor
+//
+//    UIView.animate(keyboard, animations: {
+//      container?.frame = CGRect(origin: origin, size: container!.frame.size)
+//
+//
+//      var position = CGPoint.zero
+//
+////      if hasFillColor {
+//        if template == .comic {
+//          position.y = (container!.frame.height - bounds.height) / 2 + textInset.top + (textContainerInset.top / 2)
+//        } else {
+//          position.y = container!.frame.height - bounds.height - textInset.top
+//
+//          if template != .basic {
+//            position.y += textInset.top
+//          }
+//        }
+//
+//        if textAlign == .left {
+//          position.x = textRect.x
+//
+//        } else if textAlign == .right {
+//          position.x =  (container!.bounds.width - textRect.width)
+//          position.x += textInset.left
+//          position.x += textInset.right
+//          position.x += origin.x
+//          position.x -= textRect.x
+//          position.x -= caretRect.width
+//        } else if textAlign == .center {
+//          position.x = (container!.bounds.width - textRect.width) / 2 - origin.x - caretRect.width - caretRect.x
+//        }
+////      } else {
+////        position.y = container!.frame.height - bounds.height
+////
+////        if template != .basic {
+////          position.y += textInset.top
+////          position.y += 1
+////        }
+////
+////        if textAlign == .left {
+////          position.x = textRect.x * -1
+////        } else if textAlign == .right {
+////          position.x =  container!.bounds.width - textRect.width - origin.x - caretRect.width
+////        // This works for:
+////          // position.x = (container!.bounds.width - usedRect.width) / 2 - origin.x + usedRect.x
+////        // - borderType hidden
+////        // - borderType stroke
+////        } else if textAlign == .center {
+////          position.x = (container!.bounds.width - usedRect.width) / 2 - origin.x + usedRect.x - (caretRect.width / 2)
+////        }
+////      }
+//
+//      resizableSnapshot!.transform = .identity
+//      resizableSnapshot!.frame.origin = position
+//    }, completion: {_ in
+//      let resizeFrame = container!.convert(resizableSnapshot!.frame, to: movableView.superview!)
+//      let movableFrame = movableView.frame
+//      Log.debug("""
+//        resizeFrame: \(resizeFrame)
+//        movableFrame: \(movableFrame)
+//      """)
+//      movableView.alpha = 1
+////      movableView.backgroundColor = UIColor.init(red: 0.25, green: 0.25, blue: 0, alpha: 0.5)
+//
+////      DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 5.0) {
+//        container?.removeFromSuperview()
+////        movableView.backgroundColor = .clear
+//        resizableSnapshot?.removeFromSuperview()
+//        container = nil
+//        resizableSnapshot = nil
+////      }
+//    })
   }
 
   @objc(maxContentWidth)
@@ -813,8 +798,22 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
     return CGSize(width: isFixedSize ? _maxContentWidth : self.textRect.size.width, height: max(self.textRect.size.height, self.bounds.height))
   }
 
+  var textTemplate: YeetTextTemplate {
+    return textView.textTemplate
+  }
+
+  var textInset: UIEdgeInsets {
+    return yeetTextAttributes.textContainerInset
+  }
+
+  var hasFillColor : Bool {
+    return textView.hasFillColor
+  }
+
   var isFixedSize: Bool { _maxContentWidth > .zero && isSticker }
   var hideYOffset = CGFloat.zero
+  var isHidingKeyboard = false
+
 
   @objc(handleKeyboardWillHide:)
   func handleKeyboardWillHide(notif: NSNotification) {
@@ -838,133 +837,163 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
       return
     }
 
-
-
-    var originalTintColor = textView.tintColor
-    UIView.setAnimationsEnabled(false)
-    self.bridge?.uiManager.setSize(editEndSize, for: self)
-
-    textView.tintColor = .clear
-    let containerView = movableView.superview!
-    let keyboard = KeyboardNotification(notif)
-    let trans = originalTransform
-    let textRect = self.textRect
-    let textInset = self.textInset
-
-    var offset = CGRect.zero
-
-    if let range = textView.selectedTextRange {
-      if range.isEmpty && range.end == textView.endOfDocument {
-        offset = textView.caretRect(for: range.end)
+    isHidingKeyboard = true
+    keyboardNotification = KeyboardNotification(notif)
+    NotificationCenter.default.addObserver(forName: UIResponder.keyboardDidHideNotification, object: nil, queue: .main) { [weak self, weak movableView] notification in
+      guard let this = self else {
+        return
       }
+
+      YeetTextInputView.focusedReactTag = nil
+      this.keyboardNotification = nil
+      this.isHidingKeyboard = false
+      NotificationCenter.default.removeObserver(this, name: UIResponder.keyboardDidHideNotification, object: nil)
+      if this.movableView?.animator?.state == UIViewAnimatingState.active {
+        this.movableView?.animator?.stopAnimation(false)
+      }
+
+      this.movableView?.animator = nil
     }
 
-
-    let textContainerInset = self.textView.textContainerInset
-
-
-    let size = CGSize(width: UIScreen.main.bounds.width, height: .greatestFiniteMagnitude)
-    self.isOpaque = false
-    self.superview?.isOpaque = false
-
-    var container: UIView? = UIView()
-    let originalFrame = self.originalFrame
-
-    container!.frame = CGRect(origin: movableView.frame.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
-    container!.bounds = CGRect(origin: movableView.bounds.origin, size: CGSize(width: size.width, height: movableView.bounds.height))
-
-    let usedRect = self.textView.layoutManager.usedRect(for: self.textView.textContainer)
-    let bottom = movableView.unfocusedBottom?.cgFloatValue ?? .zero
-//    origin.y -= textRect.height
-    Log.debug("""
-      textInset: \(textInset)
-      trans: \(trans.translation())
-      hideYOffset: \(hideYOffset)
-      padding: \(reactPaddingInsets)
-      scale: \(trans.scaleXY())
-      usedRect: \(usedRect)
-      rotation: \(trans.rotationRadians())
-      frame: \(movableView.frame)
-      origin: \(movableView.frame.origin)
-      bounds: \(self.bounds)
-      compoundINset: \(reactCompoundInsets)
-      textRect: \(textRect)
-      textContainerInset: \(textView.textContainerInset)
-      bottom: \(bottom)
-    """)
-
-    let frame = originalFrame.applying(trans.inverted())
-
-        let snapshotView = movableView
-    var resizableSnapshot: UIView? = snapshotView.resizableSnapshotView(from: CGRect(origin: snapshotView.bounds.origin, size: CGSize(width: snapshotView.bounds.width, height : snapshotView.bounds.height)), afterScreenUpdates: false, withCapInsets: textInset)!
-      resizableSnapshot?.transform = .identity
-    resizableSnapshot?.bounds = snapshotView.bounds
-    resizableSnapshot?.frame.origin = movableView.frame.origin
-
-    resizableSnapshot?.isOpaque = false
-
-
-
-//    self.bridge?.uiManager.setSize(editEndSize, for: self)
-
-
-        movableView.alpha = 0
-
-//        container!.addSubview(resizableSnapshot!)
-        movableView.contentContainerView!.addSubview(resizableSnapshot!)
-        let textAlign = textView.textAlignment
-
-
-        movableView.setNeedsLayout()
-        movableView.layoutIfNeeded()
-
-        let containerViewFrame = movableView.contentContainerView!.bounds
-        var contentOffset = textView.contentOffset
-        contentOffset.x += offset.width / 2
-
-        UIView.setAnimationsEnabled(true)
-        let template = self.textTemplate
-
-        let hasFillColor = self.hasFillColor
-
-
-
-        UIView.animate(keyboard, animations: {
-          resizableSnapshot?.frame.origin.y =  bottom * -1 - movableView.frame.height
-          resizableSnapshot?.frame.origin.x = originalFrame.origin.x
-//          container?.frame.origin.y -= (frame.y - originalFrame.origin.y)
 //
-//          container?.frame.origin.y += (frame.height - movableView.frame.height)
+//    var originalTintColor = textView.tintColor
+//    UIView.setAnimationsEnabled(false)
+//
+//
+//
+//    textView.tintColor = .clear
+//    let containerView = movableView.superview!
+//    let keyboard = KeyboardNotification(notif)
+//    let trans = originalTransform
+//    let textRect = self.textRect
+//    let textInset = self.textInset
+//
+//    var offset = CGRect.zero
+//
+//    if let range = textView.selectedTextRange {
+//      if range.isEmpty && range.end == textView.endOfDocument {
+//        offset = textView.caretRect(for: range.end)
+//      }
+//    }
+//
+//
+//    let textContainerInset = self.textView.textContainerInset
+//
 
-//         if hasFillColor {
-//           container?.frame.origin.y += textInset.top
-//           container?.frame.origin.y += textInset.bottom
+//
+//
+//    self.isOpaque = false
+//    self.superview?.isOpaque = false
+//
+//    var container: UIView? = UIView()
+//    let originalFrame = self.originalFrame
+//
+//    container!.frame = CGRect(origin: movableView.frame.origin, size: movableView.bounds.size)
+//    container!.bounds = CGRect(origin: movableView.bounds.origin, size: movableView.bounds.size)
+//
+//    let usedRect = self.textView.textRect
+//    let bottom = movableView.unfocusedBottom?.cgFloatValue ?? .zero
+//    let left = movableView.unfocusedLeft?.cgFloatValue ?? .zero
+//
+//
+////    self.bridge?.uiManager.setSize(textRect.size, for: self)
+//
+////    origin.y -= textRect.height
+//    Log.debug("""
+//      textInset: \(textInset)
+//      trans: \(trans.translation())
+//      hideYOffset: \(hideYOffset)
+//      padding: \(reactPaddingInsets)
+//      scale: \(trans.scaleXY())
+//      usedRect: \(usedRect)
+//      rotation: \(trans.rotationRadians())
+//      frame: \(movableView.frame)
+//      origin: \(movableView.frame.origin)
+//      bounds: \(self.bounds)
+//      compoundINset: \(reactCompoundInsets)
+//      textRect: \(textRect)
+//      textContainerInset: \(textView.textContainerInset)
+//      bottom: \(bottom)
+//    """)
+//
+//    let frame = originalFrame.applying(trans.inverted())
+//
+//        let snapshotView = movableView
+//    var resizableSnapshot: UIView? = snapshotView.resizableSnapshotView(from: CGRect(origin: snapshotView.bounds.origin, size: CGSize(width: snapshotView.bounds.width, height : snapshotView.bounds.height)), afterScreenUpdates: false, withCapInsets: textInset)!
+//      resizableSnapshot?.transform = .identity
+//    resizableSnapshot?.bounds = snapshotView.bounds
+//    resizableSnapshot?.frame.origin = movableView.frame.origin
+//
+//    resizableSnapshot?.isOpaque = false
+//
+//
+//
+//        movableView.alpha = 0
+//
+////        container!.addSubview(resizableSnapshot!)
+//        movableView.contentContainerView!.addSubview(resizableSnapshot!)
+//        let textAlign = textView.textAlignment
+//
+//
+//        movableView.setNeedsLayout()
+//        movableView.layoutIfNeeded()
+//
+//        let containerViewFrame = movableView.contentContainerView!.bounds
+//        var contentOffset = textView.contentOffset
+//        contentOffset.x += offset.width / 2
+//
+//        UIView.setAnimationsEnabled(true)
+//        let template = self.textTemplate
+//
+//        let hasFillColor = self.hasFillColor
+//
+//
+//
+//        UIView.animate(keyboard, animations: {
+//          resizableSnapshot?.frame.origin.y =  bottom * -1 - movableView.frame.height
+//          resizableSnapshot?.frame.origin.x = left
+////          container?.frame.origin.y -= (frame.y - originalFrame.origin.y)
+////
+////          container?.frame.origin.y += (frame.height - movableView.frame.height)
+//
+////         if hasFillColor {
+////           container?.frame.origin.y += textInset.top
+////           container?.frame.origin.y += textInset.bottom
+////         }
+//
+//
+//         if textAlign == .center {
+//          resizableSnapshot?.frame.origin.x += (frame.width - movableView.frame.width) / 2 + contentOffset.x
+//         } else if textAlign == .right {
+//           resizableSnapshot?.frame.origin.x += (frame.width - movableView.frame.width) + contentOffset.x
+//         } else if textAlign == .left {
+//           resizableSnapshot?.frame.origin.x -= contentOffset.x
 //         }
+//
+//        resizableSnapshot!.transform = trans
+//
+//
+//
+//        }, completion: {_ in
+//          movableView.alpha = 1
+//          self.textView.tintColor = originalTintColor
+////          container?.removeFromSuperview()
+//          resizableSnapshot?.removeFromSuperview()
+//          container = nil
+//          resizableSnapshot = nil
+//        })
 
-
-         if textAlign == .center {
-          resizableSnapshot?.frame.origin.x += (frame.width - movableView.frame.width) / 2 + contentOffset.x
-         } else if textAlign == .right {
-           resizableSnapshot?.frame.origin.x += (frame.width - movableView.frame.width) + contentOffset.x
-         } else if textAlign == .left {
-           resizableSnapshot?.frame.origin.x -= contentOffset.x
-         }
-
-        resizableSnapshot!.transform = trans
-
-
-
-        }, completion: {_ in
-          movableView.alpha = 1
-          self.textView.tintColor = originalTintColor
-//          container?.removeFromSuperview()
-          resizableSnapshot?.removeFromSuperview()
-          container = nil
-          resizableSnapshot = nil
-        })
+    movableView.animator = keyboardNotification!.createPropertyAnimator()
 
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     isShowingKeyboard = false
+  }
+
+
+  var text : String? {
+    get {
+      return self.attributedText?.string
+    }
   }
 
   @objc(onStartEditing)
@@ -973,16 +1002,16 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   override func textInputShouldChangeText(in range: NSRange, replacementText string: String) -> Bool {
     let shouldReject = super.textInputShouldChangeText(in: range, replacementText: string)
 
-    if let oldString = textView.text {
+    guard shouldReject == false else {
+      return shouldReject
+    }
+
+    if let oldString = text {
       guard let range = Range(range, in: oldString) else {
         return shouldReject
       }
 
       let newString = oldString.replacingCharacters(in: range, with: string)
-
-//      UIView.setAnimationsEnabled(false)
-      self.drawHighlight()
-//      UIView.setAnimationsEnabled(true)
     }
 
     return shouldReject
@@ -991,14 +1020,10 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   override func textInputDidChange() {
     super.textInputDidChange()
 
-
-
-
-//    UIView.setAnimationsEnabled(false)
-    self.drawHighlight()
-//    UIView.setAnimationsEnabled(true)
+    self.textView.setNeedsLayout()
+    self.setNeedsLayout()
+    self.layoutIfNeeded()
   }
-
 
   override func reactBlur() {
     super.reactBlur()
@@ -1017,6 +1042,11 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
   }
 
   override func reactFocusIfNeeded() {
+    if textView.isFirstResponder {
+      reactIsFocusNeeded = false
+      textView.reactIsFocusNeeded = false
+    }
+
     self.enableSelection()
 
     if reactIsFocusNeeded || textView.reactIsFocusNeeded {
@@ -1027,7 +1057,7 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 
 
 
-  var textRect = CGRect.zero
+
 
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     let intended = super.hitTest(point, with: event)
@@ -1053,21 +1083,8 @@ class YeetTextInputView : RCTMultilineTextInputView, TransformableView, RCTInval
 }
 
 
-extension RCTConvert {
-
-  @objc(YeetTextInputBorder:)
-  static func textInputBorder(json: AnyObject) -> String {
-    guard let border = self.nsString(json) else {
-      return YeetTextInputView.Border.hidden.rawValue
-    }
-
-    return YeetTextInputView.Border.init(rawValue: border)?.rawValue ?? YeetTextInputView.Border.hidden.rawValue
-  }
-}
-
-
 extension Notification.Name {
-    static let onAdjustYeetTextInput = Notification.Name("onAdjustYeetTextInput")
+    static let onChangeTextInputFocus = Notification.Name("onChangeTextInputFocus")
 }
 
 extension NSNumber {

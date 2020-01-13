@@ -124,6 +124,7 @@ export class BaseNode extends React.Component<Props> {
 
   gestureRef = React.createRef();
   blockLayout: DimensionsRect | null = null;
+  onContentSizeChangeRef = React.createRef();
 
   render() {
     const { block, position } = this.props.node;
@@ -163,6 +164,7 @@ export class BaseNode extends React.Component<Props> {
       currentScale,
       currentRotate,
       currentHeight,
+      animatedKeyboardVisibleValue,
       scrollY,
       inputAccessoryView,
       keyboardHeightValue
@@ -201,10 +203,13 @@ export class BaseNode extends React.Component<Props> {
         velocityY={velocityY}
         onTransform={onTransform}
         scaleLiteral={position.scale}
+        animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
         isHidden={!!isHidden}
         isOtherNodeFocused={!isFocused && focusType === FocusType.panning}
+        isEditing={isFocused && focusType === FocusType.absolute}
         maxScale={maxScale}
         absoluteX={absoluteX}
+        onContentSizeChange={this.onContentSizeChangeRef}
         absoluteY={absoluteY}
         focusTypeValue={focusTypeValue}
         containerRef={containerRef}
@@ -243,6 +248,7 @@ export class BaseNode extends React.Component<Props> {
           focusType={focusType}
           isSticker
           paddingTop={paddingTop}
+          onContentSizeChange={this.onContentSizeChangeRef.current}
           gestureRef={this.gestureRef}
           isFocused={isFocused}
           autoFocus={autoFocus}

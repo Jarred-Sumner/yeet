@@ -659,7 +659,11 @@ export const layoutBlocksInPost = (
   return [blocks, positions];
 };
 
-export const isFixedSizeBlock = (block: PostBlock) => {
+export const isFixedSizeBlock = (block: PostBlock | null = null) => {
+  if (!block) {
+    return false;
+  }
+
   if (block.type === "image") {
     return true;
   }

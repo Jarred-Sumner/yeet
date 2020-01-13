@@ -4,7 +4,8 @@ import {
   PinchGestureHandler,
   RotationGestureHandler,
   State,
-  TapGestureHandler
+  TapGestureHandler,
+  LongPressGestureHandler
 } from "react-native-gesture-handler";
 import Animated, { Transitioning } from "react-native-reanimated";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
@@ -31,16 +32,18 @@ const transformableStyles = StyleSheet.create({
 export const TransformableView = React.forwardRef((props, ref) => {
   const {
     translateX = 0,
-    translateY = 0,
     Component = TransformableViewComponent,
     onLayout,
     onTransform,
     onTransformLayout,
     rotate = 0,
     unfocusedBottom,
+    unfocusedLeft,
+    onContentSizeChange,
     zIndex,
     inputRef,
     scale = 1.0,
+
     keyboardVisibleValue,
     bottom = undefined,
     opacity = 1.0,
@@ -48,45 +51,28 @@ export const TransformableView = React.forwardRef((props, ref) => {
     children
   } = props;
 
-  const bottomContainerStyles = React.useMemo(
-    () => [
-      transformableStyles.bottomContainer,
-      {
-        opacity,
-        bottom,
-        left: translateX,
-        zIndex,
-        transform: [
-          // {
-          //   translateY
-          // },
-          // {
-          //   translateX
-          // },
-          {
-            scale
-          },
-          {
-            rotate
-          }
-        ]
-      }
-    ],
-    [opacity, bottom, zIndex, translateY, translateX, scale, rotate]
-  );
-
   if (typeof bottom !== "undefined") {
     return (
       <Component
         ref={ref}
-        onLayout={onLayout}
-        shouldRasterizeIOS={rasterize}
-        needsOffscreenAlphaCompositing={rasterize}
-        onTransformLayout={onTransformLayout}
         inputRef={inputRef}
-        onTransform={onTransform}
-        unfocusedBottom={unfocusedBottom}
-        style={bottomContainerStyles}
+        style={[
+          transformableStyles.bottomContainer,
+          {
+            opacity,
+            bottom,
+            left: translateX,
+            zIndex,
+            transform: [
+              {
+                scale
+              },
+              {
+                rotate
+              }
+            ]
+          }
+        ]}
       >
         {children}
       </Component>
@@ -95,25 +81,21 @@ export const TransformableView = React.forwardRef((props, ref) => {
     return (
       <Component
         ref={ref}
-        onLayout={onLayout}
-        shouldRasterizeIOS={rasterize}
-        needsOffscreenAlphaCompositing={rasterize}
-        onTransform={onTransform}
-        unfocusedBottom={unfocusedBottom}
-        onTransformLayout={onTransformLayout}
         inputRef={inputRef}
         style={[
           transformableStyles.topContainer,
           {
             opacity,
             zIndex,
+            bottom,
+            left: translateX,
             transform: [
-              {
-                translateY
-              },
-              {
-                translateX
-              },
+              // {
+              //   translateY
+              // },
+              // {
+              //   translateX
+              // },
               {
                 scale
               },
@@ -148,21 +130,33 @@ const {
   debug
 } = Animated;
 
-const keyboardVisibleInterpolater = Animated.proc(
-  (keyboardVisibleValue, start, end) =>
-    Animated.interpolate(keyboardVisibleValue, {
-      inputRange: [0, 1],
-      outputRange: [start, end],
-      extrapolate: Animated.Extrapolate.CLAMP
-    })
-);
-
 const keyboardVisibleCond = Animated.proc((keyboardVisibleValue, start, end) =>
-  Animated.cond(Animated.eq(keyboardVisibleValue, 1), end, start)
+  Animated.cond(Animated.eq(keyboardVisibleValue, 0), start, end)
 );
 
-const fixedSizeInterpolator = (fixedSize, yes, no) =>
-  fixedSize === 1 ? yes : no;
+// const keyboardVisibleInterpolater = Animated.proc(
+//   (keyboardVisibleValue, start, end) =>
+//     Animated.interpolate(keyboardVisibleValue, {
+//       inputRange: [0, 1],
+//       outputRange: [start, end],
+//       extrapolate: Animated.Extrapolate.CLAMP
+//     })
+// );
+
+const keyboardVisibleInterpolater = keyboardVisibleCond;
+
+const fixedSizeInterpolator = Animated.proc((fixedSize, yes, no) =>
+  Animated.cond(Animated.eq(fixedSize, 1), yes, no)
+);
+
+const scaleValueProc = Animated.proc(
+  (fixedSizeValue, Z, keyboardVisibleFocusedValue) =>
+    fixedSizeInterpolator(
+      fixedSizeValue,
+      Z,
+      keyboardVisibleCond(keyboardVisibleFocusedValue, Z, 1.0)
+    )
+);
 
 type Props = {
   xLiteral: number;
@@ -295,32 +289,14 @@ export class MovableNode extends Component<Props> {
       props.maxScale || 100
     );
 
-    this.handleTap = event(
-      [
-        {
-          nativeEvent: ({ state }) =>
-            Animated.block(
-              cond([eq(state, State.END)], [call([], this.props.onTap)])
-            )
-        }
-      ],
-      { useNativeDriver: true }
-    );
+    this.animatedKeyboardVisibleFocusedValue = new Animated.Value<number>(0);
+    this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
     this.heightValue = new Animated.Value(props.maxY);
-    this.wasFocused = new Animated.Value(0);
-    this.isFocusedValue = Animated.or(
-      eq(this.wasFocused, 1),
-      eq(props.focusedBlockValue, this.blockId)
+    this.isFocusedValue = Animated.eq(
+      this.props.focusedBlockValue,
+      this.blockId
     );
-
-    this.keyboardVisibleFocusedValue = Animated.block([
-      Animated.cond(
-        eq(this.isFocusedValue, 1),
-        [props.keyboardVisibleValue],
-        [0]
-      )
-    ]);
 
     this._translateX = keyboardVisibleCond(
       this.keyboardVisibleFocusedValue,
@@ -328,14 +304,10 @@ export class MovableNode extends Component<Props> {
       0
     );
 
-    this.overlayOpacity = keyboardVisibleInterpolater(
-      this.keyboardVisibleFocusedValue,
-      0,
-      1
-    );
+    this.overlayOpacity = this.animatedKeyboardVisibleFocusedValue;
 
     // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
-    //   ? keyboardVisibleInterpolater(
+    //   ? keyboardVisibleCond(
     //       this.keyboardVisibleFocusedValue,
     //       0,
     //       Animated.multiply(
@@ -351,46 +323,41 @@ export class MovableNode extends Component<Props> {
     //  = 0;
 
     this.unfocusedBottomValue = Animated.multiply(this.Y, -1);
+    this.unscaledValue = new Animated.Value(1);
 
     this.bottomValue = fixedSizeInterpolator(
       fixedSizeValue,
       this.unfocusedBottomValue,
-      keyboardVisibleInterpolater(
-        props.keyboardVisibleValue,
+      keyboardVisibleCond(
+        this.keyboardVisibleFocusedValue,
         this.unfocusedBottomValue,
         Animated.add(Animated.multiply(props.keyboardHeightValue, -1), 120)
       )
     );
 
-    this._scale = fixedSizeInterpolator(
-      fixedSizeValue,
+    this.scale = scaleValueProc(
+      this.fixedSizeValue,
       this.Z,
-      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this.Z, 1)
+      this.keyboardVisibleFocusedValue
     );
 
-    this._rotate = fixedSizeInterpolator(
+    this.rotateTransform = Animated.concat(this.R, "rad");
+    this.unrotatedTransform = Animated.concat(0, "rad");
+
+    this.rotate = fixedSizeInterpolator(
       fixedSizeValue,
-      Animated.concat(this.R, "rad"),
+      this.rotateTransform,
       keyboardVisibleCond(
         this.keyboardVisibleFocusedValue,
-        Animated.concat(this.R, "rad"),
-        Animated.concat(0, "rad")
+        this.rotateTransform,
+        this.unrotatedTransform
       )
     );
 
     this.translateX = fixedSizeInterpolator(
       fixedSizeValue,
       this.X,
-      keyboardVisibleInterpolater(props.keyboardVisibleValue, this.X, 0)
-    );
-
-    this.translateY = 0;
-
-    this.scale = Animated.cond(this.isFocusedValue, this._scale, this.Z);
-    this.rotate = Animated.cond(
-      this.isFocusedValue,
-      this._rotate,
-      Animated.concat(this.R, "rad")
+      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this.X, 0)
     );
   }
 
@@ -449,6 +416,24 @@ export class MovableNode extends Component<Props> {
   handleLayoutTransform = ({ nativeEvent: { layout, from } }) => {
     console.log({ layout, from });
   };
+
+  handleTap = Animated.event(
+    [
+      {
+        nativeEvent: ({ state, oldState }) =>
+          Animated.block([
+            Animated.cond(
+              Animated.and(
+                Animated.eq(state, State.END),
+                Animated.eq(oldState, State.ACTIVE)
+              ),
+              Animated.call([], this.props.onTap)
+            )
+          ])
+      }
+    ],
+    { useNativeDriver: true }
+  );
 
   // handleLayoutTransform = ({
   //   nativeEvent: { layout, from }
@@ -540,13 +525,22 @@ export class MovableNode extends Component<Props> {
       keyboardHeightValue,
       inputRef,
       extraPadding,
-      isHidden
+      isHidden,
+      isEditing
     } = this.props;
 
     return (
       <>
         <Animated.Code
           exec={Animated.block([
+            Animated.set(
+              this.animatedKeyboardVisibleFocusedValue,
+              Animated.multiply(
+                this.isFocusedValue,
+                this.props.animatedKeyboardVisibleValue
+              )
+            ),
+
             Animated.onChange(
               this.isDoneGesturingValue,
               Animated.cond(
@@ -581,19 +575,12 @@ export class MovableNode extends Component<Props> {
               this.absoluteY,
               Animated.set(this.props.absoluteY, this.absoluteY)
             ),
-            Animated.cond(
-              Animated.and(
-                Animated.greaterThan(this.props.keyboardVisibleValue, 0),
-                Animated.eq(focusedBlockValue, this.blockId)
-              ),
-              [set(this.wasFocused, 1)]
-            ),
-            Animated.cond(
-              Animated.and(
-                Animated.eq(this.props.keyboardVisibleValue, 0),
-                Animated.eq(focusedBlockValue, -1)
-              ),
-              [set(this.wasFocused, 0)]
+            Animated.set(
+              this.keyboardVisibleFocusedValue,
+              Animated.multiply(
+                this.isFocusedValue,
+                this.props.keyboardVisibleValue
+              )
             )
           ])}
         />
@@ -648,15 +635,11 @@ export class MovableNode extends Component<Props> {
                         <TransformableView
                           ref={this.props.containerRef}
                           opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
-                          translateY={this.translateY}
                           translateX={this.translateX}
                           bottom={this.bottomValue}
-                          unfocusedBottom={this.unfocusedBottomValue}
                           keyboardVisibleValue={keyboardVisibleValue}
-                          onTransformLayout={this.handleLayoutTransform}
                           inputRef={inputRef}
                           rotate={this.rotate}
-                          rasterize={false}
                           scale={this.scale}
                         >
                           {this.props.children}

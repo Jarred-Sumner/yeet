@@ -74,9 +74,14 @@ public struct KeyboardNotification {
     public func frameEndForView(view: UIView) -> CGRect {
       return view.convert(screenFrameEnd, from: view.window)
     }
+
+  func createPropertyAnimator() -> UIViewPropertyAnimator {
+    return UIViewPropertyAnimator(duration: animationDuration, timingParameters:   UICubicTimingParameters(animationCurve: UIView.AnimationCurve(rawValue: animationCurve)!))
+  }
 }
 
 extension UIView {
+  
   static func animate(_ n: KeyboardNotification, animations: @escaping () -> Void, completion: @escaping (_ finished: Bool) -> Void) {
     var opts = UIView.AnimationOptions(rawValue: UInt(n.animationCurve << 16))
     opts.insert(.allowUserInteraction)

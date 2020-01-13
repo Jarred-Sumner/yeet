@@ -27,9 +27,6 @@ class MovableView: UIView, RCTUIManagerObserver {
     super.didSetProps(changedProps)
 
 
-    if changedProps.contains("onTransform") {
-      self.sendTransformedLayout()
-    }
 
     if changedProps.contains("inputTag") || changedProps.contains("shouldRasterizeIOS")  {
       if Thread.isMainThread {
@@ -46,31 +43,95 @@ class MovableView: UIView, RCTUIManagerObserver {
 
   @objc(onTransformLayout) var onTransformLayout: RCTDirectEventBlock? = nil
 
-  func handleLayoutTransform(_ previousRect: CGRect) -> Void {
-    guard self.onTransformLayout != nil else {
+
+  override func reactSetFrame(_ frame: CGRect) {
+    if let animator = self.animator {
+      self.reactSetFrame(frame, animator)
+      incrementReadyCount()
+    } else {
+      super.yeetReactSetFrame(frame)
+    }
+  }
+
+  var animator: UIViewPropertyAnimator? = nil {
+    didSet {
+      animationReadyCount = 0
+    }
+  }
+
+  var animationReadyCount = 0
+  var requiredReadyCount: Int {
+    if textInput != nil {
+      return layer.affineTransform() != .identity ? 3 : 2
+    } else {
+      return 2
+    }
+  }
+
+  func incrementReadyCount() {
+    guard let animator = self.animator else {
       return
     }
 
-    let _rect = transformRect
+    animationReadyCount += 1
 
-    guard _rect != previousRect else {
-      return
+    if animationReadyCount >= requiredReadyCount && animator.state == .inactive {
+      animator.startAnimation()
+    }
+  }
+
+  var isTransformAnimationInProgress = false
+  @objc(yeetTransform) var yeetTransform : CATransform3D {
+    get {
+      return layer.transform
     }
 
-    onTransformLayout!([
-      "layout": [
-        "x": _rect.x,
-        "y": _rect.y,
-        "width": _rect.width,
-        "height": _rect.height,
-      ],
-      "from": [
-        "x": previousRect.x,
-        "y": previousRect.y,
-        "width": previousRect.width,
-        "height": previousRect.height,
-      ],
-    ])
+    set (newValue) {
+      guard !CATransform3DEqualToTransform(layer.transform, newValue) else {
+        return
+      }
+
+      let affineTransform = CATransform3DGetAffineTransform(newValue)
+      Log.debug("""
+        Set Transform!
+          To: \(affineTransform.scaleXY()) \(affineTransform.rotationRadians())rad
+          From: \(layer.affineTransform().scaleXY()) \(layer.affineTransform().rotationRadians())rad
+      """)
+
+      if let animator = self.animator {
+        // https://stackoverflow.com/questions/10497397/from-catransform3d-to-cgaffinetransform?rq=1
+         self.layer.allowsEdgeAntialiasing = affineTransform != CGAffineTransform.identity
+
+        animator.addAnimations { [unowned self] in
+          self.layer.transform = newValue
+          self.layoutIfNeeded()
+        }
+
+        animator.addCompletion { [weak self] state in
+          if state == .end {
+            self?.updateContentScale()
+          }
+        }
+
+        incrementReadyCount()
+      } else {
+
+        setTransformValue(newValue)
+      }
+    }
+  }
+
+  func setTransformValue(_ newValue: CATransform3D) {
+
+    self.layer.transform = newValue
+     // https://stackoverflow.com/questions/10497397/from-catransform3d-to-cgaffinetransform?rq=1
+    self.layer.allowsEdgeAntialiasing = layer.affineTransform() != CGAffineTransform.identity
+
+    DispatchQueue.main.throttle(deadline: .now() + 0.1) { [weak self] in
+      self?.updateContentScale()
+    }
+
+
   }
 
   private var contentContainerTag: NSNumber? = nil
@@ -98,7 +159,7 @@ class MovableView: UIView, RCTUIManagerObserver {
     return nil
   }
 
-  var transformObserver: NSKeyValueObservation? = nil
+
   var textInput: YeetTextInputView? {
     if let tag = inputTag {
       return self.bridge?.uiManager?.view(forReactTag: tag) as? YeetTextInputView
@@ -127,28 +188,9 @@ class MovableView: UIView, RCTUIManagerObserver {
   init(bridge: RCTBridge?) {
     self.bridge = bridge
     super.init(frame: .zero)
-
-    self.startObservingTransform()
   }
 
-  func startObservingTransform() {
-    transformObserver = self.layer.observe(\CALayer.transform) { view, changes in
-       if Thread.isMainThread {
-         self.updateContentScale()
-        self.sendTransformedLayout()
-       } else {
-         DispatchQueue.main.async { [weak self] in
-           self?.updateContentScale()
-            self?.sendTransformedLayout()
-         }
-       }
-    }
-  }
 
-  func stopObservingTransform() {
-    transformObserver?.invalidate()
-    transformObserver = nil
-  }
 
   @objc(inputTag)
   var inputTag: NSNumber? = nil
@@ -191,32 +233,6 @@ class MovableView: UIView, RCTUIManagerObserver {
     return _rect
   }
 
-  func _sendTransformedLayout() {
-    guard shouldSendTransform else {
-      return
-    }
-
-    let _rect = transformRect
-
-    onTransform!([
-      "layout": [
-        "x": _rect.x,
-        "y": _rect.y,
-        "width": _rect.width,
-        "height": _rect.height,
-      ],
-    ])
-  }
-
-  func sendTransformedLayout() {
-    guard shouldSendTransform else {
-      return
-    }
-
-    DispatchQueue.main.throttle(deadline: DispatchTime.now() + Double(Double(transformedLayoutEventThrottleMs) / 1000.0)) { [weak self] in
-      self?._sendTransformedLayout()
-    }
-  }
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
@@ -224,17 +240,27 @@ class MovableView: UIView, RCTUIManagerObserver {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-
-    self.sendTransformedLayout()
   }
 
   @objc(unfocusedBottom)
   var unfocusedBottom: NSNumber? = nil
 
+  @objc(unfocusedLeft)
+  var unfocusedLeft: NSNumber? = nil
+
 
   @objc (onMaybeNeedsAdjustment) var onMaybeNeedsAdjustment: RCTDirectEventBlock? = nil
 
+  var canUpdateContentScale: Bool {
+    return animator?.state != .active
+  }
+
+
   func updateContentScale() {
+    guard canUpdateContentScale else {
+      return
+    }
+
     guard let transformableView = self.transformableView else {
       return
     }
@@ -260,6 +286,7 @@ class MovableView: UIView, RCTUIManagerObserver {
         layer.rasterizationScale = layer.contentsScale
       }
       UIView.setAnimationsEnabled(true)
+      self.setNeedsDisplay()
     }
   }
 

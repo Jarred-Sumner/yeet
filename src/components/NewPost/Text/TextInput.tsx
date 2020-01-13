@@ -1,3 +1,4 @@
+import chroma from "chroma-js";
 import { memoize } from "lodash";
 import * as React from "react";
 // import { ReText } from "react-native-redash";
@@ -9,14 +10,13 @@ import {
   TextInputProps,
   View
 } from "react-native";
-import Animated from "react-native-reanimated";
-import chroma from "chroma-js";
 import { SCREEN_DIMENSIONS } from "../../../../config";
+import { isFixedSizeBlock, POST_WIDTH } from "../../../lib/buildPost";
+import { getStrokeColor, isColorDark } from "../../../lib/colors";
 import { FONT_STYLES } from "../../../lib/fonts";
 import { COLORS, SPACING } from "../../../lib/styles";
 import {
   CurrentUserCommentAvatar,
-  normalizeBackgroundColor,
   TextCommentAvatar
 } from "../../Posts/CommentsViewer";
 import {
@@ -28,18 +28,10 @@ import {
   TextTemplate
 } from "../NewPostFormat";
 import { TextInput as __RNTextInput } from "./CustomTextInputComponent";
-import { SpeechBubble } from "./SpeechBubble";
 import { textInputPresets } from "./Presets";
-import { invertColor, getStrokeColor, isColorDark } from "../../../lib/colors";
-import {
-  NativeViewGestureHandler,
-  createNativeWrapper
-} from "react-native-gesture-handler";
-import {
-  POST_WIDTH,
-  MAX_POST_HEIGHT,
-  isFixedSizeBlock
-} from "../../../lib/buildPost";
+import { SpeechBubble } from "./SpeechBubble";
+import useKeyboard from "@rnhooks/keyboard";
+import { useAnimatedEvent } from "../../../lib/animations";
 
 const RNTextInput = __RNTextInput;
 
@@ -171,6 +163,7 @@ const textInputTypeStylesheets: {
     },
     input: {
       ...FONT_STYLES.bigWords,
+      paddingTop: 3,
       color: textInputPresets[TextTemplate.bigWords].presets.color,
 
       textShadowColor:
@@ -414,6 +407,10 @@ export const getDenormalizedBackgroundColor = (block: TextPostBlock) => {
 };
 
 export const getTextBlockColor = (block: TextPostBlock) => {
+  if (!block || block.type !== "text") {
+    return;
+  }
+
   const { border } = block.config;
 
   let color = getDenormalizedColor(block);
@@ -546,9 +543,7 @@ export const getHighlightInset = (block: TextPostBlock) => {
 
   const presets = textInputPresets[template].presets;
 
-  return border === TextBorderType.stroke
-    ? getStrokeWidth(block) * -1
-    : presets.highlightInset ?? 0;
+  return border === TextBorderType.stroke ? -3.0 : presets.highlightInset ?? 0;
 };
 
 const getClosestNumber = (goal, counts) =>
@@ -564,32 +559,46 @@ type Props = {
   TextInputComponent: React.ComponentType<TextInputProps>;
 };
 
-export const TextInput = ({
-  editable,
-  inputRef,
-  onBlur,
-  photoURL,
-  onContentSizeChange,
-  disabled,
-  blockRef,
-  stickerRef,
-  username,
-  isBlockFocused: isFocused,
-  onLayout,
-  focusType,
-  onFinishEditing,
-  onChangeValue,
-  isSticker,
-  paddingTop,
-  onTapAvatar,
-  text,
-  focusTypeValue,
-  maxX = SCREEN_DIMENSIONS.width,
-  onFocus,
-  block,
-  gestureRef,
-  TextInputComponent = RNTextInput
-}) => {
+export const TextInput = React.forwardRef((props, ref) => {
+  const {
+    editable,
+    inputRef,
+    onBlur,
+    photoURL,
+    onContentSizeChange,
+    disabled,
+    blockRef,
+    stickerRef,
+    username,
+    isBlockFocused: _isFocused,
+    onLayout,
+    focusType,
+    onFinishEditing,
+    onChangeValue,
+    isSticker,
+    paddingTop,
+    onTapAvatar,
+    text,
+    focusTypeValue,
+    maxX = SCREEN_DIMENSIONS.width,
+    onFocus,
+    block,
+    gestureRef,
+    TextInputComponent = RNTextInput
+  } = props;
+
+  const isInitialMount = React.useRef(true);
+  React.useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+    }
+  }, [isInitialMount]);
+
+  const willAutoFocus =
+    isInitialMount.current && isSticker && text.length === 0;
+
+  const isFocused = willAutoFocus || _isFocused;
+
   const {
     config: {
       placeholder = " ",
@@ -612,6 +621,16 @@ export const TextInput = ({
     layout,
     id
   } = block;
+
+  const _ref = React.useRef();
+
+  React.useImperativeHandle(ref, () => _ref.current);
+
+  useAnimatedEvent(onContentSizeChange, "onContentSizeChange", _ref);
+
+  const isFixedSize = isFixedSizeBlock(block);
+
+  const STICKER_FOCUS_WIDTH = POST_WIDTH - 32;
 
   let format = block.format;
   if (isSticker && block.format === PostFormat.post) {
@@ -646,14 +665,16 @@ export const TextInput = ({
   );
 
   const maxWidth = overrides?.maxWidth;
-  const isFixedSize = isFixedSizeBlock(block);
+
   const highlightInset = getHighlightInset(block);
 
   let width = undefined;
   let height = undefined;
 
+  let containerWidth = undefined;
+  let containerHeight = undefined;
+
   if (focusType === FocusType.absolute && isFocused && !isFixedSize) {
-    width = POST_WIDTH - highlightInset * 2;
   } else if (format === PostFormat.post) {
     if (
       [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
@@ -668,6 +689,9 @@ export const TextInput = ({
     ) {
       width = "100%";
     }
+  } else if (isSticker && !isFocused && !isFixedSize) {
+    // width = contentSize.width;
+    // height = contentSize.height;
   }
 
   let backgroundColor = getTextBlockBackgroundColor(block);
@@ -703,15 +727,22 @@ export const TextInput = ({
       styles.container,
       textInputTypeStylesheets[template].container,
       formatStylesheets[format].container,
-      !isSticker && {
-        height,
-        width
-      }
+      isSticker
+        ? {
+            paddingLeft: isKeyboardFocused && !maxWidth ? 16 : undefined,
+            paddingRight: isKeyboardFocused && !maxWidth ? 16 : undefined
+          }
+        : {
+            height,
+            width
+          }
     ],
     [
       template,
       format,
+      textAlign,
       width,
+      containerHeight,
       height,
       isSticker,
       styles.container,
@@ -730,7 +761,6 @@ export const TextInput = ({
       {
         backgroundColor: format === PostFormat.post ? backgroundColor : null,
         minHeight,
-
         marginLeft: Math.abs(highlightInset),
         marginRight: Math.abs(highlightInset),
         marginTop: Math.abs(highlightInset),
@@ -800,19 +830,17 @@ export const TextInput = ({
         selectable={
           format === PostFormat.post && focusType !== FocusType.absolute
         }
-        ref={inputRef}
+        ref={_ref}
         style={inputStyles}
-        isSticker={isSticker}
+        format={format}
         multiline
         scrollEnabled={false}
         singleFocus
         numberOfLines={overrides.numberOfLines ?? null}
-        width={maxWidth ?? width}
-        // maxWidth={maxWidth ?? POST_WIDTH}
-        // minWidth={isSticker ? 40 : undefined}
+        width={width ?? maxWidth}
+        maxWidth={maxWidth}
         maxContentWidth={maxWidth}
         height={typeof height === "number" ? height : undefined}
-        onFinishEditing={onFinishEditing}
         nestedScrollEnabled
         fontSize={fontSize}
         listKey={block.id}
@@ -824,9 +852,10 @@ export const TextInput = ({
         highlightInset={highlightInset}
         highlightCornerRadius={highlightCornerRadius}
         strokeColor={strokeColor}
-        borderType={borderType}
+        border={borderType}
         strokeWidth={strokeWidth}
-        onContentSizeChange={onContentSizeChange}
+        // onContentSizeChange={onContentSizeChange}
+        onFinishEditing={onFinishEditing}
         lengthPerLine={50}
         blurOnSubmit={false}
         fontSizeRange={textInputPresets[template].fontSizes}
@@ -883,8 +912,8 @@ export const TextInput = ({
               top: 3,
               position: "absolute",
               alignSelf: "center",
-              // left: 0,
-              // right: 0,
+              left: 0,
+              right: 0,
               zIndex: 1,
               transform: [
                 {
@@ -894,6 +923,9 @@ export const TextInput = ({
 
                 {
                   translateY: StyleSheet.hairlineWidth
+                },
+                {
+                  translateX: -2.5
                 }
               ]
             }}
@@ -911,5 +943,5 @@ export const TextInput = ({
   } else {
     return innerContent;
   }
-};
+});
 export default TextInput;

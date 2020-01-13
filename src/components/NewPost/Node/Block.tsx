@@ -28,6 +28,7 @@ export const Block = React.forwardRef(
       isFocused,
       scale,
       focusedBlockValue,
+      onContentSizeChange,
       scrollRef,
       gestureRef,
       onTap,
@@ -58,6 +59,7 @@ export const Block = React.forwardRef(
           isFocused={isFocused}
           autoFocus={autoFocus}
           onOpenImagePicker={onOpenImagePicker}
+          onContentSizeChange={onContentSizeChange}
           onFinishEditing={onFinishEditing}
           focusTypeValue={focusTypeValue}
           inputAccessoryView={inputAccessoryView}
@@ -86,6 +88,7 @@ export const Block = React.forwardRef(
           scale={scale}
           usePreview={usePreview}
           focusedBlockValue={focusedBlockValue}
+          onContentSizeChange={onContentSizeChange}
           isFocused={isFocused}
           scrollRef={scrollRef}
           focusTypeValue={focusTypeValue}

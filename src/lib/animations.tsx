@@ -1,5 +1,7 @@
 import Animated, { Easing } from "react-native-reanimated";
 import { State } from "react-native-gesture-handler";
+import * as React from "react";
+import { findNodeHandle } from "react-native";
 
 const {
   Clock,
@@ -258,4 +260,24 @@ export const snapPoint = (
     (acc, p) => cond(eq(diffPoint(p), minDelta), p, acc),
     new Value()
   );
+};
+
+export const useAnimatedEvent = (handler, name, ref) => {
+  React.useLayoutEffect(() => {
+    let _ref = ref?.current ?? ref;
+
+    if (!handler || typeof handler?.attachEvent !== "function") {
+      return;
+    }
+
+    handler.attachEvent(findNodeHandle(_ref), name);
+    _ref.setNativeProps({ [handler]: true });
+
+    return () => {
+      let _ref = ref?.current ?? ref;
+
+      handler.detachEvent(findNodeHandle(_ref), name);
+      _ref.setNativeProps({ [handler]: false });
+    };
+  }, [handler, ref, name]);
 };
