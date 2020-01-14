@@ -59,22 +59,23 @@ class YeetTextLayoutManager: NSLayoutManager {
 
          strokeColor.setStroke()
 
-//      graphicsContext.translateBy(x: .zero, y: (strokeWidth / UIScreen.main.scale))
+      graphicsContext.translateBy(x: 0, y: 0.5)
 
-         graphicsContext.setLineWidth(strokeWidth * -1)
+         graphicsContext.setLineWidth(strokeWidth)
 //        graphicsContext.scaleBy(x: 1.05, y: 1.05)
       graphicsContext.setLineJoin(.round)
       graphicsContext.setLineCap(.round)
-      graphicsContext.setFillColor(UIColor.clear.cgColor)
+      graphicsContext.setFillColor(strokeColor.cgColor)
 //         graphicsContext.setLineJoin(.miter)
 
         graphicsContext.setTextDrawingMode(.fillStroke)
 
          super.showCGGlyphs(glyphs, positions: positions, count: glyphCount, font: font, matrix: textMatrix, attributes: textAttributes, in: graphicsContext)
 
-         // Due to a bug introduced in iOS 7, kCGTextFillStroke will never have the correct fill color, so we must draw the string twice: once for stroke and once for fill. http://stackoverflow.com/questions/18894907/why-cgcontextsetrgbstrokecolor-isnt-working-on-ios7
+//          Due to a bug introduced in iOS 7, kCGTextFillStroke will never have the correct fill color, so we must draw the string twice: once for stroke and once for fill. http://stackoverflow.com/questions/18894907/why-cgcontextsetrgbstrokecolor-isnt-working-on-ios7
 
          graphicsContext.restoreGState()
+      graphicsContext.setLineWidth(strokeWidth)
          graphicsContext.setTextDrawingMode(.fill)
      }
 }
