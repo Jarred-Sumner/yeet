@@ -6,13 +6,6 @@
 //  Copyright © 2020 Facebook. All rights reserved.
 //
 
-/**
- * Copyright (c) Facebook, Inc. and its affiliates.
- *
- * This source code is licensed under the MIT license found in the
- * LICENSE file in the root directory of this source tree.
- */
-
 
 #import "YeetTextInputShadowView.h"
 #import <React/RCTBridge.h>
@@ -21,8 +14,8 @@
 #import <yoga/Yoga.h>
 #import "EnableWebpDecoder.h"
 #import <UIKit/UIKit.h>
-
 #import <React/NSTextStorage+FontScaling.h>
+
 
 
 
@@ -40,7 +33,7 @@
   NSString *_text;
   NSTextStorage *_textStorage;
   NSTextContainer *_textContainer;
-  NSLayoutManager *_layoutManager;
+  YeetTextLayoutManager *_layoutManager;
 }
 
 @synthesize yeetAttributes = currentTextAttrs;
@@ -70,7 +63,7 @@
 }
 
 - (void)didUpdateTextStyle {
-  YeetTextAttributes *attrs = self.yeetAttributes;
+  __block YeetTextAttributes *attrs = self.yeetAttributes;
   NSNumber *tag = self.reactTag;
 
    [_bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
@@ -272,7 +265,8 @@
   if (!_textStorage) {
     _textContainer = [NSTextContainer new];
     _textContainer.lineFragmentPadding = 0; // Note, the default value is 5.
-    _layoutManager = [NSLayoutManager new];
+    _layoutManager = [YeetTextLayoutManager new];
+    
     [_layoutManager addTextContainer:_textContainer];
     _textStorage = [NSTextStorage new];
     _textContainer.lineFragmentPadding = 0;
@@ -285,22 +279,11 @@
                     withAttributedString:attributedText];
   [_layoutManager ensureLayoutForTextContainer:_textContainer];
 
-
-
-
   self.yeetAttributes.textContainerInset = self.paddingAsInsets;
-
-//  [self.yeetAttributes drawHigh]
-
-
   self.yeetAttributes.attributedText = attributedText;
-
-
   self.yeetAttributes.font = self.textAttributes.effectiveFont;
 
-
   [self.yeetAttributes drawHighlightLayer:highlightLayer layout:_layoutManager textContainer:_textContainer textLayer:textLayer];
-
 
   CGRect rect = CGRectMake(0, 0, 0, 0);
 

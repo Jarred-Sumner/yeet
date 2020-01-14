@@ -278,4 +278,11 @@
 @end
 
 
-
+@interface YeetTextLayoutManager : NSLayoutManager
+@property (nonatomic, strong) UIColor * _Nullable strokeColor;
+@property (nonatomic) CGFloat strokeWidth;
+- (void)drawGlyphsForGlyphRange:(NSRange)glyphsToShow atPoint:(CGPoint)origin;
+- (void)showCGGlyphs:(CGGlyph const * _Nonnull)glyphs positions:(CGPoint const * _Nonnull)positions count:(NSUInteger)glyphCount font:(UIFont * _Nonnull)font matrix:(CGAffineTransform)textMatrix attributes:(NSDictionary<NSAttributedStringKey, id> * _Nonnull)attributes inContext:(CGContextRef _Nonnull)graphicsContext;
+- (nonnull instancetype)init;
+- (nullable instancetype)initWithCoder:(NSCoder * _Nonnull)coder;
+@end

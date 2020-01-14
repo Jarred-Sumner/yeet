@@ -500,9 +500,9 @@ const getStrokeWidth = (block: TextPostBlock) => {
   const presets = textInputPresets[template].presets;
 
   if (template === TextTemplate.bigWords) {
-    return PixelRatio.get() * 2;
+    return -3;
   } else if (border === TextBorderType.stroke) {
-    return PixelRatio.get() * 2;
+    return -2;
   } else if (template === TextTemplate.comic) {
     return PixelRatio.get();
   } else {
@@ -765,6 +765,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         marginRight: Math.abs(highlightInset),
         marginTop: Math.abs(highlightInset),
         marginBottom: Math.abs(highlightInset),
+        letterSpacing: border === TextBorderType.stroke ? 0.5 : undefined,
 
         textAlign,
         color,
@@ -781,6 +782,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     [
       styles.input,
       template,
+      strokeWidth,
       minHeight,
       textAlign,
       paddingTop,

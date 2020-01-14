@@ -158,6 +158,7 @@ RCT_EXPORT_VIEW_PROPERTY(unfocusedLeft, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(yeetContentSizeChange, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onTransform, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onTransformLayout, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(overlayTag, NSNumber);
 RCT_REMAP_VIEW_PROPERTY(transform, yeetTransform, CATransform3D);
 //RCT_CUSTOM_VIEW_PROPERTY(transform, CATransform3D, MovableView) {
 //  view.yeetTransform = json ? [RCTConvert CATransform3D:json] : CATransform3DIdentity;

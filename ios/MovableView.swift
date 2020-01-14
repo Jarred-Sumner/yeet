@@ -47,6 +47,25 @@ class MovableView: UIView, RCTUIManagerObserver {
   override func reactSetFrame(_ frame: CGRect) {
     if let animator = self.animator {
       self.reactSetFrame(frame, animator)
+      let isShowingKeyboard = textInput?.isShowingKeyboard ?? false
+       let isHidingKeyboard = textInput?.isHidingKeyboard ?? false
+
+      animator.addAnimations { [weak self] in
+        if isShowingKeyboard {
+          self?.overlayView?.layer.opacity = 1.0
+        } else if isHidingKeyboard {
+          self?.overlayView?.layer.opacity = 0.0
+        }
+      }
+
+      animator.addCompletion { [weak self] _ in
+        if isShowingKeyboard {
+          self?.overlayView?.layer.opacity = 1.0
+        } else if isHidingKeyboard {
+          self?.overlayView?.layer.opacity = 0.0
+        }
+      }
+
       incrementReadyCount()
     } else {
       super.yeetReactSetFrame(frame)
@@ -59,10 +78,15 @@ class MovableView: UIView, RCTUIManagerObserver {
     }
   }
 
+  var hasTransform : Bool { return layer.affineTransform() != .identity }
   var animationReadyCount = 0
   var requiredReadyCount: Int {
-    if textInput != nil {
-      return layer.affineTransform() != .identity ? 3 : 2
+    if let textInput = self.textInput {
+      if hasTransform && !textInput.isFixedSize {
+        return 3
+      } else {
+        return 2
+      }
     } else {
       return 2
     }
@@ -78,6 +102,25 @@ class MovableView: UIView, RCTUIManagerObserver {
     if animationReadyCount >= requiredReadyCount && animator.state == .inactive {
       animator.startAnimation()
     }
+  }
+
+  @objc(overlayTag)
+  var overlayTag: NSNumber? = nil
+
+  var overlayView: UIView? {
+    guard let bridge = self.bridge else {
+      return nil
+    }
+
+    guard bridge.isValid else {
+      return nil
+    }
+
+    guard let tag = overlayTag else {
+      return nil
+    }
+
+    return bridge.uiManager.view(forReactTag: tag)
   }
 
   var isTransformAnimationInProgress = false

@@ -10,8 +10,8 @@ import UIKit
 
 @objc(YeetTextView)
 class YeetTextView: _RCTUITextView {
-  override required init(frame: CGRect) {
-    super.init(frame: frame)
+  override required init(frame: CGRect, textContainer: NSTextContainer?) {
+    super.init(frame: frame, textContainer: textContainer)
     self.highlightLayer.isOpaque = false
     self.backgroundColor = .clear
     self.textContainer.lineFragmentPadding = lineFragmentPadding
@@ -30,7 +30,7 @@ class YeetTextView: _RCTUITextView {
     self.isEditable = false
     clipsToBounds = false
     layer.masksToBounds = false
-    layoutManager.allowsNonContiguousLayout = false
+    
     keyboardAppearance = .dark
 
     highlightSubview.frame = bounds
@@ -182,6 +182,12 @@ class YeetTextView: _RCTUITextView {
     }
   }
 
+  var _layoutManager: YeetTextLayoutManager {
+    get {
+      return layoutManager as! YeetTextLayoutManager
+    }
+  }
+
   var _font: UIFont? = nil
   override var font: UIFont? {
     get {
@@ -219,12 +225,20 @@ class YeetTextView: _RCTUITextView {
     yeetTextAttributes.font = self.font!
 //    yeetTextAttributes.textColor = highlightColor
     yeetTextAttributes.textContainerInset = self.textContainerInset
-    yeetTextAttributes.attributedText = self.attributedText
 
 
-    yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: layoutManager, textContainer: textContainer, textLayer: layer)
 
-    if !attributedText.isEqual(to: yeetTextAttributes.attributedText!) {
+    var isShowingPlaceholder = self.attributedText?.string.isEmpty ?? true
+    if isShowingPlaceholder {
+      yeetTextAttributes.attributedText = NSAttributedString(string: "I", attributes: reactTextAttributes?.effectiveTextAttributes())
+    } else {
+      yeetTextAttributes.attributedText = self.attributedText
+    }
+
+
+    yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: _layoutManager, textContainer: textContainer, textLayer: layer)
+
+    if !isShowingPlaceholder && !attributedText.isEqual(to: yeetTextAttributes.attributedText!) {
       self.attributedText = yeetTextAttributes.attributedText
     }
 
@@ -259,7 +273,7 @@ class YeetTextView: _RCTUITextView {
 
     let text = self.attributedText!
 
-    yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: layoutManager, textContainer: textContainer, textLayer: self.layer)
+    yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: _layoutManager, textContainer: textContainer, textLayer: self.layer)
 
 
     return yeetTextAttributes.textRect.size

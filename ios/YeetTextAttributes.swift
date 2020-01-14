@@ -149,14 +149,12 @@ class YeetTextAttributes : NSObject {
 
 
   @objc(drawHighlightLayer:layout:textContainer:textLayer:)
-  func drawHighlight(highlightLayer: CAShapeLayer, layout: NSLayoutManager, textContainer: NSTextContainer, textLayer: CALayer) {
+  func drawHighlight(highlightLayer: CAShapeLayer, layout: YeetTextLayoutManager, textContainer: NSTextContainer, textLayer: CALayer) {
     guard let attributedText = self.attributedText else {
       return
     }
 
-    guard var result = attributedText.mutableCopy() as? NSMutableAttributedString else {
-      return
-    }
+    var result = NSMutableAttributedString(attributedString: attributedText)
 
     var range = layout.glyphRange(for: textContainer)
     let font = self.font
@@ -164,6 +162,15 @@ class YeetTextAttributes : NSObject {
     let highlightEdgeInsets = self.highlightEdgeInsets
     var hasAddedTrailingHeight = false
     let textColor = self.textColor
+
+    if border == .stroke {
+      layout.strokeWidth = strokeWidth
+      layout.strokeColor = strokeColor
+    } else {
+      layout.strokeWidth = .zero
+      layout.strokeColor = UIColor.clear
+    }
+
 
 
     result.beginEditing()
@@ -238,24 +245,38 @@ class YeetTextAttributes : NSObject {
       highlightLayer.lineWidth = .zero
       highlightLayer.strokeColor = UIColor.clear.cgColor
     }
-//    } else if border == .stroke {
+      //    } else if border == .stroke {
 //      var _range = layout.glyphRange(for: textContainer)
 //      Log.debug("""
 //        string: \(result.string)
 //range: \(range)
 //_range: \(_range)
 //""")
-//      var glyphs: [(CGGlyph, CGPoint)] = []
+//      var glyphs: [(CGGlyph, CGPoint, CGRect)] = []
 //      var gylphIndices: [Int] = []
+//
+////      layout.enumerateLineFragments(forGlyphRange: _range) { (rect, usedReact, textContainer, glyphRange, _) in
+////
+////      }
+//
 //      for index in _range.location..._range.length {
 //        if layout.isValidGlyphIndex(index) {
 //          let glyph = layout.cgGlyph(at: index)
 //          var point = CGPoint.zero
 //          let location = layout.location(forGlyphAt: index)
-//          let glyphRect =  layout.lineFragmentRect(forGlyphAt: index, effectiveRange: nil)
-//          point.x += location.x + glyphRect.x
+//          var glyphRect =  layout.lineFragmentUsedRect(forGlyphAt: index, effectiveRange: nil, withoutAdditionalLayout: true)
+//          glyphRect = glyphRect.insetBy(dx: .zero, dy: textContainerInset.top)
+//          glyphRect = highlightLayer.convert(glyphRect, from: textLayer)
+////          glyphRect = glyphRect.inset(by: highlightEdgeInsets.negate)
+//
+//          point.x = location.x
 //          point.y = location.y + glyphRect.y
-//          glyphs.append((glyph, point))
+//          point.y = min(
+//            max(glyphRect.topLeft.y, point.y),
+//            glyphRect.bottomCenter.y
+//          )
+//
+//          glyphs.append((glyph, point, glyphRect))
 //
 //        }
 //      }
@@ -265,25 +286,45 @@ class YeetTextAttributes : NSObject {
 //      """)
 //
 //      var bezier = UIBezierPath()
-//      for (glyph, point) in glyphs {
+//      for (glyph, point, glyphRect) in glyphs {
+//
+//
 //
 //        if let cgpath = CTFontCreatePathForGlyph(font as CTFont, glyph, nil) {
+//          var flip =  CGAffineTransform.init(translationX: cgpath.boundingBoxOfPath.center.x, y: cgpath.boundingBoxOfPath.center.y).concatenating(
+//            CGAffineTransform.init(scaleX: 1, y: -1)).concatenating(CGAffineTransform.init(translationX: cgpath.boundingBoxOfPath.center.x * -1, y: cgpath.boundingBoxOfPath.center.y * -1))
+//          var trans = CGAffineTransform.init(translationX: point.x, y: point.y)
 //
-//          var inverse = CGAffineTransform(translationX: .zero, y:  cgpath.boundingBox.height).scaledBy(x: 1, y: -1)
-//          let path = UIBezierPath(cgPath: cgpath)
+//          var inverse = CGAffineTransform(translationX: .zero, y: cgpath.boundingBoxOfPath.y + cgpath.boundingBoxOfPath.height)
+//          var offset = CGAffineTransform.identity
 //
-//          path.apply(inverse)
-//          path.apply(CGAffineTransform.init(translationX: point.x, y: point.y))
-//          path.close()
-//
-//          let strokeAblePath = cgpath.copy(strokingWithWidth: strokeWidth * -1, lineCap: .round, lineJoin: .round, miterLimit: 1)
+//          let strokeAblePath = cgpath.copy(strokingWithWidth: CGFloat(1), lineCap: .round, lineJoin: .round, miterLimit: 1)
 //          let stroker = UIBezierPath(cgPath: strokeAblePath)
 //
+//          stroker.apply(flip)
 //          stroker.apply(inverse)
-//         stroker.apply(CGAffineTransform.init(translationX: point.x, y: point.y))
-//         stroker.close()
+//          stroker.apply(trans)
 //
-//          bezier.append(path)
+//
+//          if stroker.bounds.y < glyphRect.y && stroker.bounds.height < glyphRect.height {
+//            offset = offset.translatedBy(x: .zero, y: glyphRect.y - stroker.bounds.y - highlightInset)
+//          } else if stroker.bounds.bottomLeft.y > glyphRect.bottomLeft.y && glyphRect.height > stroker.bounds.height {
+//            offset = offset.translatedBy(x: .zero, y: highlightInset)
+//          }
+//
+//          if stroker.bounds.x < glyphRect.x && stroker.bounds.width < glyphRect.width {
+//            offset = offset.translatedBy(x: glyphRect.x - stroker.bounds.x - highlightInset, y: .zero)
+//         } else if stroker.bounds.topRight.x > glyphRect.topRight.x && glyphRect.width > stroker.bounds.width {
+//            offset = offset.translatedBy(x: highlightInset, y: .zero)
+//         }
+//
+//
+//
+//          stroker.apply(offset)
+//          stroker.stroke()
+//
+//
+//           stroker.close()
 //          bezier.append(stroker)
 //
 //
@@ -296,87 +337,85 @@ class YeetTextAttributes : NSObject {
 //
 //      highlightLayer.path = bezier.cgPath
 //      highlightLayer.lineWidth = strokeWidth
-//      highlightLayer.fillColor = textColor?.cgColor
 //      highlightLayer.cornerRadius = .zero
 //      highlightLayer.masksToBounds = false
 //      highlightLayer.lineJoin = .round
+////      highlightLayer.setAffineTransform(CGAffineTransform.init(scaleX: 1 + (highlightInset / bezier.bounds.width), y: (1.0 + (highlightInset / bezier.bounds.height)) * -1 ))
 //
-//
-//
-//      highlightLayer.lineWidth = .zero
 //      highlightLayer.strokeColor = strokeColor.cgColor
+//      highlightLayer.fillColor = UIColor.clear.cgColor
 //    }
 
-    if border == .stroke {
-      if result.length > 0 {
-        var range = (result.string as NSString).range(of: result.string)
-        var attrs = result.attributes(at: 0, effectiveRange: &range)
-        var needsSetAttributes = false
-
-        if attrs[NSAttributedString.Key.strokeColor] as? UIColor != strokeColor {
-          attrs[NSAttributedString.Key.strokeColor] = strokeColor
-          needsSetAttributes = true
-        }
-
-
-        if let foregroundColor = highlightLayer.fillColor {
-          let _color = UIColor(cgColor: foregroundColor)
-
-          if _color != .clear &&  attrs[NSAttributedString.Key.foregroundColor] as? UIColor != _color {
-            attrs[NSAttributedString.Key.foregroundColor] = _color
-            needsSetAttributes = true
-          }
-        }
-
-
-        let strokeValue = abs(strokeWidth) * -1
-        if attrs[NSAttributedString.Key.strokeWidth] as? CGFloat != strokeValue {
-          attrs[NSAttributedString.Key.strokeWidth] = strokeValue
-          needsSetAttributes = true
-        }
-
-        if attrs[NSAttributedString.Key.font] as? UIFont != bolderFont {
-          attrs[NSAttributedString.Key.font] = bolderFont
-          needsSetAttributes = true
-        }
-
-
-        if needsSetAttributes {
-          result.setAttributes(attrs, range: range)
-        }
-      }
-    } else {
-      let result = NSMutableAttributedString(attributedString: result)
-      if result.length > 0 {
-        var range = (result.string as NSString).range(of: result.string)
-        var attrs = result.attributes(at: 0, effectiveRange: &range)
-
-        var needsChange = false
-
-        if attrs.keys.contains(NSAttributedString.Key.strokeColor) {
-          attrs.removeValue(forKey: NSAttributedString.Key.strokeColor)
-          needsChange = true
-        }
-
-        if attrs.keys.contains(NSAttributedString.Key.strokeWidth) {
-          attrs.removeValue(forKey: NSAttributedString.Key.strokeWidth)
-          needsChange = true
-        }
-
-        if let setFont = attrs[NSAttributedString.Key.font] as? UIFont {
-          if setFont != font {
-            attrs[NSAttributedString.Key.font] = font
-            needsChange = true
-          }
-        }
-
-
-        if needsChange {
-          result.setAttributes(attrs, range: range)
-        }
-
-      }
-    }
+//    if border == .stroke {
+//      if result.length > 0 {
+//        var range = (result.string as NSString).range(of: result.string)
+//        var attrs = result.attributes(at: 0, effectiveRange: &range)
+//        var needsSetAttributes = false
+//
+//        if attrs[NSAttributedString.Key.strokeColor] as? UIColor != strokeColor {
+//          attrs[NSAttributedString.Key.strokeColor] = strokeColor
+//          needsSetAttributes = true
+//        }
+//
+//
+//        if let foregroundColor = highlightLayer.fillColor {
+//          let _color = UIColor(cgColor: foregroundColor)
+//
+//          if _color != .clear &&  attrs[NSAttributedString.Key.foregroundColor] as? UIColor != _color {
+//            attrs[NSAttributedString.Key.foregroundColor] = _color
+//            needsSetAttributes = true
+//          }
+//        }
+//
+//
+//        let strokeValue = abs(strokeWidth) * -1
+//        if attrs[NSAttributedString.Key.strokeWidth] as? CGFloat != strokeValue {
+//          attrs[NSAttributedString.Key.strokeWidth] = strokeValue
+//          needsSetAttributes = true
+//        }
+//
+//        if attrs[NSAttributedString.Key.font] as? UIFont != bolderFont {
+//          attrs[NSAttributedString.Key.font] = bolderFont
+//          needsSetAttributes = true
+//        }
+//
+//
+//        if needsSetAttributes {
+//          result.setAttributes(attrs, range: range)
+//        }
+//      }
+//    } else {
+//      let result = NSMutableAttributedString(attributedString: result)
+//      if result.length > 0 {
+//        var range = (result.string as NSString).range(of: result.string)
+//        var attrs = result.attributes(at: 0, effectiveRange: &range)
+//
+//        var needsChange = false
+//
+//        if attrs.keys.contains(NSAttributedString.Key.strokeColor) {
+//          attrs.removeValue(forKey: NSAttributedString.Key.strokeColor)
+//          needsChange = true
+//        }
+//
+//        if attrs.keys.contains(NSAttributedString.Key.strokeWidth) {
+//          attrs.removeValue(forKey: NSAttributedString.Key.strokeWidth)
+//          needsChange = true
+//        }
+//
+//        if let setFont = attrs[NSAttributedString.Key.font] as? UIFont {
+//          if setFont != font {
+//            attrs[NSAttributedString.Key.font] = font
+//            needsChange = true
+//          }
+//        }
+//
+//
+//        if needsChange {
+//          result.setAttributes(attrs, range: range)
+//        }
+//
+//      }
+//    }
 
     result.fixAttributes(in: result.fullRange)
     result.endEditing()
@@ -435,7 +474,7 @@ class YeetTextAttributes : NSObject {
     let possibleFonts = font.otherVersions
     for currentFont in possibleFonts {
       if currentFont.weight.rawValue > currentWeight.rawValue && currentFont.isItalic == chosenFont.isItalic {
-        return currentFont
+        return currentFont.withSize(font.pointSize * 1.25)
       }
     }
 
@@ -495,14 +534,18 @@ extension NSAttributedString {
 
 
   var emptySize : CGRect {
-    let hashValue = HashableStringAttributes(self.attributes(at: 0, effectiveRange: nil)).hashValue
-    if let cachedSize =  NSAttributedString.measureCache.object(forKey: NSNumber(value:hashValue))?.cgRectValue {
-      return cachedSize
-    } else {
-      let size = screenSizeOf()
-      NSAttributedString.measureCache.setObject(NSValue(cgRect: size), forKey: NSNumber(value:hashValue))
-      return size
-    }
+    
+      var fullRange = self.fullRange
+      let hashValue = HashableStringAttributes(self.attributes(at: 0, effectiveRange: &fullRange)).hashValue
+      if let cachedSize =  NSAttributedString.measureCache.object(forKey: NSNumber(value:hashValue))?.cgRectValue {
+        return cachedSize
+      } else {
+        let size = screenSizeOf()
+        NSAttributedString.measureCache.setObject(NSValue(cgRect: size), forKey: NSNumber(value:hashValue))
+        return size
+      }
+
+
 
   }
 

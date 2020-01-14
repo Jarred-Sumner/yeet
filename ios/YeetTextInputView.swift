@@ -142,10 +142,17 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     constant: 0
   )
 
+  
 
   override init(bridge: RCTBridge) {
-    
-    textView = YeetTextView(frame: .zero)
+    let storage = NSTextStorage()
+    let manager = YeetTextLayoutManager()
+    let container = NSTextContainer(size: CGSize(width: 0, height: CGFloat.greatestFiniteMagnitude))
+    container.widthTracksTextView = true
+    manager.addTextContainer(container)
+    storage.addLayoutManager(manager)
+
+    textView = YeetTextView(frame: .zero, textContainer: container)
 
     super.init(bridge: bridge)
 
@@ -338,18 +345,19 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
     let newOffset = textView.contentOffset.applying(sizeTranslation.inverted())
 
+
     animator.addAnimations { [unowned self] in
       self.center = position.applying(sizeTranslation)
       self.layoutIfNeeded()
-    }
+    } 
 
-    animator.addCompletion { [unowned self] state in
-      self.yeetReactSetFrame(frame)
+    animator.addCompletion { [weak self] state in
+      self?.yeetReactSetFrame(frame)
 
       if state == .end {
-       self.contentMode = originalContentMode
-      self.clipsToBounds = originalClipsToBounds
-       self.layer.needsDisplayOnBoundsChange = originalNeedsDisplayOnBoundsChange
+       self?.contentMode = originalContentMode
+      self?.clipsToBounds = originalClipsToBounds
+       self?.layer.needsDisplayOnBoundsChange = originalNeedsDisplayOnBoundsChange
      }
     }
 

@@ -9,7 +9,7 @@ import {
 } from "react-native-gesture-handler";
 import Animated, { Transitioning } from "react-native-reanimated";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
-import { StyleSheet } from "react-native";
+import { StyleSheet, findNodeHandle } from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../../config";
 import {
   preserveOffset,
@@ -34,6 +34,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     translateX = 0,
     Component = TransformableViewComponent,
     onLayout,
+    overlayTag,
     onTransform,
     onTransformLayout,
     rotate = 0,
@@ -56,6 +57,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
       <Component
         ref={ref}
         inputRef={inputRef}
+        overlayTag={overlayTag}
         style={[
           transformableStyles.bottomContainer,
           {
@@ -81,6 +83,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     return (
       <Component
         ref={ref}
+        overlayTag={overlayTag}
         inputRef={inputRef}
         style={[
           transformableStyles.topContainer,
@@ -182,6 +185,7 @@ const styles = StyleSheet.create({
   },
   overlaySheet: {
     zIndex: 0,
+    opacity: 0,
     position: "absolute",
     width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height,
@@ -510,6 +514,14 @@ export class MovableNode extends Component<Props> {
     });
   };
 
+  overlayRef = overlayView => {
+    if (overlayView) {
+      this.overlayTag = findNodeHandle(overlayView.getNode());
+    }
+  };
+
+  overlayTag: number | null = null;
+
   render() {
     const {
       x,
@@ -615,12 +627,8 @@ export class MovableNode extends Component<Props> {
                   <Animated.View style={styles.gestureView}>
                     <Animated.View
                       pointerEvents="none"
-                      style={[
-                        styles.overlaySheet,
-                        {
-                          opacity: this.overlayOpacity
-                        }
-                      ]}
+                      ref={this.overlayRef}
+                      style={styles.overlaySheet}
                     />
 
                     <RotationGestureHandler
@@ -635,6 +643,7 @@ export class MovableNode extends Component<Props> {
                         <TransformableView
                           ref={this.props.containerRef}
                           opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
+                          overlayTag={this.overlayTag}
                           translateX={this.translateX}
                           bottom={this.bottomValue}
                           keyboardVisibleValue={keyboardVisibleValue}

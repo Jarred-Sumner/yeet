@@ -1,18 +1,41 @@
-//
-//  _RCTUITextView.h
-//  yeet
-//
-//  Created by Jarred WSumner on 1/9/20.
-//  Copyright © 2020 Facebook. All rights reserved.
-//
+/**
+ * Copyright (c) Facebook, Inc. and its affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
 
-#import <React/RCTUITextView.h>
+#import <UIKit/UIKit.h>
+
+#import <React/RCTBackedTextInputViewProtocol.h>
+#import <React/RCTBackedTextInputDelegate.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface _RCTUITextView : RCTUITextView
-- (instancetype)initWithFrame:(CGRect)frame NS_DESIGNATED_INITIALIZER;
-- (void)enforceTextAttributesIfNeeded;
+/*
+ * Just regular UITextView... but much better!
+ */
+@interface _RCTUITextView : UITextView <RCTBackedTextInputViewProtocol>
+
+- (instancetype)initWithFrame:(CGRect)frame textContainer:(nullable NSTextContainer *)textContainer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithCoder:(NSCoder *)decoder NS_UNAVAILABLE;
+
+@property (nonatomic, weak) id<RCTBackedTextInputDelegate> textInputDelegate;
+
+@property (nonatomic, assign) BOOL contextMenuHidden;
+@property (nonatomic, assign, readonly) BOOL textWasPasted;
+@property (nonatomic, copy, nullable) NSString *placeholder;
+@property (nonatomic, strong, nullable) UIColor *placeholderColor;
+
+@property (nonatomic, assign) CGFloat preferredMaxLayoutWidth;
+
+// The `clearButtonMode` property actually is not supported yet;
+// it's declared here only to conform to the interface.
+@property (nonatomic, assign) UITextFieldViewMode clearButtonMode;
+
+// The `caretHidden` property actually is not supported yet;
+// it's declared here only to conform to the interface.
+@property (nonatomic, assign) BOOL caretHidden;
 
 @end
 
