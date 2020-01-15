@@ -412,8 +412,8 @@ export const PostPreview = React.forwardRef(
 
     const contenViewStyle = React.useMemo(
       () => ({
-        position: "relative"
-        // paddingBottom: paddingBottom
+        position: "relative",
+        paddingBottom: paddingBottom
       }),
       [layout, paddingTop]
     );

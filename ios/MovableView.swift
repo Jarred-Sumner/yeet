@@ -43,9 +43,15 @@ class MovableView: UIView, RCTUIManagerObserver {
 
   @objc(onTransformLayout) var onTransformLayout: RCTDirectEventBlock? = nil
 
+  var didAutoAnimate = false
+
 
   override func reactSetFrame(_ frame: CGRect) {
+    let shouldAutoAnimateEmptyTextInput = textInput != nil && textInput?.reactTag == YeetTextInputView.focusedReactTag && textInput?.willAutoFocus ?? false && (frame.width == UIScreen.main.bounds.width || self.frame.width == UIScreen.main.bounds.width) && !didAutoAnimate
+
     if let animator = self.animator {
+
+
       self.reactSetFrame(frame, animator)
       let isShowingKeyboard = textInput?.isShowingKeyboard ?? false
        let isHidingKeyboard = textInput?.isHidingKeyboard ?? false
@@ -67,14 +73,56 @@ class MovableView: UIView, RCTUIManagerObserver {
       }
 
       incrementReadyCount()
+
+    // Happened too fast!
+    } else if shouldAutoAnimateEmptyTextInput {
+      didAutoAnimate = true
+      animator = UIViewPropertyAnimator(duration: 0.3, timingParameters: UISpringTimingParameters())
+      reactSetFrame(frame, animator!)
+
+      animator?.addAnimations { [weak self] in
+        self?.overlayView?.layer.opacity = 1.0
+      }
+
+      animator?.addCompletion { [weak self] _ in
+        self?.overlayView?.layer.opacity = 1.0
+      }
+
+      incrementReadyCount()
     } else {
       super.yeetReactSetFrame(frame)
     }
   }
 
   var animator: UIViewPropertyAnimator? = nil {
+    willSet (newValue) {
+      newValue?.isInterruptible = true
+    }
     didSet {
+      guard oldValue != animator else {
+        return
+      }
+
+      
       animationReadyCount = 0
+
+
+      if var animator = animator {
+        animator.addCompletion { [weak self, weak animator] state in
+          if state == .end {
+            DispatchQueue.main.async { [weak self, weak animator] in
+             if animator == self?.animator {
+               animator = nil
+               self?.animator = nil
+             }
+           }
+          }
+
+        }
+      }
+
+
+
     }
   }
 
@@ -84,6 +132,8 @@ class MovableView: UIView, RCTUIManagerObserver {
     if let textInput = self.textInput {
       if hasTransform && !textInput.isFixedSize {
         return 3
+      } else if !hasTransform && textInput.isFixedSize {
+        return 1
       } else {
         return 2
       }
@@ -99,7 +149,7 @@ class MovableView: UIView, RCTUIManagerObserver {
 
     animationReadyCount += 1
 
-    if animationReadyCount >= requiredReadyCount && animator.state == .inactive {
+    if animationReadyCount >= requiredReadyCount && animator.state == .inactive && !animator.isRunning {
       animator.startAnimation()
     }
   }
@@ -145,13 +195,20 @@ class MovableView: UIView, RCTUIManagerObserver {
         // https://stackoverflow.com/questions/10497397/from-catransform3d-to-cgaffinetransform?rq=1
          self.layer.allowsEdgeAntialiasing = affineTransform != CGAffineTransform.identity
 
+        let bounds = self.bounds
+        let oldFrame = bounds.applying(layer.affineTransform())
+        let newFrame = bounds.applying(affineTransform)
+
+
+        var animatedValue = newValue
+
         animator.addAnimations { [unowned self] in
           self.layer.transform = newValue
-          self.layoutIfNeeded()
         }
 
         animator.addCompletion { [weak self] state in
           if state == .end {
+            self?.layer.transform = newValue
             self?.updateContentScale()
           }
         }

@@ -928,9 +928,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
   handleShowKeyboard = (event, hasHappened) => {
-    isFixedSizeBlock(this.focusedBlock) &&
-      hasHappened &&
-      this.scrollRef.current.handleKeyboardEvent(event);
+    // hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
     // if (this.state.focusType === FocusType.absolute) {
     // this.scrollToTop();
     // }

@@ -27,6 +27,7 @@ extension UIView {
 
       self.center = position;
       self.bounds = bounds;
+    
   }
 
   func reactSetFrame(_ frame: CGRect, _ animator: UIViewPropertyAnimator) {
@@ -35,7 +36,7 @@ extension UIView {
     let placeholder = UIView()
     placeholder.center = position
     placeholder.bounds = bounds
-  //    placeholder.transform = layer.affineTransform()
+      placeholder.transform = layer.affineTransform()
 
     var sizeTranslation: CGAffineTransform
     let isGrowing = placeholder.frame.width > self.frame.width
@@ -69,6 +70,8 @@ extension UIView {
         this.layer.needsDisplayOnBoundsChange = originalNeedsDisplayOnBoundsChange
         this.contentMode = originalContentMode
         this.clipsToBounds = originalClipsToBounds
+      } else {
+        Log.warning("setFrame Animation interrupted in \(self)")
       }
     }
   }

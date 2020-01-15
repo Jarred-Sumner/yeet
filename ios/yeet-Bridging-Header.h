@@ -176,8 +176,7 @@ RCT_REMAP_VIEW_PROPERTY(isSticker, textView.isSticker, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(isSelectable, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
-
-
+RCT_EXPORT_VIEW_PROPERTY(willAutoFocus, BOOL);
 
 RCT_REMAP_VIEW_PROPERTY(autoCapitalize, backedTextInputView.autocapitalizationType, UITextAutocapitalizationType)
 RCT_REMAP_VIEW_PROPERTY(autoCorrect, backedTextInputView.autocorrectionType, UITextAutocorrectionType)

@@ -639,7 +639,7 @@ class ContentExport {
               instruction.layerInstructions.append(layerInstruction)
             track.preferredTransform = vidAsset.preferredTransform
               track.naturalTimeScale = vidAsset.naturalTimeScale
-
+              
 
               if (CMTimeGetSeconds(layercomposition.frameDuration) > CMTimeGetSeconds(vidAsset.minFrameDuration)) {
                 layercomposition.frameDuration = vidAsset.minFrameDuration
@@ -652,7 +652,7 @@ class ContentExport {
               _layer.frame = frame
 //              videoLayer.anchorPoint = CGPoint(x: 0.5, y: 0)
               videoLayer.bounds = ___rect
-              videoLayer.position = _layer.position
+            videoLayer.position = _layer.position
 
               let contentsScaleRect = ___rect.applying(block.position.transform())
               let contentsScaleFrame = frame.applying(block.position.transform())

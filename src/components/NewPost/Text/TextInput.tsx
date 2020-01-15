@@ -32,6 +32,7 @@ import { textInputPresets } from "./Presets";
 import { SpeechBubble } from "./SpeechBubble";
 import useKeyboard from "@rnhooks/keyboard";
 import { useAnimatedEvent } from "../../../lib/animations";
+import YeetView from "./YeetView";
 
 const RNTextInput = __RNTextInput;
 
@@ -363,13 +364,14 @@ const styles = StyleSheet.create({
 
 const formatStylesheets = {
   [PostFormat.post]: StyleSheet.create({
-    container: {},
+    container: {
+      marginBottom: SPACING.normal,
+      marginTop: SPACING.normal,
+      marginVertical: SPACING.normal
+    },
     focusedContainer: {},
     sticker: {},
     input: {
-      paddingBottom: SPACING.normal,
-      paddingTop: SPACING.normal,
-      paddingVertical: SPACING.normal,
       flex: 1
     }
   }),
@@ -500,9 +502,9 @@ const getStrokeWidth = (block: TextPostBlock) => {
   const presets = textInputPresets[template].presets;
 
   if (template === TextTemplate.bigWords) {
-    return -3;
+    return 5;
   } else if (border === TextBorderType.stroke) {
-    return -2;
+    return 3;
   } else if (template === TextTemplate.comic) {
     return PixelRatio.get();
   } else {
@@ -567,6 +569,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     photoURL,
     onContentSizeChange,
     disabled,
+    stickerTag,
     blockRef,
     stickerRef,
     username,
@@ -587,15 +590,14 @@ export const TextInput = React.forwardRef((props, ref) => {
     TextInputComponent = RNTextInput
   } = props;
 
-  const isInitialMount = React.useRef(true);
-  React.useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    }
-  }, [isInitialMount]);
+  const willAutoFocus = React.useRef(isSticker && text.length === 0);
+  const hasBlurred = React.useRef(false);
 
-  const willAutoFocus =
-    isInitialMount.current && isSticker && text.length === 0;
+  React.useEffect(() => {
+    if (willAutoFocus.current === true && hasBlurred.current) {
+      willAutoFocus.current = false;
+    }
+  }, [_isFocused]);
 
   const isFocused = willAutoFocus || _isFocused;
 
@@ -629,6 +631,7 @@ export const TextInput = React.forwardRef((props, ref) => {
   useAnimatedEvent(onContentSizeChange, "onContentSizeChange", _ref);
 
   const isFixedSize = isFixedSizeBlock(block);
+  const isKeyboardFocused = isFocused && focusType === FocusType.absolute;
 
   const STICKER_FOCUS_WIDTH = POST_WIDTH - 32;
 
@@ -645,9 +648,10 @@ export const TextInput = React.forwardRef((props, ref) => {
 
   const handleBlur = React.useCallback(
     event => {
+      hasBlurred.current = true;
       onBlur && onBlur(event);
     },
-    [onBlur]
+    [onBlur, hasBlurred]
   );
 
   const handleFocus = React.useCallback(
@@ -664,7 +668,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     [onChangeValue]
   );
 
-  const maxWidth = overrides?.maxWidth;
+  const maxWidth = block.config?.overrides?.maxWidth;
 
   const highlightInset = getHighlightInset(block);
 
@@ -674,25 +678,25 @@ export const TextInput = React.forwardRef((props, ref) => {
   let containerWidth = undefined;
   let containerHeight = undefined;
 
-  if (focusType === FocusType.absolute && isFocused && !isFixedSize) {
-  } else if (format === PostFormat.post) {
-    if (
-      [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
-        layout
-      )
-    ) {
-      width = "50%";
-    } else if (
-      [PostLayout.verticalTextMedia, PostLayout.verticalMediaText].includes(
-        layout
-      )
-    ) {
-      width = "100%";
-    }
-  } else if (isSticker && !isFocused && !isFixedSize) {
-    // width = contentSize.width;
-    // height = contentSize.height;
-  }
+  // if (focusType === FocusType.absolute && isFocused && !isFixedSize) {
+  // } else if (format === PostFormat.post) {
+  //   if (
+  //     [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
+  //       layout
+  //     )
+  //   ) {
+  //     width = "50%";
+  //   } else if (
+  //     [PostLayout.verticalTextMedia, PostLayout.verticalMediaText].includes(
+  //       layout
+  //     )
+  //   ) {
+  //     width = "100%";
+  //   }
+  // } else if (isSticker && !isFocused && !isFixedSize) {
+  //   // width = contentSize.width;
+  //   // height = contentSize.height;
+  // }
 
   let backgroundColor = getTextBlockBackgroundColor(block);
   let color = getTextBlockColor(block);
@@ -727,15 +731,10 @@ export const TextInput = React.forwardRef((props, ref) => {
       styles.container,
       textInputTypeStylesheets[template].container,
       formatStylesheets[format].container,
-      isSticker
-        ? {
-            paddingLeft: isKeyboardFocused && !maxWidth ? 16 : undefined,
-            paddingRight: isKeyboardFocused && !maxWidth ? 16 : undefined
-          }
-        : {
-            height,
-            width
-          }
+      !isSticker && {
+        height,
+        width
+      }
     ],
     [
       template,
@@ -765,14 +764,14 @@ export const TextInput = React.forwardRef((props, ref) => {
         marginRight: Math.abs(highlightInset),
         marginTop: Math.abs(highlightInset),
         marginBottom: Math.abs(highlightInset),
-        letterSpacing: border === TextBorderType.stroke ? 0.5 : undefined,
+
+        // letterSpacing: border === TextBorderType.stroke ? 0.5 : undefined,
 
         textAlign,
         color,
         textTransform,
         fontSize,
         ...textShadow
-        // maxWidth,
       }
 
       // template === TextTemplate.comic && {
@@ -808,8 +807,6 @@ export const TextInput = React.forwardRef((props, ref) => {
     ]
   );
 
-  const isKeyboardFocused = isFocused && focusType === FocusType.absolute;
-
   let pointerEvents = "auto";
   if (isSticker && focusType === FocusType.static) {
     pointerEvents = "none";
@@ -838,11 +835,12 @@ export const TextInput = React.forwardRef((props, ref) => {
         multiline
         scrollEnabled={false}
         singleFocus
+        stickerContainerTag={stickerTag}
         numberOfLines={overrides.numberOfLines ?? null}
-        width={width ?? maxWidth}
-        maxWidth={maxWidth}
+        width={maxWidth}
         maxContentWidth={maxWidth}
-        height={typeof height === "number" ? height : undefined}
+        maxWidth={maxWidth ?? POST_WIDTH}
+        // height={typeof height === "number" ? height : undefined}
         nestedScrollEnabled
         fontSize={fontSize}
         listKey={block.id}
@@ -850,6 +848,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         inputAccessoryViewID={`new-post-input`}
         minimumFontScale={0.4}
         selectionColor={selectionColor}
+        willAutoFocus={willAutoFocus.current}
         template={template}
         highlightInset={highlightInset}
         highlightCornerRadius={highlightCornerRadius}
@@ -894,15 +893,11 @@ export const TextInput = React.forwardRef((props, ref) => {
       <View
         style={[
           textInputTypeStylesheets[template]?.sticker,
-          formatStylesheets[format].sticker,
-          isKeyboardFocused && formatStylesheets[format].focusedSticker
+          formatStylesheets[format].sticker
         ]}
         nativeID="stickerContainer"
         ref={stickerRef}
       >
-        {isFixedSize && isKeyboardFocused && (
-          <View pointerEvents="none" style={styles.fixedSizeBorder} />
-        )}
         {innerContent}
 
         {template === TextTemplate.comic && (

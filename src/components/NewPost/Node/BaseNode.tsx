@@ -5,7 +5,7 @@ import { FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
 import { getTextBlockAlign } from "../Text/TextInput";
-import { PostBlockType } from "../../../lib/buildPost";
+import { PostBlockType, isFixedSizeBlock } from "../../../lib/buildPost";
 import { DimensionsRect } from "../../../lib/Rect";
 
 export type EditableNodeStaticPosition = {
@@ -183,11 +183,12 @@ export class BaseNode extends React.Component<Props> {
         ? block.config?.overrides?.maxWidth
         : undefined;
 
+    const textAlign = getTextBlockAlign(block);
     const paddingTop = Number(
       this.props.paddingTop || presetsByFormat[format].textTop
     );
 
-    const isFixedSize = typeof block?.config?.overrides?.maxWidth === "number";
+    const isFixedSize = isFixedSizeBlock(block);
     return (
       <MovableNode
         isDragEnabled={isDragEnabled}
@@ -202,6 +203,7 @@ export class BaseNode extends React.Component<Props> {
         isPanning={isFocused && focusType === FocusType.panning}
         velocityY={velocityY}
         onTransform={onTransform}
+        textAlign={textAlign}
         scaleLiteral={position.scale}
         animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
         isHidden={!!isHidden}
@@ -221,7 +223,6 @@ export class BaseNode extends React.Component<Props> {
         hasValue={block.type === "text" ? block.value.length > 0 : false}
         onChangePosition={this.handleChangePosition}
         onPan={this.handlePan}
-        textAlign={block.type === "text" ? getTextBlockAlign(block) : "left"}
         yLiteral={position.y}
         xLiteral={position.x}
         rLiteral={position.rotate}

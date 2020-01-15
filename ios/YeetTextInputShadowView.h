@@ -17,24 +17,32 @@
 # endif
 #endif
 
+@class CAShapeLayer;
+@class YeetTextLayoutManager;
+@class NSTextContainer;
+
 @interface YeetTextAttributes : NSObject
+@property (nonatomic, strong) RCTTextAttributes * _Nullable textAttributes;
 @property (nonatomic) UIEdgeInsets textContainerInset;
 @property (nonatomic) CGFloat highlightCornerRadius;
 @property (nonatomic) YeetTextBorder border;
 @property (nonatomic) YeetTextFormat format;
-@property (nonatomic, strong) NSAttributedString * _Nullable attributedText;
 @property (nonatomic) CGRect textRect;
 @property (nonatomic, getter=template, setter=setTemplate:) YeetTextTemplate template_;
 @property (nonatomic) CGFloat strokeWidth;
-@property (nonatomic, strong) UIFont * _Nonnull font;
 @property (nonatomic, strong) UIColor * _Nonnull strokeColor;
 @property (nonatomic) CGFloat highlightInset;
-- (nonnull instancetype)initWithCopy:(YeetTextAttributes * _Nonnull)other;
-- (YeetTextAttributes * _Nonnull)clone;
+- (nonnull instancetype)init ;
+- (nonnull instancetype)initWithCopy:(YeetTextAttributes * _Nonnull)other ;
+- (NSDictionary<NSAttributedStringKey, id> * _Nonnull)effectiveTextAttributes ;
+- (void)apply:(YeetTextAttributes * _Nonnull)other;
+- (id _Nonnull)copy ;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) YeetTextAttributes * _Nonnull zero;)
-+ (YeetTextAttributes * _Nonnull)zero;
-- (nonnull instancetype)initWithTextContainerInset:(UIEdgeInsets)textContainerInset highlightCornerRadius:(CGFloat)highlightCornerRadius border:(YeetTextBorder)border attributedText:(NSAttributedString * _Nullable)attributedText template:(YeetTextTemplate)template_ strokeWidth:(CGFloat)strokeWidth font:(UIFont * _Nonnull)font strokeColor:(UIColor * _Nonnull)strokeColor highlightInset:(CGFloat)highlightInset;
-- (void)drawHighlightLayer:(CAShapeLayer * _Nonnull)highlightLayer layout:(NSLayoutManager * _Nonnull)layout textContainer:(NSTextContainer * _Nonnull)textContainer textLayer:(CALayer * _Nonnull)textLayer;
++ (YeetTextAttributes * _Nonnull)zero ;
+@property (nonatomic, readonly) CGFloat baselineOffset;
+@property (nonatomic) CGRect emptySize;
+- (BOOL)isEqual:(id _Nullable)_rhs;
+- (void)drawHighlightLayer:(CAShapeLayer * _Nonnull)highlightLayer layout:(YeetTextLayoutManager * _Nonnull)layout textContainer:(NSTextContainer * _Nonnull)textContainer textLayer:(CALayer * _Nonnull)textLayer;
 @end
 
 NS_ASSUME_NONNULL_BEGIN
@@ -48,6 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didUpdateTextStyle;
 - (void)dirtyLayout;
 
+@property (nonatomic, nullable, strong) YeetTextAttributes *cachedYeetAttributes;
 @property (nonatomic, copy, nullable) NSString *text;
 @property (nonatomic, copy, nullable) NSString *placeholder;
 @property (nonatomic, assign) NSInteger maximumNumberOfLines;

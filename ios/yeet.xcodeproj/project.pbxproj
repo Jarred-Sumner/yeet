@@ -70,6 +70,8 @@
 		836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836B71C823566EF1003BF812 /* AVAsset+resize.swift */; };
 		8371AB59237EB8A50034EF15 /* VideoPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */; };
 		8378997923CD2FA300CCD6E1 /* YeetTextLayoutManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8378997823CD2FA300CCD6E1 /* YeetTextLayoutManager.swift */; };
+		8378997B23CD735300CCD6E1 /* YeetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8378997A23CD735300CCD6E1 /* YeetView.swift */; };
+		8378997D23CD73C500CCD6E1 /* YeetViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8378997C23CD73C500CCD6E1 /* YeetViewManager.swift */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
 		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
@@ -247,6 +249,8 @@
 		836B71C823566EF1003BF812 /* AVAsset+resize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AVAsset+resize.swift"; sourceTree = "<group>"; };
 		8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoPlayerView.swift; sourceTree = "<group>"; };
 		8378997823CD2FA300CCD6E1 /* YeetTextLayoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetTextLayoutManager.swift; sourceTree = "<group>"; };
+		8378997A23CD735300CCD6E1 /* YeetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetView.swift; sourceTree = "<group>"; };
+		8378997C23CD73C500CCD6E1 /* YeetViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetViewManager.swift; sourceTree = "<group>"; };
 		838A18B52328528E00FC8C22 /* WebPMux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPMux.framework; sourceTree = "<group>"; };
 		838A18B62328528E00FC8C22 /* WebPDecoder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDecoder.framework; sourceTree = "<group>"; };
 		838A18B72328528E00FC8C22 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
@@ -558,6 +562,8 @@
 				83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */,
 				8378997823CD2FA300CCD6E1 /* YeetTextLayoutManager.swift */,
 				830554E423C84369008D8BD1 /* YeetTextAttributes.swift */,
+				8378997A23CD735300CCD6E1 /* YeetView.swift */,
+				8378997C23CD73C500CCD6E1 /* YeetViewManager.swift */,
 				830554E623C858A2008D8BD1 /* _RCTUITextView.h */,
 				830554E723C858A2008D8BD1 /* _RCTUITextView.m */,
 				830554E923C861F5008D8BD1 /* YeetTextEnums.h */,
@@ -1017,6 +1023,7 @@
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */,
+				8378997B23CD735300CCD6E1 /* YeetView.swift in Sources */,
 				83B0CAD923B6F7D10010DC66 /* YeetVideo.swift in Sources */,
 				83356DDE23A5C4E300943381 /* FeatureDetector.swift in Sources */,
 				83356DE323A5D53800943381 /* FindContours.mm in Sources */,
@@ -1030,6 +1037,7 @@
 				83EF944D23B81CB700EC37CF /* ContentExportError.swift in Sources */,
 				830554E823C858A2008D8BD1 /* _RCTUITextView.m in Sources */,
 				83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */,
+				8378997D23CD73C500CCD6E1 /* YeetViewManager.swift in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				83E3E83223B990CC007AC944 /* ExportSessionProgress.swift in Sources */,

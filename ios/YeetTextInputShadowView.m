@@ -15,7 +15,7 @@
 #import "EnableWebpDecoder.h"
 #import <UIKit/UIKit.h>
 #import <React/NSTextStorage+FontScaling.h>
-
+#import <React/RCTRawTextShadowView.h>
 
 
 
@@ -43,7 +43,8 @@
   if (self = [super init]) {
     _bridge = bridge;
     _needsUpdateView = YES;
-    self.yeetAttributes = [[YeetTextAttributes alloc] initWithTextContainerInset:UIEdgeInsetsZero highlightCornerRadius:0 border:YeetTextBorderHidden attributedText:_localAttributedText template:YeetTextTemplatePost strokeWidth:0 font:[UIFont systemFontOfSize:17] strokeColor:[UIColor clearColor] highlightInset:0];
+    currentTextAttrs = [[YeetTextAttributes alloc] init];
+    currentTextAttrs.textAttributes = self.textAttributes;
     textLayer = [[CALayer alloc] init];
     textLayer.drawsAsynchronously = true;
     highlightLayer = [[CAShapeLayer alloc] init];
@@ -57,24 +58,17 @@
   return self;
 }
 
+- (void)setTextAttributes:(RCTTextAttributes *)textAttributes {
+  currentTextAttrs.textAttributes = textAttributes;
+  [super setTextAttributes:textAttributes];
+}
+
 - (BOOL)isYogaLeafNode
 {
   return YES;
 }
 
 - (void)didUpdateTextStyle {
-  __block YeetTextAttributes *attrs = self.yeetAttributes;
-  NSNumber *tag = self.reactTag;
-
-   [_bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
-     YeetTextInputView *baseTextInputView = (YeetTextInputView *)viewRegistry[tag];
-     if (!baseTextInputView) {
-       return;
-     }
-
-     baseTextInputView.yeetTextAttributes = [attrs clone];
-   }];
-
   [self dirtyLayout];
 }
 
@@ -83,24 +77,6 @@
   // Do nothing.
 }
 
-- (void)setLocalData:(NSObject *)localData
-{
-  YeetTextAttributes *attrs = (YeetTextAttributes *)localData;
-  NSAttributedString *attributedText = attrs.attributedText;
-
-  if ([attrs isEqual:currentTextAttrs]) {
-    return;
-  }
-
-  if ([attributedText isEqualToAttributedString:_localAttributedText]) {
-    return;
-  }
-
-  _localAttributedText = attributedText;
-  previousTextAttrs = currentTextAttrs;
-  currentTextAttrs = attrs;
-  [self dirtyLayout];
-}
 
 - (void)dirtyLayout
 {
@@ -108,10 +84,6 @@
   _needsUpdateView = YES;
   YGNodeMarkDirty(self.yogaNode);
   [self invalidateContentSize];
-}
-
--(void)setTextAttributes:(RCTTextAttributes *)textAttributes {
-  [super setTextAttributes:textAttributes];
 }
 
 - (void)invalidateContentSize
@@ -179,6 +151,7 @@
 
 
   RCTTextAttributes *textAttributes = [self.textAttributes copy];
+  __block YeetTextAttributes *yeetAttributes = [self.yeetAttributes copy];
 
   NSMutableAttributedString *attributedText =
     [[NSMutableAttributedString alloc] initWithAttributedString:[self attributedTextWithBaseTextAttributes:nil]];
@@ -194,7 +167,7 @@
   if (self.text.length) {
     NSAttributedString *propertyAttributedText =
       [[NSAttributedString alloc] initWithString:self.text
-                                      attributes:self.textAttributes.effectiveTextAttributes];
+                                      attributes:self.yeetAttributes.effectiveTextAttributes];
     [attributedText insertAttributedString:propertyAttributedText atIndex:0];
   }
 
@@ -215,7 +188,7 @@
       return;
     }
 
-    baseTextInputView.yeetTextAttributes = self.yeetAttributes;
+    baseTextInputView.yeetTextAttributes = yeetAttributes;
     baseTextInputView.textAttributes = textAttributes;
     baseTextInputView.reactBorderInsets = borderInsets;
     baseTextInputView.reactPaddingInsets = paddingInsets;
@@ -230,6 +203,85 @@
       }
     }
   }];
+}
+
+
+
+
+- (NSAttributedString *)attributedTextWithBaseTextAttributes:(nullable RCTTextAttributes *)baseTextAttributes
+{
+  YeetTextAttributes *yeetAttributes;
+
+  if (baseTextAttributes) {
+    yeetAttributes = [[YeetTextAttributes alloc] init];
+    yeetAttributes.textAttributes = [baseTextAttributes copy];
+  } else {
+    yeetAttributes = [self.yeetAttributes copy];
+  }
+
+  if (cachedAttributedText && [_cachedYeetAttributes isEqual:self.yeetAttributes]) {
+    return cachedAttributedText;
+  }
+
+  NSMutableAttributedString *attributedText = [NSMutableAttributedString new];
+
+  [attributedText beginEditing];
+
+  for (RCTShadowView *shadowView in self.reactSubviews) {
+    // Special Case: RCTRawTextShadowView
+    if ([shadowView isKindOfClass:[RCTRawTextShadowView class]]) {
+      RCTRawTextShadowView *rawTextShadowView = (RCTRawTextShadowView *)shadowView;
+      NSString *text = rawTextShadowView.text;
+      if (text) {
+        NSAttributedString *rawTextAttributedString =
+          [[NSAttributedString alloc] initWithString:[yeetAttributes.textAttributes applyTextAttributesToText:text]
+                                          attributes:self.yeetAttributes.effectiveTextAttributes];
+        [attributedText appendAttributedString:rawTextAttributedString];
+      }
+      continue;
+    }
+
+    // Special Case: RCTBaseTextShadowView
+    if ([shadowView isKindOfClass:[RCTBaseTextShadowView class]]) {
+      RCTBaseTextShadowView *baseTextShadowView = (RCTBaseTextShadowView *)shadowView;
+      NSAttributedString *baseTextAttributedString =
+      [baseTextShadowView attributedTextWithBaseTextAttributes:yeetAttributes.textAttributes];
+      [attributedText appendAttributedString:baseTextAttributedString];
+      continue;
+    }
+
+    // Generic Case: Any RCTShadowView
+    NSTextAttachment *attachment = [NSTextAttachment new];
+    NSMutableAttributedString *embeddedShadowViewAttributedString = [NSMutableAttributedString new];
+    [embeddedShadowViewAttributedString beginEditing];
+    [embeddedShadowViewAttributedString appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
+    [embeddedShadowViewAttributedString addAttribute:RCTBaseTextShadowViewEmbeddedShadowViewAttributeName
+                                               value:shadowView
+                                               range:(NSRange){0, embeddedShadowViewAttributedString.length}];
+    [embeddedShadowViewAttributedString endEditing];
+    [attributedText appendAttributedString:embeddedShadowViewAttributedString];
+  }
+
+  [attributedText endEditing];
+
+  [self clearLayout];
+
+  cachedAttributedText = [attributedText copy];
+  _cachedYeetAttributes = yeetAttributes;
+
+  return cachedAttributedText;
+}
+
+- (void)setLocalData:(NSObject *)localData
+{
+  NSAttributedString *attributedText = (NSAttributedString *)localData;
+
+  if ([attributedText isEqualToAttributedString:_localAttributedText]) {
+    return;
+  }
+
+  _localAttributedText = attributedText;
+  [self dirtyLayout];
 }
 
 #pragma mark -
@@ -251,7 +303,7 @@
       // Note: `zero-width space` is insufficient in some cases.
       text = @"I";
     }
-    attributedText = [[NSAttributedString alloc] initWithString:text attributes:self.textAttributes.effectiveTextAttributes];
+    attributedText = [[NSAttributedString alloc] initWithString:text attributes:self.yeetAttributes.effectiveTextAttributes];
   }
 
   return attributedText;
@@ -280,8 +332,6 @@
   [_layoutManager ensureLayoutForTextContainer:_textContainer];
 
   self.yeetAttributes.textContainerInset = self.paddingAsInsets;
-  self.yeetAttributes.attributedText = attributedText;
-  self.yeetAttributes.font = self.textAttributes.effectiveFont;
 
   [self.yeetAttributes drawHighlightLayer:highlightLayer layout:_layoutManager textContainer:_textContainer textLayer:textLayer];
 

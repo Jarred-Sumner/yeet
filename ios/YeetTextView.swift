@@ -11,6 +11,7 @@ import UIKit
 @objc(YeetTextView)
 class YeetTextView: _RCTUITextView {
   override required init(frame: CGRect, textContainer: NSTextContainer?) {
+    yeetTextAttributes = YeetTextAttributes()
     super.init(frame: frame, textContainer: textContainer)
     self.highlightLayer.isOpaque = false
     self.backgroundColor = .clear
@@ -32,7 +33,6 @@ class YeetTextView: _RCTUITextView {
     layer.masksToBounds = false
     
     keyboardAppearance = .dark
-
     highlightSubview.frame = bounds
     highlightSubview.layer.addSublayer(highlightLayer)
     self.insertSubview(highlightSubview, belowSubview: self.subviews.first!)
@@ -43,7 +43,7 @@ class YeetTextView: _RCTUITextView {
     var size = super.intrinsicContentSize
 
     if size.height == UIView.noIntrinsicMetric {
-      size.height = textRect.height
+      size.height = yeetTextAttributes.textRect.height
     }
 
     return size
@@ -74,10 +74,6 @@ class YeetTextView: _RCTUITextView {
 
   var highlightSubview = UIView()
 
-
-
-
-
   var scale: CGFloat {
     get {
       return textInputView.contentScaleFactor
@@ -105,7 +101,7 @@ class YeetTextView: _RCTUITextView {
     return superview as! YeetTextInputView?
   }
 
-  var textRect = CGRect.zero
+
 
 
  
@@ -113,7 +109,7 @@ class YeetTextView: _RCTUITextView {
 
   var textTemplate: YeetTextTemplate {
     get {
-      return self.yeetTextAttributes.template
+      return self.yeetTextAttributes.template ?? .basic
     }
   }
 
@@ -123,7 +119,7 @@ class YeetTextView: _RCTUITextView {
 
     var border: YeetTextBorder {
       get {
-        return self.yeetTextAttributes.border
+        return self.yeetTextAttributes.border ?? .hidden
       }
     }
 
@@ -176,11 +172,7 @@ class YeetTextView: _RCTUITextView {
   static var DEFAULT_HIGHLIGHT_COLOR = UIColor.blue
 
   @objc(yeetTextAttributes)
-  dynamic var yeetTextAttributes: YeetTextAttributes = .zero {
-    didSet {
-      self.setNeedsLayout()
-    }
-  }
+  var yeetTextAttributes: YeetTextAttributes
 
   var _layoutManager: YeetTextLayoutManager {
     get {
@@ -188,98 +180,49 @@ class YeetTextView: _RCTUITextView {
     }
   }
 
-  var _font: UIFont? = nil
-  override var font: UIFont? {
+
+  override var reactTextAttributes: RCTTextAttributes? {
     get {
-      return reactTextAttributes?.effectiveFont() ?? UIFont.systemFont(ofSize: 17)
+      return super.reactTextAttributes
     }
 
     set (newValue) {
-      super.font = newValue
+      let oldValue = super.reactTextAttributes
+      super.reactTextAttributes = newValue
 
-      if let _font = super.font {
-        self.yeetTextAttributes.font = _font
+      if (oldValue != super.reactTextAttributes) {
+        self.yeetTextAttributes.textAttributes = super.reactTextAttributes
+        self.typingAttributes = self.yeetTextAttributes.effectiveTextAttributes()
+        self.setNeedsLayout()
       }
     }
+
   }
 
   func drawHighlight(_ canSetNeedsLayout: Bool = false) {
-    let _font: UIFont = font ?? UIFont.systemFont(ofSize: 17)
-    guard let attributedText = self.attributedText else {
-      return
-    }
-
-
-//    if border == .stroke {
-//      textColor = .clear
-//    } else {
-//      textColor = reactTextAttributes?.effectiveForegroundColor()
-//    }
-
     textContainer.lineFragmentPadding = lineFragmentPadding
     highlightLayer.lineWidth = strokeWidth
     highlightLayer.fillColor = highlightColor.cgColor
     highlightLayer.strokeColor = strokeColor.cgColor
     highlightLayer.cornerRadius = highlightCornerRadius
 
-    yeetTextAttributes.font = self.font!
-//    yeetTextAttributes.textColor = highlightColor
     yeetTextAttributes.textContainerInset = self.textContainerInset
-
-
-
-    var isShowingPlaceholder = self.attributedText?.string.isEmpty ?? true
-    if isShowingPlaceholder {
-      yeetTextAttributes.attributedText = NSAttributedString(string: "I", attributes: reactTextAttributes?.effectiveTextAttributes())
-    } else {
-      yeetTextAttributes.attributedText = self.attributedText
-    }
-
-
+    yeetTextAttributes.textAttributes = self.reactTextAttributes
     yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: _layoutManager, textContainer: textContainer, textLayer: layer)
-
-    if !isShowingPlaceholder && !attributedText.isEqual(to: yeetTextAttributes.attributedText!) {
-      self.attributedText = yeetTextAttributes.attributedText
-    }
-
-
-
-    if (canSetNeedsLayout) {
-      if self.textRect.size != yeetTextAttributes.textRect.size {
-        self.setNeedsLayout()
-      }
-    }
-
-    self.textRect = yeetTextAttributes.textRect
   }
 
   @objc(maxContentWidth)
   var maxContentWidth : CGFloat = .zero
-
-  var _preferredMaxLayoutWidth: CGFloat = .zero
-  override var preferredMaxLayoutWidth: CGFloat {
-    get { return _preferredMaxLayoutWidth }
-    set (newValue) {
-      super.preferredMaxLayoutWidth = newValue
-      let _width = super.preferredMaxLayoutWidth
-      _preferredMaxLayoutWidth = max(_width, maxContentWidth)
-    }
-  }
 
   override func sizeThatFits(_ size: CGSize) -> CGSize {
     guard hasText else {
       return super.sizeThatFits(size)
     }
 
-    let text = self.attributedText!
-
     yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: _layoutManager, textContainer: textContainer, textLayer: self.layer)
-
 
     return yeetTextAttributes.textRect.size
   }
-
-
 
 
   deinit {

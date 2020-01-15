@@ -61,10 +61,10 @@ export const textInputPresets = {
   },
   [TextTemplate.bigWords]: {
     fontSizes: {
-      "0": 48,
-      "8": 36,
-      "12": 36,
-      "24": 30
+      "0": 32,
+      "8": 32,
+      "12": 32,
+      "24": 32
     },
     presets: {
       backgroundColor: "#000",

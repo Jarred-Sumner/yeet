@@ -24,9 +24,11 @@ export class TextPostBlock extends React.Component<Props> {
     if (this.props.block.format === PostFormat.post) {
       return findNodeHandle(this.containerRef.current);
     } else {
-      return findNodeHandle(this.stickerRef.current);
+      return this.stickerTag;
     }
   }
+
+  stickerTag: number | null = null;
 
   handleChange = text => {
     this.setState({ text });
@@ -60,11 +62,16 @@ export class TextPostBlock extends React.Component<Props> {
   };
 
   blur = () => {
-    console.trace();
     if (this.input.isFocused()) {
       this.input.blur();
     }
   };
+
+  componentDidMount() {
+    if (this.stickerRef.current) {
+      this.stickerTag = findNodeHandle(this.stickerRef.current);
+    }
+  }
 
   get textInputHandle() {
     return findNodeHandle(this.input);
@@ -80,6 +87,35 @@ export class TextPostBlock extends React.Component<Props> {
 
   get isImagePostBlock() {
     return false;
+  }
+
+  shouldComponentUpdate(nextProps, nextState, nextContext) {
+    const {
+      block,
+      inputRef,
+      disabled,
+      maxX,
+      onContentSizeChange,
+      gestureRef,
+      focusTypeValue,
+      focusType,
+      isFocused,
+      isSticker,
+      paddingTop,
+      focusedBlockValue
+    } = this.props;
+
+    return (
+      block !== nextProps.block ||
+      inputRef !== nextProps.inputRef ||
+      disabled !== nextProps.disabled ||
+      maxX !== nextProps.maxX ||
+      isSticker !== nextProps.isSticker ||
+      isFocused !== nextProps.isFocused ||
+      focusType !== nextProps.focusType ||
+      paddingTop !== nextProps.paddingTop ||
+      nextState.text !== this.state.text
+    );
   }
 
   render() {
@@ -113,6 +149,7 @@ export class TextPostBlock extends React.Component<Props> {
         isBlockFocused={isFocused}
         blockRef={this.containerRef}
         isSticker={isSticker}
+        stickerTag={this.stickerTag}
         ref={this.textInput}
         focusedBlockValue={focusedBlockValue}
         focusTypeValue={focusTypeValue}
