@@ -45,7 +45,12 @@ import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
 import { FONT_STYLES } from "./fonts";
 import { IS_DEVELOPMENT } from "../../config";
-import { getDefaultBorder, getDefaultTemplate, ExampleMap } from "./buildPost";
+import {
+  getDefaultBorder,
+  getDefaultTemplate,
+  ExampleMap,
+  isFixedSizeBlock
+} from "./buildPost";
 
 const { YeetExporter } = NativeModules;
 
@@ -569,6 +574,8 @@ const convertExportedNode = async (
     }
   }
 
+  const isFixedSize = isFixedSizeBlock(block);
+
   const _position = {
     x: node.position.x ?? 0,
     y: node.position.y ?? 0
@@ -576,19 +583,13 @@ const convertExportedNode = async (
   let { rotate, scale } = node.position;
   let { x, y } = scaleRectByFactor(scaleFactor, _position);
 
-  const { maxWidth, textAlign, fontSize, fontStyle = "normal" } =
+  const { maxWidth = 0, textAlign, fontSize, fontStyle = "normal" } =
     block.config?.overrides ?? {};
 
   const isRightOriented =
-    _position.x +
-      ((1 / scaleFactor) * block.config?.overrides?.maxWidth ?? 0) / 2 >
-    size.width / 2;
+    _position.x + ((1 / scaleFactor) * maxWidth) / 2 > size.width / 2;
   const isLeftOriented =
-    _position.x +
-      +(((1 / scaleFactor) * block.config?.overrides?.maxWidth ?? 0) / 2) <
-    size.width / 2;
-  const isTopOriented = _position.y < size.height / 2;
-  const isBottomOriented = _position.y > size.height / 2;
+    _position.x + +(((1 / scaleFactor) * maxWidth) / 2) < size.width / 2;
 
   if (yPadding > 0 && size) {
     y = Math.max(
@@ -607,6 +608,10 @@ const convertExportedNode = async (
       xPadding,
       Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2)
     );
+  }
+
+  if (isFixedSize && x + maxWidth + xPadding > size.width) {
+    x = size.width - maxWidth - xPadding;
   }
 
   return [

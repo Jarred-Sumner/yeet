@@ -278,10 +278,10 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return
     }
 
-//    guard !isFixedSize else {
-//      super.yeetReactSetFrame(frame)
-//      return
-//    }
+    guard !isFixedSize else {
+      super.yeetReactSetFrame(frame)
+      return
+    }
 
     
     Log.debug("""
@@ -364,6 +364,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   }
 
   override func reactSetFrame(_ frame: CGRect) {
+
     self.textInputReactSetFrame(frame, movableView?.animator)
   }
 
@@ -633,7 +634,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     return textView.hasFillColor
   }
 
-  var isFixedSize: Bool { _maxContentWidth > .zero && isSticker }
+  var isFixedSize: Bool { _maxContentWidth > .zero  }
   var hideYOffset = CGFloat.zero
   var isHidingKeyboard = false
 

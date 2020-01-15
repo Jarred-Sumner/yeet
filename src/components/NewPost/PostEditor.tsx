@@ -743,7 +743,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const editableNode = buildEditableNode({
       block,
       x: POST_WIDTH / 2 - block.config.dimensions.maxX / 2,
-      y: MAX_POST_HEIGHT / 2 - block.config.dimensions.maxY / 2
+      y: block.config.dimensions.maxY + SPACING.double
     });
 
     this._blockInputRefs.set(block.id, React.createRef());
@@ -1262,7 +1262,6 @@ class RawwPostEditor extends React.Component<Props, State> {
         <TextInputToolbar
           nativeID="new-post-input"
           onChooseTemplate={this.handleChangeTemplate}
-          focusType={this.state.focusType}
           block={this.focusedBlock}
           onChangeOverrides={this.handleChangeOverrides}
           focusType={this.state.focusType}

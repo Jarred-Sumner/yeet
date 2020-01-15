@@ -10,7 +10,7 @@ import {
 import Animated, { Transitioning } from "react-native-reanimated";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
 import { StyleSheet, findNodeHandle } from "react-native";
-import { SCREEN_DIMENSIONS } from "../../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import {
   preserveOffset,
   preserveMultiplicativeOffset
@@ -41,6 +41,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
     unfocusedBottom,
     unfocusedLeft,
     onContentSizeChange,
+    isFixedSize,
+    top,
     zIndex,
     inputRef,
     scale = 1.0,
@@ -52,7 +54,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     children
   } = props;
 
-  if (typeof bottom !== "undefined") {
+  if (!isFixedSize) {
     return (
       <Component
         ref={ref}
@@ -63,6 +65,33 @@ export const TransformableView = React.forwardRef((props, ref) => {
           {
             opacity,
             bottom,
+            left: translateX,
+            zIndex,
+            transform: [
+              {
+                scale
+              },
+              {
+                rotate
+              }
+            ]
+          }
+        ]}
+      >
+        {children}
+      </Component>
+    );
+  } else if (isFixedSize) {
+    return (
+      <Component
+        ref={ref}
+        inputRef={inputRef}
+        overlayTag={overlayTag}
+        style={[
+          transformableStyles.bottomContainer,
+          {
+            opacity,
+            top,
             left: translateX,
             zIndex,
             transform: [
@@ -302,12 +331,6 @@ export class MovableNode extends Component<Props> {
       this.blockId
     );
 
-    this._translateX = keyboardVisibleCond(
-      this.keyboardVisibleFocusedValue,
-      this.X,
-      0
-    );
-
     this.overlayOpacity = this.animatedKeyboardVisibleFocusedValue;
 
     // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
@@ -329,15 +352,23 @@ export class MovableNode extends Component<Props> {
     this.unfocusedBottomValue = Animated.multiply(this.Y, -1);
     this.unscaledValue = new Animated.Value(1);
 
-    this.bottomValue = fixedSizeInterpolator(
-      fixedSizeValue,
-      this.unfocusedBottomValue,
-      keyboardVisibleCond(
-        this.keyboardVisibleFocusedValue,
-        this.unfocusedBottomValue,
-        Animated.add(Animated.multiply(props.keyboardHeightValue, -1), 120)
-      )
-    );
+    this.bottomValue = !props.isFixedSize
+      ? keyboardVisibleCond(
+          this.keyboardVisibleFocusedValue,
+          this.unfocusedBottomValue,
+          Animated.add(Animated.multiply(props.keyboardHeightValue, -1), 120)
+        )
+      : null;
+
+    this.topValue = props.isFixedSize
+      ? Animated.min(
+          Animated.max(
+            Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
+            props.minY
+          ),
+          props.maxY
+        )
+      : null;
 
     this.scale = scaleValueProc(
       this.fixedSizeValue,
@@ -538,7 +569,8 @@ export class MovableNode extends Component<Props> {
       inputRef,
       extraPadding,
       isHidden,
-      isEditing
+      isEditing,
+      isFixedSize
     } = this.props;
 
     return (
@@ -625,11 +657,22 @@ export class MovableNode extends Component<Props> {
                   onHandlerStateChange={this.handleZoom}
                 >
                   <Animated.View style={styles.gestureView}>
-                    <Animated.View
-                      pointerEvents="none"
-                      ref={this.overlayRef}
-                      style={styles.overlaySheet}
-                    />
+                    {isFixedSize ? (
+                      <Animated.View
+                        pointerEvents="none"
+                        ref={this.overlayRef}
+                        style={[
+                          styles.overlaySheet,
+                          { opacity: this.animatedKeyboardVisibleFocusedValue }
+                        ]}
+                      />
+                    ) : (
+                      <Animated.View
+                        pointerEvents="none"
+                        ref={this.overlayRef}
+                        style={styles.overlaySheet}
+                      />
+                    )}
 
                     <RotationGestureHandler
                       ref={this.rotationRef}
@@ -645,7 +688,9 @@ export class MovableNode extends Component<Props> {
                           opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
                           overlayTag={this.overlayTag}
                           translateX={this.translateX}
+                          isFixedSize={isFixedSize}
                           bottom={this.bottomValue}
+                          top={this.topValue}
                           keyboardVisibleValue={keyboardVisibleValue}
                           inputRef={inputRef}
                           rotate={this.rotate}

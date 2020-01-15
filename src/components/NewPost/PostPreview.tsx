@@ -283,7 +283,6 @@ export const EditableNodeList = ({
       containerRef,
       handleSetBlockInputRef,
       handlePan,
-      focusedBlockId,
       waitFor,
       animatedKeyboardVisibleValue,
       velocityX,

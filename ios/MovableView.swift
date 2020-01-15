@@ -47,7 +47,13 @@ class MovableView: UIView, RCTUIManagerObserver {
 
 
   override func reactSetFrame(_ frame: CGRect) {
+    if textInput?.isFixedSize ?? false {
+      super.reactSetFrame(frame)
+      return
+    }
+
     let shouldAutoAnimateEmptyTextInput = textInput != nil && textInput?.reactTag == YeetTextInputView.focusedReactTag && textInput?.willAutoFocus ?? false && (frame.width == UIScreen.main.bounds.width || self.frame.width == UIScreen.main.bounds.width) && !didAutoAnimate
+
 
     if let animator = self.animator {
 

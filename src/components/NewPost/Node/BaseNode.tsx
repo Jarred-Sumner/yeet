@@ -183,7 +183,6 @@ export class BaseNode extends React.Component<Props> {
         ? block.config?.overrides?.maxWidth
         : undefined;
 
-    const textAlign = getTextBlockAlign(block);
     const paddingTop = Number(
       this.props.paddingTop || presetsByFormat[format].textTop
     );
@@ -203,7 +202,6 @@ export class BaseNode extends React.Component<Props> {
         isPanning={isFocused && focusType === FocusType.panning}
         velocityY={velocityY}
         onTransform={onTransform}
-        textAlign={textAlign}
         scaleLiteral={position.scale}
         animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
         isHidden={!!isHidden}

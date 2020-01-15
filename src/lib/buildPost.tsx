@@ -664,10 +664,6 @@ export const isFixedSizeBlock = (block: PostBlock | null = null) => {
     return false;
   }
 
-  if (block.type === "image") {
-    return true;
-  }
-
   return typeof block?.config?.overrides?.maxWidth === "number";
 };
 

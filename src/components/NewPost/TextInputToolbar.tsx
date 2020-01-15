@@ -356,10 +356,6 @@ export const TextInputToolbar = ({
   onChangeBorderType,
   nativeID
 }) => {
-  if (block && block.type === "image") {
-    return null;
-  }
-
   const [{ height, width }, setLayout] = React.useState({
     height: undefined,
     width: SCREEN_DIMENSIONS.width

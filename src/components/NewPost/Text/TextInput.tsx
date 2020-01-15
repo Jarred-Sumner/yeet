@@ -33,6 +33,8 @@ import { SpeechBubble } from "./SpeechBubble";
 import useKeyboard from "@rnhooks/keyboard";
 import { useAnimatedEvent } from "../../../lib/animations";
 import YeetView from "./YeetView";
+import { IconLock } from "../../Icon";
+import { SemiBoldText } from "../../Text";
 
 const RNTextInput = __RNTextInput;
 
@@ -349,16 +351,38 @@ const styles = StyleSheet.create({
     // flex: 1
     // textAlign: "left"
   },
-  fixedSizeBorder: {
-    borderWidth: StyleSheet.hairlineWidth,
+  fixedWidthBorder: {
+    borderWidth: 2,
+    borderRadius: 1,
     borderColor: COLORS.secondaryOpacity,
     borderStyle: "dashed",
+    margin: -2,
     position: "absolute",
     zIndex: -1,
-    top: 0,
-    bottom: 0,
+    top: -2,
+    bottom: -2,
+    left: -2,
+    right: -2
+  },
+  fixedWidthTop: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+
+    position: "absolute",
+    justifyContent: "flex-start",
+    opacity: 0.75,
+    paddingHorizontal: SPACING.half,
+
+    zIndex: -1,
+    top: -24,
     left: 0,
     right: 0
+  },
+  widthLockLabel: {
+    marginLeft: SPACING.half / 2,
+    fontSize: 12,
+    color: "white"
   }
 });
 
@@ -479,6 +503,10 @@ export const getSupportedBorderTypes = (
 };
 
 export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
+  if (block.type === "image") {
+    return "left";
+  }
+
   const { template, overrides = {}, border } = block.config;
 
   if (template === TextTemplate.bigWords || template === TextTemplate.comic) {
@@ -599,7 +627,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     }
   }, [_isFocused]);
 
-  const isFocused = willAutoFocus || _isFocused;
+  const isFocused = willAutoFocus.current || _isFocused;
 
   const {
     config: {
@@ -898,6 +926,15 @@ export const TextInput = React.forwardRef((props, ref) => {
         nativeID="stickerContainer"
         ref={stickerRef}
       >
+        {isKeyboardFocused && isFixedSize && (
+          <>
+            <View pointerEvents="none" style={styles.fixedWidthBorder} />
+            <View pointerEvents="none" style={styles.fixedWidthTop}>
+              <IconLock size={12} color={"white"} />
+              <SemiBoldText style={styles.widthLockLabel}>Width</SemiBoldText>
+            </View>
+          </>
+        )}
         {innerContent}
 
         {template === TextTemplate.comic && (

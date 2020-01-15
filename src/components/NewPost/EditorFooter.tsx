@@ -205,6 +205,10 @@ export const BorderTypeButton = ({
   block: TextPostBlock;
   onChange;
 }) => {
+  if (block?.type === "image") {
+    return null;
+  }
+
   const { template = TextTemplate.basic } = block?.config ?? {};
   const border = block ? getBorderType(block) : TextBorderType.hidden;
   const overrides = React.useMemo(() => block?.config?.overrides ?? {}, [
