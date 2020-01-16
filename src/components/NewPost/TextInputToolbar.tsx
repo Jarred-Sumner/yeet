@@ -266,6 +266,7 @@ const RawTextInputToolbar = React.memo(
           overides.backgroundColor = getNeutralColor(color);
         }
 
+        sendLightFeedback();
         onChangeOverrides(overides);
       },
       [
@@ -284,6 +285,8 @@ const RawTextInputToolbar = React.memo(
     const onChangeTextAlign = React.useCallback(
       textAlign => {
         const overrides = { ..._overrides, textAlign };
+
+        sendLightFeedback();
 
         onChangeOverrides(overrides);
       },

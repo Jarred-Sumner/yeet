@@ -240,11 +240,12 @@ const textInputTypeStylesheets: {
       backgroundColor: "rgba(0, 0, 0, 0)",
 
       marginTop: 0,
+      marginBottom: 0,
       paddingTop: 0,
       paddingBottom: 0,
-      paddingLeft: 8,
+      paddingLeft: 0,
       textAlignVertical: "center",
-      paddingRight: 8,
+      paddingRight: 0,
       color: textInputPresets[TextTemplate.post].presets.color,
       textShadowColor:
         textInputPresets[TextTemplate.post].presets.textShadowColor,
@@ -351,19 +352,19 @@ const styles = StyleSheet.create({
     // flex: 1
     // textAlign: "left"
   },
-  fixedWidthBorder: {
-    borderWidth: 2,
-    borderRadius: 1,
-    borderColor: COLORS.secondaryOpacity,
-    borderStyle: "dashed",
-    margin: -2,
-    position: "absolute",
-    zIndex: -1,
-    top: -2,
-    bottom: -2,
-    left: -2,
-    right: -2
-  },
+  // fixedWidthBorder: {
+  //   borderWidth: 2,
+  //   borderRadius: 1,
+  //   borderColor: COLORS.secondaryOpacity,
+  //   borderStyle: "solid",
+  //   margin: -2,
+  //   position: "absolute",
+  //   zIndex: -1,
+  //   top: -2,
+  //   bottom: -2,
+  //   left: -2,
+  //   right: -2
+  // },
   fixedWidthTop: {
     width: "100%",
     flexDirection: "row",
@@ -389,9 +390,7 @@ const styles = StyleSheet.create({
 const formatStylesheets = {
   [PostFormat.post]: StyleSheet.create({
     container: {
-      marginBottom: SPACING.normal,
-      marginTop: SPACING.normal,
-      marginVertical: SPACING.normal
+      padding: SPACING.half
     },
     focusedContainer: {},
     sticker: {},
@@ -494,10 +493,11 @@ export const getSupportedBorderTypes = (
     return [TextBorderType.highlight];
   } else {
     return [
-      TextBorderType.highlight,
       TextBorderType.invert,
-      TextBorderType.stroke,
-      TextBorderType.hidden
+      TextBorderType.highlight,
+
+      TextBorderType.hidden,
+      TextBorderType.stroke
     ];
   }
 };
@@ -522,6 +522,20 @@ export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
       [PostFormat.comment]: "left"
     }[block.format]
   );
+};
+
+export const isTextBlockAlignEnabled = (block: TextPostBlock): boolean => {
+  if (block?.type !== "text") {
+    return false;
+  }
+
+  const { template, overrides = {}, border } = block.config;
+
+  if (template === TextTemplate.bigWords || template === TextTemplate.comic) {
+    return false;
+  }
+
+  return true;
 };
 
 const getStrokeWidth = (block: TextPostBlock) => {
@@ -572,6 +586,10 @@ export const getHighlightInset = (block: TextPostBlock) => {
   const { template } = block.config;
 
   const presets = textInputPresets[template].presets;
+
+  if (block.format === PostFormat.post) {
+    return 0;
+  }
 
   return border === TextBorderType.stroke ? -3.0 : presets.highlightInset ?? 0;
 };
@@ -763,6 +781,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         height,
         width
       }
+      // format === PostFormat.post && !isSticker && { backgroundColor }
     ],
     [
       template,
@@ -770,6 +789,7 @@ export const TextInput = React.forwardRef((props, ref) => {
       textAlign,
       width,
       containerHeight,
+      format === PostFormat.post && backgroundColor,
       height,
       isSticker,
       styles.container,
@@ -786,8 +806,8 @@ export const TextInput = React.forwardRef((props, ref) => {
       textInputTypeStylesheets[template].input,
       formatStylesheets[format].input,
       {
-        backgroundColor: format === PostFormat.post ? backgroundColor : null,
         minHeight,
+        backgroundColor: "transparent",
         marginLeft: Math.abs(highlightInset),
         marginRight: Math.abs(highlightInset),
         marginTop: Math.abs(highlightInset),
@@ -797,7 +817,6 @@ export const TextInput = React.forwardRef((props, ref) => {
 
         textAlign,
         color,
-        textTransform,
         fontSize,
         ...textShadow
       }
@@ -865,6 +884,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         singleFocus
         stickerContainerTag={stickerTag}
         numberOfLines={overrides.numberOfLines ?? null}
+        textTransform={textTransform}
         width={maxWidth}
         maxContentWidth={maxWidth}
         maxWidth={maxWidth ?? POST_WIDTH}
@@ -928,7 +948,6 @@ export const TextInput = React.forwardRef((props, ref) => {
       >
         {isKeyboardFocused && isFixedSize && (
           <>
-            <View pointerEvents="none" style={styles.fixedWidthBorder} />
             <View pointerEvents="none" style={styles.fixedWidthTop}>
               <IconLock size={12} color={"white"} />
               <SemiBoldText style={styles.widthLockLabel}>Width</SemiBoldText>

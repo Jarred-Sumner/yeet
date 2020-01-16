@@ -181,6 +181,8 @@
   }
 
   NSNumber *tag = self.reactTag;
+  NSInteger maximumNumberOfLines = self.maximumNumberOfLines;
+  NSLineBreakMode lineBreakMode = _textContainer.lineBreakMode;
 
   [_bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
     YeetTextInputView *baseTextInputView = (YeetTextInputView *)viewRegistry[tag];
@@ -202,6 +204,13 @@
         baseTextInputView.attributedText = nil;
       }
     }
+
+    if (baseTextInputView.textView.textContainer.maximumNumberOfLines != maximumNumberOfLines) {
+      baseTextInputView.textView.textContainer.maximumNumberOfLines = maximumNumberOfLines;
+      baseTextInputView.textView.textContainer.lineBreakMode = lineBreakMode;
+      [baseTextInputView.textView.layoutManager textContainerChangedGeometry:baseTextInputView.textView.textContainer];
+    }
+
   }];
 }
 
@@ -318,6 +327,7 @@
     _textContainer = [NSTextContainer new];
     _textContainer.lineFragmentPadding = 0; // Note, the default value is 5.
     _layoutManager = [YeetTextLayoutManager new];
+
     
     [_layoutManager addTextContainer:_textContainer];
     _textStorage = [NSTextStorage new];
@@ -326,7 +336,13 @@
   }
 
   _textContainer.size = maximumSize;
-  _textContainer.maximumNumberOfLines = _maximumNumberOfLines;
+
+
+  if (_maximumNumberOfLines != _textContainer.maximumNumberOfLines) {
+    _textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
+    _textContainer.maximumNumberOfLines = _maximumNumberOfLines;
+  }
+
   [_textStorage replaceCharactersInRange:(NSRange){0, _textStorage.length}
                     withAttributedString:attributedText];
   [_layoutManager ensureLayoutForTextContainer:_textContainer];
@@ -335,9 +351,37 @@
 
   [self.yeetAttributes drawHighlightLayer:highlightLayer layout:_layoutManager textContainer:_textContainer textLayer:textLayer];
 
+
   CGRect rect = CGRectMake(0, 0, 0, 0);
 
   rect.size = CGSizeMake(self.yeetAttributes.textRect.size.width, self.yeetAttributes.textRect.size.height);
+
+
+//  if (_maximumNumberOfLines > 0) {
+//    NSRange lineRange;
+//    NSInteger index = 0;
+//    NSInteger numberOfLines = 0;
+//    NSInteger numberOfGlyphs = [_layoutManager numberOfGlyphs];
+//
+//    for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
+//        (void) [_layoutManager lineFragmentRectForGlyphAtIndex:index
+//                effectiveRange:&lineRange];
+//        index = NSMaxRange(lineRange);
+//    }
+//
+//    CGFloat remainingLines = labs(_maximumNumberOfLines - numberOfLines);
+//
+//    if (!CGRectEqualToRect([_layoutManager extraLineFragmentRect], CGRectZero)) {
+//      remainingLines = remainingLines - 1;
+//    }
+//
+//    if (remainingLines > 0) {
+//      CGFloat fillHeight = rect.size.height;
+//      CGRect lineRect = [_layoutManager lineFragmentUsedRectForGlyphAtIndex:0 effectiveRange:nil];
+//
+//      rect.size.height = fillHeight + (CGRectGetHeight(lineRect) * remainingLines);
+//    }
+//  }
 
 
   if (([YeetTextInputView.focusedReactTag isEqualToNumber:self.reactTag] || (!_localAttributedText || _localAttributedText.length == 0)) && self.yeetAttributes.format == YeetTextFormatSticker) {

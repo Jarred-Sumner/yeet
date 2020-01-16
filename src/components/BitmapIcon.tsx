@@ -41,7 +41,11 @@ export enum BitmapIconName {
   socialLogoInstagram = "SocialLogo__Instagram",
   socialLogoSnapchat = "SocialLogo__Snapchat",
   instagramPostFooter = "InstagramPostFooter",
-  instagramTabBar = "InstagramTabBar"
+  instagramTabBar = "InstagramTabBar",
+  borderStroke = "Border__stroke",
+  borderHidden = "Border__hidden",
+  borderHighlight = "Border__highlight",
+  borderInvert = "Border__invert"
 }
 
 const SIZES_BY_NAME = {
@@ -473,6 +477,50 @@ export const BitmapIconInstagramPostFooter = ({
   <BitmapIconImage
     {...otherProps}
     name={BitmapIconName.instagramPostFooter}
+    style={style}
+  />
+);
+
+export const BitmapIconBorderHidden = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.borderHidden}
+    style={style}
+  />
+);
+
+export const BitmapIconBorderStroke = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.borderStroke}
+    style={style}
+  />
+);
+
+export const BitmapIconBorderHighlight = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.borderHighlight}
+    style={style}
+  />
+);
+
+export const BitmapIconBorderInvert = ({
+  style,
+  ...otherProps
+}: Partial<ImageProps>) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.borderInvert}
     style={style}
   />
 );

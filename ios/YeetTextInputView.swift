@@ -24,6 +24,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   var isInitialMount: Bool { setPropsCount == 0 }
   var isSecondMount: Bool { setPropsCount == 1 }
 
+
+
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
@@ -147,6 +149,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 //    textView.translatesAutoresizingMaskIntoConstraints = true
     textView.contentInsetAdjustmentBehavior = .never
     textView.contentCompressionResistancePriority(for: .horizontal)
+    textView.layoutManager.allowsNonContiguousLayout = false
 
 
 
@@ -696,8 +699,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return
     }
 
-
-
     isHidingKeyboard = true
     keyboardNotification = KeyboardNotification(notif)
 
@@ -727,22 +728,37 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   @objc(onStartEditing)
   var onStartEditing: RCTDirectEventBlock? = nil
 
+
+
   override func textInputShouldChangeText(in range: NSRange, replacementText string: String) -> Bool {
-    let shouldReject = super.textInputShouldChangeText(in: range, replacementText: string)
-
-    guard shouldReject == false else {
-      return shouldReject
+    let shouldChange = super.textInputShouldChangeText(in: range, replacementText: string)
+    if shouldChange == false {
+      return false
     }
 
-    if let oldString = text {
-      guard let range = Range(range, in: oldString) else {
-        return shouldReject
+
+    if textView.textContainer.maximumNumberOfLines > 0 {
+      let remainingLines = textView.remainingLineCount
+      if remainingLines == 0 && textView.isTruncating && string.count >= range.length
+      {
+        if let movableView = self.movableView {
+          UIView.shake(view: movableView)
+        }
+
+        return false
+      } else if string == "\n" && remainingLines < 1 {
+        if let movableView = self.movableView {
+          UIView.shake(view: movableView)
+        }
+
+        return false
       }
-
-      let newString = oldString.replacingCharacters(in: range, with: string)
     }
+    
 
-    return shouldReject
+
+
+    return true
   }
 
   override func textInputDidChange() {

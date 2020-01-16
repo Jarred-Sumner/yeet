@@ -15,6 +15,7 @@ class YeetTextView: _RCTUITextView {
     super.init(frame: frame, textContainer: textContainer)
     self.highlightLayer.isOpaque = false
     self.backgroundColor = .clear
+
     self.textContainer.lineFragmentPadding = lineFragmentPadding
 
     highlightLayer.contentsScale = UIScreen.main.scale
@@ -37,6 +38,7 @@ class YeetTextView: _RCTUITextView {
     highlightSubview.layer.addSublayer(highlightLayer)
     self.insertSubview(highlightSubview, belowSubview: self.subviews.first!)
   }
+
 
 
   override var intrinsicContentSize: CGSize {
@@ -199,6 +201,37 @@ class YeetTextView: _RCTUITextView {
 
   }
 
+
+  var isTruncating: Bool {
+    var isTruncating = false
+    // Make a range that encompases the entire text length.
+    let maxRange = textStorage.fullRange
+    // Use the layout manager to go through all of its line fragments within the range (entire text because of max range).
+    // More in-depth information is available within the NSLayoutManager docs.
+    layoutManager.enumerateLineFragments(forGlyphRange: maxRange) { _, _, _, glyphRange, stop in
+      // Ask the layout manager to find the range of the truncation glyph (...) within this line fragment
+
+      let truncatedRange = self.layoutManager.truncatedGlyphRange(inLineFragmentForGlyphAt: glyphRange.lowerBound)
+      // If the truncatedRange has a valid location that means the layout manager has detected the truncation glyph.
+      if truncatedRange.location != NSNotFound {
+        isTruncating = true
+        // NSLayoutManager uses a point to a boolean to know whether it should continue traversal.
+        // Changing `stop` to point to a value of `true` halts the operation.
+        stop.pointee = true
+      }
+    }
+
+    return isTruncating
+  }
+
+  var remainingLineCount: NSInteger {
+    guard textContainer.maximumNumberOfLines > 1 else {
+      return NSIntegerMax
+    }
+
+    return textContainer.maximumNumberOfLines - _layoutManager.numberOfLines
+  }
+
   func drawHighlight(_ canSetNeedsLayout: Bool = false) {
     textContainer.lineFragmentPadding = lineFragmentPadding
     highlightLayer.lineWidth = strokeWidth
@@ -225,9 +258,26 @@ class YeetTextView: _RCTUITextView {
   }
 
 
+
+
   deinit {
 
   }
 }
 
 
+
+extension UIView {
+
+  static func shake(view: UIView, for duration: TimeInterval = 0.5, withTranslation translation: CGFloat = 10) {
+      let propertyAnimator = UIViewPropertyAnimator(duration: duration, dampingRatio: 0.3) {
+          view.transform = CGAffineTransform(translationX: translation, y: 0)
+      }
+
+      propertyAnimator.addAnimations({
+          view.transform = CGAffineTransform(translationX: 0, y: 0)
+      }, delayFactor: 0.2)
+
+      propertyAnimator.startAnimation()
+  }
+}

@@ -31,6 +31,7 @@ export const textInputPresets = {
       textShadowColor: "rgba(51,51,51, 0.25)",
       placeholderColor: "#ccc",
       highlightInset: 0,
+      highlightCornerRadius: 0,
       textShadowOffset: {
         width: 1,
         height: 1

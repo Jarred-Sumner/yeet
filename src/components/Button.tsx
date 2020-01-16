@@ -123,6 +123,7 @@ export const IconButton = ({
   style,
   iconStyle,
   color = "white",
+  hitSlop = { left: 20, right: 20, top: 20, bottom: 20 },
   waitFor,
   enabled = true,
   isLoading = false,
@@ -195,7 +196,7 @@ export const IconButton = ({
         waitFor={waitFor}
         enabled={enabled && !isLoading}
         disallowInterruption
-        hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
+        hitSlop={hitSlop}
         onPress={handlePress}
       >
         <Animated.View style={containerStyles}>

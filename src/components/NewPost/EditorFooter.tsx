@@ -40,7 +40,9 @@ import {
   getTextBlockColor,
   getDenormalizedColor,
   getBorderType,
-  getSupportedBorderTypes
+  getSupportedBorderTypes,
+  contrastingColor,
+  isTextBlockAlignEnabled
 } from "./Text/TextInput";
 import { ToolbarType } from "./Toolbar";
 import {
@@ -52,7 +54,8 @@ import {
   isColorLight,
   isColorDark,
   isColorNeutral,
-  getNeutralColor
+  getNeutralColor,
+  getStrokeColor
 } from "../../lib/colors";
 import TextInput from "./Text/CustomTextInputComponent";
 import { BoldText, SemiBoldText } from "../Text";
@@ -99,7 +102,8 @@ const styles = StyleSheet.create({
   },
   borderButtonContainer: {
     display: "flex",
-    alignItems: "flex-end"
+    alignItems: "flex-end",
+    width: 40
   },
   disabledBorderButtonContainer: {
     width: 40,
@@ -241,7 +245,9 @@ export const BorderTypeButton = ({
     border === TextBorderType.invert
   ) {
     iconType = "fill";
-    borderRadius = 4;
+    borderRadius = 1;
+  } else if (border === TextBorderType.stroke) {
+    iconType = "fill";
   }
 
   const supportedTypes = React.useMemo(
@@ -277,6 +283,15 @@ export const BorderTypeButton = ({
     onChange
   ]);
 
+  let size = iconSize;
+  if (iconType === "shadow") {
+    size = containerSize * 0.75;
+  }
+
+  if (border === TextBorderType.stroke) {
+    size = 20;
+  }
+
   return (
     <View
       style={
@@ -290,9 +305,24 @@ export const BorderTypeButton = ({
         color={color}
         borderRadius={borderRadius}
         containerSize={containerSize}
-        size={iconType === "shadow" ? containerSize * 0.75 : iconSize}
+        iconStyle={
+          border === TextBorderType.stroke
+            ? {
+                textShadowColor: contrastingColor(color),
+                textShadowRadius: 2,
+                textShadowOffset: {
+                  width: 1,
+
+                  height: 1
+                }
+              }
+            : undefined
+        }
+        size={size}
         borderColor={color}
-        backgroundColor={backgroundColor}
+        backgroundColor={
+          border === TextBorderType.stroke ? "transparent" : backgroundColor
+        }
         enabled={!!block}
         Icon={Icon}
         borderWidth={borderWidth}
@@ -333,8 +363,12 @@ export const TextAlignmentButton = ({
     <IconButton
       type="shadow"
       color="white"
+      enabled={isTextBlockAlignEnabled(block)}
       size={20}
+      hitSlop={null}
       Icon={Icon}
+      containerSize={20}
+      style={{ width: 30 }}
       onPress={handleChange}
     />
   );

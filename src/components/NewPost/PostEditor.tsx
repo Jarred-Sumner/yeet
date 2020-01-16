@@ -409,6 +409,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       value: "",
       format: PostFormat.sticker,
       template: TextTemplate.basic,
+      border: TextBorderType.stroke,
       layout: PostLayout.text,
       placeholder: " ",
       autoInserted: false
@@ -573,7 +574,9 @@ class RawwPostEditor extends React.Component<Props, State> {
       this._blockInputRefs,
       this.contentViewRef,
       this._inlineNodeRefs,
-      isServerOnly
+      isServerOnly,
+      this.props.bounds.x,
+      this.props.bounds.y
     );
   };
 
@@ -928,7 +931,9 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
   handleShowKeyboard = (event, hasHappened) => {
-    // hasHappened && this.scrollRef.current.handleKeyboardEvent(event);
+    hasHappened &&
+      isFixedSizeBlock(this.focusedBlock) &&
+      this.scrollRef.current.handleKeyboardEvent(event);
     // if (this.state.focusType === FocusType.absolute) {
     // this.scrollToTop();
     // }
@@ -1030,15 +1035,15 @@ class RawwPostEditor extends React.Component<Props, State> {
   );
 
   render() {
-    const { post } = this.props;
+    const { post, minX, minY } = this.props;
     const presets = presetsByFormat[post.format];
 
     const {
       bounds = {
         width: POST_WIDTH,
         height: SCREEN_DIMENSIONS.height,
-        x: 0,
-        y: 0
+        x: minX,
+        y: minY
       }
     } = this.state;
 
@@ -1116,7 +1121,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           ])}
         />
 
-        <View onLayout={this.updateBounds} style={this.postContainerStyle}>
+        <View style={this.postContainerStyle}>
           <PostPreview
             bounds={bounds}
             blocks={post.blocks}

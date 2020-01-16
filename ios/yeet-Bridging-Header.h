@@ -261,6 +261,7 @@ RCT_EXPORT_VIEW_PROPERTY(mostRecentEventCount, NSInteger)
 RCT_EXPORT_SHADOW_PROPERTY(text, NSString)
 RCT_EXPORT_SHADOW_PROPERTY(onContentSizeChange, RCTBubblingEventBlock)
 
+RCT_REMAP_SHADOW_PROPERTY(numberOfLines, maximumNumberOfLines, NSInteger)
 RCT_REMAP_SHADOW_PROPERTY(color, textAttributes.foregroundColor, UIColor)
 RCT_REMAP_SHADOW_PROPERTY(backgroundColor, textAttributes.backgroundColor, UIColor)
 RCT_REMAP_SHADOW_PROPERTY(opacity, textAttributes.opacity, CGFloat)

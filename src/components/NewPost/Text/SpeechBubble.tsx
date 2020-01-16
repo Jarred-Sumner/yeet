@@ -27,10 +27,12 @@ import * as React from "react";
 export const SpeechBubble = ({
   width,
   height,
-  strokeColor = "#000",
+  strokeColor: _strokeColor = "#000",
   fillColor = "#fff",
   ...otherProps
 }) => {
+  const strokeColor = _strokeColor === "#000000" ? "black" : _strokeColor;
+
   return (
     <Svg {...otherProps} width={width} height={height} viewBox="0 0 91 68">
       <G fill="white" fillRule="nonzero" strokeLinejoin="bevel">

@@ -222,7 +222,9 @@ export const startExport = async (
   refs: Map<string, React.RefObject<View>>,
   ref: React.RefObject<View>,
   nodeRefs: Map<string, React.RefObject<View>>,
-  isServerOnly: boolean
+  isServerOnly: boolean,
+  minX: number,
+  minY: number
 ): Promise<[ContentExport, ExportData]> => {
   let hasLongVideo = false;
   const trace = await perf().startTrace("YeetExporter_startExport");
@@ -332,7 +334,11 @@ export const startExport = async (
   const data: ExportData = {
     blocks: flatten(blocks).filter(Boolean),
     nodes: nodes.filter(Boolean),
-    bounds: await getEstimatedBounds(ref.current),
+    bounds: {
+      ...(await getEstimatedBounds(ref.current)),
+      x: minX,
+      y: minY
+    },
     containerNode: findNodeHandle(ref.current)
   };
 

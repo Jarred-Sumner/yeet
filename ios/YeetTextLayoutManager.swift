@@ -18,6 +18,27 @@ class YeetTextLayoutManager: NSLayoutManager {
      /// The width of the stroke to display around the text.
       var strokeWidth: CGFloat = CGFloat.zero
 
+      var numberOfLines: NSInteger {
+        let numberOfGlyphs = self.numberOfGlyphs
+        var lineRange: NSRange = NSMakeRange(0, 1)
+        var index = 0
+        var numberOfLines = 0
+
+        while index < numberOfGlyphs {
+          lineFragmentRect(forGlyphAt: index, effectiveRange: &lineRange)
+            index = NSMaxRange(lineRange)
+            numberOfLines += 1
+        }
+
+
+
+        if extraLineFragmentRect.height > 0 {
+          numberOfLines += 1
+        }
+
+        return numberOfLines
+      }
+
      override func drawGlyphs(forGlyphRange glyphsToShow: NSRange, at origin: CGPoint) {
          let context = UIGraphicsGetCurrentContext()
 
@@ -62,11 +83,9 @@ class YeetTextLayoutManager: NSLayoutManager {
       graphicsContext.translateBy(x: 0, y: 0.5)
 
          graphicsContext.setLineWidth(strokeWidth)
-//        graphicsContext.scaleBy(x: 1.05, y: 1.05)
       graphicsContext.setLineJoin(.round)
       graphicsContext.setLineCap(.round)
       graphicsContext.setFillColor(strokeColor.cgColor)
-//         graphicsContext.setLineJoin(.miter)
 
         graphicsContext.setTextDrawingMode(.fillStroke)
 

@@ -149,6 +149,9 @@ class RawNewPost extends React.Component<{}, State> {
     defaultFormat: PostFormat.post,
     defaultLayout: PostLayout.media,
     defaultBlocks: {},
+
+    minX: 0,
+    minY: 0,
     defaultPositions: [],
     examples: {},
     defaultInlineNodes: {},
@@ -179,8 +182,8 @@ class RawNewPost extends React.Component<{}, State> {
 
       bounds: {
         ...props.defaultBounds,
-        x: DEFAULT_BOUNDS.x,
-        y: DEFAULT_BOUNDS.y
+        x: props.minX,
+        y: props.minY
       }
     };
   }

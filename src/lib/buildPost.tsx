@@ -316,41 +316,19 @@ export enum FocusType {
   static = 0
 }
 
+const isImageBlock = (block: PostBlock) => block?.type === "image";
+const isTextBlock = (block: PostBlock) => block?.type === "text";
+
 export const blocksForFormat = (
   format: PostFormat,
   layout: PostLayout,
   _blocks: BlockMap,
-  positions: BlockPositionList
+  _positions: BlockPositionList
 ): Array<Array<PostBlockType>> => {
-  let blocks = flatten(positions).map(position => _blocks[position]);
-
-  if (format === PostFormat.comment) {
-    return [
-      [
-        blocks.find(block => block.type === "text") ??
-          buildTextBlock({
-            value: "",
-            placeholder: "",
-            autoInserted: true,
-            id: generateBlockId(),
-            format: PostFormat.comment,
-            template: TextTemplate.comment,
-            layout
-          })
-      ]
-    ];
-  }
+  const blocks = { ..._blocks };
 
   switch (layout) {
     case PostLayout.horizontalMediaMedia: {
-      blocks = blocks
-        .filter(block => block.type === "image")
-        .slice(0, 2)
-        .map(block => {
-          block.layout = layout;
-          return block;
-        });
-
       for (let i = blocks.length; i < 2; i++) {
         blocks.push(
           buildImageBlock({

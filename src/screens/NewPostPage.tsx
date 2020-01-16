@@ -74,7 +74,9 @@ export class NewPostPage extends React.Component {
         examples: {},
         remixId: null,
         thumbnail: null,
-        isLoading: false
+        isLoading: false,
+        minX: 0,
+        minY: 0
       };
     } else {
       this.state = {
@@ -83,7 +85,9 @@ export class NewPostPage extends React.Component {
         remixId: null,
         examples: {},
         thumbnail: null,
-        isLoading: false
+        isLoading: false,
+        minX: 0,
+        minY: 0
       };
     }
   }
@@ -196,6 +200,8 @@ export class NewPostPage extends React.Component {
         }
       }),
       thumbnail: post.media.coverUrl,
+      minX: xPadding,
+      minY: yPadding,
       backgroundColor: post?.colors?.background || "black",
       defaultLayout: guesstimateLayout(post?.layout, defaultBlocks),
       defaultFormat: post.format,
@@ -231,6 +237,8 @@ export class NewPostPage extends React.Component {
             defaultWidth={this.state.defaultWidth}
             defaultHeight={this.state.defaultHeight}
             defaultLayout={this.state.defaultLayout}
+            minX={this.state.minX}
+            minY={this.state.minY}
             defaultFormat={this.state.defaultFormat}
             defaultInlineNodes={this.state.defaultInlineNodes}
           />

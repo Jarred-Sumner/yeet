@@ -7,9 +7,20 @@ import {
   TapGestureHandler,
   LongPressGestureHandler
 } from "react-native-gesture-handler";
-import Animated, { Transitioning } from "react-native-reanimated";
+import Animated, { Transitioning, Transition } from "react-native-reanimated";
 import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
-import { StyleSheet, findNodeHandle } from "react-native";
+import {
+  StyleSheet,
+  findNodeHandle,
+  View,
+  LayoutAnimation
+} from "react-native";
+import {
+  Surface,
+  Shape,
+  ClippingRectangle,
+  Path
+} from "@react-native-community/art";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import {
   preserveOffset,
@@ -17,6 +28,10 @@ import {
 } from "../../../lib/animations";
 import { TransformableViewComponent } from "./TransformableView";
 import { FocusType } from "../../../lib/buildPost";
+import { ClipProvider, ClipContext } from "./ClipContext";
+import { Rectangle } from "../../../lib/Rectangle";
+import Svg, { Rect } from "react-native-svg";
+import { COLORS } from "../../../lib/styles";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -54,6 +69,15 @@ export const TransformableView = React.forwardRef((props, ref) => {
     children
   } = props;
 
+  const { setBounds } = React.useContext(ClipContext);
+
+  const handleLayoutChange = React.useCallback(
+    ({ nativeEvent: { layout } }) => {
+      setBounds(layout);
+    },
+    [setBounds]
+  );
+
   if (!isFixedSize) {
     return (
       <Component
@@ -87,6 +111,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
         ref={ref}
         inputRef={inputRef}
         overlayTag={overlayTag}
+        onLayout={handleLayoutChange}
         style={[
           transformableStyles.bottomContainer,
           {
@@ -212,6 +237,16 @@ const styles = StyleSheet.create({
     position: "relative",
     flex: 0
   },
+  fixedSizeOverlaySheet: {
+    zIndex: 0,
+    position: "absolute",
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0
+  },
   overlaySheet: {
     zIndex: 0,
     opacity: 0,
@@ -228,6 +263,90 @@ const styles = StyleSheet.create({
     flex: 0,
     zIndex: -1
   }
+});
+
+const OverlaySheet = React.forwardRef((props, ref) => {
+  const { bounds } = React.useContext(ClipContext);
+  const { visible } = props;
+  const transitionRef = React.useRef();
+  const isInitialMount = React.useRef(true);
+
+  React.useLayoutEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    LayoutAnimation.configureNext({
+      type: LayoutAnimation.Types.keyboard,
+      create: {
+        type: LayoutAnimation.Types.keyboard,
+        property: "opacity"
+      },
+      delete: {
+        type: LayoutAnimation.Types.keyboard,
+        property: "opacity"
+      },
+      update: {
+        type: LayoutAnimation.Types.keyboard,
+        property: "opacity"
+      }
+    });
+  }, [visible]);
+
+  const rect = new Rectangle(
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height
+  ).inflateFixed(2);
+  const screen = new Rectangle(
+    0,
+    0,
+    SCREEN_DIMENSIONS.width,
+    SCREEN_DIMENSIONS.height
+  );
+
+  const rects = screen.subtract(rect);
+
+  return (
+    <>
+      {visible && (
+        <View
+          pointerEvents="none"
+          ref={ref}
+          style={styles.fixedSizeOverlaySheet}
+        >
+          <Svg width={screen.width} height={screen.height}>
+            {rects.map((rect, index) => {
+              return (
+                <Rect
+                  width={rect.width}
+                  height={rect.height}
+                  x={rect.left}
+                  y={rect.top}
+                  fillOpacity={0.75}
+                  fill="black"
+                />
+              );
+            })}
+            <Rect
+              width={rect.width}
+              height={rect.height}
+              x={rect.left}
+              y={rect.top}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="black"
+              stroke={COLORS.secondaryOpacity}
+              strokeWidth={1}
+              fillOpacity={0.25}
+            />
+          </Svg>
+        </View>
+      )}
+    </>
+  );
 });
 
 export class MovableNode extends Component<Props> {
@@ -547,7 +666,7 @@ export class MovableNode extends Component<Props> {
 
   overlayRef = overlayView => {
     if (overlayView) {
-      this.overlayTag = findNodeHandle(overlayView.getNode());
+      this.overlayTag = findNodeHandle(overlayView);
     }
   };
 
@@ -629,83 +748,83 @@ export class MovableNode extends Component<Props> {
           ])}
         />
 
-        <TapGestureHandler
-          waitFor={this.tapGestureWaitFor}
-          ref={this.tapRef}
-          enabled={isDragEnabled}
-          onGestureEvent={this.handleTap}
-          onHandlerStateChange={this.handleTap}
-        >
-          <Animated.View
-            style={isHidden ? styles.lowerGestureView : styles.gestureView}
+        <ClipProvider>
+          <TapGestureHandler
+            waitFor={this.tapGestureWaitFor}
+            ref={this.tapRef}
+            enabled={isDragEnabled}
+            onGestureEvent={this.handleTap}
+            onHandlerStateChange={this.handleTap}
           >
-            <PanGestureHandler
-              ref={this.panRef}
-              enabled={isDragEnabled}
-              waitFor={waitFor}
-              simultaneousHandlers={this.panGestureHandlers}
-              onGestureEvent={this.handlePan}
-              onHandlerStateChange={this.handlePan}
+            <Animated.View
+              style={isHidden ? styles.lowerGestureView : styles.gestureView}
             >
-              <Animated.View style={styles.gestureView}>
-                <PinchGestureHandler
-                  ref={this.pinchRef}
-                  enabled={isDragEnabled}
-                  waitFor={waitFor}
-                  simultaneousHandlers={this.pinchGestureHandlers}
-                  onGestureEvent={this.handleZoom}
-                  onHandlerStateChange={this.handleZoom}
-                >
-                  <Animated.View style={styles.gestureView}>
-                    {isFixedSize ? (
-                      <Animated.View
-                        pointerEvents="none"
-                        ref={this.overlayRef}
-                        style={[
-                          styles.overlaySheet,
-                          { opacity: this.animatedKeyboardVisibleFocusedValue }
-                        ]}
-                      />
-                    ) : (
-                      <Animated.View
-                        pointerEvents="none"
-                        ref={this.overlayRef}
-                        style={styles.overlaySheet}
-                      />
-                    )}
+              <PanGestureHandler
+                ref={this.panRef}
+                enabled={isDragEnabled}
+                waitFor={waitFor}
+                simultaneousHandlers={this.panGestureHandlers}
+                onGestureEvent={this.handlePan}
+                onHandlerStateChange={this.handlePan}
+              >
+                <Animated.View style={styles.gestureView}>
+                  <PinchGestureHandler
+                    ref={this.pinchRef}
+                    enabled={isDragEnabled}
+                    waitFor={waitFor}
+                    simultaneousHandlers={this.pinchGestureHandlers}
+                    onGestureEvent={this.handleZoom}
+                    onHandlerStateChange={this.handleZoom}
+                  >
+                    <Animated.View style={styles.gestureView}>
+                      {isFixedSize ? (
+                        <OverlaySheet
+                          ref={this.overlayRef}
+                          visible={this.props.isEditing}
+                        />
+                      ) : (
+                        <Animated.View
+                          pointerEvents="none"
+                          ref={this.overlayRef}
+                          style={styles.overlaySheet}
+                        />
+                      )}
 
-                    <RotationGestureHandler
-                      ref={this.rotationRef}
-                      enabled={isDragEnabled}
-                      waitFor={waitFor}
-                      simultaneousHandlers={this.rotationGestureHandlers}
-                      onGestureEvent={this.handleRotate}
-                      onHandlerStateChange={this.handleRotate}
-                    >
-                      <Animated.View style={styles.childGestureView}>
-                        <TransformableView
-                          ref={this.props.containerRef}
-                          opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
-                          overlayTag={this.overlayTag}
-                          translateX={this.translateX}
-                          isFixedSize={isFixedSize}
-                          bottom={this.bottomValue}
-                          top={this.topValue}
-                          keyboardVisibleValue={keyboardVisibleValue}
-                          inputRef={inputRef}
-                          rotate={this.rotate}
-                          scale={this.scale}
-                        >
-                          {this.props.children}
-                        </TransformableView>
-                      </Animated.View>
-                    </RotationGestureHandler>
-                  </Animated.View>
-                </PinchGestureHandler>
-              </Animated.View>
-            </PanGestureHandler>
-          </Animated.View>
-        </TapGestureHandler>
+                      <RotationGestureHandler
+                        ref={this.rotationRef}
+                        enabled={isDragEnabled}
+                        waitFor={waitFor}
+                        simultaneousHandlers={this.rotationGestureHandlers}
+                        onGestureEvent={this.handleRotate}
+                        onHandlerStateChange={this.handleRotate}
+                      >
+                        <Animated.View style={styles.childGestureView}>
+                          <TransformableView
+                            ref={this.props.containerRef}
+                            opacity={
+                              isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1
+                            }
+                            overlayTag={this.overlayTag}
+                            translateX={this.translateX}
+                            isFixedSize={isFixedSize}
+                            bottom={this.bottomValue}
+                            top={this.topValue}
+                            keyboardVisibleValue={keyboardVisibleValue}
+                            inputRef={inputRef}
+                            rotate={this.rotate}
+                            scale={this.scale}
+                          >
+                            {this.props.children}
+                          </TransformableView>
+                        </Animated.View>
+                      </RotationGestureHandler>
+                    </Animated.View>
+                  </PinchGestureHandler>
+                </Animated.View>
+              </PanGestureHandler>
+            </Animated.View>
+          </TapGestureHandler>
+        </ClipProvider>
       </>
     );
   }
