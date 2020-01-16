@@ -258,7 +258,21 @@ class YeetTextView: _RCTUITextView {
   }
 
 
+  func adjustContentInset() {
+    if remainingLineCount > 0 {
+      let fittingSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
+      let size = sizeThatFits(fittingSize)
+      let topOffset = (bounds.size.height - size.height * zoomScale) / 2 - self.yeetTextAttributes.textRect.y
+      let positiveTopOffset = max(0, topOffset)
+      contentOffset.y = -positiveTopOffset
+    } else {
+      contentOffset.y = .zero
+    }
 
+  }
+
+
+  
 
   deinit {
 

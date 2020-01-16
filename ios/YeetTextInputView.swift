@@ -68,6 +68,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   private var size = CGSize.zero
   override func layoutSubviews() {
     super.layoutSubviews()
+
+    textView.adjustContentInset()
   }
 
   var hasText : Bool { attributedText?.length ?? 0 > 0 }
@@ -122,6 +124,20 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     multiplier: 1.0,
     constant: 0
   )
+  lazy var centerYConstraint = NSLayoutConstraint(
+    // object that we want to constrain
+    item: textView,
+    // the attribute of the item we want to constraint
+    attribute: NSLayoutConstraint.Attribute.centerY,
+    // how we want to relate this item with another item so most likely its parent view
+    relatedBy: NSLayoutConstraint.Relation.equal,
+    // this is the item that we are setting up the relationship with
+    toItem: self,
+    attribute: NSLayoutConstraint.Attribute.centerY,
+    // How much I want the CenterX of BlueView to Differ from the CenterX of the self
+    multiplier: 1.0,
+    constant: 0
+  )
 
 
 
@@ -151,11 +167,9 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     textView.contentCompressionResistancePriority(for: .horizontal)
     textView.layoutManager.allowsNonContiguousLayout = false
 
-
-
     self.addSubview(textView)
 
-    NSLayoutConstraint.activate([centerXConstraint])
+    NSLayoutConstraint.activate([centerXConstraint, centerYConstraint])
 
     let safeArea = safeAreaLayoutGuide
     
@@ -269,6 +283,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
     }
   }
+
+
 
   func textInputReactSetFrame(_ frame: CGRect, _ _animator: UIViewPropertyAnimator? = nil) {
     guard isSticker else {
@@ -517,6 +533,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
 
     tapRecognizer?.isEnabled = true
+
+
 
     YeetTextInputView.focusedReactTag = nil
 

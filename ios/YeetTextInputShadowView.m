@@ -357,31 +357,31 @@
   rect.size = CGSizeMake(self.yeetAttributes.textRect.size.width, self.yeetAttributes.textRect.size.height);
 
 
-//  if (_maximumNumberOfLines > 0) {
-//    NSRange lineRange;
-//    NSInteger index = 0;
-//    NSInteger numberOfLines = 0;
-//    NSInteger numberOfGlyphs = [_layoutManager numberOfGlyphs];
-//
-//    for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
-//        (void) [_layoutManager lineFragmentRectForGlyphAtIndex:index
-//                effectiveRange:&lineRange];
-//        index = NSMaxRange(lineRange);
-//    }
-//
-//    CGFloat remainingLines = labs(_maximumNumberOfLines - numberOfLines);
-//
-//    if (!CGRectEqualToRect([_layoutManager extraLineFragmentRect], CGRectZero)) {
-//      remainingLines = remainingLines - 1;
-//    }
-//
-//    if (remainingLines > 0) {
-//      CGFloat fillHeight = rect.size.height;
-//      CGRect lineRect = [_layoutManager lineFragmentUsedRectForGlyphAtIndex:0 effectiveRange:nil];
-//
-//      rect.size.height = fillHeight + (CGRectGetHeight(lineRect) * remainingLines);
-//    }
-//  }
+  if (_maximumNumberOfLines > 0 && maximumSize.width < RCTScreenSize().width) {
+    NSRange lineRange;
+    NSInteger index = 0;
+    NSInteger numberOfLines = 0;
+    NSInteger numberOfGlyphs = [_layoutManager numberOfGlyphs];
+
+    for (numberOfLines = 0, index = 0; index < numberOfGlyphs; numberOfLines++){
+        (void) [_layoutManager lineFragmentRectForGlyphAtIndex:index
+                effectiveRange:&lineRange];
+        index = NSMaxRange(lineRange);
+    }
+
+    CGFloat remainingLines = labs(_maximumNumberOfLines - numberOfLines);
+
+    if (!CGRectEqualToRect([_layoutManager extraLineFragmentRect], CGRectZero)) {
+      remainingLines = remainingLines - 1;
+    }
+
+    if (remainingLines > 0) {
+      CGFloat fillHeight = rect.size.height;
+      CGRect lineRect = [_layoutManager lineFragmentUsedRectForGlyphAtIndex:0 effectiveRange:nil];
+
+      rect.size.height = fmax(fillHeight + (CGRectGetHeight(lineRect) * remainingLines), rect.size.height);
+    }
+  }
 
 
   if (([YeetTextInputView.focusedReactTag isEqualToNumber:self.reactTag] || (!_localAttributedText || _localAttributedText.length == 0)) && self.yeetAttributes.format == YeetTextFormatSticker) {
