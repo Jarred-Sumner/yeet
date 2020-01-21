@@ -162,7 +162,12 @@ class YeetExporter: NSObject, RCTBridgeModule  {
       let start = CACurrentMediaTime()
       self.getImages(data: exportData, task: task!).then { images in
         let producer = VideoProducer(data: exportData, images: images)
+        
         self.producer = producer
+        if let backgroundColor = exportData["backgroundColor"].array {
+          producer.backgroundColor = UIColor(red: backgroundColor[0].numberValue.cgFloatValue, green:  backgroundColor[1].numberValue.cgFloatValue, blue:  backgroundColor[2].numberValue.cgFloatValue, alpha:  backgroundColor[3].numberValue.cgFloatValue)
+        }
+
 
         let boundsDict = exportData["bounds"].dictionaryValue
 

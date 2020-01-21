@@ -3,6 +3,7 @@ import { TextPostBlock } from "../TextPostBlock";
 import { ImagePostBlock } from "../ImagePostBlock";
 import { PostBlock } from "../NewPostFormat";
 import { TextInput } from "react-native-gesture-handler";
+import { PostLayoutContext } from "../PostLayoutContext";
 
 export const Block = React.forwardRef(
   (
@@ -18,6 +19,7 @@ export const Block = React.forwardRef(
       focusType,
       paddingTop,
       focusTypeValue,
+      containerRef,
       onChangePhoto,
       autoFocus,
       usePreview,
@@ -43,6 +45,7 @@ export const Block = React.forwardRef(
     },
     ref
   ) => {
+    const layoutContext = React.useContext(PostLayoutContext);
     if (block.type === "text") {
       return (
         <TextPostBlock
@@ -52,6 +55,8 @@ export const Block = React.forwardRef(
           focusType={focusType}
           isSticker={isSticker}
           scale={scale}
+          containerRef={containerRef}
+          columnCount={layoutContext.columnCount}
           block={block}
           maxX={maxX}
           onTap={onTap}
@@ -79,6 +84,8 @@ export const Block = React.forwardRef(
           onFocus={onFocus}
           ref={ref}
           onOpenImagePicker={onOpenImagePicker}
+          containerRef={containerRef}
+          columnCount={layoutContext.columnCount}
           isSticker={isSticker}
           onLayout={onLayout}
           onTap={onTap}

@@ -1,12 +1,20 @@
 import chroma from "chroma-js";
 import * as React from "react";
-import { ImageProps, ScrollView, StyleSheet } from "react-native";
+import { ImageProps, ScrollView, StyleSheet, View } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS } from "../../../config";
+import { FocusType } from "../../lib/buildPost";
+import {
+  getDarkColor,
+  getLightColor,
+  getNeutralColor,
+  isColorDark,
+  isColorLight,
+  isColorNeutral
+} from "../../lib/colors";
 import { COLORS, SPACING } from "../../lib/styles";
-import { sendLightFeedback } from "../../lib/Vibration";
-import { useLayout } from "react-native-hooks";
+import { sendSelectionFeedback } from "../../lib/Vibration";
 import {
   BitmapIconTemplateBigWords,
   BitmapIconTemplateClassic,
@@ -15,27 +23,11 @@ import {
   BitmapIconTemplateMonospace,
   BitmapIconTemplatePixel
 } from "../BitmapIcon";
-import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
-import { BorderTypeButton, TextAlignmentButton } from "./EditorFooter";
 import { ColorSlider } from "../ColorSlider";
-import { View } from "react-native";
-import {
-  getTextBlockColor,
-  getTextBlockBackgroundColor
-} from "./Text/TextInput";
-import {
-  invertColor,
-  isTooDark,
-  getDarkColor,
-  isTooLight,
-  getLightColor,
-  isColorLight,
-  isColorDark,
-  isColorNeutral,
-  getNeutralColor
-} from "../../lib/colors";
-import { buildTextBlock, FocusType } from "../../lib/buildPost";
 import { InputAccessoryView } from "../InputAccessoryView";
+import { BorderTypeButton, TextAlignmentButton } from "./EditorFooter";
+import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
+import { getTextBlockColor } from "./Text/TextBlockUtils";
 
 const CONTAINER_HEIGHT = 40;
 
@@ -160,7 +152,7 @@ const TemplateIcon = ({ template, ...otherProps }: Partial<ImageProps>) => {
 
 const TemplateOption = ({ template, isSelected = false, onPress }) => {
   const handlePress = React.useCallback(() => {
-    sendLightFeedback();
+    sendSelectionFeedback();
     onPress(template);
   }, [template, onPress]);
   return (
@@ -266,7 +258,7 @@ const RawTextInputToolbar = React.memo(
           overides.backgroundColor = getNeutralColor(color);
         }
 
-        sendLightFeedback();
+        sendSelectionFeedback();
         onChangeOverrides(overides);
       },
       [
@@ -286,7 +278,7 @@ const RawTextInputToolbar = React.memo(
       textAlign => {
         const overrides = { ..._overrides, textAlign };
 
-        sendLightFeedback();
+        sendSelectionFeedback();
 
         onChangeOverrides(overrides);
       },

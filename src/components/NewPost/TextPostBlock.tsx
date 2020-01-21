@@ -1,8 +1,8 @@
 import * as React from "react";
 import { findNodeHandle, View } from "react-native";
-import { PostFormat } from "../../lib/buildPost";
+import { PostFormat } from "../../lib/enums";
 import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
-import { TextInput, getHighlightInset } from "./Text/TextInput";
+import { TextInput } from "./Text/TextInput";
 
 type Props = {
   block: TextPostBlockType;
@@ -22,7 +22,7 @@ export class TextPostBlock extends React.Component<Props> {
 
   get boundsHandle() {
     if (this.props.block.format === PostFormat.post) {
-      return findNodeHandle(this.containerRef.current);
+      return this.containerTag;
     } else {
       return this.stickerTag;
     }
@@ -71,6 +71,10 @@ export class TextPostBlock extends React.Component<Props> {
     if (this.stickerRef.current) {
       this.stickerTag = findNodeHandle(this.stickerRef.current);
     }
+
+    if (this.containerRef.current) {
+      this.containerTag = findNodeHandle(this.containerRef.current);
+    }
   }
 
   get textInputHandle() {
@@ -80,6 +84,7 @@ export class TextPostBlock extends React.Component<Props> {
   setNativeProps = props => this.input.setNativeProps(props);
 
   textInput = React.createRef<TextInput>();
+  containerTag: number | null = null;
 
   get isTextPostBlock() {
     return true;
@@ -148,6 +153,7 @@ export class TextPostBlock extends React.Component<Props> {
         stickerRef={this.stickerRef}
         isBlockFocused={isFocused}
         blockRef={this.containerRef}
+        containerTag={this.containerTag}
         isSticker={isSticker}
         stickerTag={this.stickerTag}
         ref={this.textInput}

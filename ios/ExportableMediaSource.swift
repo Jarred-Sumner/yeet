@@ -204,6 +204,15 @@ extension ExportableMediaSource {
     return mediaPlayerView?.videoView
   }
 
+  var boundsView: UIView? {
+    if let mediaPlayerView = self.mediaPlayerView {
+      return mediaPlayerView.containerView
+    } else if let inputView = self.inputView {
+      return inputView.containerView
+    } else {
+      return nil
+    }
+  }
   var mediaPlayerView: MediaPlayer? {
     return self.view as? MediaPlayer ?? self.nodeView as? MediaPlayer
   }

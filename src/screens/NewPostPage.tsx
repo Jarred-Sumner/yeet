@@ -1,32 +1,28 @@
+import { flatten, fromPairs, isArray } from "lodash";
 import * as React from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
-import { NewPost, DEFAULT_POST } from "../components/NewPost/NewPost";
-import { UserContext } from "../components/UserContext";
-import { useNavigation, useFocusState } from "react-navigation-hooks";
-import { flatten } from "lodash";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { useFocusState } from "react-navigation-hooks";
+import { NewPost } from "../components/NewPost/NewPost";
 import {
   buildImageBlock,
-  minImageWidthByFormat,
   DEFAULT_POST_FORMAT,
+  generateBlockId,
+  ImagePostBlock,
+  minImageWidthByFormat,
   PostFormat,
   PostLayout,
-  generateBlockId,
-  POST_WIDTH,
-  ImagePostBlock
+  POST_WIDTH
 } from "../components/NewPost/NewPostFormat";
+import { sendToast, ToastType } from "../components/Toast";
+import { UserContext } from "../components/UserContext";
 import {
   ContentExport,
-  ExportData,
   convertExportedBlocks,
   convertExportedNodes,
+  ExportData,
   guesstimateLayout
 } from "../lib/Exporter";
-import { ToastType, sendToast } from "../components/Toast";
 import { PostFragment } from "../lib/graphql/PostFragment";
-import { fromPairs, isArray } from "lodash";
-import { SCREEN_DIMENSIONS } from "../../config";
-import { MAX_CONTENT_HEIGHT } from "../components/Feed/PostPreviewList";
-import { SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   container: {

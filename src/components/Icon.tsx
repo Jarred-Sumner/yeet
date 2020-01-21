@@ -19,6 +19,10 @@ export enum IconName {
   die4 = "die4",
   die5 = "die5",
   die6 = "die6",
+  circleArrowUp = "circlearrowup",
+  circleArrowRight = "circlearrowright",
+  circleArrowLeft = "circlearrowleft",
+  circleArrowDown = "circlearrowdown",
   camera = "camera",
   cameraroll = "cameraroll",
   cut = "cut",
@@ -257,3 +261,16 @@ export const IconDie4 = props => <Icon name={IconName.die4} {...props} />;
 export const IconDie5 = props => <Icon name={IconName.die5} {...props} />;
 export const IconDie6 = props => <Icon name={IconName.die6} {...props} />;
 export const IconDice = props => <Icon name={IconName.dice} {...props} />;
+
+export const IconCircleArrowUp = props => (
+  <Icon name={IconName.circleArrowUp} {...props} />
+);
+export const IconCircleArrowRight = props => (
+  <Icon name={IconName.circleArrowRight} {...props} />
+);
+export const IconCircleArrowLeft = props => (
+  <Icon name={IconName.circleArrowLeft} {...props} />
+);
+export const IconCircleArrowDown = props => (
+  <Icon name={IconName.circleArrowDown} {...props} />
+);

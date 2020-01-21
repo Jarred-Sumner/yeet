@@ -1,9 +1,29 @@
-import { StyleSheet, PixelRatio } from "react-native";
-import { TextTemplate } from "../../../lib/buildPost";
+import { StyleSheet } from "react-native";
+import { TextTemplate } from "../../../lib/enums";
 import { COLORS } from "../../../lib/styles";
-import { normalizeBackgroundColor } from "../../Posts/CommentsViewer";
+import { normalizeBackgroundColor } from "../../Posts/_normalizedBackgroundColor";
 
-export const textInputPresets = {
+type TextInputPresetOptions = {
+  fontSizes: { [length: string]: number };
+  presets: Partial<{
+    backgroundColor: string;
+    color: string;
+    textShadowColor: string;
+    placeholderColor: string;
+    highlightInset: number;
+    textAlign: CanvasTextAlign;
+    highlightCornerRadius: number;
+    textShadowOffset: {
+      width: number;
+      height: number;
+    };
+    textShadowRadius: number;
+  }>;
+};
+
+export const textInputPresets: {
+  [key: string]: TextInputPresetOptions;
+} = {
   [TextTemplate.comment]: {
     fontSizes: {
       "0": 14,

@@ -135,7 +135,7 @@ class ContentExport {
 
 
       let workBlock = {
-        let view =  image.nodeView ?? image.view!
+        let view =  (image.nodeView ?? (image.boundsView ?? image.view))!
         let containerView = image.containerView!
 
         if let _ = view as? MovableView {
@@ -316,7 +316,7 @@ class ContentExport {
   //    - and we scale the video from it's natural size to whatever frame.size says it should be
   // 3. AVAssetExportSession does it's magic.
   // 4. We take the video output...and crop it.
-  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil, task: ContentExportTask) -> Promise<ContentExportResult> {
+  static func export(url: URL, type: ExportType, estimatedBounds: CGRect, duration: TimeInterval, resources: Array<ExportableBlock>, isDigitalOnly: Bool, scale: CGFloat? = nil, task: ContentExportTask, backgroundColor: UIColor) -> Promise<ContentExportResult> {
     return Promise<ContentExportResult>(queue: VideoProducer.contentExportQueue) { resolve, reject in
 
       var contentsScale = min(scale ?? UIScreen.main.scale, type.isVideo ? CGFloat(1.5) : CGFloat(2.0))
@@ -489,7 +489,7 @@ class ContentExport {
 
       parentLayer.bounds = videoContainerRect
       parentLayer.frame = CGRect(origin: CGPoint.zero, size: videoContainerRect.size)
-
+      parentLayer.backgroundColor = backgroundColor.cgColor
       parentLayer.contentsScale = CGFloat(1)
       parentLayer.contentsGravity = .topLeft
       parentLayer.isGeometryFlipped = true
@@ -612,9 +612,10 @@ class ContentExport {
                }
               let frame = (block.nodeFrame ?? block.frame).normalize(scale: contentsScale)
 
-              let nodeView = video.nodeView!
-              let playerFrame = video.videoView!.playerLayer.videoRect
-              let nodeScale = nodeView.transform.scaleX
+              guard let nodeView = video.nodeView ?? video.view else {
+                reject(ContentExportError(.assetUnplayable))
+                return
+              }
 
               let ___rect = AVMakeRect(aspectRatio: _asset.resolution, insideRect: CGRect(origin: .zero, size: frame.size))
 
@@ -728,7 +729,7 @@ class ContentExport {
           task.incrementCompose()
         }
 
-        parentLayer.backgroundColor = UIColor.clear.cgColor
+
 
         #if DEBUG
         let debugLayer = CALayer()

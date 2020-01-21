@@ -1,6 +1,8 @@
 import { pointBox as isPointInside } from "intersects";
 import { PixelRatio } from "react-native";
 import { YeetImageRect } from "./imageSearch";
+import fill from "aspect-fill";
+import fit from "aspect-fit";
 
 export type DimensionsRect = {
   width: number;
@@ -46,7 +48,7 @@ export const scaleToWidth = (
       typeof dimensions.y === "number"
         ? (width / dimensions.width) * dimensions.y
         : 0,
-    height: roundToNearestPixel((width / dimensions.width) * dimensions.height)
+    height: (width / dimensions.width) * dimensions.height
   };
 };
 
@@ -65,7 +67,7 @@ export const scaleToHeight = (
       typeof dimensions.y === "number"
         ? (height / dimensions.height) * dimensions.y
         : 0,
-    width: roundToNearestPixel((height / dimensions.height) * dimensions.width)
+    width: (height / dimensions.height) * dimensions.width
   };
 };
 
@@ -123,6 +125,44 @@ export function intersectRect(r1: BoundsRect, r2: BoundsRect) {
     r2.height + r2.y < r1.y
   );
 }
+
+export const scaleRectAspectFit = (
+  parent: Partial<BoundsRect>,
+  dimensions: Partial<BoundsRect>
+) => {
+  const { width, height, scale } = fit(
+    dimensions.width,
+    dimensions.height,
+    parent.width,
+    parent.height
+  );
+
+  return {
+    x: 0,
+    y: 0,
+    width,
+    height
+  };
+};
+
+export const scaleRectAspectFill = (
+  parent: Partial<BoundsRect>,
+  dimensions: Partial<BoundsRect>
+) => {
+  const { width, height, scale } = fill(
+    dimensions.width,
+    dimensions.height,
+    parent.width,
+    parent.height
+  );
+
+  return {
+    x: 0,
+    y: 0,
+    width,
+    height
+  };
+};
 
 export const scaleRectByFactor = (
   scale: number,

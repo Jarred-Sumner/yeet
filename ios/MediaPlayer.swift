@@ -632,6 +632,19 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   }
 
+  @objc(containerTag) var containerTag: NSNumber? = nil
+  var containerView : UIView? {
+    guard let tag = containerTag else {
+      return nil
+    }
+
+    guard self.bridge?.isValid ?? false else {
+      return nil
+    }
+
+    return self.bridge?.uiManager.view(forReactTag: tag)
+  }
+
   var _resizeMode: String = YeetImageView.YeetImageViewResizeMode.aspectFit.rawValue;
 
      @objc(resizeMode)

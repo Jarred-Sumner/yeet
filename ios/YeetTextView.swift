@@ -64,6 +64,7 @@ class YeetTextView: _RCTUITextView {
     super.layoutSubviews()
     drawHighlight()
     highlightSubview.isHidden = !yeetTextAttributes.showHighlight
+    adjustContentInset()
   }
 
 
@@ -197,6 +198,8 @@ class YeetTextView: _RCTUITextView {
         self.typingAttributes = self.yeetTextAttributes.effectiveTextAttributes()
         self.setNeedsLayout()
       }
+
+      adjustContentInset()
     }
 
   }
@@ -244,8 +247,6 @@ class YeetTextView: _RCTUITextView {
     yeetTextAttributes.drawHighlight(highlightLayer: highlightLayer, layout: _layoutManager, textContainer: textContainer, textLayer: layer)
   }
 
-  @objc(maxContentWidth)
-  var maxContentWidth : CGFloat = .zero
 
   override func sizeThatFits(_ size: CGSize) -> CGSize {
     guard hasText else {
@@ -258,8 +259,44 @@ class YeetTextView: _RCTUITextView {
   }
 
 
+  func fontSize(at: NSRange) -> CGFloat? {
+    guard let font = self.font else {
+      return nil
+    }
+    var _range = at
+
+    let rect = _layoutManager.lineFragmentUsedRect(forGlyphAt:_range.length + _range.location, effectiveRange: &_range)
+
+    let scaleFactor = bounds.width / rect.width
+
+    let preferredFontSize = font.pointSize * scaleFactor;
+
+    return ((font.pointSize * 0.5)...(font.pointSize)).clamp(preferredFontSize)
+  }
+
+  @objc(maxContentWidth)
+  var maxContentWidth = Double(0.0) {
+    didSet {
+      preferredMaxLayoutWidth = _maxContentWidth
+    }
+  }
+  var _maxContentWidth : CGFloat {
+    return CGFloat(maxContentWidth)
+  }
+  var isFixedSize: Bool { _maxContentWidth > .zero  }
+  
+  var lineFontSize: CGFloat? {
+    let range = NSRange(location: selectedRange.location, length: selectedRange.length - 1)
+
+    return fontSize(at: range)
+  }
+
+  var shouldVerticallyCenter : Bool {
+    return yeetTextAttributes.isSticker && (remainingLineCount > 0 || isFixedSize)
+  }
+
   func adjustContentInset() {
-    if remainingLineCount > 0 {
+    if shouldVerticallyCenter {
       let fittingSize = CGSize(width: bounds.width, height: .greatestFiniteMagnitude)
       let size = sizeThatFits(fittingSize)
       let topOffset = (bounds.size.height - size.height * zoomScale) / 2 - self.yeetTextAttributes.textRect.y
@@ -270,7 +307,6 @@ class YeetTextView: _RCTUITextView {
     }
 
   }
-
 
   
 
@@ -294,4 +330,17 @@ extension UIView {
 
       propertyAnimator.startAnimation()
   }
+
+
 }
+
+
+extension ClosedRange {
+    func clamp(_ value : Bound) -> Bound {
+        return self.lowerBound > value ? self.lowerBound
+            : self.upperBound < value ? self.upperBound
+            : value
+    }
+}
+
+

@@ -30,8 +30,9 @@ import { TransformableViewComponent } from "./TransformableView";
 import { FocusType } from "../../../lib/buildPost";
 import { ClipProvider, ClipContext } from "./ClipContext";
 import { Rectangle } from "../../../lib/Rectangle";
-import Svg, { Rect } from "react-native-svg";
+import Svg, { Rect, G } from "react-native-svg";
 import { COLORS } from "../../../lib/styles";
+import { sendSelectionFeedback } from "../../../lib/Vibration";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -48,10 +49,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
   const {
     translateX = 0,
     Component = TransformableViewComponent,
-    onLayout,
     overlayTag,
-    onTransform,
-    onTransformLayout,
     rotate = 0,
     unfocusedBottom,
     unfocusedLeft,
@@ -68,15 +66,6 @@ export const TransformableView = React.forwardRef((props, ref) => {
     rasterize,
     children
   } = props;
-
-  const { setBounds } = React.useContext(ClipContext);
-
-  const handleLayoutChange = React.useCallback(
-    ({ nativeEvent: { layout } }) => {
-      setBounds(layout);
-    },
-    [setBounds]
-  );
 
   if (!isFixedSize) {
     return (
@@ -111,7 +100,6 @@ export const TransformableView = React.forwardRef((props, ref) => {
         ref={ref}
         inputRef={inputRef}
         overlayTag={overlayTag}
-        onLayout={handleLayoutChange}
         style={[
           transformableStyles.bottomContainer,
           {
@@ -267,8 +255,7 @@ const styles = StyleSheet.create({
 
 const OverlaySheet = React.forwardRef((props, ref) => {
   const { bounds } = React.useContext(ClipContext);
-  const { visible } = props;
-  const transitionRef = React.useRef();
+  const { visible, rotate, scale } = props;
   const isInitialMount = React.useRef(true);
 
   React.useLayoutEffect(() => {
@@ -294,12 +281,6 @@ const OverlaySheet = React.forwardRef((props, ref) => {
     });
   }, [visible]);
 
-  const rect = new Rectangle(
-    bounds.x,
-    bounds.y,
-    bounds.width,
-    bounds.height
-  ).inflateFixed(2);
   const screen = new Rectangle(
     0,
     0,
@@ -307,45 +288,51 @@ const OverlaySheet = React.forwardRef((props, ref) => {
     SCREEN_DIMENSIONS.height
   );
 
-  const rects = screen.subtract(rect);
+  let boundsRect = new Rectangle(
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height
+  );
+
+  boundsRect = boundsRect.inflateFixed(2);
+
+  const rects = React.useMemo(() => {
+    if (!visible) {
+      return [];
+    }
+
+    return screen.subtract(boundsRect);
+  }, [visible, bounds, boundsRect, rotate]);
+
+  const renderRect = React.useCallback(rect => {
+    return (
+      <Rect
+        width={rect.width}
+        height={rect.height}
+        key={rect.toString()}
+        x={rect.left}
+        y={rect.top}
+        fillOpacity={0.75}
+        fill="black"
+      />
+    );
+  }, []);
+
+  if (!visible) {
+    return null;
+  }
 
   return (
-    <>
-      {visible && (
-        <View
-          pointerEvents="none"
-          ref={ref}
-          style={styles.fixedSizeOverlaySheet}
-        >
-          <Svg width={screen.width} height={screen.height}>
-            {rects.map((rect, index) => {
-              return (
-                <Rect
-                  width={rect.width}
-                  height={rect.height}
-                  x={rect.left}
-                  y={rect.top}
-                  fillOpacity={0.75}
-                  fill="black"
-                />
-              );
-            })}
-            <Rect
-              width={rect.width}
-              height={rect.height}
-              x={rect.left}
-              y={rect.top}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="black"
-              stroke={COLORS.secondaryOpacity}
-              strokeWidth={1}
-              fillOpacity={0.25}
-            />
-          </Svg>
-        </View>
-      )}
-    </>
+    <View pointerEvents="none" ref={ref} style={styles.fixedSizeOverlaySheet}>
+      <Svg
+        transform={[{ rotate: `${rotate || 0}rad` }]}
+        width={screen.width}
+        height={screen.height}
+      >
+        {rects.map(renderRect)}
+      </Svg>
+    </View>
   );
 });
 
@@ -357,19 +344,14 @@ export class MovableNode extends Component<Props> {
     super(props);
 
     const fixedSizeValue = props.isFixedSize ? 1 : 0;
+    const yLiteral = props.isFixedSize
+      ? Math.max(props.yLiteral, props.minY)
+      : props.yLiteral;
 
+    this.tapGestureState = new Animated.Value(State.UNDETERMINED);
     this.panGestureState = new Animated.Value(State.UNDETERMINED);
     this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
     this.rotationGestureState = new Animated.Value(State.UNDETERMINED);
-    this.isDoneGesturingValue = Animated.cond(
-      Animated.and(
-        Animated.eq(this.panGestureState, State.END),
-        Animated.eq(this.scaleGestureState, State.END),
-        Animated.eq(this.rotationGestureState, State.END)
-      ),
-      1,
-      0
-    );
     this.isCurrentlyGesturingValue = Animated.cond(
       Animated.or(
         Animated.eq(this.panGestureState, State.ACTIVE),
@@ -384,7 +366,7 @@ export class MovableNode extends Component<Props> {
     );
 
     this._X = new Animated.Value(props.xLiteral);
-    this._Y = new Animated.Value(props.yLiteral);
+    this._Y = new Animated.Value(yLiteral);
     this._R = new Animated.Value(props.rLiteral);
     this._Z = new Animated.Value(props.scaleLiteral);
 
@@ -429,9 +411,12 @@ export class MovableNode extends Component<Props> {
       { useNativeDriver: true }
     );
 
+    this.widthValue = new Animated.Value<number>(props.frame?.width ?? 0);
+    this.heightValue = new Animated.Value<number>(props.frame?.height ?? 0);
     this.X = Animated.round(
       preserveOffset(this._X, this.panGestureState, props.x)
     );
+
     this.Y = Animated.round(
       preserveOffset(this._Y, this.panGestureState, props.y)
     );
@@ -444,13 +429,13 @@ export class MovableNode extends Component<Props> {
     this.animatedKeyboardVisibleFocusedValue = new Animated.Value<number>(0);
     this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
-    this.heightValue = new Animated.Value(props.maxY);
     this.isFocusedValue = Animated.eq(
       this.props.focusedBlockValue,
       this.blockId
     );
 
     this.overlayOpacity = this.animatedKeyboardVisibleFocusedValue;
+    this.opacityValue = new Animated.Value(1);
 
     // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
     //   ? keyboardVisibleCond(
@@ -481,10 +466,7 @@ export class MovableNode extends Component<Props> {
 
     this.topValue = props.isFixedSize
       ? Animated.min(
-          Animated.max(
-            Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
-            props.minY
-          ),
+          Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
           props.maxY
         )
       : null;
@@ -534,7 +516,6 @@ export class MovableNode extends Component<Props> {
   panGestureState: Animated.Value<State>;
   scaleGestureState: Animated.Value<State>;
   rotationGestureState: Animated.Value<State>;
-  isDoneGesturingValue: Animated.Value<State>;
   _isMounted = true;
 
   updatePosition = coords => {
@@ -542,17 +523,38 @@ export class MovableNode extends Component<Props> {
       return;
     }
 
-    const [x, y, rotate, scale, panGestureState, absoluteX, absoluteY] = coords;
+    if (this.props.isEditing) {
+      return;
+    }
+
+    const [
+      x,
+      y,
+      rotate,
+      scale,
+      panGestureState,
+      absoluteX,
+      absoluteY,
+      snapOpacity
+    ] = coords;
+
     this.props.onChangePosition({
       x,
       y,
       scale,
-      rotate
+      rotate,
+      absoluteX,
+      absoluteY,
+      isPanning: false
     });
   };
 
-  startUpdatePosition = ([absoluteX, absoluteY]) => {
+  startUpdatePosition = ([absoluteX, absoluteY, snapOpacity]) => {
     if (!this._isMounted) {
+      return;
+    }
+
+    if (this.props.isEditing) {
       return;
     }
 
@@ -563,6 +565,7 @@ export class MovableNode extends Component<Props> {
       rotate: this.props.rLiteral,
       absoluteX,
       absoluteY,
+      snapOpacity,
       isPanning: true
     });
   };
@@ -571,23 +574,13 @@ export class MovableNode extends Component<Props> {
     console.log({ layout, from });
   };
 
-  handleTap = Animated.event(
-    [
-      {
-        nativeEvent: ({ state, oldState }) =>
-          Animated.block([
-            Animated.cond(
-              Animated.and(
-                Animated.eq(state, State.END),
-                Animated.eq(oldState, State.ACTIVE)
-              ),
-              Animated.call([], this.props.onTap)
-            )
-          ])
-      }
-    ],
-    { useNativeDriver: true }
-  );
+  _handleTap = () => {
+    if (this.props.isFixedSize) {
+      sendSelectionFeedback();
+    }
+
+    return this.props.onTap();
+  };
 
   // handleLayoutTransform = ({
   //   nativeEvent: { layout, from }
@@ -639,6 +632,20 @@ export class MovableNode extends Component<Props> {
         this.pinchRef
       ];
     }
+
+    if (
+      prevProps.frame?.width !== this.props.frame?.width &&
+      this.props.frame?.width
+    ) {
+      this.widthValue.setValue(this.props.frame.width);
+    }
+
+    if (
+      prevProps.frame?.height !== this.props.frame?.height &&
+      this.props.frame?.height
+    ) {
+      this.heightValue.setValue(this.props.frame.height);
+    }
   }
 
   rotationRef = React.createRef();
@@ -687,10 +694,15 @@ export class MovableNode extends Component<Props> {
       keyboardHeightValue,
       inputRef,
       extraPadding,
+      frame,
       isHidden,
       isEditing,
       isFixedSize
     } = this.props;
+
+    const ActivationGestureHandler = isFixedSize
+      ? LongPressGestureHandler
+      : TapGestureHandler;
 
     return (
       <>
@@ -704,31 +716,51 @@ export class MovableNode extends Component<Props> {
               )
             ),
 
-            Animated.onChange(
-              this.isDoneGesturingValue,
-              Animated.cond(
-                Animated.eq(this.isDoneGesturingValue, 1),
-                Animated.call(
-                  [
-                    this.X,
-                    this.Y,
-                    this.R,
-                    this.Z,
-                    this.panGestureState,
-                    this.absoluteX,
-                    this.absoluteY
-                  ],
-                  this.updatePosition
-                )
-              )
-            ),
+            Animated.cond(Animated.eq(this.panGestureState, State.ACTIVE), [
+              Animated.set(this.props.currentX, this._X),
+              isFixedSize
+                ? Animated.set(
+                    this.props.currentY,
+                    Animated.add(
+                      this.Y,
+                      Animated.multiply(this.heightValue, -0.5)
+                    )
+                  )
+                : Animated.set(
+                    this.props.currentY,
+                    Animated.add(
+                      this.Y,
+                      Animated.multiply(this.heightValue, -0.5)
+                    )
+                  )
+            ]),
             Animated.onChange(
               this.isCurrentlyGesturingValue,
-
-              Animated.call(
-                [this.absoluteX, this.absoluteY, this.panGestureState],
-                this.handlePanChange
-              )
+              Animated.block([
+                Animated.cond(
+                  Animated.eq(this.isCurrentlyGesturingValue, 1),
+                  Animated.block([
+                    Animated.call(
+                      [this.absoluteX, this.absoluteY, this.panGestureState],
+                      this.handlePanChange
+                    )
+                  ]),
+                  Animated.block([
+                    Animated.call(
+                      [
+                        this.X,
+                        this.Y,
+                        this.R,
+                        this.Z,
+                        this.panGestureState,
+                        this.absoluteX,
+                        this.absoluteY
+                      ],
+                      this.updatePosition
+                    )
+                  ])
+                )
+              ])
             ),
             Animated.onChange(
               this.absoluteX,
@@ -748,11 +780,13 @@ export class MovableNode extends Component<Props> {
           ])}
         />
 
-        <ClipProvider>
-          <TapGestureHandler
+        <ClipProvider value={frame}>
+          <ActivationGestureHandler
             waitFor={this.tapGestureWaitFor}
             ref={this.tapRef}
             enabled={isDragEnabled}
+            minDurationMs={isFixedSize ? 500 : undefined}
+            maxDist={isFixedSize ? 3 : undefined}
             onGestureEvent={this.handleTap}
             onHandlerStateChange={this.handleTap}
           >
@@ -780,6 +814,7 @@ export class MovableNode extends Component<Props> {
                       {isFixedSize ? (
                         <OverlaySheet
                           ref={this.overlayRef}
+                          rotate={this.props.rLiteral}
                           visible={this.props.isEditing}
                         />
                       ) : (
@@ -823,7 +858,7 @@ export class MovableNode extends Component<Props> {
                 </Animated.View>
               </PanGestureHandler>
             </Animated.View>
-          </TapGestureHandler>
+          </ActivationGestureHandler>
         </ClipProvider>
       </>
     );

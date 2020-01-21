@@ -1,15 +1,9 @@
-import * as React from "react";
-import { View, StyleSheet } from "react-native";
-import {
-  BaseButton,
-  TouchableWithoutFeedback,
-  LongPressGestureHandler,
-  TapGestureHandler,
-  State
-} from "react-native-gesture-handler";
-import { SPACING, COLORS } from "../../lib/styles";
 import chroma from "chroma-js";
-import { normalizeBackgroundColor } from "../Posts/CommentsViewer";
+import * as React from "react";
+import { StyleSheet, View } from "react-native";
+import { BaseButton } from "react-native-gesture-handler";
+import { COLORS, SPACING } from "../../lib/styles";
+import { normalizeBackgroundColor } from "../Posts/_normalizedBackgroundColor";
 
 export type ColorSwatch = {
   backgroundColor: string;

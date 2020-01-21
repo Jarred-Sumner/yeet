@@ -417,6 +417,7 @@ class RawNewPost extends React.Component<{}, State> {
   };
 
   stepContainerRef = React.createRef();
+  scrollY = new Animated.Value<number>(CAROUSEL_HEIGHT * -1);
 
   onFlingLeft = ({ nativeEvent: { state, ...other } }) => {
     if (state === GestureState.ACTIVE) {
@@ -542,15 +543,13 @@ class RawNewPost extends React.Component<{}, State> {
           }
           length={FORMATS.length}
         >
-          <Animated.View
+          <View
             pointerEvents={this.state.showGallery ? "none" : "auto"}
             style={styles.page}
           >
             <StatusBar hidden showHideTransition="slide" />
 
-            <Animated.View
-              style={[styles.transitionContainer, { backgroundColor }]}
-            >
+            <View style={[styles.transitionContainer, { backgroundColor }]}>
               <MediaPlayerPauser isHidden={this.state.showGallery}>
                 <PostEditor
                   bounds={this.state.bounds}
@@ -559,6 +558,7 @@ class RawNewPost extends React.Component<{}, State> {
                   exampleCount={this.state.exampleCount}
                   exampleIndex={this.state.exampleIndex}
                   onPressExample={this.handlePressExample}
+                  scrollY={this.scrollY}
                   ref={this.postEditor}
                   keyboardVisibleValue={this.keyboardVisibleValue}
                   keyboardHeightValue={this.keyboardHeightValue}
@@ -583,7 +583,7 @@ class RawNewPost extends React.Component<{}, State> {
                   onSubmit={this.handleSubmit}
                 />
               </MediaPlayerPauser>
-            </Animated.View>
+            </View>
 
             <PostHeader
               position={this.layoutIndexValue}
@@ -596,7 +596,7 @@ class RawNewPost extends React.Component<{}, State> {
               opacity={this.headerOpacity}
               controlsOpacityValue={this.controlsOpacityValue}
             />
-          </Animated.View>
+          </View>
         </Panner>
         {!this.state.disableGallery && (
           <GallerySheet

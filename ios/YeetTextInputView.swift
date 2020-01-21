@@ -31,6 +31,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     super.didSetProps(changedProps)
 
 
+
     let needsUpdateHighlight = changedProps.contains("borderType") || changedProps.contains("borderTypeString") || changedProps.contains("highlightInset") || changedProps.contains("highlightColor") || changedProps.contains("strokeColor") || changedProps.contains("strokeWidth") || changedProps.contains("highlightCornerRadius") ||  changedProps.contains("template") || changedProps.contains("textAlign")
 
     let forceLayout = changedProps.contains("template") || changedProps.contains("borderType") || changedProps.contains("highlightInset") || changedProps.contains("strokeWidth")
@@ -41,7 +42,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
         self.layoutIfNeeded()
       } else {
         DispatchQueue.main.async { [weak self] in
-
           self?.setNeedsLayout()
           self?.layoutIfNeeded()
 
@@ -65,11 +65,23 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   }
 
 
+  @objc(containerTag) var containerTag: NSNumber? = nil
+  var containerView : UIView? {
+    guard let tag = containerTag else {
+      return nil
+    }
+
+    guard self.bridge?.isValid ?? false else {
+      return nil
+    }
+
+    return self.bridge?.uiManager.view(forReactTag: tag)
+  }
+
+
   private var size = CGSize.zero
   override func layoutSubviews() {
     super.layoutSubviews()
-
-    textView.adjustContentInset()
   }
 
   var hasText : Bool { attributedText?.length ?? 0 > 0 }
@@ -77,8 +89,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   var textInputView : UIView {
     return self.textView.textInputView
   }
-
-  
 
   var scale: CGFloat {
     get { textView.scale }
@@ -153,7 +163,10 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
     textView = YeetTextView(frame: .zero, textContainer: container)
 
-
+    textView.contentInsetAdjustmentBehavior = .never
+    if #available(iOS 13.0, *) {
+      textView.automaticallyAdjustsScrollIndicatorInsets = false
+    }
 
     super.init(bridge: bridge)
 
@@ -162,8 +175,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     textView.frame = bounds
     textView.textInputDelegate = self
     textView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-//    textView.translatesAutoresizingMaskIntoConstraints = true
-    textView.contentInsetAdjustmentBehavior = .never
     textView.contentCompressionResistancePriority(for: .horizontal)
     textView.layoutManager.allowsNonContiguousLayout = false
 
@@ -632,14 +643,23 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   }
 
   @objc(maxContentWidth)
-  var maxContentWidth: NSNumber = NSNumber(value: 0) {
-    didSet {
-      textView.preferredMaxLayoutWidth = _maxContentWidth
+  var maxContentWidth : Double {
+    get {
+      return textView.maxContentWidth
+    }
+
+    set (newValue) {
+      textView.maxContentWidth = newValue
     }
   }
+
+
   var _maxContentWidth : CGFloat {
-    return maxContentWidth.cgFloatValue
+    return textView._maxContentWidth
   }
+
+  var isFixedSize : Bool { textView.isFixedSize }
+  
 
   var beforeEditSize: CGSize = .zero
 
@@ -655,7 +675,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     return textView.hasFillColor
   }
 
-  var isFixedSize: Bool { _maxContentWidth > .zero  }
+
   var hideYOffset = CGFloat.zero
   var isHidingKeyboard = false
 
@@ -754,6 +774,13 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return false
     }
 
+//    var typingAttributes = textView.typingAttributes
+//    if let currentFont = typingAttributes[.font] as? UIFont {
+//      if let newSize = textView.lineFontSize {
+//        typingAttributes[.font] = UIFont(descriptor: currentFont.fontDescriptor, size: newSize)
+//        textView.typingAttributes = typingAttributes
+//      }
+//    }
 
     if textView.textContainer.maximumNumberOfLines > 0 {
       let remainingLines = textView.remainingLineCount
@@ -781,6 +808,33 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
   override func textInputDidChange() {
     super.textInputDidChange()
+
+//    let layoutManager = textView.layoutManager
+//    var lineRanges: Array<NSValue> = []
+//    layoutManager.enumerateLineFragments(forGlyphRange: NSRange(location: 0, length: layoutManager.numberOfGlyphs), using: { rect, usedRect, textContainer, glyphRange, stop in
+//      lineRanges.append(NSValue(range: layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)))
+//    })
+//
+//
+//
+//    if let font = textView.font {
+//      textView.textStorage.beginEditing()
+//
+//      for valueRange in lineRanges {
+//        let lineRange = valueRange.rangeValue
+//        var _range = lineRange
+//        if let fontSize = textView.fontSize(at: lineRange) {
+//          let _font = UIFont(descriptor: font.fontDescriptor, size: fontSize)
+//          var attrs = textView.textStorage.attributes(at: lineRange.location, effectiveRange: &_range)
+//
+//          attrs[.font] = _font
+//          textView.textStorage.setAttributes(attrs, range: lineRange)
+//        }
+//      }
+//
+//      textView.textStorage.endEditing()
+//
+//    }
 
     self.textView.setNeedsLayout()
     self.setNeedsLayout()

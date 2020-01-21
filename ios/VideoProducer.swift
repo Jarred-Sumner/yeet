@@ -30,6 +30,8 @@ class VideoProducer {
     }) != nil
   }
 
+  var backgroundColor: UIColor = UIColor.black
+
   var hasAnyVideos: Bool {
     return blocks.first(where: { imageBlock in
       return imageBlock.value.image.video != nil
@@ -138,7 +140,7 @@ class VideoProducer {
     let _exportURL: URL = exportURL != nil ? exportURL! : VideoProducer.generateExportURL(type: exportType)
 
 
-    return ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale, task: task)
+    return ContentExport.export(url: _exportURL, type: exportType, estimatedBounds: estimatedBounds, duration: self.maxDuration(), resources: self.resources, isDigitalOnly: isDigital, scale: scale, task: task, backgroundColor: backgroundColor)
   }
 
 

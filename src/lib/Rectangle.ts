@@ -15,6 +15,10 @@ export class Rectangle {
     return new Rectangle(left, top, right - left, bottom - top);
   }
 
+  static fromFrame({ x, y, width, height }) {
+    return new Rectangle(x, y, width, height);
+  }
+
   get x() {
     return this.left;
   }
@@ -316,5 +320,50 @@ export class Rectangle {
     this.top -= fixed;
     this.bottom += fixed;
     return this;
+  }
+
+  get frame() {
+    return {
+      x: this.x,
+      y: this.y,
+      width: this.width,
+      height: this.height
+    };
+  }
+
+  rotate(radians) {
+    if (this.isEmpty()) {
+      return this;
+    }
+    const cx = this.center().x;
+    const cy = this.center().y;
+
+    const points = [
+      [this.left, this.top],
+      [this.right, this.bottom]
+    ];
+
+    const rotatePoint = ([x, y]) => {
+      var cos = Math.cos(radians),
+        sin = Math.sin(radians),
+        nx = cos * (x - cx) + sin * (y - cy) + cx,
+        ny = cos * (y - cy) - sin * (x - cx) + cy;
+
+      return { x: nx, y: ny };
+    };
+
+    const coords = [
+      rotatePoint(points[0]).x,
+      rotatePoint(points[0]).y,
+      rotatePoint(points[1]).x,
+      rotatePoint(points[1]).y
+    ];
+
+    return new Rectangle(this.x, this.y, this.width, this.height).setBounds(
+      coords[0],
+      coords[1],
+      coords[2],
+      coords[3]
+    );
   }
 }

@@ -2,6 +2,7 @@ import Animated, { Easing } from "react-native-reanimated";
 import { State } from "react-native-gesture-handler";
 import * as React from "react";
 import { findNodeHandle } from "react-native";
+import euclideanDistance from "euclidean-distance";
 
 const {
   Clock,
@@ -281,3 +282,16 @@ export const useAnimatedEvent = (handler, name, ref) => {
     };
   }, [handler, ref, name]);
 };
+
+export const getSnapPoints = () => {
+  return [-200, -100, -40, -11, -10, 0, 10, 11, 40, 100, 200];
+};
+
+export const snapButtonValue = Animated.proc((midX, midY, x, y, size) =>
+  Animated.sqrt(
+    Animated.add(
+      Animated.multiply(Animated.sub(midX, x), Animated.sub(midX, x)),
+      Animated.multiply(Animated.sub(midY, y), Animated.sub(midY, y))
+    )
+  )
+);

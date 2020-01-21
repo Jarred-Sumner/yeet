@@ -1,11 +1,24 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { COLORS } from "../../../lib/styles";
 import Animated from "react-native-reanimated";
-import { FocusType } from "../../../lib/buildPost";
+import { IS_SIMULATOR } from "../../../../config";
+import { snapButtonValue } from "../../../lib/animations";
+import { FocusType, POST_WIDTH } from "../../../lib/buildPost";
+import { SnapDirection, PostBlockType } from "../../../lib/enums";
+import { COLORS } from "../../../lib/styles";
+import {
+  IconCircleArrowDown,
+  IconCircleArrowLeft,
+  IconCircleArrowRight,
+  IconCircleArrowUp
+} from "../../Icon";
+import { CAROUSEL_HEIGHT } from "../NewPostFormat";
+import { BoundsRect } from "../../../lib/Rect";
+import { Rectangle } from "../../../lib/Rectangle";
+import { SnapGuides } from "./SnapGuides";
 
-const SPACING = 10;
-const backgroundColor = COLORS.secondary;
+const SPACING = 16;
+const backgroundColor = COLORS.primaryDark;
 const SIZE = 2;
 
 const styles = StyleSheet.create({
@@ -64,54 +77,54 @@ const styles = StyleSheet.create({
 });
 
 const Lines = {
-  Top: ({ opacity }) => (
+  Top: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.top, { opacity }]}
     />
-  ),
-  Bottom: ({ opacity }) => (
+  )),
+  Bottom: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.bottom, { opacity }]}
     />
-  ),
-  Left: ({ opacity }) => (
+  )),
+  Left: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.left, { opacity }]}
     />
-  ),
-  Right: ({ opacity }) => (
+  )),
+  Right: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.right, { opacity }]}
     />
-  ),
-  Center: ({ opacity }) => (
+  )),
+  Center: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.center, { opacity }]}
     />
-  ),
-  Middle: ({ opacity }) => (
+  )),
+  Middle: React.memo(({ opacity }) => (
     <View
       shouldRasterizeIOS
       renderToHardwareTextureAndroid
       pointerEvents="none"
       style={[styles.middle, { opacity }]}
     />
-  )
+  ))
 };
 
 export const MarginView = ({
@@ -119,39 +132,83 @@ export const MarginView = ({
   x,
   width,
   scale,
-  rotate,
+  rotate = 0,
+  postBottom,
+  onChangeSnapPoint,
   velocityX,
+  // absoluteX: x,
+  // absoluteY: y,
+  type,
+  snapOpacityValue,
+  frame,
   velocityY,
   contentViewRef,
+  block,
   focusType,
+  topSnapValue,
   y,
   height,
+  blocks,
+  positions,
+  snapPoint,
   bottom,
   minY = 10,
   minX = 10
+}: {
+  blocks: Array<PostBlockType>;
 }) => {
   const isVisible = focusType === FocusType.panning;
+
   return (
-    <Animated.View
-      needsOffscreenAlphaCompositing={isVisible}
-      renderToHardwareTextureAndroid={isVisible}
-      shouldRasterizeIOS={isVisible}
-      style={{
-        height: bottom,
-        width: "100%",
-        opacity: isVisible ? 0.5 : 0,
-        position: "absolute",
-        zIndex: -1
-      }}
-      pointerEvents="none"
-    >
-      <Lines.Top opacity={1} />
+    <>
+      <Animated.View
+        // needsOffscreenAlphaCompositing={isVisible}
+        // renderToHardwareTextureAndroid={isVisible}
+        // shouldRasterizeIOS={isVisible}
+        style={{
+          height: bottom,
+          width: "100%",
+          position: "absolute",
+          display: isVisible ? "flex" : "none",
+          zIndex: 99999
+        }}
+        pointerEvents="none"
+      >
+        {/* <Lines.Top opacity={1} />
       <Lines.Bottom opacity={1} />
       <Lines.Left opacity={1} />
       <Lines.Right opacity={1} />
       <Lines.Middle opacity={1} />
 
-      <Lines.Center opacity={1} />
-    </Animated.View>
+      <Lines.Center opacity={1} /> */}
+      </Animated.View>
+      {isVisible && frame && (
+        <>
+          <SnapGuides
+            blocks={blocks}
+            block={block}
+            positions={positions}
+            snapPoint={snapPoint}
+            x={x}
+            y={y}
+            onChange={onChangeSnapPoint}
+          />
+          {IS_SIMULATOR && (
+            <Animated.View
+              style={{
+                backgroundColor: "red",
+                width: 32,
+                height: 32,
+                borderRadius: 16,
+                position: "absolute",
+                top: y,
+                left: x,
+                transform: [{ translateX: -16 }, { translateY: -16 }]
+              }}
+            />
+          )}
+        </>
+      )}
+    </>
   );
 };

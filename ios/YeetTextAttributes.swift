@@ -33,7 +33,7 @@ class YeetTextAttributes : NSObject {
     if isSticker {
       return [.solid, .highlight, .ellipse, .invert].contains(border)
     } else {
-      return [.solid, .stroke].contains(border)
+      return [.solid].contains(border)
     }
   }
 

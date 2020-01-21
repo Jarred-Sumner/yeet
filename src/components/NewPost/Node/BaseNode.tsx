@@ -1,12 +1,10 @@
 import * as React from "react";
-import { View, LayoutChangeEvent } from "react-native";
 import Animated from "react-native-reanimated";
+import { isFixedSizeBlock, PostBlockType } from "../../../lib/buildPost";
+import { DimensionsRect } from "../../../lib/Rect";
 import { FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
-import { getTextBlockAlign } from "../Text/TextInput";
-import { PostBlockType, isFixedSizeBlock } from "../../../lib/buildPost";
-import { DimensionsRect } from "../../../lib/Rect";
 
 export type EditableNodeStaticPosition = {
   y: number;
@@ -104,10 +102,30 @@ export class BaseNode extends React.Component<Props> {
     });
   };
 
-  handlePan = ({ isPanning, absoluteX, absoluteY }) =>
-    this.props.onPan({ isPanning, x: absoluteX, y: absoluteY });
+  handlePan = ({ isPanning, absoluteX, absoluteY, snapOpacity }) =>
+    this.props.onPan({
+      isPanning,
+      x: absoluteX,
+      y: absoluteY,
+      snapOpacity
+    });
 
-  handleChangePosition = ({ x, y, scale, rotate }) => {
+  handleChangePosition = ({
+    x,
+    y,
+    scale,
+    rotate,
+    absoluteX,
+    absoluteY,
+    snapOpacity
+  }) => {
+    this.handlePan({
+      isPanning: false,
+      absoluteX,
+      absoluteY,
+      snapOpacity
+    });
+
     this.props.onChange({
       ...this.props.node,
       position: {
@@ -167,6 +185,7 @@ export class BaseNode extends React.Component<Props> {
       animatedKeyboardVisibleValue,
       scrollY,
       inputAccessoryView,
+      snapOpacityValue,
       keyboardHeightValue
     } = this.props;
 
@@ -197,8 +216,12 @@ export class BaseNode extends React.Component<Props> {
         blockId={block.id}
         x={position.animatedX}
         y={position.animatedY}
+        snapOpacityValue={snapOpacityValue}
         r={position.animatedRotate}
         velocityX={velocityX}
+        frame={block.frame}
+        currentX={currentX}
+        currentY={currentY}
         isPanning={isFocused && focusType === FocusType.panning}
         velocityY={velocityY}
         onTransform={onTransform}

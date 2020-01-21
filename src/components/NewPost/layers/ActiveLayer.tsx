@@ -1,14 +1,8 @@
 import * as React from "react";
-import { View, StyleSheet, Keyboard, KeyboardAvoidingView } from "react-native";
-import { Transition, Transitioning } from "react-native-reanimated";
+import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { TapGestureHandler } from "react-native-gesture-handler";
-import DefaultToolbar, {
-  ToolbarType,
-  TextToolbarButton,
-  ToolbarButton
-} from "../Toolbar";
-import { EditorFooter, DeleteFooter, EditorHeader } from "../EditorFooter";
+import { DeleteFooter, EditorFooter, EditorHeader } from "../EditorFooter";
+import DefaultToolbar, { ToolbarType } from "../Toolbar";
 
 const styles = StyleSheet.create({
   container: {
@@ -68,14 +62,6 @@ class ActiveLayerComponent extends React.Component<Props> {
     }
   }
 
-  onLayoutFooter = ({
-    nativeEvent: {
-      layout: { x, y, width, height }
-    }
-  }) => {
-    this.props.onChangeFooterHeight && this.props.onChangeFooterHeight(height);
-  };
-
   render() {
     const {
       children,
@@ -97,43 +83,9 @@ class ActiveLayerComponent extends React.Component<Props> {
           style={[styles.layer, { width, height }]}
         >
           <View pointerEvents="box-none" style={styles.container}>
-            <Transitioning.View
-              ref={this.headerContainer}
-              pointerEvents="box-none"
-              transition={
-                <Transition.Sequence>
-                  <Transition.Out type="fade" delayMs={0} durationMs={100} />
-                  <Transition.In
-                    type="fade"
-                    durationMs={100}
-                    delayMs={0}
-                    interpolation="easeIn"
-                  />
-                </Transition.Sequence>
-              }
-              style={styles.header}
-            >
-              {header}
-            </Transitioning.View>
+            <View style={styles.header}>{header}</View>
 
-            <Transitioning.View
-              ref={this.footerContainer}
-              onLayout={this.onLayoutFooter}
-              transition={
-                <Transition.Sequence>
-                  <Transition.Out type="fade" delayMs={0} durationMs={100} />
-                  <Transition.In
-                    type="fade"
-                    durationMs={100}
-                    delayMs={0}
-                    interpolation="easeIn"
-                  />
-                </Transition.Sequence>
-              }
-              style={styles.footer}
-            >
-              {footer}
-            </Transitioning.View>
+            <View style={styles.footer}>{footer}</View>
           </View>
         </View>
       </>
@@ -146,6 +98,8 @@ const Toolbar = ({ type, onPress, onBack, opacity }) => {
     return <DefaultToolbar onPress={onPress} onBack={onBack} type={type} />;
   } else if (type === ToolbarType.panning) {
     return <Animated.View pointerEvents="none" />;
+  } else {
+    return null;
   }
 };
 

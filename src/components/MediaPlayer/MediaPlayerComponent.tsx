@@ -261,6 +261,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       onError,
       resizeMode,
       isActive,
+      containerTag,
       muted,
       onPlay,
       onPause
@@ -280,6 +281,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       onError !== nextProps.onError ||
       isActive !== nextProps.isActive ||
       prefetch != nextProps.prefetch ||
+      containerTag != nextProps.containerTag ||
       resizeMode !== nextProps.resizeMode
     ) {
       return true;
@@ -311,6 +313,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       onPlay,
       onPause,
       muted,
+      containerTag,
       resizeMode,
       onError,
       onChangeItem
@@ -322,6 +325,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
         sources={clean(sources)}
         onEnd={onEnd}
         id={id}
+        containerTag={containerTag}
         nativeID={id}
         borderRadius={borderRadius}
         isActive={isActive}

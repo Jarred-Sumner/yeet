@@ -9,19 +9,15 @@ const DEFAULT_BOUNDS = {
 };
 
 export const ClipContext = React.createContext({
-  bounds: DEFAULT_BOUNDS,
-  setBounds: (bounds: BoundsRect) => null
+  bounds: DEFAULT_BOUNDS
 });
 
-export const ClipProvider = ({ children }) => {
-  const [bounds, setBounds] = React.useState(DEFAULT_BOUNDS);
-
+export const ClipProvider = ({ value: bounds, children }) => {
   const contextValue = React.useMemo(
     () => ({
-      bounds,
-      setBounds
+      bounds: bounds ?? { x: 0, y: 0, width: 0, height: 0 }
     }),
-    [bounds, setBounds]
+    [bounds]
   );
 
   return (

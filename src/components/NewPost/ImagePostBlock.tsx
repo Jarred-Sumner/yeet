@@ -1,10 +1,7 @@
-import {
-  connectActionSheet,
-  useActionSheet
-} from "@expo/react-native-action-sheet";
+import { useActionSheet } from "@expo/react-native-action-sheet";
 import assert from "assert";
 import * as React from "react";
-import { StyleProp, StyleSheet, View, findNodeHandle } from "react-native";
+import { findNodeHandle, StyleProp, StyleSheet, View } from "react-native";
 import {
   LongPressGestureHandler,
   State as GestureState,
@@ -13,22 +10,20 @@ import {
 import Animated from "react-native-reanimated";
 import {
   mediaSourcesFromImage,
-  YeetImageContainer,
-  isVideo
+  YeetImageContainer
 } from "../../lib/imageSearch";
 import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
 import { BitmapIconAddPhoto } from "../BitmapIcon";
 import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
 import MediaPlayer from "../MediaPlayer";
+import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 import {
   ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
   PostFormat,
-  presetsByFormat
+  PostLayout
 } from "./NewPostFormat";
-import { PostLayout } from "../../lib/buildPost";
-import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 // import Image from "../Image";
 
 type Props = {
@@ -66,8 +61,8 @@ const stylesByFormat = {
   [PostFormat.post]: StyleSheet.create({
     image: {},
     container: {
-      width: "100%",
-      backgroundColor: presetsByFormat[PostFormat.post].backgroundColor
+      // flex: 1
+      // backgroundColor: presetsByFormat[PostFormat.post].backgroundColor
     }
   }),
   [PostFormat.sticker]: StyleSheet.create({
@@ -87,17 +82,11 @@ const stylesByLayout = {
   }),
   [PostLayout.horizontalMediaText]: StyleSheet.create({
     image: {},
-    container: {
-      paddingHorizontal: SPACING.half,
-      paddingVertical: SPACING.half
-    }
+    container: {}
   }),
   [PostLayout.horizontalMediaText]: StyleSheet.create({
     image: {},
-    container: {
-      paddingHorizontal: SPACING.half,
-      paddingVertical: SPACING.half
-    }
+    container: {}
   })
 };
 
@@ -105,6 +94,7 @@ const MediaComponent = ({
   source,
   dimensions,
   playDuration,
+  containerTag,
   borderRadius,
   usePreview,
   playerRef,
@@ -135,6 +125,7 @@ const MediaComponent = ({
     <MediaPlayer
       {...otherProps}
       paused={false}
+      containerTag={containerTag}
       autoPlay
       id={id}
       borderRadius={borderRadius}
@@ -150,6 +141,7 @@ const LibraryImage = ({
   block,
   usePreview,
   playerRef,
+  containerTag,
   scale = 1.0
 }: {
   block: ImagePostBlockType;
@@ -163,6 +155,7 @@ const LibraryImage = ({
       id={block.id}
       layout={block.layout}
       dimensions={block.config.dimensions}
+      containerTag={containerTag}
       usePreview={usePreview}
       style={[
         stylesByFormat[block.format].image,
@@ -292,6 +285,20 @@ class RawImagePostBlock extends React.Component<Props> {
     this.imageRef.current = mediaPlayer;
   };
 
+  componentDidMount() {
+    if (this.containerRef.current) {
+      this.containerTag = findNodeHandle(this.containerRef.current);
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.block !== this.props.block) {
+      if (this.containerRef.current) {
+        this.containerTag = findNodeHandle(this.containerRef.current);
+      }
+    }
+  }
+
   imageRef = React.createRef<MediaPlayerComponent>();
   containerRef = React.createRef<View>();
 
@@ -329,8 +336,9 @@ class RawImagePostBlock extends React.Component<Props> {
           ref={this.props.gestureRef}
           onHandlerStateChange={this.handleLongPress}
         >
-          <View
+          <Animated.View
             ref={this.containerRef}
+            onLayout={onLayout}
             style={[
               styles.container,
               stylesByFormat[block.format].container,
@@ -345,11 +353,12 @@ class RawImagePostBlock extends React.Component<Props> {
               block={block}
               playerRef={this.updateImageRef}
               usePreview={usePreview}
+              containerTag={this.containerTag}
               scale={scale}
             />
 
             {this.props.children}
-          </View>
+          </Animated.View>
         </LongPressGestureHandler>
       );
     } else {

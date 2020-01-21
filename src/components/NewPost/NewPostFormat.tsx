@@ -7,25 +7,27 @@ export {
   buildPost,
   buildTextBlock,
   buildImageBlock,
-  ChangeBlockFunction,
-  DEFAULT_FORMAT,
-  DEFAULT_POST_FORMAT,
-  DEFAULT_TEXT_BACKGROUND_COLOR,
-  DEFAULT_TEXT_BORDER_BY_TEMPLATE,
-  DEFAULT_TEXT_COLOR,
   FocusType,
   generateBlockId,
-  ImagePostBlock,
   isPlaceholderImageBlock,
   MAX_POST_HEIGHT,
   minImageWidthByFormat,
+  DEFAULT_TEXT_BORDER_BY_TEMPLATE,
+  POST_WIDTH,
+  presetsByFormat
+} from "../../lib/buildPost";
+export {
+  TextBorderType,
+  TextPostBlock,
+  TextTemplate,
   NewPostType,
   PostBlockType,
   PostFormat,
   PostLayout,
-  POST_WIDTH,
-  presetsByFormat,
-  TextBorderType,
-  TextPostBlock,
-  TextTemplate
-} from "../../lib/buildPost";
+  ChangeBlockFunction,
+  DEFAULT_FORMAT,
+  DEFAULT_POST_FORMAT,
+  DEFAULT_TEXT_BACKGROUND_COLOR,
+  DEFAULT_TEXT_COLOR,
+  ImagePostBlock
+} from "../../lib/enums";

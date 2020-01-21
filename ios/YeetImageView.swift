@@ -82,6 +82,7 @@ class YeetImageView : PINAnimatedImageView {
     request.deliveryMode = .opportunistic
 
 
+
     let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
 
 

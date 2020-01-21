@@ -225,7 +225,6 @@ const TextInput = createReactClass({
   },
 
   componentWillUnmount() {
-    console.log("UNmoUNT");
     this._focusSubscription && this._focusSubscription.remove();
     if (this.isFocused()) {
       this.blur();

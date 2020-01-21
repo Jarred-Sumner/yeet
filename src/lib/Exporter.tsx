@@ -1,58 +1,44 @@
-import {
-  NativeModules,
-  findNodeHandle,
-  View,
-  ScrollView,
-  UIManager,
-  Image,
-  PixelRatio,
-  Alert
-} from "react-native";
-import { isEmpty, isArray, flatten, uniq } from "lodash";
-import rnTextSize, {
-  TSFontSpecs,
-  TSMeasureParams
-} from "react-native-text-size";
-
-import {
-  YeetImageRect,
-  ImageSourceType,
-  YeetImageContainer,
-  ImageMimeType,
-  isVideo,
-  imageContainerFromMediaSource
-} from "./imageSearch";
-import {
-  PostBlockType,
-  PostFormat,
-  buildImageBlock,
-  buildTextBlock,
-  TextTemplate,
-  PostLayout,
-  POST_WIDTH,
-  CAROUSEL_HEIGHT
-} from "../components/NewPost/NewPostFormat";
-import {
-  EditableNodeStaticPosition,
-  EditableNode,
-  EditableNodeMap,
-  buildEditableNode
-} from "../components/NewPost/Node/BaseNode";
-import Bluebird from "bluebird";
-import { BoundsRect, scaleRectByFactor } from "./Rect";
-import { fromPairs } from "lodash";
 import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
-import { FONT_STYLES } from "./fonts";
-import { IS_DEVELOPMENT } from "../../config";
+import Bluebird from "bluebird";
+import { flatten, fromPairs, isArray, isEmpty, uniq } from "lodash";
+import { findNodeHandle, NativeModules, UIManager, View } from "react-native";
+import chroma from "chroma-js";
 import {
+  buildImageBlock,
+  buildTextBlock,
+  PostBlockType,
+  PostFormat,
+  PostLayout,
+  POST_WIDTH,
+  TextTemplate
+} from "../components/NewPost/NewPostFormat";
+import {
+  buildEditableNode,
+  EditableNode,
+  EditableNodeMap,
+  EditableNodeStaticPosition
+} from "../components/NewPost/Node/BaseNode";
+import {
+  ExampleMap,
   getDefaultBorder,
   getDefaultTemplate,
-  ExampleMap,
   isFixedSizeBlock
 } from "./buildPost";
+import {
+  ImageMimeType,
+  ImageSourceType,
+  isVideo,
+  YeetImageContainer,
+  YeetImageRect
+} from "./imageSearch";
+import { BoundsRect, scaleRectByFactor } from "./Rect";
 
 const { YeetExporter } = NativeModules;
+
+const rgbColorArray = (colors: Array<number>) => {
+  return [colors[0] / 255, colors[1] / 255, colors[2] / 255, colors[3]];
+};
 
 export type ContentExport = {
   uri: string;
@@ -224,7 +210,8 @@ export const startExport = async (
   nodeRefs: Map<string, React.RefObject<View>>,
   isServerOnly: boolean,
   minX: number,
-  minY: number
+  minY: number,
+  backgroundColor: string
 ): Promise<[ContentExport, ExportData]> => {
   let hasLongVideo = false;
   const trace = await perf().startTrace("YeetExporter_startExport");
@@ -334,6 +321,7 @@ export const startExport = async (
   const data: ExportData = {
     blocks: flatten(blocks).filter(Boolean),
     nodes: nodes.filter(Boolean),
+    backgroundColor: rgbColorArray(chroma(backgroundColor).rgba(true)),
     bounds: {
       ...(await getEstimatedBounds(ref.current)),
       x: minX,
@@ -445,7 +433,10 @@ const sanitizeOverrides = (_overrides, scaleFactor) => {
   };
 
   if (typeof overrides.maxWidth === "number") {
-    overrides.maxWidth = overrides.maxWidth * scaleFactor;
+    overrides.maxWidth = Math.min(
+      Math.max(overrides.maxWidth * scaleFactor, 0),
+      POST_WIDTH
+    );
   }
 
   return overrides;
@@ -616,8 +607,11 @@ const convertExportedNode = async (
     );
   }
 
-  if (isFixedSize && x + maxWidth + xPadding > size.width) {
-    x = size.width - maxWidth - xPadding;
+  if (isFixedSize && x + maxWidth > size.width) {
+    if (maxWidth * 0.75 >= size.width) {
+      block.config.overrides.maxWidth = size.width - xPadding * 2;
+      x = 0;
+    }
   }
 
   return [

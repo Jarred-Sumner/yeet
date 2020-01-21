@@ -1,65 +1,40 @@
 import euclideanDistance from "euclidean-distance";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
+import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { interpolateColor } from "react-native-redash";
 import { SafeAreaContext } from "react-native-safe-area-context";
-import chroma from "chroma-js";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { getTextBlockAlign } from "../../lib/buildPost";
 import { COLORS, SPACING } from "../../lib/styles";
 import { BitmapIconNext } from "../BitmapIcon";
 import { IconButton } from "../Button";
-import ColorSlider from "../ColorSlider";
 import {
-  IconClose,
+  IconDice,
+  IconDie1,
+  IconDie2,
+  IconDie4,
+  IconDie5,
+  IconDie6,
   IconJustifyCenter,
   IconJustifyLeft,
   IconJustifyRight,
   IconText,
-  IconTrash,
-  IconDie1,
-  IconDie2,
-  IconDie3,
-  IconDie4,
-  IconDice,
-  IconDie5,
-  IconDie6
+  IconTrash
 } from "../Icon";
-import {
-  CAROUSEL_HEIGHT,
-  FocusType,
-  PostFormat,
-  TextBorderType,
-  TextTemplate
-} from "./NewPostFormat";
+import { SemiBoldText } from "../Text";
+import { CAROUSEL_HEIGHT, TextBorderType, TextTemplate } from "./NewPostFormat";
 import { CAROUSEL_BACKGROUND } from "./PostHeader";
 import {
-  getDenormalizedBackgroundColor,
-  getTextBlockAlign,
-  getTextBlockBackgroundColor,
+  isTextBlockAlignEnabled,
   getTextBlockColor,
-  getDenormalizedColor,
-  getBorderType,
-  getSupportedBorderTypes,
   contrastingColor,
-  isTextBlockAlignEnabled
-} from "./Text/TextInput";
+  getTextBlockBackgroundColor,
+  getBorderType,
+  getSupportedBorderTypes
+} from "./Text/TextBlockUtils";
+
 import { ToolbarType } from "./Toolbar";
-import {
-  invertColor,
-  isTooDark,
-  getDarkColor,
-  isTooLight,
-  getLightColor,
-  isColorLight,
-  isColorDark,
-  isColorNeutral,
-  getNeutralColor,
-  getStrokeColor
-} from "../../lib/colors";
-import TextInput from "./Text/CustomTextInputComponent";
-import { BoldText, SemiBoldText } from "../Text";
-import { BaseButton, BorderlessButton } from "react-native-gesture-handler";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -137,6 +112,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal,
     flexDirection: "row",
     paddingBottom: SPACING.normal
+  },
+  deleteFooter: {
+    justifyContent: "space-between",
+    width: "100%",
+    overflow: "visible",
+    flexDirection: "row",
+    paddingRight: SPACING.normal
+  },
+  deleteFooterContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    width: "100%",
+    paddingBottom: BOTTOM_Y,
+    height: FOOTER_HEIGHT
   },
   container: {
     // shadowRadius: StyleSheet.hairlineWidth,
@@ -437,6 +428,7 @@ export const EditorHeader = ({
   panX,
   panY,
   focusedBlock: block,
+  onDelete,
   height,
   onPress,
   onChangeBorderType,
@@ -458,7 +450,7 @@ export const EditorHeader = ({
       />
     );
   } else {
-    return <Animated.View />;
+    return null;
   }
 };
 
@@ -538,7 +530,7 @@ export const EditorFooter = ({
   );
 };
 
-const DELETE_SIZE = 26;
+const DELETE_SIZE = 36;
 const MID_Y_DELETE_BUTTON =
   SCREEN_DIMENSIONS.height - BOTTOM_Y - (DELETE_SIZE * 1.25) / 2;
 const MID_X_DELETE_BUTTON = SCREEN_DIMENSIONS.width / 2;
@@ -574,71 +566,20 @@ export const isDeletePressed = (x: number, y: number) => {
 export const DeleteFooter = ({ onDelete, panY, panX }) => {
   const distance = React.useRef(new Animated.Value(0));
 
-  const opacity = React.useRef(
-    Animated.interpolate(
-      distance.current,
-
-      {
-        inputRange: DELETE_RANGE,
-        outputRange: [1, 1, 0.95, 0.5]
-      }
-    )
-  );
-
   const scaleTransform = React.useRef(
     Animated.interpolate(
       distance.current,
 
       {
         inputRange: DELETE_RANGE,
-        outputRange: [1.01, 1.0, 0.97, 0.95]
+        outputRange: [1.15, 1.0, 0.9, 0.8],
+        extrapolate: Animated.Extrapolate.CLAMP
       }
     )
   );
 
-  const backgroundColor = React.useRef(
-    interpolateColor(
-      distance.current,
-      {
-        inputRange: DELETE_RANGE,
-        outputRange: [
-          {
-            r: 120,
-            g: 120,
-            b: 120
-          },
-          {
-            r: 75,
-            g: 75,
-            b: 75
-          },
-          {
-            r: 50,
-            g: 50,
-            b: 50
-          },
-          {
-            r: 0,
-            g: 0,
-            b: 0
-          }
-        ]
-      },
-      "rgb"
-    )
-  );
-
   return (
-    <View
-      pointerEvents="none"
-      style={[
-        styles.wrapper,
-        styles.container,
-        styles.footer,
-        styles.footerContainer,
-        styles.footerCenter
-      ]}
-    >
+    <View pointerEvents="none" style={styles.deleteFooter}>
       <Animated.Code
         exec={Animated.block([
           Animated.set(
@@ -658,28 +599,14 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
           )
         ])}
       />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.footerSide,
-          {
-            alignItems: "center",
-            justifyContent: "center",
-            alignSelf: "center",
-            width: "100%"
-          }
-        ]}
-      >
+      <View pointerEvents="none" style={styles.deleteFooterContent}>
         <IconButton
           onPress={onDelete}
           Icon={IconTrash}
           color="#fff"
+          type="shadow"
           size={DELETE_SIZE}
-          backgroundColor={backgroundColor.current}
-          opacity={opacity.current}
           transform={[{ scale: scaleTransform.current }]}
-          borderColor="#fff"
-          type="fill"
         />
       </View>
     </View>

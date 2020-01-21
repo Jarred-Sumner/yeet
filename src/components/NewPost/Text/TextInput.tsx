@@ -11,45 +11,43 @@ import {
   View
 } from "react-native";
 import { SCREEN_DIMENSIONS } from "../../../../config";
-import { isFixedSizeBlock, POST_WIDTH } from "../../../lib/buildPost";
-import { getStrokeColor, isColorDark } from "../../../lib/colors";
-import { FONT_STYLES } from "../../../lib/fonts";
-import { COLORS, SPACING } from "../../../lib/styles";
-import {
-  CurrentUserCommentAvatar,
-  TextCommentAvatar
-} from "../../Posts/CommentsViewer";
+import { useAnimatedEvent } from "../../../lib/animations";
 import {
   FocusType,
+  getTextBlockAlign,
+  isFixedSizeBlock,
+  POST_WIDTH
+} from "../../../lib/buildPost";
+import { getStrokeColor, isColorDark } from "../../../lib/colors";
+import {
   PostFormat,
   PostLayout,
   TextBorderType,
   TextPostBlock,
   TextTemplate
-} from "../NewPostFormat";
+} from "../../../lib/enums";
+import { FONT_STYLES } from "../../../lib/fonts";
+import { COLORS, SPACING } from "../../../lib/styles";
+import { IconLock } from "../../Icon";
+import {
+  CurrentUserCommentAvatar,
+  TextCommentAvatar
+} from "../../Posts/CommentAvatar";
+import { SemiBoldText } from "../../Text";
 import { TextInput as __RNTextInput } from "./CustomTextInputComponent";
 import { textInputPresets } from "./Presets";
 import { SpeechBubble } from "./SpeechBubble";
-import useKeyboard from "@rnhooks/keyboard";
-import { useAnimatedEvent } from "../../../lib/animations";
-import YeetView from "./YeetView";
-import { IconLock } from "../../Icon";
-import { SemiBoldText } from "../../Text";
+import {
+  contrastingColor,
+  getBorderType,
+  getFontSize,
+  getHighlightInset,
+  getStrokeWidth,
+  getTextBlockBackgroundColor,
+  getTextBlockColor
+} from "./TextBlockUtils";
 
 const RNTextInput = __RNTextInput;
-
-// const RNTextInput = createNativeWrapper(, {
-//   disallowInterruption: true,
-//   shouldCancelWhenOutside: true
-// });
-
-export const contrastingColor = memoize((color: string) => {
-  if (isColorDark(color)) {
-    return "#fff";
-  } else {
-    return "#333";
-  }
-});
 
 const getPlaceholderColor = memoize((color: string) =>
   chroma(color)
@@ -87,7 +85,7 @@ const getTextShadow = (
     };
   }
 
-  const presets = textInputPresets[template];
+  const presets = textInputPresets[template].presets;
 
   let textShadowOffset = presets.textShadowOffset ?? {
     width: 0,
@@ -352,19 +350,30 @@ const styles = StyleSheet.create({
     // flex: 1
     // textAlign: "left"
   },
-  // fixedWidthBorder: {
-  //   borderWidth: 2,
-  //   borderRadius: 1,
-  //   borderColor: COLORS.secondaryOpacity,
-  //   borderStyle: "solid",
-  //   margin: -2,
-  //   position: "absolute",
-  //   zIndex: -1,
-  //   top: -2,
-  //   bottom: -2,
-  //   left: -2,
-  //   right: -2
-  // },
+  fixedWidthFocused: {
+    borderWidth: 1,
+    borderRadius: 1,
+    borderColor: COLORS.secondaryOpacity,
+    borderStyle: "solid",
+    margin: -1,
+    position: "absolute",
+    backgroundColor: "rgba(0, 0, 0, 0.1)",
+    zIndex: -1,
+    top: -1,
+    bottom: -1,
+    left: -1,
+    right: -1
+  },
+  fixedWidthPanning: {
+    backgroundColor: COLORS.secondary,
+    position: "absolute",
+    zIndex: -1,
+    top: -1,
+    bottom: -1,
+    left: -1,
+    right: -1,
+    opacity: 0.25
+  },
   fixedWidthTop: {
     width: "100%",
     flexDirection: "row",
@@ -412,195 +421,6 @@ const formatStylesheets = {
   })
 };
 
-export const getDenormalizedColor = (block: TextPostBlock) => {
-  const { template, overrides = {} } = block.config;
-
-  return (
-    overrides?.color ||
-    overrides?.textColor ||
-    textInputPresets[block.config.template].presets.color
-  );
-};
-
-export const getDenormalizedBackgroundColor = (block: TextPostBlock) => {
-  const { template, overrides = {} } = block.config;
-
-  return (
-    overrides?.backgroundColor ||
-    textInputPresets[block.config.template].presets.backgroundColor
-  );
-};
-
-export const getTextBlockColor = (block: TextPostBlock) => {
-  if (!block || block.type !== "text") {
-    return;
-  }
-
-  const { border } = block.config;
-
-  let color = getDenormalizedColor(block);
-  let backgroundColor = getDenormalizedBackgroundColor(block);
-
-  if (border === TextBorderType.invert) {
-    return backgroundColor;
-  } else {
-    return color;
-  }
-};
-
-export const getTextBlockBackgroundColor = (block: TextPostBlock) => {
-  const { template, overrides = {}, border } = block.config;
-
-  let color = getDenormalizedColor(block);
-
-  let backgroundColor = getDenormalizedBackgroundColor(block);
-
-  if (block.format === PostFormat.comment) {
-    return backgroundColor;
-  }
-
-  if (border === TextBorderType.hidden && template !== TextTemplate.post) {
-    return "rgba(0, 0, 0, 0)";
-  } else if (border === TextBorderType.invert) {
-    return color;
-  } else {
-    return backgroundColor;
-  }
-};
-
-export const getBorderType = (block: TextPostBlock): TextBorderType => {
-  const { template, overrides = {}, border } = block.config;
-
-  if (template === TextTemplate.comic) {
-    if (border === TextBorderType.invert) {
-      return border;
-    } else {
-      return TextBorderType.solid;
-    }
-  } else if (template === TextTemplate.bigWords) {
-    return TextBorderType.stroke;
-  } else {
-    return border;
-  }
-};
-
-export const getSupportedBorderTypes = (
-  block: TextPostBlock
-): Array<TextBorderType> => {
-  if (block.format === PostFormat.post) {
-    return [TextBorderType.hidden, TextBorderType.invert];
-  } else if (block.config.template === TextTemplate.bigWords) {
-    return [TextBorderType.highlight];
-  } else {
-    return [
-      TextBorderType.invert,
-      TextBorderType.highlight,
-
-      TextBorderType.hidden,
-      TextBorderType.stroke
-    ];
-  }
-};
-
-export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
-  if (block.type === "image") {
-    return "left";
-  }
-
-  const { template, overrides = {}, border } = block.config;
-
-  if (template === TextTemplate.bigWords || template === TextTemplate.comic) {
-    return "center";
-  }
-
-  return (
-    overrides?.textAlign ||
-    textInputPresets[block.config.template].textAlign ||
-    {
-      [PostFormat.post]: "left",
-      [PostFormat.sticker]: "center",
-      [PostFormat.comment]: "left"
-    }[block.format]
-  );
-};
-
-export const isTextBlockAlignEnabled = (block: TextPostBlock): boolean => {
-  if (block?.type !== "text") {
-    return false;
-  }
-
-  const { template, overrides = {}, border } = block.config;
-
-  if (template === TextTemplate.bigWords || template === TextTemplate.comic) {
-    return false;
-  }
-
-  return true;
-};
-
-const getStrokeWidth = (block: TextPostBlock) => {
-  const border = getBorderType(block);
-  const { template } = block.config;
-  const presets = textInputPresets[template].presets;
-
-  if (template === TextTemplate.bigWords) {
-    return 5;
-  } else if (border === TextBorderType.stroke) {
-    return 3;
-  } else if (template === TextTemplate.comic) {
-    return PixelRatio.get();
-  } else {
-    return 0;
-  }
-};
-
-const getFontSize = (block: TextPostBlock) => {
-  const { fontSize } = block.config.overrides;
-
-  if (typeof fontSize === "number") {
-    return fontSize;
-  }
-
-  const { template } = block.config;
-
-  const fontSizes = textInputPresets[template].fontSizes;
-  const _borderType = getBorderType(block);
-
-  const size = getClosestNumber(
-    block.value?.length ?? 0,
-    Object.values(fontSizes)
-  );
-
-  if (
-    _borderType === TextBorderType.stroke &&
-    template !== TextTemplate.bigWords
-  ) {
-    return size * 1.25;
-  } else {
-    return size;
-  }
-};
-
-export const getHighlightInset = (block: TextPostBlock) => {
-  const border = getBorderType(block);
-  const { template } = block.config;
-
-  const presets = textInputPresets[template].presets;
-
-  if (block.format === PostFormat.post) {
-    return 0;
-  }
-
-  return border === TextBorderType.stroke ? -3.0 : presets.highlightInset ?? 0;
-};
-
-const getClosestNumber = (goal, counts) =>
-  counts.find(count => {
-    if (goal - Number(count) <= 0) {
-      return true;
-    }
-  }) || counts[counts.length - 1];
-
 type Props = {
   block: TextPostBlock;
   onChangeValue: (value: string) => void;
@@ -625,6 +445,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     onFinishEditing,
     onChangeValue,
     isSticker,
+    containerTag,
     paddingTop,
     onTapAvatar,
     text,
@@ -632,6 +453,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     maxX = SCREEN_DIMENSIONS.width,
     onFocus,
     block,
+    columnCount,
     gestureRef,
     TextInputComponent = RNTextInput
   } = props;
@@ -724,25 +546,24 @@ export const TextInput = React.forwardRef((props, ref) => {
   let containerWidth = undefined;
   let containerHeight = undefined;
 
-  // if (focusType === FocusType.absolute && isFocused && !isFixedSize) {
-  // } else if (format === PostFormat.post) {
-  //   if (
-  //     [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
-  //       layout
-  //     )
-  //   ) {
-  //     width = "50%";
-  //   } else if (
-  //     [PostLayout.verticalTextMedia, PostLayout.verticalMediaText].includes(
-  //       layout
-  //     )
-  //   ) {
-  //     width = "100%";
-  //   }
-  // } else if (isSticker && !isFocused && !isFixedSize) {
-  //   // width = contentSize.width;
-  //   // height = contentSize.height;
-  // }
+  if (format === PostFormat.post) {
+    if (
+      [PostLayout.horizontalTextMedia, PostLayout.horizontalMediaText].includes(
+        layout
+      ) ||
+      columnCount > 1
+    ) {
+      width = "100%";
+      height = "100%";
+    } else if (
+      [PostLayout.verticalTextMedia, PostLayout.verticalMediaText].includes(
+        layout
+      )
+    ) {
+      width = "100%";
+      height = "100%";
+    }
+  }
 
   let backgroundColor = getTextBlockBackgroundColor(block);
   let color = getTextBlockColor(block);
@@ -779,9 +600,10 @@ export const TextInput = React.forwardRef((props, ref) => {
       formatStylesheets[format].container,
       !isSticker && {
         height,
-        width
-      }
-      // format === PostFormat.post && !isSticker && { backgroundColor }
+        width,
+        flex: 1
+      },
+      format === PostFormat.post && !isSticker && { backgroundColor }
     ],
     [
       template,
@@ -808,10 +630,10 @@ export const TextInput = React.forwardRef((props, ref) => {
       {
         minHeight,
         backgroundColor: "transparent",
-        marginLeft: Math.abs(highlightInset),
-        marginRight: Math.abs(highlightInset),
-        marginTop: Math.abs(highlightInset),
-        marginBottom: Math.abs(highlightInset),
+        // marginLeft: Math.abs(highlightInset),
+        // marginRight: Math.abs(highlightInset),
+        // marginTop: Math.abs(highlightInset),
+        // marginBottom: Math.abs(highlightInset),
 
         // letterSpacing: border === TextBorderType.stroke ? 0.5 : undefined,
 
@@ -880,6 +702,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         style={inputStyles}
         format={format}
         multiline
+        containerTag={containerTag}
         scrollEnabled={false}
         singleFocus
         stickerContainerTag={stickerTag}
@@ -946,8 +769,12 @@ export const TextInput = React.forwardRef((props, ref) => {
         nativeID="stickerContainer"
         ref={stickerRef}
       >
+        {isFocused && isSticker && focusType === FocusType.panning && (
+          <View pointerEvents="none" style={styles.fixedWidthPanning} />
+        )}
         {isKeyboardFocused && isFixedSize && (
           <>
+            <View pointerEvents="none" style={styles.fixedWidthFocused} />
             <View pointerEvents="none" style={styles.fixedWidthTop}>
               <IconLock size={12} color={"white"} />
               <SemiBoldText style={styles.widthLockLabel}>Width</SemiBoldText>

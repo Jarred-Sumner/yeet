@@ -202,8 +202,6 @@ export class MediaUpload {
       this.uploadProgress = progress;
 
       this.onProgress();
-    } else {
-      debugger;
     }
   };
   handleCancel = () => {

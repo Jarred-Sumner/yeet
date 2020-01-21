@@ -40,8 +40,9 @@ class MovableView: UIView, RCTUIManagerObserver {
       }
     }
   }
+  
 
-  @objc(onTransformLayout) var onTransformLayout: RCTDirectEventBlock? = nil
+  @objc(yeetTransformLayout) var yeetTransformLayout: RCTDirectEventBlock? = nil
 
   var didAutoAnimate = false
 
@@ -49,6 +50,7 @@ class MovableView: UIView, RCTUIManagerObserver {
   override func reactSetFrame(_ frame: CGRect) {
     if textInput?.isFixedSize ?? false {
       super.reactSetFrame(frame)
+      sendTransformEvent()
       return
     }
 
@@ -76,6 +78,8 @@ class MovableView: UIView, RCTUIManagerObserver {
         } else if isHidingKeyboard {
           self?.overlayView?.layer.opacity = 0.0
         }
+
+        self?.sendTransformEvent()
       }
 
       incrementReadyCount()
@@ -92,11 +96,13 @@ class MovableView: UIView, RCTUIManagerObserver {
 
       animator?.addCompletion { [weak self] _ in
         self?.overlayView?.layer.opacity = 1.0
+        self?.sendTransformEvent()
       }
 
       incrementReadyCount()
     } else {
       super.yeetReactSetFrame(frame)
+      self.sendTransformEvent()
     }
   }
 
@@ -217,14 +223,34 @@ class MovableView: UIView, RCTUIManagerObserver {
             self?.layer.transform = newValue
             self?.updateContentScale()
           }
+
+          self?._sendTransformEvent()
         }
 
         incrementReadyCount()
       } else {
-
         setTransformValue(newValue)
+        self.sendTransformEvent()
       }
     }
+  }
+
+
+
+  func sendTransformEvent() {
+    DispatchQueue.main.debounce(interval: 0.25) { [weak self] in
+      self?._sendTransformEvent()
+    }
+  }
+
+
+
+  func _sendTransformEvent() {
+    guard let yeetTransformLayout = self.yeetTransformLayout else {
+      return
+    }
+
+
   }
 
   func setTransformValue(_ newValue: CATransform3D) {
@@ -397,28 +423,20 @@ class MovableView: UIView, RCTUIManagerObserver {
   }
 
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-    var frame = self.bounds
-    var _point = point
-    let scale = max(self.layer.affineTransform().scaleX, self.layer.affineTransform().scaleY)
+    let superValue = super.hitTest(point, with: event)
 
-    if let textInput = self.textInput {
-      if textInput.textView.isFirstResponder {
-        return super.hitTest(point, with: event)
-      } else if textInput.pointerEvents == .none {
-        return nil
-      } else {
-//        frame = textInput.textRect.inset(by: textInput.textInset)
-//        _point = self.convert(point, to: textInput.textView)
-      }
+    guard let textInput = self.textInput else {
+     return superValue
     }
 
-
-    if scale > 1.25 {
-      frame = frame.insetBy(dx: -5, dy: -5)
+    if textInput.textView.isFirstResponder {
+      return superValue
+    } else if textInput.pointerEvents == .none {
+      return nil
     } else {
-      frame = frame.insetBy(dx: -10, dy: -10)
+      return superValue
+
     }
 
-     return frame.contains(_point) ? self : nil;
    }
 }

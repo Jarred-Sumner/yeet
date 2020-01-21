@@ -142,7 +142,6 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
   }
 
   getScrollResponder = () => {
-    console.log(this._rnkasv_keyboardView?.getScrollResponder());
     return this._rnkasv_keyboardView?.getScrollResponder();
   };
 
@@ -249,7 +248,9 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
                 const textInputBottomPosition = y + height;
                 const keyboardPosition = frames.endCoordinates.screenY;
                 const totalExtraHeight =
-                  this.props.extraScrollHeight + this.props.extraHeight;
+                  this.props.extraScrollHeight +
+                  this.props.extraHeight -
+                  this.props.paddingTop;
                 if (Platform.OS === "ios") {
                   if (
                     textInputBottomPosition >
@@ -446,10 +447,10 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
               Animated.set(this.props.scrollX, this.contentOffsetXValue),
 
             this.props.topInsetValue &&
-              Animated.set(this.props.topInsetValue, this.contentInsetValue),
-            Animated.onChange(this.contentOffsetYValue, [
-              Animated.call([this.contentOffsetYValue], this._handleOnScroll)
-            ])
+              Animated.set(this.props.topInsetValue, this.contentInsetValue)
+            // Animated.onChange(this.contentOffsetYValue, [
+            //   Animated.call([this.contentOffsetYValue], this._handleOnScroll)
+            // ])
           ])}
         />
       </>

@@ -11,7 +11,7 @@ import Animated from "react-native-reanimated";
 import Carousel from "react-native-snap-carousel";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
-import { sendLightFeedback } from "../../lib/Vibration";
+import { sendLightFeedback, sendSelectionFeedback } from "../../lib/Vibration";
 import {
   BitmapIconFormatHorizontalMediaMedia,
   BitmapIconFormatHorizontalMediaText,
@@ -217,7 +217,7 @@ export class FormatPicker extends React.PureComponent {
   };
 
   handleSnap = index => {
-    sendLightFeedback();
+    sendSelectionFeedback();
     this.props.onChangeLayout(FORMATS[index].value);
   };
   keyExtractor = item => item.value;

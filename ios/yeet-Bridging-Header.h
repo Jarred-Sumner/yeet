@@ -156,8 +156,7 @@ RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedBottom, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedLeft, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(yeetContentSizeChange, RCTDirectEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onTransform, RCTDirectEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(onTransformLayout, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(yeetTransformLayout, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(overlayTag, NSNumber);
 RCT_REMAP_VIEW_PROPERTY(transform, yeetTransform, CATransform3D);
 //RCT_CUSTOM_VIEW_PROPERTY(transform, CATransform3D, MovableView) {
@@ -177,6 +176,7 @@ RCT_EXPORT_VIEW_PROPERTY(isSelectable, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(willAutoFocus, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
 
 RCT_REMAP_VIEW_PROPERTY(autoCapitalize, backedTextInputView.autocapitalizationType, UITextAutocapitalizationType)
 RCT_REMAP_VIEW_PROPERTY(autoCorrect, backedTextInputView.autocorrectionType, UITextAutocorrectionType)
@@ -238,7 +238,7 @@ RCT_CUSTOM_SHADOW_PROPERTY(strokeColor, UIColor, YeetTextInputShadowView) {
 
 RCT_REMAP_VIEW_PROPERTY(highlightColor, textView.highlightColor, UIColor)
 
-RCT_REMAP_VIEW_PROPERTY(maxContentWidth, textView.maxContentWidth, CGFloat);
+RCT_REMAP_VIEW_PROPERTY(maxContentWidth, textView.maxContentWidth, double);
 
 RCT_EXPORT_VIEW_PROPERTY(secureTextEntry, BOOL)
 RCT_EXPORT_VIEW_PROPERTY(blurOnSubmit, BOOL)
@@ -320,6 +320,7 @@ _RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueN
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(autoPlay, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(prefetch, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(isVisible, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(borderRadius, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(muted, BOOL);

@@ -1,30 +1,21 @@
 import * as React from "react";
-import {
-  View,
-  StyleSheet,
-  TouchableWithoutFeedback,
-  findNodeHandle
-} from "react-native";
-import {
-  LongPressGestureHandler,
-  TapGestureHandler
-} from "react-native-gesture-handler";
+import { StyleSheet, View } from "react-native";
+import { TapGestureHandler } from "react-native-gesture-handler";
 import { useLayout } from "react-native-hooks";
-import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import Animated from "react-native-reanimated";
-import { useFocusState } from "react-navigation-hooks";
 import {
-  FocusType,
-  PostBlockType,
-  CAROUSEL_HEIGHT,
-  PostLayout
-} from "./NewPostFormat";
+  BlockMap,
+  BlockPositionList,
+  PostBlockID,
+  getPositionsKey
+} from "../../lib/buildPost";
+import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
+import { FocusType, PostBlockType, PostLayout } from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
-import { getInset } from "react-native-safe-area-view";
 import { currentlyFocusedField } from "./Text/TextInputState";
-import { BlockMap, BlockPositionList, PostBlockID } from "../../lib/buildPost";
-import { BlurView } from "@react-native-community/blur";
+import { PostLayoutContext } from "./PostLayoutContext";
+
 export const ScrollView = KeyboardAwareScrollView;
 
 const isTextBlock = (block: PostBlockType) => block.type === "text";
@@ -38,28 +29,25 @@ const styles = StyleSheet.create({
 const BlockLayoutContainer = ({
   layout,
   multiList = false,
-  children
+  children,
+  columnCount = 1
 }: {
   layout: PostLayout;
 }) => {
-  if (
-    [
-      PostLayout.horizontalMediaMedia,
-      PostLayout.horizontalMediaText,
-      PostLayout.horizontalTextMedia
-    ].includes(layout)
-  ) {
-    return (
+  const contextValue = React.useMemo(() => ({ columnCount: columnCount }), [
+    columnCount
+  ]);
+
+  return (
+    <PostLayoutContext.Provider value={contextValue}>
       <View
         pointerEvents="box-none"
         style={multiList ? styles.horizontalMultiList : styles.horizontalList}
       >
         {children}
       </View>
-    );
-  } else {
-    return <View style={styles.verticalList}>{children}</View>;
-  }
+    </PostLayoutContext.Provider>
+  );
 };
 
 type BlockListProps = {
@@ -67,6 +55,60 @@ type BlockListProps = {
   positions: BlockPositionList;
   setBlockAtIndex: (block: PostBlockType, index: number) => void;
 };
+
+const BlockCell = React.forwardRef((props, ref) => {
+  const {
+    block,
+    onChange,
+    focusedBlockId,
+    onOpenImagePicker,
+    focusType,
+    onChangePhoto,
+    onTap,
+    onFocus,
+    onBlur,
+    focusTypeValue,
+    focusedBlockValue,
+    onLayout,
+    scrollRef,
+    disabled
+  } = props;
+
+  const _ref = React.useRef();
+
+  const layoutChange = React.useCallback(() => {
+    onLayout(block, _ref.current);
+  }, [block, _ref, onLayout]);
+
+  React.useEffect(() => {
+    onLayout(block, _ref.current);
+  }, [onLayout]);
+
+  return (
+    <View style={{ flex: 1 }} onLayout={layoutChange} ref={_ref}>
+      <Block
+        block={block}
+        onFocus={onFocus}
+        containerRef={_ref}
+        focusedBlockValue={focusedBlockValue}
+        scrollRef={scrollRef}
+        isFocused={focusedBlockId === block.id}
+        disabled={
+          disabled || focusedBlockId ? focusedBlockId !== block.id : false
+        }
+        onOpenImagePicker={onOpenImagePicker}
+        focusType={focusType}
+        onChangePhoto={onChangePhoto}
+        onTap={onTap}
+        onBlur={onBlur}
+        focusTypeValue={focusTypeValue}
+        ref={ref}
+        onChange={onChange}
+      />
+    </View>
+  );
+});
+
 export const BlockList = ({
   blocks,
   setBlockAtIndex,
@@ -101,25 +143,20 @@ export const BlockList = ({
   const renderBlock = React.useCallback(
     (blockId: string, index: number) => {
       const block = blocks[blockId];
-
       return (
-        <Block
-          onLayout={onLayout}
-          block={block}
+        <BlockCell
           onFocus={onFocus}
+          onLayout={onLayout}
           focusedBlockValue={focusedBlockValue}
-          scrollRef={scrollRef}
-          isFocused={focusedBlockId === block.id}
-          disabled={
-            disabled || focusedBlockId ? focusedBlockId !== block.id : false
-          }
           onOpenImagePicker={onOpenImagePicker}
+          positions={positions}
+          block={block}
           focusType={focusType}
+          key={block.id}
           onChangePhoto={onChangePhoto}
           onTap={onTap}
           onBlur={onBlur}
           focusTypeValue={focusTypeValue}
-          key={block.id}
           ref={handleSetBlockInputRef(block)}
           onChange={handleChangeBlock(index)}
         />
@@ -132,6 +169,7 @@ export const BlockList = ({
       onOpenImagePicker,
       positions,
       blocks,
+      onLayout,
       focusType,
       onChangePhoto,
       onTap,
@@ -147,7 +185,12 @@ export const BlockList = ({
       const rowKey = row.join("-");
 
       return (
-        <BlockLayoutContainer multiList={false} key={rowKey} layout={layout}>
+        <BlockLayoutContainer
+          multiList={row.length > 1}
+          key={rowKey}
+          layout={layout}
+          columnCount={row.length}
+        >
           {row.map(renderBlock)}
         </BlockLayoutContainer>
       );
@@ -180,6 +223,8 @@ export const EditableNodeList = ({
   velocityY,
   onTransform,
   maxX,
+  currentX,
+  currentY,
   bottom,
   keyboardHeightValue,
   focusType,
@@ -194,6 +239,7 @@ export const EditableNodeList = ({
   minY,
   midY,
   midX,
+  snapOpacityValue,
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
@@ -238,6 +284,8 @@ export const EditableNodeList = ({
           velocityX={velocityX}
           velocityY={velocityY}
           onTransform={onTransform}
+          currentX={currentX}
+          currentY={currentY}
           bottom={bottom}
           onBlur={onBlurNode}
           focusedBlockValue={focusedBlockValue}
@@ -260,6 +308,7 @@ export const EditableNodeList = ({
           onTap={onTapNode}
           onPan={handlePan(id)}
           format={node.block.format}
+          snapOpacityValue={snapOpacityValue}
           isHidden={
             focusedBlockId &&
             focusedBlockId !== id &&
@@ -275,8 +324,11 @@ export const EditableNodeList = ({
       minY,
       bottom,
       maxY,
+      currentX,
+      currentY,
       scrollY,
       keyboardHeight,
+      snapOpacityValue,
       topInsetValue,
       onBlurNode,
       focusedBlockValue,
@@ -324,12 +376,14 @@ export const PostPreview = React.forwardRef(
       onTapNode,
       onChangeNode,
       onTapBackground,
+      contentTranslate,
       focusType,
       focusedBlockValue,
       onBlurNode,
       scrollY,
       children,
       maxHeight,
+      onLayoutBlock,
       minY,
       paddingTop,
       onChangePhoto,
@@ -348,7 +402,8 @@ export const PostPreview = React.forwardRef(
       onScroll,
       onSwipe,
       bounces,
-      waitFor
+      waitFor,
+      setPostBottom
     },
     ref
   ) => {
@@ -361,8 +416,9 @@ export const PostPreview = React.forwardRef(
         }
       }) => {
         bottomY?.setValue(height);
+        setPostBottom(height);
       },
-      [bottomY]
+      [bottomY, setPostBottom]
     );
 
     const blockContainerRef = React.useRef(null);
@@ -425,6 +481,10 @@ export const PostPreview = React.forwardRef(
     //   });
     // }, [scrollRef.current, paddingTop]);
 
+    const _positionsKey = React.useMemo(() => getPositionsKey(positions), [
+      positions
+    ]);
+
     return (
       <ScrollView
         directionalLockEnabled
@@ -439,7 +499,6 @@ export const PostPreview = React.forwardRef(
         getFocusedField={currentlyFocusedField}
         onScroll={onScroll}
         onLayout={onLayout}
-        centerContent={enableCenter}
         nestedScrollEnabled
         scrollY={scrollY}
         topInsetValue={topInsetValue}
@@ -450,7 +509,7 @@ export const PostPreview = React.forwardRef(
         ref={scrollRef}
         paddingTop={paddingTop}
         enableResetScrollToCoords={false}
-        resetScrollToCoords={initialOffset}
+        resetScrollToCoords={null}
         contentInset={contentInset}
         paddingBottom={paddingBottom}
         style={scrollViewStyle}
@@ -470,12 +529,16 @@ export const PostPreview = React.forwardRef(
             ref={contentViewRef}
             style={contenViewStyle}
           >
-            <View ref={blockContainerRef} onLayout={onContentViewLayout}>
+            <Animated.View
+              ref={blockContainerRef}
+              onLayout={onContentViewLayout}
+            >
               <BlockList
                 setBlockInputRef={setBlockInputRef}
                 blocks={blocks}
                 positions={positions}
                 layout={postLayout}
+                key={_positionsKey}
                 onFocus={onFocus}
                 focusTypeValue={focusTypeValue}
                 onOpenImagePicker={onOpenImagePicker}
@@ -484,12 +547,13 @@ export const PostPreview = React.forwardRef(
                 onTap={onTapBlock}
                 disabled={!scrollEnabled}
                 scrollRef={scrollRef}
+                onLayout={onLayoutBlock}
                 focusedBlockId={focusedBlockId}
                 focusedBlockValue={focusedBlockValue}
                 onBlur={onBlur}
                 setBlockAtIndex={setBlockAtIndex}
               />
-            </View>
+            </Animated.View>
 
             {children}
           </Animated.View>
