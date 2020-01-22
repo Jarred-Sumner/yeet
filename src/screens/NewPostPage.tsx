@@ -23,6 +23,7 @@ import {
   guesstimateLayout
 } from "../lib/Exporter";
 import { PostFragment } from "../lib/graphql/PostFragment";
+import { getHighlightInset } from "../components/NewPost/Text/TextBlockUtils";
 
 const styles = StyleSheet.create({
   container: {
@@ -116,22 +117,24 @@ export class NewPostPage extends React.Component {
     );
 
     if (this.state.isLoading && post) {
-      this.loadPost().catch(err => {
-        console.error(err);
+      // try {
+      this.loadPost();
+      // } catch (exception) {
+      //   console.error(exception);
 
-        sendToast("Loading didn't work :(", ToastType.error);
+      //   sendToast("Loading didn't work :(", ToastType.error);
 
-        this.setState({
-          defaultBlocks: undefined,
-          defaultPositions: {},
-          thumbnail: null,
-          isLoading: false
-        });
-      });
+      //   this.setState({
+      //     defaultBlocks: undefined,
+      //     defaultPositions: {},
+      //     thumbnail: null,
+      //     isLoading: false
+      //   });
+      // }
     }
   }
 
-  loadPost = async () => {
+  loadPost = () => {
     const { userId } = this.props;
     const post: Partial<PostFragment> | null = this.props.navigation.getParam(
       "post"
@@ -173,7 +176,7 @@ export class NewPostPage extends React.Component {
       );
     }
 
-    const defaultNodes = await convertExportedNodes(
+    const defaultNodes = convertExportedNodes(
       post.nodes,
       {},
       scaleFactor,

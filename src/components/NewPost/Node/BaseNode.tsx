@@ -1,10 +1,11 @@
 import * as React from "react";
 import Animated from "react-native-reanimated";
-import { isFixedSizeBlock, PostBlockType } from "../../../lib/buildPost";
+import { isFixedSizeBlock } from "../../../lib/buildPost";
 import { DimensionsRect } from "../../../lib/Rect";
 import { FocusType, presetsByFormat } from "../NewPostFormat";
 import { Block } from "./Block";
 import { MovableNode } from "./MovableNode";
+import { PostBlockType } from "../../../lib/enums";
 
 export type EditableNodeStaticPosition = {
   y: number;
@@ -20,8 +21,11 @@ export type EditableNodePosition = EditableNodeStaticPosition & {
   animatedScale: Animated.Value<number>;
 };
 
+export type VerticalNodeAlign = "top" | "bottom";
+
 export interface EditableNode {
   block: PostBlockType;
+  verticalAlign: VerticalNodeAlign;
   position: EditableNodePosition;
 }
 
@@ -47,10 +51,19 @@ export const buildEditableNode = ({
   x = 0,
   y = 0,
   scale = 1.0,
+  verticalAlign = "bottom",
   rotate = 0
+}: {
+  block: PostBlockType;
+  x: number;
+  y: number;
+  scale: number;
+  rotate: number;
+  verticalAlign: VerticalNodeAlign;
 }): EditableNode => {
   return {
     block,
+    verticalAlign,
     position: {
       x,
       y,
@@ -145,7 +158,7 @@ export class BaseNode extends React.Component<Props> {
   onContentSizeChangeRef = React.createRef();
 
   render() {
-    const { block, position } = this.props.node;
+    const { block, position, verticalAlign } = this.props.node;
     const {
       isHidden = false,
       isFocused,
@@ -238,6 +251,7 @@ export class BaseNode extends React.Component<Props> {
         containerRef={containerRef}
         topInsetValue={topInsetValue}
         inputRef={inputRef}
+        verticalAlign={verticalAlign}
         maxWidth={block.config?.overrides?.maxWidth || -1}
         scrollY={scrollY}
         isTextBlock={block.type === "text"}

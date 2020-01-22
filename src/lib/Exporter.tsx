@@ -1,7 +1,7 @@
 import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
 import Bluebird from "bluebird";
-import { flatten, fromPairs, isArray, isEmpty, uniq } from "lodash";
+import { flatten, fromPairs, isArray, isEmpty, uniq, isFinite } from "lodash";
 import { findNodeHandle, NativeModules, UIManager, View } from "react-native";
 import chroma from "chroma-js";
 import {
@@ -33,6 +33,10 @@ import {
   YeetImageRect
 } from "./imageSearch";
 import { BoundsRect, scaleRectByFactor } from "./Rect";
+import {
+  getFontSize,
+  getHighlightInset
+} from "../components/NewPost/Text/TextBlockUtils";
 
 const { YeetExporter } = NativeModules;
 
@@ -432,7 +436,7 @@ const sanitizeOverrides = (_overrides, scaleFactor) => {
     ..._overrides
   };
 
-  if (typeof overrides.maxWidth === "number") {
+  if (isFinite(overrides.maxWidth)) {
     overrides.maxWidth = Math.min(
       Math.max(overrides.maxWidth * scaleFactor, 0),
       POST_WIDTH
@@ -493,6 +497,7 @@ const convertExportableBlock = (
     return buildTextBlock({
       id: block.id,
       value,
+
       placeholder: block.value || "Tap to edit text",
       template: template,
       autoInserted: false,
@@ -531,7 +536,7 @@ export const convertExportedBlocks = (
     .filter(Boolean);
 };
 
-const convertExportedNode = async (
+const convertExportedNode = (
   node: ExportableNode,
   assets: AssetMap,
   scaleFactor: number = 1,
@@ -580,38 +585,62 @@ const convertExportedNode = async (
   let { rotate, scale } = node.position;
   let { x, y } = scaleRectByFactor(scaleFactor, _position);
 
-  const { maxWidth = 0, textAlign, fontSize, fontStyle = "normal" } =
+  const inset = getHighlightInset(block);
+
+  let { maxWidth = 0, textAlign, fontSize, fontStyle = "normal" } =
     block.config?.overrides ?? {};
+
+  if (isFinite(maxWidth)) {
+    if (maxWidth >= size.width) {
+      let maxWidthOffset = maxWidth - size.width;
+      x = x - maxWidthOffset / 2;
+      block.config.overrides.maxWidth = size.width;
+      maxWidth = size.width;
+    }
+  }
+
+  let verticalAlign = isFixedSize ? "top" : "bottom";
 
   const isRightOriented =
     _position.x + ((1 / scaleFactor) * maxWidth) / 2 > size.width / 2;
   const isLeftOriented =
     _position.x + +(((1 / scaleFactor) * maxWidth) / 2) < size.width / 2;
 
+  if (y > size.height * 0.75) {
+    verticalAlign = "bottom";
+  }
+
   if (yPadding > 0 && size) {
-    y = Math.max(
-      yPadding,
-      Math.min(y + yPadding + fontSize, size.height - yPadding)
-    );
+    if (
+      verticalAlign === "bottom" &&
+      _size.height - _position.y <= yPadding * (1 / scaleFactor) * 2
+    ) {
+      y = yPadding;
+    } else if (isFixedSize) {
+      y = Math.max(0, Math.min(y + yPadding - inset, size.height - yPadding));
+    } else {
+      y = Math.max(
+        yPadding + inset,
+        Math.min(y + yPadding + inset, size.height - yPadding)
+      );
+    }
   }
 
   if (xPadding > 0 && size && isLeftOriented) {
     x = Math.max(
       xPadding,
-      Math.min(x - xPadding * 2, size.width - xPadding - maxWidth / 2)
+      Math.min(x - xPadding * 2, size.width - xPadding - maxWidth / 2 - inset)
     );
   } else if (xPadding > 0 && size && isRightOriented) {
     x = Math.max(
       xPadding,
-      Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2)
+      Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2 - inset)
     );
   }
 
-  if (isFixedSize && x + maxWidth > size.width) {
-    if (maxWidth * 0.75 >= size.width) {
-      block.config.overrides.maxWidth = size.width - xPadding * 2;
-      x = 0;
-    }
+  if (isFixedSize && size.width * 0.8 < maxWidth) {
+    block.config.overrides.maxWidth = size.width - xPadding * 2 - inset;
+    x = xPadding;
   }
 
   return [
@@ -621,12 +650,14 @@ const convertExportedNode = async (
       x,
       y,
       rotate,
+
+      verticalAlign,
       scale
     })
   ];
 };
 
-export const convertExportedNodes = async (
+export const convertExportedNodes = (
   nodes: Array<ExportableNode>,
   assets: AssetMap,
   scaleFactor: number = 1,
@@ -634,22 +665,17 @@ export const convertExportedNodes = async (
   yPadding: number = 0,
   size: BoundsRect,
   examples: ExampleMap = {}
-): Promise<EditableNodeMap> => {
-  const convertedNodes = await Bluebird.map(
-    nodes,
-    node =>
-      convertExportedNode(
-        node,
-        assets,
-        scaleFactor,
-        xPadding,
-        yPadding,
-        size,
-        examples
-      ),
-    {
-      concurrency: 2
-    }
+): EditableNodeMap => {
+  const convertedNodes = nodes.map(node =>
+    convertExportedNode(
+      node,
+      assets,
+      scaleFactor,
+      xPadding,
+      yPadding,
+      size,
+      examples
+    )
   );
 
   return fromPairs(convertedNodes.filter(Boolean));

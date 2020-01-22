@@ -706,7 +706,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         scrollEnabled={false}
         singleFocus
         stickerContainerTag={stickerTag}
-        numberOfLines={overrides.numberOfLines ?? null}
+        numberOfLines={isSticker ? overrides.numberOfLines ?? null : null}
         textTransform={textTransform}
         width={maxWidth}
         maxContentWidth={maxWidth}

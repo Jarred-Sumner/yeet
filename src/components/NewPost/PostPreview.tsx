@@ -7,7 +7,8 @@ import {
   BlockMap,
   BlockPositionList,
   PostBlockID,
-  getPositionsKey
+  getPositionsKey,
+  getRowKey
 } from "../../lib/buildPost";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import { FocusType, PostBlockType, PostLayout } from "./NewPostFormat";
@@ -182,7 +183,7 @@ export const BlockList = ({
 
   const renderRow = React.useCallback(
     (row: Array<PostBlockID>, index: number) => {
-      const rowKey = row.join("-");
+      const rowKey = React.useMemo(() => getRowKey(row), [row]);
 
       return (
         <BlockLayoutContainer

@@ -1,15 +1,6 @@
-import {
-  flatMap,
-  flatten,
-  isArray,
-  isEmpty,
-  set,
-  uniqBy,
-  sortBy,
-  cloneDeep
-} from "lodash";
+import { cloneDeep, flatMap, flatten, isArray, isEmpty, set } from "lodash";
 import nanoid from "nanoid/non-secure";
-import { textInputPresets } from "../components/NewPost/Text/Presets";
+
 import {
   BlockMap,
   BlockPositionList,
@@ -39,8 +30,12 @@ import { SPACING } from "./styles";
 
 export const generateBlockId = nanoid;
 
+let textInputPresets = {};
+
 if (typeof globalThis.SCREEN_DIMENSIONS === "undefined") {
   var { SCREEN_DIMENSIONS, TOP_Y } = require("../../config");
+  textInputPresets = require("../components/NewPost/Text/Presets")
+    .textInputPresets;
 } else {
   var { SCREEN_DIMENSIONS, TOP_Y } = globalThis;
 }
@@ -722,7 +717,7 @@ export const isFixedSizeBlock = (block: PostBlock | null = null) => {
     return false;
   }
 
-  return typeof block?.config?.overrides?.maxWidth === "number";
+  return isFinite(block?.config?.overrides?.maxWidth);
 };
 
 export const buildPost = ({
@@ -775,8 +770,9 @@ export const getTextBlockAlign = (block: TextPostBlock): CanvasTextAlign => {
   );
 };
 
+export const getRowKey = row => `|${row.join("|")}|`;
 export const getPositionsKey = positions =>
-  positions.map(row => `|${row.join("|")}|`).join("\n");
+  positions.map(row => getRowKey(row)).join("\n");
 
 export const getSnapPoints = (
   at: PostBlockType,
@@ -908,3 +904,5 @@ export const getAllSnapPoints = (
 
   return Object.values(_points);
 };
+
+export const isTopAligned;

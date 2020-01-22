@@ -42,7 +42,7 @@ export const getSupportedBorderTypes = (
   }
 };
 
-export const getFontSize = (block: TextPostBlock) => {
+export const getFontSize = (block: TextPostBlock): number => {
   const { fontSize } = block.config.overrides;
 
   if (typeof fontSize === "number") {
@@ -70,6 +70,10 @@ export const getFontSize = (block: TextPostBlock) => {
 };
 
 export const getHighlightInset = (block: TextPostBlock) => {
+  if (block?.type !== "text") {
+    return 0;
+  }
+
   const border = getBorderType(block);
   const { template } = block.config;
   const presets = textInputPresets[template].presets;

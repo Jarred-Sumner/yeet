@@ -9,6 +9,7 @@ export interface PostBlock {
   layout: PostLayout;
   config: {};
   autoInserted: boolean;
+
   id: PostBlockID;
   frame: BoundsRect | null;
 }

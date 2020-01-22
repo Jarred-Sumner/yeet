@@ -357,7 +357,7 @@
   rect.size = CGSizeMake(self.yeetAttributes.textRect.size.width, self.yeetAttributes.textRect.size.height);
 
 
-  if (_maximumNumberOfLines > 0 && maximumSize.width < RCTScreenSize().width) {
+  if (_maximumNumberOfLines > 0 && maximumSize.width < RCTScreenSize().width && self.yeetAttributes.format != YeetTextFormatPost) {
     NSRange lineRange;
     NSInteger index = 0;
     NSInteger numberOfLines = 0;

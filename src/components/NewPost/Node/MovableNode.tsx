@@ -1,38 +1,29 @@
 import React, { Component } from "react";
 import {
+  findNodeHandle,
+  LayoutAnimation,
+  StyleSheet,
+  View
+} from "react-native";
+import {
+  LongPressGestureHandler,
   PanGestureHandler,
   PinchGestureHandler,
   RotationGestureHandler,
   State,
-  TapGestureHandler,
-  LongPressGestureHandler
+  TapGestureHandler
 } from "react-native-gesture-handler";
-import Animated, { Transitioning, Transition } from "react-native-reanimated";
-import { BoundsRect, isSameSize, totalX } from "../../../lib/Rect";
-import {
-  StyleSheet,
-  findNodeHandle,
-  View,
-  LayoutAnimation
-} from "react-native";
-import {
-  Surface,
-  Shape,
-  ClippingRectangle,
-  Path
-} from "@react-native-community/art";
+import Animated from "react-native-reanimated";
+import Svg, { Rect } from "react-native-svg";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import {
-  preserveOffset,
-  preserveMultiplicativeOffset
+  preserveMultiplicativeOffset,
+  preserveOffset
 } from "../../../lib/animations";
-import { TransformableViewComponent } from "./TransformableView";
-import { FocusType } from "../../../lib/buildPost";
-import { ClipProvider, ClipContext } from "./ClipContext";
 import { Rectangle } from "../../../lib/Rectangle";
-import Svg, { Rect, G } from "react-native-svg";
-import { COLORS } from "../../../lib/styles";
 import { sendSelectionFeedback } from "../../../lib/Vibration";
+import { ClipContext, ClipProvider } from "./ClipContext";
+import { TransformableViewComponent } from "./TransformableView";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -51,6 +42,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     Component = TransformableViewComponent,
     overlayTag,
     rotate = 0,
+    verticalAlign,
     unfocusedBottom,
     unfocusedLeft,
     onContentSizeChange,
@@ -67,7 +59,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     children
   } = props;
 
-  if (!isFixedSize) {
+  if (verticalAlign === "bottom" || !verticalAlign) {
     return (
       <Component
         ref={ref}
@@ -94,7 +86,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
         {children}
       </Component>
     );
-  } else if (isFixedSize) {
+  } else if (verticalAlign === "top") {
     return (
       <Component
         ref={ref}
@@ -343,10 +335,15 @@ export class MovableNode extends Component<Props> {
   constructor(props) {
     super(props);
 
+    const { verticalAlign = "bottom" } = props;
+
     const fixedSizeValue = props.isFixedSize ? 1 : 0;
-    const yLiteral = props.isFixedSize
-      ? Math.max(props.yLiteral, props.minY)
-      : props.yLiteral;
+    const yLiteral =
+      verticalAlign === "top"
+        ? Math.max(props.yLiteral, props.minY)
+        : props.yLiteral;
+
+    console.log({ verticalAlign });
 
     this.tapGestureState = new Animated.Value(State.UNDETERMINED);
     this.panGestureState = new Animated.Value(State.UNDETERMINED);
@@ -411,8 +408,6 @@ export class MovableNode extends Component<Props> {
       { useNativeDriver: true }
     );
 
-    this.widthValue = new Animated.Value<number>(props.frame?.width ?? 0);
-    this.heightValue = new Animated.Value<number>(props.frame?.height ?? 0);
     this.X = Animated.round(
       preserveOffset(this._X, this.panGestureState, props.x)
     );
@@ -456,20 +451,29 @@ export class MovableNode extends Component<Props> {
     this.unfocusedBottomValue = Animated.multiply(this.Y, -1);
     this.unscaledValue = new Animated.Value(1);
 
-    this.bottomValue = !props.isFixedSize
-      ? keyboardVisibleCond(
-          this.keyboardVisibleFocusedValue,
-          this.unfocusedBottomValue,
-          Animated.add(Animated.multiply(props.keyboardHeightValue, -1), 120)
-        )
-      : null;
+    this.bottomValue =
+      verticalAlign === "bottom"
+        ? fixedSizeInterpolator(
+            fixedSizeValue,
+            this.unfocusedBottomValue,
+            keyboardVisibleCond(
+              this.keyboardVisibleFocusedValue,
+              this.unfocusedBottomValue,
+              Animated.add(
+                Animated.multiply(props.keyboardHeightValue, -1),
+                120
+              )
+            )
+          )
+        : null;
 
-    this.topValue = props.isFixedSize
-      ? Animated.min(
-          Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
-          props.maxY
-        )
-      : null;
+    this.topValue =
+      verticalAlign === "top"
+        ? Animated.min(
+            Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
+            props.maxY
+          )
+        : null;
 
     this.scale = scaleValueProc(
       this.fixedSizeValue,
@@ -632,20 +636,6 @@ export class MovableNode extends Component<Props> {
         this.pinchRef
       ];
     }
-
-    if (
-      prevProps.frame?.width !== this.props.frame?.width &&
-      this.props.frame?.width
-    ) {
-      this.widthValue.setValue(this.props.frame.width);
-    }
-
-    if (
-      prevProps.frame?.height !== this.props.frame?.height &&
-      this.props.frame?.height
-    ) {
-      this.heightValue.setValue(this.props.frame.height);
-    }
   }
 
   rotationRef = React.createRef();
@@ -717,22 +707,8 @@ export class MovableNode extends Component<Props> {
             ),
 
             Animated.cond(Animated.eq(this.panGestureState, State.ACTIVE), [
-              Animated.set(this.props.currentX, this._X),
-              isFixedSize
-                ? Animated.set(
-                    this.props.currentY,
-                    Animated.add(
-                      this.Y,
-                      Animated.multiply(this.heightValue, -0.5)
-                    )
-                  )
-                : Animated.set(
-                    this.props.currentY,
-                    Animated.add(
-                      this.Y,
-                      Animated.multiply(this.heightValue, -0.5)
-                    )
-                  )
+              Animated.set(this.props.currentX, this.absoluteX),
+              Animated.set(this.props.currentY, this.absoluteY)
             ]),
             Animated.onChange(
               this.isCurrentlyGesturingValue,
@@ -842,6 +818,7 @@ export class MovableNode extends Component<Props> {
                             overlayTag={this.overlayTag}
                             translateX={this.translateX}
                             isFixedSize={isFixedSize}
+                            verticalAlign={this.props.verticalAlign}
                             bottom={this.bottomValue}
                             top={this.topValue}
                             keyboardVisibleValue={keyboardVisibleValue}

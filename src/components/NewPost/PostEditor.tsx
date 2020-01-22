@@ -300,6 +300,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       getPositionsKey(prevProps.post.positions) !==
       getPositionsKey(this.props.post.positions)
     ) {
+
     }
   }
 
@@ -1220,7 +1221,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 ])
               ])
             ),
-            Animated.debug("scrollY", this.props.scrollY),
+            // Animated.debug("scrollY", this.props.scrollY),
 
             // Ignore background taps when keyboard is showing/hiding
             Animated.onChange(

@@ -1457,13 +1457,16 @@ const scaleToWidth = (width, dimensions) =>
 const scaleToHeight = (width, dimensions) =>
   _scaleToHeight(width, dimensions, value => value);
 
+const { buildImageBlock } = require(path.resolve(
+  __dirname,
+  "../src/lib/buildPost.tsx"
+));
 const {
-  buildImageBlock,
   PostFormat,
   PostLayout,
   TextTemplate,
   TextBorderType
-} = require(path.resolve(__dirname, "../src/lib/buildPost.tsx"));
+} = require(path.resolve(__dirname, "../src/lib/enums.tsx"));
 
 const createExportableImageBlock = (entry, scaledImageSize, imageSize) => {
   return {
@@ -1733,7 +1736,7 @@ const normalizeID = text => slugify(text);
 const TOP_TEXT_ID = "top-text";
 const BOTTOM_TEXT_ID = "bottom-text";
 
-const createOldTextBlock = isTop => {
+const createOldTextBlock = (isTop, size) => {
   const id = isTop ? TOP_TEXT_ID : BOTTOM_TEXT_ID;
 
   return {
@@ -1747,22 +1750,24 @@ const createOldTextBlock = isTop => {
     value: "",
     frame: {
       x: 0,
-      y: 0
+      y: 0,
+      width: size.width
     },
     config: {
       border: TextBorderType.stroke,
       overrides: {
         textAlign: "center",
         color: "white",
-        backgroundColor: "black"
+        backgroundColor: "black",
+        maxWidth: size.width
       }
     }
   };
 };
 
 const createOldTextNode = (size, isTop) => {
-  const block = createOldTextBlock(isTop);
-  const y = isTop ? 16 : size.height - 16 - 32;
+  const block = createOldTextBlock(isTop, size);
+  const y = isTop ? 0 : size.maxY;
 
   return {
     block,
@@ -2057,12 +2062,12 @@ const convertEntry = entry => {
 
     const bounds = {
       ...size,
-      x: 20,
-      y: 20,
+      x: xPadding,
+      y: yPadding,
       maxX: size.width,
       maxY: size.height,
-      minX: 0,
-      minY: 0
+      minX: xPadding,
+      minY: yPadding
     };
 
     const examples = {
@@ -2098,7 +2103,10 @@ const convertEntry = entry => {
 
     return {
       blocks: [[imageBlock]],
-      nodes: [createOldTextNode(false, size), createOldTextBlock(true, size)],
+      nodes: [
+        createOldTextNode(bounds, false),
+        createOldTextNode(bounds, true)
+      ],
       backgroundColor,
       layout: PostLayout.media,
       examples,
