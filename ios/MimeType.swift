@@ -61,6 +61,35 @@ enum MimeType: String {
     }
   }
 
+  static func from(uti: String) -> MimeType? {
+    switch uti {
+    case "public.png":
+      return MimeType.png
+  case "public.gif":
+      return MimeType.gif
+  case "public.webp":
+      return MimeType.webp
+    case "public.jpeg":
+  return MimeType.jpg
+    case "public.mpeg-4":
+  return MimeType.mp4
+
+    case "public.heic":
+  return MimeType.heic
+
+    case "public.heif":
+      return MimeType.heif
+  case "public.tiff":
+      return MimeType.tiff
+    case "com.apple.quicktime-movie":
+      return MimeType.mov
+    case "public.bmp":
+  return MimeType.bmp
+  default:
+    return nil
+    }
+  }
+
   func fileExtension() -> String {
     switch self {
     case .png:

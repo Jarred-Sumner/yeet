@@ -24,6 +24,7 @@ import {
 } from "../lib/Exporter";
 import { PostFragment } from "../lib/graphql/PostFragment";
 import { getHighlightInset } from "../components/NewPost/Text/TextBlockUtils";
+import { scaleRectByFactor } from "../lib/Rect";
 
 const styles = StyleSheet.create({
   container: {
@@ -150,7 +151,7 @@ export class NewPostPage extends React.Component {
       scaleFactor,
       examples
     );
-    const imageBlock = flatten(defaultBlocks).find(
+    let imageBlock = flatten(defaultBlocks).find(
       image => image.type === "image"
     ) as ImagePostBlock;
 
@@ -183,7 +184,8 @@ export class NewPostPage extends React.Component {
       xPadding,
       yPadding,
       post.bounds,
-      examples
+      examples,
+      defaultBlocks
     );
 
     this.setState({

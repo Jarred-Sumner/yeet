@@ -4,6 +4,7 @@ import Bluebird from "bluebird";
 import { flatten, fromPairs, isArray, isEmpty, uniq, isFinite } from "lodash";
 import { findNodeHandle, NativeModules, UIManager, View } from "react-native";
 import chroma from "chroma-js";
+import * as TransformMatrix from "transformation-matrix";
 import {
   buildImageBlock,
   buildTextBlock,
@@ -23,7 +24,9 @@ import {
   ExampleMap,
   getDefaultBorder,
   getDefaultTemplate,
-  isFixedSizeBlock
+  isFixedSizeBlock,
+  isTextBlock,
+  isImageBlock
 } from "./buildPost";
 import {
   ImageMimeType,
@@ -32,11 +35,12 @@ import {
   YeetImageContainer,
   YeetImageRect
 } from "./imageSearch";
-import { BoundsRect, scaleRectByFactor } from "./Rect";
+import { BoundsRect, scaleRectByFactor, isTapInside } from "./Rect";
 import {
   getFontSize,
   getHighlightInset
 } from "../components/NewPost/Text/TextBlockUtils";
+import { BlockMap, ImagePostBlock } from "./enums";
 
 const { YeetExporter } = NativeModules;
 
@@ -456,7 +460,7 @@ const convertExportableBlock = (
   const format = isSticker ? PostFormat.sticker : PostFormat.post;
 
   if (block.type === "image") {
-    return buildImageBlock({
+    const imageBlock = buildImageBlock({
       id: block.id,
       image: convertImage(block.value, assets),
       dimensions: scaleRectByFactor(scaleFactor, block.dimensions),
@@ -466,6 +470,9 @@ const convertExportableBlock = (
       format,
       layout: PostLayout[block.layout] || PostLayout.text
     });
+    imageBlock.frame = block.frame ?? imageBlock.config.dimensions;
+
+    return imageBlock;
   } else if (block.type === "text") {
     const template = getDefaultTemplate(block.template, format);
     const border = getDefaultBorder(
@@ -473,25 +480,27 @@ const convertExportableBlock = (
       template
     );
 
-    const uniqueExamples = uniq(
-      examples[block.id]?.filter(
-        text => typeof text === "string" && text.trim().length > 0
-      ) ?? []
-    );
-
+    const hasExamples = examples ? !isEmpty(examples[block.id]) : false;
     let value = block.value;
-
     if (typeof value !== "string" || value.trim().length === 0) {
       value = "";
     }
 
-    if (
-      value === "" &&
-      isArray(examples[block.id]) &&
-      examples[block.id].length > 1 &&
-      uniqueExamples.length === 1
-    ) {
-      value = uniqueExamples[0];
+    if (hasExamples) {
+      const uniqueExamples = uniq(
+        examples[block.id].filter(
+          text => typeof text === "string" && text.trim().length > 0
+        ) ?? []
+      );
+
+      if (
+        value === "" &&
+        isArray(examples[block.id]) &&
+        examples[block.id].length > 1 &&
+        uniqueExamples.length === 1
+      ) {
+        value = uniqueExamples[0];
+      }
     }
 
     return buildTextBlock({
@@ -543,9 +552,13 @@ const convertExportedNode = (
   xPadding: number = 0,
   yPadding: number = 0,
   _size: BoundsRect,
-  examples: ExampleMap = {}
+  examples: ExampleMap = {},
+  relativeBlock: PostBlockType | null = null
 ) => {
-  const size = scaleRectByFactor(scaleFactor, _size);
+  let size = scaleRectByFactor(scaleFactor, _size);
+  const relativeSize = relativeBlock
+    ? scaleRectByFactor(scaleFactor, relativeBlock?.frame ?? _size)
+    : size;
 
   const block = convertExportableBlock(
     node.block,
@@ -583,12 +596,25 @@ const convertExportedNode = (
     y: node.position.y ?? 0
   };
   let { rotate, scale } = node.position;
-  let { x, y } = scaleRectByFactor(scaleFactor, _position);
+  let position = scaleRectByFactor(scaleFactor, _position);
+  // let relativePosition = { ...position };
+  // relativePosition.y = relativePosition.y - relativeSize.y;
+  relativeSize.height = relativeSize.height - relativeSize.y;
+  relativeSize.y = 0;
+
+  let { x, y } = position;
 
   const inset = getHighlightInset(block);
 
-  let { maxWidth = 0, textAlign, fontSize, fontStyle = "normal" } =
-    block.config?.overrides ?? {};
+  let {
+    maxWidth = 0,
+    numberOfLines = 1,
+    textAlign,
+    fontSize,
+    fontStyle = "normal"
+  } = block.config?.overrides ?? {};
+
+  let canAutoCenter = true;
 
   if (isFinite(maxWidth)) {
     if (maxWidth >= size.width) {
@@ -596,53 +622,107 @@ const convertExportedNode = (
       x = x - maxWidthOffset / 2;
       block.config.overrides.maxWidth = size.width;
       maxWidth = size.width;
+      canAutoCenter = false;
     }
   }
+
+  let minY = relativeBlock?.frame?.y ?? 0;
 
   let verticalAlign = isFixedSize ? "top" : "bottom";
+  let isBottomCentered = block.id.toLowerCase() === "bottom-text";
+  let isTopCentered = block.id.toLowerCase() === "top-text";
 
-  const isRightOriented =
-    _position.x + ((1 / scaleFactor) * maxWidth) / 2 > size.width / 2;
-  const isLeftOriented =
-    _position.x + +(((1 / scaleFactor) * maxWidth) / 2) < size.width / 2;
+  let horizontalAlign;
 
-  if (y > size.height * 0.75) {
-    verticalAlign = "bottom";
+  if (relativeSize.width * 0.8 < maxWidth) {
+    horizontalAlign = "center";
+  } else if ((x + maxWidth) / size.width < 0.5) {
+    horizontalAlign = "left";
+  } else if ((x + maxWidth) / size.width > 0.5) {
+    horizontalAlign = "right";
   }
 
-  if (yPadding > 0 && size) {
-    if (
-      verticalAlign === "bottom" &&
-      _size.height - _position.y <= yPadding * (1 / scaleFactor) * 2
-    ) {
-      y = yPadding;
-    } else if (isFixedSize) {
-      y = Math.max(0, Math.min(y + yPadding - inset, size.height - yPadding));
-    } else {
-      y = Math.max(
-        yPadding + inset,
-        Math.min(y + yPadding + inset, size.height - yPadding)
-      );
+  let estimatedHeight =
+    (numberOfLines || 1) * getFontSize(block) * 1.25 + yPadding;
+  const bottomY = y + estimatedHeight;
+  const yPercent = (_position.y + estimatedHeight) / relativeSize.height;
+
+  const hasExactHeight = isFinite(block.frame?.height);
+
+  if (!isBottomCentered && !isTopCentered) {
+    if (yPercent > 0.8 && (isFixedSize || horizontalAlign === "center")) {
+      verticalAlign = "bottom";
+    } else if (horizontalAlign === "center" && 30 > y) {
+      verticalAlign = "top";
     }
   }
 
-  if (xPadding > 0 && size && isLeftOriented) {
-    x = Math.max(
-      xPadding,
-      Math.min(x - xPadding * 2, size.width - xPadding - maxWidth / 2 - inset)
+  if (isBottomCentered) {
+    verticalAlign = "bottom";
+  } else if (isTopCentered) {
+    verticalAlign = "top";
+  }
+
+  // if (y > size.height * 0.75) {
+  //   verticalAlign = "bottom";
+  // }
+
+  // Handle bottom center
+  if (
+    horizontalAlign === "center" &&
+    verticalAlign === "bottom" &&
+    canAutoCenter
+  ) {
+    y = yPadding * -1;
+  } else if (
+    horizontalAlign === "center" &&
+    verticalAlign === "top" &&
+    canAutoCenter
+  ) {
+    y = yPadding + inset + getFontSize(block);
+  } else if (isFixedSize && verticalAlign === "top") {
+    // y = Math.max(minY, yPadding, Math.min(y - inset, size.height - yPadding));
+  } else if (isFixedSize && verticalAlign === "bottom" && !hasExactHeight) {
+    y = y - size.height + estimatedHeight;
+  } else if (hasExactHeight && verticalAlign === "top") {
+    y = Math.max(
+      yPadding - inset,
+      Math.min(
+        y + yPadding + inset,
+        size.height - block.frame.height - yPadding - inset
+      )
     );
-  } else if (xPadding > 0 && size && isRightOriented) {
-    x = Math.max(
-      xPadding,
-      Math.min(x + xPadding * 2, size.width - xPadding - maxWidth / 2 - inset)
+  } else if (hasExactHeight && verticalAlign === "bottom") {
+    y = Math.max(
+      yPadding - inset,
+      Math.min(y + yPadding + inset, size.height - yPadding)
     );
   }
 
-  if (isFixedSize && size.width * 0.8 < maxWidth) {
-    block.config.overrides.maxWidth = size.width - xPadding * 2 - inset;
+  if (horizontalAlign === "left") {
+    x = Math.max(
+      xPadding,
+      Math.min(x, size.width - xPadding - maxWidth / 2 - inset)
+    );
+  } else if (horizontalAlign === "right") {
+    x = Math.max(
+      xPadding,
+      Math.min(x + xPadding, size.width - maxWidth + inset * 2)
+    );
+  } else if (horizontalAlign === "center") {
+    block.config.overrides.maxWidth = size.width - xPadding * 2;
     x = xPadding;
   }
 
+  console.log({
+    y,
+    x,
+    bottomY,
+    yPercent,
+    relativeSize,
+    verticalAlign,
+    horizontalAlign
+  });
   return [
     block.id,
     buildEditableNode({
@@ -664,19 +744,37 @@ export const convertExportedNodes = (
   xPadding: number = 0,
   yPadding: number = 0,
   size: BoundsRect,
-  examples: ExampleMap = {}
+  examples: ExampleMap = {},
+  _blocks: PostBlockType[]
 ): EditableNodeMap => {
-  const convertedNodes = nodes.map(node =>
-    convertExportedNode(
+  if (isEmpty(nodes)) {
+    return {};
+  }
+
+  const blocks = flatten(_blocks ?? []);
+  const convertedNodes = nodes.map(node => {
+    const relativeBlock = blocks.find(block => {
+      if (isImageBlock(block)) {
+        let _block = block as ImagePostBlock;
+        if (_block.frame !== null) {
+          const _frame = scaleRectByFactor(1 / scaleFactor, _block.frame);
+          return isTapInside(_frame, node.position);
+        }
+      } else if (isTextBlock(block)) {
+        return false;
+      }
+    });
+    return convertExportedNode(
       node,
       assets,
       scaleFactor,
       xPadding,
       yPadding,
       size,
-      examples
-    )
-  );
+      examples,
+      relativeBlock
+    );
+  });
 
   return fromPairs(convertedNodes.filter(Boolean));
 };

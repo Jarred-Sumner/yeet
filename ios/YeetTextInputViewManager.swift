@@ -17,7 +17,7 @@ class YeetTextInputViewManager: RCTBaseTextViewManager, RCTUIManagerObserver {
   override var bridge: RCTBridge! {
     didSet {
       if bridge != nil {
-        self.bridge?.uiManager.observerCoordinator.add(self)
+        self.bridge?.uiManager?.observerCoordinator.add(self)
       }
     }
   }
@@ -69,10 +69,19 @@ class YeetTextInputViewManager: RCTBaseTextViewManager, RCTUIManagerObserver {
   }
 
   func uiManagerWillPerformMounting(_ manager: RCTUIManager!) {
+    guard bridge?.isValid ?? false else {
+      return
+    }
+
     for shadowView in shadowViews.allObjects {
       shadowView.uiManagerWillPerformMounting()
     }
   }
 
+  deinit {
+    self.bridge?.uiManager?.observerCoordinator.remove(self)
+    bridge = nil
+    shadowViews = NSHashTable<YeetTextInputShadowView>(options: .weakMemory)
+  }
   
 }

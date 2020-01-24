@@ -290,7 +290,7 @@ export enum FocusType {
   static = 0
 }
 isPlaceholderImageBlock;
-const isImageBlock = (block: PostBlock) => block?.type === "image";
+export const isImageBlock = (block: PostBlock) => block?.type === "image";
 export const isTextBlock = (block: PostBlock) => block?.type === "text";
 export const isEmptyTextBlock = (block: TextPostBlock) =>
   isTextBlock(block) && isEmpty(block.value);

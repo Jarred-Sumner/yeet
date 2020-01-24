@@ -12,11 +12,11 @@ import UIKit
 import SwiftyBeaver
 import Promise
 import Photos
-
+import Vision
 
 
 @objc(MediaPlayer)
-final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate, TransformableView {
+final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, TrackableMediaSourceDelegate, TransformableView, UIVideoEditorControllerDelegate, UINavigationControllerDelegate {
   enum MediaPlayerContentType {
     case video
     case image
@@ -420,6 +420,73 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
+  @objc(editVideo) func editVideo() -> Bool {
+    guard let video = self.videoSource else {
+      return false
+    }
+
+    guard let viewController = reactViewController() else {
+      return false
+    }
+
+    let path = video.mediaSource.getAssetURI().path
+
+    guard UIVideoEditorController.canEditVideo(atPath: path) else {
+      return false
+    }
+
+    let editor = UIVideoEditorController()
+    editor.videoPath = path
+    editor.videoQuality = .typeHigh
+    editor.delegate = self
+
+    viewController.present(editor, animated: true, completion: nil)
+    return true
+  }
+
+  @objc(onEditVideo)
+  var onEditVideo: RCTDirectEventBlock? = nil
+
+  func videoEditorController(_ editor: UIVideoEditorController,
+    didSaveEditedVideoToPath editedVideoPath: String) {
+    guard canSendEvents else {
+      return
+    }
+
+    guard self.onEditVideo != nil else {
+      return
+    }
+
+    let url = URL(fileURLWithPath: editedVideoPath)
+
+    guard let uti = url.typeIdentifier else {
+      return
+    }
+
+    guard let mimeType = MimeType.from(uti: uti) else {
+      return
+    }
+
+    let asset = AVURLAsset.init(url: url)
+    asset.load(forKeys: ["duration"]).then { [weak self] asset in
+      guard self?.canSendEvents ?? false else {
+        return
+      }
+
+      guard let onEditVideo = self?.onEditVideo else {
+         return
+       }
+
+      let resolution = asset.resolution
+
+       onEditVideo([
+        "url": url.absoluteString,
+        "duration": asset.duration,
+        "size": resolution.dictionaryValue(),
+        "mimeType": mimeType.rawValue
+       ])
+    }
+  }
 
   override func layoutSubviews() {
     super.layoutSubviews()
@@ -439,6 +506,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     self.layer.cornerRadius = borderRadius
     self.clipsToBounds = borderRadius > .zero
     self.layer.masksToBounds = borderRadius > .zero
+
+    if #available(iOS 13.0, *) {
+      if borderRadius < (0.3 * frame.size.width) {
+        self.layer.cornerCurve = .continuous
+      } else {
+        self.layer.cornerCurve = .circular
+      }
+    }
   }
 
   let imageViewTag = Int(arc4random())
@@ -819,6 +894,10 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
+  
+
+  var rectangleDetectRequest: VNDetectRectanglesRequest? = nil
+
   func goNext(cb: TrackableMediaSource.onLoadCallback? = nil) {
 //    mediaQueue?.advanceToNextItem(cb: cb)
   }
@@ -961,8 +1040,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
-
-
   var videoSource: TrackableVideoSource? {
     return source as? TrackableVideoSource
   }
@@ -985,4 +1062,9 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
 
   }
+}
+
+extension URL {
+    var typeIdentifier: String? { (try? resourceValues(forKeys: [.typeIdentifierKey]))?.typeIdentifier }
+    var localizedName: String? { (try? resourceValues(forKeys: [.localizedNameKey]))?.localizedName }
 }

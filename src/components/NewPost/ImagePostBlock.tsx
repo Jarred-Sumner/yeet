@@ -10,7 +10,8 @@ import {
 import Animated from "react-native-reanimated";
 import {
   mediaSourcesFromImage,
-  YeetImageContainer
+  YeetImageContainer,
+  isVideo
 } from "../../lib/imageSearch";
 import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
 import { SPACING } from "../../lib/styles";
@@ -18,12 +19,15 @@ import { BitmapIconAddPhoto } from "../BitmapIcon";
 import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
 import MediaPlayer from "../MediaPlayer";
 import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
+import { AnimatedContextMenu, ContextMenuAction } from "../ContextMenu";
+import { IS_IOS_13 } from "../../../config";
 import {
-  ChangeBlockFunction,
   ImagePostBlock as ImagePostBlockType,
+  ChangeBlockFunction,
   PostFormat,
   PostLayout
-} from "./NewPostFormat";
+} from "../../lib/enums";
+import { BlockActionType } from "./BlockActions";
 // import Image from "../Image";
 
 type Props = {
@@ -208,13 +212,17 @@ const StickerImage = ({
 };
 
 class RawImagePostBlock extends React.Component<Props> {
+  constructor(props) {
+    super(props);
+
+    this.setActions();
+  }
   handleChangeImage = (photo: YeetImageContainer) => {
-    console.log("CHANGE", photo);
     this.props.onChangePhoto(this.props.block.id, photo);
   };
 
   handleOpenPicker = () => {
-    this.props.onOpenImagePicker(this.props.block);
+    this.handlePressAction({ nativeEvent: { id: BlockActionType.change } });
   };
 
   handleOpenSheet = () => {
@@ -222,17 +230,23 @@ class RawImagePostBlock extends React.Component<Props> {
       ? ["Change image", "Cancel"]
       : ["Change image", "Delete", "Cancel"];
     const cancelButtonIndex = options.length - 1;
-    const descructiveButtonIndex = this.props.block.required ? 1 : undefined;
+    const destructiveButonIndex = this.props.block.required ? 1 : undefined;
 
     this.props.showActionSheetWithOptions(
       {
         options,
         cancelButtonIndex,
-        descructiveButtonIndex
+        destructiveButonIndex
       },
       buttonIndex => {
         if (buttonIndex === 0) {
-          this.handleOpenPicker();
+          this.handlePressAction({
+            nativeEvent: { id: BlockActionType.change }
+          });
+        } else if (buttonIndex === destructiveButonIndex) {
+          this.handlePressAction({
+            nativeEvent: { id: BlockActionType.delete }
+          });
         }
       }
     );
@@ -292,15 +306,99 @@ class RawImagePostBlock extends React.Component<Props> {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.block !== this.props.block) {
+    if (
+      prevProps.block !== this.props.block ||
+      prevProps.block.value !== this.props.block.value
+    ) {
       if (this.containerRef.current) {
         this.containerTag = findNodeHandle(this.containerRef.current);
       }
+
+      this.setActions();
     }
   }
 
   imageRef = React.createRef<MediaPlayerComponent>();
   containerRef = React.createRef<View>();
+
+  get isVideo() {
+    return isVideo(
+      (this.props.block.value as YeetImageContainer).image.mimeType
+    );
+  }
+
+  setActions() {
+    const cropAction = {
+      id: BlockActionType.crop,
+      title: `Crop`,
+      systemIcon: "crop"
+    };
+    const moveAction = {
+      id: BlockActionType.move,
+      title: `Move`,
+      systemIcon: "rectangle.on.rectangle"
+    };
+
+    const formatActons =
+      this.props.block.format === PostFormat.post
+        ? [
+            {
+              id: BlockActionType.change,
+              title: `Replace`,
+              systemIcon: "photo"
+            },
+            cropAction,
+            moveAction
+          ]
+        : [cropAction];
+    if (this.isVideo) {
+      this.actions = [
+        ...formatActons,
+        {
+          id: BlockActionType.trim,
+          title: `Trim`,
+          systemIcon: "film"
+        },
+
+        {
+          id: BlockActionType.delete,
+          title: `Delete`,
+          systemIcon: "trash",
+          destructive: true,
+          disabled: !this.props.block.required
+        }
+      ];
+    } else {
+      this.actions = [
+        ...formatActons,
+        {
+          id: BlockActionType.delete,
+          title: `Delete`,
+          systemIcon: "trash",
+          destructive: true,
+          disabled: !this.props.block.required
+        }
+      ];
+    }
+  }
+
+  handlePressAction = ({ nativeEvent: { id } }) => {
+    this.props.onAction({
+      action: id,
+      id: this.props.block.id
+    });
+  };
+
+  get sizeStyle() {
+    const { block } = this.props;
+
+    return {
+      width: block.config.dimensions.width,
+      height: block.config.dimensions.height
+    };
+  }
+
+  actions: Array<ContextMenuAction> = [];
 
   render() {
     const {
@@ -322,22 +420,20 @@ class RawImagePostBlock extends React.Component<Props> {
     if (!ImageComponent) {
       assert(ImageComponent, `must exist for format: ${block.format}`);
     }
-
-    const sizeStyle = {
-      width: block.config.dimensions.width,
-      height: block.config.dimensions.height
-    };
+    const sizeStyle = this.sizeStyle;
 
     if (block.value) {
       return (
         <LongPressGestureHandler
           onGestureEvent={this.handleLongPress}
-          enabled={!this.props.disabled}
+          enabled={!IS_IOS_13 && !this.props.disabled}
           ref={this.props.gestureRef}
           onHandlerStateChange={this.handleLongPress}
         >
-          <Animated.View
+          <AnimatedContextMenu
             ref={this.containerRef}
+            onPress={this.handlePressAction}
+            actions={this.actions}
             onLayout={onLayout}
             style={[
               styles.container,
@@ -345,7 +441,8 @@ class RawImagePostBlock extends React.Component<Props> {
               stylesByLayout[block.layout]?.container,
               {
                 overflow: "hidden",
-                flex: 0
+                flex: 0,
+                position: "relative"
               }
             ]}
           >
@@ -358,7 +455,7 @@ class RawImagePostBlock extends React.Component<Props> {
             />
 
             {this.props.children}
-          </Animated.View>
+          </AnimatedContextMenu>
         </LongPressGestureHandler>
       );
     } else {
@@ -366,7 +463,7 @@ class RawImagePostBlock extends React.Component<Props> {
         <TapGestureHandler
           maxDeltaX={5}
           maxDeltaY={5}
-          enabled={!this.props.disabled}
+          enabled={!IS_IOS_13 && !this.props.disabled}
           maxDist={10}
           ref={this.props.gestureRef}
           onGestureEvent={this.handleTapEvent}

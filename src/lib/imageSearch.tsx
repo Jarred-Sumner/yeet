@@ -1,9 +1,9 @@
+import CameraRoll from "@react-native-community/cameraroll";
 import giphyClient from "giphy-api";
 import memoizee from "memoizee";
-import CameraRoll from "@react-native-community/cameraroll";
+import { extname } from "path";
 import {
-  ImageResolvedAssetSource,
-  Image,
+  ImageSourcePropType,
   PerpectiveTransform,
   RotateTransform,
   RotateXTransform,
@@ -12,16 +12,21 @@ import {
   ScaleTransform,
   ScaleXTransform,
   ScaleYTransform,
-  TranslateXTransform,
-  TranslateYTransform,
   SkewXTransform,
   SkewYTransform,
-  ImageSourcePropType
+  TranslateXTransform,
+  TranslateYTransform
 } from "react-native";
-import { extname } from "path";
 import { MediaSource } from "../components/MediaPlayer";
-import { DimensionsRect, BoundsRect } from "./Rect";
 import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
+import { BoundsRect, DimensionsRect } from "./Rect";
+
+export type VideoEditResponse = {
+  url: string;
+  duration: number;
+  size: DimensionsRect;
+  mimeType: MimeType;
+};
 
 export enum ImageAspectRatio {
   vertical = "vertical",
@@ -451,6 +456,27 @@ export const imageFromMediaSource = (
   };
 };
 
+export const imageFromVideoEditor = (
+  video: Partial<VideoEditResponse>
+): YeetImage => {
+  const mimeType = ImageMimeType[video.mimeType];
+
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for video ${JSON.stringify(video)}`);
+  }
+
+  return {
+    uri: video.url,
+    width: video.size.width,
+    __typename: "YeetImage",
+    height: video.size.width,
+    mimeType,
+    duration: video.duration,
+    transform: [],
+    source: ImageSourceType.yeet
+  };
+};
+
 export const imageContainerFromMediaSource = (
   mediaSource: Partial<MediaSource>,
   source: YeetImageContainer
@@ -460,6 +486,19 @@ export const imageContainerFromMediaSource = (
     sourceType: ImageSourceType.yeet,
     image: imageFromMediaSource(mediaSource),
     preview: imageFromMediaSource(mediaSource),
+    source
+  };
+};
+
+export const imageContainerFromVideoEdit = (
+  video: VideoEditResponse,
+  source: YeetImageContainer
+): YeetImageContainer => {
+  return {
+    id: video.url,
+    sourceType: ImageSourceType.yeet,
+    image: imageFromVideoEditor(video),
+    preview: imageFromVideoEditor(video),
     source
   };
 };

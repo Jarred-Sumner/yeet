@@ -18,7 +18,8 @@ import Svg, { Rect } from "react-native-svg";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
 import {
   preserveMultiplicativeOffset,
-  preserveOffset
+  preserveOffset,
+  isCurrentlyGesturingProc
 } from "../../../lib/animations";
 import { Rectangle } from "../../../lib/Rectangle";
 import { sendSelectionFeedback } from "../../../lib/Vibration";
@@ -211,11 +212,20 @@ type Props = {
 
 const styles = StyleSheet.create({
   gestureView: {
-    flex: 0
+    flex: 0,
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0
   },
   childGestureView: {
-    position: "relative",
-    flex: 0
+    flex: 0,
+    width: "100%",
+    top: 0,
+    left: 0,
+    bottom: 0,
+    height: 0
   },
   fixedSizeOverlaySheet: {
     zIndex: 0,
@@ -241,6 +251,11 @@ const styles = StyleSheet.create({
   },
   lowerGestureView: {
     flex: 0,
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    bottom: 0,
     zIndex: -1
   }
 });
@@ -329,9 +344,6 @@ const OverlaySheet = React.forwardRef((props, ref) => {
 });
 
 export class MovableNode extends Component<Props> {
-  absoluteX = new Animated.Value(0);
-  absoluteY = new Animated.Value(0);
-
   constructor(props) {
     super(props);
 
@@ -343,23 +355,13 @@ export class MovableNode extends Component<Props> {
         ? Math.max(props.yLiteral, props.minY)
         : props.yLiteral;
 
-    console.log({ verticalAlign });
-
-    this.tapGestureState = new Animated.Value(State.UNDETERMINED);
     this.panGestureState = new Animated.Value(State.UNDETERMINED);
     this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
     this.rotationGestureState = new Animated.Value(State.UNDETERMINED);
-    this.isCurrentlyGesturingValue = Animated.cond(
-      Animated.or(
-        Animated.eq(this.panGestureState, State.ACTIVE),
-        Animated.eq(this.panGestureState, State.BEGAN),
-        Animated.eq(this.scaleGestureState, State.ACTIVE),
-        Animated.eq(this.scaleGestureState, State.BEGAN),
-        Animated.eq(this.rotationGestureState, State.ACTIVE),
-        Animated.eq(this.rotationGestureState, State.BEGAN)
-      ),
-      1,
-      0
+    this.isCurrentlyGesturingValue = isCurrentlyGesturingProc(
+      this.panGestureState,
+      this.scaleGestureState,
+      this.rotationGestureState
     );
 
     this._X = new Animated.Value(props.xLiteral);
@@ -368,6 +370,8 @@ export class MovableNode extends Component<Props> {
     this._Z = new Animated.Value(props.scaleLiteral);
 
     this.blockId = new Animated.Value(props.blockId.hashCode());
+    this.absoluteX = new Animated.Value(0);
+    this.absoluteY = new Animated.Value(0);
 
     this.handlePan = event(
       [
@@ -377,6 +381,8 @@ export class MovableNode extends Component<Props> {
             translationY: this._Y,
             absoluteX: this.absoluteX,
             absoluteY: this.absoluteY,
+            // velocityX: this.props.velocityX,
+            // velocityY: this.props.velocityY,
             state: this.panGestureState
           }
         }
@@ -408,13 +414,8 @@ export class MovableNode extends Component<Props> {
       { useNativeDriver: true }
     );
 
-    this.X = Animated.round(
-      preserveOffset(this._X, this.panGestureState, props.x)
-    );
-
-    this.Y = Animated.round(
-      preserveOffset(this._Y, this.panGestureState, props.y)
-    );
+    this.X = preserveOffset(this._X, this.panGestureState, props.x);
+    this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
     this.Z = Animated.min(
       preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
@@ -448,19 +449,17 @@ export class MovableNode extends Component<Props> {
     //   : 0;
     //  = 0;
 
-    this.unfocusedBottomValue = Animated.multiply(this.Y, -1);
-    this.unscaledValue = new Animated.Value(1);
-
     this.bottomValue =
       verticalAlign === "bottom"
         ? fixedSizeInterpolator(
             fixedSizeValue,
-            this.unfocusedBottomValue,
+            Animated.multiply(this.Y, -1),
             keyboardVisibleCond(
               this.keyboardVisibleFocusedValue,
-              this.unfocusedBottomValue,
+              Animated.multiply(this.Y, -1),
               Animated.add(
                 Animated.multiply(props.keyboardHeightValue, -1),
+                props.height,
                 120
               )
             )
@@ -475,10 +474,13 @@ export class MovableNode extends Component<Props> {
           )
         : null;
 
-    this.scale = scaleValueProc(
-      this.fixedSizeValue,
-      this.Z,
-      this.keyboardVisibleFocusedValue
+    this.scale = Animated.multiply(
+      scaleValueProc(
+        this.fixedSizeValue,
+        this.Z,
+        this.keyboardVisibleFocusedValue
+      ),
+      Animated.cond(this.isFocusedValue, props.currentScale, 1.0)
     );
 
     this.rotateTransform = Animated.concat(this.R, "rad");
@@ -678,6 +680,7 @@ export class MovableNode extends Component<Props> {
       isDragEnabled,
       isPanning,
       isOtherNodeFocused,
+      height,
       focusedBlockValue,
       waitFor = [],
       keyboardVisibleValue,
@@ -706,10 +709,6 @@ export class MovableNode extends Component<Props> {
               )
             ),
 
-            Animated.cond(Animated.eq(this.panGestureState, State.ACTIVE), [
-              Animated.set(this.props.currentX, this.absoluteX),
-              Animated.set(this.props.currentY, this.absoluteY)
-            ]),
             Animated.onChange(
               this.isCurrentlyGesturingValue,
               Animated.block([
@@ -717,7 +716,11 @@ export class MovableNode extends Component<Props> {
                   Animated.eq(this.isCurrentlyGesturingValue, 1),
                   Animated.block([
                     Animated.call(
-                      [this.absoluteX, this.absoluteY, this.panGestureState],
+                      [
+                        this.props.absoluteX,
+                        this.props.absoluteY,
+                        this.panGestureState
+                      ],
                       this.handlePanChange
                     )
                   ]),
@@ -729,8 +732,8 @@ export class MovableNode extends Component<Props> {
                         this.R,
                         this.Z,
                         this.panGestureState,
-                        this.absoluteX,
-                        this.absoluteY
+                        this.props.absoluteX,
+                        this.props.absoluteY
                       ],
                       this.updatePosition
                     )
@@ -738,14 +741,12 @@ export class MovableNode extends Component<Props> {
                 )
               ])
             ),
-            Animated.onChange(
-              this.absoluteX,
-              Animated.set(this.props.absoluteX, this.absoluteX)
-            ),
-            Animated.onChange(
-              this.absoluteY,
+
+            Animated.cond(this.isFocusedValue, [
+              Animated.set(this.props.absoluteX, this.absoluteX),
               Animated.set(this.props.absoluteY, this.absoluteY)
-            ),
+            ]),
+
             Animated.set(
               this.keyboardVisibleFocusedValue,
               Animated.multiply(
@@ -761,13 +762,18 @@ export class MovableNode extends Component<Props> {
             waitFor={this.tapGestureWaitFor}
             ref={this.tapRef}
             enabled={isDragEnabled}
-            minDurationMs={isFixedSize ? 500 : undefined}
+            minDurationMs={isFixedSize ? 200 : undefined}
             maxDist={isFixedSize ? 3 : undefined}
             onGestureEvent={this.handleTap}
             onHandlerStateChange={this.handleTap}
           >
             <Animated.View
-              style={isHidden ? styles.lowerGestureView : styles.gestureView}
+              pointerEvents="box-none"
+              style={
+                isHidden
+                  ? [styles.lowerGestureView, { height }]
+                  : [styles.gestureView, { height: height }]
+              }
             >
               <PanGestureHandler
                 ref={this.panRef}
@@ -777,7 +783,10 @@ export class MovableNode extends Component<Props> {
                 onGestureEvent={this.handlePan}
                 onHandlerStateChange={this.handlePan}
               >
-                <Animated.View style={styles.gestureView}>
+                <Animated.View
+                  pointerEvents="box-none"
+                  style={[styles.gestureView, { height: height }]}
+                >
                   <PinchGestureHandler
                     ref={this.pinchRef}
                     enabled={isDragEnabled}
@@ -786,7 +795,10 @@ export class MovableNode extends Component<Props> {
                     onGestureEvent={this.handleZoom}
                     onHandlerStateChange={this.handleZoom}
                   >
-                    <Animated.View style={styles.gestureView}>
+                    <Animated.View
+                      pointerEvents="box-none"
+                      style={[styles.gestureView, { height: height }]}
+                    >
                       {isFixedSize ? (
                         <OverlaySheet
                           ref={this.overlayRef}
@@ -809,7 +821,10 @@ export class MovableNode extends Component<Props> {
                         onGestureEvent={this.handleRotate}
                         onHandlerStateChange={this.handleRotate}
                       >
-                        <Animated.View style={styles.childGestureView}>
+                        <Animated.View
+                          pointerEvents="box-none"
+                          style={[styles.childGestureView, { height }]}
+                        >
                           <TransformableView
                             ref={this.props.containerRef}
                             opacity={

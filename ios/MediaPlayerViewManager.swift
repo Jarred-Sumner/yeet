@@ -8,6 +8,7 @@
 
 import Foundation
 import SwiftyBeaver
+import Vision
 
 @objc(MediaPlayerViewManager)
 class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
@@ -269,6 +270,109 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     }
   }
 
+  @objc(editVideo: cb:)
+  func editVideo(_ tag: NSNumber, _ cb: @escaping RCTResponseSenderBlock) {
+    withView(tag: tag) { view in
+      let didOpen = view.editVideo()
+      guard didOpen else {
+        cb([nil, ["success": false]])
+        return
+      }
+
+      let _originalEditVideo = view.onEditVideo
+      view.onEditVideo = { [weak view] value in
+        cb([nil, value])
+        view?.onEditVideo = _originalEditVideo
+      }
+    }
+  }
+
+  @objc(detectRectangles: cb:)
+  func detectRectangles(_ tag: NSNumber, _ cb: @escaping RCTResponseSenderBlock) {
+    withView(tag: tag) { view in
+      guard self.bridge?.isValid == true else {
+        return
+      }
+
+      guard let image = view.imageView?.image else {
+        cb([nil, ["rectangles": []]])
+        return
+      }
+
+      let imageSize = view.imageView!.bounds.size
+      let scaleX = imageSize.width / (image.size.width * image.scale)
+      let scaleY = imageSize.height / (image.size.height * image.scale)
+      
+
+      var rects: Array<[String: Any]> = []
+      for rect in FeatureDetector().detectRectangles(image: image) {
+        rects.append(rect.applying(.init(scaleX: scaleX, y: scaleY)).dictionaryValue())
+      }
+      cb([nil, ["rectangles": rects]])
+
+//      let request = VNDetectRectanglesRequest(completionHandler: { request, error in
+//        guard let observations = request.results as? [VNRectangleObservation]
+//            else { fatalError("unexpected result type from VNDetectRectanglesRequest") }
+//        guard observations.count > 0 else {
+//            cb([nil, ["rectangles": []]])
+//          return
+//        }
+//
+//
+//
+//        var rects: Array<[String: Any]> = []
+//        for observation in observations {
+//          rects.append(observation.boundingBox.scaled(to: imageSize).dictionaryValue())
+//        }
+//        cb([nil, ["rectangles": rects]])
+//
+//
+//
+//        // Rectify the detected image and reduce it to inverted grayscale for applying model.
+//
+////        let correctedImage = inputImage
+////            .cropping(to: boundingBox)
+////            .applyingFilter("CIPerspectiveCorrection", withInputParameters: [
+////                "inputTopLeft": CIVector(cgPoint: topLeft),
+////                "inputTopRight": CIVector(cgPoint: topRight),
+////                "inputBottomLeft": CIVector(cgPoint: bottomLeft),
+////                "inputBottomRight": CIVector(cgPoint: bottomRight)
+////            ])
+////            .applyingFilter("CIColorControls", withInputParameters: [
+////                kCIInputSaturationKey: 0,
+////                kCIInputContrastKey: 32
+////            ])
+////            .applyingFilter("CIColorInvert", withInputParameters: nil)
+//
+//      })
+//
+//      request.minimumConfidence = 0.1
+//      request.maximumObservations = 5
+//      request.quadratureTolerance = 45
+//      view.rectangleDetectRequest = request
+//
+//
+//      do {
+//        if let cgImage = image.cgImage {
+//          let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+//          try requestHandler.perform([request])
+//        } else if let ciImage = image.ciImage {
+//          let requestHandler = VNImageRequestHandler(ciImage: ciImage, orientation: CGImagePropertyOrientation(image.imageOrientation), options: [:])
+//          try requestHandler.perform([request])
+//        } else {
+//          cb([nil, ["rectangles": []]])
+//          return
+//        }
+//      } catch {
+//        cb([error, ["rectangles": [], "error": error.localizedDescription]])
+//      }
+
+
+    }
+  }
+
+
+
   @objc(share:network:callback:)
   func share(_ tag: NSNumber, _ network: String, _ cb: @escaping RCTResponseSenderBlock) {
     withView(tag: tag) { view in
@@ -373,4 +477,19 @@ class MediaPlayerCacheDelegate : NSObject, NSCacheDelegate {
 
     print("WILL EVICT \(mediaSource.id)")
   }
+}
+
+extension CGImagePropertyOrientation {
+  init(_ uiOrientation: UIImage.Orientation) {
+        switch uiOrientation {
+            case .up: self = .up
+            case .upMirrored: self = .upMirrored
+            case .down: self = .down
+            case .downMirrored: self = .downMirrored
+            case .left: self = .left
+            case .leftMirrored: self = .leftMirrored
+            case .right: self = .right
+            case .rightMirrored: self = .rightMirrored
+        }
+    }
 }

@@ -1,7 +1,14 @@
 import { useActionSheet } from "@expo/react-native-action-sheet";
-import { isArray, memoize } from "lodash";
+import {
+  cloneDeep,
+  isArray,
+  isEmpty,
+  memoize,
+  throttle,
+  debounce
+} from "lodash";
 import * as React from "react";
-import { StyleSheet, View, InteractionManager, Task } from "react-native";
+import { InteractionManager, StyleSheet, Task, View } from "react-native";
 import {
   ScrollView,
   State as GestureState
@@ -12,20 +19,19 @@ import { NavigationEvents } from "react-navigation";
 import * as TransformMatrix from "transformation-matrix";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
 import {
+  getPositionsKey,
   isEmptyTextBlock,
   isFixedSizeBlock,
-  NewPostType,
-  snapBlock,
-  getPositionsKey
+  NewPostType
 } from "../../lib/buildPost";
-import { SnapDirection, SnapPoint } from "../../lib/enums";
-import { flatten, cloneDeep } from "lodash";
+import { SnapPoint } from "../../lib/enums";
 import {
   getEstimatedBounds,
   getEstimatedBoundsToContainer,
   startExport
 } from "../../lib/Exporter";
 import {
+  imageContainerFromVideoEdit,
   ImageSourceType,
   isVideo,
   YeetImageContainer,
@@ -34,7 +40,9 @@ import {
 import { Rectangle } from "../../lib/Rectangle";
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback, sendSelectionFeedback } from "../../lib/Vibration";
+import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
+import { BlockActionType } from "./BlockActions";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
 import { GallerySectionItem } from "./ImagePicker/FilterBar";
 import { ActiveLayer } from "./layers/ActiveLayer";
@@ -68,6 +76,8 @@ import {
   ToolbarButtonType,
   ToolbarType
 } from "./Toolbar";
+import { scaleRectByFactor } from "../../lib/Rect";
+import { moving } from "../../lib/animations";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -247,13 +257,11 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleWillFocus = () => {};
   handleChangeSnapPoint = snapPoint => {
-    const willChangeSnapDirection = snapPoint !== this.state.snapPoint;
-
-    this.setState(
-      { snapPoint },
-      willChangeSnapDirection ? () => sendSelectionFeedback() : undefined
-    );
+    this.setState({ snapPoint }, () => sendSelectionFeedback());
   };
+
+  // handleChangeSnapPoint = debounce(this._handleChangeSnapPoint, 10);
+  currentScale = new Animated.Value(1.0);
 
   deleteNode = (id: string) => {
     if (this._inlineNodeRefs.has(id)) {
@@ -300,7 +308,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       getPositionsKey(prevProps.post.positions) !==
       getPositionsKey(this.props.post.positions)
     ) {
-
     }
   }
 
@@ -804,6 +811,110 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
+  deleteBlock = (id: string) => {
+    const blocks = cloneDeep(this.props.post.blocks);
+    delete blocks[id];
+
+    const positions = this.props.post.positions
+      .map(row => {
+        if (isArray(row)) {
+          let _row = row.filter(_id => id !== _id);
+          if (isEmpty(_row)) {
+            return null;
+          } else {
+            return _row;
+          }
+        } else if (row === id) {
+          return null;
+        } else {
+          return [row];
+        }
+      })
+      .filter(Boolean);
+    this.props.onChange({ ...this.props.post, blocks, positions });
+  };
+
+  handleBlockAction = ({
+    id,
+    action
+  }: {
+    id: string;
+    action: BlockActionType;
+  }) => {
+    const node = this.props.inlineNodes[id];
+    const block = node ?? this.props.post.blocks[id];
+    const blockInputRef = this._blockInputRefs.get(id)?.current;
+    const isNode = !!node;
+
+    switch (action) {
+      case BlockActionType.change: {
+        this.handleOpenImagePicker(block);
+        return;
+      }
+
+      case BlockActionType.crop: {
+      }
+
+      case BlockActionType.delete: {
+        this.clearFocus();
+
+        if (isNode) {
+          this.deleteNode(id);
+        } else {
+          this.deleteBlock(id);
+        }
+      }
+
+      case BlockActionType.move: {
+        const frame = scaleRectByFactor(
+          0.8,
+          block.frame ?? { width: 0, height: 0, x: 0, y: 0 }
+        );
+
+        const position = {
+          x: Math.max(frame.x, 0),
+          y: (this.state.bottomInset - frame.y - frame.height) * -1
+        };
+
+        const _block = cloneDeep(block);
+        _block.format = PostFormat.sticker;
+
+        const editableNode = buildEditableNode({
+          block: _block,
+          scale: 0.8,
+          rotate: 0,
+          verticalAlign: "bottom",
+          ...position
+        });
+
+        console.log({ position });
+
+        this.props.onChangeNodes({
+          ...this.props.inlineNodes,
+          [block.id]: editableNode
+        });
+        this.deleteBlock(id);
+      }
+
+      case BlockActionType.trim: {
+        if (!isVideo(block.value?.image?.mimeType)) {
+          return;
+        }
+
+        (blockInputRef as MediaPlayerComponent).editVideo().then(resp => {
+          if (typeof resp === "object" && typeof resp.url === "string") {
+            const imageContainer = imageContainerFromVideoEdit(
+              resp,
+              block.value
+            );
+
+            this.handleChangeImageBlockPhoto(id, imageContainer, resp.size);
+          }
+        });
+      }
+    }
+  };
+
   handleInsertPhoto = (
     block,
     initialRoute = "all",
@@ -842,7 +953,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     const editableNode = buildEditableNode({
       block,
       x: POST_WIDTH / 2 - block.config.dimensions.maxX / 2,
-      y: block.config.dimensions.maxY + SPACING.double
+      y: (block.config.dimensions.maxY + SPACING.double) * -1
     });
 
     this._blockInputRefs.set(block.id, React.createRef());
@@ -881,8 +992,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
-    const _block = this.props.post.blocks[blockId];
-
+    const node = this.props.inlineNodes[blockId];
+    const _block = node?.block ?? this.props.post.blocks[blockId];
     const minWidth = minImageWidthByFormat(_block.format);
 
     const block = buildImageBlock({
@@ -896,7 +1007,14 @@ class RawwPostEditor extends React.Component<Props, State> {
       format: _block.format
     });
 
-    this.handleChangeBlock(block);
+    if (node) {
+      this.handleInlineNodeChange({
+        ...node,
+        block: block
+      });
+    } else {
+      this.handleChangeBlock(block);
+    }
   };
 
   buttonRef = React.createRef();
@@ -1160,6 +1278,10 @@ class RawwPostEditor extends React.Component<Props, State> {
   currentWidth = new Animated.Value<number>(0);
   currentHeight = new Animated.Value<number>(0);
   topSnapValue = new Animated.Value<number>(0);
+  isMovingValue = Animated.or(
+    moving(this.panX, undefined, 5),
+    moving(this.panY, undefined, 5)
+  );
 
   render() {
     const { post, minX, minY } = this.props;
@@ -1196,7 +1318,12 @@ class RawwPostEditor extends React.Component<Props, State> {
             Animated.cond(
               Animated.eq(this.focusTypeValue, FocusType.panning),
               set(this.props.headerOpacity, 0),
-              set(this.props.headerOpacity, sub(1.0, this.keyboardVisibleValue))
+              Animated.block([
+                set(
+                  this.props.headerOpacity,
+                  sub(1.0, this.keyboardVisibleValue)
+                )
+              ])
             ),
             Animated.onChange(
               this.focusTypeValue,
@@ -1204,7 +1331,10 @@ class RawwPostEditor extends React.Component<Props, State> {
                 Animated.set(this.snapOpacityValue, 0),
                 cond(
                   Animated.neq(this.focusTypeValue, FocusType.panning),
-                  Animated.block([set(this.props.controlsOpacityValue, 1.0)])
+                  Animated.block([
+                    set(this.props.controlsOpacityValue, 1.0),
+                    set(this.currentScale, 1.0)
+                  ])
                 ),
                 cond(eq(this.focusTypeValue, FocusType.absolute), [
                   set(this.props.controlsOpacityValue, 1.0)
@@ -1284,6 +1414,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             onFocus={this.handleFocusBlock}
             onOpenImagePicker={this.handleOpenImagePicker}
             onChangePhoto={this.handleChangeImageBlockPhoto}
+            onAction={this.handleBlockAction}
             waitFor={this.postPreviewHandlers}
             maxY={bounds.height}
             onlyShow={this.state.focusedBlockId}
@@ -1326,14 +1457,16 @@ class RawwPostEditor extends React.Component<Props, State> {
                 keyboardHeight={this.props.keyboardHeight}
                 waitFor={this.postPreviewHandlers}
                 focusType={this.state.focusType}
+                currentScale={this.currentScale}
                 minX={bounds.x}
                 minY={bounds.y}
-                currentX={this.currentX}
-                currentY={this.currentY}
+                currentX={this.panX}
+                currentY={this.panY}
                 maxX={sizeStyle.width}
+                onAction={this.handleBlockAction}
                 bottomY={this.postBottomY}
                 onFocus={this.handleFocusBlock}
-                maxY={sizeStyle.height}
+                maxY={bounds.height}
                 onTapNode={this.handleTapNode}
                 onlyShow={this.state.focusedBlockId}
                 onBlur={this.handleBlurNode}
@@ -1350,7 +1483,9 @@ class RawwPostEditor extends React.Component<Props, State> {
                 velocityY={this.velocityY}
                 topSnapValue={this.topSnapValue}
                 type={this.focusedNode?.block?.type}
+                isMovingValue={this.isMovingValue}
                 frame={this.focusedNode?.block?.frame}
+                currentScale={this.currentScale}
                 onChangeSnapPoint={this.handleChangeSnapPoint}
                 minY={10}
                 snapOpacityValue={this.snapOpacityValue}
@@ -1388,6 +1523,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               waitFor={this.postPreviewHandlers}
               width={sizeStyle.width}
               height={sizeStyle.height}
+              currentScale={this.currentScale}
               relativeHeight={this.relativeKeyboardHeightValue}
               isTappingEnabled={
                 this.state.activeButton === ToolbarButtonType.text

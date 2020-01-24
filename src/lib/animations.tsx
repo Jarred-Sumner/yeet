@@ -248,6 +248,30 @@ export const moving = (
   );
 };
 
+// const movingProc = Animated.proc(
+//   (minPositionDelta, emptyFrameThreshold, noMovementFrames, position) =>
+//     cond(
+//       lessThan(abs(position), minPositionDelta),
+//       [
+//         set(noMovementFrames, add(noMovementFrames, 1)),
+//         not(greaterThan(noMovementFrames, emptyFrameThreshold))
+//       ],
+//       [set(noMovementFrames, 0), 1]
+//     )
+// );
+
+// export const moving = (
+//   position: Animated.Node<number>,
+//   minPositionDelta = 1e-3,
+//   emptyFrameThreshold = 5
+// ) => {
+//   return movingProc(
+//     minPositionDelta,
+//     emptyFrameThreshold,
+//     Animated.diff(position)
+//   );
+// };
+
 export const snapPoint = (
   value: Animated.Adaptable<number>,
   velocity: Animated.Adaptable<number>,
@@ -288,10 +312,28 @@ export const getSnapPoints = () => {
 };
 
 export const snapButtonValue = Animated.proc((midX, midY, x, y, size) =>
-  Animated.sqrt(
-    Animated.add(
-      Animated.multiply(Animated.sub(midX, x), Animated.sub(midX, x)),
-      Animated.multiply(Animated.sub(midY, y), Animated.sub(midY, y))
+  Animated.abs(
+    Animated.sqrt(
+      Animated.add(
+        Animated.multiply(Animated.sub(midX, x), Animated.sub(midX, x)),
+        Animated.multiply(Animated.sub(midY, y), Animated.sub(midY, y))
+      )
     )
   )
+);
+
+export const isCurrentlyGesturingProc = Animated.proc(
+  (panGestureState, scaleGestureState, rotationGestureState) =>
+    Animated.cond(
+      Animated.or(
+        Animated.eq(panGestureState, State.ACTIVE),
+        Animated.eq(panGestureState, State.BEGAN),
+        Animated.eq(scaleGestureState, State.ACTIVE),
+        Animated.eq(scaleGestureState, State.BEGAN),
+        Animated.eq(rotationGestureState, State.ACTIVE),
+        Animated.eq(rotationGestureState, State.BEGAN)
+      ),
+      1,
+      0
+    )
 );

@@ -127,7 +127,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       this.props.paddingTop !== prevProps.paddingTop
     ) {
       const responder = this.getScrollResponder();
-
+      console.log("PRECRASHED?");
       responder.setNativeProps({
         contentInset: {
           top: this.props.paddingTop,
@@ -422,6 +422,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
             right: paddingRight
           }}
           automaticallyAdjustContentInsets={false}
+          contentInsetAdjustmentBehavior="never"
           showsVerticalScrollIndicator={true}
           scrollEventThrottle={1}
           ref={this._handleRef}

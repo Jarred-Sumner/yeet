@@ -54,7 +54,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   }
 
   func invalidate() {
-    bridge?.uiManager.observerCoordinator.remove(self)
+    bridge?.uiManager?.observerCoordinator.remove(self)
     self.movableViewTag = nil
     self.bridge = nil
 
@@ -234,7 +234,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
 
     if isDetached && bridge?.isValid ?? false {
-      bridge?.uiManager.observerCoordinator.remove(self)
+      bridge?.uiManager?.observerCoordinator.remove(self)
     }
   }
 
@@ -383,7 +383,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
       if state == .end {
        self?.contentMode = originalContentMode
-      self?.clipsToBounds = originalClipsToBounds
+        self?.clipsToBounds = originalClipsToBounds
        self?.layer.needsDisplayOnBoundsChange = originalNeedsDisplayOnBoundsChange
      }
     }

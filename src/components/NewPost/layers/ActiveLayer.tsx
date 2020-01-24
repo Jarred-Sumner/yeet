@@ -112,6 +112,7 @@ const Footer = ({
   hasExamples,
   exampleCount,
   onPressExample,
+  currentScale,
   exampleIndex,
   waitFor,
   panX,
@@ -137,6 +138,7 @@ const Footer = ({
     return (
       <DeleteFooter
         panX={panX}
+        currentScale={currentScale}
         panY={panY}
         onDelete={onDelete}
         waitFor={waitFor}
@@ -165,6 +167,7 @@ export const ActiveLayer = ({
   exampleCount = 0,
   exampleIndex = -1,
   focusType,
+  currentScale,
   onBack,
   keyboardVisibleOpacity,
   panX,
@@ -200,6 +203,7 @@ export const ActiveLayer = ({
           type={toolbarType}
           opacity={controlsOpacity}
           onDelete={onDelete}
+          currentScale={currentScale}
           panX={panX}
           panY={panY}
           hasExamples={exampleCount > 0}

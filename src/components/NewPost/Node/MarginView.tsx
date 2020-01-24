@@ -132,7 +132,9 @@ export const MarginView = ({
   x,
   width,
   scale,
+  isMovingValue,
   rotate = 0,
+  currentScale,
   postBottom,
   onChangeSnapPoint,
   velocityX,
@@ -158,6 +160,9 @@ export const MarginView = ({
   blocks: Array<PostBlockType>;
 }) => {
   const isVisible = focusType === FocusType.panning;
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <>
@@ -170,7 +175,7 @@ export const MarginView = ({
           width: "100%",
           position: "absolute",
           display: isVisible ? "flex" : "none",
-          zIndex: 99999
+          zIndex: -1
         }}
         pointerEvents="none"
       >
@@ -189,8 +194,12 @@ export const MarginView = ({
             block={block}
             positions={positions}
             snapPoint={snapPoint}
+            velocityX={velocityX}
+            currentScale={currentScale}
+            velocityY={velocityY}
             x={x}
             y={y}
+            isMovingValue={isMovingValue}
             onChange={onChangeSnapPoint}
           />
           {IS_SIMULATOR && (

@@ -337,6 +337,9 @@ RCT_EXPORT_VIEW_PROPERTY(onEnd, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);
 
+RCT_EXPORT_VIEW_PROPERTY(onEditVideo, RCTDirectEventBlock);
+
+
 RCT_EXTERN_METHOD(batchPlay:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids);
 RCT_EXTERN_METHOD(batchPause:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids);
 RCT_EXTERN_METHOD(crop:(nonnull NSNumber*)tag bounds:(CGRect)bounds originalSize:(CGSize)originalSize resolver:(RCTPromiseResolveBlock)resolver rejecter:( RCTPromiseRejectBlock)rejecter);
@@ -348,6 +351,8 @@ RCT_EXTERN_METHOD(stopCachingAll);
 RCT_EXTERN_METHOD(share:(nonnull NSNumber*)tag network:(NSString*)network callback:(RCTResponseSenderBlock)callback);
 RCT_EXTERN_METHOD(pause:);
 RCT_EXTERN_METHOD(play:);
+RCT_EXTERN_METHOD(editVideo:(nonnull NSNumber*)tag cb:(RCTResponseSenderBlock)callback);
+RCT_EXTERN_METHOD(detectRectangles:(nonnull NSNumber*)tag cb:(RCTResponseSenderBlock)callback);
 RCT_EXTERN_METHOD(reset:);
 RCT_EXTERN_METHOD(save:(nonnull NSNumber*)tag cb:(RCTResponseSenderBlock)callback);
 RCT_EXTERN_METHOD(goNext:::);

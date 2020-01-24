@@ -70,6 +70,7 @@ const BlockCell = React.forwardRef((props, ref) => {
     onBlur,
     focusTypeValue,
     focusedBlockValue,
+    onAction,
     onLayout,
     scrollRef,
     disabled
@@ -94,6 +95,7 @@ const BlockCell = React.forwardRef((props, ref) => {
         focusedBlockValue={focusedBlockValue}
         scrollRef={scrollRef}
         isFocused={focusedBlockId === block.id}
+        onAction={onAction}
         disabled={
           disabled || focusedBlockId ? focusedBlockId !== block.id : false
         }
@@ -115,6 +117,7 @@ export const BlockList = ({
   setBlockAtIndex,
   setBlockInputRef,
   focusType,
+  onAction,
   positions,
   disabled,
   focusedBlockValue,
@@ -153,6 +156,7 @@ export const BlockList = ({
           positions={positions}
           block={block}
           focusType={focusType}
+          onAction={onAction}
           key={block.id}
           onChangePhoto={onChangePhoto}
           onTap={onTap}
@@ -171,6 +175,7 @@ export const BlockList = ({
       positions,
       blocks,
       onLayout,
+      onAction,
       focusType,
       onChangePhoto,
       onTap,
@@ -220,13 +225,14 @@ export const EditableNodeList = ({
   onTapNode,
   velocityX,
   keyboardHeight,
+  currentScale,
   animatedKeyboardVisibleValue,
   velocityY,
   onTransform,
   maxX,
   currentX,
   currentY,
-  bottom,
+  bottomY: bottom,
   keyboardHeightValue,
   focusType,
   topInsetValue,
@@ -245,6 +251,7 @@ export const EditableNodeList = ({
   setNodeRef,
   setBlockInputRef,
   panX,
+  onAction,
   panY,
   format,
   onPan,
@@ -283,7 +290,9 @@ export const EditableNodeList = ({
           topInsetValue={topInsetValue}
           containerRef={containerRef(id)}
           velocityX={velocityX}
+          currentScale={currentScale}
           velocityY={velocityY}
+          onAction={onAction}
           onTransform={onTransform}
           currentX={currentX}
           currentY={currentY}
@@ -323,6 +332,8 @@ export const EditableNodeList = ({
     [
       maxX,
       minY,
+      onAction,
+      currentScale,
       bottom,
       maxY,
       currentX,
@@ -377,6 +388,7 @@ export const PostPreview = React.forwardRef(
       onTapNode,
       onChangeNode,
       onTapBackground,
+      onAction,
       contentTranslate,
       focusType,
       focusedBlockValue,
@@ -541,6 +553,7 @@ export const PostPreview = React.forwardRef(
                 layout={postLayout}
                 key={_positionsKey}
                 onFocus={onFocus}
+                onAction={onAction}
                 focusTypeValue={focusTypeValue}
                 onOpenImagePicker={onOpenImagePicker}
                 onChangePhoto={onChangePhoto}

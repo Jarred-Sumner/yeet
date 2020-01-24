@@ -563,7 +563,7 @@ export const isDeletePressed = (x: number, y: number) => {
   return distance >= DELETE_RANGE[0] && distance <= DELETE_RANGE[1];
 };
 
-export const DeleteFooter = ({ onDelete, panY, panX }) => {
+export const DeleteFooter = ({ onDelete, panY, panX, currentScale }) => {
   const distance = React.useRef(new Animated.Value(0));
 
   const scaleTransform = React.useRef(
@@ -594,6 +594,21 @@ export const DeleteFooter = ({ onDelete, panY, panX }) => {
                   Animated.sub(MID_Y_DELETE_BUTTON, panY),
                   Animated.sub(MID_Y_DELETE_BUTTON, panY)
                 )
+              )
+            )
+          ),
+          Animated.cond(
+            Animated.greaterThan(scaleTransform.current, 0.9),
+            Animated.set(
+              currentScale,
+              Animated.interpolate(
+                distance.current,
+
+                {
+                  inputRange: DELETE_RANGE,
+                  outputRange: [0.75, 0.95, 1.0, 1.0],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                }
               )
             )
           )

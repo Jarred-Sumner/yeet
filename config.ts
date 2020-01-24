@@ -20,6 +20,11 @@ export const BOTTOM_Y = getInset("bottom");
 export const IS_DEVELOPMENT = process.env.NODE_ENV !== "production";
 export const IS_PRODUCTION = process.env.NODE_ENV === "production";
 export const FLICKR_API_KEY = "567fbd36f8779b6b9ee673ee7c5e570f";
+export const OS_VERSION = parseInt(Platform.Version, 10);
+export const IS_IOS_13 = Platform.select({
+  ios: OS_VERSION >= 13,
+  android: false
+});
 
 if (IS_DEVELOPMENT && !IS_SIMULATOR && Platform.OS === "ios") {
   BASE_HOSTNAME = Config.PRODUCTION_BASE_HOSTNAME;

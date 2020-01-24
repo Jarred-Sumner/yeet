@@ -5,7 +5,11 @@ import {
   StyleProp,
   UIManager
 } from "react-native";
-import { ImageMimeType, isVideo } from "../../lib/imageSearch";
+import {
+  ImageMimeType,
+  isVideo,
+  VideoEditResponse
+} from "../../lib/imageSearch";
 import { BoundsRect, DimensionsRect } from "../../lib/Rect";
 import { NativeMediaPlayer, VIEW_NAME } from "./NativeMediaPlayer";
 import { MediaPlayerStatus } from "./MediaPlayerContext";
@@ -53,6 +57,7 @@ export type MediaPlayerProps = {
   onEnd?: ReactEventHandler<StatusEventData>;
   onLoad?: ReactEventHandler<StatusEventData>;
   onPlay?: ReactEventHandler<StatusEventData>;
+  onEditVideo?: ReactEventHandler<VideoEditResponse>;
   onPause?: ReactEventHandler<StatusEventData>;
   id: string;
   paused?: boolean;
@@ -212,6 +217,37 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     );
   };
 
+  detectRectangles = () => {
+    return new Promise((resolve, reject) => {
+      MediaPlayerComponent.NativeModule?.detectRectangles(
+        findNodeHandle(this),
+        (err, success) => {
+          if (err) {
+            reject(err);
+            return;
+          } else {
+            resolve(success);
+          }
+        }
+      );
+    });
+  };
+
+  editVideo = (): Promise<VideoEditResponse> =>
+    new Promise<VideoEditResponse>((resolve, reject) => {
+      MediaPlayerComponent.NativeModule?.editVideo(
+        findNodeHandle(this),
+        (err, success) => {
+          if (err) {
+            reject(err);
+            return;
+          } else {
+            resolve(success);
+          }
+        }
+      );
+    });
+
   advance = (index: number, withFrame: Boolean = false) => {
     if (withFrame) {
       return MediaPlayerComponent.NativeModule?.advanceWithFrame(
@@ -264,7 +300,8 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       containerTag,
       muted,
       onPlay,
-      onPause
+      onPause,
+      onEditVideo
     } = this.props;
 
     if (
@@ -282,7 +319,8 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       isActive !== nextProps.isActive ||
       prefetch != nextProps.prefetch ||
       containerTag != nextProps.containerTag ||
-      resizeMode !== nextProps.resizeMode
+      resizeMode !== nextProps.resizeMode ||
+      onEditVideo !== nextProps.onEditVideo
     ) {
       return true;
     }
@@ -316,6 +354,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       containerTag,
       resizeMode,
       onError,
+      onEditVideo,
       onChangeItem
     } = this.props;
 
@@ -330,6 +369,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
         borderRadius={borderRadius}
         isActive={isActive}
         allowSkeleton
+        onEditVideo={onEditVideo}
         prefetch={prefetch}
         onProgress={onProgress}
         muted={muted}

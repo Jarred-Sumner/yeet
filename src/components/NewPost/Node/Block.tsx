@@ -33,6 +33,7 @@ export const Block = React.forwardRef(
       onContentSizeChange,
       scrollRef,
       gestureRef,
+      onAction,
       onTap,
       waitFor,
       disabled = false
@@ -54,6 +55,7 @@ export const Block = React.forwardRef(
           onLayout={onLayout}
           focusType={focusType}
           isSticker={isSticker}
+          onAction={onAction}
           scale={scale}
           containerRef={containerRef}
           columnCount={layoutContext.columnCount}
@@ -91,6 +93,7 @@ export const Block = React.forwardRef(
           onTap={onTap}
           onChangePhoto={onChangePhoto}
           focusType={focusType}
+          onAction={onAction}
           gestureRef={gestureRef}
           scale={scale}
           usePreview={usePreview}

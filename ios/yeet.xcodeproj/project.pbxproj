@@ -34,6 +34,10 @@
 		831F27AD2378F971005E18FF /* NotificationService.m in Sources */ = {isa = PBXBuildFile; fileRef = 831F27AC2378F971005E18FF /* NotificationService.m */; };
 		831F27B12378F971005E18FF /* OneSignalNotificationServiceExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 831F27A92378F971005E18FF /* OneSignalNotificationServiceExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		831F27B7237902A2005E18FF /* AppCenter-Config.plist in Resources */ = {isa = PBXBuildFile; fileRef = 831F27B6237902A2005E18FF /* AppCenter-Config.plist */; };
+		8324807323D9A75E000E537E /* ContextMenuViewManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 8324806C23D9A75D000E537E /* ContextMenuViewManager.m */; };
+		8324807423D9A75E000E537E /* ContextMenuAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 8324806E23D9A75E000E537E /* ContextMenuAction.m */; };
+		8324807523D9A75E000E537E /* RCTConvert+ContextMenuAction.m in Sources */ = {isa = PBXBuildFile; fileRef = 8324807123D9A75E000E537E /* RCTConvert+ContextMenuAction.m */; };
+		8324807623D9A75E000E537E /* ContextMenuView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8324807223D9A75E000E537E /* ContextMenuView.m */; };
 		832C5CE9235F93730056323D /* yeetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832C5CE8235F93730056323D /* yeetTests.swift */; };
 		832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 832E37EB232379FD0033E3A3 /* ContentExport.swift */; };
 		832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */; };
@@ -202,6 +206,14 @@
 		831F27AE2378F971005E18FF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		831F27B52378FC45005E18FF /* OneSignalNotificationServiceExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OneSignalNotificationServiceExtension.entitlements; sourceTree = "<group>"; };
 		831F27B6237902A2005E18FF /* AppCenter-Config.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "AppCenter-Config.plist"; sourceTree = "<group>"; };
+		8324806B23D9A75D000E537E /* ContextMenuViewManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContextMenuViewManager.h; sourceTree = "<group>"; };
+		8324806C23D9A75D000E537E /* ContextMenuViewManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContextMenuViewManager.m; sourceTree = "<group>"; };
+		8324806D23D9A75D000E537E /* ContextMenuView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContextMenuView.h; sourceTree = "<group>"; };
+		8324806E23D9A75E000E537E /* ContextMenuAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContextMenuAction.m; sourceTree = "<group>"; };
+		8324806F23D9A75E000E537E /* RCTConvert+ContextMenuAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "RCTConvert+ContextMenuAction.h"; sourceTree = "<group>"; };
+		8324807023D9A75E000E537E /* ContextMenuAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ContextMenuAction.h; sourceTree = "<group>"; };
+		8324807123D9A75E000E537E /* RCTConvert+ContextMenuAction.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+ContextMenuAction.m"; sourceTree = "<group>"; };
+		8324807223D9A75E000E537E /* ContextMenuView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ContextMenuView.m; sourceTree = "<group>"; };
 		832C5CE6235F93730056323D /* yeetTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = yeetTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		832C5CE8235F93730056323D /* yeetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = yeetTests.swift; sourceTree = "<group>"; };
 		832C5CEA235F93730056323D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -359,6 +371,7 @@
 				839219D22378EC3300DC3461 /* yeet.entitlements */,
 				83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */,
 				83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */,
+				8324806A23D9A74E000E537E /* ContextMenu */,
 				8371AB58237EB8A50034EF15 /* VideoPlayerView.swift */,
 				830418642345AAEE007C9E5A /* EnableWebpDecoder.h */,
 				831C520C233F2FC300F364A3 /* MediaPlayer */,
@@ -478,6 +491,21 @@
 			children = (
 			);
 			name = Libraries;
+			sourceTree = "<group>";
+		};
+		8324806A23D9A74E000E537E /* ContextMenu */ = {
+			isa = PBXGroup;
+			children = (
+				8324807023D9A75E000E537E /* ContextMenuAction.h */,
+				8324806E23D9A75E000E537E /* ContextMenuAction.m */,
+				8324806D23D9A75D000E537E /* ContextMenuView.h */,
+				8324807223D9A75E000E537E /* ContextMenuView.m */,
+				8324806B23D9A75D000E537E /* ContextMenuViewManager.h */,
+				8324806C23D9A75D000E537E /* ContextMenuViewManager.m */,
+				8324806F23D9A75E000E537E /* RCTConvert+ContextMenuAction.h */,
+				8324807123D9A75E000E537E /* RCTConvert+ContextMenuAction.m */,
+			);
+			path = ContextMenu;
 			sourceTree = "<group>";
 		};
 		832C5CE7235F93730056323D /* yeetTests */ = {
@@ -1019,6 +1047,7 @@
 				83EF944F23B81CFF00EC37CF /* ContentExportThumbnail.swift in Sources */,
 				833867E123B6F3FC0054778D /* CGRect+extensions.swift in Sources */,
 				8341A1EB238E1D8F00632E88 /* Log.swift in Sources */,
+				8324807623D9A75E000E537E /* ContextMenuView.m in Sources */,
 				830554E323C8187E008D8BD1 /* YeetTextView.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
@@ -1030,6 +1059,7 @@
 				834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */,
 				833867E723B6F56F0054778D /* CGSize+Extensions.swift in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.m in Sources */,
+				8324807423D9A75E000E537E /* ContextMenuAction.m in Sources */,
 				83B0CAD123B6F7900010DC66 /* PostFormat.swift in Sources */,
 				8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */,
 				83E3E82E23B985F4007AC944 /* ContentExportResult.swift in Sources */,
@@ -1045,6 +1075,7 @@
 				833867E323B6F43F0054778D /* BinaryFloatingPoint+Extensions.swift in Sources */,
 				8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */,
 				83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */,
+				8324807323D9A75E000E537E /* ContextMenuViewManager.m in Sources */,
 				839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */,
 				83B0CAD523B6F7B40010DC66 /* YeetMedia.swift in Sources */,
 				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
@@ -1064,6 +1095,7 @@
 				836B71C923566EF1003BF812 /* AVAsset+resize.swift in Sources */,
 				8311793823B1889500EA8CB2 /* MovableViewManager.swift in Sources */,
 				834DEDE923C06833006946AD /* KeyboardNotification.swift in Sources */,
+				8324807523D9A75E000E537E /* RCTConvert+ContextMenuAction.m in Sources */,
 				83B0CACB23B6F7300010DC66 /* ExportType.swift in Sources */,
 				83B0CACD23B6F7490010DC66 /* MimeType.swift in Sources */,
 				8366FB2E239F000F00F73311 /* YeetColorSlider.swift in Sources */,

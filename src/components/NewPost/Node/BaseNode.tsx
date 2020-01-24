@@ -189,17 +189,20 @@ export class BaseNode extends React.Component<Props> {
       currentX,
       currentY,
       keyboardHeight,
+      currentScale,
       currentWidth,
       velocityX,
       velocityY,
-      currentScale,
+
       currentRotate,
       currentHeight,
       animatedKeyboardVisibleValue,
       scrollY,
+      onAction,
       inputAccessoryView,
       snapOpacityValue,
-      keyboardHeightValue
+      keyboardHeightValue,
+      bottom
     } = this.props;
 
     const isDragEnabled =
@@ -231,6 +234,7 @@ export class BaseNode extends React.Component<Props> {
         y={position.animatedY}
         snapOpacityValue={snapOpacityValue}
         r={position.animatedRotate}
+        currentScale={currentScale}
         velocityX={velocityX}
         frame={block.frame}
         currentX={currentX}
@@ -272,6 +276,7 @@ export class BaseNode extends React.Component<Props> {
         paddingTop={paddingTop}
         minY={minY}
         maxY={maxY}
+        height={bottom}
         onTap={this.handleTap}
         extraPadding={0}
       >
@@ -284,6 +289,7 @@ export class BaseNode extends React.Component<Props> {
           focusType={focusType}
           isSticker
           paddingTop={paddingTop}
+          onAction={onAction}
           onContentSizeChange={this.onContentSizeChangeRef.current}
           gestureRef={this.gestureRef}
           isFocused={isFocused}
