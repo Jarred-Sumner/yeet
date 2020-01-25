@@ -78,11 +78,13 @@ import {
 } from "./Toolbar";
 import { scaleRectByFactor } from "../../lib/Rect";
 import { moving } from "../../lib/animations";
+import { SnapPreview } from "./SnapPreview";
 
 const { block, cond, set, eq, sub } = Animated;
 
 export const HEADER_HEIGHT = 30 + SPACING.normal;
 
+const _getPositionsKey = memoize(getPositionsKey);
 const styles = StyleSheet.create({
   safeWrapper: {
     justifyContent: "center",
@@ -183,36 +185,6 @@ type State = {
   isSaving: boolean;
   bottomInset: number;
   snapPoint: SnapPoint | null;
-};
-
-const DarkSheet = ({
-  opacity,
-  keyboardHeight,
-  width = SCREEN_DIMENSIONS.width,
-  height = SCREEN_DIMENSIONS.height
-}) => {
-  const containerStyle = React.useMemo(
-    () => [
-      styles.darkSheetStyle,
-      {
-        width,
-        height,
-        opacity
-      }
-    ],
-    [styles.darkSheetStyle, opacity, height, keyboardHeight]
-  );
-
-  return (
-    <Animated.View
-      renderToHardwareTextureAndroid
-      shouldRasterizeIOS
-      pointerEvents="none"
-      style={containerStyle}
-    >
-      <View style={styles.darkSheetContent} />
-    </Animated.View>
-  );
 };
 
 class RawwPostEditor extends React.Component<Props, State> {
@@ -621,7 +593,6 @@ class RawwPostEditor extends React.Component<Props, State> {
         focusType
       },
       () => {
-        console.log("GO");
         if (block.type === "text") {
           this._blockInputRefs.get(block.id).current?.focus();
         }
@@ -722,7 +693,6 @@ class RawwPostEditor extends React.Component<Props, State> {
   keyboardVisibleValue = this.props.keyboardVisibleValue;
   keyboardHeightValue = this.props.keyboardHeightValue;
   animatedKeyboardVisibleValue = this.props.animatedKeyboardVisibleValue;
-  animatedKeyboardHeightValue = this.props.animatedKeyboardHeightValue;
   focusedBlockValue = new Animated.Value<number>(-1);
   focusTypeValue = new Animated.Value<FocusType | -1>(-1);
 
@@ -1158,7 +1128,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   panY = new Animated.Value(0);
   textColorValue = Animated.color(0, 0, 0, 1);
   contentViewRef = React.createRef();
-  topInsetValue = new Animated.Value<number>(this.props.yInset || 0);
+  topInsetValue = new Animated.Value<number>(this.props.paddingTop);
 
   relativeKeyboardHeightValue = Animated.add(
     this.keyboardHeightValue,
@@ -1167,7 +1137,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   scrollToTop = () =>
     this.scrollRef.current.getScrollResponder().scrollTo({
-      y: presetsByFormat[this.props.post.format].paddingTop * -1,
+      y: this.props.paddingTop * -1,
       x: 0
     });
 
@@ -1229,12 +1199,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
   };
 
-  darkSheetOpacityValue = Animated.cond(
-    Animated.eq(this.focusTypeValue, FocusType.absolute),
-    this.animatedKeyboardVisibleValue,
-    0
-  );
-
   getPostContainerStyle = memoize((backgroundColor, width) => {
     return [
       styles.safeWrapper,
@@ -1268,7 +1232,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
   };
 
-  snapOpacityValue = new Animated.Value<number>(1);
   postPreviewHandlers = [];
   postBottomY = new Animated.Value<number>(0);
   velocityX = new Animated.Value<number>(0);
@@ -1285,7 +1248,8 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   render() {
     const { post, minX, minY } = this.props;
-    const presets = presetsByFormat[post.format];
+
+    const { snapPoint } = this.state;
 
     const {
       bounds = {
@@ -1315,39 +1279,34 @@ class RawwPostEditor extends React.Component<Props, State> {
 
         <Animated.Code
           exec={Animated.block([
-            Animated.cond(
-              Animated.eq(this.focusTypeValue, FocusType.panning),
-              set(this.props.headerOpacity, 0),
-              Animated.block([
-                set(
-                  this.props.headerOpacity,
-                  sub(1.0, this.keyboardVisibleValue)
-                )
-              ])
-            ),
             Animated.onChange(
               this.focusTypeValue,
               block([
-                Animated.set(this.snapOpacityValue, 0),
-                cond(
-                  Animated.neq(this.focusTypeValue, FocusType.panning),
-                  Animated.block([
-                    set(this.props.controlsOpacityValue, 1.0),
-                    set(this.currentScale, 1.0)
-                  ])
-                ),
                 cond(eq(this.focusTypeValue, FocusType.absolute), [
-                  set(this.props.controlsOpacityValue, 1.0)
+                  set(this.props.controlsOpacityValue, 1.0),
+                  set(
+                    this.props.headerOpacity,
+                    sub(1.0, this.keyboardVisibleValue)
+                  )
                 ]),
 
                 cond(eq(this.focusTypeValue, FocusType.static), [
                   set(
                     this.props.controlsOpacityValue,
                     sub(1.0, this.keyboardVisibleValue)
+                  ),
+                  set(
+                    this.props.headerOpacity,
+                    sub(1.0, this.keyboardVisibleValue)
                   )
                 ]),
                 cond(eq(this.focusTypeValue, -1), [
-                  set(this.props.controlsOpacityValue, 1.0)
+                  set(this.props.controlsOpacityValue, 1.0),
+                  set(this.currentScale, 1.0),
+                  set(this.props.headerOpacity, 1.0)
+                ]),
+                cond(eq(this.focusTypeValue, FocusType.panning), [
+                  set(this.props.headerOpacity, 0)
                 ])
               ])
             ),
@@ -1388,7 +1347,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             bounds={bounds}
             blocks={post.blocks}
             positions={post.positions}
-            paddingTop={(presets.paddingTop || 0) + this.props.yInset}
+            paddingTop={this.props.paddingTop}
             paddingBottom={FOOTER_HEIGHT}
             inlineNodes={this.props.inlineNodes}
             focusedBlockId={this.state.focusedBlockId}
@@ -1431,10 +1390,6 @@ class RawwPostEditor extends React.Component<Props, State> {
               zIndex={LayerZIndex.inlineNodes}
               opacity={this.props.controlsOpacityValue}
             >
-              <DarkSheet
-                keyboardHeight={this.keyboardHeightValue}
-                opacity={this.darkSheetOpacityValue}
-              ></DarkSheet>
               <EditableNodeList
                 inlineNodes={this.props.inlineNodes}
                 format={post.format}
@@ -1448,7 +1403,6 @@ class RawwPostEditor extends React.Component<Props, State> {
                 topInsetValue={this.topInsetValue}
                 velocityX={this.velocityX}
                 velocityY={this.velocityY}
-                snapOpacityValue={this.snapOpacityValue}
                 focusTypeValue={this.focusTypeValue}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 keyboardHeightValue={this.keyboardHeightValue}
@@ -1488,7 +1442,6 @@ class RawwPostEditor extends React.Component<Props, State> {
                 currentScale={this.currentScale}
                 onChangeSnapPoint={this.handleChangeSnapPoint}
                 minY={10}
-                snapOpacityValue={this.snapOpacityValue}
                 blocks={this.props.post.blocks}
                 positions={this.props.post.positions}
                 focusType={this.state.focusType}
@@ -1555,6 +1508,12 @@ class RawwPostEditor extends React.Component<Props, State> {
           onChangeOverrides={this.handleChangeOverrides}
           focusType={this.state.focusType}
           onChangeBorderType={this.handleChangeBorderType}
+        />
+
+        <SnapPreview
+          key={_getPositionsKey(this.props.post.positions)}
+          snapPoint={snapPoint}
+          positionKey={_getPositionsKey(this.props.post.positions)}
         />
       </View>
     );

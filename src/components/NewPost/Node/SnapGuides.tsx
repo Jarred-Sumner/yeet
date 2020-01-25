@@ -6,7 +6,7 @@ import Animated, {
   Transition
 } from "react-native-reanimated";
 import { COLORS } from "../../../lib/styles";
-import { snapButtonValue, runTiming } from "../../../lib/animations";
+import { snapButtonValue, runTiming, runDelay } from "../../../lib/animations";
 import { getAllSnapPoints } from "../../../lib/buildPost";
 import { SnapDirection } from "../../../lib/enums";
 import {
@@ -73,7 +73,6 @@ const appendStyles = StyleSheet.create({
   },
   icon: {
     color: "white",
-    fontSize: 24,
     textShadowRadius: 3,
     textShadowOffset: {
       width: 1,
@@ -110,7 +109,6 @@ const SnapPosition = React.memo(
     snapDirection,
     id,
     onChange,
-    scaleValue = 1.0,
     Icon
   }) => {
     const horizontal =
@@ -130,14 +128,14 @@ const SnapPosition = React.memo(
       translateX = size / -2;
     } else if (snapDirection === SnapDirection.left) {
       translateY = size * -0.5;
-      translateX = size * 1;
+      translateX = size * 2;
     } else if (snapDirection === SnapDirection.right) {
       translateY = size * -0.5;
       translateX = size * -1;
     }
 
-    const midX = left + translateX;
-    const midY = top + translateY;
+    const midX = left + (snapDirection === SnapDirection.left ? translateX : 0);
+    const midY = top;
 
     const currentStatusValue = React.useRef(
       Animated.cond(
@@ -151,33 +149,46 @@ const SnapPosition = React.memo(
       )
     );
 
+    const activationClock = React.useRef(new Animated.Clock());
     const animationClock = React.useRef(new Animated.Clock());
-    const animationValue = React.useRef(
-      new Animated.Value(
-        currentId === id
-          ? SnapPositionStatus.active
-          : !currentId
-          ? SnapPositionStatus.pending
-          : SnapPositionStatus.disabled
-      )
-    );
+    const status =
+      currentId === id
+        ? SnapPositionStatus.active
+        : !currentId
+        ? SnapPositionStatus.pending
+        : SnapPositionStatus.disabled;
+
+    const animationValue = React.useRef(new Animated.Value(status));
 
     const animatedStatusValue = React.useRef(animationValue.current);
 
-    const distance = React.useRef(snapButtonValue(midX, midY, x, y, size));
+    const distance = React.useRef(new Animated.Value(999));
 
-    const progress = React.useRef(
-      Animated.interpolate(distance.current, {
-        inputRange: [size, size * 1.2, size * 1.75, size * 2, size * 4],
-        outputRange: [1.0, 0.75, 0.25, 0.1, 0],
+    const shouldActivate = React.useRef(
+      Animated.lessOrEq(distance.current, size)
+    );
+
+    const buttonOpacityValue = React.useRef(
+      Animated.interpolate(animatedStatusValue.current, {
+        inputRange: [-1, 0, 1],
+        outputRange: [
+          0,
+          Animated.min(Animated.divide(size * 3, distance.current), 1.0),
+          1.0
+        ],
         extrapolate: Animated.Extrapolate.CLAMP
       })
     );
 
     return (
-      <View>
+      <>
         <Animated.Code
           exec={Animated.block([
+            Animated.set(
+              distance.current,
+              snapButtonValue(midX, midY, x, y, size)
+            ),
+
             Animated.set(
               animationValue.current,
               runTiming(
@@ -187,86 +198,79 @@ const SnapPosition = React.memo(
                 200
               )
             ),
-            Animated.onChange(
-              Animated.greaterThan(progress.current, 0.99),
+
+            // Animated.debug("shouldActivate?", shouldActivate.current),
+
+            // Animated.onChange(
+            //   shouldActivate.current,
+            Animated.block([
               Animated.cond(
                 Animated.and(
-                  Animated.greaterThan(progress.current, 0.99),
+                  shouldActivate.current,
                   Animated.eq(currentIdValue, -1)
                 ),
-                Animated.block([Animated.set(currentIdValue, id.hashCode())]),
-
-                Animated.cond(
-                  Animated.and(
-                    Animated.lessOrEq(progress.current, 0.99),
-                    Animated.eq(currentIdValue, id.hashCode())
-                  ),
-                  Animated.block([Animated.set(currentIdValue, -1)])
-                )
+                runDelay(
+                  Animated.block([
+                    Animated.cond(
+                      Animated.and(
+                        shouldActivate.current,
+                        Animated.eq(currentIdValue, -1)
+                      ),
+                      [Animated.set(currentIdValue, id.hashCode())],
+                      Animated.cond(
+                        Animated.and(
+                          Animated.not(shouldActivate.current),
+                          Animated.eq(currentIdValue, id.hashCode())
+                        ),
+                        Animated.set(currentIdValue, -1)
+                      )
+                    )
+                  ]),
+                  activationClock.current,
+                  200
+                ),
+                Animated.block([
+                  Animated.cond(
+                    Animated.and(
+                      Animated.not(shouldActivate.current),
+                      Animated.eq(currentIdValue, id.hashCode())
+                    ),
+                    Animated.set(currentIdValue, -1)
+                  )
+                ])
               )
-            )
+            ])
+            // )
+            // Animated.cond(
+            //   Animated.eq(currentIdValue, id.hashCode()),
+            //   Animated.block([Animated.set(currentIdValue, -1)])
+            // )
           ])}
         />
-        <Animated.View
-          pointerEvents="none"
-          key="background"
-          style={{
-            position: "absolute",
-            top: backgroundTop,
-            left: backgroundLeft,
-            width: backgroundWidth,
-            height: backgroundHeight,
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor,
-            opacity: Animated.interpolate(animatedStatusValue.current, {
-              inputRange: [-1, 0, 1],
-              outputRange: [
-                0,
-                Animated.multiply(progress.current, 0.1),
-                Animated.multiply(progress.current, 0.5)
-              ],
-              extrapolate: Animated.Extrapolate.CLAMP
-            }),
-            zIndex: -1
-          }}
-        ></Animated.View>
 
-        <Animated.View
-          pointerEvents="none"
+        <View
           style={{
             position: "absolute",
-            top,
-            left,
+            top: top + translateY,
+            left: left + translateX,
             width: size,
-            height: size,
-            alignItems: "center",
-            justifyContent: "center",
-            transform: [
-              {
-                translateX
-              },
-              {
-                translateY
-              },
-              {
-                scale: Animated.interpolate(animatedStatusValue.current, {
-                  inputRange: [-1, 0, 1],
-                  outputRange: [1, 1, 1.15],
-                  extrapolate: Animated.Extrapolate.CLAMP
-                })
-              }
-            ],
-            opacity: Animated.interpolate(animatedStatusValue.current, {
-              inputRange: [-1, 0, 1],
-              outputRange: [0, Animated.multiply(progress.current, 20), 1.0],
-              extrapolate: Animated.Extrapolate.CLAMP
-            })
+            height: size
           }}
         >
-          <Icon style={appendStyles.icon} size={size} />
-        </Animated.View>
-      </View>
+          <Animated.View
+            pointerEvents="none"
+            style={{
+              opacity: buttonOpacityValue.current,
+              width: size,
+              height: size,
+              justifyContent: "center",
+              alignItems: "center"
+            }}
+          >
+            <Icon style={appendStyles.icon} size={size} />
+          </Animated.View>
+        </View>
+      </>
     );
   }
 );
@@ -285,8 +289,9 @@ export const SnapGuides = ({
   y,
   onChange
 }) => {
+  const SNAP_SIZE = 20;
   const points = React.useMemo(
-    () => (block ? getAllSnapPoints(block, blocks, positions) : []),
+    () => (block ? getAllSnapPoints(block, blocks, positions, SNAP_SIZE) : []),
     [getAllSnapPoints, block, blocks, positions]
   );
 
@@ -299,11 +304,11 @@ export const SnapGuides = ({
   const handleChangeSnapDirection = React.useCallback(
     ([_id]) => {
       if (_id === -1) {
-        Animated.timing(currentScale, {
-          toValue: 1.0,
-          duration: 200,
-          easing: Easing.ease
-        }).start();
+        // Animated.timing(currentScale, {
+        //   toValue: 1.0,
+        //   duration: 200,
+        //   easing: Easing.ease
+        // }).start();
         onChange(null);
       } else {
         const _snapPoint = points.find(point => point.key.hashCode() === _id);
@@ -311,11 +316,11 @@ export const SnapGuides = ({
           return;
         }
 
-        Animated.timing(currentScale, {
-          toValue: 0.9,
-          duration: 200,
-          easing: Easing.ease
-        }).start();
+        // Animated.timing(currentScale, {
+        //   toValue: 0.85,
+        //   duration: 300,
+        //   easing: Easing.ease
+        // }).start();
 
         onChange(_snapPoint);
       }
@@ -332,7 +337,7 @@ export const SnapGuides = ({
         currentIdValue={currentIdValue.current}
         backgroundWidth={point.background.width}
         backgroundHeight={point.background.height}
-        size={32}
+        size={SNAP_SIZE}
         snapDirection={point.direction}
         currentId={snapPoint?.key ?? null}
         x={x}

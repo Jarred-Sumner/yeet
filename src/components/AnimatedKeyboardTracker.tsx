@@ -252,22 +252,23 @@ export class AnimatedKeyboardTracker extends React.Component {
     const {
       keyboardVisibleValue,
       keyboardHeightValue,
-      animatedKeyboardVisibleValue,
-      animatedKeyboardHeightValue
+      animatedKeyboardVisibleValue
     } = this.props;
 
     const hasAnyValues =
       keyboardVisibleValue ||
       keyboardHeightValue ||
-      animatedKeyboardVisibleValue ||
-      animatedKeyboardHeightValue;
+      animatedKeyboardVisibleValue;
 
     if (hasAnyValues) {
       return (
         <Animated.Code
           exec={Animated.block([
             keyboardVisibleValue
-              ? Animated.set(keyboardVisibleValue, this._keyboardVisibleValue)
+              ? Animated.onChange(
+                  this._keyboardVisibleValue,
+                  Animated.set(keyboardVisibleValue, this._keyboardVisibleValue)
+                )
               : 0,
 
             animatedKeyboardVisibleValue
@@ -286,21 +287,9 @@ export class AnimatedKeyboardTracker extends React.Component {
               : 0,
 
             keyboardHeightValue
-              ? Animated.set(keyboardHeightValue, this._keyboardHeightValue)
-              : 0,
-
-            animatedKeyboardHeightValue
-              ? Animated.set(
-                  animatedKeyboardHeightValue,
-                  runTiming(
-                    this.keyboardHeightClock,
-                    this._keyboardHeightValue,
-                    {
-                      duration: this._durationValue,
-                      toValue: this._keyboardHeightValue,
-                      easing: Easing.linear
-                    }
-                  )
+              ? Animated.onChange(
+                  this._keyboardHeightValue,
+                  Animated.set(keyboardHeightValue, this._keyboardHeightValue)
                 )
               : 0
           ])}

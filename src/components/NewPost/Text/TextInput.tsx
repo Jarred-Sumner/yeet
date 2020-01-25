@@ -769,9 +769,12 @@ export const TextInput = React.forwardRef((props, ref) => {
         nativeID="stickerContainer"
         ref={stickerRef}
       >
-        {isFocused && isSticker && focusType === FocusType.panning && (
-          <View pointerEvents="none" style={styles.fixedWidthPanning} />
-        )}
+        {isFocused &&
+          isSticker &&
+          isFixedSize &&
+          focusType === FocusType.panning && (
+            <View pointerEvents="none" style={styles.fixedWidthPanning} />
+          )}
         {isKeyboardFocused && isFixedSize && (
           <>
             <View pointerEvents="none" style={styles.fixedWidthFocused} />

@@ -40,7 +40,11 @@ import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
 import nanoid from "nanoid/non-secure";
-import { layoutBlocksInPost, ExampleMap } from "../../lib/buildPost";
+import {
+  layoutBlocksInPost,
+  ExampleMap,
+  presetsByFormat
+} from "../../lib/buildPost";
 import TextPostBlock from "./TextPostBlock";
 
 enum NewPostStep {
@@ -186,6 +190,9 @@ class RawNewPost extends React.Component<{}, State> {
         y: props.minY
       }
     };
+
+    const scrollY = this.paddingTop * -1;
+    this.scrollY = new Animated.Value<number>(scrollY);
   }
 
   componentDidMount() {
@@ -389,12 +396,6 @@ class RawNewPost extends React.Component<{}, State> {
         positions
       })
     });
-
-    if (this.state.step === NewPostStep.choosePhoto) {
-      window.requestAnimationFrame(() => {
-        this.scrollY.setValue(0);
-      });
-    }
   };
 
   componentDidUpdate(prevProps, prevState) {
@@ -409,15 +410,18 @@ class RawNewPost extends React.Component<{}, State> {
 
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
-    this.scrollY.setValue(0);
   };
 
   handleBack = () => {
     this.props.navigation.navigate("FeedTab");
   };
 
+  get paddingTop() {
+    return CAROUSEL_HEIGHT + presetsByFormat[this.state.post.format].paddingTop;
+  }
+
   stepContainerRef = React.createRef();
-  scrollY = new Animated.Value<number>(CAROUSEL_HEIGHT * -1);
+  scrollY: Animated.Value<number>;
 
   onFlingLeft = ({ nativeEvent: { state, ...other } }) => {
     if (state === GestureState.ACTIVE) {
@@ -488,10 +492,10 @@ class RawNewPost extends React.Component<{}, State> {
     });
     this.openGalleryCallback = null;
   };
+
   keyboardVisibleValue = new Animated.Value<number>(0);
   keyboardHeightValue = new Animated.Value<number>(0);
   animatedKeyboardVisibleValue = new Animated.Value<number>(0);
-  animatedKeyboardHeightValue = new Animated.Value<number>(0);
   headerOffset = new Animated.Value(0);
   headerOpacity = new Animated.Value(0);
   postEditor = React.createRef<View>();
@@ -523,7 +527,6 @@ class RawNewPost extends React.Component<{}, State> {
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
           animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
-          animatedKeyboardHeightValue={this.animatedKeyboardHeightValue}
         />
 
         <Panner
@@ -565,9 +568,7 @@ class RawNewPost extends React.Component<{}, State> {
                   animatedKeyboardVisibleValue={
                     this.animatedKeyboardVisibleValue
                   }
-                  animatedKeyboardHeightValue={this.animatedKeyboardHeightValue}
                   keyboardHeight={this.state.keyboardHeight ?? 0}
-                  headerOffset={this.headerOffset}
                   headerOpacity={this.headerOpacity}
                   navigation={this.props.navigation}
                   onChange={this.handleChangePost}
@@ -577,7 +578,7 @@ class RawNewPost extends React.Component<{}, State> {
                   onOpenGallery={this.handleOpenGallery}
                   inlineNodes={inlineNodes}
                   simultaneousHandlers={[this.pannerRef]}
-                  yInset={CAROUSEL_HEIGHT}
+                  paddingTop={this.paddingTop}
                   onChangeNodes={this.handleChangeNodes}
                   onBeforeExport={this.handleBeforeExport}
                   onSubmit={this.handleSubmit}

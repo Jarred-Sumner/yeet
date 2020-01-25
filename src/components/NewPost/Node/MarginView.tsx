@@ -141,7 +141,6 @@ export const MarginView = ({
   // absoluteX: x,
   // absoluteY: y,
   type,
-  snapOpacityValue,
   frame,
   velocityY,
   contentViewRef,
@@ -160,63 +159,38 @@ export const MarginView = ({
   blocks: Array<PostBlockType>;
 }) => {
   const isVisible = focusType === FocusType.panning;
-  if (!isVisible) {
+  if (!isVisible || !frame) {
     return null;
   }
 
   return (
     <>
-      <Animated.View
-        // needsOffscreenAlphaCompositing={isVisible}
-        // renderToHardwareTextureAndroid={isVisible}
-        // shouldRasterizeIOS={isVisible}
-        style={{
-          height: bottom,
-          width: "100%",
-          position: "absolute",
-          display: isVisible ? "flex" : "none",
-          zIndex: -1
-        }}
-        pointerEvents="none"
-      >
-        {/* <Lines.Top opacity={1} />
-      <Lines.Bottom opacity={1} />
-      <Lines.Left opacity={1} />
-      <Lines.Right opacity={1} />
-      <Lines.Middle opacity={1} />
-
-      <Lines.Center opacity={1} /> */}
-      </Animated.View>
-      {isVisible && frame && (
-        <>
-          <SnapGuides
-            blocks={blocks}
-            block={block}
-            positions={positions}
-            snapPoint={snapPoint}
-            velocityX={velocityX}
-            currentScale={currentScale}
-            velocityY={velocityY}
-            x={x}
-            y={y}
-            isMovingValue={isMovingValue}
-            onChange={onChangeSnapPoint}
-          />
-          {IS_SIMULATOR && (
-            <Animated.View
-              style={{
-                backgroundColor: "red",
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                position: "absolute",
-                top: y,
-                left: x,
-                transform: [{ translateX: -16 }, { translateY: -16 }]
-              }}
-            />
-          )}
-        </>
+      <SnapGuides
+        blocks={blocks}
+        block={block}
+        positions={positions}
+        snapPoint={snapPoint}
+        velocityX={velocityX}
+        currentScale={currentScale}
+        velocityY={velocityY}
+        x={x}
+        y={y}
+        isMovingValue={isMovingValue}
+        onChange={onChangeSnapPoint}
+      />
+      {IS_SIMULATOR && (
+        <Animated.View
+          style={{
+            backgroundColor: "red",
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            position: "absolute",
+            top: y,
+            left: x,
+            transform: [{ translateX: -16 }, { translateY: -16 }]
+          }}
+        />
       )}
     </>
   );

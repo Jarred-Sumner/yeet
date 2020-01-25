@@ -231,10 +231,21 @@ export const sheetOpacity = Animated.proc(
     )
 );
 
+export const runDelay = (
+  node: Animated.Node<number>,
+  clock: Animated.Clock,
+  duration: number
+) => {
+  return block([
+    runTiming(clock, 0, 1, duration),
+    cond(not(clockRunning(clock)), node)
+  ]);
+};
+
 export const moving = (
   position: Animated.Node<number>,
-  minPositionDelta = 1e-3,
-  emptyFrameThreshold = 5
+  minPositionDelta = 1,
+  emptyFrameThreshold = 10
 ) => {
   const delta = diff(position);
   const noMovementFrames = new Value(0);

@@ -41,6 +41,7 @@ import {
   getHighlightInset
 } from "../components/NewPost/Text/TextBlockUtils";
 import { BlockMap, ImagePostBlock } from "./enums";
+import { Rectangle } from "./Rectangle";
 
 const { YeetExporter } = NativeModules;
 
@@ -597,10 +598,6 @@ const convertExportedNode = (
   };
   let { rotate, scale } = node.position;
   let position = scaleRectByFactor(scaleFactor, _position);
-  // let relativePosition = { ...position };
-  // relativePosition.y = relativePosition.y - relativeSize.y;
-  relativeSize.height = relativeSize.height - relativeSize.y;
-  relativeSize.y = 0;
 
   let { x, y } = position;
 
@@ -642,17 +639,18 @@ const convertExportedNode = (
     horizontalAlign = "right";
   }
 
-  let estimatedHeight =
-    (numberOfLines || 1) * getFontSize(block) * 1.25 + yPadding;
+  const hasExactHeight = isFinite(block.frame?.height);
+
+  let estimatedHeight = hasExactHeight
+    ? block.frame?.height
+    : (numberOfLines || 1) * getFontSize(block) * 1.25 + yPadding;
   const bottomY = y + estimatedHeight;
   const yPercent = (_position.y + estimatedHeight) / relativeSize.height;
-
-  const hasExactHeight = isFinite(block.frame?.height);
 
   if (!isBottomCentered && !isTopCentered) {
     if (yPercent > 0.8 && (isFixedSize || horizontalAlign === "center")) {
       verticalAlign = "bottom";
-    } else if (horizontalAlign === "center" && 30 > y) {
+    } else if (isFixedSize) {
       verticalAlign = "top";
     }
   }
@@ -662,6 +660,8 @@ const convertExportedNode = (
   } else if (isTopCentered) {
     verticalAlign = "top";
   }
+
+  const relativeRect = Rectangle.fromFrame(relativeSize);
 
   // if (y > size.height * 0.75) {
   //   verticalAlign = "bottom";
@@ -673,17 +673,18 @@ const convertExportedNode = (
     verticalAlign === "bottom" &&
     canAutoCenter
   ) {
-    y = yPadding * -1;
+    y =
+      yPercent > 1.0
+        ? size.height - yPadding - relativeRect.top
+        : size.height - yPadding;
   } else if (
     horizontalAlign === "center" &&
     verticalAlign === "top" &&
     canAutoCenter
   ) {
     y = yPadding + inset + getFontSize(block);
-  } else if (isFixedSize && verticalAlign === "top") {
-    // y = Math.max(minY, yPadding, Math.min(y - inset, size.height - yPadding));
-  } else if (isFixedSize && verticalAlign === "bottom" && !hasExactHeight) {
-    y = y - size.height + estimatedHeight;
+  } else if (!hasExactHeight && isFixedSize && verticalAlign === "top") {
+    y = Math.max(minY, yPadding, Math.min(y - inset, size.height - yPadding));
   } else if (hasExactHeight && verticalAlign === "top") {
     y = Math.max(
       yPadding - inset,

@@ -862,14 +862,18 @@ export const getSnapPoints = (
 export const getAllSnapPoints = (
   block: PostBlockType,
   blocks: BlockMap,
-  positions: BlockPositionList
+  positions: BlockPositionList,
+  size: number
 ): Array<SnapPoint> => {
   let _points = {};
 
-  const snapPoints = flatMap(Object.values(blocks), at =>
-    getSnapPoints(cloneDeep(at), cloneDeep(block), cloneDeep(blocks), [
-      ...positions
-    ])
+  const snapPoints = flatMap(
+    Object.values(blocks),
+    at =>
+      getSnapPoints(cloneDeep(at), cloneDeep(block), cloneDeep(blocks), [
+        ...positions
+      ]),
+    size
   );
 
   const mergePoints = (current: SnapPoint, newPoint: SnapPoint): SnapPoint => {

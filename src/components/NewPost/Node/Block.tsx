@@ -33,6 +33,8 @@ export const Block = React.forwardRef(
       onContentSizeChange,
       scrollRef,
       gestureRef,
+      paused,
+      muted,
       onAction,
       onTap,
       waitFor,
@@ -54,6 +56,8 @@ export const Block = React.forwardRef(
           disabled={disabled}
           onLayout={onLayout}
           focusType={focusType}
+          paused={paused}
+          muted={muted}
           isSticker={isSticker}
           onAction={onAction}
           scale={scale}
@@ -95,6 +99,8 @@ export const Block = React.forwardRef(
           focusType={focusType}
           onAction={onAction}
           gestureRef={gestureRef}
+          paused={paused}
+          muted={muted}
           scale={scale}
           usePreview={usePreview}
           focusedBlockValue={focusedBlockValue}

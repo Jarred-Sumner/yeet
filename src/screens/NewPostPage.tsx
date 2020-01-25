@@ -49,10 +49,7 @@ export class NewPostPage extends React.Component {
     const blockId = props.navigation.getParam("blockId");
 
     if (post) {
-      this.state = {
-        isLoading: true,
-        remixId: post?.id
-      };
+      this.loadPost(post);
     } else if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
 
@@ -112,34 +109,10 @@ export class NewPostPage extends React.Component {
     if (this.props.isFocused || this.props.isFocusing) {
       this.props.requireAuthentication();
     }
-
-    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
-      "post"
-    );
-
-    if (this.state.isLoading && post) {
-      // try {
-      this.loadPost();
-      // } catch (exception) {
-      //   console.error(exception);
-
-      //   sendToast("Loading didn't work :(", ToastType.error);
-
-      //   this.setState({
-      //     defaultBlocks: undefined,
-      //     defaultPositions: {},
-      //     thumbnail: null,
-      //     isLoading: false
-      //   });
-      // }
-    }
   }
 
-  loadPost = () => {
+  loadPost = post => {
     const { userId } = this.props;
-    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
-      "post"
-    );
 
     let scaleFactor = POST_WIDTH / (post.bounds.width ?? post.media.width);
 
@@ -188,7 +161,7 @@ export class NewPostPage extends React.Component {
       defaultBlocks
     );
 
-    this.setState({
+    this.state = {
       remixId: post.id,
       defaultBlocks: fromPairs(
         flatten(defaultBlocks).map(block => [block.id, block])
@@ -209,7 +182,7 @@ export class NewPostPage extends React.Component {
       defaultInlineNodes: defaultNodes,
       examples,
       isLoading: false
-    });
+    };
   };
 
   componentDidUpdate(prevProps) {

@@ -370,8 +370,6 @@ export class MovableNode extends Component<Props> {
     this._Z = new Animated.Value(props.scaleLiteral);
 
     this.blockId = new Animated.Value(props.blockId.hashCode());
-    this.absoluteX = new Animated.Value(0);
-    this.absoluteY = new Animated.Value(0);
 
     this.handlePan = event(
       [
@@ -379,8 +377,8 @@ export class MovableNode extends Component<Props> {
           nativeEvent: {
             translationX: this._X,
             translationY: this._Y,
-            absoluteX: this.absoluteX,
-            absoluteY: this.absoluteY,
+            absoluteX: this.props.absoluteX,
+            absoluteY: this.props.absoluteY,
             // velocityX: this.props.velocityX,
             // velocityY: this.props.velocityY,
             state: this.panGestureState
@@ -422,7 +420,6 @@ export class MovableNode extends Component<Props> {
       props.maxScale || 100
     );
 
-    this.animatedKeyboardVisibleFocusedValue = new Animated.Value<number>(0);
     this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
     this.isFocusedValue = Animated.eq(
@@ -430,7 +427,6 @@ export class MovableNode extends Component<Props> {
       this.blockId
     );
 
-    this.overlayOpacity = this.animatedKeyboardVisibleFocusedValue;
     this.opacityValue = new Animated.Value(1);
 
     // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
@@ -459,7 +455,7 @@ export class MovableNode extends Component<Props> {
               Animated.multiply(this.Y, -1),
               Animated.add(
                 Animated.multiply(props.keyboardHeightValue, -1),
-                props.height,
+                // props.height,
                 120
               )
             )
@@ -701,14 +697,6 @@ export class MovableNode extends Component<Props> {
       <>
         <Animated.Code
           exec={Animated.block([
-            Animated.set(
-              this.animatedKeyboardVisibleFocusedValue,
-              Animated.multiply(
-                this.isFocusedValue,
-                this.props.animatedKeyboardVisibleValue
-              )
-            ),
-
             Animated.onChange(
               this.isCurrentlyGesturingValue,
               Animated.block([
@@ -742,16 +730,24 @@ export class MovableNode extends Component<Props> {
               ])
             ),
 
-            Animated.cond(this.isFocusedValue, [
-              Animated.set(this.props.absoluteX, this.absoluteX),
-              Animated.set(this.props.absoluteY, this.absoluteY)
-            ]),
-
-            Animated.set(
-              this.keyboardVisibleFocusedValue,
-              Animated.multiply(
-                this.isFocusedValue,
-                this.props.keyboardVisibleValue
+            Animated.onChange(
+              this.isFocusedValue,
+              Animated.set(
+                this.keyboardVisibleFocusedValue,
+                Animated.multiply(
+                  this.isFocusedValue,
+                  this.props.keyboardVisibleValue
+                )
+              )
+            ),
+            Animated.onChange(
+              this.props.keyboardVisibleValue,
+              Animated.set(
+                this.keyboardVisibleFocusedValue,
+                Animated.multiply(
+                  this.isFocusedValue,
+                  this.props.keyboardVisibleValue
+                )
               )
             )
           ])}
@@ -769,11 +765,7 @@ export class MovableNode extends Component<Props> {
           >
             <Animated.View
               pointerEvents="box-none"
-              style={
-                isHidden
-                  ? [styles.lowerGestureView, { height }]
-                  : [styles.gestureView, { height: height }]
-              }
+              style={isHidden ? styles.lowerGestureView : styles.gestureView}
             >
               <PanGestureHandler
                 ref={this.panRef}
@@ -785,7 +777,7 @@ export class MovableNode extends Component<Props> {
               >
                 <Animated.View
                   pointerEvents="box-none"
-                  style={[styles.gestureView, { height: height }]}
+                  style={styles.gestureView}
                 >
                   <PinchGestureHandler
                     ref={this.pinchRef}
@@ -797,7 +789,7 @@ export class MovableNode extends Component<Props> {
                   >
                     <Animated.View
                       pointerEvents="box-none"
-                      style={[styles.gestureView, { height: height }]}
+                      style={styles.gestureView}
                     >
                       {isFixedSize ? (
                         <OverlaySheet
@@ -823,7 +815,7 @@ export class MovableNode extends Component<Props> {
                       >
                         <Animated.View
                           pointerEvents="box-none"
-                          style={[styles.childGestureView, { height }]}
+                          style={styles.childGestureView}
                         >
                           <TransformableView
                             ref={this.props.containerRef}

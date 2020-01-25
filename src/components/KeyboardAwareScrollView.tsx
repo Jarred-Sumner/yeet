@@ -15,7 +15,9 @@ import { isIphoneX } from "react-native-iphone-x-helper";
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
 
-const ScrollView = Animated.createAnimatedComponent(GestureScrollView);
+const ScrollView = Animated.createAnimatedComponent(
+  GestureScrollView
+) as React.Component<ScrollViewProps>;
 
 const _KAM_DEFAULT_TAB_BAR_HEIGHT = isIphoneX() ? 83 : 49;
 const _KAM_KEYBOARD_OPENING_TIME = 250;
@@ -341,24 +343,20 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         : this.props.keyboardOpeningTime || 0
     );
   };
-  contentOffsetYValue = new Animated.Value(this.props.defaultPosition.y);
-  contentOffsetXValue = new Animated.Value(this.props.defaultPosition.x);
-  contentInsetValue = new Animated.Value(this.props.paddingTop);
 
-  onScrollEvent = Animated.event(
-    [
-      {
-        nativeEvent: {
-          contentOffset: {
-            y: this.contentOffsetYValue,
-            x: this.contentOffsetXValue
+  onScrollEvent = this.props.scrollY
+    ? Animated.event(
+        [
+          {
+            nativeEvent: {
+              contentOffset: { y: this.props.scrollY },
+              contentInset: { top: this.props.topInsetValue }
+            }
           }
-          // contentInset: { top: this.contentInsetValue }
-        }
-      }
-    ],
-    { useNativeDriver: true }
-  );
+        ],
+        { useNativeDriver: true }
+      )
+    : null;
 
   _handleOnScroll = ([y]) => {
     this.position = {
@@ -438,21 +436,6 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
           handleOnScroll={this._handleOnScroll}
           update={this.update}
           onScroll={this.onScrollEvent}
-        />
-        <Animated.Code
-          exec={Animated.block([
-            this.props.scrollY &&
-              Animated.set(this.props.scrollY, this.contentOffsetYValue),
-
-            this.props.scrollX &&
-              Animated.set(this.props.scrollX, this.contentOffsetXValue),
-
-            this.props.topInsetValue &&
-              Animated.set(this.props.topInsetValue, this.contentInsetValue)
-            // Animated.onChange(this.contentOffsetYValue, [
-            //   Animated.call([this.contentOffsetYValue], this._handleOnScroll)
-            // ])
-          ])}
         />
       </>
     );

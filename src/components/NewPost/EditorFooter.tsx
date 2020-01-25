@@ -35,6 +35,7 @@ import {
 } from "./Text/TextBlockUtils";
 
 import { ToolbarType } from "./Toolbar";
+import { sendSelectionFeedback } from "../../lib/Vibration";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -596,6 +597,10 @@ export const DeleteFooter = ({ onDelete, panY, panX, currentScale }) => {
                 )
               )
             )
+          ),
+          Animated.onChange(
+            Animated.lessThan(distance.current, DELETE_RANGE[1]),
+            Animated.call([], sendSelectionFeedback)
           ),
           Animated.cond(
             Animated.greaterThan(scaleTransform.current, 0.9),

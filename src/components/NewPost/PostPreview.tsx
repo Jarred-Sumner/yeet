@@ -73,6 +73,8 @@ const BlockCell = React.forwardRef((props, ref) => {
     onAction,
     onLayout,
     scrollRef,
+    paused,
+    muted,
     disabled
   } = props;
 
@@ -92,6 +94,8 @@ const BlockCell = React.forwardRef((props, ref) => {
         block={block}
         onFocus={onFocus}
         containerRef={_ref}
+        paused={paused}
+        muted={muted}
         focusedBlockValue={focusedBlockValue}
         scrollRef={scrollRef}
         isFocused={focusedBlockId === block.id}
@@ -117,6 +121,8 @@ export const BlockList = ({
   setBlockAtIndex,
   setBlockInputRef,
   focusType,
+  paused,
+  muted,
   onAction,
   positions,
   disabled,
@@ -133,13 +139,13 @@ export const BlockList = ({
   onLayout
 }: BlockListProps) => {
   const handleChangeBlock = React.useCallback(
-    index => block => setBlockAtIndex(block, index),
+    index => block => setBlockAtIndex && setBlockAtIndex(block, index),
     [setBlockAtIndex, blocks]
   );
 
   const handleSetBlockInputRef = React.useCallback(
     block => {
-      return setBlockInputRef(block.id);
+      return setBlockInputRef && setBlockInputRef(block.id);
     },
     [setBlockInputRef]
   );
@@ -155,6 +161,8 @@ export const BlockList = ({
           onOpenImagePicker={onOpenImagePicker}
           positions={positions}
           block={block}
+          paused={paused}
+          muted={muted}
           focusType={focusType}
           onAction={onAction}
           key={block.id}
@@ -171,6 +179,8 @@ export const BlockList = ({
       onFocus,
       onLayout,
       focusedBlockValue,
+      paused,
+      muted,
       onOpenImagePicker,
       positions,
       blocks,
@@ -246,7 +256,6 @@ export const EditableNodeList = ({
   minY,
   midY,
   midX,
-  snapOpacityValue,
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
@@ -318,7 +327,6 @@ export const EditableNodeList = ({
           onTap={onTapNode}
           onPan={handlePan(id)}
           format={node.block.format}
-          snapOpacityValue={snapOpacityValue}
           isHidden={
             focusedBlockId &&
             focusedBlockId !== id &&
@@ -340,7 +348,6 @@ export const EditableNodeList = ({
       currentY,
       scrollY,
       keyboardHeight,
-      snapOpacityValue,
       topInsetValue,
       onBlurNode,
       focusedBlockValue,
@@ -524,6 +531,10 @@ export const PostPreview = React.forwardRef(
         enableResetScrollToCoords={false}
         resetScrollToCoords={null}
         contentInset={contentInset}
+        pinchGestureEnabled
+        bouncesZoom
+        minimumZoomScale={1}
+        maximumZoomScale={4}
         paddingBottom={paddingBottom}
         style={scrollViewStyle}
         contentContainerStyle={contentContainerStyle}

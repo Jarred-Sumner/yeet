@@ -104,6 +104,8 @@ const MediaComponent = ({
   playerRef,
   layout,
   scale = 1.0,
+  paused,
+  muted,
   id,
   style,
   ...otherProps
@@ -128,10 +130,11 @@ const MediaComponent = ({
   return (
     <MediaPlayer
       {...otherProps}
-      paused={false}
       containerTag={containerTag}
       autoPlay
       id={id}
+      paused={paused}
+      muted={muted}
       borderRadius={borderRadius}
       resizeMode={"aspectFill"}
       ref={playerRef}
@@ -145,6 +148,8 @@ const LibraryImage = ({
   block,
   usePreview,
   playerRef,
+  paused,
+  muted,
   containerTag,
   scale = 1.0
 }: {
@@ -157,6 +162,8 @@ const LibraryImage = ({
       playerRef={playerRef}
       source={block.value}
       id={block.id}
+      paused={paused}
+      muted={muted}
       layout={block.layout}
       dimensions={block.config.dimensions}
       containerTag={containerTag}
@@ -178,6 +185,8 @@ const LibraryImage = ({
 
 const StickerImage = ({
   block,
+  paused,
+  muted,
   usePreview,
   playerRef,
   scale = 1.0
@@ -192,6 +201,8 @@ const StickerImage = ({
       source={block.value}
       usePreview={usePreview}
       id={block.id}
+      paused={paused}
+      muted={muted}
       layout={block.layout}
       scale={scale}
       dimensions={block.config.dimensions}
@@ -450,6 +461,8 @@ class RawImagePostBlock extends React.Component<Props> {
               block={block}
               playerRef={this.updateImageRef}
               usePreview={usePreview}
+              muted={this.props.muted}
+              paused={this.props.paused}
               containerTag={this.containerTag}
               scale={scale}
             />

@@ -200,7 +200,6 @@ export class BaseNode extends React.Component<Props> {
       scrollY,
       onAction,
       inputAccessoryView,
-      snapOpacityValue,
       keyboardHeightValue,
       bottom
     } = this.props;
@@ -232,7 +231,6 @@ export class BaseNode extends React.Component<Props> {
         blockId={block.id}
         x={position.animatedX}
         y={position.animatedY}
-        snapOpacityValue={snapOpacityValue}
         r={position.animatedRotate}
         currentScale={currentScale}
         velocityX={velocityX}
