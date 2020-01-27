@@ -353,6 +353,16 @@
                 "defaultValue": null
               },
               {
+                "name": "latest",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null
+              },
+              {
                 "name": "offset",
                 "description": null,
                 "type": {

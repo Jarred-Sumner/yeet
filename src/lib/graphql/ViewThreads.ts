@@ -13,14 +13,6 @@ export interface ViewThreads_postThreads_data_profile {
   photoURL: string | null;
 }
 
-export interface ViewThreads_postThreads_data_posts_data_bounds {
-  __typename: "Rectangle";
-  x: number | null;
-  y: number | null;
-  width: number | null;
-  height: number | null;
-}
-
 export interface ViewThreads_postThreads_data_posts_data_profile {
   __typename: "Profile";
   id: string;
@@ -35,8 +27,6 @@ export interface ViewThreads_postThreads_data_posts_data_media {
   height: number | null;
   pixelRatio: number | null;
   mimeType: string | null;
-  duration: number;
-  coverUrl: string;
   previewUrl: string;
   url: string;
 }
@@ -44,21 +34,15 @@ export interface ViewThreads_postThreads_data_posts_data_media {
 export interface ViewThreads_postThreads_data_posts_data {
   __typename: "Post";
   id: string;
-  likesCount: number;
   threadId: string;
-  createdAt: DateTime;
   commentsCount: number;
   autoplaySeconds: number;
-  bounds: ViewThreads_postThreads_data_posts_data_bounds;
   profile: ViewThreads_postThreads_data_posts_data_profile;
   media: ViewThreads_postThreads_data_posts_data_media;
 }
 
 export interface ViewThreads_postThreads_data_posts {
   __typename: "PostTypeList";
-  offset: number;
-  limit: number;
-  hasMore: boolean;
   id: string;
   data: ViewThreads_postThreads_data_posts_data[];
 }

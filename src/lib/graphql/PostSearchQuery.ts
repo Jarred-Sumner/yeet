@@ -56,4 +56,5 @@ export interface PostSearchQueryVariables {
   offset?: number | null;
   limit?: number | null;
   query?: string | null;
+  latest?: boolean | null;
 }

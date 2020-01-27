@@ -3,9 +3,15 @@ import { NetworkStatus } from "apollo-client";
 import { memoize, uniqBy } from "lodash";
 import * as React from "react";
 import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
-import { InteractionManager, StyleSheet, View } from "react-native";
-import Animated from "react-native-reanimated";
-import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import {
+  InteractionManager,
+  StyleSheet,
+  View,
+  SegmentedControlIOS,
+  LayoutAnimation
+} from "react-native";
+import Animated, { Transition, Transitioning } from "react-native-reanimated";
+import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
 import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
 import CAMERA_ROLL_QUERY from "../../lib/CameraRollQuery.local.graphql";
 import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
@@ -34,6 +40,11 @@ import {
   PostSearchQuery_searchPosts_data
 } from "../../lib/graphql/PostSearchQuery";
 import { PostFragment } from "../../lib/graphql/PostFragment";
+import {
+  CameraRollAssetTypeSwitcher,
+  MemeFilterControl,
+  MemeFilterType
+} from "./SegmentFilterControl";
 
 const COLUMN_COUNT = 3;
 const GIF_COLUMN_COUNT = 2;
@@ -234,13 +245,10 @@ class GalleryFilterListComponent extends React.Component<Props> {
     ? Animated.event(
         [
           {
-            nativeEvent: ({ contentOffset: { y }, contentInset: { top } }) =>
-              Animated.block([
-                Animated.set(this.props.scrollY, y),
-                this.props.insetValue
-                  ? Animated.set(this.props.insetValue, top)
-                  : 0
-              ])
+            nativeEvent: {
+              contentOffset: { y: this.props.scrollY },
+              contentInset: { top: this.props.insetValue }
+            }
           }
         ],
         { useNativeDriver: true }
@@ -270,8 +278,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
     Animated.event(
       [
         {
-          nativeEvent: ({ contentInset: { top } }) =>
-            Animated.block([Animated.set(this.props.insetValue, top)])
+          nativeEvent: { contentInset: { top: this.props.insetValue } }
         }
       ],
       { useNativeDriver: true }
@@ -296,6 +303,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
       stickyHeader,
       scrollY,
       inset,
+      ListFooterComponent,
       headerHeight = 0,
       ListEmptyComponent,
       offset,
@@ -405,6 +413,24 @@ class GalleryFilterListComponent extends React.Component<Props> {
             ]}
           >
             <ListHeaderComponent />
+          </Animated.View>
+        )}
+
+        {ListFooterComponent && (
+          <Animated.View
+            style={[
+              styles.footer,
+              {
+                bottom: this.props.isModal
+                  ? inset - 1
+                  : BOTTOM_Y - SPACING.normal
+              }
+              // {
+              //   translateY: this.translateY
+              // }
+            ]}
+          >
+            <ListFooterComponent />
           </Animated.View>
         )}
       </>
@@ -821,7 +847,9 @@ export const MemesFilterList = ({
 }) => {
   const [query, onChangeQuery] = React.useState("");
   const [isKeyboardVisible] = useKeyboard();
+  const [filter, onChangeFilter] = React.useState(MemeFilterType.spicy);
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
+  const isHeaderSticky = query.length > 0 || isKeyboardVisible;
 
   const [loadMemes, memesQuery] = useLazyQuery<
     PostSearchQuery,
@@ -831,7 +859,8 @@ export const MemesFilterList = ({
     variables: {
       query,
       limit: getInitialLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT),
-      offset: 0
+      offset: 0,
+      latest: filter === MemeFilterType.recent && !isHeaderSticky
     },
     notifyOnNetworkStatusChange: true
   });
@@ -957,32 +986,49 @@ export const MemesFilterList = ({
         insetValue={insetValue}
         inset={_inset}
         ListHeaderComponent={ImageSearch}
-        stickyHeader={query.length > 0 || isKeyboardVisible}
+        stickyHeader={isHeaderSticky}
         // removeClippedSubviews={isFocused}
         isFocused={isFocused}
         hasNextPage={memesQuery?.data?.searchPosts?.hasMore ?? false}
         networkStatus={memesQuery.networkStatus}
       />
+
+      {!isHeaderSticky && (
+        <MemeFilterControl
+          isModal={isModal}
+          value={filter}
+          onChange={onChangeFilter}
+        />
+      )}
     </ImageSearchContext.Provider>
   );
 };
 
-export const PhotosFilterList = ({
+export const CameraRollFilterList = ({
   query = "",
   isFocused,
   offset,
   scrollY,
+  isModal,
+  defaultAssetType = "all",
   ...otherProps
 }) => {
+  const [assetType, setAssetType] = React.useState(defaultAssetType);
+
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
 
-  const height = SQUARE_ITEM_HEIGHT;
-  const width = SQUARE_ITEM_WIDTH;
+  let height = SQUARE_ITEM_HEIGHT;
+  let width = SQUARE_ITEM_WIDTH;
+
+  if (assetType === "videos") {
+    height = VERTICAL_ITEM_HEIGHT;
+    width = VERTICAL_ITEM_WIDTH;
+  }
 
   const [loadPhotos, photosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
     variables: {
-      assetType: "photos",
+      assetType,
       first: 33
     },
     notifyOnNetworkStatusChange: true
@@ -992,7 +1038,7 @@ export const PhotosFilterList = ({
     if (isFocused && typeof loadPhotos === "function") {
       loadPhotos();
     }
-  }, [loadPhotos, isFocused]);
+  }, [loadPhotos, isFocused, assetType]);
 
   const data: Array<GalleryValue> = React.useMemo(() => {
     const data = photosQuery?.data?.cameraRoll?.data ?? [];
@@ -1021,7 +1067,7 @@ export const PhotosFilterList = ({
     return photosQuery.fetchMore({
       variables: {
         after: photosQuery.data.cameraRoll.page_info.end_cursor,
-        assetType: "photos",
+        assetType,
         first: 42
       },
       updateQuery: (
@@ -1040,6 +1086,7 @@ export const PhotosFilterList = ({
       }
     });
   }, [
+    assetType,
     photosQuery?.networkStatus,
     photosQuery?.fetchMore,
     photosQuery?.data,
@@ -1057,161 +1104,39 @@ export const PhotosFilterList = ({
         "cover"
       );
     }
-
-    return () => {
-      const data = photosQuery?.data?.cameraRoll?.data ?? [];
-      if (data.length === 0) {
-        return;
-      }
-
-      console.log("STOP CACHING!", data.length);
-
-      MediaPlayer.stopCachingAll();
-    };
   }, [photosQuery?.data?.cameraRoll?.data]);
 
-  return (
-    <GalleryFilterListComponent
-      {...otherProps}
-      data={data}
-      onRefresh={photosQuery?.refetch}
-      isFocused={isFocused}
-      listKey="photos"
-      offset={offset}
-      scrollY={scrollY}
-      itemHeight={height}
-      itemWidth={width}
-      onEndReached={handleEndReached}
-      networkStatus={photosQuery.networkStatus}
-      hasNextPage={
-        photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
-      }
-    />
-  );
-};
-
-export const VideosFilterList = ({
-  query = "",
-  isFocused,
-  offset,
-  scrollY,
-  ...otherProps
-}) => {
-  const client = useApolloClient();
-  client.addResolvers(CameraRollGraphQL);
-
-  const [loadVideos, videosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
-    variables: {
-      assetType: "videos",
-      first: 33,
-      offset: 0
-    },
-
-    notifyOnNetworkStatusChange: true
-  });
-
   React.useEffect(() => {
-    if (isFocused && typeof loadVideos === "function") {
-      loadVideos();
-    }
-  }, [loadVideos, isFocused]);
-
-  const data: Array<GalleryValue> = React.useMemo(() => {
-    return buildValue(videosQuery?.data?.cameraRoll?.data);
-  }, [videosQuery?.data, videosQuery?.networkStatus]);
-
-  const handleEndReached = React.useCallback(() => {
-    const { networkStatus, loading } = videosQuery;
-
-    if (loading === true) {
-      return;
-    }
-
-    if (
-      !(
-        (videosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false) &&
-        networkStatus !== NetworkStatus.fetchMore &&
-        typeof videosQuery?.fetchMore === "function"
-      )
-    ) {
-      return;
-    }
-
-    console.log("FETCHING more");
-
-    return videosQuery.fetchMore({
-      variables: {
-        after: videosQuery.data.cameraRoll?.page_info.end_cursor,
-        assetType: "videos",
-        first: 42
-      },
-      updateQuery: (
-        previousResult,
-        { fetchMoreResult }: { fetchMoreResult }
-      ) => {
-        return {
-          ...fetchMoreResult,
-          cameraRoll: {
-            ...fetchMoreResult.cameraRoll,
-
-            data: previousResult.cameraRoll.data.concat(
-              fetchMoreResult.cameraRoll.data
-            )
-          }
-        };
-      }
-    });
-  }, [
-    videosQuery?.networkStatus,
-    videosQuery?.fetchMore,
-    videosQuery?.loading,
-    videosQuery?.data,
-    videosQuery?.data?.page_info?.end_cursor,
-    videosQuery?.data?.cameraRoll?.page_info?.has_next_page
-  ]);
-
-  const height = VERTICAL_ITEM_HEIGHT;
-  const width = VERTICAL_ITEM_WIDTH;
-
-  React.useEffect(() => {
-    const data = videosQuery?.data?.cameraRoll?.data ?? [];
-
-    if (data.length > 0) {
-      MediaPlayer.startCaching(
-        data.map(image => galleryItemMediaSource(image, width, height)),
-        { width, height },
-        "contain"
-      );
-    }
-
     return () => {
-      const data = videosQuery?.data?.cameraRoll?.data ?? [];
-      if (data.length === 0) {
-        return;
-      }
-
-      console.log("STOP CACHING!", data.length);
-
       MediaPlayer.stopCachingAll();
     };
-  }, [videosQuery?.data?.cameraRoll?.data, width, height]);
+  }, []);
 
   return (
-    <GalleryFilterListComponent
-      {...otherProps}
-      data={data}
-      onRefresh={videosQuery?.refetch}
-      isFocused={isFocused}
-      offset={offset}
-      onEndReached={handleEndReached}
-      listKey="videos"
-      scrollY={scrollY}
-      itemHeight={height}
-      itemWidth={width}
-      networkStatus={videosQuery.networkStatus}
-      hasNextPage={
-        videosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
-      }
-    />
+    <View style={styles.container}>
+      <GalleryFilterListComponent
+        {...otherProps}
+        data={data}
+        onRefresh={photosQuery?.refetch}
+        isFocused={isFocused}
+        listKey={assetType}
+        offset={offset}
+        scrollY={scrollY}
+        itemHeight={height}
+        itemWidth={width}
+        isModal={isModal}
+        onEndReached={handleEndReached}
+        networkStatus={photosQuery.networkStatus}
+        hasNextPage={
+          photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
+        }
+      ></GalleryFilterListComponent>
+
+      <CameraRollAssetTypeSwitcher
+        isModal={isModal}
+        assetType={assetType}
+        setAssetType={setAssetType}
+      />
+    </View>
   );
 };

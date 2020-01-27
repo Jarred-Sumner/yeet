@@ -1,5 +1,10 @@
-query PostSearchQuery($offset: Int, $limit: Int, $query: String) {
-  searchPosts(offset: $offset, limit: $limit, query: $query) {
+query PostSearchQuery(
+  $offset: Int
+  $limit: Int
+  $query: String
+  $latest: Boolean
+) {
+  searchPosts(offset: $offset, limit: $limit, query: $query, latest: $latest) {
     id
 
     hasMore

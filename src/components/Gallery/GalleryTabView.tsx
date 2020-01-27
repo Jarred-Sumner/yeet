@@ -9,8 +9,7 @@ import {
 } from "../NewPost/ImagePicker/FilterBar";
 import {
   GIFsFilterList,
-  PhotosFilterList,
-  VideosFilterList,
+  CameraRollFilterList,
   SearchFilterList,
   MemesFilterList
 } from "./GalleryFilterList";
@@ -81,10 +80,9 @@ class GalleryTabViewComponent extends React.Component {
 
   panRef = React.createRef<PanGestureHandler>();
 
-  photosListRef = React.createRef<FlatList>();
+  cameraRollListRef = React.createRef<FlatList>();
   gifsListRef = React.createRef<FlatList>();
   memesListRef = React.createRef<FlatList>();
-  videosListRef = React.createRef<FlatList>();
   searchListRef = React.createRef<FlatList>();
 
   simultaneousHandlers = this.panRef;
@@ -143,22 +141,23 @@ class GalleryTabViewComponent extends React.Component {
             keyboardVisibleValue={keyboardVisibleValue}
           />
         );
-      case GallerySectionItem.photos:
+
+      case GallerySectionItem.cameraRoll:
         return (
-          <PhotosFilterList
-            isFocused={currentRoute === GallerySectionItem.photos}
-            flatListRef={this.photosListRef}
+          <CameraRollFilterList
+            isFocused={currentRoute === GallerySectionItem.cameraRoll}
+            flatListRef={this.cameraRollListRef}
             simultaneousHandlers={this.simultaneousHandlers}
-            onPress={onPress}
             onChangeFilter={jumpTo}
+            onPress={onPress}
+            selectedIDs={selectedIDs}
+            bottomInset={this.props.bottomInset}
+            keyboardVisibleValue={keyboardVisibleValue}
             insetValue={this.props.insetValue}
             offset={this.props.offset}
-            bottomInset={this.props.bottomInset}
-            selectedIDs={selectedIDs}
             isModal={this.props.isModal}
             inset={this.props.inset}
             scrollY={this.props.scrollY}
-            keyboardVisibleValue={keyboardVisibleValue}
           />
         );
       case GallerySectionItem.gifs:
@@ -180,24 +179,6 @@ class GalleryTabViewComponent extends React.Component {
           />
         );
 
-      case GallerySectionItem.videos:
-        return (
-          <VideosFilterList
-            isFocused={currentRoute === GallerySectionItem.videos}
-            flatListRef={this.videosListRef}
-            simultaneousHandlers={this.simultaneousHandlers}
-            onChangeFilter={jumpTo}
-            onPress={onPress}
-            selectedIDs={selectedIDs}
-            bottomInset={this.props.bottomInset}
-            keyboardVisibleValue={keyboardVisibleValue}
-            insetValue={this.props.insetValue}
-            offset={this.props.offset}
-            isModal={this.props.isModal}
-            inset={this.props.inset}
-            scrollY={this.props.scrollY}
-          />
-        );
       default: {
         throw Error(`Invalid route: ${route}`);
         return null;
@@ -248,8 +229,7 @@ class GalleryTabViewComponent extends React.Component {
           simultaneousHandlers: [
             this.gifsListRef,
             this.memesListRef,
-            this.photosListRef,
-            this.videosListRef
+            this.cameraRollListRef
           ]
         }}
         sceneContainerStyle={styles.sceneContainer}

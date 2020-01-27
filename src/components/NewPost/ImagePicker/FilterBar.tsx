@@ -10,12 +10,11 @@ import { SemiBoldText } from "../../Text";
 export enum GallerySectionItem {
   clipboardImage = "clipboardImage",
   clipboardURL = "clipboardURL",
+  cameraRoll = "cameraRoll",
   search = "search",
   memes = "memes",
   recent = "recent",
-  gifs = "gifs",
-  photos = "photos",
-  videos = "videos"
+  gifs = "gifs"
 }
 
 export const FILTER_LABELS = {
@@ -26,8 +25,7 @@ export const FILTER_LABELS = {
   [GallerySectionItem.clipboardURL]: "CLIPBOARD",
   [GallerySectionItem.memes]: "MEMES",
   [GallerySectionItem.gifs]: "GIFs",
-  [GallerySectionItem.photos]: "PHOTOS",
-  [GallerySectionItem.videos]: "VIDEOS"
+  [GallerySectionItem.cameraRoll]: "CAMERA ROLL"
 };
 
 export const LIST_HEADER_HEIGHT = 35;
@@ -43,12 +41,8 @@ export const FILTERS = [
   },
 
   {
-    label: FILTER_LABELS[GallerySectionItem.photos],
-    value: GallerySectionItem.photos
-  },
-  {
-    label: FILTER_LABELS[GallerySectionItem.videos],
-    value: GallerySectionItem.videos
+    label: FILTER_LABELS[GallerySectionItem.cameraRoll],
+    value: GallerySectionItem.cameraRoll
   },
 
   {
@@ -159,7 +153,13 @@ export const ListHeaderRow = ({
         .css()}
     >
       <View>
-        <SemiBoldText style={styles.headerText}>{children}</SemiBoldText>
+        <SemiBoldText
+          adjustsFontSizeToFit
+          numberOfLines={1}
+          style={styles.headerText}
+        >
+          {children}
+        </SemiBoldText>
       </View>
     </RectButton>
   );

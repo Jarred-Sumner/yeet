@@ -3,7 +3,7 @@ import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { IS_SIMULATOR } from "../../../../config";
 import { runDelay, runTiming, snapButtonValue } from "../../../lib/animations";
-import { getAllSnapPoints } from "../../../lib/buildPost";
+import { getAllSnapPoints, FocusType } from "../../../lib/buildPost";
 import { SnapDirection } from "../../../lib/enums";
 import { COLORS } from "../../../lib/styles";
 import {
@@ -374,6 +374,7 @@ export const SnapGuides = ({
   positions,
   block,
   frame,
+  focusTypeValue,
   snapPoint,
   velocityX,
   velocityY,
@@ -512,7 +513,11 @@ export const SnapGuides = ({
         ])}
       />
 
-      {points.map(renderPoint)}
+      <Animated.View
+        style={{ opacity: Animated.eq(focusTypeValue, FocusType.panning) }}
+      >
+        {points.map(renderPoint)}
+      </Animated.View>
 
       {IS_SIMULATOR && (
         <Animated.View

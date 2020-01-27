@@ -376,6 +376,8 @@ PODS:
     - WCPhotoManipulator
   - react-native-safe-area-context (0.6.1):
     - React
+  - react-native-segmented-control (1.1.1):
+    - React
   - react-native-splash-screen (3.2.0):
     - React
   - react-native-video (5.0.2):
@@ -561,6 +563,7 @@ DEPENDENCIES:
   - react-native-onesignal (from `../node_modules/react-native-onesignal`)
   - react-native-photo-manipulator (from `../node_modules/react-native-photo-manipulator`)
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
+  - "react-native-segmented-control (from `../node_modules/@react-native-community/segmented-control`)"
   - react-native-splash-screen (from `../node_modules/react-native-splash-screen`)
   - react-native-video (from `../node_modules/react-native-video`)
   - react-native-view-shot (from `../node_modules/react-native-view-shot`)
@@ -744,6 +747,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-photo-manipulator"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
+  react-native-segmented-control:
+    :path: "../node_modules/@react-native-community/segmented-control"
   react-native-splash-screen:
     :path: "../node_modules/react-native-splash-screen"
   react-native-video:
@@ -918,6 +923,7 @@ SPEC CHECKSUMS:
   react-native-onesignal: 9ff0097cc4af1bb141eb2c4774d65b43045dcbb0
   react-native-photo-manipulator: 7e987ed95012ecc8d8a2b5d2cb7a5dd7f4ea6dc3
   react-native-safe-area-context: 1f8a52fb0ab1321eef9a7099bd2c360d4e38264b
+  react-native-segmented-control: ce117efd6429051d42a17ddbafa3c7b4b2434aa2
   react-native-splash-screen: 200d11d188e2e78cea3ad319964f6142b6384865
   react-native-video: d01ed7ff1e38fa7dcc6c15c94cf505e661b7bfd0
   react-native-view-shot: 5f80b8f4f9003c3da8c0c0013488e5b2db17b1e2

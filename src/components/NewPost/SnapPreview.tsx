@@ -136,7 +136,7 @@ export const SnapPreview = (props: Props) => {
   if (direction !== SnapDirection.none) {
     animationStyles.top = animationProgress.current.interpolate({
       inputRange: [0, 1],
-      outputRange: [y, direction === SnapDirection.bottom ? height * -1 : 0],
+      outputRange: [y, 0],
       extrapolate: Animated.Extrapolate.CLAMP
     });
   }
@@ -206,9 +206,46 @@ export const SnapPreview = (props: Props) => {
             }),
             transform: [
               {
+                translateY: animationProgress.current.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [
+                    0,
+                    Animated.cond(
+                      Animated.greaterThan(
+                        props.bottom,
+                        Animated.min(
+                          Animated.divide(SCREEN_DIMENSIONS.height, height),
+                          0.85
+                        )
+                      ),
+                      Animated.multiply(props.offsetY, -1),
+                      0
+                    )
+                  ],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                })
+              },
+              {
                 scale: animationProgress.current.interpolate({
                   inputRange: [0, 1],
-                  outputRange: [0.01, 0.85],
+                  outputRange: [
+                    0.01,
+
+                    Animated.cond(
+                      Animated.greaterOrEq(
+                        Animated.divide(SCREEN_DIMENSIONS.height, height),
+                        1.0
+                      ),
+                      Animated.min(
+                        0.85,
+                        Animated.divide(SCREEN_DIMENSIONS.height, height)
+                      ),
+                      Animated.min(
+                        0.55,
+                        Animated.divide(SCREEN_DIMENSIONS.height, height)
+                      )
+                    )
+                  ],
                   extrapolate: Animated.Extrapolate.CLAMP
                 })
               }

@@ -8,7 +8,8 @@ import {
   View,
   InteractionManager,
   Task,
-  findNodeHandle
+  findNodeHandle,
+  LayoutAnimation
 } from "react-native";
 import {
   BorderlessButton,
@@ -35,7 +36,7 @@ export const IMAGE_SEARCH_HEIGHT = 64;
 
 const PLACEHOLDER_COLOR = "#ccc";
 
-const styles = StyleSheet.create({
+export const imageSearchStyles = StyleSheet.create({
   container: {
     height: IMAGE_SEARCH_HEIGHT,
     width: "100%"
@@ -133,19 +134,25 @@ class ImageSearchComponent extends React.Component<Props> {
     placeholder: "Search GIPHY"
   };
 
-  paddingRightValue = Animated.interpolate(this.props.keyboardVisibleValue, {
+  hasTextValue = new Animated.Value(0);
+  isSearchingValue = Animated.eq(
+    Animated.or(this.hasTextValue, this.props.keyboardVisibleValue),
+    1
+  );
+
+  paddingRightValue = Animated.interpolate(this.isSearchingValue, {
     inputRange: [0, 1],
     outputRange: [SPACING.half, 75 + SPACING.half],
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
-  translateX = Animated.interpolate(this.props.keyboardVisibleValue, {
+  translateX = Animated.interpolate(this.isSearchingValue, {
     inputRange: [0, 1],
     outputRange: [CANCEL_WIDTH, 0],
     extrapolate: Animated.Extrapolate.CLAMP
   });
 
-  spinnerX = Animated.interpolate(this.props.keyboardVisibleValue, {
+  spinnerX = Animated.interpolate(this.isSearchingValue, {
     inputRange: [0, 1],
     outputRange: [SPACING.normal * -1, (CANCEL_WIDTH + SPACING.normal) * -1],
     extrapolate: Animated.Extrapolate.CLAMP
@@ -153,7 +160,7 @@ class ImageSearchComponent extends React.Component<Props> {
 
   stickerTranslateX =
     this.props.rightActions &&
-    Animated.interpolate(this.props.keyboardVisibleValue, {
+    Animated.interpolate(this.isSearchingValue, {
       inputRange: [0, 1],
       outputRange: [0, (CANCEL_WIDTH - SPACING.half) * -1],
       extrapolate: Animated.Extrapolate.CLAMP
@@ -174,6 +181,21 @@ class ImageSearchComponent extends React.Component<Props> {
   state = { isFocused: false, defaultQuery: this.props.query };
 
   handleFocus = evt => {
+    LayoutAnimation.configureNext({
+      ...LayoutAnimation.Presets.linear,
+      create: {
+        ...LayoutAnimation.Presets.linear.create,
+        type: LayoutAnimation.Types.keyboard
+      },
+      update: {
+        ...LayoutAnimation.Presets.linear.update,
+        type: LayoutAnimation.Types.keyboard
+      },
+      delete: {
+        ...LayoutAnimation.Presets.linear.delete,
+        type: LayoutAnimation.Types.keyboard
+      }
+    });
     this.setState({ isFocused: true });
     this.props.onFocus && this.props.onFocus(evt);
   };
@@ -182,10 +204,21 @@ class ImageSearchComponent extends React.Component<Props> {
     this.props.onBlur && this.props.onBlur(evt);
   };
 
-  inputStyles = [styles.textish, styles.text];
+  inputStyles = [imageSearchStyles.textish, imageSearchStyles.text];
   textInputRef = React.createRef<RNTextInput>();
+  hadText = false;
 
-  debouncedChange = debounce(this.props.onChange, 1000);
+  _debouncedChange = text => {
+    this.props.onChange(text);
+
+    const hasText = text.length > 0;
+    if (this.hadText !== hasText) {
+      console.log("HAS TEXT?", this.hadText);
+      this.hasTextValue.setValue(hasText ? 1 : 0);
+      this.hadText = hasText;
+    }
+  };
+  debouncedChange = debounce(this._debouncedChange, 100);
 
   didAutoFocus = false;
 
@@ -233,6 +266,11 @@ class ImageSearchComponent extends React.Component<Props> {
   }
 
   clear() {
+    window.requestAnimationFrame(() => {
+      this.hasTextValue.setValue(0);
+      this.hadText = false;
+    });
+
     this.textInput?.blur();
   }
 
@@ -290,11 +328,15 @@ class ImageSearchComponent extends React.Component<Props> {
     const marginTop = (IMAGE_SEARCH_HEIGHT + offset - additionalOffset) * -1;
 
     return (
-      <Animated.View style={styles.container}>
-        <BlurView blurType="dark" style={styles.blur} blurAmount={25}>
+      <Animated.View style={imageSearchStyles.container}>
+        <BlurView
+          blurType="dark"
+          style={imageSearchStyles.blur}
+          blurAmount={25}
+        >
           <Animated.View
             style={[
-              styles.content,
+              imageSearchStyles.content,
               // { height: IMAGE_SEARCH_HEIGHT - inset },
               {
                 paddingRight: this.paddingRightValue
@@ -308,11 +350,14 @@ class ImageSearchComponent extends React.Component<Props> {
           >
             <View
               pointerEvents="none"
-              style={[styles.textish, styles.iconContainer]}
+              style={[
+                imageSearchStyles.textish,
+                imageSearchStyles.iconContainer
+              ]}
             >
               <IconSearch
                 style={[
-                  styles.icon,
+                  imageSearchStyles.icon,
                   {
                     opacity: isLoading ? 0 : 1
                   }
@@ -320,7 +365,7 @@ class ImageSearchComponent extends React.Component<Props> {
               />
 
               {isLoading && (
-                <View style={styles.spinnerContainer}>
+                <View style={imageSearchStyles.spinnerContainer}>
                   <ActivityIndicator
                     color={COLORS.muted}
                     size="small"
@@ -356,7 +401,7 @@ class ImageSearchComponent extends React.Component<Props> {
             {rightActions && (
               <Animated.View
                 style={[
-                  styles.right,
+                  imageSearchStyles.right,
                   {
                     transform: [
                       {
@@ -371,11 +416,10 @@ class ImageSearchComponent extends React.Component<Props> {
             )}
 
             <Animated.View
-              pointerEvents={this.state.isFocused ? "auto" : "none"}
               style={[
-                styles.cancelWrapper,
+                imageSearchStyles.cancelWrapper,
                 {
-                  opacity: keyboardVisibleValue,
+                  opacity: this.isSearchingValue,
                   transform: [
                     {
                       translateX: this.translateX
@@ -385,8 +429,10 @@ class ImageSearchComponent extends React.Component<Props> {
               ]}
             >
               <BorderlessButton onPress={this.dismissKeyboard}>
-                <Animated.View style={styles.cancelButton}>
-                  <SemiBoldText style={styles.cancelText}>Cancel</SemiBoldText>
+                <Animated.View style={imageSearchStyles.cancelButton}>
+                  <SemiBoldText style={imageSearchStyles.cancelText}>
+                    Cancel
+                  </SemiBoldText>
                 </Animated.View>
               </BorderlessButton>
             </Animated.View>

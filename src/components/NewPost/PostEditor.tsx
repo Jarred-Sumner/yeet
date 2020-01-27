@@ -1565,6 +1565,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                   snapPoint={snapPoint}
                   currentScale={this.currentScale}
                   x={this.panX}
+                  focusTypeValue={this.focusTypeValue}
                   y={this.panY}
                   onChange={this.handleChangeSnapPoint}
                 />
@@ -1608,7 +1609,10 @@ class RawwPostEditor extends React.Component<Props, State> {
                   <SnapPreview
                     key={_getPositionsKey(this.props.post.positions)}
                     snapPoint={snapPoint}
+                    focusTypeValue={this.focusTypeValue}
                     onDismiss={this.hideSnapGuide}
+                    offsetY={this.props.offsetY}
+                    bottom={this.postBottomY}
                     positionKey={_getPositionsKey(this.props.post.positions)}
                   />
                 )}
@@ -1618,7 +1622,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           <Layer
             isShown
             width={sizeStyle.width}
-            height={sizeStyle.height}
+            height={this.postBottomY}
             zIndex={LayerZIndex.icons}
             pointerEvents="box-none"
           >
