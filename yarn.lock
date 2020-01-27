@@ -8606,9 +8606,9 @@ react-native-portal@^1.3.0:
     prop-types "*"
     react "*"
 
-"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#eeadb20":
+"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#a053447ddb604e41fd73b56a4cf8e4bebcbd80e5":
   version "1.4.0"
-  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#eeadb2018d6db786e6725d437bec11c11e2347bb"
+  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#a053447ddb604e41fd73b56a4cf8e4bebcbd80e5"
 
 react-native-redash@^7.5.1:
   version "7.5.1"

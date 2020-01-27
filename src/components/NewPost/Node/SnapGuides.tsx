@@ -1,21 +1,17 @@
 import * as React from "react";
-import { View, StyleSheet, LayoutAnimation } from "react-native";
-import Animated, {
-  Easing,
-  Transitioning,
-  Transition
-} from "react-native-reanimated";
-import { COLORS } from "../../../lib/styles";
-import { snapButtonValue, runTiming, runDelay } from "../../../lib/animations";
+import { StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
+import { IS_SIMULATOR } from "../../../../config";
+import { runDelay, runTiming, snapButtonValue } from "../../../lib/animations";
 import { getAllSnapPoints } from "../../../lib/buildPost";
 import { SnapDirection } from "../../../lib/enums";
+import { COLORS } from "../../../lib/styles";
 import {
-  IconCircleArrowLeft,
-  IconCircleArrowUp,
-  IconCircleArrowDown,
-  IconCircleArrowRight
-} from "../../Icon";
-import { runSpring } from "react-native-redash";
+  BitmapIconCircleChevronDown,
+  BitmapIconCircleChevronLeft,
+  BitmapIconCircleChevronRight,
+  BitmapIconCircleChevronUp
+} from "../../BitmapIcon";
 
 const backgroundColor = COLORS.primaryDark;
 
@@ -42,6 +38,10 @@ const appendStyles = StyleSheet.create({
     zIndex: 10,
     bottom: 0
   },
+  icon: {
+    width: 30,
+    height: 30
+  },
   left: {
     position: "absolute",
     width: 16,
@@ -64,21 +64,6 @@ const appendStyles = StyleSheet.create({
     width: "100%",
     bottom: 0,
     top: 0
-  },
-  largeIcon: {
-    color: "white",
-    fontSize: 48,
-    textShadowRadius: 3,
-    textShadowColor: "black"
-  },
-  icon: {
-    color: "white",
-    textShadowRadius: 3,
-    textShadowOffset: {
-      width: 1,
-      height: 1
-    },
-    textShadowColor: "black"
   }
 });
 
@@ -87,6 +72,159 @@ enum SnapPositionStatus {
   pending = 0,
   active = 1
 }
+
+const snapPositionProc = Animated.proc(
+  (
+    distance,
+    buttonOpacityValue,
+    isMovingValue,
+    midX,
+    midY,
+    x,
+    y,
+    size,
+    animationValue,
+    animationClock,
+    currentStatusValue,
+    currentIdValue,
+    id,
+    shouldActivate,
+    backgroundOpacityValue
+  ) =>
+    Animated.block([
+      Animated.set(distance, snapButtonValue(midX, midY, x, y, size)),
+      Animated.set(
+        shouldActivate,
+        Animated.lessOrEq(distance, size)
+        // Animated.and(
+        //   ,
+        //   Animated.neq(currentStatusValue, SnapPositionStatus.disabled)
+        // )
+      ),
+
+      Animated.set(
+        animationValue,
+        runTiming(
+          animationClock,
+          animationValue,
+          Animated.cond(
+            Animated.eq(currentIdValue, -1),
+            SnapPositionStatus.pending,
+            Animated.cond(
+              Animated.eq(currentIdValue, id),
+              SnapPositionStatus.active,
+              SnapPositionStatus.disabled
+            )
+          ),
+          200
+        )
+      ),
+
+      Animated.set(
+        buttonOpacityValue,
+        Animated.cond(
+          shouldActivate,
+          1,
+
+          Animated.cond(
+            Animated.lessThan(
+              Animated.divide(Animated.multiply(size, 5), distance),
+              0.2
+            ),
+            0,
+
+            Animated.max(
+              Animated.min(
+                Animated.multiply(
+                  Animated.add(animationValue, 1.0),
+                  Animated.min(
+                    Animated.divide(Animated.multiply(size, 5), distance),
+                    1.0
+                  )
+                ),
+                1.0
+              ),
+              0
+            )
+          )
+        )
+        // Animated.interpolate(animationValue, {
+        //   inputRange: [
+        //     SnapPositionStatus.disabled,
+        //     SnapPositionStatus.pending,
+        //     SnapPositionStatus.active
+        //   ],
+        //   outputRange: [
+        //     0,
+        //     Animated.min(
+        //       Animated.divide(Animated.multiply(size, 5), distance),
+        //       1.0
+        //     ),
+        //     1.0
+        //   ],
+        //   extrapolate: Animated.Extrapolate.CLAMP
+        // })
+      ),
+      Animated.set(
+        backgroundOpacityValue,
+        Animated.cond(
+          Animated.eq(currentIdValue, id),
+          Animated.min(Animated.multiply(0.4, animationValue), 0.4),
+          Animated.multiply(0.05, buttonOpacityValue)
+        )
+      ),
+      Animated.block([
+        Animated.cond(
+          Animated.and(
+            shouldActivate,
+            Animated.and(
+              Animated.eq(currentIdValue, -1),
+              Animated.not(isMovingValue)
+            )
+          ),
+          [Animated.set(currentIdValue, id)],
+          Animated.cond(
+            Animated.and(
+              Animated.or(Animated.not(shouldActivate), isMovingValue),
+              Animated.eq(currentIdValue, id)
+            ),
+            Animated.set(currentIdValue, -1)
+          )
+        )
+      ])
+    ])
+
+  // Animated.onChange(
+  //   shouldActivate,
+  //   Animated.block([
+  //     Animated.cond(
+  //       Animated.and(
+  //         shouldActivate,
+  //         Animated.and(
+  //           Animated.eq(currentIdValue, -1),
+  //           Animated.not(isMovingValue)
+  //         )
+  //       ),
+  //       runDelay(
+
+  //         activationClock,
+  //         200
+  //       ),
+  //       Animated.block([
+  //         Animated.cond(
+  //           Animated.and(
+  //             Animated.not(shouldActivate),
+  //             Animated.eq(currentIdValue, id)
+  //           ),
+  //           Animated.set(currentIdValue, -1)
+  //         )
+  //       ])
+  //     )
+  //   ])
+  // ])
+
+  // )
+);
 
 const SnapPosition = React.memo(
   ({
@@ -137,19 +275,8 @@ const SnapPosition = React.memo(
     const midX = left + (snapDirection === SnapDirection.left ? translateX : 0);
     const midY = top;
 
-    const currentStatusValue = React.useRef(
-      Animated.cond(
-        Animated.eq(currentIdValue, -1),
-        SnapPositionStatus.pending,
-        Animated.cond(
-          Animated.eq(currentIdValue, id.hashCode()),
-          SnapPositionStatus.active,
-          SnapPositionStatus.disabled
-        )
-      )
-    );
+    const currentStatusValue = React.useRef(new Animated.Value(0));
 
-    const activationClock = React.useRef(new Animated.Clock());
     const animationClock = React.useRef(new Animated.Clock());
     const status =
       currentId === id
@@ -159,115 +286,82 @@ const SnapPosition = React.memo(
         : SnapPositionStatus.disabled;
 
     const animationValue = React.useRef(new Animated.Value(status));
-
-    const animatedStatusValue = React.useRef(animationValue.current);
-
     const distance = React.useRef(new Animated.Value(999));
-
-    const shouldActivate = React.useRef(
-      Animated.lessOrEq(distance.current, size)
-    );
-
-    const buttonOpacityValue = React.useRef(
-      Animated.interpolate(animatedStatusValue.current, {
-        inputRange: [-1, 0, 1],
-        outputRange: [
-          0,
-          Animated.min(Animated.divide(size * 3, distance.current), 1.0),
-          1.0
-        ],
-        extrapolate: Animated.Extrapolate.CLAMP
-      })
-    );
+    const shouldActivate = React.useRef(new Animated.Value(0));
+    const buttonOpacityValue = React.useRef(new Animated.Value(0));
+    const backgroundOpacityValue = React.useRef(new Animated.Value(0));
 
     return (
       <>
         <Animated.Code
-          exec={Animated.block([
-            Animated.set(
-              distance.current,
-              snapButtonValue(midX, midY, x, y, size)
-            ),
-
-            Animated.set(
-              animationValue.current,
-              runTiming(
-                animationClock.current,
-                animationValue.current,
-                currentStatusValue.current,
-                200
-              )
-            ),
-
-            // Animated.debug("shouldActivate?", shouldActivate.current),
-
-            // Animated.onChange(
-            //   shouldActivate.current,
-            Animated.block([
-              Animated.cond(
-                Animated.and(
-                  shouldActivate.current,
-                  Animated.eq(currentIdValue, -1)
-                ),
-                runDelay(
-                  Animated.block([
-                    Animated.cond(
-                      Animated.and(
-                        shouldActivate.current,
-                        Animated.eq(currentIdValue, -1)
-                      ),
-                      [Animated.set(currentIdValue, id.hashCode())],
-                      Animated.cond(
-                        Animated.and(
-                          Animated.not(shouldActivate.current),
-                          Animated.eq(currentIdValue, id.hashCode())
-                        ),
-                        Animated.set(currentIdValue, -1)
-                      )
-                    )
-                  ]),
-                  activationClock.current,
-                  200
-                ),
-                Animated.block([
-                  Animated.cond(
-                    Animated.and(
-                      Animated.not(shouldActivate.current),
-                      Animated.eq(currentIdValue, id.hashCode())
-                    ),
-                    Animated.set(currentIdValue, -1)
-                  )
-                ])
-              )
-            ])
-            // )
-            // Animated.cond(
-            //   Animated.eq(currentIdValue, id.hashCode()),
-            //   Animated.block([Animated.set(currentIdValue, -1)])
-            // )
-          ])}
+          exec={snapPositionProc(
+            distance.current,
+            buttonOpacityValue.current,
+            isMovingValue,
+            midX,
+            midY,
+            x,
+            y,
+            size * size,
+            animationValue.current,
+            animationClock.current,
+            currentStatusValue.current,
+            currentIdValue,
+            id.hashCode(),
+            shouldActivate.current,
+            backgroundOpacityValue.current
+          )}
         />
 
         <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            top: backgroundTop,
+            left: backgroundLeft,
+            width: backgroundWidth,
+            overflow: "visible",
+            height: backgroundHeight
+          }}
+        >
+          <Animated.View
+            style={{
+              backgroundColor: COLORS.primary,
+              height: backgroundHeight,
+              width: backgroundWidth,
+              opacity: backgroundOpacityValue.current
+            }}
+          />
+        </View>
+
+        <View
+          pointerEvents="none"
           style={{
             position: "absolute",
             top: top + translateY,
             left: left + translateX,
             width: size,
+            overflow: "visible",
             height: size
           }}
         >
           <Animated.View
             pointerEvents="none"
             style={{
-              opacity: buttonOpacityValue.current,
-              width: size,
-              height: size,
-              justifyContent: "center",
-              alignItems: "center"
+              opacity: buttonOpacityValue.current
             }}
           >
-            <Icon style={appendStyles.icon} size={size} />
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                overflow: "visible",
+                width: size,
+                height: size
+              }}
+            >
+              <Icon style={appendStyles.icon} />
+            </View>
           </Animated.View>
         </View>
       </>
@@ -284,22 +378,26 @@ export const SnapGuides = ({
   velocityX,
   velocityY,
   currentScale,
-  isMovingValue,
+  isMovingValue: _isMovingValue,
   x,
   y,
   onChange
 }) => {
-  const SNAP_SIZE = 20;
+  const SNAP_SIZE = 24;
   const points = React.useMemo(
     () => (block ? getAllSnapPoints(block, blocks, positions, SNAP_SIZE) : []),
     [getAllSnapPoints, block, blocks, positions]
   );
 
   const currentId = snapPoint ? snapPoint.key : null;
+  const isMovingValue = React.useRef(new Animated.Value(0));
+  const activationClock = React.useRef(new Animated.Clock());
 
-  const currentIdValue = React.useRef(
-    new Animated.Value(currentId ? currentId.hashCode() : -1)
-  );
+  const currentIdValue = React.useRef(new Animated.Value(-1));
+
+  React.useEffect(() => {
+    currentIdValue.current.setValue(-1);
+  }, []);
 
   const handleChangeSnapDirection = React.useCallback(
     ([_id]) => {
@@ -325,7 +423,7 @@ export const SnapGuides = ({
         onChange(_snapPoint);
       }
     },
-    [onChange, snapPoint, points]
+    [onChange, points]
   );
 
   const renderPoint = React.useCallback(
@@ -344,7 +442,7 @@ export const SnapGuides = ({
         velocityX={velocityX}
         velocityY={velocityY}
         y={y}
-        isMovingValue={isMovingValue}
+        isMovingValue={isMovingValue.current}
         // animationValue={animationValue}
         left={point.indicator.x}
         top={point.indicator.y}
@@ -352,10 +450,10 @@ export const SnapGuides = ({
         // onChange={handleChangeSnapDirection}
         Icon={
           {
-            [SnapDirection.bottom]: IconCircleArrowDown,
-            [SnapDirection.top]: IconCircleArrowUp,
-            [SnapDirection.left]: IconCircleArrowLeft,
-            [SnapDirection.right]: IconCircleArrowRight
+            [SnapDirection.bottom]: BitmapIconCircleChevronDown,
+            [SnapDirection.top]: BitmapIconCircleChevronUp,
+            [SnapDirection.left]: BitmapIconCircleChevronLeft,
+            [SnapDirection.right]: BitmapIconCircleChevronRight
           }[point.direction]
         }
       />
@@ -379,11 +477,57 @@ export const SnapGuides = ({
             Animated.block([
               Animated.call([currentIdValue.current], handleChangeSnapDirection)
             ])
+          ),
+          Animated.cond(
+            // Animated.and(
+            Animated.eq(isMovingValue.current, 1),
+            // Animated.not(Animated.clockRunning(activationClock.current))
+            // ),
+            runDelay(
+              Animated.block([Animated.set(isMovingValue.current, 0)]),
+              activationClock.current,
+              100
+            )
+          ),
+          Animated.cond(
+            Animated.and(
+              Animated.clockRunning(activationClock.current),
+              Animated.eq(isMovingValue.current, 0)
+            ),
+            Animated.onChange(
+              Animated.greaterThan(Animated.abs(Animated.diff(x)), 2),
+              [
+                Animated.stopClock(activationClock.current),
+                Animated.set(isMovingValue.current, 1)
+              ]
+            ),
+            Animated.onChange(
+              Animated.greaterThan(Animated.abs(Animated.diff(y)), 2),
+              [
+                Animated.stopClock(activationClock.current),
+                Animated.set(isMovingValue.current, 1)
+              ]
+            )
           )
         ])}
       />
 
       {points.map(renderPoint)}
+
+      {IS_SIMULATOR && (
+        <Animated.View
+          style={{
+            backgroundColor: "red",
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            position: "absolute",
+            top: y,
+            left: x,
+            transform: [{ translateX: -16 }, { translateY: -16 }]
+          }}
+        />
+      )}
     </>
   );
 };

@@ -36,6 +36,7 @@ import {
 
 import { ToolbarType } from "./Toolbar";
 import { sendSelectionFeedback } from "../../lib/Vibration";
+import { snapButtonValue } from "../../lib/animations";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
 
@@ -585,17 +586,12 @@ export const DeleteFooter = ({ onDelete, panY, panX, currentScale }) => {
         exec={Animated.block([
           Animated.set(
             distance.current,
-            Animated.sqrt(
-              Animated.add(
-                Animated.multiply(
-                  Animated.sub(MID_X_DELETE_BUTTON, panX),
-                  Animated.sub(MID_X_DELETE_BUTTON, panX)
-                ),
-                Animated.multiply(
-                  Animated.sub(MID_Y_DELETE_BUTTON, panY),
-                  Animated.sub(MID_Y_DELETE_BUTTON, panY)
-                )
-              )
+            snapButtonValue(
+              MID_X_DELETE_BUTTON,
+              MID_Y_DELETE_BUTTON,
+              panX,
+              panY,
+              0
             )
           ),
           Animated.onChange(
@@ -606,15 +602,11 @@ export const DeleteFooter = ({ onDelete, panY, panX, currentScale }) => {
             Animated.greaterThan(scaleTransform.current, 0.9),
             Animated.set(
               currentScale,
-              Animated.interpolate(
-                distance.current,
-
-                {
-                  inputRange: DELETE_RANGE,
-                  outputRange: [0.75, 0.95, 1.0, 1.0],
-                  extrapolate: Animated.Extrapolate.CLAMP
-                }
-              )
+              Animated.interpolate(distance.current, {
+                inputRange: DELETE_RANGE,
+                outputRange: [0.75, 0.95, 1.0, 1.0],
+                extrapolate: Animated.Extrapolate.CLAMP
+              })
             )
           )
         ])}

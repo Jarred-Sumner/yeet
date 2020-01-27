@@ -25,6 +25,7 @@ import { Rectangle } from "../../../lib/Rectangle";
 import { sendSelectionFeedback } from "../../../lib/Vibration";
 import { ClipContext, ClipProvider } from "./ClipContext";
 import { TransformableViewComponent } from "./TransformableView";
+import { CAROUSEL_HEIGHT } from "../NewPostFormat";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
 
 const OverlaySheet = React.forwardRef((props, ref) => {
   const { bounds } = React.useContext(ClipContext);
-  const { visible, rotate, scale } = props;
+  const { visible, rotate, scale, topInsetValue } = props;
   const isInitialMount = React.useRef(true);
 
   React.useLayoutEffect(() => {
@@ -326,7 +327,7 @@ const OverlaySheet = React.forwardRef((props, ref) => {
     );
   }, []);
 
-  if (!visible) {
+  if (!visible || Math.abs(rotate) > 0.01 || scale !== 0) {
     return null;
   }
 
@@ -371,12 +372,28 @@ export class MovableNode extends Component<Props> {
 
     this.blockId = new Animated.Value(props.blockId.hashCode());
 
+    this.handleTap = event(
+      [
+        {
+          nativeEvent: {
+            x: this.props.panX,
+            y: this.props.panY,
+            absoluteX: this.props.absoluteX,
+            absoluteY: this.props.absoluteY
+          }
+        }
+      ],
+      { useNativeDriver: true }
+    );
+
     this.handlePan = event(
       [
         {
           nativeEvent: {
             translationX: this._X,
             translationY: this._Y,
+            x: this.props.panX,
+            y: this.props.panY,
             absoluteX: this.props.absoluteX,
             absoluteY: this.props.absoluteY,
             // velocityX: this.props.velocityX,
@@ -455,8 +472,7 @@ export class MovableNode extends Component<Props> {
               Animated.multiply(this.Y, -1),
               Animated.add(
                 Animated.multiply(props.keyboardHeightValue, -1),
-                // props.height,
-                120
+                this.props.offsetY
               )
             )
           )
@@ -689,9 +705,7 @@ export class MovableNode extends Component<Props> {
       isFixedSize
     } = this.props;
 
-    const ActivationGestureHandler = isFixedSize
-      ? LongPressGestureHandler
-      : TapGestureHandler;
+    const ActivationGestureHandler = TapGestureHandler;
 
     return (
       <>
@@ -730,8 +744,7 @@ export class MovableNode extends Component<Props> {
               ])
             ),
 
-            Animated.onChange(
-              this.isFocusedValue,
+            Animated.onChange(this.isFocusedValue, [
               Animated.set(
                 this.keyboardVisibleFocusedValue,
                 Animated.multiply(
@@ -739,7 +752,7 @@ export class MovableNode extends Component<Props> {
                   this.props.keyboardVisibleValue
                 )
               )
-            ),
+            ]),
             Animated.onChange(
               this.props.keyboardVisibleValue,
               Animated.set(
@@ -758,15 +771,12 @@ export class MovableNode extends Component<Props> {
             waitFor={this.tapGestureWaitFor}
             ref={this.tapRef}
             enabled={isDragEnabled}
-            minDurationMs={isFixedSize ? 200 : undefined}
+            minDurationMs={isFixedSize ? 50 : undefined}
             maxDist={isFixedSize ? 3 : undefined}
             onGestureEvent={this.handleTap}
             onHandlerStateChange={this.handleTap}
           >
-            <Animated.View
-              pointerEvents="box-none"
-              style={isHidden ? styles.lowerGestureView : styles.gestureView}
-            >
+            <Animated.View pointerEvents="box-none" style={[]}>
               <PanGestureHandler
                 ref={this.panRef}
                 enabled={isDragEnabled}
@@ -795,6 +805,7 @@ export class MovableNode extends Component<Props> {
                         <OverlaySheet
                           ref={this.overlayRef}
                           rotate={this.props.rLiteral}
+                          scale={this.props.scaleLiteral}
                           visible={this.props.isEditing}
                         />
                       ) : (

@@ -8,14 +8,22 @@ import {
   BlockPositionList,
   PostBlockID,
   getPositionsKey,
-  getRowKey
+  getRowKey,
+  MAX_POST_HEIGHT
 } from "../../lib/buildPost";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
-import { FocusType, PostBlockType, PostLayout } from "./NewPostFormat";
+import {
+  FocusType,
+  PostBlockType,
+  PostLayout,
+  CAROUSEL_HEIGHT
+} from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
 import { currentlyFocusedField } from "./Text/TextInputState";
 import { PostLayoutContext } from "./PostLayoutContext";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import { getEstimatedBounds } from "../../lib/Exporter";
 
 export const ScrollView = KeyboardAwareScrollView;
 
@@ -232,16 +240,16 @@ type EditableNodeListProps = {
 export const EditableNodeList = ({
   inlineNodes,
   onChangeNode,
+  offsetY,
   onTapNode,
   velocityX,
+  height,
   keyboardHeight,
   currentScale,
   animatedKeyboardVisibleValue,
   velocityY,
   onTransform,
   maxX,
-  currentX,
-  currentY,
   bottomY: bottom,
   keyboardHeightValue,
   focusType,
@@ -256,6 +264,8 @@ export const EditableNodeList = ({
   minY,
   midY,
   midX,
+  absoluteX,
+  absoluteY,
   onBlur: onBlurNode,
   setNodeRef,
   setBlockInputRef,
@@ -303,8 +313,6 @@ export const EditableNodeList = ({
           velocityY={velocityY}
           onAction={onAction}
           onTransform={onTransform}
-          currentX={currentX}
-          currentY={currentY}
           bottom={bottom}
           onBlur={onBlurNode}
           focusedBlockValue={focusedBlockValue}
@@ -312,13 +320,17 @@ export const EditableNodeList = ({
           waitFor={waitFor}
           inputRef={handleSetBlockInputRef(id)}
           onFocus={onFocus}
-          absoluteX={panX}
+          absoluteX={absoluteX}
+          panX={panX}
+          height={height}
           animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
           enableAutomaticScroll
-          absoluteY={panY}
+          absoluteY={absoluteY}
+          panY={panY}
           focusTypeValue={focusTypeValue}
           keyboardVisibleValue={keyboardVisibleValue}
           keyboardHeightValue={keyboardHeightValue}
+          offsetY={offsetY}
           keyboardHeight={keyboardHeight}
           focusType={focusType}
           key={id}
@@ -340,13 +352,15 @@ export const EditableNodeList = ({
     [
       maxX,
       minY,
+      absoluteX,
+      height,
+      absoluteY,
       onAction,
       currentScale,
       bottom,
       maxY,
-      currentX,
-      currentY,
       scrollY,
+      offsetY,
       keyboardHeight,
       topInsetValue,
       onBlurNode,
@@ -376,6 +390,12 @@ export const EditableNodeList = ({
   return Object.values(inlineNodes).map(renderNode);
 };
 
+export const CENTER_PREVIEW = true;
+
+export const willContentScroll = (bounds: BoundsRect, paddingTop: number) => {
+  return bounds.height < SCREEN_DIMENSIONS.height - paddingTop;
+};
+
 export const PostPreview = React.forwardRef(
   (
     {
@@ -387,6 +407,7 @@ export const PostPreview = React.forwardRef(
       onFocus,
       setBlockAtIndex,
       blocks,
+      onTouchStart,
       setBlockInputRef,
       onChangeBlock,
       onlyShow,
@@ -400,6 +421,7 @@ export const PostPreview = React.forwardRef(
       focusType,
       focusedBlockValue,
       onBlurNode,
+      offsetY,
       scrollY,
       children,
       maxHeight,
@@ -410,9 +432,11 @@ export const PostPreview = React.forwardRef(
       onTapBlock,
       scrollEnabled,
       onBlur,
+      onTouchMove,
       onOpenImagePicker,
       positions,
       focusTypeValue,
+      onLayout,
       topInsetValue,
       contentViewRef,
       simultaneousHandlers,
@@ -422,31 +446,16 @@ export const PostPreview = React.forwardRef(
       onScroll,
       onSwipe,
       bounces,
+      positionsKey,
       waitFor,
       setPostBottom
     },
     ref
   ) => {
     const scrollRef = React.useRef();
-
-    const onContentViewLayout = React.useCallback(
-      ({
-        nativeEvent: {
-          layout: { width, height, x, y }
-        }
-      }) => {
-        bottomY?.setValue(height);
-        setPostBottom(height);
-      },
-      [bottomY, setPostBottom]
-    );
-
     const blockContainerRef = React.useRef(null);
 
-    const enableCenter = false;
-
     React.useImperativeHandle(ref, () => scrollRef.current);
-    const { onLayout, ...layout } = useLayout();
 
     const initialOffset = React.useMemo(
       () => ({
@@ -456,41 +465,41 @@ export const PostPreview = React.forwardRef(
       [paddingTop]
     );
 
-    const contentInset = React.useMemo(
-      () => ({
-        top: paddingTop,
-        bottom: paddingBottom
-      }),
-      [paddingTop, paddingBottom]
-    );
+    const scrollHeight = SCREEN_DIMENSIONS.height - paddingTop - paddingBottom;
 
     const scrollViewStyle = React.useMemo(
       () => ({
-        maxHeight,
         width: bounds.width,
         flex: 1,
         // overflow: "visible",
-        backgroundColor
+        backgroundColor: "#111"
       }),
-      [maxHeight, bounds.width, backgroundColor]
+      [maxHeight, bounds.width, backgroundColor, paddingBottom]
     );
 
     const contentContainerStyle = React.useMemo(
       () => [
         {
-          backgroundColor,
-          marginTop: enableCenter && paddingTop * -1
+          // backgroundColor: "pink",
+          // maxHeight,
+          justifyContent: "center",
+          alignSelf: "center",
+          flexGrow: 1,
+          width: bounds.width
         }
       ],
-      [backgroundColor, paddingTop, paddingBottom]
+      [backgroundColor, maxHeight, scrollHeight]
     );
 
     const contenViewStyle = React.useMemo(
       () => ({
         position: "relative",
-        paddingBottom: paddingBottom
+        // backgroundColor: "red",
+        overflow: "visible",
+        marginTop: paddingTop,
+        marginBottom: paddingBottom
       }),
-      [layout, paddingTop]
+      [paddingTop, bottomY, paddingBottom, backgroundColor]
     );
 
     // React.useLayoutEffect(() => {
@@ -501,89 +510,83 @@ export const PostPreview = React.forwardRef(
     //   });
     // }, [scrollRef.current, paddingTop]);
 
-    const _positionsKey = React.useMemo(() => getPositionsKey(positions), [
-      positions
-    ]);
-
+    const isCentered = !willContentScroll(bounds.height, paddingTop);
     return (
-      <ScrollView
-        directionalLockEnabled
-        horizontal={false}
-        vertical
-        bounces={bounces}
-        alwaysBounceVertical={bounces}
-        overScrollMode="always"
-        defaultPosition={initialOffset}
-        contentOffset={initialOffset}
-        scrollEnabled={scrollEnabled}
-        getFocusedField={currentlyFocusedField}
-        onScroll={onScroll}
-        onLayout={onLayout}
-        nestedScrollEnabled
-        scrollY={scrollY}
-        topInsetValue={topInsetValue}
-        keyboardShouldPersistTaps="always"
-        contentInsetAdjustmentBehavior="never"
-        keyboardOpeningTime={0}
-        extraScrollHeight={0}
-        ref={scrollRef}
-        paddingTop={paddingTop}
-        enableResetScrollToCoords={false}
-        resetScrollToCoords={null}
-        contentInset={contentInset}
-        pinchGestureEnabled
-        bouncesZoom
-        minimumZoomScale={1}
-        maximumZoomScale={4}
-        paddingBottom={paddingBottom}
-        style={scrollViewStyle}
-        contentContainerStyle={contentContainerStyle}
+      <TapGestureHandler
+        onHandlerStateChange={onTapBackground}
+        onGestureEvent={onTapBackground}
+        shouldCancelWhenOutside={false}
+        waitFor={waitFor}
+        maxDeltaX={10}
+        maxDeltaY={10}
+        maxDist={10}
       >
-        <TapGestureHandler
-          onHandlerStateChange={onTapBackground}
-          onGestureEvent={onTapBackground}
-          shouldCancelWhenOutside={false}
-          waitFor={waitFor}
-          maxDeltaX={10}
-          maxDeltaY={10}
-          maxDist={10}
+        <ScrollView
+          directionalLockEnabled
+          horizontal={false}
+          bounces={bounces}
+          alwaysBounceVertical={false}
+          overScrollMode="always"
+          defaultPosition={isCentered ? { y: 0, x: 0 } : initialOffset}
+          contentOffset={isCentered ? { y: 0, x: 0 } : initialOffset}
+          scrollEnabled
+          getFocusedField={currentlyFocusedField}
+          scrollToOverflowEnabled
+          onScroll={onScroll}
+          onScrollBeginDrag={onScroll}
+          onMomentumScrollBegin={onScroll}
+          nestedScrollEnabled
+          scrollY={scrollY}
+          topInsetValue={topInsetValue}
+          keyboardShouldPersistTaps="always"
+          contentInsetAdjustmentBehavior="never"
+          keyboardOpeningTime={0}
+          extraScrollHeight={0}
+          ref={scrollRef}
+          centerContent={false}
+          paddingTop={0}
+          enableResetScrollToCoords
+          resetScrollToCoords={null}
+          pinchGestureEnabled
+          bouncesZoom
+          minimumZoomScale={1}
+          maximumZoomScale={4}
+          paddingBottom={0}
+          style={scrollViewStyle}
+          contentContainerStyle={contentContainerStyle}
         >
           <Animated.View
             nativeID="content-container"
             ref={contentViewRef}
+            onLayout={onLayout}
             style={contenViewStyle}
           >
-            <Animated.View
-              ref={blockContainerRef}
-              onLayout={onContentViewLayout}
-            >
-              <BlockList
-                setBlockInputRef={setBlockInputRef}
-                blocks={blocks}
-                positions={positions}
-                layout={postLayout}
-                key={_positionsKey}
-                onFocus={onFocus}
-                onAction={onAction}
-                focusTypeValue={focusTypeValue}
-                onOpenImagePicker={onOpenImagePicker}
-                onChangePhoto={onChangePhoto}
-                focusType={focusType}
-                onTap={onTapBlock}
-                disabled={!scrollEnabled}
-                scrollRef={scrollRef}
-                onLayout={onLayoutBlock}
-                focusedBlockId={focusedBlockId}
-                focusedBlockValue={focusedBlockValue}
-                onBlur={onBlur}
-                setBlockAtIndex={setBlockAtIndex}
-              />
-            </Animated.View>
+            <BlockList
+              setBlockInputRef={setBlockInputRef}
+              blocks={blocks}
+              positions={positions}
+              layout={postLayout}
+              key={positionsKey}
+              onFocus={onFocus}
+              onAction={onAction}
+              focusTypeValue={focusTypeValue}
+              onOpenImagePicker={onOpenImagePicker}
+              onChangePhoto={onChangePhoto}
+              focusType={focusType}
+              onTap={onTapBlock}
+              disabled={!scrollEnabled}
+              scrollRef={scrollRef}
+              onLayout={onLayoutBlock}
+              focusedBlockId={focusedBlockId}
+              focusedBlockValue={focusedBlockValue}
+              onBlur={onBlur}
+              setBlockAtIndex={setBlockAtIndex}
+            />
 
             {children}
           </Animated.View>
-        </TapGestureHandler>
-      </ScrollView>
+        </ScrollView>
+      </TapGestureHandler>
     );
   }
 );

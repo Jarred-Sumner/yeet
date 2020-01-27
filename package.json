@@ -96,7 +96,7 @@
     "react-native-permissions": "2.0.0-rc.0",
     "react-native-photo-manipulator": "https://github.com/Jarred-Sumner/react-native-photo-manipulator.git",
     "react-native-portal": "^1.3.0",
-    "react-native-reanimated": "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#eeadb20",
+    "react-native-reanimated": "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#a053447ddb604e41fd73b56a4cf8e4bebcbd80e5",
     "react-native-redash": "^7.5.1",
     "react-native-safe-area-context": "^0.6.0",
     "react-native-safe-area-view": "^0.14.6",

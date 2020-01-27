@@ -7,6 +7,7 @@ import Animated, {
   Easing
 } from "react-native-reanimated";
 import { BlockList } from "./PostPreview";
+import { isEmpty } from "lodash";
 import { POST_WIDTH, MAX_POST_HEIGHT } from "../../lib/buildPost";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import BlurView from "../BlurView";
@@ -59,32 +60,38 @@ type Props = {
 };
 
 const InnerPost = React.memo(
-  ({ blocks, positions, placeholderFunc, paused }) => (
-    <View style={styles.post}>
-      <BlockList
-        setBlockInputRef={null}
-        blocks={blocks}
-        positions={positions}
-        layout={PostLayout.media}
-        onFocus={null}
-        onAction={null}
-        focusTypeValue={null}
-        paused={paused}
-        muted
-        onOpenImagePicker={null}
-        onChangePhoto={null}
-        focusType={null}
-        onTap={null}
-        disabled
-        scrollRef={null}
-        onLayout={placeholderFunc}
-        focusedBlockId={null}
-        focusedBlockValue={null}
-        onBlur={placeholderFunc}
-        setBlockAtIndex={placeholderFunc}
-      />
-    </View>
-  )
+  ({ blocks, positions, placeholderFunc, paused }) => {
+    if (isEmpty(blocks) || isEmpty(positions)) {
+      return null;
+    }
+
+    return (
+      <View style={styles.post}>
+        <BlockList
+          setBlockInputRef={null}
+          blocks={blocks}
+          positions={positions}
+          layout={PostLayout.media}
+          onFocus={null}
+          onAction={null}
+          focusTypeValue={null}
+          paused={paused}
+          muted
+          onOpenImagePicker={null}
+          onChangePhoto={null}
+          focusType={null}
+          onTap={null}
+          disabled
+          scrollRef={null}
+          onLayout={placeholderFunc}
+          focusedBlockId={null}
+          focusedBlockValue={null}
+          onBlur={placeholderFunc}
+          setBlockAtIndex={placeholderFunc}
+        />
+      </View>
+    );
+  }
 );
 
 export const SnapPreview = (props: Props) => {
@@ -94,75 +101,45 @@ export const SnapPreview = (props: Props) => {
     return () => {};
   }, []);
 
-  const animationProgress = React.useRef(
-    new Animated.Value(!!props.snapPoint ? 1 : 0)
-  );
+  const animationProgress = React.useRef(new Animated.Value(0));
   const hasSnapPoint = React.useRef(!!props.snapPoint);
   const animation = React.useRef(null);
   const lastSnapKey = React.useRef(props.snapPoint?.key);
+  const animationClock = React.useRef(new Animated.Clock());
+  const _animationValue = React.useRef(new Animated.Value<number>(0));
+
+  const hideView = React.useRef(function() {
+    props.onDismiss();
+  });
 
   React.useEffect(() => {
     if (props.snapPoint) {
       setSnapPoint(props.snapPoint);
       hasSnapPoint.current = true;
       lastSnapKey.current = props.snapPoint.key;
-
-      let cancelTimer = setTimeout(() => {
-        animation.current = Animated.timing(animationProgress.current, {
-          toValue: 1,
-          duration: 300,
-          easing: Easing.inOut(Easing.quad)
-        }).start(didFinish => {
-          animation.current = null;
-        });
-
-        cancelTimer = null;
-      }, 400);
-
-      return () => {
-        cancelTimer && window.clearTimeout(cancelTimer);
-        if (animation.current) {
-          animation.current.cancel();
-        }
-      };
+      _animationValue.current.setValue(1);
     } else if (!props.snapPoint && hasSnapPoint.current) {
-      const key = lastSnapKey.current;
-
-      animation.current = Animated.timing(animationProgress.current, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.linear
-      }).start(() => {
-        if (lastSnapKey.current === key) {
-          setSnapPoint(null);
-          hasSnapPoint.current = false;
-          animation.current = null;
-        }
-      });
-
-      return () => {
-        animation.current?.cancel();
-      };
+      hasSnapPoint.current = false;
+      _animationValue.current.setValue(0);
     }
   }, [props.snapPoint, setSnapPoint]);
 
-  if (!snapPoint) {
-    return null;
-  }
-
   const {
-    value: { blocks, positions },
-    indicator: { x, y },
-    direction
-  } = snapPoint;
+    value: { blocks, positions } = { blocks: {}, positions: [] },
+    indicator: { x, y } = { x, y },
+    background: { height } = { height: 0 },
+    direction = SnapDirection.none
+  } = snapPoint || {};
 
-  const animationStyles = {
-    top: animationProgress.current.interpolate({
+  const animationStyles = {};
+
+  if (direction !== SnapDirection.none) {
+    animationStyles.top = animationProgress.current.interpolate({
       inputRange: [0, 1],
-      outputRange: [y - CAROUSEL_HEIGHT, CAROUSEL_HEIGHT],
+      outputRange: [y, direction === SnapDirection.bottom ? height * -1 : 0],
       extrapolate: Animated.Extrapolate.CLAMP
-    })
-  };
+    });
+  }
 
   if (direction === SnapDirection.left) {
     animationStyles.right = animationProgress.current.interpolate({
@@ -180,7 +157,33 @@ export const SnapPreview = (props: Props) => {
 
   return (
     <>
+      <Animated.Code
+        exec={Animated.block([
+          Animated.set(
+            animationProgress.current,
+            Animated.cond(
+              Animated.eq(_animationValue.current, 1),
+              runTiming(
+                animationClock.current,
+                animationProgress.current,
+                _animationValue.current,
+                300,
+                Easing.inOut(Easing.quad)
+              ),
+              runTiming(
+                animationClock.current,
+                animationProgress.current,
+                _animationValue.current,
+                200,
+                Easing.linear,
+                Animated.block([Animated.call([], hideView.current)])
+              )
+            )
+          )
+        ])}
+      />
       <Animated.View
+        key={snapPoint?.key + "fade" ?? "" + "fade"}
         pointerEvents="none"
         style={[
           styles.fade,
@@ -191,6 +194,7 @@ export const SnapPreview = (props: Props) => {
       />
 
       <Animated.View
+        key={snapPoint?.key}
         style={[
           styles.wrapper,
           animationStyles,
@@ -215,7 +219,7 @@ export const SnapPreview = (props: Props) => {
         <InnerPost
           blocks={blocks}
           positions={positions}
-          paused={!!props.snapPoint}
+          paused={false}
           placeholderFunc={placeholderFunc}
         />
       </Animated.View>

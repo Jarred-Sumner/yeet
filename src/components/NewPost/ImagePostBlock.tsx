@@ -176,7 +176,7 @@ const LibraryImage = ({
           height: block.config.dimensions.height
         },
         {
-          transform: block.value.image.transform
+          transform: block.value.image?.transform
         }
       ]}
     />
@@ -208,14 +208,14 @@ const StickerImage = ({
       dimensions={block.config.dimensions}
       borderRadius={2}
       style={[
-        stylesByFormat[block.format].image,
+        stylesByFormat[block.format]?.image,
         stylesByLayout[block.layout]?.image,
         {
           width: block.config.dimensions.width,
           height: block.config.dimensions.height
         },
         {
-          transform: block.value.image.transform
+          transform: block.value?.image.transform
         }
       ]}
     />
@@ -333,6 +333,10 @@ class RawImagePostBlock extends React.Component<Props> {
   containerRef = React.createRef<View>();
 
   get isVideo() {
+    if (!this.props.block.value) {
+      return false;
+    }
+
     return isVideo(
       (this.props.block.value as YeetImageContainer).image.mimeType
     );
@@ -476,7 +480,7 @@ class RawImagePostBlock extends React.Component<Props> {
         <TapGestureHandler
           maxDeltaX={5}
           maxDeltaY={5}
-          enabled={!IS_IOS_13 && !this.props.disabled}
+          enabled={!this.props.disabled}
           maxDist={10}
           ref={this.props.gestureRef}
           onGestureEvent={this.handleTapEvent}

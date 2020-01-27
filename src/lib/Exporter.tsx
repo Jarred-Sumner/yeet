@@ -223,6 +223,7 @@ export const startExport = async (
   backgroundColor: string
 ): Promise<[ContentExport, ExportData]> => {
   let hasLongVideo = false;
+  console.log("A");
   const trace = await perf().startTrace("YeetExporter_startExport");
   let videoCount = 0;
   let imageCount = 0;
@@ -245,6 +246,7 @@ export const startExport = async (
     }
   );
 
+  console.log("B");
   await Bluebird.map(
     [...nodeRefs.entries()],
     ([id, _ref]) =>
@@ -257,6 +259,8 @@ export const startExport = async (
       concurrency: 3
     }
   );
+
+  console.log("C");
   const measureDuration = new Date().getTime() - measureTime;
   trace.putMetric("measure", measureDuration);
 
@@ -289,6 +293,7 @@ export const startExport = async (
       );
     })
   );
+  console.log("D");
 
   const nodes = [...Object.values(_nodes)].map(node => {
     const blockRef = refs.get(node.block.id).current;
@@ -323,6 +328,7 @@ export const startExport = async (
     );
   });
 
+  console.log("E");
   trace.putMetric("imageCount", imageCount);
   trace.putMetric("videoCount", videoCount);
   trace.putMetric("textCount", textCount);
@@ -339,6 +345,7 @@ export const startExport = async (
     containerNode: findNodeHandle(ref.current)
   };
 
+  console.log("F");
   if (process.env.NODE_ENV !== "production") {
     console.log(JSON.stringify(data));
   }

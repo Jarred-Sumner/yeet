@@ -186,14 +186,24 @@ class RawNewPost extends React.Component<{}, State> {
 
       bounds: {
         ...props.defaultBounds,
+        height: props.defaultHeight,
+        width: props.defaultWidth,
         x: props.minX,
         y: props.minY
       }
     };
 
     const scrollY = this.paddingTop * -1;
-    this.scrollY = new Animated.Value<number>(scrollY);
+
+    if (this.state.bounds.height < SCREEN_DIMENSIONS.height - this.paddingTop) {
+      console.log(this.state.bounds);
+      this.scrollY = new Animated.Value<number>(0);
+    } else {
+      this.scrollY = new Animated.Value<number>(scrollY);
+    }
   }
+
+  offsetY = new Animated.Value(0);
 
   componentDidMount() {
     window.requestIdleCallback(() => {
@@ -560,6 +570,7 @@ class RawNewPost extends React.Component<{}, State> {
                   onBack={this.handleBack}
                   exampleCount={this.state.exampleCount}
                   exampleIndex={this.state.exampleIndex}
+                  offsetY={this.offsetY}
                   onPressExample={this.handlePressExample}
                   scrollY={this.scrollY}
                   ref={this.postEditor}

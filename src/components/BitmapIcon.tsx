@@ -45,7 +45,11 @@ export enum BitmapIconName {
   borderStroke = "Border__stroke",
   borderHidden = "Border__hidden",
   borderHighlight = "Border__highlight",
-  borderInvert = "Border__invert"
+  borderInvert = "Border__invert",
+  circleChevronDown = "CircleChevronDown",
+  circleChevronLeft = "CircleChevronLeft",
+  circleChevronRight = "CircleChevronRight",
+  circleChevronUp = "CircleChevronUp"
 }
 
 const SIZES_BY_NAME = {
@@ -521,6 +525,31 @@ export const BitmapIconBorderInvert = ({
   <BitmapIconImage
     {...otherProps}
     name={BitmapIconName.borderInvert}
+    style={style}
+  />
+);
+
+export const BitmapIconCircleChevronDown = ({ style, ...otherProps }) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.circleChevronDown}
+    style={style}
+  />
+);
+export const BitmapIconCircleChevronLeft = ({ style, ...otherProps }) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.circleChevronLeft}
+    style={style}
+  />
+);
+export const BitmapIconCircleChevronRight = ({ style, ...otherProps }) => (
+  <BitmapIconImage name={BitmapIconName.circleChevronRight} style={style} />
+);
+export const BitmapIconCircleChevronUp = ({ style, ...otherProps }) => (
+  <BitmapIconImage
+    {...otherProps}
+    name={BitmapIconName.circleChevronUp}
     style={style}
   />
 );

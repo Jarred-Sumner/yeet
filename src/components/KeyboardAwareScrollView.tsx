@@ -99,6 +99,8 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     defaultPosition: { x: 0, y: 0 }
   };
 
+  contentSize = { width: 0, height: 0 };
+
   constructor(props) {
     super(props);
     this.callbacks = {};
@@ -176,6 +178,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       if (!this.mountedComponent) {
         return;
       }
+
       const responder = this.getScrollResponder();
       responder &&
         responder.scrollResponderScrollNativeHandleToKeyboard(
@@ -253,6 +256,12 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
                   this.props.extraScrollHeight +
                   this.props.extraHeight -
                   this.props.paddingTop;
+                console.log({
+                  textInputBottomPosition,
+                  keyboardPosition,
+                  totalExtraHeight
+                });
+
                 if (Platform.OS === "ios") {
                   if (
                     textInputBottomPosition >
@@ -297,6 +306,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     }
   };
 
+  isResettingScroll = false;
   resetKeyboardSpace = () => {
     const keyboardSpace = this.props.viewIsInsideTabBar
       ? _KAM_DEFAULT_TAB_BAR_HEIGHT
@@ -306,23 +316,15 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     if (this.props.enableResetScrollToCoords === false) {
       this.defaultResetScrollToCoords = null;
       return;
-    } else if (this.props.resetScrollToCoords) {
+    } else {
+      console.log("RESETTING", this.resetScrollCoords);
+
+      this.isResettingScroll = true;
       this.scrollToPosition(
-        this.props.resetScrollToCoords.x,
-        this.props.resetScrollToCoords.y,
+        this.resetScrollCoords.x,
+        this.resetScrollCoords.y,
         true
       );
-    } else {
-      if (this.defaultResetScrollToCoords) {
-        this.scrollToPosition(
-          this.defaultResetScrollToCoords.x,
-          this.defaultResetScrollToCoords.y,
-          true
-        );
-        this.defaultResetScrollToCoords = null;
-      } else {
-        this.scrollToPosition(0, 0, true);
-      }
     }
   };
 
@@ -365,6 +367,9 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     };
   };
 
+  flashScrollIndicators = () =>
+    this._rnkasv_keyboardView?.flashScrollIndicators();
+
   _handleRef = ref => {
     this._rnkasv_keyboardView = ref
       ? ScrollIntoViewDefaultOptions.extractNativeRef(ref)
@@ -386,16 +391,59 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     this._scrollToFocusedInputWithNodeHandle(currentlyFocusedField);
   };
 
+  get resetScrollCoords() {
+    if (this.props.centerContent) {
+      const y = (this.props.maxHeight - this.contentSize.height) / 2;
+      return {
+        y: this.isResettingScroll ? y * -1 : y,
+        x: 0
+      };
+    } else {
+      return this.position;
+    }
+  }
+
+  handleContentSizeChange = (width, height) => {
+    this.contentSize = { width, height };
+
+    if (this.props.centerContent) {
+      this.props.scrollY.setValue(this.resetScrollCoords.y);
+    }
+
+    this.props.onContentSizeChange &&
+      this.props.onContentSizeChange(width, height);
+  };
+
+  contentInset = {
+    top: this.props.paddingTop,
+    bottom: (this.props.keyboardSpace || 0) + this.props.paddingBottom,
+    left: this.props.paddingLeft,
+    right: this.props.paddingRight
+  };
+
+  handleScrollEnd = ({ nativeEvent: { contentOffset, contentInset } }) => {
+    this.contentOffset = contentOffset;
+    this.contentInset = contentInset;
+    console.log("SCROLL END!!", contentOffset, contentInset);
+
+    if (this.isResettingScroll) {
+      this.isResettingScroll = false;
+    }
+  };
+
   render() {
     const {
       enableOnAndroid,
       contentContainerStyle,
       keyboardDismissMode = "interactive",
       onScroll,
+      automaticallyAdjustContentInsets,
+      contentInsetAdjustmentBehavior,
       paddingTop = 0,
       paddingBottom = 0,
       paddingLeft = 0,
       paddingRight = 0,
+      centerContent,
       ...otherProps
     } = this.props;
     const { keyboardSpace } = this.state;
@@ -413,15 +461,14 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         <ScrollView
           {...otherProps}
           keyboardDismissMode={keyboardDismissMode}
-          contentInset={{
-            top: paddingTop,
-            bottom: keyboardSpace + paddingBottom,
-            left: paddingLeft,
-            right: paddingRight
-          }}
-          automaticallyAdjustContentInsets={false}
-          contentInsetAdjustmentBehavior="never"
+          onContentSizeChange={this.handleContentSizeChange}
+          contentInset={this.contentInset}
+          automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
+          onMomentumScrollEnd={this.handleScrollEnd}
+          centerContent={centerContent}
+          contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
           showsVerticalScrollIndicator={true}
+          scrollToOverflowEnabled
           scrollEventThrottle={1}
           ref={this._handleRef}
           contentContainerStyle={

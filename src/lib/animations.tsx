@@ -29,7 +29,14 @@ const {
   divide
 } = Animated;
 
-export function runTiming(clock, value, dest, duration = 300) {
+export function runTiming(
+  clock,
+  value,
+  dest,
+  duration = 300,
+  easing = Easing.inOut(Easing.ease),
+  completion = Animated.block([])
+) {
   const state = {
     finished: new Value(0),
     position: new Value(0),
@@ -40,7 +47,7 @@ export function runTiming(clock, value, dest, duration = 300) {
   const config = {
     duration,
     toValue: new Value(0),
-    easing: Easing.inOut(Easing.ease)
+    easing: easing
   };
 
   return block([
@@ -66,7 +73,7 @@ export function runTiming(clock, value, dest, duration = 300) {
         // we run the step here that is going to update position
         timing(clock, state, config),
         // if the animation is over we stop the clock
-        cond(state.finished, stopClock(clock)),
+        cond(state.finished, [stopClock(clock), completion]),
         // we made the block return the updated position
         state.position
       ]),
@@ -322,16 +329,15 @@ export const getSnapPoints = () => {
   return [-200, -100, -40, -11, -10, 0, 10, 11, 40, 100, 200];
 };
 
-export const snapButtonValue = Animated.proc((midX, midY, x, y, size) =>
-  Animated.abs(
-    Animated.sqrt(
-      Animated.add(
-        Animated.multiply(Animated.sub(midX, x), Animated.sub(midX, x)),
-        Animated.multiply(Animated.sub(midY, y), Animated.sub(midY, y))
-      )
-    )
-  )
-);
+export const snapButtonValue = (midX, midY, x, y, size) =>
+  // Animated.abs(
+  // Animated.sqrt(
+  Animated.add(
+    Animated.multiply(Animated.sub(midX, x), Animated.sub(midX, x)),
+    Animated.multiply(Animated.sub(midY, y), Animated.sub(midY, y))
+  );
+// )
+// );
 
 export const isCurrentlyGesturingProc = Animated.proc(
   (panGestureState, scaleGestureState, rotationGestureState) =>

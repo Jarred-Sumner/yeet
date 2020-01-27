@@ -165,6 +165,7 @@ export class BaseNode extends React.Component<Props> {
       onTap,
       onChange,
       maxX,
+      offsetY,
       maxY,
       minX,
       minY,
@@ -180,14 +181,14 @@ export class BaseNode extends React.Component<Props> {
       autoFocus,
       absoluteY,
       focusType,
+      panX,
+      panY,
       focusedBlockId,
       focusTypeValue,
       onLayout,
       format,
       topInsetValue,
       maxScale,
-      currentX,
-      currentY,
       keyboardHeight,
       currentScale,
       currentWidth,
@@ -201,7 +202,7 @@ export class BaseNode extends React.Component<Props> {
       onAction,
       inputAccessoryView,
       keyboardHeightValue,
-      bottom
+      height
     } = this.props;
 
     const isDragEnabled =
@@ -235,8 +236,6 @@ export class BaseNode extends React.Component<Props> {
         currentScale={currentScale}
         velocityX={velocityX}
         frame={block.frame}
-        currentX={currentX}
-        currentY={currentY}
         isPanning={isFocused && focusType === FocusType.panning}
         velocityY={velocityY}
         onTransform={onTransform}
@@ -249,6 +248,8 @@ export class BaseNode extends React.Component<Props> {
         absoluteX={absoluteX}
         onContentSizeChange={this.onContentSizeChangeRef}
         absoluteY={absoluteY}
+        panX={panX}
+        panY={panY}
         focusTypeValue={focusTypeValue}
         containerRef={containerRef}
         topInsetValue={topInsetValue}
@@ -274,7 +275,8 @@ export class BaseNode extends React.Component<Props> {
         paddingTop={paddingTop}
         minY={minY}
         maxY={maxY}
-        height={bottom}
+        height={height}
+        offsetY={offsetY}
         onTap={this.handleTap}
         extraPadding={0}
       >

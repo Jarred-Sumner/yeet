@@ -146,6 +146,8 @@ class MovableView: UIView, RCTUIManagerObserver {
         return 3
       } else if !hasTransform && textInput.isFixedSize {
         return 1
+      } else if textInput.text?.isEmpty ?? true {
+        return 1
       } else {
         return 2
       }
@@ -197,11 +199,6 @@ class MovableView: UIView, RCTUIManagerObserver {
       }
 
       let affineTransform = CATransform3DGetAffineTransform(newValue)
-      Log.debug("""
-        Set Transform!
-          To: \(affineTransform.scaleXY()) \(affineTransform.rotationRadians())rad
-          From: \(layer.affineTransform().scaleXY()) \(layer.affineTransform().rotationRadians())rad
-      """)
 
       if let animator = self.animator {
         // https://stackoverflow.com/questions/10497397/from-catransform3d-to-cgaffinetransform?rq=1

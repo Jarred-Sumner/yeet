@@ -865,6 +865,10 @@ export const getAllSnapPoints = (
   positions: BlockPositionList,
   size: number
 ): Array<SnapPoint> => {
+  if (isEmpty(positions) || !block || isEmpty(blocks)) {
+    return [];
+  }
+
   let _points = {};
 
   const snapPoints = flatMap(

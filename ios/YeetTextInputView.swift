@@ -620,7 +620,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return
     }
 
-
     isShowingKeyboard = true
     sentWillShowKeyboard = true
 
