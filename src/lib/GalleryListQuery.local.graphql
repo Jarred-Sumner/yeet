@@ -6,6 +6,8 @@ query GalleryListQuery(
   $photoColumnCount: Int!
 ) {
   photos: cameraRoll(assetType: "photos", first: $photoColumnCount) @client {
+    id
+
     data {
       ...YeetImageContainerFragment
     }
@@ -15,7 +17,23 @@ query GalleryListQuery(
     id
 
     data {
-      ...YeetImageContainerFragment
+      id
+      post {
+        blocks
+        bounds
+        nodes
+        assets
+        examples
+        bounds
+        media
+        profile
+        id
+        __typename
+      }
+
+      image {
+        ...YeetImageContainerFragment
+      }
     }
   }
 
@@ -34,6 +52,7 @@ query GalleryListQuery(
   }
 
   videos: cameraRoll(assetType: "videos", first: $videoColumnCount) @client {
+    id
     data {
       ...YeetImageContainerFragment
     }

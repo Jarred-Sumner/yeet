@@ -62,8 +62,8 @@ type Props = {
 };
 
 class GallerySectionListComponent extends React.Component<Props> {
-  handlePressColumn = (image: YeetImageContainer) => {
-    this.props.onPressColumn(image);
+  handlePressColumn = (image: YeetImageContainer, post) => {
+    this.props.onPressColumn(image, post);
   };
 
   renderSectionItem = (item: GallerySection, index: number) => {
@@ -78,16 +78,18 @@ class GallerySectionListComponent extends React.Component<Props> {
     } else if (item.type === GallerySectionItem.clipboardImage) {
       const image = item.data[0]?.image?.image;
 
-      height = CLIPBOARD_IMAGE_HEIGHT;
-      width = CLIPBOARD_IMAGE_WIDTH;
+      if (image !== null) {
+        height = CLIPBOARD_IMAGE_HEIGHT;
+        width = CLIPBOARD_IMAGE_WIDTH;
 
-      if (image && (image.width < width || image.height < height)) {
-        width = image.width;
-        height = image.height;
-      } else if (image && image.width > width) {
-        const dimensions = scaleRectToWidth(width, image);
-        width = dimensions.width;
-        height = dimensions.height;
+        if (image && (image.width < width || image.height < height)) {
+          width = image.width;
+          height = image.height;
+        } else if (image && image.width > width) {
+          const dimensions = scaleRectToWidth(width, image);
+          width = dimensions.width;
+          height = dimensions.height;
+        }
       }
 
       columnCount = 2;
@@ -96,6 +98,8 @@ class GallerySectionListComponent extends React.Component<Props> {
     } else if (item.type === GallerySectionItem.recent) {
       rowCount = Math.ceil(item.data.length / columnCount);
     }
+
+    console.log({ width, height });
 
     return (
       <React.Fragment key={item.type}>
@@ -140,10 +144,12 @@ const buildSection = (
 ): GallerySection => {
   return {
     type,
-    data: data.map(image => ({
-      id: image.id,
-      image: image
-    })),
+    data: data.map(image => {
+      return {
+        id: image.id,
+        image
+      };
+    }),
     networkStatus
   };
 };
@@ -151,8 +157,7 @@ const buildSection = (
 const ORDERED_ITEMS = [
   GallerySectionItem.clipboardURL,
   GallerySectionItem.clipboardImage,
-  GallerySectionItem.photos,
-  GallerySectionItem.videos,
+  // GallerySectionItem.cameraRoll,
   GallerySectionItem.gifs,
   GallerySectionItem.recent
 ];
@@ -184,9 +189,9 @@ export const GallerySectionList = ({
       photoColumnCount: COLUMN_COUNT * 2,
       videoColumnCount: COLUMN_COUNT
     },
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     returnPartialData: true,
-    errorPolicy: "alll",
+    errorPolicy: "ignore",
     notifyOnNetworkStatusChange: true
   });
 
@@ -268,14 +273,14 @@ export const GallerySectionList = ({
       }
 
       let data = [];
-      if (type === GallerySectionItem.videos) {
-        data = videos?.data;
-      } else if (type === GallerySectionItem.gifs) {
+      if (type === GallerySectionItem.gifs) {
         data = gifs?.data;
-      } else if (type === GallerySectionItem.photos) {
-        data = photos?.data;
       } else if (type === GallerySectionItem.recent) {
-        data = recentImages?.data;
+        return {
+          type,
+          data: galleryQuery.data.recentImages.data,
+          networkStatus: galleryQuery?.networkStatus
+        };
       }
 
       return buildSection(type, data || [], galleryQuery?.networkStatus);
@@ -291,6 +296,7 @@ export const GallerySectionList = ({
     clipboardContext
   ]);
 
+  console.log({ galleryQuery });
   return (
     <GallerySectionListComponent
       sections={sections}

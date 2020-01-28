@@ -1338,7 +1338,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     );
   }
 
-  handleUpdateBlockFrame = async (
+  _handleUpdateBlockFrame = async (
     block: PostBlockType,
     ref: React.RefObject<View>
   ) => {
@@ -1348,10 +1348,11 @@ class RawwPostEditor extends React.Component<Props, State> {
     );
 
     this.handleChangeBlock({
-      ...cloneDeep(block),
+      ...block,
       frame
     });
   };
+  handleUpdateBlockFrame = debounce(this._handleUpdateBlockFrame, 20);
 
   postPreviewHandlers = [];
   postBottomY = new Animated.Value<number>(0);

@@ -25,7 +25,7 @@ class YeetImageView : PINAnimatedImageView {
   @objc var completed = false
   @objc var errored = false
   @objc var needsReload = false
-  private var _source: TrackableImageSource? = nil
+  private weak var _source: TrackableImageSource? = nil
   var source: TrackableImageSource? {
     get {
       return _source
@@ -284,7 +284,10 @@ class YeetImageView : PINAnimatedImageView {
     }
 
     if mediaSource.isFromCameraRoll {
-      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: self.contentMode) { [weak self] image in
+      let contentMode = self.contentMode
+      let bounds = self.bounds
+
+      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: contentMode) { [weak self] image in
         if self?.imageRequestID != nil {
           self?.imageRequestID = nil
         }
@@ -577,10 +580,12 @@ class YeetImageView : PINAnimatedImageView {
   }
 
 
+  
+
   deinit {
     self.reset()
-    self.animatedImage?.clearCache()
-    self.animatedImage = nil
+//    self.animatedImage?.clearCache()
+//    self.animatedImage = nil
     videoCover?.stop()
   }
 }

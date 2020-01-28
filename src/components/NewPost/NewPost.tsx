@@ -132,7 +132,7 @@ const DEFAULT_BOUNDS = {
   width: SCREEN_DIMENSIONS.width
 };
 
-class RawNewPost extends React.Component<{}, State> {
+export class NewPost extends React.Component<{}, State> {
   static getExampleCount(examples: ExampleMap = {}) {
     if (!examples) {
       return 0;
@@ -172,12 +172,12 @@ class RawNewPost extends React.Component<{}, State> {
     this.state = {
       showGallery: false,
       isKeyboardVisible: false,
-      disableGallery: true,
+      disableGallery: false,
       editToken: nanoid(),
       exampleIndex: -1,
       exampleCount: isEmpty(props.examples)
         ? 0
-        : RawNewPost.getExampleCount(props.examples),
+        : NewPost.getExampleCount(props.examples),
 
       post: this.buildFromDefaults(props),
 
@@ -194,22 +194,10 @@ class RawNewPost extends React.Component<{}, State> {
     };
 
     const scrollY = this.paddingTop * -1;
-
-    if (this.state.bounds.height < SCREEN_DIMENSIONS.height - this.paddingTop) {
-      console.log(this.state.bounds);
-      this.scrollY = new Animated.Value<number>(0);
-    } else {
-      this.scrollY = new Animated.Value<number>(scrollY);
-    }
+    this.scrollY = new Animated.Value<number>(scrollY);
   }
 
   offsetY = new Animated.Value(0);
-
-  componentDidMount() {
-    window.requestIdleCallback(() => {
-      this.setState({ disableGallery: false });
-    });
-  }
 
   handlePressExample = () => {
     const { exampleIndex: _exampleIndex, exampleCount } = this.state;
@@ -408,16 +396,6 @@ class RawNewPost extends React.Component<{}, State> {
     });
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      !prevProps.isFocused &&
-      this.props.isFocused &&
-      this.state.disableGallery
-    ) {
-      this.setState({ disableGallery: false });
-    }
-  }
-
   handleBackToChoosePhoto = () => {
     this.setState({ step: NewPostStep.choosePhoto });
   };
@@ -610,7 +588,7 @@ class RawNewPost extends React.Component<{}, State> {
             />
           </View>
         </Panner>
-        {!this.state.disableGallery && (
+        {!this.state.disableGallery && this.props.isFocused && (
           <GallerySheet
             show={this.state.showGallery}
             blockId={this.state.galleryBlockId}
@@ -643,9 +621,3 @@ class RawNewPost extends React.Component<{}, State> {
     );
   };
 }
-
-export const NewPost = hoistNonReactStatics(
-  withNavigationFocus(withNavigation(RawNewPost)),
-  RawNewPost
-);
-export default NewPost;

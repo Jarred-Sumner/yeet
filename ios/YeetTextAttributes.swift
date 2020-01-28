@@ -169,6 +169,7 @@ class YeetTextAttributes : NSObject {
     }
   }
 
+  
 
   @objc(drawHighlightLayer:layout:textContainer:textLayer:)
   func drawHighlight(highlightLayer: CAShapeLayer, layout: YeetTextLayoutManager, textContainer: NSTextContainer, textLayer: CALayer) {
@@ -186,9 +187,6 @@ class YeetTextAttributes : NSObject {
       layout.strokeWidth = .zero
       layout.strokeColor = UIColor.clear
     }
-
-
-
 
     if border == .highlight || border == .invert {
       var rects = [CGRect]()

@@ -700,6 +700,8 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
           videoSource.player = nil
         }
 
+        videoView?.reset()
+
         self.isWaitingToPlay = false
       } else if let imageView = self.imageView {
         imageView.reset()
@@ -735,7 +737,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
      }
 
   func haltContent() {
-    imageView?.isPlaybackPaused = true
+    imageView?.reset()
 
     if let videoSource = self.videoSource {
       if videoSource.player != nil {
@@ -962,7 +964,11 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     invalidated = true
     bridgeObserver?.invalidate()
     bridgeObserver = nil
+    source?.delegate.removeDelegate(self)
+
+
   }
+
 
   @objc(didMoveToWindow)
   override func didMoveToWindow() {
@@ -973,16 +979,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
     if (isVisible) {
       
+      
     } else if (isDetachedView && !invalidated) {
       self.haltContent()
       self.halted = true
     } else if (isDetachedView && invalidated) {
-      self.source?.stop()
       self.reset()
-      videoView?.reset()
-      self.imageView?.removeFromSuperview()
-      self.videoView?.removeFromSuperview()
-      self.source = nil
+      self.source?.stop()
+      source = nil
     }
   }
 
@@ -990,9 +994,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     super.willMove(toWindow: newWindow)
 
     let wasDetached = superview != nil && window == nil && newWindow != nil
+    let willDetach = newWindow == nil && superview != nil
     if (wasDetached && halted) {
       self.unhaltContent()
       self.halted = false
+    } else if willDetach {
+
+    } else {
+
     }
   }
 

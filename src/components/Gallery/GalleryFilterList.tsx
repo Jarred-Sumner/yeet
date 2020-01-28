@@ -1,26 +1,27 @@
 import useKeyboard from "@rnhooks/keyboard";
 import { NetworkStatus } from "apollo-client";
-import { memoize, uniqBy } from "lodash";
+import { memoize, get } from "lodash";
 import * as React from "react";
 import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
-import {
-  InteractionManager,
-  StyleSheet,
-  View,
-  SegmentedControlIOS,
-  LayoutAnimation
-} from "react-native";
-import Animated, { Transition, Transitioning } from "react-native-reanimated";
-import { SCREEN_DIMENSIONS, TOP_Y, BOTTOM_Y } from "../../../config";
+import { InteractionManager, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
 import CAMERA_ROLL_QUERY from "../../lib/CameraRollQuery.local.graphql";
 import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
+import { PostFragment } from "../../lib/graphql/PostFragment";
 import {
-  YeetImageContainer,
+  PostSearchQuery,
+  PostSearchQueryVariables,
+  PostSearchQuery_searchPosts_data
+} from "../../lib/graphql/PostSearchQuery";
+import {
   imageContainerFromMediaSource,
-  ImageMimeType
+  ImageMimeType,
+  YeetImageContainer
 } from "../../lib/imageSearch";
 import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
+import POST_SEARCH_QUERY from "../../lib/PostSearchQuery.graphql";
 import { SPACING } from "../../lib/styles";
 import { FlatList } from "../FlatList";
 import MediaPlayer from "../MediaPlayer";
@@ -33,13 +34,6 @@ import GalleryItem, { galleryItemMediaSource } from "./GalleryItem";
 import { TransparentToggle } from "./GallerySearchFilter";
 import { GalleryValue } from "./GallerySection";
 import { GallerySectionList } from "./GallerySectionList";
-import POST_SEARCH_QUERY from "../../lib/PostSearchQuery.graphql";
-import {
-  PostSearchQuery,
-  PostSearchQueryVariables,
-  PostSearchQuery_searchPosts_data
-} from "../../lib/graphql/PostSearchQuery";
-import { PostFragment } from "../../lib/graphql/PostFragment";
 import {
   CameraRollAssetTypeSwitcher,
   MemeFilterControl,
@@ -181,6 +175,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
           height={this.props.itemHeight}
           post={item.post}
           onPress={this.handlePressColumn}
+          username={get(item, "post.profile.username")}
           transparent={this.props.transparent}
           resizeMode={this.props.resizeMode}
           isSelected={this.props.selectedIDs.includes(item.image.id)}
@@ -373,7 +368,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
             keyExtractor={this.keyExtractor}
             contentInsetAdjustmentBehavior="automatic"
             extraData={selectedIDs}
-            removeClippedSubviews={removeClippedSubviews}
+            removeClippedSubviews={false}
             contentInset={this.contentInset}
             contentOffset={this.contentOffset}
             overScrollMode="always"
@@ -855,7 +850,6 @@ export const MemesFilterList = ({
     PostSearchQuery,
     PostSearchQueryVariables
   >(POST_SEARCH_QUERY, {
-    fetchPolicy: "cache-and-network",
     variables: {
       query,
       limit: getInitialLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT),

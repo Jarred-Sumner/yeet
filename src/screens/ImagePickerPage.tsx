@@ -15,6 +15,7 @@ import { SPACING } from "../lib/styles";
 import { isArray } from "lodash";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import Storage from "../lib/Storage";
+import { cloneDeep } from "lodash";
 
 const styles = StyleSheet.create({
   container: {
@@ -103,6 +104,7 @@ class RawImagePickerPage extends React.Component {
     const onChange = this.props.navigation.getParam("onChange");
 
     let photo = selectedImages[0];
+    console.log({ post });
 
     if (onChange) {
       onChange(this.props.navigation.getParam("blockId"), photo, post);
@@ -110,16 +112,18 @@ class RawImagePickerPage extends React.Component {
     } else {
       console.log(photo);
       this.props.navigation.navigate("NewPost", {
-        image: photo,
+        image: cloneDeep(photo),
         blockId: this.state.blockId,
-        post
+        post: cloneDeep(post)
       });
     }
 
     let __photo = photo;
+    let _post = cloneDeep(post);
     window.requestIdleCallback(() => {
-      Storage.insertRecentlyUsed(__photo);
+      Storage.insertRecentlyUsed(__photo, _post).catch(console.error);
       __photo = null;
+      _post = null;
     });
   };
 

@@ -8,12 +8,13 @@ import {
   YeetImage,
   ImageSourceType
 } from "./imageSearch";
-import { uniqBy, capitalize } from "lodash";
+import { uniqBy, capitalize, get, map } from "lodash";
 import { performSearch } from "./SearchResponse";
 import { downloadLink } from "./LinkDownloader";
 import Storage from "./Storage";
 import { Platform } from "react-native";
 import { check, PERMISSIONS, request, RESULTS } from "react-native-permissions";
+import { fetchRecentlyUsedContent } from "./db/database";
 
 let _lastStatus = null;
 const ensureExternalStoragePermission = async () => {
@@ -148,21 +149,24 @@ export default {
           }
         };
       }
-
-      const data = await Storage.getRecentlyUsed();
-      const id = `recent/${data.map(({ uri }) => uri).join("-")}`;
-      return {
-        __typename: "RecentImageSearchResponse",
-        id: id,
-        data: uniqBy(data.map(imageToImageContainer), "id").slice(0, 15),
-        page_info: {
-          __typename: "PageInfo",
-          has_next_page: false,
-          offset: 0,
-          limit: 80,
-          id: `${id}_pageinfo`
-        }
-      };
+      try {
+        const data = await fetchRecentlyUsedContent();
+        const id = `recent-images`;
+        return {
+          __typename: "RecentImageSearchResponse",
+          id: id,
+          data,
+          page_info: {
+            __typename: "PageInfo",
+            has_next_page: false,
+            offset: 0,
+            limit: data.length,
+            id: `${id}_pageinfo`
+          }
+        };
+      } catch (exception) {
+        console.error(exception);
+      }
     },
     images: async (_, args = {}, { cache }) => {
       const { query = "", limit = 20, offset = 0, transparent } = args;

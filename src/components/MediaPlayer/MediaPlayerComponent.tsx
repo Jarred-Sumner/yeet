@@ -17,6 +17,8 @@ import memoizee from "memoizee";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
+export const registrations = {};
+
 export type MediaSource = {
   id: string;
   url: string;
@@ -78,6 +80,10 @@ const _clean = (
     })
     .map(source => {
       const cover = [source.cover, source.coverUrl].find(Boolean);
+      if (typeof source.id === "string" && registrations[source.id]) {
+        return { id: source.id };
+      }
+
       return {
         ...source,
         playDuration: source.playDuration || 0,
@@ -335,6 +341,25 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     return currentSourceIDs !== newSourceIDs;
   }
 
+  handleError = event => {
+    this.props.onError && this.props.onError(event);
+
+    const source = clean(this.props.sources)[0];
+
+    if (source?.id) {
+      delete registrations[source?.id];
+    }
+  };
+
+  handleLoad = event => {
+    const sources = clean(this.props.sources);
+    sources.forEach(({ id }) => {
+      registrations[id] = true;
+    });
+
+    this.props.onLoad && this.props.onLoad(event);
+  };
+
   render() {
     const {
       sources,
@@ -376,8 +401,8 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
         onPlay={onPlay}
         resizeMode={resizeMode}
         onPause={onPause}
-        onLoad={onLoad}
-        onError={onError}
+        onLoad={this.handleLoad}
+        onError={this.handleError}
         onChangeItem={onChangeItem}
         autoPlay={autoPlay}
         paused={paused}

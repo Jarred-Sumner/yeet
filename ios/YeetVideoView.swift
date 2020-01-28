@@ -20,7 +20,7 @@ import Foundation
     }
   }
 
-  var mediaSource: MediaSource? = nil {
+  weak var mediaSource: MediaSource? = nil {
     didSet {
       if coverView.mediaSource != mediaSource?.coverMediaSource {
         self.coverView.mediaSource = mediaSource?.coverMediaSource
@@ -139,8 +139,12 @@ import Foundation
   func reset() {
     coverView.isHidden = true
     observer?.invalidate()
+    playerView.player?.pause()
+    playerView.player?.cancelPendingPrerolls()
     playerView.player = nil
+    playerView.isHidden = true
   }
+
 
   deinit {
     self.reset()

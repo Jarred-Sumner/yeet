@@ -9,7 +9,7 @@ import SectionHeader from "./SectionHeader";
 import * as React from "react";
 import GalleryItem from "./GalleryItem";
 import { SPACING } from "../../lib/styles";
-import { range } from "lodash";
+import { range, get } from "lodash";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 
 export type GalleryValue = {
@@ -53,12 +53,15 @@ export const GallerySectionComponent = ({
   const handlePressHeader = React.useCallback(() => {
     onPressHeader(section.type);
   }, [section.type, onPressHeader]);
+  console.log(section.data);
 
   const renderColumn =
     // React.useCallback(
     (index: number) => {
       const column = section.data[index];
       const isSelected = selectedIDs.includes(column?.image?.id);
+
+      console.log({ user: get(column, "post.profile.username") });
       return (
         <View
           key={column?.id ?? `placeholder-${index}`}
@@ -69,6 +72,8 @@ export const GallerySectionComponent = ({
               image={column.image}
               id={column.id}
               paused={paused}
+              post={column.post}
+              username={get(column, "post.profile.username")}
               width={columnWidth}
               height={columnHeight}
               onPress={onPressColumn}

@@ -27,6 +27,11 @@ query PostSearchQuery(
       layout
       examples
 
+      profile {
+        id
+        username
+      }
+
       media {
         id
         width

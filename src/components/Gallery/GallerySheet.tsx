@@ -186,7 +186,7 @@ export class GallerySheet extends React.Component {
     this.props.onPress(_photo);
 
     window.requestIdleCallback(() => {
-      Storage.insertRecentlyUsed(_photo);
+      Storage.insertRecentlyUsed(_photo, null);
       _photo = null;
     });
   };

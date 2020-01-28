@@ -14,6 +14,12 @@ export interface PostSearchQuery_searchPosts_data_bounds {
   height: number | null;
 }
 
+export interface PostSearchQuery_searchPosts_data_profile {
+  __typename: "Profile";
+  id: string;
+  username: string;
+}
+
 export interface PostSearchQuery_searchPosts_data_media {
   __typename: "Media";
   id: string;
@@ -36,6 +42,7 @@ export interface PostSearchQuery_searchPosts_data {
   format: string;
   layout: string | null;
   examples: JSON;
+  profile: PostSearchQuery_searchPosts_data_profile;
   media: PostSearchQuery_searchPosts_data_media;
 }
 

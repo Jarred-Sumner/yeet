@@ -89,9 +89,9 @@ const cache = new InMemoryCache({
   cacheRedirects: {
     Query: {
       post: (_, args) =>
-        toIdValue(dataIdFromObject({ __typename: "Post", id: args.id })),
-      profile: (_, args) =>
-        toIdValue(dataIdFromObject({ __typename: "Profile", id: args.id }))
+        toIdValue(dataIdFromObject({ __typename: "Post", id: args.id }))
+      // profile: (_, args) =>
+      //   toIdValue(dataIdFromObject({ __typename: "Profile", id: args.id }))
     }
   }
 });

@@ -179,7 +179,7 @@ export class NewPostPage extends React.Component {
       }),
       defaultWidth: POST_WIDTH,
       defaultHeight: post.bounds.height * scaleFactor,
-      thumbnail: post.media.coverUrl,
+      thumbnail: post.media?.coverUrl,
       minX: xPadding,
       minY: yPadding,
       backgroundColor: post?.colors?.background || "#111",
@@ -213,6 +213,7 @@ export class NewPostPage extends React.Component {
             examples={this.state.examples}
             thumbnail={this.state.thumbnail}
             onExport={this.handleExport}
+            isFocused={this.props.isFocused}
             backgroundColor={this.state.backgroundColor}
             defaultWidth={this.state.defaultWidth}
             defaultHeight={this.state.defaultHeight}

@@ -338,7 +338,7 @@ class MediaSource : NSObject  {
   static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?, audioURI: String? = nil) -> MediaSource {
     var mediaSource: MediaSource? = nil
 
-    let cacheKey = "\(uri)-\(id)-\(width.intValue)-\(height.intValue)"
+    let cacheKey = "\(id)"
     mediaSource = cached(uri: cacheKey)
 
     if (mediaSource == nil) {
@@ -362,28 +362,36 @@ class MediaSource : NSObject  {
 
 extension RCTConvert {
   @objc(MediaSource:)
-  static func mediaSource(json: AnyObject) -> MediaSource  {
+  static func mediaSource(json: AnyObject) -> MediaSource?  {
     let dictionary = self.nsDictionary(json) as! Dictionary<String, Any>
 
-    let bounds = CGRect.from(json: JSON(dictionary["bounds"]) )
-    let uri =  dictionary["url"] as! String
+    if dictionary.keys.count == 1 && dictionary["id"] != nil {
+      return MediaSource.cached(uri: dictionary["id"] as! String)
+    } else {
+      let bounds = CGRect.from(json: JSON(dictionary["bounds"]) )
+      let uri =  dictionary["url"] as! String
+      let id = dictionary["id"] as? String ?? uri
 
-    let mimeType = MimeType.init(rawValue: dictionary["mimeType"] as! String)!
-    let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
-    let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
-    let id = dictionary["id"] as? String ?? uri
-    let width = dictionary["width"] as! NSNumber
-    let cover = dictionary["cover"] as? String
-    let audioURI = dictionary["audioURI"] as? String
-    let height = dictionary["height"] as! NSNumber
-    let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
+      let mimeType = MimeType.init(rawValue: dictionary["mimeType"] as! String)!
+      let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
+      let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
 
-    return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
+      let width = dictionary["width"] as! NSNumber
+      let cover = dictionary["cover"] as? String
+      let audioURI = dictionary["audioURI"] as? String
+      let height = dictionary["height"] as! NSNumber
+      let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
+      return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
+    }
+
+
+
+
   }
 
   @objc(MediaSourceArray:)
   static func mediaSourceArray(json: AnyObject) -> Array<MediaSource>  {
-    return self.nsArray(json).map { json in
+    return self.nsArray(json).compactMap { json in
       return RCTConvert.mediaSource(json: json as AnyObject)
     }
   }

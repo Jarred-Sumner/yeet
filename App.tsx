@@ -30,6 +30,8 @@ import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
 import NavigationService from "./src/lib/NavigationService";
 import { isWaitlisted } from "./src/lib/Settings";
+import DatabaseProvider from "@nozbe/watermelondb/DatabaseProvider";
+import { database } from "./src/lib/db/database";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -177,33 +179,35 @@ export class App extends React.Component {
     return (
       <View style={styles.wrap}>
         <StatusBar barStyle="light-content" backgroundColor="#000" />
-        <SafeAreaProvider initialSafeAreaInsets={this.initialSafeAreaInsets}>
-          <MaterialThemeProvider>
-            <ApolloProvider client={this.state.client}>
-              <UserContextProvider>
-                <MediaUploadProvider>
-                  <ImagePickerProvider>
-                    <ActionSheetProvider>
-                      <ClipboardProvider>
-                        <ModalContextProvider>
-                          <>
-                            <Toast />
+        <DatabaseProvider database={database}>
+          <SafeAreaProvider initialSafeAreaInsets={this.initialSafeAreaInsets}>
+            <MaterialThemeProvider>
+              <ApolloProvider client={this.state.client}>
+                <UserContextProvider>
+                  <MediaUploadProvider>
+                    <ImagePickerProvider>
+                      <ActionSheetProvider>
+                        <ClipboardProvider>
+                          <ModalContextProvider>
+                            <>
+                              <Toast />
 
-                            <Routes
-                              initialRouteName={this.initialRouteName}
-                              ref={this.setNavRef}
-                              uriPrefix={APP_PREFIX}
-                            />
-                          </>
-                        </ModalContextProvider>
-                      </ClipboardProvider>
-                    </ActionSheetProvider>
-                  </ImagePickerProvider>
-                </MediaUploadProvider>
-              </UserContextProvider>
-            </ApolloProvider>
-          </MaterialThemeProvider>
-        </SafeAreaProvider>
+                              <Routes
+                                initialRouteName={this.initialRouteName}
+                                ref={this.setNavRef}
+                                uriPrefix={APP_PREFIX}
+                              />
+                            </>
+                          </ModalContextProvider>
+                        </ClipboardProvider>
+                      </ActionSheetProvider>
+                    </ImagePickerProvider>
+                  </MediaUploadProvider>
+                </UserContextProvider>
+              </ApolloProvider>
+            </MaterialThemeProvider>
+          </SafeAreaProvider>
+        </DatabaseProvider>
       </View>
     );
   }

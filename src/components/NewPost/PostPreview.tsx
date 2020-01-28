@@ -460,7 +460,7 @@ export const PostPreview = React.forwardRef(
     const initialOffset = React.useMemo(
       () => ({
         x: 0,
-        y: paddingTop * -1
+        y: 0
       }),
       [paddingTop]
     );
@@ -527,8 +527,8 @@ export const PostPreview = React.forwardRef(
           bounces={bounces}
           alwaysBounceVertical={false}
           overScrollMode="always"
-          defaultPosition={isCentered ? { y: 0, x: 0 } : initialOffset}
-          contentOffset={isCentered ? { y: 0, x: 0 } : initialOffset}
+          defaultPosition={initialOffset}
+          contentOffset={initialOffset}
           scrollEnabled
           getFocusedField={currentlyFocusedField}
           scrollToOverflowEnabled

@@ -6,6 +6,11 @@ import { uniqBy } from "lodash";
 import RNFS from "react-native-fs";
 import { basename, join, extname } from "path";
 import nanoid from "nanoid/non-secure";
+import {
+  database,
+  addRecentlyUsedContent,
+  fetchRecentlyUsedContent
+} from "./db/database";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -126,49 +131,29 @@ export class Storage {
 
   static getItem(key: string) {
     console.log(`[Storage] GET ${key}`);
-    return AsyncStorage.getItem(Storage.formatKey(key));
+    return database.adapter.getLocal(Storage.formatKey(key));
+    // return AsyncStorage.getItem(Storage.formatKey(key));
   }
 
   static getRecentlyUsed(): Promise<Array<RecentImage>> {
-    return this.getItem(KEYS.RECENTLY_USED_IMAGES).then(result => {
-      if (result && typeof result === "string") {
-        try {
-          return JSON.parse(result);
-        } catch {
-          return [];
-        }
-      } else {
-        return [];
-      }
+    return fetchRecentlyUsedContent().then(contents => {
+      return contents;
     });
+    // return this.getItem(KEYS.RECENTLY_USED_IMAGES).then(result => {
+    //   if (result && typeof result === "string") {
+    //     try {
+    //       return JSON.parse(result);
+    //     } catch {
+    //       return [];
+    //     }
+    //   } else {
+    //     return [];
+    //   }
+    // });
   }
 
-  static async insertRecentlyUsed(imageContainer: YeetImageContainer) {
-    const recentlyUsed = await this.getRecentlyUsed();
-
-    let image: RecentImage = { ...imageContainer.image };
-    image.id = imageContainer.id;
-    if (image.uri.includes(RNFS.TemporaryDirectoryPath)) {
-      const path = image.uri.replace("file://", "");
-
-      const filename = basename(path);
-      let newPath = join(RNFS.DocumentDirectoryPath, filename);
-      if (await RNFS.exists(newPath)) {
-        const extension = extname(newPath);
-        newPath = join(RNFS.DocumentDirectoryPath, nanoid() + extension);
-      }
-
-      await RNFS.copyFile(path, newPath);
-
-      image.uri = newPath;
-    }
-
-    recentlyUsed.unshift(image);
-
-    return Storage.setItem(
-      KEYS.RECENTLY_USED_IMAGES,
-      JSON.stringify(uniqBy(recentlyUsed, recentlyUsedId).slice(0, 80))
-    );
+  static async insertRecentlyUsed(imageContainer: YeetImageContainer, post) {
+    return addRecentlyUsedContent(imageContainer, post);
   }
 
   static clearRecentlyUsed() {
@@ -177,12 +162,27 @@ export class Storage {
 
   static setItem(key, value) {
     if (value) {
-      AsyncStorage.setItem(Storage.formatKey(key), value);
+      database.adapter.setLocal(Storage.formatKey(key), value);
     } else {
       console.log(`[Storage] REMOVE ${key}`);
-      AsyncStorage.removeItem(Storage.formatKey(key));
+      database.adapter.removeLocal(Storage.formatKey(key));
     }
   }
 }
 
 export default Storage;
+
+export const copyFileToDocuments = async (uri: string) => {
+  const path = uri.replace("file://", "");
+
+  const filename = basename(path);
+  let newPath = join(RNFS.DocumentDirectoryPath, filename);
+  if (await RNFS.exists(newPath)) {
+    const extension = extname(newPath);
+    newPath = join(RNFS.DocumentDirectoryPath, nanoid() + extension);
+  }
+
+  await RNFS.copyFile(path, newPath);
+
+  return newPath;
+};
