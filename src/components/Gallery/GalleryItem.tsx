@@ -188,9 +188,7 @@ const GalleryItemComponent = React.memo(
               muted
               paused={paused}
               loop
-              resizeMode={
-                resizeMode || galleryItemResizeMode({ image, width, height })
-              }
+              resizeMode={resizeMode}
               id={id}
               autoPlay={false}
               borderRadius={1}
@@ -234,10 +232,9 @@ const GalleryItemComponent = React.memo(
           shouldActivateOnStart={false}
           exclusive={false}
           onPress={onPress}
-          width={width}
-          height={height}
+          style={containerStyle}
         >
-          <Animated.View testID="galleryItemContainer" style={viewStyle}>
+          <Animated.View style={viewStyle}>
             <MediaPlayer
               sources={sources}
               muted
@@ -374,6 +371,7 @@ export const GalleryItem = ({
       duration={image.image?.duration ?? 0}
       resizeMode={resizeMode}
       viewStyle={viewStyle}
+      onPress={_onPress}
       mediaPlayerStyle={sizeStyle}
     />
   );
@@ -524,10 +522,10 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
-          isSelected={selectedIDs.includes(third.id)}
-          id={third.id}
-          post={third.post}
-          image={third.image}
+          isSelected={selectedIDs.includes(third?.id)}
+          id={third?.id}
+          post={third?.post}
+          image={third?.image}
           username={get(third, "post.profile.username")}
           paused={paused}
         />

@@ -1558,19 +1558,20 @@ class RawwPostEditor extends React.Component<Props, State> {
                 onChangeNode={this.handleInlineNodeChange}
                 onPan={this.handlePan}
               />
-              {this.state.focusType === FocusType.panning && (
-                <SnapGuides
-                  blocks={this.props.post.blocks}
-                  block={this.focusedNode?.block}
-                  positions={this.props.post.positions}
-                  snapPoint={snapPoint}
-                  currentScale={this.currentScale}
-                  x={this.panX}
-                  focusTypeValue={this.focusTypeValue}
-                  y={this.panY}
-                  onChange={this.handleChangeSnapPoint}
-                />
-              )}
+              {this.state.focusType === FocusType.panning &&
+                this.focusedNode?.block?.frame && (
+                  <SnapGuides
+                    blocks={this.props.post.blocks}
+                    block={this.focusedNode?.block}
+                    positions={this.props.post.positions}
+                    snapPoint={snapPoint}
+                    currentScale={this.currentScale}
+                    x={this.panX}
+                    focusTypeValue={this.focusTypeValue}
+                    y={this.panY}
+                    onChange={this.handleChangeSnapPoint}
+                  />
+                )}
               {/* <MarginView
                 minX={10}
                 snapPoint={this.state.snapPoint}
