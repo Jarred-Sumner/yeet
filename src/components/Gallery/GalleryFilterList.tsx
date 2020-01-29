@@ -1,6 +1,6 @@
 import useKeyboard from "@rnhooks/keyboard";
 import { NetworkStatus } from "apollo-client";
-import { memoize, get } from "lodash";
+import { memoize, get, chunk, fill } from "lodash";
 import * as React from "react";
 import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
 import { InteractionManager, StyleSheet, View } from "react-native";
@@ -30,7 +30,7 @@ import ImageSearch, {
   ImageSearchContext,
   IMAGE_SEARCH_HEIGHT
 } from "../NewPost/ImagePicker/ImageSearch";
-import GalleryItem, { galleryItemMediaSource } from "./GalleryItem";
+import GalleryItem, { galleryItemMediaSource, GalleryRow } from "./GalleryItem";
 import { TransparentToggle } from "./GallerySearchFilter";
 import { GalleryValue } from "./GallerySection";
 import { GallerySectionList } from "./GallerySectionList";
@@ -39,11 +39,25 @@ import {
   MemeFilterControl,
   MemeFilterType
 } from "./SegmentFilterControl";
-
-const COLUMN_COUNT = 3;
-const GIF_COLUMN_COUNT = 2;
-const MEMES_COLUMN_COUNT = 4;
-const COLUMN_GAP = 2;
+import FastList from "../FastList";
+import { Text } from "../Text";
+import {
+  SQUARE_ITEM_HEIGHT,
+  SQUARE_ITEM_WIDTH,
+  HORIZONTAL_ITEM_HEIGHT,
+  HORIZONTAL_ITEM_WIDTH,
+  MEMES_ITEM_HEIGHT,
+  MEMES_ITEM_WIDTH,
+  VERTICAL_ITEM_HEIGHT,
+  VERTICAL_ITEM_WIDTH
+} from "./sizes";
+import {
+  COLUMN_GAP,
+  COLUMN_COUNT,
+  GIF_COLUMN_COUNT,
+  MEMES_COLUMN_COUNT
+} from "./COLUMN_COUNT";
+import { ITEM_SEPARATOR_HEIGHT } from "../ItemSeparatorComponent";
 
 const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
 
@@ -62,14 +76,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: SEPARATOR_HEIGHT
-  },
-  column: {
-    justifyContent: "center",
-    marginLeft: COLUMN_GAP
-  },
-  fourColumn: {
-    justifyContent: "space-evenly",
-    paddingRight: COLUMN_GAP
   },
   item: {
     marginRight: COLUMN_GAP
@@ -96,30 +102,12 @@ type Props = {
   onRefetch: () => void;
 };
 
-export const SQUARE_ITEM_WIDTH =
-  SCREEN_DIMENSIONS.width / COLUMN_COUNT - COLUMN_GAP * COLUMN_COUNT;
-export const SQUARE_ITEM_HEIGHT = SQUARE_ITEM_WIDTH;
-
-export const VERTICAL_ITEM_HEIGHT = SQUARE_ITEM_WIDTH * (16 / 9);
-export const VERTICAL_ITEM_WIDTH = SQUARE_ITEM_WIDTH;
-
-export const HORIZONTAL_ITEM_HEIGHT = 200;
-export const HORIZONTAL_ITEM_WIDTH =
-  SCREEN_DIMENSIONS.width / GIF_COLUMN_COUNT - COLUMN_GAP * GIF_COLUMN_COUNT;
-
-export const MEMES_ITEM_WIDTH =
-  SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT -
-  COLUMN_GAP * MEMES_COLUMN_COUNT;
-export const MEMES_ITEM_HEIGHT =
-  SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT -
-  COLUMN_GAP * MEMES_COLUMN_COUNT;
-
 const getPaginatedLimit = (columnCount: number, height: number) => {
   return (SCREEN_DIMENSIONS.height / height) * columnCount;
 };
 
 const getInitialLimit = (columnCount: number, height: number) => {
-  return getPaginatedLimit(columnCount, height) * 1.5;
+  return getPaginatedLimit(columnCount, height) * 4;
 };
 
 class GalleryFilterListComponent extends React.Component<Props> {
@@ -164,29 +152,6 @@ class GalleryFilterListComponent extends React.Component<Props> {
     post?: Partial<PostFragment>
   ) => {
     this.props.onPress(image, post);
-  };
-
-  renderColumn = ({ item, index }: { item: GalleryValue; index: number }) => {
-    return (
-      <View style={this.props.numColumns === 4 ? styles.fourItem : styles.item}>
-        <GalleryItem
-          image={item.image}
-          width={this.props.itemWidth}
-          height={this.props.itemHeight}
-          post={item.post}
-          onPress={this.handlePressColumn}
-          username={get(item, "post.profile.username")}
-          transparent={this.props.transparent}
-          resizeMode={this.props.resizeMode}
-          isSelected={this.props.selectedIDs.includes(item.image.id)}
-          paused={
-            !this.props.isFocused ||
-            item.image.image.mimeType === ImageMimeType.jpeg
-          }
-          id={item.id}
-        />
-      </View>
-    );
   };
 
   keyExtractor = item => item.id;
@@ -279,7 +244,61 @@ class GalleryFilterListComponent extends React.Component<Props> {
       { useNativeDriver: true }
     );
 
-  listStyle = [styles.container];
+  listStyle = styles.container;
+
+  static getSections = memoize((data, numColumns) => {
+    return chunk(
+      data.map((row, index) => index),
+      numColumns
+    );
+  });
+
+  get sections() {
+    return GalleryFilterListComponent.getSections(
+      this.props.data,
+      this.props.numColumns
+    );
+  }
+
+  static getColumnCounts = memoize((length, numColumns) => {
+    return [Math.ceil(length / numColumns)];
+  });
+
+  get sectionCounts() {
+    return GalleryFilterListComponent.getColumnCounts(
+      this.props.data.length,
+      this.props.numColumns
+    );
+  }
+
+  renderSection = index => {
+    return (
+      <View style={styles.row}>
+        <Text>{index}</Text>
+      </View>
+    );
+  };
+
+  handleRenderRow = (section: number, row: number) => {
+    const { itemWidth, itemHeight, data, numColumns } = this.props;
+    const columns = this.sections[row];
+    return (
+      <GalleryRow
+        first={data[columns[0]]}
+        second={data[columns[1]]}
+        third={data[columns[2]]}
+        fourth={data[columns[3]]}
+        width={itemWidth}
+        numColumns={numColumns}
+        selectedIDs={this.props.selectedIDs}
+        height={itemHeight}
+        onPress={this.handlePressColumn}
+        transparent={this.props.transparent}
+        resizeMode={this.props.resizeMode}
+        paused={!this.props.isFocused}
+      />
+    );
+  };
 
   render() {
     const {
@@ -298,6 +317,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
       stickyHeader,
       scrollY,
       inset,
+      itemHeight,
       ListFooterComponent,
       headerHeight = 0,
       ListEmptyComponent,
@@ -305,20 +325,23 @@ class GalleryFilterListComponent extends React.Component<Props> {
       ...otherProps
     } = this.props;
 
+    const ContainerComponent = isModal ? Animated.View : View;
+    const containerStyles = isModal
+      ? [
+          styles.wrapper,
+          isModal && {
+            transform: [
+              {
+                translateY: this.translateY
+              }
+            ]
+          }
+        ]
+      : styles.wrapper;
+
     return (
       <>
-        <Animated.View
-          style={[
-            styles.wrapper,
-            isModal && {
-              transform: [
-                {
-                  translateY: this.translateY
-                }
-              ]
-            }
-          ]}
-        >
+        <ContainerComponent style={containerStyles}>
           {ListHeaderComponent && isModal && (
             <Animated.View
               style={{
@@ -333,7 +356,34 @@ class GalleryFilterListComponent extends React.Component<Props> {
             </Animated.View>
           )}
 
-          <FlatList
+          <FastList
+            // contentInset={this.contentInset}
+            // contentOffset={this.contentOffset}
+            insetTop={0}
+            contentInsetAdjustmentBehavior="none"
+            renderRow={this.handleRenderRow}
+            // scrollTopValue={this.props.scrollY}
+            footerHeight={0}
+            // refreshControl={
+            //   <RefreshControl
+            //     refreshing={refreshing}
+            //     onRefresh={this.handleRefresh}
+            //     tintColor="white"
+            //   />
+            // }
+            headerHeight={headerHeight}
+            style={this.listStyle}
+            insetBottom={inset}
+            onScrollEnd={onEndReached}
+            footerHeight={0}
+            rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
+            // sectionHeight={this.getTotalHeight}
+            sections={this.sectionCounts}
+            renderSection={this.renderSection}
+            uniform
+          />
+
+          {/* <FlatList
             ref={this.setFlatListRef}
             data={data}
             directionalLockEnabled
@@ -390,10 +440,10 @@ class GalleryFilterListComponent extends React.Component<Props> {
                 : undefined
             }
             onEndReachedThreshold={0.75}
-          />
-        </Animated.View>
+          /> */}
+        </ContainerComponent>
 
-        {ListHeaderComponent && (
+        {ListHeaderComponent && !isModal && (
           <Animated.View
             style={[
               styles.header,
@@ -433,28 +483,31 @@ class GalleryFilterListComponent extends React.Component<Props> {
   }
 }
 
-const buildValue = memoize((data: Array<YeetImageContainer> = []) => {
-  return (data || []).map(image => {
-    return {
-      image,
-      id: image.id
-    };
-  });
+const _buildValue = memoize(image => ({
+  image,
+  id: image.id
+}));
+
+const buildValue = (data: Array<YeetImageContainer> = []) => {
+  return (data || []).map(_buildValue);
+};
+
+const postToCell = memoize(post => {
+  const { media, id } = post;
+
+  return {
+    image: imageContainerFromMediaSource(media, null),
+    post,
+    id
+  };
 });
 
-const buildPostValue = memoize(
-  (data: Array<PostSearchQuery_searchPosts_data> = []) => {
-    return (data || []).map(post => {
-      const { media, id } = post;
-
-      return {
-        image: imageContainerFromMediaSource(media, null),
-        post,
-        id
-      };
-    });
-  }
-);
+const buildPostValue = (data: Array<PostSearchQuery_searchPosts_data> = []) => {
+  console.time("Create values");
+  const values = (data || []).map(postToCell);
+  console.timeEnd("Create values");
+  return values;
+};
 
 export const SearchFilterList = ({
   isFocused,
@@ -863,11 +916,13 @@ export const MemesFilterList = ({
     if (isFocused && typeof loadMemes === "function") {
       loadMemes();
     }
+  }, [loadMemes, isFocused]);
 
+  React.useEffect(() => {
     if (isFocused && insetValue) {
       insetValue.setValue(_inset);
     }
-  }, [loadMemes, isFocused, insetValue, _inset]);
+  }, [isFocused, insetValue, _inset]);
 
   const changeQuery = React.useCallback(
     // function
@@ -923,11 +978,10 @@ export const MemesFilterList = ({
 
   const handleEndReached = React.useCallback(() => {
     const { networkStatus, loading } = memesQuery;
-
+    console.time("Fetch More");
     if (loading === true) {
       return;
     }
-
     if (
       !(
         (memesQuery?.data?.searchPosts?.hasMore ?? false) &&
@@ -937,7 +991,6 @@ export const MemesFilterList = ({
     ) {
       return;
     }
-
     return memesQuery.fetchMore({
       variables: {
         query,
@@ -947,7 +1000,7 @@ export const MemesFilterList = ({
         limit: getPaginatedLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT)
       },
       updateQuery: (previousResult, { fetchMoreResult }) => {
-        return {
+        const queryUPdate = {
           ...fetchMoreResult,
           searchPosts: {
             ...fetchMoreResult.searchPosts,
@@ -956,6 +1009,8 @@ export const MemesFilterList = ({
             )
           }
         };
+        console.timeEnd("Fetch More");
+        return queryUPdate;
       }
     });
   }, [memesQuery?.networkStatus, memesQuery?.fetchMore, memesQuery?.data]);

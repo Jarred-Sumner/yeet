@@ -30,6 +30,7 @@
 #import "RNSplashScreen.h"  // here
 #import "VydiaRNFileUploader.h"
 #import <PINCache/PINCache.h>
+#import "NSNumber+CGFloat.h"
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>

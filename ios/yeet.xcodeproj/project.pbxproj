@@ -90,6 +90,7 @@
 		83B0CAD923B6F7D10010DC66 /* YeetVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CAD823B6F7D10010DC66 /* YeetVideo.swift */; };
 		83B0CADB23B6F8000010DC66 /* ContentBlock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CADA23B6F8000010DC66 /* ContentBlock.swift */; };
 		83CC6C47235FB68000772285 /* ContentExportTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83CC6C46235FB68000772285 /* ContentExportTest.swift */; };
+		83CE3E8723E04872008F624B /* NSNumber+CGFloat.m in Sources */ = {isa = PBXBuildFile; fileRef = 83CE3E8623E04872008F624B /* NSNumber+CGFloat.m */; };
 		83D49B7023B71EB400820D57 /* MediaSourceVideoCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D49B6F23B71EB400820D57 /* MediaSourceVideoCover.swift */; };
 		83D57E3A23CBC797002178AC /* UIView+keyboardAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */; };
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
@@ -291,6 +292,8 @@
 		83B0CAD823B6F7D10010DC66 /* YeetVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetVideo.swift; sourceTree = "<group>"; };
 		83B0CADA23B6F8000010DC66 /* ContentBlock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentBlock.swift; sourceTree = "<group>"; };
 		83CC6C46235FB68000772285 /* ContentExportTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportTest.swift; sourceTree = "<group>"; };
+		83CE3E8523E04872008F624B /* NSNumber+CGFloat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "NSNumber+CGFloat.h"; sourceTree = "<group>"; };
+		83CE3E8623E04872008F624B /* NSNumber+CGFloat.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "NSNumber+CGFloat.m"; sourceTree = "<group>"; };
 		83D49B6F23B71EB400820D57 /* MediaSourceVideoCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSourceVideoCover.swift; sourceTree = "<group>"; };
 		83D57E3923CBC797002178AC /* UIView+keyboardAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIView+keyboardAnimation.swift"; sourceTree = "<group>"; };
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
@@ -579,6 +582,8 @@
 				83356DDD23A5C4E300943381 /* FeatureDetector.swift */,
 				83356DE123A5D53800943381 /* FindContours.h */,
 				83356DE223A5D53800943381 /* FindContours.mm */,
+				83CE3E8523E04872008F624B /* NSNumber+CGFloat.h */,
+				83CE3E8623E04872008F624B /* NSNumber+CGFloat.m */,
 				83356DE723A5DD7600943381 /* UIImage+OpenCVConversion.h */,
 				83356DE823A5DD7600943381 /* UIImage+OpenCVConversion.mm */,
 			);
@@ -1109,6 +1114,7 @@
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				83E3E83223B990CC007AC944 /* ExportSessionProgress.swift in Sources */,
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
+				83CE3E8723E04872008F624B /* NSNumber+CGFloat.m in Sources */,
 				833867E323B6F43F0054778D /* BinaryFloatingPoint+Extensions.swift in Sources */,
 				8347051E232B0912004B2FF7 /* YeetTextInputView.swift in Sources */,
 				83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */,

@@ -22,6 +22,7 @@
 #import <React/RCTTextSelection.h>
 #import <React/RCTConvert+Transform.h>
 #import "EnableWebpDecoder.h"
+#import "NSNumber+CGFloat.h"
 
 
 #import <React/RCTUIManagerObserverCoordinator.h>

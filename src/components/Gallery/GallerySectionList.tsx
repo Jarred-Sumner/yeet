@@ -22,7 +22,7 @@ import {
   SQUARE_ITEM_HEIGHT,
   VERTICAL_ITEM_WIDTH,
   SQUARE_ITEM_WIDTH
-} from "./GalleryFilterList";
+} from "./sizes";
 import Animated from "react-native-reanimated";
 import { ClipboardContext } from "../Clipboard/ClipboardContext";
 import { scaleRectToWidth } from "../../lib/Rect";
@@ -98,8 +98,6 @@ class GallerySectionListComponent extends React.Component<Props> {
     } else if (item.type === GallerySectionItem.recent) {
       rowCount = Math.ceil(item.data.length / columnCount);
     }
-
-    console.log({ width, height });
 
     return (
       <React.Fragment key={item.type}>
@@ -296,7 +294,6 @@ export const GallerySectionList = ({
     clipboardContext
   ]);
 
-  console.log({ galleryQuery });
   return (
     <GallerySectionListComponent
       sections={sections}

@@ -420,7 +420,9 @@ export const imageFromMediaSource = (
 ): YeetImage => {
   const {
     width = 0,
-    url: _url,
+    url: __url,
+    previewUrl: _previewUrl,
+    coverUrl: _coverUrl,
     height = 0,
     pixelRatio,
     mimeType: _mimeType,
@@ -428,6 +430,7 @@ export const imageFromMediaSource = (
     playDuration = 0
   } = mediaSource;
 
+  let _url = __url ?? _previewUrl ?? _coverUrl;
   if (!_url) {
     throw Error(`Invalid url for asset ${JSON.stringify(mediaSource)}`);
   }

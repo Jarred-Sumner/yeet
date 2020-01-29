@@ -940,6 +940,7 @@ export default class FastList extends React.PureComponent<
       insetBottom,
       actionSheetScrollRef,
       renderActionSheetScrollViewWrapper,
+      ScrollViewComponent = ScrollView,
       renderEmpty,
 
       /* eslint-enable no-unused-vars */
@@ -950,7 +951,7 @@ export default class FastList extends React.PureComponent<
     // to wrap the scrollview in a NativeViewGestureHandler. This wrapper does that thing that need do
     const wrapper = renderActionSheetScrollViewWrapper || (val => val);
     const scrollView = wrapper(
-      <ScrollView
+      <ScrollViewComponent
         {...props}
         ref={ref => {
           this.scrollView.current = ref;
@@ -968,7 +969,7 @@ export default class FastList extends React.PureComponent<
         onScrollEndDrag={this.handleScrollEnd}
       >
         {this.renderItems()}
-      </ScrollView>
+      </ScrollViewComponent>
     );
     return (
       <React.Fragment>

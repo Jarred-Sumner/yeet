@@ -14,19 +14,6 @@ query PostSearchQuery(
     data {
       id
 
-      bounds {
-        x
-        y
-        width
-        height
-      }
-
-      blocks
-      nodes
-      format
-      layout
-      examples
-
       profile {
         id
         username
@@ -36,15 +23,12 @@ query PostSearchQuery(
         id
         width
         height
-        pixelRatio
         mimeType
         duration
 
-        coverUrl
         __typename
 
         previewUrl
-        url
       }
     }
   }

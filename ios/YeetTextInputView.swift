@@ -907,10 +907,6 @@ extension Notification.Name {
     static let onChangeTextInputFocus = Notification.Name("onChangeTextInputFocus")
 }
 
-extension NSNumber {
-  var cgFloatValue: CGFloat {
-    return CGFloat(self.doubleValue)
-  }
-}
+
 
 

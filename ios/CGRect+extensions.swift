@@ -229,10 +229,10 @@ extension CGRect {
 
   static func from(x: NSNumber, y: NSNumber, width: NSNumber, height: NSNumber) -> CGRect {
     return CGRect(
-      x: CGFloat(x.doubleValue),
-      y: CGFloat(y.doubleValue),
-      width: CGFloat(width.doubleValue),
-      height: CGFloat(height.doubleValue)
+      x: x.cgFloatValue,
+      y: y.cgFloatValue,
+      width: width.cgFloatValue,
+      height: height.cgFloatValue
     )
   }
 }

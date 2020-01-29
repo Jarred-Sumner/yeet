@@ -77,7 +77,6 @@ class RawImagePickerPage extends React.Component {
   handlePickPhoto = (photo: YeetImageContainer, post) => {
     const { selectedImages, selectMultiple } = this.state;
     sendLightFeedback();
-    console.log(photo);
 
     const index = selectedImages.findIndex(image => photo.id === image.id);
 
@@ -104,7 +103,6 @@ class RawImagePickerPage extends React.Component {
     const onChange = this.props.navigation.getParam("onChange");
 
     let photo = selectedImages[0];
-    console.log({ post });
 
     if (onChange) {
       onChange(this.props.navigation.getParam("blockId"), photo, post);
