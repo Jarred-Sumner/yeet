@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
  * This source code is licensed under the MIT license found in the
@@ -8,6 +8,7 @@
 #import <UIKit/UIKit.h>
 
 #import <React/RCTBackedTextInputViewProtocol.h>
+
 #import <React/RCTBackedTextInputDelegate.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -15,9 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 /*
  * Just regular UITextView... but much better!
  */
-@interface _RCTUITextView : UITextView <RCTBackedTextInputViewProtocol>
+@interface YeetUITextView : UITextView <RCTBackedTextInputViewProtocol>
 
-- (instancetype)initWithFrame:(CGRect)frame textContainer:(nullable NSTextContainer *)textContainer NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithFrame:(CGRect)frame textContainer:(nullable NSTextContainer *)textContainer;
 - (instancetype)initWithCoder:(NSCoder *)decoder NS_UNAVAILABLE;
 
 @property (nonatomic, weak) id<RCTBackedTextInputDelegate> textInputDelegate;
