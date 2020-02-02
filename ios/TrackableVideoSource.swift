@@ -84,7 +84,7 @@ class TrackableVideoSource : TrackableMediaSource {
         return
       }
 
-      let looper = AVPlayerLooper(player: player, templateItem: playerItem, timeRange: CMTimeRangeMake(start: .zero, duration: asset.duration))
+      let looper = AVPlayerLooper(player: player, templateItem: playerItem)
 
       if let _looper = self?.looper {
         _looper.disableLooping()

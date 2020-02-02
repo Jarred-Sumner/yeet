@@ -1,10 +1,10 @@
 import Upload from "react-native-background-upload";
 import * as Sentry from "@sentry/react-native";
 import {
+  extensionByMimeType,
   convertLocalIdentifierToAssetLibrary,
   convertCameraRollIDToRNFetchBlobId
-} from "./imageResize";
-import { extensionByMimeType } from "./imageSearch";
+} from "./imageSearch";
 
 export const allowSuspendIfBackgrounded = () => Upload.canSuspendIfBackground();
 export const cancelUpload = (id: string) => Upload.cancelUpload(id);

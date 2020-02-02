@@ -1,45 +1,9 @@
-import RNFS from "react-native-fs";
 import PhotoEditor from "react-native-photo-manipulator";
 import {
   normalizeResizedImage,
   YeetImageContainer,
   YeetImageRect
 } from "./imageSearch";
-
-export const generateFilename = (extension = "png") =>
-  `${Math.random()
-    .toString(36)
-    .substring(7)}.${extension}`;
-
-export const convertLocalIdentifierToAssetLibrary = (localIdentifier, ext) => {
-  const hash = localIdentifier.split("/")[0];
-  const withoutLeadingDot = ext.startsWith(".") ? ext.substr(1) : ext;
-
-  return `assets-library://asset/asset.${withoutLeadingDot}?id=${hash}&ext=${ext}`;
-};
-
-export const convertCameraRollIDToRNFetchBlobId = (assetPath, extension) =>
-  convertLocalIdentifierToAssetLibrary(
-    assetPath.split("://")[1].split("/")[0],
-    extension
-  );
-
-const getAssetFileAbsolutePath = async assetPath => {
-  const dest = `${RNFS.TemporaryDirectoryPath}${generateFilename()}`;
-
-  const _path = assetPath.startsWith("ph://")
-    ? convertLocalIdentifierToAssetLibrary(
-        assetPath.split("://")[1].split("/")[0],
-        "png"
-      )
-    : assetPath;
-
-  try {
-    return await RNFS.copyAssetsFileIOS(_path, dest, 0, 0);
-  } catch (err) {
-    console.log(err);
-  }
-};
 
 export const getLocalURI = async (_uri: string | Object) => {
   const uri = typeof _uri === "string" ? _uri : _uri.uri;

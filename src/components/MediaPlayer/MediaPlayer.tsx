@@ -67,11 +67,11 @@ const _MediaPlayer = (React.forwardRef(
       return player;
     }
   }
-) as unknown) as MediaPlayerComponent;
+) as unknown) as React.Component<MediaPlayerProps>;
 
 export const MediaPlayer = hoistNonReactStatics(
   _MediaPlayer,
   MediaPlayerComponent
-);
+) as React.ComponentType<MediaPlayerProps>;
 
 export default MediaPlayer;

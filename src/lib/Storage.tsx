@@ -2,15 +2,16 @@ import { Platform } from "react-native";
 import AsyncStorage from "@react-native-community/async-storage";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
 import { YeetImageContainer, YeetImage, isVideo } from "./imageSearch";
-import { uniqBy } from "lodash";
+import { uniqBy, first } from "lodash";
 import RNFS from "react-native-fs";
 import { basename, join, extname } from "path";
 import nanoid from "nanoid/non-secure";
-import {
-  database,
-  addRecentlyUsedContent,
-  fetchRecentlyUsedContent
-} from "./db/database";
+import { database } from "./db/database";
+import { orderBy, cloneDeep } from "lodash";
+import { ImageContainer } from "./db/models/ImageContainer";
+import { RecentlyUsedContent } from "./db/models/RecentlyUsedContent";
+import { PostFragment } from "./graphql/PostFragment";
+import { Q } from "@nozbe/watermelondb";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -185,4 +186,72 @@ export const copyFileToDocuments = async (uri: string) => {
   await RNFS.copyFile(path, newPath);
 
   return newPath;
+};
+
+export const fetchRecentlyUsedContent = async () => {
+  const contents: Query<RecentlyUsedContent> = await database.collections
+    .get("recently_used_contents")
+    .query()
+    .fetch();
+
+  return orderBy<RecentlyUsedContent>(
+    uniqBy(contents, "uid"),
+    ["lastUsedAt"],
+    ["desc"]
+  ).map(content => {
+    return content.graphql;
+  });
+};
+
+export const addRecentlyUsedContent = async (
+  _image: YeetImageContainer,
+  post: Partial<PostFragment> | null = null
+) => {
+  let image = cloneDeep(_image);
+
+  if (image) {
+    if (image.image.uri.includes(RNFS.TemporaryDirectoryPath)) {
+      image.image.uri = await copyFileToDocuments(image.image.uri);
+    }
+
+    if (image.preview?.uri?.includes(RNFS.TemporaryDirectoryPath)) {
+      image.preview.uri = await copyFileToDocuments(image.preview.uri);
+    }
+  }
+
+  const id = post?.id || image.id;
+
+  return database.action(async () => {
+    const contents = database.collections.get("recently_used_contents");
+    const existingContents = first<ImageContainer>(
+      await contents.query(Q.where("uid", id)).fetch()
+    );
+
+    if (existingContents) {
+      await existingContents.update(record => {
+        if (post) {
+          Object.assign(record, RecentlyUsedContent.fromPost(post));
+        } else {
+          Object.assign(
+            record,
+            RecentlyUsedContent.fromYeetImageContainer(image)
+          );
+        }
+
+        record.lastUsedAt = new Date();
+      });
+    } else {
+      return contents.create(record => {
+        if (post) {
+          Object.assign(record, RecentlyUsedContent.fromPost(post));
+        } else {
+          Object.assign(
+            record,
+            RecentlyUsedContent.fromYeetImageContainer(image)
+          );
+        }
+        record.lastUsedAt = new Date();
+      });
+    }
+  });
 };

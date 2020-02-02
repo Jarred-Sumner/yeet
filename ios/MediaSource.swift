@@ -58,7 +58,7 @@ class MediaSource : NSObject  {
 
     cache.totalCostLimit = 99999999
     cache.delegate = MediaPlayerViewManager.cacheDelegate
-    cache.evictsObjectsWithDiscardedContent = false
+    cache.evictsObjectsWithDiscardedContent = true
 
     return cache
   }()
@@ -146,7 +146,12 @@ class MediaSource : NSObject  {
     }
 
     if scheme.starts(with: "ph") {
-      return PHAsset.fetchAssets(withLocalIdentifiers: [url.path], options:fetchOptions )
+      guard let localIdentifier = url.localIdentifier else {
+        return nil
+      }
+
+      Log.debug("Path: \(localIdentifier)")
+      return PHAsset.fetchAssets(withLocalIdentifiers: [localIdentifier], options:fetchOptions )
     } else if scheme.starts(with: "assets-library") {
       return PHAsset.fetchAssets(withALAssetURLs: [url], options: fetchOptions)
     } else {
@@ -167,7 +172,7 @@ class MediaSource : NSObject  {
      }
 
      if scheme.starts(with: "ph") {
-      return PHAsset.fetchAssets(withLocalIdentifiers: urls.map { url in url.path }, options:fetchOptions )
+      return PHAsset.fetchAssets(withLocalIdentifiers: urls.compactMap { url in url.localIdentifier }, options:fetchOptions )
      } else if scheme.starts(with: "assets-library") {
        return PHAsset.fetchAssets(withALAssetURLs: urls, options: fetchOptions)
      } else {
@@ -260,7 +265,7 @@ class MediaSource : NSObject  {
   var videoOutput: AVPlayerItemVideoOutput? = nil
   
   var isVideo: Bool {
-    return (self.mimeType == .mp4 || self.mimeType == .mov) && !isLivePhoto
+    return (self.mimeType == .mp4 || self.mimeType == .mov || self.mimeType == .m4v) && !isLivePhoto
   }
 
   lazy var isLivePhoto: Bool = {
@@ -335,7 +340,25 @@ class MediaSource : NSObject  {
     return audioURI != nil
   }
 
-  static func from(uri: String, mimeType: MimeType, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?, audioURI: String? = nil) -> MediaSource {
+  @objc(fromDictionary:)
+  static func from(_ dictionary: Dictionary<String, Any>) -> MediaSource {
+    let bounds = CGRect.from(json: JSON(dictionary["bounds"]))
+    let uri =  dictionary["url"] as! String
+    let id = dictionary["id"] as? String ?? uri
+
+
+    let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
+    let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
+
+    let width = dictionary["width"] as! NSNumber
+    let cover = dictionary["cover"] as? String
+    let audioURI = dictionary["audioURI"] as? String
+    let height = dictionary["height"] as! NSNumber
+    let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
+    return MediaSource.from(uri: uri, mimeType: dictionary["mimeType"] as! String, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
+  }
+
+  @objc(fromURI: mimeType: duration: playDuration: id: width: height: bounds: pixelRatio: cover: audioURI:) static func from(uri: String, mimeType: String, duration: NSNumber, playDuration: NSNumber, id: String, width: NSNumber, height: NSNumber, bounds: CGRect, pixelRatio: NSNumber, cover: String?, audioURI: String? = nil) -> MediaSource {
     var mediaSource: MediaSource? = nil
 
     let cacheKey = "\(id)"
@@ -347,14 +370,13 @@ class MediaSource : NSObject  {
       let url = URL(string: uri)!
       let audioURL = audioURI != nil ? URL(string: audioURI!) : nil
 
-      mediaSource = MediaSource(url, mimeType, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL, audioURL)
-      cache.setObject(mediaSource!, forKey: cacheKey as NSString)
+      mediaSource = MediaSource(url, MimeType.init(rawValue: mimeType)!, duration, playDuration, id, width, height, bounds, pixelRatio, coverURL, audioURL)
     }
 
     return mediaSource!
   }
 
-  static func cached(uri: String) -> MediaSource? {
+  @objc(cached:) static func cached(uri: String) -> MediaSource? {
     return self.cache.object(forKey: uri as NSString)
   }
 }
@@ -368,25 +390,8 @@ extension RCTConvert {
     if dictionary.keys.count == 1 && dictionary["id"] != nil {
       return MediaSource.cached(uri: dictionary["id"] as! String)
     } else {
-      let bounds = CGRect.from(json: JSON(dictionary["bounds"]) )
-      let uri =  dictionary["url"] as! String
-      let id = dictionary["id"] as? String ?? uri
-
-      let mimeType = MimeType.init(rawValue: dictionary["mimeType"] as! String)!
-      let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
-      let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
-
-      let width = dictionary["width"] as! NSNumber
-      let cover = dictionary["cover"] as? String
-      let audioURI = dictionary["audioURI"] as? String
-      let height = dictionary["height"] as! NSNumber
-      let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
-      return MediaSource.from(uri: uri, mimeType: mimeType, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
+      return MediaSource.from(dictionary)
     }
-
-
-
-
   }
 
   @objc(MediaSourceArray:)
@@ -397,3 +402,13 @@ extension RCTConvert {
   }
 }
 
+
+extension URL {
+  var localIdentifier: String? {
+    guard let host = self.host else {
+      return nil
+    }
+
+    return host + path
+  }
+}

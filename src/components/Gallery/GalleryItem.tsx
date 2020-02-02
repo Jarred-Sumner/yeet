@@ -1,46 +1,53 @@
-import { View, StyleSheet } from "react-native";
-import * as React from "react";
-import { MediaPlayer, MediaSource } from "../MediaPlayer";
-import { BaseButton } from "react-native-gesture-handler";
-import {
-  YeetImageContainer,
-  mediaSourceFromImage,
-  ImageSourceType,
-  isVideo
-} from "../../lib/imageSearch";
-import { DurationLabel } from "../NewPost/ImagePicker/DurationLabel";
-import { SPACING, COLORS } from "../../lib/styles";
-import memoizee from "memoizee";
 import { get } from "lodash";
-import { BitmapIconCircleCheckSelected } from "../BitmapIcon";
-import { MediumText, Text } from "../Text";
+import * as React from "react";
+import { StyleSheet, View } from "react-native";
+import { BaseButton } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import {
+  ImageMimeType,
+  mediaSourceFromImage,
+  YeetImageContainer,
+  isVideo,
+  ImageSourceType
+} from "../../lib/imageSearch";
+import { COLORS, SPACING } from "../../lib/styles";
+import { useMemoOne } from "use-memo-one";
+import { BitmapIconCircleCheckSelected } from "../BitmapIcon";
+import { MediaPlayer, MediaSource } from "../MediaPlayer";
+import { DurationLabel } from "../NewPost/ImagePicker/DurationLabel";
+import { MediumText } from "../Text";
+import { COLUMN_GAP } from "./COLUMN_COUNT";
+import {
+  HORIZONTAL_ITEM_HEIGHT,
+  HORIZONTAL_ITEM_WIDTH,
+  MEMES_ITEM_HEIGHT,
+  MEMES_ITEM_WIDTH,
   SQUARE_ITEM_HEIGHT,
   SQUARE_ITEM_WIDTH,
   VERTICAL_ITEM_HEIGHT,
-  VERTICAL_ITEM_WIDTH,
-  MEMES_ITEM_WIDTH,
-  MEMES_ITEM_HEIGHT
+  VERTICAL_ITEM_WIDTH
 } from "./sizes";
-import Animated from "react-native-reanimated";
-import { COLUMN_GAP } from "./COLUMN_COUNT";
 
-const BORDER_RADIUS = 1;
+const BORDER_RADIUS = 0;
 
 const photoCellStyles = StyleSheet.create({
   container: {
     alignItems: "center",
+    borderRadius: BORDER_RADIUS,
+    justifyContent: "center"
+  },
+  button: {
+    alignItems: "center",
     backgroundColor: "#222",
+    overflow: "visible",
 
     borderRadius: BORDER_RADIUS,
-    overflow: "hidden",
     justifyContent: "center"
   },
   insetBorder: {
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
-    overflow: "hidden",
     borderColor: "rgba(255, 255, 255, 0.1)",
     position: "absolute",
     top: 0,
@@ -60,7 +67,7 @@ const photoCellStyles = StyleSheet.create({
   },
   transparentContainer: {
     alignItems: "center",
-    overflow: "hidden",
+    overflow: "visible",
     justifyContent: "center"
   },
   selectedContainer: {
@@ -72,11 +79,23 @@ const photoCellStyles = StyleSheet.create({
     right: SPACING.half,
     bottom: SPACING.half
   },
-  durationContainer: {},
+  durationContainer: {
+    position: "absolute",
+    right: SPACING.half,
+    justifyContent: "center",
+    bottom: SPACING.half
+  },
+  durationContainerTop: {
+    position: "absolute",
+    top: 2,
+    justifyContent: "center",
+    right: 2
+  },
   footer: {
     position: "absolute",
     left: 0,
     right: 0,
+    justifyContent: "center",
     bottom: 0,
     zIndex: 2
   },
@@ -84,8 +103,8 @@ const photoCellStyles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.25)",
     borderBottomLeftRadius: BORDER_RADIUS,
     borderBottomRightRadius: BORDER_RADIUS,
-    overflow: "hidden",
     flex: 1,
+    justifyContent: "center",
     paddingVertical: 2,
     paddingHorizontal: 2
   }
@@ -95,6 +114,10 @@ const sizeStyles = StyleSheet.create({
   square: {
     width: SQUARE_ITEM_WIDTH,
     height: SQUARE_ITEM_HEIGHT
+  },
+  horizontal: {
+    width: HORIZONTAL_ITEM_WIDTH,
+    height: HORIZONTAL_ITEM_HEIGHT
   },
   vertical: {
     width: VERTICAL_ITEM_WIDTH,
@@ -129,13 +152,14 @@ export const galleryItemMediaSource = (
   return mediaSourceFromImage(image, { width, height }, true, true);
 };
 
-export const galleryItemResizeMode = ({ image, width, height }) => {
-  const isSquareInAHorizontalImage =
-    width / height === 1 && image.preview?.width / image.preview?.height > 1.3;
+export const galleryItemResizeMode = ({ source, width, height }) => {
+  // const isSquareInAHorizontalImage =
+  //   width / height > 0.9 &&
+  //   width / height < 1.1 &&
+  //   source.width / source.height > 1.3;
 
-  return image.image.duration > 0 || isSquareInAHorizontalImage
-    ? "aspectFit"
-    : "aspectFill";
+  return "aspectFill";
+  // return source.duration > 0 ? "aspectFit" : "aspectFill";
 };
 
 const AuthorLabel = React.memo(({ username, width, height }) => (
@@ -160,6 +184,7 @@ const GalleryItemComponent = React.memo(
     viewStyle,
     width,
     height,
+    mediaSource,
     image,
     resizeMode,
     id,
@@ -184,9 +209,12 @@ const GalleryItemComponent = React.memo(
         >
           <Animated.View style={viewStyle}>
             <MediaPlayer
+              mediaSource={mediaSource}
               sources={sources}
               muted
+              thumbnail
               paused={paused}
+              opaque
               loop
               resizeMode={resizeMode}
               id={id}
@@ -202,20 +230,24 @@ const GalleryItemComponent = React.memo(
               style={borderStyle}
             />
 
-            {/* <View
-              width={width}
-              pointerEvents="none"
-              style={photoCellStyles.footer}
-            >
-              <DurationLabel
-                duration={duration}
-                style={photoCellStyles.durationContainer}
-              />
+            {username && (
+              <View
+                width={width}
+                pointerEvents="none"
+                style={photoCellStyles.footer}
+              >
+                <AuthorLabel username={username} width={width} />
+              </View>
+            )}
 
-              {username && (
-                <AuthorLabel username={username} width={width} height={24} />
-              )}
-            </View> */}
+            <DurationLabel
+              duration={duration}
+              style={
+                username
+                  ? photoCellStyles.durationContainerTop
+                  : photoCellStyles.durationContainer
+              }
+            />
 
             {isSelected && (
               <View style={photoCellStyles.selectedIcon}>
@@ -234,10 +266,12 @@ const GalleryItemComponent = React.memo(
           onPress={onPress}
           style={containerStyle}
         >
-          <Animated.View style={viewStyle}>
+          <Animated.View width={width} height={height} style={viewStyle}>
             <MediaPlayer
+              mediaSource={mediaSource}
               sources={sources}
               muted
+              thumbnail
               paused={paused}
               loop
               resizeMode={resizeMode}
@@ -255,16 +289,16 @@ const GalleryItemComponent = React.memo(
               style={borderStyle}
             />
 
-            {/* {username && (
+            {username && (
               <View
                 testId="footer"
                 width={width}
                 pointerEvents="none"
                 style={photoCellStyles.footer}
               >
-                <AuthorLabel username={username} width={width} height={24} />
+                <AuthorLabel username={username} width={width} />
               </View>
-            )} */}
+            )}
 
             {isSelected && (
               <View style={photoCellStyles.selectedIcon}>
@@ -284,6 +318,7 @@ export const GalleryItem = ({
   resizeMode,
   transparent = false,
   id,
+  mediaSource = null,
   post,
   username = null,
   height,
@@ -300,15 +335,20 @@ export const GalleryItem = ({
   id: string;
   username: string | null;
   width: number;
+  mediaSource: MediaSource | null;
   paused: boolean;
 }) => {
   const sources = React.useMemo(() => {
-    return [galleryItemMediaSource(image, width, height)];
-  }, [image, width, height, id, galleryItemMediaSource]);
+    if (mediaSource) {
+      return [mediaSource];
+    } else {
+      return [galleryItemMediaSource(image, width, height)];
+    }
+  }, [image, width, height, id, galleryItemMediaSource, mediaSource]);
 
   const _onPress = React.useCallback(() => {
     onPress(image, post);
-  }, [onPress, image, post]);
+  }, [onPress, image, post, id]);
 
   let sizeStyle;
 
@@ -318,9 +358,11 @@ export const GalleryItem = ({
     sizeStyle = sizeStyles.square;
   } else if (height === MEMES_ITEM_HEIGHT) {
     sizeStyle = sizeStyles.fourColumn;
+  } else if (height === HORIZONTAL_ITEM_HEIGHT) {
+    sizeStyle = sizeStyles.horizontal;
   }
 
-  const viewStyle = React.useMemo(() => {
+  const viewStyle = useMemoOne(() => {
     return [
       transparent
         ? photoCellStyles.transparentContainer
@@ -330,14 +372,8 @@ export const GalleryItem = ({
     ];
   }, [sizeStyle, isSelected, transparent]);
 
-  const containerStyle = React.useMemo(() => {
-    return [
-      transparent
-        ? photoCellStyles.transparentContainer
-        : photoCellStyles.container,
-      isSelected && photoCellStyles.selectedContainer,
-      sizeStyle
-    ];
+  const containerStyle = useMemoOne(() => {
+    return [photoCellStyles.button, sizeStyle];
   }, [sizeStyle, isSelected, transparent]);
 
   // const onError = React.useCallback(() => {
@@ -351,25 +387,40 @@ export const GalleryItem = ({
   //   }
   // }, [setSource, image]);
 
-  const _isVideo = image.image.duration > 0 && isVideo(image.preview.mimeType);
-  const borderStyles = React.useMemo(
+  let duration = 0;
+
+  let _isVideo = false;
+
+  if (mediaSource) {
+    if (isVideo(mediaSource.mimeType)) {
+      _isVideo = true;
+      duration = mediaSource.duration ?? 0;
+    }
+  } else if (image) {
+    const _image = image.preview ?? image.image;
+    if (isVideo(_image.mimeType)) {
+      _isVideo = true;
+      duration = _image.duration ?? 0;
+    }
+  }
+
+  const borderStyles = useMemoOne(
     () => [sizeStyle, photoCellStyles.insetBorder],
     [sizeStyle]
   );
 
   return (
     <GalleryItemComponent
-      isVideo={_isVideo}
       sources={sources}
       username={username}
       containerStyle={containerStyle}
       paused={paused}
       isSelected={isSelected}
+      isVideo={_isVideo}
       borderStyle={borderStyles}
       id={id}
-      key={id}
-      duration={image.image?.duration ?? 0}
-      resizeMode={resizeMode}
+      duration={duration}
+      resizeMode={"aspectFill"}
       viewStyle={viewStyle}
       onPress={_onPress}
       mediaPlayerStyle={sizeStyle}
@@ -383,6 +434,7 @@ const GalleryRowItem = ({
   onPress,
   image,
   resizeMode,
+  mediaSource,
   transparent = false,
   id,
   post,
@@ -392,7 +444,7 @@ const GalleryRowItem = ({
   width,
   paused
 }) => {
-  if (!image) {
+  if (!image && !mediaSource) {
     return <View width={width} height={height} />;
   } else {
     return (
@@ -400,6 +452,7 @@ const GalleryRowItem = ({
         onPress={onPress}
         image={image}
         resizeMode={resizeMode}
+        mediaSource={mediaSource}
         transparent={transparent}
         id={id}
         post={post}
@@ -441,6 +494,7 @@ export const GalleryRow = ({
           id={first?.id}
           post={first?.post}
           image={first?.image}
+          mediaSource={first?.mediaSource}
           username={get(first, "post.profile.username")}
           paused={paused}
         />
@@ -450,6 +504,7 @@ export const GalleryRow = ({
           width={width}
           height={height}
           transparent={transparent}
+          mediaSource={second?.mediaSource}
           resizeMode={resizeMode}
           isSelected={selectedIDs.includes(second?.id)}
           id={second?.id}
@@ -464,6 +519,7 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
+          mediaSource={third?.mediaSource}
           isSelected={selectedIDs.includes(third?.id)}
           id={third?.id}
           post={third?.post}
@@ -477,6 +533,7 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
+          mediaSource={fourth?.mediaSource}
           isSelected={selectedIDs.includes(fourth?.id)}
           id={fourth?.id}
           post={fourth?.post}
@@ -492,6 +549,7 @@ export const GalleryRow = ({
         <GalleryRowItem
           onPress={onPress}
           width={width}
+          mediaSource={first?.mediaSource}
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
@@ -509,6 +567,7 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
+          mediaSource={second?.mediaSource}
           isSelected={selectedIDs.includes(second?.id)}
           id={second?.id}
           post={second?.post}
@@ -522,6 +581,7 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
+          mediaSource={third?.mediaSource}
           isSelected={selectedIDs.includes(third?.id)}
           id={third?.id}
           post={third?.post}
@@ -540,6 +600,7 @@ export const GalleryRow = ({
           height={height}
           transparent={transparent}
           resizeMode={resizeMode}
+          mediaSource={first?.mediaSource}
           isSelected={selectedIDs.includes(first.id)}
           id={first.id}
           post={first.post}
@@ -553,6 +614,7 @@ export const GalleryRow = ({
           width={width}
           height={height}
           transparent={transparent}
+          mediaSource={second?.mediaSource}
           resizeMode={resizeMode}
           isSelected={selectedIDs.includes(second?.id)}
           id={second?.id}
@@ -571,6 +633,7 @@ export const GalleryRow = ({
           width={width}
           height={height}
           transparent={transparent}
+          mediaSource={first?.mediaSource}
           resizeMode={resizeMode}
           isSelected={selectedIDs.includes(first.id)}
           id={first.id}

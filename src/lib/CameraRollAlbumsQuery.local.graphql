@@ -1,0 +1,10 @@
+query CameraRollAlbumsQuery {
+  albums @client {
+    id
+    title
+    type
+    subtype
+    count
+    __type
+  }
+}

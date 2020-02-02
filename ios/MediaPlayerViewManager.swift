@@ -27,7 +27,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
   @objc
   override static func requiresMainQueueSetup() -> Bool {
-    return true
+    return false
   }
 
   func withView(tag: NSNumber, block: @escaping (_ mediaPlayer: MediaPlayer) -> Void) {
@@ -35,6 +35,28 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
       if let _view = (self?.bridge.uiManager.view(forReactTag: tag) as! MediaPlayer?) {
         block(_view)
       }
+    }
+  }
+
+
+  override var bridge: RCTBridge! {
+    get {
+      return super.bridge
+    }
+
+    set (newValue) {
+      super.bridge = newValue
+
+
+
+      newValue.dispatchBlock({ [weak self] in
+        guard let this = self else {
+          return
+        }
+
+        MediaPlayerJSIModuleInstaller.install(this)
+      }, queue: RCTJSThread)
+
     }
   }
 
@@ -371,6 +393,12 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     }
   }
 
+
+
+  @objc(isRegistered:)
+  func isRegistered(_ id: NSString) -> Bool {
+    return MediaSource.cached(uri: id as String) != nil
+  }
 
 
   @objc(share:network:callback:)

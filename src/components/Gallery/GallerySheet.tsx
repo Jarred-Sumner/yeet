@@ -2,7 +2,7 @@ import BottomSheet from "reanimated-bottom-sheet";
 import { View, StyleSheet, InteractionManager, Keyboard } from "react-native";
 import * as React from "react";
 
-import GalleryTabView from "./GalleryTabView";
+import GalleryTabView, { SHEET_ROUTES_LIST } from "./GalleryTabView";
 import Animated, {
   Transitioning,
   Transition,
@@ -302,6 +302,7 @@ export class GallerySheet extends React.Component {
                 <GalleryTabView
                   width={SCREEN_DIMENSIONS.width}
                   height={height}
+                  routes={SHEET_ROUTES_LIST}
                   inset={GallerySheet.CONTENT_INSET}
                   bottomInset={GallerySheet.TOP_OFFSET}
                   insetValue={this.insetValue}

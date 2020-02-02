@@ -28,7 +28,7 @@ query PostSearchQuery(
 
         __typename
 
-        previewUrl
+        coverUrl
       }
     }
   }

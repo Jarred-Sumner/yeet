@@ -147,7 +147,7 @@ class ExportableImageSource : ExportableMediaSource {
     urlComponents.path = "/\(id).png"
 
 
-    super.init(mediaSource: MediaSource.from(uri: urlComponents.url!.absoluteString, mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: width, height: height, bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: pixelRatio, cover: nil))
+    super.init(mediaSource: MediaSource.from(uri: urlComponents.url!.absoluteString, mimeType: MimeType.png.rawValue, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: width, height: height, bounds: CGRect(origin: .zero, size: screenshot.size), pixelRatio: pixelRatio, cover: nil))
 
     self.view = view
     self.nodeView = nodeView
@@ -159,7 +159,7 @@ class ExportableImageSource : ExportableMediaSource {
     staticImage = thumbnail
     animatedImage = nil
 
-    super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale), cover: nil))
+    super.init(mediaSource: MediaSource.from(uri: "thumbnails://\(id).png", mimeType: MimeType.png.rawValue, duration: NSNumber(0), playDuration: NSNumber(0), id: id, width: NSNumber(nonretainedObject: thumbnail.size.width), height: NSNumber(nonretainedObject: thumbnail.size.height), bounds: CGRect(origin: .zero, size: thumbnail.size), pixelRatio: NSNumber(nonretainedObject: thumbnail.scale), cover: nil))
 
     self.view = view
     

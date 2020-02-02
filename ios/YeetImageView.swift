@@ -35,11 +35,14 @@ class YeetImageView : PINAnimatedImageView {
       let old = _source
       self._source = newValue
       self.mediaSource = newValue?.mediaSource
+      
 
-      if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) ) {
+      if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) || [.pending, .error].contains(loadStatus)) {
+
         old?.hasLoaded = false
         old?.stop()
 
+        
         if let videoCover = self.videoCover {
           videoCover.stop()
         }
@@ -57,11 +60,16 @@ class YeetImageView : PINAnimatedImageView {
    }
   }
 
-  static let phImageManager = PHCachingImageManager()
+  static var phImageManager = PHCachingImageManager() {
+    didSet {
+      phImageManager.allowsCachingHighQualityImages = true
+    }
+  }
 
 
   var imageRequestID: PHImageRequestID? = nil
   var livePhotoRequestID: PHLivePhotoRequestID? = nil
+  static var fetchRequestCache = NSCache<NSString, PHAsset>()
 
   @objc (startCachingMediaSources:bounds:contentMode:)
   static func startCaching(mediaSources: Array<MediaSource>, bounds: CGRect, contentMode: UIView.ContentMode) {
@@ -79,12 +87,11 @@ class YeetImageView : PINAnimatedImageView {
 
     let request = PHImageRequestOptions()
     request.isNetworkAccessAllowed = true
-    request.deliveryMode = .opportunistic
+    request.deliveryMode = .highQualityFormat
 
 
 
     let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
-
 
     phImageManager.startCachingImages(for: fetchReq.objects(at: IndexSet.init(integersIn: 0...fetchReq.count - 1)), targetSize: bounds.size, contentMode: _contentMode, options: request)
   }
@@ -104,7 +111,7 @@ class YeetImageView : PINAnimatedImageView {
 
     let request = PHImageRequestOptions()
     request.isNetworkAccessAllowed = true
-    request.deliveryMode = .opportunistic
+    request.deliveryMode = .highQualityFormat
 
 
     let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
@@ -115,23 +122,37 @@ class YeetImageView : PINAnimatedImageView {
   @objc (stopCaching)
   static func stopCaching() {
     phImageManager.stopCachingImagesForAllAssets()
+    fetchRequestCache.removeAllObjects()
   }
 
 
   static func fetchCameraRollAsset(mediaSource: MediaSource, size: CGSize, cropRect: CGRect = .zero, contentMode: UIView.ContentMode, deliveryMode: PHImageRequestOptionsDeliveryMode = .opportunistic, completion: @escaping ImageFetchCompletionBlock) -> (PHImageRequestID?, PHLivePhotoRequestID?) {
-    guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
+
+    guard let localIdentifier = mediaSource.uri.localIdentifier else {
       completion(nil)
       return (nil, nil)
     }
 
-    guard let asset = fetchReq.firstObject else {
-      completion(nil)
-      return (nil, nil)
+    var asset: PHAsset? = fetchRequestCache.object(forKey: localIdentifier as NSString)
+
+    if asset == nil {
+      guard let fetchReq = MediaSource.fetchRequest(url: mediaSource.uri) else {
+        completion(nil)
+        return (nil, nil)
+      }
+
+      asset = fetchReq.firstObject
+
+      guard asset != nil else {
+        completion(nil)
+        return (nil, nil)
+      }
+
+      fetchRequestCache.setObject(asset!, forKey: localIdentifier as NSString)
     }
 
     let _contentMode = contentMode == .scaleAspectFit ? PHImageContentMode.aspectFit : PHImageContentMode.aspectFill
 
-    phImageManager.allowsCachingHighQualityImages = false
 
     var livePhotoRequestID: PHLivePhotoRequestID? = nil
     var imageRequestID: PHImageRequestID? = nil
@@ -162,9 +183,10 @@ class YeetImageView : PINAnimatedImageView {
         request.resizeMode = .exact
       }
 
+      request.resizeMode = .fast
       request.deliveryMode = deliveryMode
 
-       imageRequestID = phImageManager.requestImage(for: asset, targetSize: size, contentMode: _contentMode, options: request) { image, _ in
+       imageRequestID = phImageManager.requestImage(for: asset!, targetSize: size, contentMode: _contentMode, options: request) { image, _ in
         completion(image)
       }
 //    }
@@ -200,6 +222,8 @@ class YeetImageView : PINAnimatedImageView {
     layer.allowsEdgeAntialiasing = shouldAntiAlias
     layer.edgeAntialiasingMask = [.layerBottomEdge, .layerTopEdge, .layerLeftEdge, .layerRightEdge]
     self.backgroundColor = .clear
+    layer.addSublayer(coverLayer)
+    coverLayer.isHidden = false
 
 
     self.clipsToBounds = true
@@ -209,8 +233,9 @@ class YeetImageView : PINAnimatedImageView {
   override func layoutSubviews() {
     super.layoutSubviews()
 
+    self.pin_updateWithProgress = bounds.width > 200.0 || bounds.height > 200.0
     let shouldAntiAlias = frame.size.width < UIScreen.main.bounds.size.width
-    layer.allowsEdgeAntialiasing = shouldAntiAlias
+    layer.allowsEdgeAntialiasing = !isThumbnail
   }
 
 
@@ -270,33 +295,48 @@ class YeetImageView : PINAnimatedImageView {
 
   var videoCover: MediaSourceVideoCover? = nil
 
+
   func handleImageResult(result: PINRemoteImageManagerResult, scale: CGFloat) {
+    self.canShowCoverImage = result.alternativeRepresentation != nil
     let success = self.image != nil || self.animatedImage != nil
+
     self.handleLoad(success: success, error: result.error)
   }
 
   var lastURL: URL? = nil
+  var deliveryMode = PHImageRequestOptionsDeliveryMode.opportunistic
+  var isThumbnail = false
 
   func loadImage(async: Bool = true) {
     guard let mediaSource = self.mediaSource else {
-//      self.image = nil
+      self.handleLoad(success: false)
       return
     }
 
+    var _id: String? = mediaSource.id
+
     if mediaSource.isFromCameraRoll {
+      canShowCoverImage = false
       let contentMode = self.contentMode
       let bounds = self.bounds
 
-      let (imageRequestID, livePhotoRequestID) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: contentMode) { [weak self] image in
+      let (imageRequestID, _) = YeetImageView.fetchCameraRollAsset(mediaSource: mediaSource, size: bounds.applying(.init(scaleX: UIScreen.main.nativeScale, y: UIScreen.main.nativeScale)).size, contentMode: contentMode, deliveryMode: deliveryMode) { [weak self] image in
         if self?.imageRequestID != nil {
           self?.imageRequestID = nil
+        }
+
+        guard self?.mediaSource?.id == _id else {
+          _id = nil
+          return
         }
 
         self?.handleImageLoad(image: image, scale: UIScreen.main.nativeScale)
       }
 
+
       self.imageRequestID = imageRequestID
     } else if mediaSource.isVideoCover && mediaSource.coverUri == nil {
+      canShowCoverImage = false
       mediaSource.loadAsset { [weak self] asset in
         guard let _asset = asset else {
           self?.handleLoad(success: false)
@@ -308,8 +348,16 @@ class YeetImageView : PINAnimatedImageView {
            return
         }
 
+        guard self?.mediaSource?.id == _id else {
+          return
+        }
+
         // To get the bounds
         DispatchQueue.main.async { [weak self]  in
+          guard self?.mediaSource?.id == _id else {
+            return
+          }
+
           guard let bounds = self?.bounds else {
             self?.handleLoad(success: false)
             return
@@ -330,27 +378,37 @@ class YeetImageView : PINAnimatedImageView {
       let (url, scale) = YeetImageView.imageUri(source: mediaSource, bounds: bounds)
       let needsChange = lastURL != url || ((image == nil && animatedImage == nil) && pin_downloadImageOperationUUID() == nil)
 
-      guard needsChange else {
+      guard needsChange || loadStatus == .error else {
         if (pin_downloadImageOperationUUID() == nil) {
           self.handleLoad(success: true, error: nil)
         }
         return
       }
 
+
+      if self.image != nil || self.animatedImage != nil {
+        self.pin_clearImages()
+      }
+
       self.pin_setImage(from: url, placeholderImage: nil) { [weak self] result in
+        guard self?.mediaSource?.id == _id else {
+          return
+        }
+
         self?.handleImageResult(result: result, scale: scale)
       }
       lastURL = url
     } else if mediaSource.isFileProtocol {
+      canShowCoverImage = false
      do {
       try self.loadFileImage(async: async)
      }  catch {
        self.handleImageLoad(image: nil, scale: CGFloat(1), error: error)
        return
      }
-
     }
 
+    self.loadStatus = .loading
     onLoadStartEvent?(["id": mediaSource.id])
   }
 
@@ -424,7 +482,7 @@ class YeetImageView : PINAnimatedImageView {
         }
       }
     } else {
-      self.image = nil
+      self.pin_clearImages()
     }
 
 
@@ -447,6 +505,7 @@ class YeetImageView : PINAnimatedImageView {
     }
   }
 
+
   func handleLoad(success: Bool, error: Error? = nil) {
     if (success) {
       self._source?.onLoad()
@@ -455,6 +514,7 @@ class YeetImageView : PINAnimatedImageView {
       }
 
       guard let mediaSource = self.mediaSource else {
+        loadStatus = .error
         onLoadEvent?([:])
         return
       }
@@ -462,7 +522,9 @@ class YeetImageView : PINAnimatedImageView {
 
       let size = imageSize
       onLoadEvent?([ "id": mediaSource.id, "width": size.width, "height": size.height ])
+      loadStatus = .success
     } else {
+      loadStatus = .error
       guard let mediaSource = self.mediaSource else {
         return
       }
@@ -564,6 +626,14 @@ class YeetImageView : PINAnimatedImageView {
     return url
   }
 
+  enum LoadStatus {
+    case pending
+    case loading
+    case error
+    case success
+  }
+  var loadStatus = LoadStatus.pending
+
   func reset() {
     self.source = nil
     self.pin_cancelImageDownload()
@@ -577,12 +647,160 @@ class YeetImageView : PINAnimatedImageView {
     videoCover = nil
 
     self.isPlaybackPaused = true
+    loadStatus = .pending
+
+  }
+
+  var invalidated = false
+
+  @objc(invalidate) func invalidate() {
+    invalidated = true
+  }
+
+//  var isPaused = true
+  var coverLayer = CALayer()
+//
+//  override func displayLinkFired(_ displayLink: CADisplayLink!) {
+//
+//
+//    let wasPaused = displayLink.isPaused
+//    var copiedImage = !wasPaused ? frameImage?.copy() : nil
+//
+//    super.displayLinkFired(displayLink)
+//    let isPaused = displayLink.isPaused
+//
+//    if wasPaused != isPaused && isPaused && frameImage != nil {
+//      coverLayer.isHidden = false
+//      coverLayer.contents = frameImage?.copy()
+//      copiedImage = nil
+//
+//    } else if wasPaused != isPaused && isPaused && frameImage == nil {
+//      coverLayer.isHidden = false
+//      coverLayer.contents = copiedImage
+//    } else if !isPaused && !coverLayer.isHidden && frameImage != nil {
+////      coverLayer.isHidden = true
+//      copiedImage = nil
+//    } else {
+//      copiedImage = nil
+//    }
+//
+//  }
+
+  override var animatedImage: PINCachedAnimatedImage? {
+    get {
+      return super.animatedImage
+    }
+
+    set (newValue) {
+
+//      if canShowCoverImage {
+//        if (newValue != nil && coverLayer.contents == nil && newValue != self.animatedImage) {
+//          if let firstFrame = newValue?.image(at: 0)?.takeUnretainedValue().copy() {
+//            coverLayer.contents = firstFrame
+//            coverLayer.isHidden = false
+//          }
+//        }
+//      }
+
+
+      super.animatedImage = newValue
+    }
+  }
+
+  var canShowCoverImage : Bool = false
+
+//  override func coverImageCompleted(_ coverImage: UIImage!) {
+//    guard canShowCoverImage  else {
+//      super.coverImageCompleted(coverImage)
+//      return
+//    }
+//    guard animatedImage != nil else {
+//      return
+//    }
+//
+//    guard !invalidated else {
+//      return
+//    }
+//
+//    setCoverImage(coverImage)
+//
+//  }
+
+//  override func setCoverImage(_ coverImage: UIImage!) {
+//    super.setCoverImage(coverImage)
+//
+//    if canShowCoverImage {
+//      if coverImage != nil && coverLayer.contents == nil {
+//        coverLayer.contents = coverImage?.cgImage
+//        coverLayer.isHidden = true
+//      }
+//    }
+//  }
+
+  override var isPlaybackPaused: Bool {
+    get {
+      return super.isPlaybackPaused
+    }
+
+    set (newValue) {
+//      if canShowCoverImage {
+//        if newValue && !invalidated {
+//          if let frame = imageRef()?.takeUnretainedValue().copy() {
+//            coverLayer.contents = frame
+//            coverLayer.isHidden = false
+//          }
+//        }
+//      }
+
+
+      super.isPlaybackPaused = newValue
+    }
+  }
+
+//  override func stopAnimating() {
+//    guard canShowCoverImage else {
+//      super.stopAnimating()
+//      return
+//    }
+////    guard source != nil && !invalidated && animatedImage != nil && window != nil else {
+////      super.stopAnimating()
+////      return
+////    }
+//
+//    displayLink?.isPaused = true
+//    lastDisplayLinkFire = 0
+//    if !invalidated && animatedImage != nil {
+//      if let frame = imageRef()?.takeUnretainedValue().copy() {
+//        coverLayer.contents = frame
+//        coverLayer.isHidden = false
+//      }
+//    }
+//
+//    animatedImage?.clearCache()
+//  }
+
+  override func layoutSublayers(of layer: CALayer) {
+    super.layoutSublayers(of: layer)
+
+//    if (layer == self.layer && (coverLayer.bounds != layer.bounds || coverLayer.position != layer.position) && animatedImage != nil) {
+//      UIView.setAnimationsEnabled(false)
+//      coverLayer.bounds = layer.bounds
+//      coverLayer.contentsScale = layer.contentsScale
+//      coverLayer.position = layer.position
+//      coverLayer.contentsGravity = layer.contentsGravity
+//      UIView.setAnimationsEnabled(true)
+//    } else if animatedImage == nil && image != nil && !coverLayer.isHidden {
+//      coverLayer.isHidden = true
+//    } else if !canShowCoverImage {
+//      coverLayer.isHidden = true
+//    }
   }
 
 
-  
 
   deinit {
+
+    invalidated = true
     self.reset()
 //    self.animatedImage?.clearCache()
 //    self.animatedImage = nil

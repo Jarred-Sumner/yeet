@@ -2,6 +2,7 @@ import CameraRoll from "@react-native-community/cameraroll";
 import giphyClient from "giphy-api";
 import memoizee from "memoizee";
 import { extname } from "path";
+import { last } from "lodash";
 import {
   ImageSourcePropType,
   PerpectiveTransform,
@@ -18,8 +19,31 @@ import {
   TranslateYTransform
 } from "react-native";
 import { MediaSource } from "../components/MediaPlayer";
-import { convertCameraRollIDToRNFetchBlobId } from "./imageResize";
 import { BoundsRect, DimensionsRect } from "./Rect";
+
+export const validateMimeType = (image, mimeType: string) => {
+  if (!mimeType) {
+    throw Error(`Invalid mimetype for ${JSON.stringify(image)}`);
+  }
+};
+
+export const generateFilename = (extension = "png") =>
+  `${Math.random()
+    .toString(36)
+    .substring(7)}.${extension}`;
+
+export const convertLocalIdentifierToAssetLibrary = (localIdentifier, ext) => {
+  const hash = localIdentifier.split("/")[0];
+  const withoutLeadingDot = ext.startsWith(".") ? ext.substr(1) : ext;
+
+  return `assets-library://asset/asset.${withoutLeadingDot}?id=${hash}&ext=${ext}`;
+};
+
+export const convertCameraRollIDToRNFetchBlobId = (assetPath, extension) =>
+  convertLocalIdentifierToAssetLibrary(
+    assetPath.split("://")[1].split("/")[0],
+    extension
+  );
 
 export type VideoEditResponse = {
   url: string;
@@ -55,6 +79,7 @@ export enum ImageMimeType {
   jpeg = "image/jpeg",
   webp = "image/webp",
   mp4 = "video/mp4",
+  m4v = "video/x-m4v",
   mov = "video/quicktime",
   heic = "image/heif",
   heif = "image/heif",
@@ -63,7 +88,7 @@ export enum ImageMimeType {
 }
 
 export const isVideo = (mimeType: ImageMimeType) =>
-  [ImageMimeType.mov, ImageMimeType.mp4].includes(mimeType);
+  [ImageMimeType.mov, ImageMimeType.mp4, ImageMimeType.m4v].includes(mimeType);
 
 export const extensionByMimeType = (mimeType: ImageMimeType) => {
   if (mimeType === ImageMimeType.png) {
@@ -100,13 +125,14 @@ export const MIME_TYPE_MAPPING = {
   tiff: ImageMimeType.tiff,
   tif: ImageMimeType.tiff,
   mp4: ImageMimeType.mp4,
+  m4v: ImageMimeType.mp4,
   plist: ImageMimeType.jpg,
   bmp: ImageMimeType.bmp,
   mov: ImageMimeType.mov
 };
 
 export const mimeTypeFromFilename = (filename: string) => {
-  const ext = extname(filename || ".")
+  const ext = extname(last(filename.split("/")) || ".")
     .substring(1)
     .toLowerCase();
 
@@ -249,25 +275,13 @@ export const imageContainerFromCameraRoll = (
   photo: CameraRoll.PhotoIdentifier,
   transform: YeetTransform = []
 ): YeetImageContainer => {
-  const {
-    uri,
-    width,
-    height,
-    playableDuration: duration = 0,
-    filename
-  } = photo.node.image;
+  const { uri, width, height, duration, mimeType } = photo;
 
   const assetData = {
     uri,
     width,
     height
   };
-
-  const mimeType = mimeTypeFromFilename(filename);
-
-  if (!mimeType) {
-    throw Error(`Invalid mimetype for photo: ${JSON.stringify(photo)}`);
-  }
 
   const image = {
     ...assetData,
@@ -436,16 +450,11 @@ export const imageFromMediaSource = (
   }
 
   const mimeType =
-    ImageMimeType[_mimeType] || mimeTypeFromFilename(_url.split("?")[0]);
+    ImageMimeType[_mimeType] ?? mimeTypeFromFilename(_url.split("?")[0]);
 
-  if (!mimeType) {
-    throw Error(`Invalid mimetype for asset ${JSON.stringify(mediaSource)}`);
-  }
+  validateMimeType(mediaSource, mimeType);
 
-  const url =
-    mimeType !== undefined && _url.includes("ph://")
-      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
-      : _url;
+  const url = _url;
 
   return {
     uri: url,
@@ -462,12 +471,6 @@ export const imageFromMediaSource = (
 export const imageFromVideoEditor = (
   video: Partial<VideoEditResponse>
 ): YeetImage => {
-  const mimeType = ImageMimeType[video.mimeType];
-
-  if (!mimeType) {
-    throw Error(`Invalid mimetype for video ${JSON.stringify(video)}`);
-  }
-
   return {
     uri: video.url,
     width: video.size.width,
@@ -518,20 +521,15 @@ export const mediaSourceFromImage = (
 
   const { width, height, uri: __url, mimeType, duration } = image;
 
-  const _url = __url ?? image.url;
+  const _url = __url ?? image.uri;
 
-  if (!mimeType) {
-    throw Error(`Invalid mimetype for asset ${JSON.stringify(container)}`);
-  }
+  validateMimeType(container, mimeType);
 
   if (_url === null) {
     throw Error(`Invalid url for asset ${JSON.stringify(container)}`);
   }
 
-  const url =
-    mimeType !== undefined && _url.includes("ph://")
-      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
-      : _url;
+  const url = _url;
 
   const _mimeType =
     forceImage && isVideo(mimeType) ? ImageMimeType.jpeg : mimeType;
@@ -561,16 +559,11 @@ export const mediaSourceFromSource = (
     throw Error(`Invalid url for asset ${JSON.stringify(source)}`);
   }
 
-  const mimeType = _mimeType || mimeTypeFromFilename(_url.split("?")[0]);
+  const mimeType = mimeTypeFromFilename(_url.split("?")[0]);
 
-  if (!mimeType) {
-    throw Error(`Invalid mimetype for asset ${JSON.stringify(source)}`);
-  }
+  validateMimeType(source, mimeType);
 
-  const url =
-    mimeType !== undefined && _url.includes("ph://")
-      ? convertCameraRollIDToRNFetchBlobId(_url, extensionByMimeType(mimeType))
-      : _url;
+  const url = _url;
 
   return {
     url,

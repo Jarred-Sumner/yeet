@@ -1,0 +1,46 @@
+#import "./PostFragment.graphql"
+
+query LoadEditorPostQuery($id: ID!) {
+  post(id: $id) {
+    id
+
+    blocks
+    format
+    examples
+    layout
+
+    colors {
+      background
+      primary
+    }
+    nodes
+
+    bounds {
+      x
+      y
+      width
+      height
+    }
+
+    profile {
+      id
+      photoURL
+      username
+    }
+
+    media {
+      id
+      width
+      height
+      pixelRatio
+      mimeType
+      duration
+
+      coverUrl
+      __typename
+
+      previewUrl
+      url
+    }
+  }
+}

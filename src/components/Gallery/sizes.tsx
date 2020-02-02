@@ -7,17 +7,18 @@ import {
 } from "./COLUMN_COUNT";
 import { PixelRatio } from "react-native";
 
-export const SQUARE_ITEM_WIDTH =
-  SCREEN_DIMENSIONS.width / COLUMN_COUNT - COLUMN_GAP * COLUMN_COUNT;
+export const SQUARE_ITEM_WIDTH = Math.floor(
+  SCREEN_DIMENSIONS.width / COLUMN_COUNT - COLUMN_GAP * COLUMN_COUNT
+);
 export const SQUARE_ITEM_HEIGHT = SQUARE_ITEM_WIDTH;
 export const VERTICAL_ITEM_HEIGHT = SQUARE_ITEM_WIDTH * (16 / 9);
 export const VERTICAL_ITEM_WIDTH = SQUARE_ITEM_WIDTH;
 export const HORIZONTAL_ITEM_HEIGHT = 200;
 export const HORIZONTAL_ITEM_WIDTH =
   SCREEN_DIMENSIONS.width / GIF_COLUMN_COUNT - COLUMN_GAP * GIF_COLUMN_COUNT;
-export const MEMES_ITEM_WIDTH = PixelRatio.roundToNearestPixel(
+export const MEMES_ITEM_WIDTH = Math.floor(
   SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT - COLUMN_GAP * MEMES_COLUMN_COUNT
 );
-export const MEMES_ITEM_HEIGHT = PixelRatio.roundToNearestPixel(
+export const MEMES_ITEM_HEIGHT = Math.floor(
   SCREEN_DIMENSIONS.width / MEMES_COLUMN_COUNT - COLUMN_GAP * MEMES_COLUMN_COUNT
 );

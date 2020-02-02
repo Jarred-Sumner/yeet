@@ -6,14 +6,6 @@
 // GraphQL query operation: PostSearchQuery
 // ====================================================
 
-export interface PostSearchQuery_searchPosts_data_bounds {
-  __typename: "Rectangle";
-  x: number | null;
-  y: number | null;
-  width: number | null;
-  height: number | null;
-}
-
 export interface PostSearchQuery_searchPosts_data_profile {
   __typename: "Profile";
   id: string;
@@ -25,23 +17,14 @@ export interface PostSearchQuery_searchPosts_data_media {
   id: string;
   width: number | null;
   height: number | null;
-  pixelRatio: number | null;
   mimeType: string | null;
   duration: number;
-  coverUrl: string;
   previewUrl: string;
-  url: string;
 }
 
 export interface PostSearchQuery_searchPosts_data {
   __typename: "Post";
   id: string;
-  bounds: PostSearchQuery_searchPosts_data_bounds;
-  blocks: JSON;
-  nodes: JSON;
-  format: string;
-  layout: string | null;
-  examples: JSON;
   profile: PostSearchQuery_searchPosts_data_profile;
   media: PostSearchQuery_searchPosts_data_media;
 }

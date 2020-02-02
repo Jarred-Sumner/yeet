@@ -1,7 +1,7 @@
 import { appSchema, tableSchema } from "@nozbe/watermelondb";
 
 export const schema = appSchema({
-  version: 2,
+  version: 3,
   tables: [
     tableSchema({
       name: "recently_used_contents",
@@ -18,7 +18,7 @@ export const schema = appSchema({
         { name: "x", type: "number", isOptional: true },
         { name: "y", type: "number", isOptional: true },
         { name: "examples", type: "string", isOptional: true },
-        { name: "type", type: "string", isOptional: false },
+        { name: "contentType", type: "string", isOptional: false },
         { name: "created_at", type: "number" },
         { name: "updated_at", type: "number" },
         { name: "image_uri", type: "string" },

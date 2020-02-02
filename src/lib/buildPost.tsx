@@ -1,4 +1,12 @@
-import { cloneDeep, flatMap, flatten, isArray, isEmpty, set } from "lodash";
+import {
+  cloneDeep,
+  flatMap,
+  flatten,
+  isArray,
+  isEmpty,
+  set,
+  compact
+} from "lodash";
 import nanoid from "nanoid/non-secure";
 
 import {
@@ -741,7 +749,17 @@ export const buildPost = ({
     format,
     layout,
     backgroundColor,
-    positions,
+    positions: compact(
+      positions.map(row => {
+        if (isArray(row)) {
+          return row;
+        } else if (typeof row === "string") {
+          return [row];
+        } else {
+          return null;
+        }
+      })
+    ),
     width,
     blocks,
     height

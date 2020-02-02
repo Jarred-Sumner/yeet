@@ -53,7 +53,6 @@ export const GallerySectionComponent = ({
   const handlePressHeader = React.useCallback(() => {
     onPressHeader(section.type);
   }, [section.type, onPressHeader]);
-  console.log(section.data);
 
   const renderColumn =
     // React.useCallback(
@@ -61,7 +60,6 @@ export const GallerySectionComponent = ({
       const column = section.data[index];
       const isSelected = selectedIDs.includes(column?.image?.id);
 
-      console.log({ user: get(column, "post.profile.username") });
       return (
         <View
           key={column?.id ?? `placeholder-${index}`}
@@ -70,6 +68,18 @@ export const GallerySectionComponent = ({
           {column && (
             <GalleryItem
               image={column.image}
+              mediaSource={
+                column.post?.media
+                  ? {
+                      ...column.post?.media,
+                      id: `${column.post?.id}-cell`,
+                      url:
+                        column.post?.media.coverUrl ??
+                        column.post?.media.previewUrl ??
+                        column.post?.media.url
+                    }
+                  : null
+              }
               id={column.id}
               paused={paused}
               post={column.post}

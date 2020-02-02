@@ -6,81 +6,64 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTBridge.h>
 #import <SDWebImage/SDAnimatedImage.h>
+#import <SDWebImageWebPCoder.h>
+
+#import "RCTConvert+PHotos.h"
+
 #import <React/RCTUIManager.h>
 #import <React/RCTUIManagerUtils.h>
-#import <SDWebImageWebPCoder.h>
+
 #import <React/RCTMultilineTextInputView.h>
 #import <React/RCTMultilineTextInputViewManager.h>
 #import <React/RCTScrollView.h>
 #import <React/UIView+React.h>
 #import <React/RCTUITextView.h>
 #import <React/RCTTextView.h>
+#import <React/RCTTextSelection.h>
+#import <React/RCTConvert+Transform.h>
+#import "EnableWebpDecoder.h"
+#import <React/RCTBridge+Private.h>
+#import <React/RCTUIManagerObserverCoordinator.h>
+#import <React/RCTSurfacePresenterStub.h>
+#import <React/RCTUITextView.h>
+#import <React/RCTEventEmitter.h>
+#import <React/RCTInvalidating.h>
+#import <FFFastImageView.h>
+#import "YeetTextInputShadowView.h"
+
 #import "_RCTUITextView.h"
 #import <React/RCTInputAccessoryView.h>
 #import <React/RCTInputAccessoryViewContent.h>
 #import <React/RCTTextAttributes.h>
-#import <React/RCTTextSelection.h>
-#import <React/RCTConvert+Transform.h>
-#import "EnableWebpDecoder.h"
+
+
+
 #import "NSNumber+CGFloat.h"
 
+#import "MediaPlayerJSIModuleInstaller.h"
 
-#import <React/RCTUIManagerObserverCoordinator.h>
+#import "RCTConvert+YeetTextEnums.h"
 
-#import <React/RCTInvalidating.h>
+
 #import <DVURLAsset.h>
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
 #import <KTVHTTPCache/KTVHTTPCache.h>
-#import <FFFastImageView.h>
+
 #import <PINRemoteImage/PINAnimatedImageView.h>
 #import <PINRemoteImage/PINDisplayLink.h>
-#import <React/RCTSurfacePresenterStub.h>
-#import <React/RCTUITextView.h>
-#import <React/RCTEventEmitter.h>
+
 #import "FindContours.h"
-#import "YeetTextInputShadowView.h"
+
 #import <XExtensionItem/XExtensionItem.h>
 #import "YeetTextEnums.h"
+#import "PINRemoteImageMacros.h"
 
 
-@interface RCTConvert (YeetTextEnums)
+@interface PINAnimatedImageView (Private)
 
-+ (YeetTextBorder)YeetTextBorder:(id)json;
-+ (YeetTextTemplate)YeetTextTemplate:(id)json;
-+ (YeetTextFormat)YeetTextFormat:(id)json;
-
-@end
-
-@implementation RCTConvert (YeetTextEnums)
-
-RCT_ENUM_CONVERTER(YeetTextBorder, (@{
-@"stroke": @(YeetTextBorderStroke),
-@"ellipse": @(YeetTextBorderEllipse),
-@"solid": @(YeetTextBorderSolid),
-@"hidden": @(YeetTextBorderHidden),
-@"invert": @(YeetTextBorderInvert),
-@"highlight": @(YeetTextBorderHighlight),
-}), YeetTextBorderHidden, integerValue);
-
-RCT_ENUM_CONVERTER(YeetTextTemplate, (@{
-@"basic": @(YeetTextTemplateBasic),
-@"bigWords": @(YeetTextTemplateBigWords),
-@"post": @(YeetTextTemplatePost),
-@"comment": @(YeetTextTemplateComment),
-@"comic": @(YeetTextTemplateComic),
-@"gary": @(YeetTextTemplateGary),
-@"terminal": @(YeetTextTemplateTerminal),
-@"pickaxe": @(YeetTextTemplatePickaxe),
-}), YeetTextTemplatePost, integerValue);
-
-RCT_ENUM_CONVERTER(YeetTextFormat, (@{
-@"post": @(YeetTextFormatPost),
-@"sticker": @(YeetTextFormatSticker),
-@"comment": @(YeetTextFormatComment),
-}), YeetTextFormatPost, integerValue);
+- (void)coverImageCompleted:(PINImage *)coverImage;
 
 @end
-
 
 
 
@@ -156,8 +139,6 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedBottom, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedLeft, NSNumber);
-RCT_EXPORT_VIEW_PROPERTY(yeetContentSizeChange, RCTDirectEventBlock);
-RCT_EXPORT_VIEW_PROPERTY(yeetTransformLayout, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(overlayTag, NSNumber);
 RCT_REMAP_VIEW_PROPERTY(transform, yeetTransform, CATransform3D);
 //RCT_CUSTOM_VIEW_PROPERTY(transform, CATransform3D, MovableView) {
@@ -209,7 +190,7 @@ RCT_CUSTOM_SHADOW_PROPERTY(format, YeetTextFormat, YeetTextInputShadowView) {
 
 RCT_CUSTOM_SHADOW_PROPERTY(template, YeetTextTemplate, YeetTextInputShadowView) {
   YeetTextTemplate _template = [RCTConvert YeetTextTemplate:json];
-  view.yeetAttributes.template = _template;
+  [view.yeetAttributes setTemplate: _template];
   [view didUpdateTextStyle];
 }
 
@@ -316,11 +297,15 @@ _RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueN
 @end
 
 
+
+
 @interface RCT_EXTERN_MODULE(MediaPlayerViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(paused, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(autoPlay, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(prefetch, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(opaque, BOOL);
+RCT_EXPORT_VIEW_PROPERTY(thumbnail, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(isVisible, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(borderRadius, CGFloat);
@@ -339,6 +324,10 @@ RCT_EXPORT_VIEW_PROPERTY(onError, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onChangeItem, RCTDirectEventBlock);
 
 RCT_EXPORT_VIEW_PROPERTY(onEditVideo, RCTDirectEventBlock);
+
+
+RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(isRegistered:);
+
 
 
 RCT_EXTERN_METHOD(batchPlay:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids);
@@ -366,3 +355,4 @@ _RCT_EXTERN_REMAP_METHOD(goNextWithResolver, goNextWithResolver::::, NO);
 _RCT_EXTERN_REMAP_METHOD(goBackWithResolver, goBackWithResolver::::, NO);
 
 @end
+

@@ -11,10 +11,10 @@ import {
 import { uniqBy, capitalize, get, map } from "lodash";
 import { performSearch } from "./SearchResponse";
 import { downloadLink } from "./LinkDownloader";
-import Storage from "./Storage";
+import Storage, { fetchRecentlyUsedContent } from "./Storage";
 import { Platform } from "react-native";
 import { check, PERMISSIONS, request, RESULTS } from "react-native-permissions";
-import { fetchRecentlyUsedContent } from "./db/database";
+import memoizee from "memoizee";
 
 let _lastStatus = null;
 const ensureExternalStoragePermission = async () => {
@@ -61,11 +61,23 @@ const imageToImageContainer = (image: YeetImage): YeetImageContainer => {
 export default {
   Query: {
     cameraRoll: async (_, args = {}, { cache, getCacheKey }) => {
-      const { assetType, first, mediaSubtypes, after } = args;
+      const {
+        assetType,
+        first,
+        mediaSubtypes,
+        after,
+        offset = 0,
+        album,
+        width,
+        height,
+        contentMode = "aspectFill",
+        cache: shouldCache = true
+      } = args;
 
       const params = {
         assetType: capitalize(assetType),
         first: first ?? 0,
+        offset,
         mediaSubtypes,
         after
       };
@@ -90,27 +102,43 @@ export default {
             };
           }
         }
-        const result = await CameraRoll.getPhotos(params);
+
+        console.time("Get Photos");
+        // const result = await getPhotos(params);
+        const result = await global.MediaPlayerViewManager.getPhotos({
+          mediaType: assetType,
+          albumID: album,
+          offset: Math.max(offset, 0),
+          length: first,
+          size: {
+            width,
+            height
+          },
+          contentMode,
+          cache: shouldCache
+        });
+        console.timeEnd("Get Photos");
+
         const id = `cameraroll_${[
           params.assetType,
           params.first,
           mediaSubtypes,
-          after
+          after,
+          offset
         ].join("/")}`;
 
         const response = {
           __typename: "CameraRollResult",
           page_info: {
-            __typename: "PageInfo",
-            start_cursor: 0,
-            end_cursor: 0,
-
             ...result.page_info,
-            limit: params.first,
+            __typename: "PageInfo",
+            offset: Math.max(result.page_info.offset, 0),
             id: `${id}-pageinfo`
           },
           id,
-          data: result.edges.map(edge =>
+          album: result.album,
+          sessionId: result.sessionId,
+          data: result.data.map(edge =>
             graphqlImageContainer(imageContainerFromCameraRoll(edge))
           )
         };

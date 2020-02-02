@@ -3,20 +3,42 @@
 query CameraRollQuery(
   $assetType: String
   $first: Int!
+  $offset: Int
+  $width: Int
+  $album: String
+  $height: Int
+  $cache: Bool
+  $contentMode: String
   $mediaSubtypes: [String]
   $after: String
 ) {
   cameraRoll(
     assetType: $assetType
     first: $first
+    offset: $offset
+    album: $album
     mediaSubtypes: $mediaSubtypes
     after: $after
+    width: $width
+    height: $height
+    cache: $cache
+    contentMode: $contentMode
   ) @client {
+    sessionId
+    album {
+      id
+      title
+      type
+      subtype
+      count
+      __type
+    }
+
     page_info {
       id
       has_next_page
-      end_cursor
-      start_cursor
+      offset
+      limit
     }
 
     id

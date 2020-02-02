@@ -1,9 +1,9 @@
 import useKeyboard from "@rnhooks/keyboard";
 import { NetworkStatus } from "apollo-client";
-import { memoize, get, chunk, fill } from "lodash";
+import { chunk, uniqBy } from "lodash";
 import * as React from "react";
 import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
-import { InteractionManager, StyleSheet, View } from "react-native";
+import { InteractionManager, PixelRatio, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import CameraRollGraphQL from "../../lib/CameraRollGraphQL";
@@ -15,22 +15,27 @@ import {
   PostSearchQueryVariables,
   PostSearchQuery_searchPosts_data
 } from "../../lib/graphql/PostSearchQuery";
-import {
-  imageContainerFromMediaSource,
-  ImageMimeType,
-  YeetImageContainer
-} from "../../lib/imageSearch";
+import { YeetImageContainer } from "../../lib/imageSearch";
 import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
 import POST_SEARCH_QUERY from "../../lib/PostSearchQuery.graphql";
 import { SPACING } from "../../lib/styles";
+import FastList from "../FastList";
 import { FlatList } from "../FlatList";
 import MediaPlayer from "../MediaPlayer";
+import { registrations } from "../MediaPlayer/MediaPlayerComponent";
 import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
+import { partition } from "lodash";
 import ImageSearch, {
   ImageSearchContext,
   IMAGE_SEARCH_HEIGHT
 } from "../NewPost/ImagePicker/ImageSearch";
-import GalleryItem, { galleryItemMediaSource, GalleryRow } from "./GalleryItem";
+import {
+  COLUMN_COUNT,
+  COLUMN_GAP,
+  GIF_COLUMN_COUNT,
+  MEMES_COLUMN_COUNT
+} from "./COLUMN_COUNT";
+import { galleryItemMediaSource, GalleryRow } from "./GalleryItem";
 import { TransparentToggle } from "./GallerySearchFilter";
 import { GalleryValue } from "./GallerySection";
 import { GallerySectionList } from "./GallerySectionList";
@@ -39,38 +44,45 @@ import {
   MemeFilterControl,
   MemeFilterType
 } from "./SegmentFilterControl";
-import FastList from "../FastList";
-import { Text } from "../Text";
 import {
-  SQUARE_ITEM_HEIGHT,
-  SQUARE_ITEM_WIDTH,
   HORIZONTAL_ITEM_HEIGHT,
   HORIZONTAL_ITEM_WIDTH,
   MEMES_ITEM_HEIGHT,
   MEMES_ITEM_WIDTH,
+  SQUARE_ITEM_HEIGHT,
+  SQUARE_ITEM_WIDTH,
   VERTICAL_ITEM_HEIGHT,
   VERTICAL_ITEM_WIDTH
 } from "./sizes";
-import {
-  COLUMN_GAP,
-  COLUMN_COUNT,
-  GIF_COLUMN_COUNT,
-  MEMES_COLUMN_COUNT
-} from "./COLUMN_COUNT";
-import { ITEM_SEPARATOR_HEIGHT } from "../ItemSeparatorComponent";
+import memoizee from "memoizee";
 
+const memoize = memoizee;
 const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    flexShrink: 1,
     width: SCREEN_DIMENSIONS.width,
-    overflow: "hidden"
+    height: SCREEN_DIMENSIONS.height,
+    backgroundColor: "black",
+    flex: 0
+    // overflow: "visible"
+  },
+  modalContainer: {
+    flex: 1,
+    flexShrink: 0,
+    width: SCREEN_DIMENSIONS.width,
+    overflow: "visible"
   },
   wrapper: {
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height,
+    flex: 0,
+    overflow: "visible",
+    backgroundColor: "black"
+  },
+  modalWrapper: {
     flex: 1,
-    flexShrink: 1,
+    flexShrink: 0,
     width: SCREEN_DIMENSIONS.width,
     overflow: "hidden"
   },
@@ -103,20 +115,28 @@ type Props = {
 };
 
 const getPaginatedLimit = (columnCount: number, height: number) => {
-  return (SCREEN_DIMENSIONS.height / height) * columnCount;
+  return Math.ceil((SCREEN_DIMENSIONS.height / height) * columnCount * 1.2);
 };
 
 const getInitialLimit = (columnCount: number, height: number) => {
   return getPaginatedLimit(columnCount, height) * 4;
 };
 
-class GalleryFilterListComponent extends React.Component<Props> {
+class GalleryFilterListComponent extends React.PureComponent<Props> {
   static defaultProps = {
     headerHeight: 0,
-    numColumns: COLUMN_COUNT
+    bottomInset: 0,
+
+    inset: 0,
+    numColumns: COLUMN_COUNT,
+    useFastList: true
   };
   constructor(props) {
     super(props);
+
+    this.state = {
+      showScrollView: !!props.isFocused
+    };
   }
 
   setFlatListRef = (flatList: FlatList) => {
@@ -138,10 +158,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
       prevProps.data.length > 0 &&
       data[0].id !== prevProps.data[0].id
     ) {
-      this.flatListRef.scrollToOffset({
-        offset: this.props.offset - (this.props.isModal ? 0 : TOP_Y),
-        animated: true
-      });
+      this.scrollTop(true);
     }
   }
 
@@ -154,13 +171,13 @@ class GalleryFilterListComponent extends React.Component<Props> {
     this.props.onPress(image, post);
   };
 
-  keyExtractor = item => item.id;
+  keyExtractor = item => item.join("-");
 
   getItemLayout = (_data, index) => {
-    const length = this.props.itemHeight;
+    const length = this.props.itemHeight + SEPARATOR_HEIGHT;
     const offset =
-      this.props.itemHeight * Math.floor(index / this.props.numColumns);
-
+      (this.props.itemHeight + SEPARATOR_HEIGHT) *
+      Math.ceil(index / this.props.numColumns);
     return {
       length,
       offset,
@@ -168,15 +185,29 @@ class GalleryFilterListComponent extends React.Component<Props> {
     };
   };
 
-  contentInset = {
+  // contentInset = {
+  //   top: this.props.inset,
+  //   left: 0,
+  //   right: 0,
+  //   bottom: this.props.bottomInset || 0
+  // };
+  scrollIndicatorInsets = {
     top: this.props.inset,
+    bottom: this.props.bottomInset || 0,
     left: 0,
-    right: 0,
-    bottom: this.props.bottomInset || 0
+    right: 1
   };
   contentOffset = {
-    y: this.props.offset,
+    y: this.props.offset + (!this.props.isModal ? TOP_Y * -1 : 0),
     x: 0
+  };
+  contentInset = {
+    top: Math.abs(this.props.inset + (this.props.isModal ? 0 : TOP_Y)),
+    left: 0,
+    right: 0,
+    bottom: Math.abs(
+      (this.props.bottomInset * -1 + (this.props.isModal ? 0 : BOTTOM_Y)) * -1
+    )
   };
 
   renderListEmpty = () => {
@@ -198,22 +229,17 @@ class GalleryFilterListComponent extends React.Component<Props> {
     );
   };
 
+  static getDerivedStateFromProps(props, state) {
+    if (props.isFocused && !state.showScrollView) {
+      return { showScrollView: true };
+    } else {
+      return state;
+    }
+  }
+
   static stickerHeaderIndices = [0];
   // https://github.com/facebook/react-native/issues/26610
   static scrollIndicatorInsets = { right: 1, left: 0, top: 0, bottom: 0 };
-  handleScroll = this.props.scrollY
-    ? Animated.event(
-        [
-          {
-            nativeEvent: {
-              contentOffset: { y: this.props.scrollY },
-              contentInset: { top: this.props.insetValue }
-            }
-          }
-        ],
-        { useNativeDriver: true }
-      )
-    : undefined;
 
   translateY = this.props.isModal
     ? Animated.interpolate(this.props.scrollY, {
@@ -224,13 +250,17 @@ class GalleryFilterListComponent extends React.Component<Props> {
     : undefined;
 
   scrollTop = (animated = true) => {
-    this.flatListRef &&
-      this.flatListRef.scrollToOffset({
-        offset: this.props.isModal
-          ? this.contentOffset.y
-          : this.contentOffset.y - TOP_Y,
-        animated
-      });
+    if (this.props.useFastList) {
+      this.flatListRef && this.flatListRef.scrollToTop(animated);
+    } else {
+      this.flatListRef &&
+        this.flatListRef.scrollToOffset({
+          offset: this.props.isModal
+            ? this.contentOffset.y
+            : this.contentOffset.y - TOP_Y,
+          animated
+        });
+    }
   };
 
   onScrollBeginDrag =
@@ -244,7 +274,9 @@ class GalleryFilterListComponent extends React.Component<Props> {
       { useNativeDriver: true }
     );
 
-  listStyle = styles.container;
+  listStyle = this.props.isModal
+    ? [styles.modalContainer, { height: this.props.height }]
+    : styles.container;
 
   static getSections = memoize((data, numColumns) => {
     return chunk(
@@ -271,13 +303,7 @@ class GalleryFilterListComponent extends React.Component<Props> {
     );
   }
 
-  renderSection = index => {
-    return (
-      <View style={styles.row}>
-        <Text>{index}</Text>
-      </View>
-    );
-  };
+  getItemCount = data => this.sectionCounts[0];
 
   handleRenderRow = (section: number, row: number) => {
     const { itemWidth, itemHeight, data, numColumns } = this.props;
@@ -300,12 +326,47 @@ class GalleryFilterListComponent extends React.Component<Props> {
     );
   };
 
+  _handleRenderRow = ({ item: columns }) => {
+    const { itemWidth, itemHeight, data, numColumns } = this.props;
+    return (
+      <GalleryRow
+        first={data[columns[0]]}
+        second={data[columns[1]]}
+        third={data[columns[2]]}
+        fourth={data[columns[3]]}
+        width={itemWidth}
+        numColumns={numColumns}
+        selectedIDs={this.props.selectedIDs}
+        height={itemHeight}
+        onPress={this.handlePressColumn}
+        transparent={this.props.transparent}
+        resizeMode={this.props.resizeMode}
+        paused={!this.props.isFocused}
+      />
+    );
+  };
+
+  renderHeader = list => {
+    const { ListHeaderComponent } = this.props;
+
+    return (
+      <Animated.View
+        style={{
+          transform: []
+        }}
+      >
+        <ListHeaderComponent />
+      </Animated.View>
+    );
+  };
+
   render() {
     const {
       data,
       networkStatus,
       isFocused,
       selectedIDs,
+      useFastList,
       onRefresh,
       hasNextPage = false,
       removeClippedSubviews,
@@ -319,17 +380,23 @@ class GalleryFilterListComponent extends React.Component<Props> {
       inset,
       itemHeight,
       ListFooterComponent,
+      bottomInset,
       headerHeight = 0,
+      height = 0,
       ListEmptyComponent,
       offset,
       ...otherProps
     } = this.props;
+    const { showScrollView } = this.state;
+
+    const containerHeight = isModal ? height : SCREEN_DIMENSIONS.height;
 
     const ContainerComponent = isModal ? Animated.View : View;
     const containerStyles = isModal
       ? [
-          styles.wrapper,
-          isModal && {
+          styles.modalWrapper,
+          {
+            paddingTop: headerHeight,
             transform: [
               {
                 translateY: this.translateY
@@ -337,16 +404,129 @@ class GalleryFilterListComponent extends React.Component<Props> {
             ]
           }
         ]
-      : styles.wrapper;
+      : [
+          styles.wrapper
+          // {
+          //   paddingTop: inset + TOP_Y,
+          //   paddingBottom: bottomInset ?? BOTTOM_Y
+          // }
+        ];
+
+    const { contentInset, contentOffset } = this;
 
     return (
       <>
         <ContainerComponent style={containerStyles}>
+          {showScrollView &&
+            (useFastList ? (
+              <FastList
+                ref={this.setFlatListRef}
+                contentInsetAdjustmentBehavior="never"
+                keyboardDismissMode="on-drag"
+                contentInset={this.contentInset}
+                contentOffset={this.contentOffset}
+                insetBottom={Math.abs(this.contentInset.bottom) * -1}
+                insetTop={Math.abs(this.contentInset.top) * -1}
+                scrollTopValue={this.props.scrollY}
+                scrollIndicatorInsets={this.scrollIndicatorInsets}
+                insetTopValue={this.props.insetValue}
+                automaticallyAdjustContentInsets={false}
+                keyboardShouldPersistTaps="always"
+                renderRow={this.handleRenderRow}
+                containerHeight={containerHeight}
+                translateY={this.translateY}
+                scrollToOverflowEnabled
+                overScrollMode="always"
+                scrollTopValue={this.props.scrollY}
+                footerHeight={0}
+                // refreshControl={
+                //   <RefreshControl
+                //     refreshing={refreshing}
+                //     onRefresh={this.handleRefresh}
+                //     tintColor="white"
+                //   />
+                // }
+                headerHeight={0}
+                style={this.listStyle}
+                onScrollEnd={onEndReached}
+                isFastList
+                alwaysBounceVertical
+                renderEmpty={
+                  ListEmptyComponent ? this.renderListEmpty : undefined
+                }
+                rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
+                // sectionHeight={this.getTotalHeight}
+                sections={this.sectionCounts}
+                uniform
+              />
+            ) : (
+              <FlatList
+                ref={this.setFlatListRef}
+                data={this.sections}
+                // getItem={this.getItem}
+                directionalLockEnabled
+                nestedScrollEnabled
+                // getItemCount={this.getItemCount}
+                bounces
+                listKey={this.props.listKey}
+                // ListHeaderComponent={ListHeaderComponent}
+                ListEmptyComponent={
+                  ListEmptyComponent ? this.renderListEmpty : undefined
+                }
+                extraData={isFocused}
+                getItemLayout={this.getItemLayout}
+                keyboardShouldPersistTaps="always"
+                onScrollBeginDrag={this.onScrollBeginDrag}
+                scrollEventThrottle={scrollY ? 1 : undefined}
+                scrollIndicatorInsets={
+                  GalleryFilterListComponent.scrollIndicatorInsets
+                }
+                // refreshControl={
+                //   <RefreshControl
+                //     refreshing={networkStatus === NetworkStatus.refetch}
+                //     onRefresh={onRefresh}
+                //     tintColor="white"
+                //   />
+                // }
+                simultaneousHandlers={simultaneousHandlers}
+                ItemSeparatorComponent={ItemSeparatorComponent}
+                refreshing={networkStatus === NetworkStatus.refetch}
+                keyboardDismissMode="on-drag"
+                style={this.listStyle}
+                keyExtractor={this.keyExtractor}
+                contentInsetAdjustmentBehavior="automatic"
+                extraData={selectedIDs}
+                removeClippedSubviews={false}
+                contentInset={this.contentInset}
+                contentOffset={this.contentOffset}
+                overScrollMode="always"
+                // stickyHeaderIndices={
+                //   ListHeaderComponent
+                //     ? GalleryFilterListComponent.stickerHeaderIndices
+                //     : undefined
+                // }
+                alwaysBounceVertical
+                scrollToOverflowEnabled
+                renderItem={this._handleRenderRow}
+                onEndReached={
+                  networkStatus === NetworkStatus.ready && hasNextPage
+                    ? onEndReached
+                    : undefined
+                }
+                onEndReachedThreshold={0.75}
+              />
+            ))}
+
           {ListHeaderComponent && isModal && (
             <Animated.View
               style={{
                 height: headerHeight,
-                width: 1,
+                width: "100%",
+                zIndex: 999,
+                top: 0,
+                left: 0,
+                right: 0,
+                position: "absolute",
                 transform: [
                   { translateY: Animated.multiply(this.translateY, -1) }
                 ]
@@ -355,92 +535,6 @@ class GalleryFilterListComponent extends React.Component<Props> {
               <ListHeaderComponent />
             </Animated.View>
           )}
-
-          <FastList
-            // contentInset={this.contentInset}
-            // contentOffset={this.contentOffset}
-            insetTop={0}
-            contentInsetAdjustmentBehavior="none"
-            renderRow={this.handleRenderRow}
-            // scrollTopValue={this.props.scrollY}
-            footerHeight={0}
-            // refreshControl={
-            //   <RefreshControl
-            //     refreshing={refreshing}
-            //     onRefresh={this.handleRefresh}
-            //     tintColor="white"
-            //   />
-            // }
-            headerHeight={headerHeight}
-            style={this.listStyle}
-            insetBottom={inset}
-            onScrollEnd={onEndReached}
-            footerHeight={0}
-            rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
-            // sectionHeight={this.getTotalHeight}
-            sections={this.sectionCounts}
-            renderSection={this.renderSection}
-            uniform
-          />
-
-          {/* <FlatList
-            ref={this.setFlatListRef}
-            data={data}
-            directionalLockEnabled
-            nestedScrollEnabled
-            bounces
-            listKey={this.props.listKey}
-            // ListHeaderComponent={ListHeaderComponent}
-            ListEmptyComponent={
-              ListEmptyComponent ? this.renderListEmpty : undefined
-            }
-            extraData={isFocused}
-            getItemLayout={this.getItemLayout}
-            keyboardShouldPersistTaps="always"
-            onScroll={scrollY ? this.handleScroll : undefined}
-            onScrollBeginDrag={this.onScrollBeginDrag}
-            scrollEventThrottle={scrollY ? 1 : undefined}
-            scrollIndicatorInsets={
-              GalleryFilterListComponent.scrollIndicatorInsets
-            }
-            // refreshControl={
-            //   <RefreshControl
-            //     refreshing={networkStatus === NetworkStatus.refetch}
-            //     onRefresh={onRefresh}
-            //     tintColor="white"
-            //   />
-            // }
-            simultaneousHandlers={simultaneousHandlers}
-            ItemSeparatorComponent={ItemSeparatorComponent}
-            refreshing={networkStatus === NetworkStatus.refetch}
-            keyboardDismissMode="on-drag"
-            style={this.listStyle}
-            keyExtractor={this.keyExtractor}
-            contentInsetAdjustmentBehavior="automatic"
-            extraData={selectedIDs}
-            removeClippedSubviews={false}
-            contentInset={this.contentInset}
-            contentOffset={this.contentOffset}
-            overScrollMode="always"
-            // stickyHeaderIndices={
-            //   ListHeaderComponent
-            //     ? GalleryFilterListComponent.stickerHeaderIndices
-            //     : undefined
-            // }
-            alwaysBounceVertical
-            numColumns={numColumns}
-            columnWrapperStyle={
-              numColumns === 4 ? styles.fourColumn : styles.column
-            }
-            scrollToOverflowEnabled
-            renderItem={this.renderColumn}
-            onEndReached={
-              networkStatus === NetworkStatus.ready && hasNextPage
-                ? onEndReached
-                : undefined
-            }
-            onEndReachedThreshold={0.75}
-          /> */}
         </ContainerComponent>
 
         {ListHeaderComponent && !isModal && (
@@ -483,24 +577,46 @@ class GalleryFilterListComponent extends React.Component<Props> {
   }
 }
 
-const _buildValue = memoize(image => ({
-  image,
-  id: image.id
-}));
+const _buildValue = memoize(
+  image => ({
+    image,
+    id: `${image.id}-cell`
+  }),
+  {
+    max: 1000
+  }
+);
 
 const buildValue = (data: Array<YeetImageContainer> = []) => {
   return (data || []).map(_buildValue);
 };
 
-const postToCell = memoize(post => {
-  const { media, id } = post;
+const postToCell = memoize(
+  post => {
+    const {
+      media: { width, height, previewUrl, coverUrl, url, duration, mimeType },
+      id
+    } = post;
 
-  return {
-    image: imageContainerFromMediaSource(media, null),
-    post,
-    id
-  };
-});
+    const _id = `${id}-cell`;
+
+    return {
+      mediaSource: registrations[_id]
+        ? { id: _id }
+        : {
+            width,
+            height,
+            duration,
+            mimeType,
+            id: _id,
+            url: coverUrl ?? previewUrl ?? url
+          },
+      post,
+      id
+    };
+  },
+  { max: 500 }
+);
 
 const buildPostValue = (data: Array<PostSearchQuery_searchPosts_data> = []) => {
   console.time("Create values");
@@ -757,11 +873,13 @@ export const GIFsFilterList = ({
     if (isFocused && typeof loadGifs === "function") {
       loadGifs();
     }
+  }, [loadGifs, isFocused, insetValue, _inset]);
 
+  React.useEffect(() => {
     if (isFocused && insetValue) {
       insetValue.setValue(_inset);
     }
-  }, [loadGifs, isFocused, insetValue, _inset]);
+  }, [insetValue, _inset, isFocused]);
 
   const changeQuery = React.useCallback(
     // function
@@ -898,11 +1016,13 @@ export const MemesFilterList = ({
   const [filter, onChangeFilter] = React.useState(MemeFilterType.spicy);
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
   const isHeaderSticky = query.length > 0 || isKeyboardVisible;
+  const lastContentOffset = React.useRef({ y: otherProps.offset || 0, x: 0 });
 
   const [loadMemes, memesQuery] = useLazyQuery<
     PostSearchQuery,
     PostSearchQueryVariables
   >(POST_SEARCH_QUERY, {
+    fetchPolicy: "cache-and-network",
     variables: {
       query,
       limit: getInitialLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT),
@@ -915,8 +1035,9 @@ export const MemesFilterList = ({
   React.useEffect(() => {
     if (isFocused && typeof loadMemes === "function") {
       loadMemes();
+      lastContentOffset.current = { y: otherProps.offset || 0, x: 0 };
     }
-  }, [loadMemes, isFocused]);
+  }, [loadMemes, isFocused, otherProps?.offset]);
 
   React.useEffect(() => {
     if (isFocused && insetValue) {
@@ -976,44 +1097,69 @@ export const MemesFilterList = ({
     return buildPostValue(memesQuery?.data?.searchPosts?.data);
   }, [memesQuery?.data, memesQuery?.networkStatus]);
 
-  const handleEndReached = React.useCallback(() => {
-    const { networkStatus, loading } = memesQuery;
-    console.time("Fetch More");
-    if (loading === true) {
-      return;
-    }
-    if (
-      !(
-        (memesQuery?.data?.searchPosts?.hasMore ?? false) &&
-        networkStatus !== NetworkStatus.fetchMore &&
-        typeof memesQuery?.fetchMore === "function"
-      )
-    ) {
-      return;
-    }
-    return memesQuery.fetchMore({
-      variables: {
-        query,
-        offset:
-          memesQuery?.data?.searchPosts?.offset +
-          memesQuery?.data?.searchPosts?.limit,
-        limit: getPaginatedLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT)
-      },
-      updateQuery: (previousResult, { fetchMoreResult }) => {
-        const queryUPdate = {
-          ...fetchMoreResult,
-          searchPosts: {
-            ...fetchMoreResult.searchPosts,
-            data: previousResult.searchPosts.data.concat(
-              fetchMoreResult.searchPosts.data
-            )
-          }
-        };
-        console.timeEnd("Fetch More");
-        return queryUPdate;
+  const handleEndReached = React.useCallback(
+    args => {
+      const { networkStatus, loading } = memesQuery;
+      console.time("Fetch More");
+      if (loading === true) {
+        return;
       }
-    });
-  }, [memesQuery?.networkStatus, memesQuery?.fetchMore, memesQuery?.data]);
+
+      const { contentOffset, targetContentOffset } = args?.nativeEvent ?? {};
+      if (contentOffset) {
+        if (targetContentOffset && targetContentOffset.y < contentOffset.y) {
+          return;
+        } else if (
+          lastContentOffset.current.y > contentOffset.y &&
+          contentOffset.y > 1
+        ) {
+          return;
+        }
+        lastContentOffset.current = contentOffset;
+      }
+
+      if (
+        !(
+          (memesQuery?.data?.searchPosts?.hasMore ?? false) &&
+          networkStatus !== NetworkStatus.fetchMore &&
+          typeof memesQuery?.fetchMore === "function"
+        )
+      ) {
+        return;
+      }
+
+      const offset =
+        memesQuery?.data?.searchPosts?.offset +
+        memesQuery?.data?.searchPosts?.limit;
+
+      const limit = getPaginatedLimit(MEMES_COLUMN_COUNT, MEMES_ITEM_HEIGHT);
+
+      return memesQuery.fetchMore({
+        variables: {
+          query,
+          offset,
+          limit
+        },
+        updateQuery: (previousResult, { fetchMoreResult }) => {
+          const queryUPdate = {
+            ...fetchMoreResult,
+            searchPosts: {
+              ...fetchMoreResult.searchPosts,
+              data: uniqBy(
+                previousResult.searchPosts.data.concat(
+                  fetchMoreResult.searchPosts.data
+                ),
+                "id"
+              )
+            }
+          };
+          console.timeEnd("Fetch More");
+          return queryUPdate;
+        }
+      });
+    },
+    [memesQuery?.networkStatus, memesQuery?.fetchMore, memesQuery?.data]
+  );
 
   return (
     <ImageSearchContext.Provider value={imageSearchContext}>
@@ -1062,15 +1208,19 @@ export const CameraRollFilterList = ({
   defaultAssetType = "all",
   ...otherProps
 }) => {
+  const ref = React.useRef<GalleryFilterListComponent>(null);
   const [assetType, setAssetType] = React.useState(defaultAssetType);
+  const lastContentOffset = React.useRef({ y: otherProps.offset || 0, x: 0 });
 
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
 
+  let columnCount = 3;
   let height = SQUARE_ITEM_HEIGHT;
-  let width = SQUARE_ITEM_WIDTH;
+  let width = SQUARE_ITEM_HEIGHT;
 
   if (assetType === "videos") {
+    columnCount = 3;
     height = VERTICAL_ITEM_HEIGHT;
     width = VERTICAL_ITEM_WIDTH;
   }
@@ -1078,16 +1228,63 @@ export const CameraRollFilterList = ({
   const [loadPhotos, photosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
     variables: {
       assetType,
-      first: 33
+      width,
+      height,
+      contentMode: "aspectFill",
+      first: getPaginatedLimit(columnCount, height)
     },
     notifyOnNetworkStatusChange: true
   });
 
+  const isFirstLoad = React.useRef(false);
+
   React.useEffect(() => {
-    if (isFocused && typeof loadPhotos === "function") {
-      loadPhotos();
+    const sessionId = photosQuery?.data?.cameraRoll?.sessionId;
+
+    if (sessionId) {
+      return () => {
+        global.MediaPlayerViewManager?.stopAlbumSession(
+          photosQuery?.data?.cameraRoll?.sessionId
+        );
+      };
     }
-  }, [loadPhotos, isFocused, assetType]);
+  }, [photosQuery?.data?.cameraRoll?.sessionId]);
+
+  const _setAssetType = React.useCallback(
+    assetType => {
+      isFirstLoad.current = false;
+
+      ref.current.scrollTop(true);
+
+      setAssetType(assetType);
+
+      let columnCount = 3;
+      let height = SQUARE_ITEM_HEIGHT;
+      let width = SQUARE_ITEM_HEIGHT;
+
+      if (assetType === "videos") {
+        columnCount = 3;
+        height = VERTICAL_ITEM_HEIGHT;
+        width = VERTICAL_ITEM_WIDTH;
+      }
+
+      photosQuery?.refetch({
+        assetType,
+        width,
+        height,
+        contentMode: "aspectFill",
+        first: getPaginatedLimit(columnCount, height)
+      });
+    },
+    [setAssetType, photosQuery, ref]
+  );
+
+  React.useEffect(() => {
+    if (isFocused && typeof loadPhotos === "function" && !photosQuery?.called) {
+      loadPhotos();
+      lastContentOffset.current = { y: otherProps.offset || 0, x: 0 };
+    }
+  }, [loadPhotos, isFocused, otherProps?.offset]);
 
   const data: Array<GalleryValue> = React.useMemo(() => {
     const data = photosQuery?.data?.cameraRoll?.data ?? [];
@@ -1095,69 +1292,76 @@ export const CameraRollFilterList = ({
     return buildValue(data);
   }, [photosQuery?.data, photosQuery, photosQuery?.networkStatus]);
 
-  const handleEndReached = React.useCallback(() => {
-    const { networkStatus, loading } = photosQuery;
+  const handleEndReached = React.useCallback(
+    args => {
+      const { networkStatus, loading } = photosQuery;
 
-    if (loading === true) {
-      return;
-    }
-
-    if (
-      !(
-        (photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false) &&
-        networkStatus !== NetworkStatus.fetchMore &&
-        typeof photosQuery?.fetchMore === "function"
-      )
-    ) {
-      console.log(photosQuery);
-      return;
-    }
-
-    return photosQuery.fetchMore({
-      variables: {
-        after: photosQuery.data.cameraRoll.page_info.end_cursor,
-        assetType,
-        first: 42
-      },
-      updateQuery: (
-        previousResult,
-        { fetchMoreResult }: { fetchMoreResult }
-      ) => {
-        return {
-          ...fetchMoreResult,
-          cameraRoll: {
-            ...fetchMoreResult.cameraRoll,
-            data: previousResult.cameraRoll.data.concat(
-              fetchMoreResult.cameraRoll.data
-            )
-          }
-        };
+      if (loading === true) {
+        return;
       }
-    });
-  }, [
-    assetType,
-    photosQuery?.networkStatus,
-    photosQuery?.fetchMore,
-    photosQuery?.data,
-    photosQuery?.data?.cameraRoll?.page_info?.has_next_page,
-    photosQuery.data?.cameraRoll?.page_info?.end_cursor
-  ]);
 
-  React.useEffect(() => {
-    const data = photosQuery?.data?.cameraRoll?.data ?? [];
+      const { contentOffset, targetContentOffset } = args?.nativeEvent ?? {};
 
-    if (data.length > 0) {
-      MediaPlayer.startCaching(
-        data.map(image => galleryItemMediaSource(image, width, height)),
-        { width, height },
-        "cover"
-      );
-    }
-  }, [photosQuery?.data?.cameraRoll?.data]);
+      lastContentOffset.current = contentOffset;
+
+      if (
+        !(
+          (photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false) &&
+          networkStatus !== NetworkStatus.fetchMore &&
+          typeof photosQuery?.fetchMore === "function"
+        )
+      ) {
+        return;
+      }
+
+      let offset =
+        photosQuery?.data?.cameraRoll?.page_info?.offset +
+        photosQuery?.data?.cameraRoll?.page_info?.limit;
+
+      return photosQuery.fetchMore({
+        variables: {
+          // after: photosQuery.data.cameraRoll.page_info.end_cursor,
+          offset: offset,
+          assetType,
+          width,
+          height,
+          cache: true,
+          first: getPaginatedLimit(columnCount, height)
+        },
+        updateQuery: (
+          previousResult,
+          { fetchMoreResult }: { fetchMoreResult }
+        ) => {
+          return {
+            ...fetchMoreResult,
+            cameraRoll: {
+              ...fetchMoreResult.cameraRoll,
+              data: previousResult.cameraRoll.data.concat(
+                fetchMoreResult.cameraRoll.data
+              )
+            }
+          };
+        }
+      });
+    },
+    [
+      assetType,
+      photosQuery?.networkStatus,
+      photosQuery?.fetchMore,
+      photosQuery?.data,
+      width,
+      height,
+      columnCount,
+      getPaginatedLimit,
+      photosQuery?.data?.cameraRoll?.page_info?.has_next_page,
+      photosQuery.data?.cameraRoll?.page_info?.end_cursor,
+      photosQuery.data?.cameraRoll?.page_info?.offset
+    ]
+  );
 
   React.useEffect(() => {
     return () => {
-      MediaPlayer.stopCachingAll();
+      window.requestIdleCallback(() => MediaPlayer.stopCachingAll());
     };
   }, []);
 
@@ -1168,9 +1372,11 @@ export const CameraRollFilterList = ({
         data={data}
         onRefresh={photosQuery?.refetch}
         isFocused={isFocused}
+        ref={ref}
         listKey={assetType}
         offset={offset}
         scrollY={scrollY}
+        numColumns={columnCount}
         itemHeight={height}
         itemWidth={width}
         isModal={isModal}
@@ -1184,7 +1390,7 @@ export const CameraRollFilterList = ({
       <CameraRollAssetTypeSwitcher
         isModal={isModal}
         assetType={assetType}
-        setAssetType={setAssetType}
+        setAssetType={_setAssetType}
       />
     </View>
   );

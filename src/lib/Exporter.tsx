@@ -618,9 +618,12 @@ const convertExportedNode = (
     fontStyle = "normal"
   } = block.config?.overrides ?? {};
 
+  let isBottomCentered = block.id.toLowerCase() === "bottom-text";
+  let isTopCentered = block.id.toLowerCase() === "top-text";
+
   let canAutoCenter = true;
 
-  if (isFinite(maxWidth)) {
+  if (isFinite(maxWidth) && !(isTopCentered || isBottomCentered)) {
     if (maxWidth >= size.width) {
       let maxWidthOffset = maxWidth - size.width;
       x = x - maxWidthOffset / 2;
@@ -633,8 +636,6 @@ const convertExportedNode = (
   let minY = relativeBlock?.frame?.y ?? 0;
 
   let verticalAlign = isFixedSize ? "top" : "bottom";
-  let isBottomCentered = block.id.toLowerCase() === "bottom-text";
-  let isTopCentered = block.id.toLowerCase() === "top-text";
 
   let horizontalAlign;
 
@@ -689,9 +690,19 @@ const convertExportedNode = (
     verticalAlign === "top" &&
     canAutoCenter
   ) {
-    y = yPadding + inset + getFontSize(block);
+    y = Math.max(
+      Math.min(
+        y - (relativeRect?.top ?? 0) - yPadding - inset,
+        size.height - yPadding - inset
+      ),
+      0
+    );
   } else if (!hasExactHeight && isFixedSize && verticalAlign === "top") {
-    y = Math.max(minY, yPadding, Math.min(y - inset, size.height - yPadding));
+    y = Math.max(
+      minY,
+      yPadding,
+      Math.min(y - yPadding - inset, size.height - yPadding)
+    );
   } else if (hasExactHeight && verticalAlign === "top") {
     y = Math.max(
       yPadding - inset,
@@ -725,11 +736,14 @@ const convertExportedNode = (
   console.log({
     y,
     x,
+    minY,
     bottomY,
+    relativeRect,
     yPercent,
-    relativeSize,
     verticalAlign,
-    horizontalAlign
+    yPadding,
+    horizontalAlign,
+    canAutoCenter
   });
   return [
     block.id,

@@ -14,11 +14,14 @@ import { Cancelable } from "lodash";
 export class AnimatedKeyboardTracker extends React.Component {
   constructor(props) {
     super(props);
+  }
 
-    if (props.enabled) {
+  componentDidMount() {
+    if (this.props.enabled) {
       this.subscribeToKeyboard();
     }
   }
+
   static defaultProps = {
     keyboardVisibleValue: null,
     keyboardHeightValue: null,
@@ -133,13 +136,6 @@ export class AnimatedKeyboardTracker extends React.Component {
     );
     this.props.onKeyboardShow && this.props.onKeyboardShow(event);
   };
-
-  componentWillMount() {
-    if (this.animationFrame > -1) {
-      window.cancelAnimationFrame(this.animationFrame);
-      this.animationFrame = -1;
-    }
-  }
 
   animationFrame = -1;
 

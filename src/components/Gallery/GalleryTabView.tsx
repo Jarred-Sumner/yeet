@@ -17,9 +17,16 @@ import { GallerySectionList } from "./GallerySectionList";
 import { GalleryHeader } from "./GalleryHeader";
 import Animated from "react-native-reanimated";
 import { PanGestureHandler, FlatList } from "react-native-gesture-handler";
+import { SCREEN_DIMENSIONS } from "../../../config";
+import { cloneDeep } from "lodash";
 
 const styles = StyleSheet.create({
   sceneContainer: {
+    overflow: "visible",
+    flex: 1
+  },
+  modalSceneContainer: {
+    backgroundColor: "black",
     overflow: "visible",
     flex: 1
   },
@@ -28,7 +35,16 @@ const styles = StyleSheet.create({
   }
 });
 
-const ROUTE_LIST = FILTERS.map(filter => {
+export const ROUTE_LIST = FILTERS.map(filter => {
+  return {
+    key: filter.value || "all",
+    title: filter.label
+  };
+});
+
+export const SHEET_ROUTES_LIST = FILTERS.filter(
+  ({ value }) => value !== GallerySectionItem.memes
+).map(filter => {
   return {
     key: filter.value || "all",
     title: filter.label
@@ -42,10 +58,10 @@ class GalleryTabViewComponent extends React.Component {
     this.state = {
       navigationState: {
         index: Math.max(
-          ROUTE_LIST.findIndex(({ key }) => key === props.initialRoute),
+          props.routes.findIndex(({ key }) => key === props.initialRoute),
           0
         ),
-        routes: ROUTE_LIST
+        routes: cloneDeep(props.routes)
       },
       query: ""
     };
@@ -53,13 +69,19 @@ class GalleryTabViewComponent extends React.Component {
     this.position = new Animated.Value<number>(
       this.state.navigationState.index
     );
-    this.initialLayout = { width: this.props.width, height: this.props.height };
+    this.initialLayout = {
+      width: this.props.width,
+      height: this.props.height
+    };
   }
 
   static defaultProps = {
     initialRoute: "all",
+    routes: ROUTE_LIST,
     tabBarPosition: "top",
     inset: 0,
+    width: SCREEN_DIMENSIONS.width,
+    height: 0,
     bottomInset: 0,
     offset: 0
   };
@@ -69,7 +91,9 @@ class GalleryTabViewComponent extends React.Component {
       this.setState({
         navigationState: {
           index: Math.max(
-            ROUTE_LIST.findIndex(({ key }) => key === this.props.initialRoute),
+            this.state.navigationState.routes.findIndex(
+              ({ key }) => key === this.props.initialRoute
+            ),
             0
           ),
           routes: this.state.navigationState.routes
@@ -108,6 +132,7 @@ class GalleryTabViewComponent extends React.Component {
             flatListRef={this.searchListRef}
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
+            height={height}
             onPress={onPress}
             inset={this.props.inset}
             show={this.props.show}
@@ -132,6 +157,7 @@ class GalleryTabViewComponent extends React.Component {
             onPress={onPress}
             onChangeFilter={jumpTo}
             insetValue={this.props.insetValue}
+            height={height}
             offset={this.props.offset}
             bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
@@ -149,6 +175,7 @@ class GalleryTabViewComponent extends React.Component {
             flatListRef={this.cameraRollListRef}
             simultaneousHandlers={this.simultaneousHandlers}
             onChangeFilter={jumpTo}
+            height={height}
             onPress={onPress}
             selectedIDs={selectedIDs}
             bottomInset={this.props.bottomInset}
@@ -171,6 +198,7 @@ class GalleryTabViewComponent extends React.Component {
             bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
             isModal={this.props.isModal}
+            height={height}
             insetValue={this.props.insetValue}
             offset={this.props.offset}
             keyboardVisibleValue={keyboardVisibleValue}
@@ -194,6 +222,7 @@ class GalleryTabViewComponent extends React.Component {
       query={this.state.query}
       showHeader={this.props.showHeader}
       filter={props.navigationState.routes[0].key}
+      tabs={this.props.routes}
       scrollY={this.props.scrollY}
       keyboardVisibleValue={this.props.keyboardVisibleValue}
       position={this.position}
@@ -232,7 +261,11 @@ class GalleryTabViewComponent extends React.Component {
             this.cameraRollListRef
           ]
         }}
-        sceneContainerStyle={styles.sceneContainer}
+        sceneContainerStyle={
+          this.props.isModal
+            ? styles.modalSceneContainer
+            : styles.sceneContainer
+        }
         style={this.containerStyle}
         renderTabBar={this.renderTabBar}
         onIndexChange={this.onIndexChange}
@@ -245,5 +278,7 @@ class GalleryTabViewComponent extends React.Component {
 }
 
 export const GalleryTabView = React.memo(GalleryTabViewComponent);
+
+GalleryTabView.defaultProps = GalleryTabViewComponent.defaultProps;
 
 export default GalleryTabView;

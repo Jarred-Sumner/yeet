@@ -9,6 +9,7 @@
 import Foundation
 import Vision
 import SwiftyBeaver
+import Firebase
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
   @objc static func enable() {
@@ -20,6 +21,10 @@ import SwiftyBeaver
     #else
       SwiftyBeaver.addDestination(ConsoleDestination())
     #endif
+
+//    Firebase
+//    [FIRPerformance sharedInstance].dataCollectionEnabled = false;
+//    [FIRPerformance sharedInstance].instrumentationEnabled = false;
 
     let titleTextAttributes = [NSAttributedString.Key.foregroundColor: UIColor.white, NSAttributedString.Key.font: UIFont(name: "Inter", size: 18)]
     UISegmentedControl.appearance().setTitleTextAttributes(titleTextAttributes, for: .normal)

@@ -19,6 +19,7 @@ export class RecentlyUsedContent extends Model {
   @date("created_at") createdAt;
   @date("updated_at") updatedAt;
   @field("username") username;
+  @field("contentType") contentType;
   @field("profile_id") profileId;
   @json("blocks", identity) blocks;
   @json("asset", identity) asset;
@@ -62,7 +63,14 @@ export class RecentlyUsedContent extends Model {
       height: post.bounds?.height,
       x: post.bounds?.x,
       y: post.bounds?.y,
-      examples: post.examples
+      contentType: RecentlyUsedContentType.post,
+      examples: post.examples,
+
+      previewUri: post.media.coverUrl ?? post.media.previewUrl,
+      previewWidth: post.media.width,
+      previewHeight: post.media.height,
+      previewDuration: post.media.duration,
+      previewMimeType: post.media.mimeType
     };
   }
 
@@ -76,6 +84,7 @@ export class RecentlyUsedContent extends Model {
       imageHeight: container.image.height,
       imageDuration: container.image.duration,
       imageMimeType: container.image.mimeType,
+      contentType: RecentlyUsedContentType.image,
       previewUri: container.preview?.uri,
       previewWidth: container.preview?.width,
       previewHeight: container.preview?.height,
@@ -154,20 +163,47 @@ export class RecentlyUsedContent extends Model {
       assets: asset,
       nodes,
       bounds: { width, height, x, y, __typename: "Rectangle" },
-      examples
+      examples,
+      media: this.mediaSource
+    };
+  }
+
+  get mediaSource() {
+    return {
+      previewUrl: this.previewUri,
+      width: this.previewWidth,
+      height: this.previewHeight,
+      duration: this.previewDuration,
+      mimeType: this.previewMimeType
     };
   }
 
   get isPost() {
-    return this.blocks || this.nodes;
+    return this.contentType === RecentlyUsedContentType.post;
   }
 
   get graphql() {
-    return {
-      id: this.uid,
-      post: this.isPost ? this.asPost : null,
-      image: this.yeetImageContainer,
-      __typename: "RecentlyUsedContent"
-    };
+    if (this.isPost) {
+      return {
+        id: this.uid,
+        post: this.asPost,
+        mediaSource: this.mediaSource,
+        image: null,
+        __typename: "RecentlyUsedContent"
+      };
+    } else {
+      return {
+        id: this.uid,
+        post: null,
+        mediaSource: null,
+        image: this.yeetImageContainer,
+        __typename: "RecentlyUsedContent"
+      };
+    }
   }
+}
+
+export enum RecentlyUsedContentType {
+  post = "post",
+  image = "image"
 }

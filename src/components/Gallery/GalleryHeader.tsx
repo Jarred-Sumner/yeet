@@ -71,6 +71,7 @@ export const GalleryHeader = ({
   jumpTo,
   filterBarInset = 50,
   showHeader,
+  tabs = [],
   scrollY,
   navigationState: { index, routes },
   ...otherProps
@@ -81,10 +82,13 @@ export const GalleryHeader = ({
 
   const { top, bottom } = React.useContext(SafeAreaContext);
 
+  const tabKeys = React.useMemo(() => tabs.map(({ key }) => key), [tabs]);
+
   const content = (
     <View ref={viewRef}>
       <FilterBar
         value={routes[index].key}
+        tabs={tabKeys}
         onChange={jumpTo}
         light={!showHeader}
         scrollY={scrollY}

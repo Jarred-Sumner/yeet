@@ -3,6 +3,7 @@ import { InMemoryCache } from "apollo-cache-inmemory";
 import { CachePersistor, persistCache } from "apollo-cache-persist";
 import { ApolloClient } from "apollo-client";
 import { BatchHttpLink } from "apollo-link-batch-http";
+import { RetryLink } from "apollo-link-retry";
 import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
 
@@ -28,6 +29,18 @@ const customFetch = (uri, options) => {
     return response;
   });
 };
+
+const retryLink = new RetryLink({
+  delay: {
+    initial: 300,
+    max: Infinity,
+    jitter: true
+  },
+  attempts: {
+    max: 5,
+    retryIf: (error, _operation) => !!error
+  }
+});
 
 const errorLink = onError(({ graphQLErrors, networkError }) => {
   if (graphQLErrors) {
@@ -88,8 +101,8 @@ const cache = new InMemoryCache({
 
   cacheRedirects: {
     Query: {
-      post: (_, args) =>
-        toIdValue(dataIdFromObject({ __typename: "Post", id: args.id }))
+      // post: (_, args) =>
+      //   toIdValue(dataIdFromObject({ __typename: "Post", id: args.id }))
       // profile: (_, args) =>
       //   toIdValue(dataIdFromObject({ __typename: "Profile", id: args.id }))
     }
@@ -97,7 +110,10 @@ const cache = new InMemoryCache({
 });
 
 const client = new ApolloClient({
-  link: authLink.concat(httpLink).concat(errorLink),
+  link: authLink
+    .concat(httpLink)
+    .concat(errorLink)
+    .concat(retryLink),
   cache,
   defaultOptions: {
     watchQuery: {

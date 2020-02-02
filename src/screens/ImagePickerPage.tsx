@@ -108,7 +108,6 @@ class RawImagePickerPage extends React.Component {
       onChange(this.props.navigation.getParam("blockId"), photo, post);
       this.goBack(true);
     } else {
-      console.log(photo);
       this.props.navigation.navigate("NewPost", {
         image: cloneDeep(photo),
         blockId: this.state.blockId,

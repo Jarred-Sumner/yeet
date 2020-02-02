@@ -28,8 +28,14 @@ export const isSameSize = (a: BoundsRect, b: BoundsRect) => {
 
 export const isTapInside = (
   rect: BoundsRect,
-  { x, y }: { x: number; y: number }
+  point: { x: number; y: number }
 ) => {
+  if (!rect || !point) {
+    return false;
+  }
+
+  const { x, y } = point;
+
   return isPointInside(x, y, rect.x, rect.y, rect.width, rect.height);
 };
 

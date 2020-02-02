@@ -50,6 +50,9 @@ export type MediaPlayerProps = {
   autoPlay: boolean;
   sources: Array<MediaSource>;
   borderRadius?: number;
+  mediaSource?: MediaSource;
+  opaque: boolean;
+  thumbnail: boolean;
   onError: ReactEventHandler<StatusEventData>;
   isActive: boolean;
   style: StyleProp<any>;
@@ -67,36 +70,38 @@ export type MediaPlayerProps = {
   onChangeItem?: ReactEventHandler<StatusEventData>;
 };
 
-const _clean = (
-  sources: Array<Partial<MediaSource | null>>
-): Array<MediaSource> => {
-  return sources
-    .filter(source => {
-      if (!source || typeof source !== "object") {
-        return false;
-      }
+const __clean = (source: Partial<MediaSource | null>) => {
+  if (!source) {
+    return null;
+  }
 
-      return source.url && source.width && source.height;
-    })
-    .map(source => {
-      const cover = [source.cover, source.coverUrl].find(Boolean);
-      if (typeof source.id === "string" && registrations[source.id]) {
-        return { id: source.id };
-      }
+  const useCached =
+    typeof source.id === "string" &&
+    global.MediaPlayerViewManager?.isCached(source.id);
 
-      return {
-        ...source,
-        playDuration: source.playDuration || 0,
-        cover: typeof cover === "string" ? cover : undefined,
-        duration: source.duration || 0,
-        pixelRatio: source.pixelRatio || 1.0,
-        width: source.width || 0,
-        height: source.height || 0
-      };
-    });
+  if (useCached) {
+    return { id: source.id };
+  }
+
+  const cover = source.cover || source.coverUrl;
+
+  return {
+    id: source.id || source.url,
+    ...source,
+    playDuration: source.playDuration || 0,
+    cover: typeof cover === "string" ? cover : undefined,
+    duration: source.duration || 0,
+    pixelRatio: source.pixelRatio || 1.0,
+    width: source.width || 0,
+    height: source.height || 0
+  };
 };
 
-const clean = memoizee(_clean);
+const cleanMany = memoizee(sources => sources.map(__clean).filter(Boolean));
+const cleanOne = memoizee(sources => [__clean(sources)]);
+
+const clean = sources =>
+  sources?.length === 1 ? cleanOne(sources[0]) : cleanMany(sources);
 
 export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   static defaultProps = {
@@ -104,7 +109,9 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     paused: false,
     prefetch: false,
     muted: false,
+    thumbnail: false,
     isActive: true,
+    mediaSource: null,
     pauseUnUnmount: false,
     sources: []
   };
@@ -118,11 +125,11 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   static NativeModule = NativeModules["MediaPlayerViewManager"];
 
   static batchPlay(tag: number, ids: Array<string>) {
-    return MediaPlayerComponent.NativeModule?.batchPlay(tag, ids);
+    return global.MediaPlayerViewManager?.batchPlay(tag, ids);
   }
 
   static batchPause(tag: number, ids: Array<string>) {
-    return MediaPlayerComponent.NativeModule?.batchPause(tag, ids);
+    return global.MediaPlayerViewManager?.batchPause(tag, ids);
   }
 
   static startCaching(
@@ -132,11 +139,17 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   ) {
     const _mediaSources = clean(mediaSources);
 
-    MediaPlayerComponent.NativeModule?.startCachingMediaSources(
+    global.MediaPlayerViewManager?.startCaching(
       _mediaSources,
       size,
       contentMode
     );
+
+    // MediaPlayerComponent.NativeModule?.startCachingMediaSources(
+    //   _mediaSources,
+    //   size,
+    //   contentMode
+    // );
   }
 
   static stopCaching(
@@ -146,15 +159,17 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   ) {
     const _mediaSources = clean(mediaSources);
 
-    MediaPlayerComponent.NativeModule?.startCachingMediaSources(
-      _mediaSources,
-      size,
-      contentMode
-    );
+    // MediaPlayerComponent.NativeModule?.startCachingMediaSources(
+    //   _mediaSources,
+    //   size,
+    //   contentMode
+    // );
   }
 
   static stopCachingAll() {
-    MediaPlayerComponent.NativeModule?.stopCachingAll();
+    return global.MediaPlayerViewManager?.stopCaching();
+
+    // MediaPlayerComponent.NativeModule?.stopCachingAll();
   }
 
   componentWillUnmount() {
@@ -175,11 +190,13 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   };
 
   play = () => {
-    this.callNativeMethod("play");
+    return global.MediaPlayerViewManager?.play(this.nativeNode);
+    // this.callNativeMethod("play");
   };
 
   pause = () => {
-    this.callNativeMethod("pause");
+    // this.callNativeMethod("pause");
+    return global.MediaPlayerViewManager?.pause(this.nativeNode);
   };
 
   save = () => {
@@ -289,7 +306,7 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     this.nativeRef.current?.setNativeProps(nativeProps);
   };
 
-  shouldComponentUpdate(nextProps) {
+  shouldComponentUpdate(nextProps: Props) {
     const {
       paused,
       sources,
@@ -304,7 +321,11 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       resizeMode,
       isActive,
       containerTag,
+      id,
+      opaque,
       muted,
+      thumbnail,
+      mediaSource,
       onPlay,
       onPause,
       onEditVideo
@@ -325,20 +346,18 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       isActive !== nextProps.isActive ||
       prefetch != nextProps.prefetch ||
       containerTag != nextProps.containerTag ||
+      thumbnail !== nextProps.thumbnail ||
       resizeMode !== nextProps.resizeMode ||
-      onEditVideo !== nextProps.onEditVideo
+      onEditVideo !== nextProps.onEditVideo ||
+      mediaSource !== nextProps.mediaSource ||
+      clean(sources) !== clean(nextProps.sources) ||
+      opaque !== nextProps.opaque ||
+      id !== nextProps.id
     ) {
       return true;
+    } else {
+      return false;
     }
-
-    const currentSourceIDs = sources
-      .map(({ id, url }) => [id, url].join(""))
-      .join("-");
-    const newSourceIDs = nextProps.sources
-      .map(({ id, url }) => [id, url].join(""))
-      .join("-");
-
-    return currentSourceIDs !== newSourceIDs;
   }
 
   handleError = event => {
@@ -378,7 +397,10 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       muted,
       containerTag,
       resizeMode,
+      mediaSource,
+      thumbnail,
       onError,
+      opaque,
       onEditVideo,
       onChangeItem
     } = this.props;
@@ -389,20 +411,24 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
         sources={clean(sources)}
         onEnd={onEnd}
         id={id}
+        thumbnail={thumbnail}
         containerTag={containerTag}
         nativeID={id}
         borderRadius={borderRadius}
         isActive={isActive}
         allowSkeleton
         onEditVideo={onEditVideo}
+        opaque={opaque}
         prefetch={prefetch}
         onProgress={onProgress}
         muted={muted}
         onPlay={onPlay}
         resizeMode={resizeMode}
         onPause={onPause}
-        onLoad={this.handleLoad}
-        onError={this.handleError}
+        onLoad={onLoad}
+        onError={onError}
+        // onLoad={this.handleLoad}
+        // onError={this.handleError}
         onChangeItem={onChangeItem}
         autoPlay={autoPlay}
         paused={paused}

@@ -53,8 +53,6 @@ export const FILTERS = [
 
 const count = FILTERS.length;
 
-export const FILTER_WIDTH = SCREEN_DIMENSIONS.width / count;
-
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
@@ -101,15 +99,18 @@ const styles = StyleSheet.create({
   row: {
     height: LIST_HEADER_HEIGHT,
 
-    width: FILTER_WIDTH,
     opacity: 0.65,
 
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center"
   },
+
+  rowWrapper: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
   indicator: {
-    width: FILTER_WIDTH,
     height: 3,
     borderRadius: 4,
     backgroundColor: "white",
@@ -133,30 +134,29 @@ export const ListHeaderRow = ({
   children,
   onPress,
   value,
+  size,
   inset
 }) => {
   const handlePress = React.useCallback(() => {
     onPress(value);
   }, [onPress, value]);
 
-  const width = { width: FILTER_WIDTH - inset / count };
-
   return (
     <RectButton
       onPress={handlePress}
       enabled={!isActive}
       style={
-        isActive ? [styles.row, styles.activeRow, width] : [styles.row, width]
+        isActive ? [styles.row, styles.activeRow, size] : [styles.row, size]
       }
       underlayColor={chroma(COLORS.primary)
         .alpha(0.5)
         .css()}
     >
-      <View>
+      <View style={[size, styles.rowWrapper]}>
         <SemiBoldText
           adjustsFontSizeToFit
           numberOfLines={1}
-          style={styles.headerText}
+          style={[styles.headerText, size]}
         >
           {children}
         </SemiBoldText>
@@ -170,14 +170,17 @@ export const FilterBar = ({
   onChange,
   value,
   light,
+  tabs,
   scrollY,
   inset,
   tabBarPosition
 }) => {
+  const width = (SCREEN_DIMENSIONS.width - inset) / tabs.length;
+  const count = tabs.length;
   const indicatorStyles = [
     styles.indicator,
     light && styles.lightIndicator,
-    inset > 0 && { width: FILTER_WIDTH - inset / count },
+    tabs.length === 3 ? { width } : { width },
     tabBarPosition === "bottom" && styles.bottomIndicator,
     tabBarPosition === "top" && styles.topIndicator,
     {
@@ -210,18 +213,19 @@ export const FilterBar = ({
           isActive={value === filter.value}
           inset={inset}
           value={filter.value}
+          size={{ width }}
         >
           {filter.label}
         </ListHeaderRow>
       );
     },
-    [onChange, value, inset]
+    [onChange, value, inset, tabs.length]
   );
 
   return (
     <Animated.View style={[light ? styles.lightContainer : styles.container]}>
       <View style={{ width: inset, height: 1 }} />
-      {FILTERS.map(renderFilter)}
+      {FILTERS.filter(({ value }) => tabs.includes(value)).map(renderFilter)}
       <Animated.View style={indicatorStyles} />
     </Animated.View>
   );

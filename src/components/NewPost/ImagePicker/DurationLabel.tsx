@@ -11,17 +11,16 @@ function formatSeconds(seconds) {
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 2,
-    backgroundColor: "#666",
-    paddingHorizontal: SPACING.half / 2,
-    paddingVertical: SPACING.half / 2,
     justifyContent: "center",
     alignItems: "center",
     textAlign: "center"
   },
   text: {
-    color: "#eee",
-    fontSize: 14
+    color: "#fff",
+    fontSize: 14,
+    textShadowColor: "black",
+
+    textShadowRadius: 1
   }
 });
 

@@ -16,6 +16,7 @@ enum MimeType: String {
   case webp = "image/webp"
   case jpg = "image/jpeg"
   case mp4 = "video/mp4"
+  case m4v = "video/x-m4v"
   case heic = "image/heic"
   case heif = "image/heif"
   case tiff = "image/tiff"
@@ -36,6 +37,7 @@ enum MimeType: String {
 
   func utiType() -> String {
     switch self {
+
     case .png:
       return "public.png"
     case .gif:
@@ -46,7 +48,8 @@ enum MimeType: String {
       return "public.jpeg"
     case .mp4:
       return "public.mpeg-4"
-
+    case .m4v:
+        return "public.mpeg-4"
     case .heic:
       return "public.heic"
 
@@ -96,6 +99,8 @@ enum MimeType: String {
       return "png"
     case .gif:
       return "gif"
+    case .m4v:
+      return "m4v"
     case .webp:
       return "webp"
     case .jpg:
@@ -126,6 +131,8 @@ enum MimeType: String {
   }
 
   static func fileExtension(_ ext: String) -> MimeType? {
+
+
       let fileExtension = ext as CFString
 
      guard

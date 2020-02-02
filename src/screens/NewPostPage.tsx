@@ -1,7 +1,12 @@
 import { flatten, fromPairs, isArray } from "lodash";
 import * as React from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
-import { useFocusState } from "react-navigation-hooks";
+import {
+  ActivityIndicator,
+  StyleSheet,
+  View,
+  LayoutAnimation
+} from "react-native";
+import { useFocusState, useNavigationParam } from "react-navigation-hooks";
 import { NewPost } from "../components/NewPost/NewPost";
 import {
   buildImageBlock,
@@ -25,15 +30,34 @@ import {
 import { PostFragment } from "../lib/graphql/PostFragment";
 import { getHighlightInset } from "../components/NewPost/Text/TextBlockUtils";
 import { scaleRectByFactor } from "../lib/Rect";
+import { useQuery } from "react-apollo";
+import LOAD_POST_QUERY from "../lib/LoadEditorPostQuery.graphql";
+import {
+  LoadEditorPostQuery,
+  LoadEditorPostQueryVariables
+} from "../lib/graphql/LoadEditorPostQuery";
+import { NetworkStatus } from "apollo-client";
+import { SPACING } from "../lib/styles";
+import { MediumText } from "../components/Text";
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
+    backgroundColor: "#000"
+  },
+  loadingWrapper: {
+    height: "100%",
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#ccc",
+    textAlign: "center"
   },
   spinner: {
-    marginTop: 150,
-    justifyContent: "center",
-    alignItems: "center",
+    marginBottom: SPACING.double,
     alignSelf: "center"
   }
 });
@@ -49,7 +73,22 @@ export class NewPostPage extends React.Component {
     const blockId = props.navigation.getParam("blockId");
 
     if (post) {
-      this.loadPost(post);
+      if (props.postQuery.networkStatus !== NetworkStatus.ready) {
+        this.state = {
+          defaultBlocks: undefined,
+          defaultPositions: {},
+          remixId: null,
+          defaultHeight: 0,
+          defaultWidth: POST_WIDTH,
+          examples: {},
+          thumbnail: null,
+          isLoading: true,
+          minX: 0,
+          minY: 0
+        };
+      } else {
+        this.loadPost(post);
+      }
     } else if (image) {
       const minWidth = minImageWidthByFormat(DEFAULT_POST_FORMAT);
 
@@ -71,7 +110,7 @@ export class NewPostPage extends React.Component {
         defaultHeight: imageBlock.config.dimensions.height,
         remixId: null,
         thumbnail: null,
-        isLoading: false,
+        isLoading: props.postQuery?.loading ?? false,
         minX: 0,
         minY: 0
       };
@@ -84,7 +123,7 @@ export class NewPostPage extends React.Component {
         defaultWidth: POST_WIDTH,
         examples: {},
         thumbnail: null,
-        isLoading: false,
+        isLoading: props.postQuery?.loading ?? false,
         minX: 0,
         minY: 0
       };
@@ -115,7 +154,7 @@ export class NewPostPage extends React.Component {
     }
   }
 
-  loadPost = post => {
+  loadPost = (post, isLate = false) => {
     const { userId } = this.props;
 
     let scaleFactor = POST_WIDTH / (post.bounds.width ?? post.media.width);
@@ -165,7 +204,7 @@ export class NewPostPage extends React.Component {
       defaultBlocks
     );
 
-    this.state = {
+    const changes = {
       remixId: post.id,
       defaultBlocks: fromPairs(
         flatten(defaultBlocks).map(block => [block.id, block])
@@ -189,14 +228,26 @@ export class NewPostPage extends React.Component {
       examples,
       isLoading: false
     };
+
+    if (isLate) {
+      this.setState(changes);
+    } else {
+      this.state = changes;
+    }
   };
 
-  componentDidUpdate(prevProps) {
-    if (
-      (this.props.isFocused || this.props.isFocusing) &&
-      !prevProps.isFocused
-    ) {
-      this.props.requireAuthentication();
+  componentDidUpdate(prevProps, prevState) {
+    const post = this.props.postQuery?.data?.post;
+    const isLoadingPost = this.props.postQuery?.loading;
+
+    const prevPost = prevProps.postQuery?.data?.post;
+
+    if (this.state.isLoading && post !== prevPost && post && !isLoadingPost) {
+      this.loadPost(post, true);
+    }
+
+    if (!this.state.isLoading && prevState.isLoading) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
     }
   }
 
@@ -204,7 +255,10 @@ export class NewPostPage extends React.Component {
     return (
       <View style={styles.container}>
         {this.state.isLoading ? (
-          <ActivityIndicator size="large" style={styles.spinner} />
+          <View style={styles.loadingWrapper}>
+            <ActivityIndicator size="large" style={styles.spinner} />
+            <MediumText style={styles.loadingText}>Loading post...</MediumText>
+          </View>
         ) : (
           <NewPost
             navigation={this.props.navigation}
@@ -231,7 +285,22 @@ export class NewPostPage extends React.Component {
 
 export default pageProps => {
   const userContext = React.useContext(UserContext);
+  const postParam = useNavigationParam("post");
   const { isFocused, isFocusing } = useFocusState();
+  const postId = postParam?.id;
+  const postQuery = useQuery<LoadEditorPostQuery, LoadEditorPostQueryVariables>(
+    LOAD_POST_QUERY,
+    {
+      skip: !postId,
+      returnPartialData: false,
+      fetchPolicy: "no-cache",
+      notifyOnNetworkStatusChange: true,
+
+      variables: {
+        id: postId
+      }
+    }
+  );
 
   return (
     <NewPostPage
@@ -239,6 +308,7 @@ export default pageProps => {
       requireAuthentication={userContext.requireAuthentication}
       authState={userContext.authState}
       userId={userContext.userId}
+      postQuery={postQuery}
       isFocused={isFocused}
       isFocusing={isFocusing}
     />

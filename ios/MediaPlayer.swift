@@ -34,6 +34,10 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
     let item = mediaSource.mediaSource
 
+    if (status == .loaded || status == .ready) {
+      MediaSource.cache.setObject(item, forKey: item.id as NSString)
+    }
+
     self.sendStatusUpdate(status: status, mediaSource: mediaSource)
 
 
@@ -78,6 +82,10 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   }
 
   var halted = false
+
+  func setNeedsSourceUpdate() {
+    needsSourceUpdate = true
+  }
 
 
 
@@ -153,6 +161,20 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
       if changedProps.contains("isActive") {
         self.handleChangeIsActive()
+      }
+
+      if changedProps.contains("id") {
+        setNeedsSourceUpdate()
+      }
+
+      if changedProps.contains("sources") || changedProps.contains("id") {
+         if hasContentView {
+           updateSubviewData()
+         } else {
+          RCTExecuteOnMainQueue { [weak self] in
+            self?.setNeedsLayout()
+          }
+        }
       }
     }
 
@@ -269,11 +291,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   var isInitialMount = true
 
 
-  @objc(id) var id: NSString? {
-    didSet(newValue) {
-
-    }
-  }
+  @objc(id) var id: NSString? = nil
 
   @objc(sources)
   var sources: Array<MediaSource>? {
@@ -292,7 +310,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         }
         source = TrackableMediaSource.source(first, bounds: bounds)
         source?.alwaysLoop = true
-
        
       } else {
         if let source = source as? TrackableVideoSource {
@@ -557,19 +574,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         videoView!.frame = reactContentFrame
       }
 
-      if let current = self.source as? TrackableVideoSource {
-        if !current.delegate.containsDelegate(videoView!) {
-          current.delegate.addDelegate(videoView!)
-        }
-
-        self.videoView?.mediaSource = current.mediaSource
-
-        if current.mediaSource.coverUri != nil && !current.canPlay {
-          self.videoView?.showCover = true
-        }
-      }
-
-      self.contentType = MediaPlayerContentType.video
+      updateSubviewData()
     } else if (shouldShowImageView) {
       if self.imageView == nil {
         let imageView = YeetImageView()
@@ -584,23 +589,46 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
       imageView.bounds = self.bounds
       imageView.frame = reactContentFrame
+      updateSubviewData()
+    }
 
-      let imageSource = source as! TrackableImageSource?
+//    self.isSkeletonable = allowSkeleton
+  }
 
-      if imageView.source != imageSource {
-        if paused && imageSource?.mediaSource.mimeType.isAnimatable() ?? false {
+  var needsSourceUpdate = false
+
+  func updateSubviewData() {
+    if let current = self.source as? TrackableVideoSource {
+      if !current.delegate.containsDelegate(videoView!) {
+        current.delegate.addDelegate(videoView!)
+      }
+
+      self.videoView?.mediaSource = current.mediaSource
+
+      if current.mediaSource.coverUri != nil && !current.canPlay {
+        self.videoView?.showCover = true
+      }
+
+      self.contentType = MediaPlayerContentType.video
+    } else if let imageSource = source as? TrackableImageSource {
+      guard let imageView = self.imageView else {
+        return
+      }
+
+      if imageView.source?.mediaSource.uri != source?.mediaSource.uri || needsSourceUpdate || imageView.loadStatus == .pending || imageView.loadStatus == .error {
+        if paused && imageSource.mediaSource.mimeType.isAnimatable() ?? false {
           imageView.isPlaybackPaused = true
         }
 
         imageView.source = imageSource
       }
 
+      imageView.isThumbnail = thumbnail
       imageView.resizeMode = self.resizeMode
-
       self.contentType = MediaPlayerContentType.image
     }
 
-//    self.isSkeletonable = allowSkeleton
+
   }
 
   required init(coder: NSCoder) {
@@ -916,6 +944,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   var hasAutoPlayed = false
 
   func sendStatusUpdate(status: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
+
     guard canSendEvents else {
       return
     }
@@ -965,10 +994,14 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     bridgeObserver?.invalidate()
     bridgeObserver = nil
     source?.delegate.removeDelegate(self)
-
-
+    imageView?.invalidate()
   }
 
+  @objc(thumbnail) var thumbnail = false {
+    didSet {
+      imageView?.deliveryMode = thumbnail ? .fastFormat : .opportunistic
+    }
+  }
 
   @objc(didMoveToWindow)
   override func didMoveToWindow() {

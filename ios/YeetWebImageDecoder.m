@@ -1,7 +1,9 @@
 
 #import "YeetWebImageDecoder.h"
 #include <WebP/decode.h>
+#ifdef __cplusplus
 #include "WebPDemux/demux.h"
+#endif
 #import <SDWebImageWebPCoder.h>
 #import "YeetAnimatedImage.h"
 

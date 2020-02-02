@@ -1,0 +1,168 @@
+{
+  "modules": {
+    "NativeMediaPlayerViewTurboModule": {
+      "nativeModules": {
+        "MediaPlayerViewTurboModule": {
+          "properties": [
+            {
+              "name": "greeting",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "StringTypeAnnotation"
+                },
+                "params": [],
+                "optional": false
+              }
+            },
+            {
+              "name": "getRandomNumber",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "NumberTypeAnnotation"
+                },
+                "params": [],
+                "optional": false
+              }
+            },
+            {
+              "name": "addItBy30",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "NumberTypeAnnotation"
+                },
+                "params": [
+                  {
+                    "nullable": false,
+                    "name": "num",
+                    "typeAnnotation": {
+                      "type": "NumberTypeAnnotation"
+                    }
+                  }
+                ],
+                "optional": false
+              }
+            },
+            {
+              "name": "isBiggerThan100",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "BooleanTypeAnnotation"
+                },
+                "params": [
+                  {
+                    "nullable": false,
+                    "name": "num",
+                    "typeAnnotation": {
+                      "type": "NumberTypeAnnotation"
+                    }
+                  }
+                ],
+                "optional": false
+              }
+            },
+            {
+              "name": "nativeReverse",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "ArrayTypeAnnotation",
+                  "elementType": {
+                    "type": "AnyTypeAnnotation"
+                  }
+                },
+                "params": [
+                  {
+                    "name": "array",
+                    "nullable": false,
+                    "typeAnnotation": {
+                      "type": "ArrayTypeAnnotation",
+                      "elementType": {
+                        "type": "AnyTypeAnnotation"
+                      }
+                    }
+                  }
+                ],
+                "optional": false
+              }
+            },
+            {
+              "name": "simulateCallback",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "nullable": false,
+                  "type": "VoidTypeAnnotation"
+                },
+                "params": [
+                  {
+                    "nullable": false,
+                    "name": "waitingSeconds",
+                    "typeAnnotation": {
+                      "type": "NumberTypeAnnotation"
+                    }
+                  },
+                  {
+                    "name": "callback",
+                    "nullable": false,
+                    "typeAnnotation": {
+                      "type": "FunctionTypeAnnotation"
+                    }
+                  }
+                ],
+                "optional": false
+              }
+            },
+            {
+              "name": "simulatePromise",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "type": "GenericPromiseTypeAnnotation",
+                  "nullable": false
+                },
+                "params": [
+                  {
+                    "nullable": false,
+                    "name": "error",
+                    "typeAnnotation": {
+                      "type": "BooleanTypeAnnotation"
+                    }
+                  },
+                  {
+                    "nullable": false,
+                    "name": "waitingSeconds",
+                    "typeAnnotation": {
+                      "type": "NumberTypeAnnotation"
+                    }
+                  }
+                ],
+                "optional": false
+              }
+            },
+            {
+              "name": "getDeviceInfo",
+              "typeAnnotation": {
+                "type": "FunctionTypeAnnotation",
+                "returnTypeAnnotation": {
+                  "type": "GenericObjectTypeAnnotation",
+                  "nullable": false
+                },
+                "params": [],
+                "optional": false
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
