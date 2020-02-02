@@ -930,5 +930,3 @@ export const getAllSnapPoints = (
 
   return Object.values(_points);
 };
-
-export const isTopAligned;

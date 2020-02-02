@@ -192,6 +192,8 @@ type State = {
   focusedBlockId: string | null;
   focusType: FocusType | null;
   showSnapGuide: boolean;
+  postTopY: number;
+  postBottomY: number;
   isSaving: boolean;
   bottomInset: number;
   snapPoint: SnapPoint | null;
@@ -204,6 +206,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
       focusedBlockId: null,
       focusType: null,
+      postTopY: 0,
+      postBottomY: 0,
       isSaving: false,
       bottomInset: 0,
       snapPoint: null,
@@ -407,7 +411,10 @@ class RawwPostEditor extends React.Component<Props, State> {
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
         x: SPACING.double,
-        y: 150
+        y:
+          this.state.postTopY > 0
+            ? (this.state.postBottomY - this.state.postTopY) / 2
+            : 100
       });
     } else if (activeButton === ToolbarButtonType.plus) {
       const options = ["Text", "Image", "Cancel"];
@@ -1108,7 +1115,8 @@ class RawwPostEditor extends React.Component<Props, State> {
     return node ? node.block : this.props.post.blocks[focusedBlockId];
   }
 
-  handleSetPostBottom = postBottomY => this.setState({ postBottomY });
+  handleSetPostBottom = ([postBottomY, postTopY]) =>
+    this.setState({ postBottomY, postTopY });
 
   get focusedNode() {
     const { focusedBlockId, focusType } = this.state;
@@ -1229,10 +1237,9 @@ class RawwPostEditor extends React.Component<Props, State> {
     [
       {
         nativeEvent: {
-          state: this.tapGestureState
-          // x: this.panX,
-          // y: this.panY,
-          // absoluteY: this.tapYAbsolute
+          state: this.tapGestureState,
+          x: this.panX,
+          y: this.panY
         }
       }
     ],
@@ -1250,10 +1257,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       : 0
   );
 
-  relativeKeyboardHeightValue = Animated.add(
-    this.keyboardHeightValue,
-    Animated.sub(Animated.or(this.props.scrollY, this.props.offsetY), 20)
-  );
+  relativeKeyboardHeightValue = new Animated.Value(0);
 
   scrollToTop = () =>
     this.scrollRef.current.getScrollResponder().scrollTo({
@@ -1420,6 +1424,14 @@ class RawwPostEditor extends React.Component<Props, State> {
                   )
                 ]),
 
+                Animated.onChange(this.keyboardVisibleValue, [
+                  set(
+                    this.props.headerOpacity,
+                    sub(1.0, this.keyboardVisibleValue)
+                  ),
+                  set(this.props.controlsOpacityValue, 1.0)
+                ]),
+
                 cond(eq(this.focusTypeValue, FocusType.static), [
                   set(
                     this.props.controlsOpacityValue,
@@ -1439,6 +1451,47 @@ class RawwPostEditor extends React.Component<Props, State> {
                   set(this.props.headerOpacity, 0)
                 ])
               ])
+            ),
+
+            Animated.onChange(this.keyboardHeightValue, [
+              Animated.set(
+                this.relativeKeyboardHeightValue,
+                Animated.cond(
+                  Animated.greaterThan(
+                    this.props.offsetY,
+                    this.props.paddingTop
+                  ),
+                  Animated.sub(
+                    this.props.keyboardHeight,
+                    Animated.sub(
+                      Animated.multiply(this.props.scrollY, 1),
+                      Animated.add(this.props.offsetY, -20)
+                    )
+                  ),
+                  Animated.add(
+                    this.keyboardHeightValue,
+                    Animated.sub(
+                      Animated.sub(this.props.scrollY, this.props.offsetY),
+                      20
+                    )
+                  )
+                )
+              )
+            ]),
+
+            Animated.onChange(
+              this.postBottomY,
+              Animated.call(
+                [this.postBottomY, this.props.offsetY],
+                this.handleSetPostBottom
+              )
+            ),
+            Animated.onChange(
+              this.offsetY,
+              Animated.call(
+                [this.postBottomY, this.props.offsetY],
+                this.handleSetPostBottom
+              )
             ),
 
             // Ignore background taps when keyboard is showing/hiding
@@ -1572,39 +1625,6 @@ class RawwPostEditor extends React.Component<Props, State> {
                     onChange={this.handleChangeSnapPoint}
                   />
                 )}
-              {/* <MarginView
-                minX={10}
-                snapPoint={this.state.snapPoint}
-                absoluteX={this.panX}
-                block={this.focusedNode?.block}
-                velocityX={this.velocityX}
-                velocityY={this.velocityY}
-                topSnapValue={this.topSnapValue}
-                type={this.focusedNode?.block?.type}
-                isMovingValue={this.isMovingValue}
-                frame={this.focusedNode?.block?.frame}
-                currentScale={this.currentScale}
-                onChangeSnapPoint={this.handleChangeSnapPoint}
-                minY={10}
-                blocks={this.props.post.blocks}
-                positions={this.props.post.positions}
-                focusType={this.state.focusType}
-                rotate={this.focusedNode?.position?.rotate ?? 0}
-                bottom={this.postBottomY}
-                postBottom={this.state.postBottomY}
-                focusTypeValue={this.focusTypeValue}
-                x={this.panX}
-                y={Animated.cond(
-                  Animated.lessThan(
-                    this.postBottomY,
-                    SCREEN_DIMENSIONS.height - this.props.paddingTop
-                  ),
-                  Animated.sub(this.panY, this.topInsetValue),
-                  Animated.add(this.panY, this.scrollY)
-                )}
-                width={this.currentWidth}
-                height={this.currentHeight}
-              /> */}
 
               {this.state.focusType === FocusType.panning &&
                 this.state.showSnapGuide && (

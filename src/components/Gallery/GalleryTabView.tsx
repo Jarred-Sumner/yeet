@@ -23,15 +23,21 @@ import { cloneDeep } from "lodash";
 const styles = StyleSheet.create({
   sceneContainer: {
     overflow: "visible",
-    flex: 1
+    flex: 1,
+    width: "100%",
+    height: "100%"
   },
   modalSceneContainer: {
     backgroundColor: "black",
     overflow: "visible",
-    flex: 1
+    flex: 1,
+    width: "100%"
   },
   container: {
-    flex: 1
+    flex: 1,
+    width: "100%",
+    height: "100%",
+    overflow: "visible"
   }
 });
 
@@ -248,11 +254,7 @@ class GalleryTabViewComponent extends React.Component {
         navigationState={this.state.navigationState}
         renderScene={this.renderScene}
         tabBarPosition={showHeader ? "bottom" : "top"}
-        lazy={false}
-        removeClippedSubviews={Platform.select({
-          ios: false,
-          android: false
-        })}
+        removeClippedSubviews={false}
         gestureHandlerProps={{
           ref: this.panRef,
           simultaneousHandlers: [

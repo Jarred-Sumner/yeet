@@ -114,6 +114,22 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
 
   componentDidMount() {
     this.mountedComponent = true;
+
+    console.time("FAKE SCROLL TOOK");
+    window.requestAnimationFrame(() => {
+      const _scroll = this._rnkasv_keyboardView;
+
+      if (_scroll) {
+        console.log(
+          "FAKE SCROLL!!",
+          global.MediaPlayerViewManager?.triggerScrollEvent(
+            findNodeHandle(_scroll)
+          )
+        );
+      }
+
+      console.timeEnd("FAKE SCROLL TOOK");
+    });
   }
 
   componentDidUpdate(prevProps) {
@@ -375,6 +391,8 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       ? ScrollIntoViewDefaultOptions.extractNativeRef(ref)
       : ref;
 
+    const _scroll = this._rnkasv_keyboardView;
+
     if (this.props.innerRef) {
       this.props.innerRef(this._rnkasv_keyboardView);
     }
@@ -457,34 +475,32 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     }
 
     return (
-      <>
-        <ScrollView
-          {...otherProps}
-          keyboardDismissMode={keyboardDismissMode}
-          onContentSizeChange={this.handleContentSizeChange}
-          contentInset={this.contentInset}
-          automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
-          onMomentumScrollEnd={this.handleScrollEnd}
-          centerContent={centerContent}
-          contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
-          showsVerticalScrollIndicator={true}
-          scrollToOverflowEnabled
-          scrollEventThrottle={1}
-          ref={this._handleRef}
-          contentContainerStyle={
-            newContentContainerStyle || contentContainerStyle
-          }
-          getScrollResponder={this.getScrollResponder}
-          scrollToPosition={this.scrollToPosition}
-          scrollToEnd={this.scrollToEnd}
-          scrollForExtraHeightOnAndroid={this.scrollForExtraHeightOnAndroid}
-          scrollToFocusedInput={this.scrollToFocusedInput}
-          scrollIntoView={this.scrollIntoView}
-          handleOnScroll={this._handleOnScroll}
-          update={this.update}
-          onScroll={this.onScrollEvent}
-        />
-      </>
+      <ScrollView
+        {...otherProps}
+        keyboardDismissMode={keyboardDismissMode}
+        onContentSizeChange={this.handleContentSizeChange}
+        contentInset={this.contentInset}
+        automaticallyAdjustContentInsets={automaticallyAdjustContentInsets}
+        onMomentumScrollEnd={this.handleScrollEnd}
+        centerContent={centerContent}
+        contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
+        showsVerticalScrollIndicator={true}
+        scrollToOverflowEnabled
+        scrollEventThrottle={1}
+        ref={this._handleRef}
+        contentContainerStyle={
+          newContentContainerStyle || contentContainerStyle
+        }
+        getScrollResponder={this.getScrollResponder}
+        scrollToPosition={this.scrollToPosition}
+        scrollToEnd={this.scrollToEnd}
+        scrollForExtraHeightOnAndroid={this.scrollForExtraHeightOnAndroid}
+        scrollToFocusedInput={this.scrollToFocusedInput}
+        scrollIntoView={this.scrollIntoView}
+        handleOnScroll={this._handleOnScroll}
+        update={this.update}
+        onScroll={this.onScrollEvent}
+      />
     );
   }
 }

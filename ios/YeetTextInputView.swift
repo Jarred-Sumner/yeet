@@ -877,8 +877,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
   }
 
-
-
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     let intended = super.hitTest(point, with: event)
 

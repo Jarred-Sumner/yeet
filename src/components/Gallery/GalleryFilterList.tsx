@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height,
     backgroundColor: "black",
-    flex: 0
-    // overflow: "visible"
+    flex: 0,
+    overflow: "visible"
   },
   modalContainer: {
     flex: 1,
@@ -276,7 +276,7 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
 
   listStyle = this.props.isModal
     ? [styles.modalContainer, { height: this.props.height }]
-    : styles.container;
+    : [styles.container, { height: this.props.height }];
 
   static getSections = memoize((data, numColumns) => {
     return chunk(
@@ -414,11 +414,13 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
 
     const { contentInset, contentOffset } = this;
 
+    const isEmpty = this.sectionCounts[0] === 0;
+
     return (
       <>
-        <ContainerComponent style={containerStyles}>
+        <ContainerComponent height={containerHeight} style={containerStyles}>
           {showScrollView &&
-            (useFastList ? (
+            (useFastList && !isEmpty ? (
               <FastList
                 ref={this.setFlatListRef}
                 contentInsetAdjustmentBehavior="never"
@@ -1224,6 +1226,7 @@ export const CameraRollFilterList = ({
     height = VERTICAL_ITEM_HEIGHT;
     width = VERTICAL_ITEM_WIDTH;
   }
+  const first = getPaginatedLimit(columnCount, height);
 
   const [loadPhotos, photosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
     variables: {
@@ -1231,7 +1234,7 @@ export const CameraRollFilterList = ({
       width,
       height,
       contentMode: "aspectFill",
-      first: getPaginatedLimit(columnCount, height)
+      first: first
     },
     notifyOnNetworkStatusChange: true
   });
@@ -1336,8 +1339,11 @@ export const CameraRollFilterList = ({
             ...fetchMoreResult,
             cameraRoll: {
               ...fetchMoreResult.cameraRoll,
-              data: previousResult.cameraRoll.data.concat(
-                fetchMoreResult.cameraRoll.data
+              data: uniqBy(
+                previousResult.cameraRoll.data.concat(
+                  fetchMoreResult.cameraRoll.data
+                ),
+                "id"
               )
             }
           };
@@ -1366,7 +1372,7 @@ export const CameraRollFilterList = ({
   }, []);
 
   return (
-    <View style={styles.container}>
+    <>
       <GalleryFilterListComponent
         {...otherProps}
         data={data}
@@ -1392,6 +1398,6 @@ export const CameraRollFilterList = ({
         assetType={assetType}
         setAssetType={_setAssetType}
       />
-    </View>
+    </>
   );
 };

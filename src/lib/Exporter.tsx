@@ -675,8 +675,13 @@ const convertExportedNode = (
   //   verticalAlign = "bottom";
   // }
 
-  // Handle bottom center
-  if (
+  if (isBottomCentered && !hasExactHeight) {
+    if (relativeRect.top > 0) {
+      y = relativeRect.height - estimatedHeight + inset * 2 - yPadding * 2;
+    }
+  } else if (isTopCentered) {
+    y = yPadding * -2 - inset * -2;
+  } else if (
     horizontalAlign === "center" &&
     verticalAlign === "bottom" &&
     canAutoCenter
@@ -692,7 +697,7 @@ const convertExportedNode = (
   ) {
     y = Math.max(
       Math.min(
-        y - (relativeRect?.top ?? 0) - yPadding - inset,
+        y - (relativeRect?.top ?? 0) - yPadding - inset - estimatedHeight,
         size.height - yPadding - inset
       ),
       0
@@ -738,8 +743,10 @@ const convertExportedNode = (
     x,
     minY,
     bottomY,
+    hasExactHeight,
     relativeRect,
     yPercent,
+    estimatedHeight,
     verticalAlign,
     yPadding,
     horizontalAlign,

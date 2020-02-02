@@ -48,13 +48,16 @@ const styles = StyleSheet.create({
     right: 0
   },
   wrapper: {
-    backgroundColor: "#000",
-    flex: 1
+    backgroundColor: "red",
+    flex: 1,
+    height: "100%",
+    width: "100%"
   },
   page: {
     flex: 1,
-    height: SCREEN_DIMENSIONS.height,
-    backgroundColor: "#000"
+    height: "100%",
+    width: "100%",
+    backgroundColor: "pink"
   }
 });
 

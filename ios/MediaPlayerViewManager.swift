@@ -394,6 +394,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
   }
 
 
+  
 
   @objc(isRegistered:)
   func isRegistered(_ id: NSString) -> Bool {

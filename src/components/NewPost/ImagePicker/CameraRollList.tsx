@@ -431,10 +431,6 @@ export class CameraRollList extends React.Component<Props, State> {
             flex: 1
           }}
           contentInsetAdjustmentBehavior="never"
-          removeClippedSubviews={Platform.select({
-            ios: false,
-            android: true
-          })}
           onScrollBeginDrag={onScrollBeginDrag}
           scrollEventThrottle={1}
           overScrollMode="always"

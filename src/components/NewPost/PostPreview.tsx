@@ -447,8 +447,7 @@ export const PostPreview = React.forwardRef(
       onSwipe,
       bounces,
       positionsKey,
-      waitFor,
-      setPostBottom
+      waitFor
     },
     ref
   ) => {

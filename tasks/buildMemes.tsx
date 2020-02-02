@@ -2065,6 +2065,7 @@ const convertEntry = entry => {
       x: xPadding,
       y: yPadding,
       maxX: size.width,
+
       maxY: size.height,
       minX: xPadding,
       minY: yPadding

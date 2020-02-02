@@ -5,13 +5,13 @@ query GalleryListQuery(
   $videoColumnCount: Int!
   $photoColumnCount: Int!
 ) {
-  photos: cameraRoll(assetType: "photos", first: $photoColumnCount) @client {
-    id
+  # photos: cameraRoll(assetType: "photos", first: $photoColumnCount) @client {
+  #   id
 
-    data {
-      ...YeetImageContainerFragment
-    }
-  }
+  #   data {
+  #     ...YeetImageContainerFragment
+  #   }
+  # }
 
   recentImages @client {
     id
@@ -52,10 +52,10 @@ query GalleryListQuery(
     }
   }
 
-  videos: cameraRoll(assetType: "videos", first: $videoColumnCount) @client {
-    id
-    data {
-      ...YeetImageContainerFragment
-    }
-  }
+  # videos: cameraRoll(assetType: "videos", first: $videoColumnCount) @client {
+  #   id
+  #   data {
+  #     ...YeetImageContainerFragment
+  #   }
+  # }
 }

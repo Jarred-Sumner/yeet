@@ -14,11 +14,66 @@
 #import <ReactCommon/TurboModule.h>
 #import <Foundation/Foundation.h>
 #import "CameraRoll.h"
+#import <React/RCTUIManager.h>
+#import <React/RCTScrollView.h>
 
 
+@interface RCTUIManager (ext)
+  - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
+  - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
+    - (NSMutableDictionary<NSNumber *, RCTShadowView *> *)shadowViewRegistry;
+@end
+
+@implementation RCTUIManager (ext)
+- (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag {
+  return self.viewRegistry[reactTag];
+}
+@end
+
+@interface RCTScrollView (hacks)
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView;
+- (NSDictionary*)body;
+@end
+
+
+@implementation RCTScrollView (hacks)
+
+- (NSDictionary*)body {
+  return @{
+    @"contentOffset": @{
+      @"x": @(self.scrollView.contentOffset.x),
+      @"y": @(self.scrollView.contentOffset.y)
+    },
+    @"contentInset": @{
+      @"top": @(self.contentInset.top),
+      @"left": @(self.contentInset.left),
+      @"bottom": @(self.contentInset.bottom),
+      @"right": @(self.contentInset.right)
+    },
+    @"contentSize": @{
+      @"width": @(self.contentSize.width),
+      @"height": @(self.contentSize.height)
+    },
+    @"layoutMeasurement": @{
+      @"width": @(self.frame.size.width),
+      @"height": @(self.frame.size.height)
+    },
+    @"zoomScale": @(self.scrollView.zoomScale ?: 1),
+  };
+}
+@end
+
+
+
+
+@interface RCTBridge (ext)
+- (std::weak_ptr<facebook::react::Instance>)reactInstance;
+@end
 
 MediaPlayerJSIModule::MediaPlayerJSIModule(MediaPlayerViewManager* mediaPlayer)
-: mediaPlayer_(mediaPlayer) {}
+: mediaPlayer_(mediaPlayer) {
+  std::shared_ptr<facebook::react::JSCallInvoker> _jsInvoker = std::make_shared<react::BridgeJSCallInvoker>(mediaPlayer.bridge.reactInstance);
+}
 
 
 void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
@@ -26,9 +81,11 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
   RCTCxxBridge *cxxBridge = (RCTCxxBridge *)mediaPlayerManager.bridge;
 
 
+
   if (cxxBridge.runtime == nullptr) {
     return;
   }
+
 
 
  jsi::Runtime &runtime = *(jsi::Runtime *)cxxBridge.runtime;
@@ -39,6 +96,8 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
 
  auto object = jsi::Object::createFromHostObject(runtime, reaJsiModule);
 
+
+
  runtime.global().setProperty(runtime, reaModuleName, std::move(object));
 
 }
@@ -48,7 +107,6 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
 
   if (methodName == "isCached") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-
 
     return jsi::Function::createFromHostFunction(runtime, name, 2, [mediaPlayerViewManager](
           jsi::Runtime &runtime,
@@ -216,6 +274,80 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        [CameraRoll stopSession:convertJSIStringToNSString(runtime, arguments[0].asString(runtime))];
 
        return jsi::Value::null();
+    });
+  } else if (methodName == "scrollViewMetrics") {
+    MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
+     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerViewManager](
+           jsi::Runtime &runtime,
+           const jsi::Value &thisValue,
+           const jsi::Value *arguments,
+           size_t count) -> jsi::Value {
+
+
+
+        __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0]);
+       __block RCTScrollView *scrollView = [mediaPlayerViewManager.bridge.uiManager unsafeViewForReactTag:scrollViewTag];
+       __block NSDictionary *bodyValue;
+
+       dispatch_group_t group = dispatch_group_create();
+       dispatch_group_enter(group);
+       RCTExecuteOnMainQueue(^{
+         bodyValue = scrollView.body;
+          dispatch_group_leave(group);
+       });
+       dispatch_group_wait(group, DISPATCH_TIME_NOW + (1.0 * NSEC_PER_SEC));
+
+       if (scrollView != nil) {
+         return convertObjCObjectToJSIValue(runtime, bodyValue);
+       } else {
+         return jsi::Value::null();
+       }
+
+    });
+  } else if (methodName == "triggerScrollEvent") {
+    MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
+     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerViewManager](
+           jsi::Runtime &runtime,
+           const jsi::Value &thisValue,
+           const jsi::Value *arguments,
+           size_t count) -> jsi::Value {
+
+
+
+       __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0]);
+
+
+       if (scrollViewTag == nil) {
+         return jsi::Value::null();
+       }
+
+
+      __block NSDictionary *bodyValue = nil;
+
+       dispatch_group_t group = dispatch_group_create();
+       dispatch_group_enter(group);
+       RCTExecuteOnMainQueue(^{
+         RCTScrollView *scrollView = [mediaPlayerViewManager.bridge.uiManager viewForReactTag:scrollViewTag];
+         if (scrollView != nil) {
+           [scrollView scrollViewDidScroll:scrollView.scrollView];
+           bodyValue = scrollView.body;
+         }
+
+        dispatch_group_leave(group);
+       });
+
+
+       dispatch_group_wait(group, DISPATCH_TIME_NOW + (int64_t)(0.5 * NSEC_PER_SEC));
+
+       if (bodyValue != nil) {
+         jsi::Value body = convertObjCObjectToJSIValue(runtime, bodyValue);
+         
+         return body;
+       } else {
+         return jsi::Value::null();
+       }
+
+
     });
   }
 

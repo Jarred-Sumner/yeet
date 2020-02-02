@@ -39,7 +39,7 @@ Sentry.init({
 });
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1 }
+  wrap: { flex: 1, width: "100%", height: "100%" }
 });
 
 function getActiveRouteName(navigationState: NavigationState): string | null {
@@ -177,7 +177,7 @@ export class App extends React.Component {
     }
 
     return (
-      <View style={styles.wrap}>
+      <>
         <StatusBar barStyle="light-content" backgroundColor="#000" />
         <DatabaseProvider database={database}>
           <SafeAreaProvider initialSafeAreaInsets={this.initialSafeAreaInsets}>
@@ -208,7 +208,7 @@ export class App extends React.Component {
             </MaterialThemeProvider>
           </SafeAreaProvider>
         </DatabaseProvider>
-      </View>
+      </>
     );
   }
 }

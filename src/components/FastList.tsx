@@ -5,18 +5,22 @@ import {
   View,
   ScrollView,
   ViewStyle,
+  StyleSheet,
   NativeScrollEvent,
   LayoutChangeEvent,
   findNodeHandle,
   ScrollViewProps
 } from "react-native";
 import { ViewabilityHelper } from "./ViewabilityHelper";
+import { SCREEN_DIMENSIONS } from "../../config";
 
 type HeaderHeight = number | (() => number);
 type FooterHeight = number | (() => number);
 type SectionHeight = number | ((section: number) => number);
 type RowHeight = number | ((section: number, row?: number) => number);
 type SectionFooterHeight = number | ((section: number) => number);
+
+let DEBUG_MODE = false;
 
 export enum ScrollDirection {
   neutral = 0,
@@ -134,7 +138,7 @@ export class FastListComputer {
     const { sections } = this;
 
     let height = this.insetTop;
-    let spacerHeight = height;
+    let spacerHeight = Math.max(height, 0);
     let items = [] as FastListItem[];
 
     const recycler = new FastListItemRecycler(prevItems);
@@ -236,6 +240,7 @@ export class FastListComputer {
         const rowHeight = this.getHeightForRow(section);
         for (let row = 0; row < rows; row++) {
           layoutY = height;
+
           if (isVisible(rowHeight)) {
             push(
               recycler.get(
@@ -481,11 +486,26 @@ export class FastListItemRecycler {
 
 const FastListItemRenderer = ({
   layoutHeight: height,
+  spacer,
   children
 }: {
   layoutHeight: number;
   children?: React.ReactNode;
-}) => <View style={{ height }}>{children}</View>;
+}) => (
+  <View
+    height={height}
+    style={
+      DEBUG_MODE
+        ? {
+            height,
+            backgroundColor: spacer ? "blue" : "red"
+          }
+        : { height }
+    }
+  >
+    {children}
+  </View>
+);
 
 export interface FastListProps {
   renderActionSheetScrollViewWrapper?: (
@@ -550,6 +570,7 @@ const computeBlock = (
   const blockNumber = Math.ceil(scrollTop / batchSize);
   const blockStart = batchSize * blockNumber;
   const blockEnd = blockStart + batchSize;
+
   return { batchSize, blockStart, blockEnd };
 };
 
@@ -575,7 +596,6 @@ function getFastListState(
       items: []
     };
   }
-
   const computer = new FastListComputer({
     headerHeight,
     footerHeight,
@@ -586,15 +606,18 @@ function getFastListState(
     insetTop,
     insetBottom
   });
+
+  const results = computer.compute(
+    blockStart - batchSize,
+    blockEnd + batchSize,
+    prevItems || []
+  );
+
   return {
     batchSize,
     blockStart,
     blockEnd,
-    ...computer.compute(
-      blockStart - batchSize,
-      blockEnd + batchSize,
-      prevItems || []
-    )
+    ...results
   };
 }
 
@@ -613,22 +636,29 @@ export default class FastList extends React.PureComponent<
     sectionHeight: 0,
     sectionFooterHeight: 0,
     insetTop: 0,
-    containerHeight: 0,
+    containerHeight: SCREEN_DIMENSIONS.height,
     insetBottom: 0,
+    contentOffset: { x: 0, y: 0 },
     contentInset: { top: 0, right: 0, left: 0, bottom: 0 }
   };
 
-  containerHeight: number = this.props.containerHeight;
-  scrollTop: number = this.props.contentInset.top * -1;
-  scrollTopValue: Animated.Value =
-    this.props.scrollTopValue || new Animated.Value(0);
+  constructor(props) {
+    super(props);
+    this.containerHeight = props.containerHeight;
+    this.scrollTop = props.contentInset.top * -1;
+    this.scrollTopValue =
+      this.props.scrollTopValue ?? new Animated.Value(this.scrollTop);
+    this.state = getFastListState(
+      props,
+      computeBlock(this.containerHeight, this.scrollTop)
+    );
+  }
+
+  containerHeight: number;
+  scrollTop: number;
+  scrollTopValue: Animated.Value<number>;
   scrollTopValueAttachment: { detach: () => void } | null | undefined;
   scrollView: { current: ScrollView | null | undefined } = React.createRef();
-
-  state = getFastListState(
-    this.props,
-    computeBlock(this.containerHeight, this.scrollTop)
-  );
 
   static getDerivedStateFromProps(props: FastListProps, state: FastListState) {
     return getFastListState(props, state);
@@ -764,7 +794,7 @@ export default class FastList extends React.PureComponent<
       this.props.scrollTopValue.setValue(this.scrollTop);
     }
 
-    this.containerHeight = nativeEvent.layout.height - insetTop - insetBottom;
+    this.containerHeight = nativeEvent.layout.height;
 
     const nextState = computeBlock(this.containerHeight, this.scrollTop);
     if (
@@ -812,7 +842,8 @@ export default class FastList extends React.PureComponent<
 
     const { items = [] } = this.state;
 
-    if (renderEmpty != null && this.isEmpty()) {
+    const _isEmpty = this.isEmpty();
+    if (renderEmpty != null && _isEmpty) {
       return renderEmpty();
     }
 
@@ -828,7 +859,11 @@ export default class FastList extends React.PureComponent<
       switch (type) {
         case FastListItemType.spacer: {
           const child = (
-            <FastListItemRenderer key={key} layoutHeight={layoutHeight} />
+            <FastListItemRenderer
+              spacer
+              key={key}
+              layoutHeight={layoutHeight}
+            />
           );
           children.push(child);
           break;
@@ -904,7 +939,7 @@ export default class FastList extends React.PureComponent<
   }
 
   componentDidMount() {
-    if (this.scrollView.current != null) {
+    if (this.scrollView.current !== null) {
       const nativeEvent = { contentOffset: { y: this.scrollTopValue } };
       if (this.props.insetTopValue) {
         nativeEvent.contentInset = { top: this.props.insetTopValue };
@@ -932,7 +967,7 @@ export default class FastList extends React.PureComponent<
     }
   }
 
-  componentDidUpdate(prevProps: FastListProps) {
+  componentDidUpdate(prevProps: FastListProps, prevState) {
     if (prevProps.scrollTopValue !== this.props.scrollTopValue) {
       throw new Error("scrollTopValue cannot changed after mounting");
     }
@@ -1034,6 +1069,7 @@ export default class FastList extends React.PureComponent<
         scrollEventThrottle={16}
         style={style}
         automaticallyAdjustContentInsets={false}
+        contentContainerStyle={styles.contentContainer}
         contentInsetAdjustmentBehavior="never"
         onScroll={this.handleScroll}
         onLayout={this.handleLayout}
@@ -1052,3 +1088,9 @@ export default class FastList extends React.PureComponent<
     );
   }
 }
+
+const styles = StyleSheet.create({
+  contentContainer: DEBUG_MODE
+    ? { backgroundColor: "pink", flexGrow: 1 }
+    : { flexGrow: 1 }
+});

@@ -7,6 +7,7 @@
 //
 
 #import <jsi/jsi.h>
+#include <ReactCommon/BridgeJSCallInvoker.h>
 
 using namespace facebook;
 
@@ -25,6 +26,8 @@ public:
 
 private:
     MediaPlayerViewManager* mediaPlayer_;
+    std::shared_ptr<facebook::react::JSCallInvoker> _jsInvoker;
 };
+
 
 

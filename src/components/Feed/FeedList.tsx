@@ -62,12 +62,12 @@ const ITEM_WIDTH = SCREEN_DIMENSIONS.width;
 
 const styles = StyleSheet.create({
   screen: {
-    flex: 1
-  },
-  list: {
+    flexGrow: 1,
     width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height
   },
+  contentContainer: { flex: 0 },
+
   separator: {
     height: 1,
     marginVertical: ITEM_SEPARATOR_HEIGHT / 2 - 1,
@@ -323,29 +323,28 @@ class FeedListComponent extends React.Component<Props, State> {
     } = this.props;
 
     return (
-      <View style={styles.screen}>
-        <FastList
-          contentInset={contentInset}
-          contentOffset={contentOffset}
-          insetTop={insetTop}
-          renderRow={this.handleRenderRow}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={this.handleRefresh}
-              tintColor="white"
-            />
-          }
-          headerHeight={0}
-          style={styles.list}
-          insetBottom={ITEM_SEPARATOR_HEIGHT}
-          onScrollEnd={this.handleEndReached}
-          footerHeight={0}
-          rowHeight={this.getRowHeight}
-          // sectionHeight={this.getTotalHeight}
-          sections={sections}
-        />
-      </View>
+      <FastList
+        contentInset={contentInset}
+        contentOffset={contentOffset}
+        insetTop={insetTop}
+        renderRow={this.handleRenderRow}
+        contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={this.handleRefresh}
+            tintColor="white"
+          />
+        }
+        headerHeight={0}
+        uniform={false}
+        insetBottom={ITEM_SEPARATOR_HEIGHT}
+        onScrollEnd={this.handleEndReached}
+        footerHeight={0}
+        rowHeight={this.getRowHeight}
+        // sectionHeight={this.getTotalHeight}
+        sections={sections}
+      />
     );
 
     // return (
@@ -417,14 +416,19 @@ export const FeedList = React.forwardRef((props: FlatListProps, ref) => {
     return [threads.length];
   }, [threads, threads.length]);
 
+  const contentInset = React.useMemo(
+    () => ({ top, bottom: bottom + TAB_BAR_HEIGHT, left: 0, right: 0 }),
+    [top, bottom, TAB_BAR_HEIGHT]
+  );
+  const contentOffset = React.useMemo(() => ({ y: top * -1, x: 0 }), [top]);
   return (
     <FeedListComponent
       {...props}
       threads={threads}
       ref={ref}
       offset={threadsQuery?.data?.postThreads.offset ?? 0}
-      contentInset={{ top, bottom: bottom + TAB_BAR_HEIGHT, left: 0, right: 0 }}
-      contentOffset={{ y: top * -1, x: 0 }}
+      contentInset={contentInset}
+      contentOffset={contentOffset}
       insetTop={0}
       initialLoad={threadsQuery.loading}
       hasMore={threadsQuery?.data?.postThreads.hasMore}

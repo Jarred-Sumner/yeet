@@ -103,7 +103,6 @@ export default {
           }
         }
 
-        console.time("Get Photos");
         // const result = await getPhotos(params);
         const result = await global.MediaPlayerViewManager.getPhotos({
           mediaType: assetType,
@@ -119,13 +118,9 @@ export default {
         });
         console.timeEnd("Get Photos");
 
-        const id = `cameraroll_${[
-          params.assetType,
-          params.first,
-          mediaSubtypes,
-          after,
-          offset
-        ].join("/")}`;
+        const id = `cameraroll_${[params.assetType, mediaSubtypes, offset].join(
+          "/"
+        )}`;
 
         const response = {
           __typename: "CameraRollResult",

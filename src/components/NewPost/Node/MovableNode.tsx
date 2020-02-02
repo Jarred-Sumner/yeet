@@ -352,9 +352,7 @@ export class MovableNode extends Component<Props> {
 
     const fixedSizeValue = props.isFixedSize ? 1 : 0;
     const yLiteral =
-      verticalAlign === "top"
-        ? Math.max(props.yLiteral, props.minY)
-        : props.yLiteral;
+      verticalAlign === "top" ? Math.max(props.yLiteral, 0) : props.yLiteral;
 
     this.panGestureState = new Animated.Value(State.UNDETERMINED);
     this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
@@ -470,10 +468,7 @@ export class MovableNode extends Component<Props> {
             keyboardVisibleCond(
               this.keyboardVisibleFocusedValue,
               Animated.multiply(this.Y, -1),
-              Animated.add(
-                Animated.multiply(props.keyboardHeightValue, -1),
-                this.props.offsetY
-              )
+              Animated.multiply(props.keyboardHeightValue, -1)
             )
           )
         : null;
