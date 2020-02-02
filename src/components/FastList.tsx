@@ -732,19 +732,11 @@ export default class FastList extends React.PureComponent<
       this.scrollDirection = ScrollDirection.up;
     }
 
-    // if (nativeEvent.layoutMeasurement.height < ) {
-    //   return;
-    // }
-    // this.containerHeight = nativeEvent.layoutMeasurement.height;
-
-    if (nativeEvent.contentOffset.y < this.props.contentInset.top * -1) {
-      this.scrollTop = this.props.contentInset.top * -1;
-    } else {
-      this.scrollTop = Math.min(
-        Math.max(this.props.contentOffset.y, 0, nativeEvent.contentOffset.y),
-        nativeEvent.contentSize.height - this.containerHeight
-      );
+    if (nativeEvent.layoutMeasurement.height > 0) {
+      this.containerHeight = nativeEvent.layoutMeasurement.height;
     }
+
+    this.scrollTop = nativeEvent.contentOffset.y;
 
     const nextState = computeBlock(this.containerHeight, this.scrollTop);
     if (
