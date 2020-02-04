@@ -8,7 +8,8 @@ import {
   UIManager,
   TextInput,
   findNodeHandle,
-  ScrollViewProps
+  ScrollViewProps,
+  InteractionManager
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
@@ -17,7 +18,7 @@ import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
 
 const ScrollView = Animated.createAnimatedComponent(
   GestureScrollView
-) as React.Component<ScrollViewProps>;
+) as React.ComponentType<ScrollViewProps>;
 
 const _KAM_DEFAULT_TAB_BAR_HEIGHT = isIphoneX() ? 83 : 49;
 const _KAM_KEYBOARD_OPENING_TIME = 250;
@@ -116,17 +117,18 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     this.mountedComponent = true;
 
     console.time("FAKE SCROLL TOOK");
-    window.requestAnimationFrame(() => {
-      const _scroll = this._rnkasv_keyboardView;
 
-      if (_scroll) {
-        console.log(
-          "FAKE SCROLL!!",
-          global.MediaPlayerViewManager?.triggerScrollEvent(
+    InteractionManager.runAfterInteractions(() => {
+      window.requestAnimationFrame(() => {
+        const _scroll = this._rnkasv_keyboardView;
+
+        if (_scroll) {
+          const fakeScroll = global.MediaPlayerViewManager?.triggerScrollEvent(
             findNodeHandle(_scroll)
-          )
-        );
-      }
+          );
+          console.log("FAKE SCROLL!!", fakeScroll);
+        }
+      });
 
       console.timeEnd("FAKE SCROLL TOOK");
     });

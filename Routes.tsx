@@ -35,12 +35,14 @@ import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import NewThreadPage from "./src/screens/NewThreadPage";
 import WaitlistScreen from "./src/screens/WaitlistScreen";
 import { memoize } from "lodash";
+import { enableScreens } from "react-native-screens";
 
 const IS_SCREENS_ENABLED = true;
 
 let createStackNavigator = _createStackNavigator;
 if (IS_SCREENS_ENABLED) {
-  createStackNavigator = __createStackNavigator;
+  enableScreens();
+  // createStackNavigator = __createStackNavigator;
 }
 
 const AuthStack = createStackNavigator(
@@ -182,12 +184,7 @@ const _AppContainer = memoize(initialRouteName => {
                 ),
                 NewPostStack: createStackNavigator(
                   {
-                    ImagePicker: {
-                      screen: ImagePickerPage,
-                      cardStyle: {
-                        backgroundColor: "#000"
-                      }
-                    },
+                    ImagePicker: ImagePickerPage,
                     NewPost: NewPostPage,
                     NewThread: NewThreadPage,
                     ...SHARED_GLOBAL_SCREENS
@@ -199,10 +196,10 @@ const _AppContainer = memoize(initialRouteName => {
                       backgroundColor: "#000"
                     },
                     headerMode: "none",
+                    mode: "card",
                     // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
                     defaultNavigationOptions: {
                       header: () => null,
-                      mode: "modal",
                       headerMode: "none",
                       headerTransparent: false,
                       gesturesEnabled: false

@@ -1,18 +1,14 @@
-import AsyncStorage from "@react-native-community/async-storage";
 import { InMemoryCache } from "apollo-cache-inmemory";
-import { CachePersistor, persistCache } from "apollo-cache-persist";
 import { ApolloClient } from "apollo-client";
 import { BatchHttpLink } from "apollo-link-batch-http";
-import { RetryLink } from "apollo-link-retry";
 import { setContext } from "apollo-link-context";
 import { onError } from "apollo-link-error";
-
+import { RetryLink } from "apollo-link-retry";
 import _ from "lodash";
-import { Platform, StatusBar } from "react-native";
+import { Platform } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import { BASE_HOSTNAME } from "../../config";
 import { Storage } from "./Storage";
-import { toIdValue } from "apollo-utilities";
 
 // import introspectionQueryResultData from "../../static/fragmentTypes.json";
 // import Alert from "../lib/Alert";

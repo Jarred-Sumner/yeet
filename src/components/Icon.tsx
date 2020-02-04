@@ -42,6 +42,8 @@ export enum IconName {
   help = "help",
   chevronLeft = "chevron-left",
   chevronRight = "chevron-right",
+  chevronUp = "chevronup",
+  chevronDown = "chevrondown",
   circleaddAlt = "plus-circle-alt",
   circleadd = "plus-circle",
   clip = "clip",
@@ -124,6 +126,12 @@ export const IconChevronLeft = props => (
 );
 export const IconChevronRight = props => (
   <Icon name={IconName.chevronRight} {...props} />
+);
+export const IconChevronUp = props => (
+  <Icon name={IconName.chevronUp} {...props} />
+);
+export const IconChevronDown = props => (
+  <Icon name={IconName.chevronDown} {...props} />
 );
 export const IconCircleAddAlt = props => (
   <Icon name={IconName.circleaddAlt} {...props} />

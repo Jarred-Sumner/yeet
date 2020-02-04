@@ -26,8 +26,7 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     position: "absolute"
   },
-  wrapper: {
-    position: "absolute",
+  shadowSnapView: {
     shadowRadius: 10,
     shadowOffset: {
       width: 2,
@@ -38,7 +37,46 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "rgba(255, 255, 255, 0.25)",
     borderRadius: 8,
-
+    left: 0,
+    right: 0,
+    position: "absolute"
+  },
+  verticalSnapView: {
+    // alignSelf: "center",
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  horizontalSnapView: {
+    alignItems: "center"
+  },
+  wrapper: {
+    position: "absolute",
+    justifyContent: "center",
+    // alignItems: "center",
+    overflow: "visible"
+  },
+  leftWrapper: {
+    position: "absolute",
+    // alignItems: "flex-end",
+    justifyContent: "center",
+    overflow: "visible"
+  },
+  rightWrapper: {
+    position: "absolute",
+    // alignItems: "flex-end",
+    justifyContent: "center",
+    overflow: "visible"
+  },
+  bottomWrapper: {
+    position: "absolute",
+    // alignItems: "flex-end",
+    justifyContent: "center",
+    overflow: "visible"
+  },
+  topWrapper: {
+    position: "absolute",
+    // alignItems: "flex-start",
+    justifyContent: "center",
     overflow: "visible"
   },
   container: {
@@ -133,12 +171,32 @@ export const SnapPreview = (props: Props) => {
 
   const animationStyles = {};
 
-  if (direction !== SnapDirection.none) {
+  if (direction === SnapDirection.bottom) {
+    animationStyles.bottom = animationProgress.current.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-y, 0],
+      extrapolate: Animated.Extrapolate.CLAMP
+    });
+    animationStyles.top = animationProgress.current.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-y, 0],
+      extrapolate: Animated.Extrapolate.CLAMP
+    });
+    animationStyles.left = 0;
+    animationStyles.right = 0;
+  } else if (direction === SnapDirection.top) {
     animationStyles.top = animationProgress.current.interpolate({
       inputRange: [0, 1],
       outputRange: [y, 0],
       extrapolate: Animated.Extrapolate.CLAMP
     });
+    animationStyles.bottom = animationProgress.current.interpolate({
+      inputRange: [0, 1],
+      outputRange: [-y, 0],
+      extrapolate: Animated.Extrapolate.CLAMP
+    });
+    animationStyles.left = 0;
+    animationStyles.right = 0;
   }
 
   if (direction === SnapDirection.left) {
@@ -147,12 +205,18 @@ export const SnapPreview = (props: Props) => {
       outputRange: [x * -1, 0],
       extrapolate: Animated.Extrapolate.CLAMP
     });
+    animationStyles.left = 0;
+    animationStyles.top = Animated.multiply(y, -1);
+    animationStyles.bottom = Animated.multiply(y, -1);
   } else if (direction === SnapDirection.right) {
     animationStyles.left = animationProgress.current.interpolate({
       inputRange: [0, 1],
       outputRange: [x, 0],
       extrapolate: Animated.Extrapolate.CLAMP
     });
+    animationStyles.right = 0;
+    animationStyles.top = Animated.multiply(y, -1);
+    animationStyles.bottom = Animated.multiply(y, -1);
   }
 
   return (
@@ -196,7 +260,12 @@ export const SnapPreview = (props: Props) => {
       <Animated.View
         key={snapPoint?.key}
         style={[
-          styles.wrapper,
+          {
+            [SnapDirection.bottom]: styles.bottomWrapper,
+            [SnapDirection.left]: styles.leftWrapper,
+            [SnapDirection.right]: styles.rightWrapper,
+            [SnapDirection.top]: styles.topWrapper
+          }[direction],
           animationStyles,
           {
             opacity: animationProgress.current.interpolate({
@@ -205,26 +274,13 @@ export const SnapPreview = (props: Props) => {
               extrapolate: Animated.Extrapolate.CLAMP
             }),
             transform: [
-              {
-                translateY: animationProgress.current.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: [
-                    0,
-                    Animated.cond(
-                      Animated.greaterThan(
-                        props.bottom,
-                        Animated.min(
-                          Animated.divide(SCREEN_DIMENSIONS.height, height),
-                          0.85
-                        )
-                      ),
-                      Animated.multiply(props.offsetY, -1),
-                      0
-                    )
-                  ],
-                  extrapolate: Animated.Extrapolate.CLAMP
-                })
-              },
+              // {
+              //   translateY: animationProgress.current.interpolate({
+              //     inputRange: [0, 1],
+              //     outputRange: [0, Animated.multiply(props.offsetY, -1)],
+              //     extrapolate: Animated.Extrapolate.CLAMP
+              //   })
+              // },
               {
                 scale: animationProgress.current.interpolate({
                   inputRange: [0, 1],
@@ -253,12 +309,14 @@ export const SnapPreview = (props: Props) => {
           }
         ]}
       >
-        <InnerPost
-          blocks={blocks}
-          positions={positions}
-          paused={false}
-          placeholderFunc={placeholderFunc}
-        />
+        <View style={styles.shadowSnapView}>
+          <InnerPost
+            blocks={blocks}
+            positions={positions}
+            paused={false}
+            placeholderFunc={placeholderFunc}
+          />
+        </View>
       </Animated.View>
     </>
   );

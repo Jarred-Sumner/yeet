@@ -16,4 +16,5 @@ fragment YeetImageContainerFragment on YeetImageContainer {
   }
 
   id
+  timestamp
 }

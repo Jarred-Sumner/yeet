@@ -29,6 +29,7 @@ query PostSearchQuery(
         __typename
 
         coverUrl
+        url
       }
     }
   }

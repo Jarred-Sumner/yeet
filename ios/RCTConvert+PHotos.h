@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RCTConvert(ReactNativePhotosFramework)
 
 + (PHAssetMediaType)PHAssetMediaType:(id)json;
++ (PHAuthorizationStatus)PHAuthorizationStatus:(id)json;
 + (PHAssetMediaSubtype)PHAssetMediaSubtype:(id)json;
 + (PHAssetCollectionType)PHAssetCollectionType:(id)json;
 + (PHAssetCollectionSubtype)PHAssetCollectionSubtype:(id)json;
@@ -23,11 +24,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSDictionary *)PHAssetMediaTypeValuesReversed;
 + (NSDictionary *)PHAssetMediaSubtypeValuesReversed;
++ (NSDictionary *)PHAuthorizationStatusValuesReversed;
 + (NSDictionary *)PHAssetBurstSelectionTypeValuesReversed;
 + (NSDictionary *)PHAssetSourceTypeValuesReversed;
 + (NSDictionary *)PHAssetCollectionTypeValuesReversed;
 + (NSDictionary *)PHAssetCollectionSubtypeValuesReversed;
 + (NSDictionary *)PHAssetResourceTypeValuesReversed;
+
+
 
 @end
 

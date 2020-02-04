@@ -10,7 +10,7 @@
 #import <Photos/Photos.h>
 
 @interface CameraRoll : NSObject
-+ (NSArray<PHAssetCollection *> * _Nonnull)assetCollections;
++ (NSArray<NSDictionary *> * _Nonnull)assetCollectionDictionaries;
 + (void)stopSession:(NSString * _Nonnull)cacheKey;
 + (CameraRoll * _Nonnull)withAlbumID:(NSString * _Nullable)assetCollectionID mediaType:(NSString * _Nullable)mediaType size:(CGSize)size contentMode:(PHImageContentMode)contentMode cache:(BOOL)cache;
 @property (nonatomic) NSInteger count;

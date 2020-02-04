@@ -715,9 +715,9 @@ export default class FastList extends React.PureComponent<
   };
 
   scrollToTop = (animated = true) => {
-    this.scrollView.current.scrollTo({
+    this.scrollView?.current?.scrollTo({
       x: 0,
-      y: this.props.contentOffset.y,
+      y: this.props?.contentOffset?.y ?? 0,
       animated
     });
   };
@@ -846,6 +846,7 @@ export default class FastList extends React.PureComponent<
       }
     });
 
+    const visibleItems = [];
     const children = [] as JSX.Element[];
     items.forEach(({ type, key, layoutY, layoutHeight, section, row }) => {
       switch (type) {
@@ -905,6 +906,7 @@ export default class FastList extends React.PureComponent<
         case FastListItemType.row: {
           const child = renderRow(section, row);
           if (child != null) {
+            visibleItems.push(row);
             children.push(
               <FastListItemRenderer key={key} layoutHeight={layoutHeight}>
                 {child}
@@ -927,6 +929,7 @@ export default class FastList extends React.PureComponent<
       }
     });
 
+    this.visibleRows = visibleItems;
     return children;
   }
 
@@ -1014,8 +1017,11 @@ export default class FastList extends React.PureComponent<
     }
   };
 
+  visibleRows = [];
+
   decorateEvent = event => {
     event.nativeEvent.direction = this.scrollDirection;
+    event.nativeEvent.visibleRows = this.visibleRows;
 
     return { nativeEvent: event.nativeEvent };
   };

@@ -221,7 +221,7 @@ export type YeetImageContainer =
   | YeetImageContainerCameraRoll;
 
 const normalizeBaseImage = (
-  image,
+  image: giphyClient.GIFObject,
   transform: YeetTransform = []
 ): YeetImage => {
   const assetData = {
@@ -232,6 +232,7 @@ const normalizeBaseImage = (
   return {
     ...assetData,
     duration: Number(image.length || 0),
+
     mimeType: mimeTypeFromFilename(assetData.uri),
     source: ImageSourceType.giphy,
     __typename: "YeetImage",
@@ -290,12 +291,14 @@ export const imageContainerFromCameraRoll = (
     playDuration: duration,
     mimeType,
     source: ImageSourceType.cameraRoll,
-    transform
+    transform,
+    timestamp: photo.timestamp
   };
 
   return {
     image,
     source: photo,
+    timestamp: photo.timestamp,
     id: image.uri,
     sourceType: ImageSourceType.cameraRoll
   };
@@ -352,6 +355,7 @@ const findGiphyImage = (
 const normalizeImage = (gif: giphyClient.GIFObject): YeetImageContainer => ({
   id: gif.id,
   source: gif,
+  timestamp: gif.create_datetime,
   preview: normalizeBaseImage(findGiphyImage(gif, undefined, "webp")),
   image: normalizeOriginalImage(gif.images.original),
   sourceType: ImageSourceType.giphy,

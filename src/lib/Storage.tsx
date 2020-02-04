@@ -1,17 +1,15 @@
-import { Platform } from "react-native";
-import AsyncStorage from "@react-native-community/async-storage";
-import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
-import { YeetImageContainer, YeetImage, isVideo } from "./imageSearch";
-import { uniqBy, first } from "lodash";
-import RNFS from "react-native-fs";
-import { basename, join, extname } from "path";
+import { Q } from "@nozbe/watermelondb";
+import { cloneDeep, first, orderBy, uniqBy } from "lodash";
 import nanoid from "nanoid/non-secure";
+import { basename, extname, join } from "path";
+import { Platform } from "react-native";
+import RNFS from "react-native-fs";
+import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
 import { database } from "./db/database";
-import { orderBy, cloneDeep } from "lodash";
 import { ImageContainer } from "./db/models/ImageContainer";
 import { RecentlyUsedContent } from "./db/models/RecentlyUsedContent";
 import { PostFragment } from "./graphql/PostFragment";
-import { Q } from "@nozbe/watermelondb";
+import { YeetImage, YeetImageContainer } from "./imageSearch";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -76,7 +74,7 @@ export class Storage {
   }
 
   static removeItem(key) {
-    AsyncStorage.removeItem(Storage.formatKey(key));
+    return database.adapter.removeLocal(Storage.formatKey(key));
   }
 
   static setDismissedWelcomeModal(value) {

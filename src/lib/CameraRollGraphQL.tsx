@@ -40,21 +40,12 @@ const ensureExternalStoragePermission = async () => {
 const graphqlImageContainer = (
   image: YeetImageContainer
 ): YeetImageContainer => {
+  const preview = image.preview ?? image.image;
   return {
     ...image,
     __typename: "YeetImageContainer",
-    preview: image.preview ?? image.image
-  };
-};
-
-const imageToImageContainer = (image: YeetImage): YeetImageContainer => {
-  return {
-    id: image.id ?? image.uri,
-    image,
-    preview: image,
-    source: image,
-    sourceType: ImageSourceType.search,
-    __typename: "YeetImageContainer"
+    preview,
+    timestamp: preview.timestamp || null
   };
 };
 
@@ -81,7 +72,6 @@ export default {
         mediaSubtypes,
         after
       };
-
       try {
         if (Platform.OS === "android") {
           const status = await ensureExternalStoragePermission();
@@ -103,11 +93,14 @@ export default {
           }
         }
 
+        console.time("Get Photos");
+
+        const _offset = Math.max(offset, 0);
         // const result = await getPhotos(params);
-        const result = await global.MediaPlayerViewManager.getPhotos({
+        const result = global.MediaPlayerViewManager.getPhotos({
           mediaType: assetType,
-          albumID: album,
-          offset: Math.max(offset, 0),
+          albumId: album,
+          offset: _offset,
           length: first,
           size: {
             width,
@@ -118,9 +111,13 @@ export default {
         });
         console.timeEnd("Get Photos");
 
-        const id = `cameraroll_${[params.assetType, mediaSubtypes, offset].join(
-          "/"
-        )}`;
+        const id = `cameraroll_${[
+          params.assetType,
+          mediaSubtypes,
+          _offset,
+          album,
+          first
+        ].join("/")}`;
 
         const response = {
           __typename: "CameraRollResult",
@@ -174,6 +171,7 @@ export default {
       }
       try {
         const data = await fetchRecentlyUsedContent();
+
         const id = `recent-images`;
         return {
           __typename: "RecentImageSearchResponse",

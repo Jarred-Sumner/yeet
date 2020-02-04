@@ -65,8 +65,6 @@ export class App extends React.Component {
   constructor(props) {
     super(props);
 
-    enableScreens();
-
     OneSignal.init(ONESIGNAL_APP_ID, { kOSSettingsKeyAutoPrompt: false });
 
     OneSignal.addEventListener("received", this.onReceived);

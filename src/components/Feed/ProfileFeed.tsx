@@ -122,7 +122,7 @@ export const ProfileFeedComponent = ({
               <Animated.View>
                 <Text
                   numberOfLines={1}
-                  adjustsSizeToFit
+                  adjustsFontSizeToFit
                   style={styles.username}
                 >
                   {profile.username}

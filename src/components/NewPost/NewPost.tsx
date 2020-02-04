@@ -563,6 +563,7 @@ export class NewPost extends React.Component<{}, State> {
                   onChange={this.handleChangePost}
                   isReply={!this.props.threadId}
                   onChangeFormat={this.handleChangeLayout}
+                  isFocused={this.props.isFocused && !this.state.showGallery}
                   controlsOpacityValue={this.controlsOpacityValue}
                   onOpenGallery={this.handleOpenGallery}
                   inlineNodes={inlineNodes}
@@ -588,7 +589,7 @@ export class NewPost extends React.Component<{}, State> {
             />
           </View>
         </Panner>
-        {!this.state.disableGallery && this.props.isFocused && (
+        {this.state.showGallery && (
           <GallerySheet
             show={this.state.showGallery}
             blockId={this.state.galleryBlockId}

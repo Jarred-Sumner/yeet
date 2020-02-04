@@ -16,6 +16,8 @@
 #import "CameraRoll.h"
 #import <React/RCTUIManager.h>
 #import <React/RCTScrollView.h>
+#import "RCTConvert+PHotos.h"
+
 
 
 @interface RCTUIManager (ext)
@@ -80,26 +82,16 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
   MediaPlayerViewManager *_mediaPlayerManager = mediaPlayerManager;
   RCTCxxBridge *cxxBridge = (RCTCxxBridge *)mediaPlayerManager.bridge;
 
-
-
   if (cxxBridge.runtime == nullptr) {
     return;
   }
 
-
-
  jsi::Runtime &runtime = *(jsi::Runtime *)cxxBridge.runtime;
 
  auto reaModuleName = "MediaPlayerViewManager";
-
  auto reaJsiModule = std::make_shared<MediaPlayerJSIModule>(std::move(_mediaPlayerManager));
-
  auto object = jsi::Object::createFromHostObject(runtime, reaJsiModule);
-
-
-
  runtime.global().setProperty(runtime, reaModuleName, std::move(object));
-
 }
 
 jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
@@ -254,15 +246,16 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
            const jsi::Value *arguments,
            size_t count) -> jsi::Value {
 
-
-       NSArray *collections = [CameraRoll assetCollections];
-       NSMutableArray *dicts = [[NSMutableArray alloc] initWithCapacity:collections.count];
-       for (PHAssetCollection *collection in collections) {
-         [dicts addObject:[collection dictionaryValue]];
-       }
-
-       return convertNSArrayToJSIArray(runtime, dicts);
+       return convertNSArrayToJSIArray(runtime, [CameraRoll assetCollectionDictionaries]);
     });
+  } else if (methodName == "photosAuthorizationStatus") {
+    NSString *value = [RCTConvert PHAuthorizationStatusValuesReversed][@([PHPhotoLibrary authorizationStatus])];
+
+    if (value != nil) {
+      return convertNSStringToJSIString(runtime, value);
+    } else {
+      return convertNSStringToJSIString(runtime, [RCTConvert PHAuthorizationStatusValuesReversed][@(PHAuthorizationStatusNotDetermined)]);
+    }
   } else if (methodName == "stopAlbumSession") {
      return jsi::Function::createFromHostFunction(runtime, name, 1, [](
            jsi::Runtime &runtime,
@@ -329,7 +322,7 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        RCTExecuteOnMainQueue(^{
          RCTScrollView *scrollView = [mediaPlayerViewManager.bridge.uiManager viewForReactTag:scrollViewTag];
          if (scrollView != nil) {
-           [scrollView scrollViewDidScroll:scrollView.scrollView];
+           [scrollView scrollViewDidZoom:scrollView.scrollView];
            bodyValue = scrollView.body;
          }
 
@@ -337,7 +330,7 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        });
 
 
-       dispatch_group_wait(group, DISPATCH_TIME_NOW + (int64_t)(0.5 * NSEC_PER_SEC));
+       dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
 
        if (bodyValue != nil) {
          jsi::Value body = convertObjCObjectToJSIValue(runtime, bodyValue);
@@ -346,8 +339,6 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        } else {
          return jsi::Value::null();
        }
-
-
     });
   }
 

@@ -48,7 +48,8 @@ const normalizeSearchResponse = (
     preview: image,
     image,
     sourceType: ImageSourceType.search,
-    __typename: "YeetImageContainer"
+    __typename: "YeetImageContainer",
+    timestamp: null
   };
 };
 
@@ -73,8 +74,6 @@ export const performSearch = ({
     limit,
     offset
   };
-
-  console.log({ transparent });
 
   if (transparent) {
     params.transparent = 1;

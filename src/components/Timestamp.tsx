@@ -1,17 +1,13 @@
-import React from "react";
+import { differenceInHours, differenceInWeeks } from "date-fns";
 import {
-  format,
-  formatDistanceStrict,
-  isSameDay,
-  isSameHour,
-  isSameMinute,
-  isSameWeek,
-  differenceInMinutes,
   differenceInDays,
+  differenceInMinutes,
+  format,
+  isSameMinute,
   isSameMonth
 } from "date-fns/esm";
+import React from "react";
 import { Text } from "./Text";
-import { differenceInHours, differenceInWeeks } from "date-fns";
 
 export type TimestampType = string | Date;
 
@@ -46,13 +42,20 @@ export const shortFormat = (time: TimestampType): string => {
   }
 };
 
+export const shortDateFormat = (time: TimestampType): string => {
+  const date = normalizeTimestamp(time);
+
+  return format(date, "MMMM dd, yyyy");
+};
+
 export const Timestamp = ({
   TextComponent = Text,
   time,
+  formatter = shortFormat,
   style,
   ...otherProps
 }) => {
-  const formattedTime = shortFormat(time);
+  const formattedTime = formatter(time);
 
   return (
     <TextComponent {...otherProps} style={style}>

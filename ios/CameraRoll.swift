@@ -25,24 +25,46 @@ import Photos
     return fetcher
   }()
 
-  @objc(assetCollections) static var assetCollections: [PHAssetCollection] = {
+  @objc(assetCollectionDictionaries) static func assetCollectionDictionaries() -> [Dictionary<String, Any>] {
     let fetchOptions = PHFetchOptions()
-    fetchOptions.sortDescriptors = [NSSortDescriptor(key: "localizedTitle", ascending: true)]
-    fetchOptions.predicate = NSPredicate(format: "estimatedAssetCount > 0")
+    fetchOptions
 
-    let albums = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: fetchOptions)
+    let albums = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .albumRegular, options: fetchOptions)
     let smartAlbums = PHAssetCollection.fetchAssetCollections(with: .smartAlbum, subtype: .any, options: fetchOptions)
 
     var result = Set<PHAssetCollection>()
+    var counts: Dictionary<PHAssetCollection, Int> = [:]
 
     [albums, smartAlbums].forEach {
       $0.enumerateObjects { collection, index, stop in
-        result.insert(collection)
+        var count = collection.estimatedAssetCount
+
+        var hasItems = collection.estimatedAssetCount > 0 && collection.estimatedAssetCount != NSNotFound
+
+        if collection.estimatedAssetCount == NSNotFound {
+          count = PHAsset.fetchAssets(in: collection, options: nil).count
+          counts[collection] = count
+          hasItems = count > 0
+        } else {
+          counts[collection] = count
+        }
+
+        if hasItems {
+          result.insert(collection)
+        }
       }
     }
 
-    return Array(result)
-  }()
+    let results: [PHAssetCollection] = Array(result).sorted { $0.localizedTitle != nil && $1.localizedTitle != nil ? $0.localizedTitle!.lowercased() < $1.localizedTitle!.lowercased() : true }
+
+    var dicts: [Dictionary<String, Any>] = []
+
+    for result in results {
+      dicts.append(result.dictionaryValueWithCount(count: counts[result] ?? 0 ))
+    }
+
+    return dicts
+  }
 
   @objc(stopSession:)
   static func stopSession(_ cacheKey: NSString) {
@@ -63,7 +85,7 @@ import Photos
 
       var collection: PHAssetCollection?  = PHAssetCollection.fetchAssetCollections(with:.smartAlbum,subtype:.smartAlbumUserLibrary,options: nil).firstObject
 //      if #available(iOS 13.0, *) {
-//        collection = PHAssetCollection.fetchAssetCollections(with:.smartAlbum,subtype:.smartAlbumRecentlyAdded,options: nil).firstObject
+//        collection = PHAssetCollection.fetchAssetCollectio  ns(with:.smartAlbum,subtype:.smartAlbumRecentlyAdded,options: nil).firstObject
 //      } else {
 //        collection = PHAssetCollection.fetchAssetCollections(with:.smartAlbum,subtype:.smartAlbumUserLibrary,options: nil).firstObject
 //      }
@@ -87,7 +109,6 @@ import Photos
 
   @objc(withAlbumID:mediaType:size:contentMode:cache:)
   static func with(assetCollectionID: String? = nil, mediaType: String? = nil, size: CGSize = .zero, contentMode: PHImageContentMode = .aspectFill, cache: Bool = true) -> CameraRoll {
-
     var assetCollection: PHAssetCollection? = nil
 
     if let localId = assetCollectionID {
@@ -102,6 +123,14 @@ import Photos
      } else if mediaType == "videos" {
        _mediaType = PHAssetMediaType.video
      }
+
+    if cache {
+      let cacheKey = self.cacheKey(assetCollection: assetCollection, mediaType: _mediaType, size: size, contentMode: contentMode, cache: cache)
+
+      if let cameraRoll = CameraRoll.cameraRolls.object(forKey: cacheKey as NSString) {
+        return cameraRoll
+      }
+    }
 
     return CameraRoll(assetCollection: assetCollection, mediaType: _mediaType, size: size, contentMode: contentMode, cache: cache)
   }
@@ -138,7 +167,15 @@ import Photos
 
     var values: [Dictionary<String, Any>] = []
     for asset in data {
-      let timestamp = asset.creationDate != nil ? dateFormatter.string(from: asset.creationDate!) : nil
+      var timestamp: Date? = nil
+
+      if asset.modificationDate != nil {
+        timestamp = asset.modificationDate
+      }
+
+      if timestamp == nil {
+        timestamp = asset.creationDate
+      }
 
       var mimeType: MimeType? = nil
 
@@ -156,14 +193,14 @@ import Photos
         "height": asset.pixelHeight,
         "filename": filename,
         "mimeType": mimeType?.rawValue,
-        "timestamp": timestamp != nil ? timestamp! : nil,
+        "timestamp": timestamp != nil ? dateFormatter.string(from: timestamp!) : nil,
         "duration": asset.duration
       ])
     }
 
     return [
       "sessionId": cacheKey,
-      "album": assetCollection?.dictionaryValue,
+      "album": assetCollection != nil ? assetCollection!.dictionaryValueWithCount(count: assetCollection!.estimatedAssetCount) : nil,
       "page_info": [
         "offset": offset,
         "limit": length,
@@ -250,14 +287,14 @@ import Photos
 
 @objc(PHAssetCollection)
 extension PHAssetCollection {
-  @objc(dictionaryValue)
-  var dictionaryValue: [String: Any] {
+  @objc(dictionaryValueWithCount:)
+  func dictionaryValueWithCount(count: Int)  -> [String: Any] {
     return [
       "id": localIdentifier,
       "title": localizedTitle,
       "type": RCTConvert.phAssetCollectionTypeValuesReversed()[assetCollectionType.rawValue],
       "subtype": RCTConvert.phAssetCollectionTypeValuesReversed()[assetCollectionSubtype.rawValue],
-      "count":  estimatedAssetCount != NSNotFound ? NSNumber(value: estimatedAssetCount) : NSNumber(value: -1),
+      "count":  count,
       "__type": "CameraRollAlbum"
     ]
   }

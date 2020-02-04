@@ -410,11 +410,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.handleInsertPhoto(undefined, "all", true, true, true);
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
-        x: SPACING.double,
-        y:
-          this.state.postTopY > 0
-            ? (this.state.postBottomY - this.state.postTopY) / 2
-            : 100
+        x: SPACING.half,
+        y: this.state.postTopY > 0 ? 50 : 100
       });
     } else if (activeButton === ToolbarButtonType.plus) {
       const options = ["Text", "Image", "Cancel"];
@@ -815,6 +812,10 @@ class RawwPostEditor extends React.Component<Props, State> {
     keyboardHeightValue,
     tapYAbsolute
   ]) => {
+    if (!this.props.isFocused) {
+      return;
+    }
+
     const { focusedBlockId, focusType } = this.state;
 
     if (focusedBlockId && focusType === FocusType.absolute) {
@@ -1115,9 +1116,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     return node ? node.block : this.props.post.blocks[focusedBlockId];
   }
 
-  handleSetPostBottom = ([postBottomY, postTopY]) =>
-    this.setState({ postBottomY, postTopY });
-
   get focusedNode() {
     const { focusedBlockId, focusType } = this.state;
 
@@ -1364,6 +1362,9 @@ class RawwPostEditor extends React.Component<Props, State> {
   // onContentLayout = ({ nativeEvent: { layout } }) =>
   //   console.log("ON LAYOUT", { layout });
 
+  handleSetPostBottom = ([postBottomY, postTopY]) =>
+    this.setState({ postBottomY, postTopY });
+
   onContentLayout = Animated.event(
     [
       {
@@ -1411,119 +1412,121 @@ class RawwPostEditor extends React.Component<Props, State> {
       >
         <NavigationEvents onWillFocus={this.handleWillFocus} />
 
-        <Animated.Code
-          exec={Animated.block([
-            Animated.onChange(
-              this.focusTypeValue,
-              block([
-                cond(eq(this.focusTypeValue, FocusType.absolute), [
-                  set(this.props.controlsOpacityValue, 1.0),
-                  set(
-                    this.props.headerOpacity,
-                    sub(1.0, this.keyboardVisibleValue)
-                  )
-                ]),
+        {this.props.isFocused && (
+          <Animated.Code
+            exec={Animated.block([
+              Animated.onChange(this.keyboardVisibleValue, [
+                set(
+                  this.props.headerOpacity,
+                  sub(1.0, this.keyboardVisibleValue)
+                ),
+                set(this.props.controlsOpacityValue, 1.0)
+              ]),
 
-                Animated.onChange(this.keyboardVisibleValue, [
-                  set(
-                    this.props.headerOpacity,
-                    sub(1.0, this.keyboardVisibleValue)
-                  ),
-                  set(this.props.controlsOpacityValue, 1.0)
-                ]),
+              Animated.onChange(
+                this.focusTypeValue,
+                block([
+                  cond(eq(this.focusTypeValue, FocusType.absolute), [
+                    set(this.props.controlsOpacityValue, 1.0),
+                    set(
+                      this.props.headerOpacity,
+                      sub(1.0, this.keyboardVisibleValue)
+                    )
+                  ]),
 
-                cond(eq(this.focusTypeValue, FocusType.static), [
-                  set(
-                    this.props.controlsOpacityValue,
-                    sub(1.0, this.keyboardVisibleValue)
-                  ),
-                  set(
-                    this.props.headerOpacity,
-                    sub(1.0, this.keyboardVisibleValue)
-                  )
-                ]),
-                cond(eq(this.focusTypeValue, -1), [
-                  set(this.props.controlsOpacityValue, 1.0),
-                  set(this.currentScale, 1.0),
-                  set(this.props.headerOpacity, 1.0)
-                ]),
-                cond(eq(this.focusTypeValue, FocusType.panning), [
-                  set(this.props.headerOpacity, 0)
+                  cond(eq(this.focusTypeValue, FocusType.static), [
+                    set(
+                      this.props.controlsOpacityValue,
+                      sub(1.0, this.keyboardVisibleValue)
+                    ),
+                    set(
+                      this.props.headerOpacity,
+                      sub(1.0, this.keyboardVisibleValue)
+                    )
+                  ]),
+                  cond(eq(this.focusTypeValue, -1), [
+                    set(this.props.controlsOpacityValue, 1.0),
+                    set(this.currentScale, 1.0),
+                    set(this.props.headerOpacity, 1.0)
+                  ]),
+                  cond(eq(this.focusTypeValue, FocusType.panning), [
+                    set(this.props.headerOpacity, 0)
+                  ])
                 ])
-              ])
-            ),
+              ),
 
-            Animated.onChange(this.keyboardHeightValue, [
-              Animated.set(
-                this.relativeKeyboardHeightValue,
-                Animated.cond(
-                  Animated.greaterThan(
-                    this.props.offsetY,
-                    this.props.paddingTop
-                  ),
-                  Animated.sub(
-                    this.props.keyboardHeight,
-                    Animated.sub(
-                      Animated.multiply(this.props.scrollY, 1),
-                      Animated.add(this.props.offsetY, -20)
-                    )
-                  ),
-                  Animated.add(
-                    this.keyboardHeightValue,
-                    Animated.sub(
-                      Animated.sub(this.props.scrollY, this.props.offsetY),
-                      20
+              Animated.onChange(this.keyboardHeightValue, [
+                Animated.set(
+                  this.relativeKeyboardHeightValue,
+                  Animated.cond(
+                    Animated.greaterThan(
+                      this.props.offsetY,
+                      this.props.scrollY
+                    ),
+                    Animated.add(
+                      Animated.sub(
+                        this.keyboardHeightValue,
+                        this.props.offsetY
+                      ),
+                      -20
+                    ),
+                    Animated.add(
+                      this.keyboardHeightValue,
+                      Animated.sub(
+                        Animated.sub(this.props.scrollY, this.props.offsetY),
+                        20
+                      )
                     )
                   )
                 )
-              )
-            ]),
+              ]),
 
-            Animated.onChange(
-              this.postBottomY,
-              Animated.call(
-                [this.postBottomY, this.props.offsetY],
-                this.handleSetPostBottom
-              )
-            ),
-            Animated.onChange(
-              this.offsetY,
-              Animated.call(
-                [this.postBottomY, this.props.offsetY],
-                this.handleSetPostBottom
-              )
-            ),
-
-            // Ignore background taps when keyboard is showing/hiding
-            Animated.onChange(
-              this.tapGestureState,
-              block([
-                cond(
-                  Animated.and(
-                    eq(this.tapGestureState, GestureState.END),
-                    Animated.or(
-                      eq(this.keyboardVisibleValue, 0),
-                      eq(this.keyboardVisibleValue, 1)
-                    )
-                  ),
-                  [
-                    Animated.call(
-                      [
-                        this.tapGestureState,
-                        this.panX,
-                        this.panY,
-                        this.focusTypeValue,
-                        this.focusedBlockValue,
-                        this.keyboardHeightValue
-                      ],
-                      this.handleTapBackground
-                    )
-                  ]
+              Animated.onChange(
+                this.postBottomY,
+                Animated.call(
+                  [this.postBottomY, this.props.offsetY],
+                  this.handleSetPostBottom
                 )
-              ])
-            )
-          ])}
-        />
+              ),
+              Animated.onChange(
+                this.props.offsetY,
+                Animated.call(
+                  [this.postBottomY, this.props.offsetY],
+                  this.handleSetPostBottom
+                )
+              ),
+
+              // Ignore background taps when keyboard is showing/hiding
+              Animated.onChange(
+                this.tapGestureState,
+                block([
+                  cond(
+                    Animated.and(
+                      eq(this.tapGestureState, GestureState.END),
+                      Animated.or(
+                        eq(this.keyboardVisibleValue, 0),
+                        eq(this.keyboardVisibleValue, 1)
+                      )
+                    ),
+                    [
+                      Animated.call(
+                        [
+                          this.tapGestureState,
+                          this.panX,
+                          this.panY,
+                          this.focusTypeValue,
+                          this.focusedBlockValue,
+                          this.keyboardHeightValue
+                        ],
+                        this.handleTapBackground
+                      )
+                    ]
+                  )
+                ])
+              )
+            ])}
+          />
+        )}
 
         <View style={this.postContainerStyle}>
           <PostPreview
@@ -1625,22 +1628,29 @@ class RawwPostEditor extends React.Component<Props, State> {
                     onChange={this.handleChangeSnapPoint}
                   />
                 )}
-
-              {this.state.focusType === FocusType.panning &&
-                this.state.showSnapGuide && (
-                  <SnapPreview
-                    key={_getPositionsKey(this.props.post.positions)}
-                    snapPoint={snapPoint}
-                    focusTypeValue={this.focusTypeValue}
-                    onDismiss={this.hideSnapGuide}
-                    offsetY={this.props.offsetY}
-                    bottom={this.postBottomY}
-                    positionKey={_getPositionsKey(this.props.post.positions)}
-                  />
-                )}
             </Layer>
           </PostPreview>
 
+          {this.state.focusType === FocusType.panning &&
+            this.state.showSnapGuide && (
+              <Layer
+                isShown
+                width={sizeStyle.width}
+                height={sizeStyle.height}
+                zIndex={LayerZIndex.icons}
+                pointerEvents="box-none"
+              >
+                <SnapPreview
+                  key={_getPositionsKey(this.props.post.positions)}
+                  snapPoint={snapPoint}
+                  focusTypeValue={this.focusTypeValue}
+                  onDismiss={this.hideSnapGuide}
+                  offsetY={this.props.offsetY}
+                  bottom={this.postBottomY}
+                  positionKey={_getPositionsKey(this.props.post.positions)}
+                />
+              </Layer>
+            )}
           <Layer
             isShown
             width={sizeStyle.width}
@@ -1653,9 +1663,9 @@ class RawwPostEditor extends React.Component<Props, State> {
               onSend={this.handleSend}
               focusedBlock={this.focusedBlock}
               keyboardVisibleOpacity={this.keyboardVisibleValue}
-              panX={this.panX}
+              panX={this.absoluteX}
               inputRef={this._blockInputRefs[this.state.focusedBlockId]}
-              panY={this.panY}
+              panY={this.absoluteY}
               isPageModal={this.props.isReply}
               waitFor={this.postPreviewHandlers}
               width={sizeStyle.width}

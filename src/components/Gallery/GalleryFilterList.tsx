@@ -1,6 +1,6 @@
 import useKeyboard from "@rnhooks/keyboard";
 import { NetworkStatus } from "apollo-client";
-import { chunk, uniqBy } from "lodash";
+import { chunk, uniqBy, first, flatMap } from "lodash";
 import * as React from "react";
 import { useApolloClient, useLazyQuery, useQuery } from "react-apollo";
 import { InteractionManager, PixelRatio, StyleSheet, View } from "react-native";
@@ -19,12 +19,12 @@ import { YeetImageContainer } from "../../lib/imageSearch";
 import IMAGE_SEARCH_QUERY from "../../lib/ImageSearchQuery.local.graphql";
 import POST_SEARCH_QUERY from "../../lib/PostSearchQuery.graphql";
 import { SPACING } from "../../lib/styles";
-import FastList from "../FastList";
+import FastList, { ScrollDirection } from "../FastList";
 import { FlatList } from "../FlatList";
 import MediaPlayer from "../MediaPlayer";
 import { registrations } from "../MediaPlayer/MediaPlayerComponent";
 import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
-import { partition } from "lodash";
+import { partition, maxBy } from "lodash";
 import ImageSearch, {
   ImageSearchContext,
   IMAGE_SEARCH_HEIGHT
@@ -55,6 +55,8 @@ import {
   VERTICAL_ITEM_WIDTH
 } from "./sizes";
 import memoizee from "memoizee";
+import { isSameDay } from "date-fns/esm";
+import { PERMISSIONS, RESULTS } from "react-native-permissions";
 
 const memoize = memoizee;
 const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
@@ -127,6 +129,7 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
     headerHeight: 0,
     bottomInset: 0,
 
+    paused: true,
     inset: 0,
     numColumns: COLUMN_COUNT,
     useFastList: true
@@ -139,6 +142,8 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
     };
   }
 
+  flatListRef: FastList | null = null;
+
   setFlatListRef = (flatList: FlatList) => {
     this.flatListRef = flatList;
 
@@ -147,9 +152,29 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
     if (flatListRef && typeof flatListRef === "function") {
       flatListRef(flatList);
     }
+
+    if (this.flatListRef) {
+      this.handleScroll({
+        nativeEvent: { visibleRows: this.flatListRef.visibleRows }
+      });
+    }
   };
 
-  componentDidUpdate(prevProps) {
+  componentDidMount() {
+    if (
+      this.props.onVisibleItemsChange &&
+      this.state.showScrollView &&
+      this.sectionCounts
+    ) {
+      if (this.flatListRef) {
+        this.handleScroll({
+          nativeEvent: { visibleRows: this.flatListRef.visibleRows }
+        });
+      }
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
     const { data } = this.props;
 
     if (
@@ -159,6 +184,22 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
       data[0].id !== prevProps.data[0].id
     ) {
       this.scrollTop(true);
+      this.handleScroll({
+        nativeEvent: { visibleRows: this.flatListRef.visibleRows }
+      });
+    }
+
+    if (
+      this.props.onVisibleItemsChange &&
+      !prevState.showScrollView &&
+      this.state.showScrollView &&
+      this.sectionCounts
+    ) {
+      if (this.flatListRef) {
+        this.handleScroll({
+          nativeEvent: { visibleRows: this.flatListRef.visibleRows }
+        });
+      }
     }
   }
 
@@ -249,19 +290,40 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
       })
     : undefined;
 
+  scrollToTopRaf: number | null = 0;
+
   scrollTop = (animated = true) => {
-    if (this.props.useFastList) {
-      this.flatListRef && this.flatListRef.scrollToTop(animated);
-    } else {
-      this.flatListRef &&
-        this.flatListRef.scrollToOffset({
+    if (!this.state.showScrollView) {
+      return;
+    }
+
+    let scrollToTopRaf = window.requestAnimationFrame(() => {
+      if (this.props.useFastList) {
+        this.flatListRef &&
+          typeof this.flatListRef.scrollToTop === "function" &&
+          this.flatListRef.scrollToTop(animated);
+      } else {
+        this.flatListRef?.scrollToOffset({
           offset: this.props.isModal
             ? this.contentOffset.y
             : this.contentOffset.y - TOP_Y,
           animated
         });
-    }
+      }
+
+      if (scrollToTopRaf === this.scrollToTopRaf) {
+        this.scrollToTopRaf = null;
+        scrollToTopRaf = null;
+      }
+    });
+
+    this.scrollToTopRaf = scrollToTopRaf;
   };
+
+  componentWillUnmount() {
+    this.visibleRaf && window.cancelAnimationFrame(this.visibleRaf);
+    this.scrollToTopRaf && window.cancelAnimationFrame(this.scrollToTopRaf);
+  }
 
   onScrollBeginDrag =
     this.props.insetValue &&
@@ -321,7 +383,7 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
         onPress={this.handlePressColumn}
         transparent={this.props.transparent}
         resizeMode={this.props.resizeMode}
-        paused={!this.props.isFocused}
+        paused={this.props.paused}
       />
     );
   };
@@ -341,9 +403,53 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
         onPress={this.handlePressColumn}
         transparent={this.props.transparent}
         resizeMode={this.props.resizeMode}
-        paused={!this.props.isFocused}
+        paused={this.props.paused}
       />
     );
+  };
+
+  visibleKey = null;
+
+  visibleItemsFromRows = (visibleRows, ids) => {
+    return flatMap(visibleRows, rowNumber =>
+      this.sections[rowNumber].map(item => {
+        const cell = this.props.data[item];
+        if (cell) {
+          ids?.push(cell.id);
+        }
+
+        return cell;
+      })
+    );
+  };
+
+  visibleRaf: number | null = null;
+  handleScroll = () => {
+    // console.time("Handle Scroll");
+    // if (this.visibleRaf) {
+    //   window.cancelAnimationFrame(this.visibleRaf);
+    // }
+    // const raf = window.requestAnimationFrame(() => {
+    //   if (!this.flatListRef) {
+    //     return;
+    //   }
+    //   const visibleIDs = [];
+    //   const visibleRows = this.visibleItemsFromRows(
+    //     this.flatListRef.visibleRows,
+    //     visibleIDs
+    //   );
+    //   const visibleKey = visibleIDs.join("-");
+    //   if (visibleKey !== this.visibleKey) {
+    //     this.visibleKey = visibleIDs;
+    //     this.props.onVisibleItemsChange &&
+    //       this.props.onVisibleItemsChange(visibleRows);
+    //   }
+    //   if (this.visibleRaf === raf) {
+    //     this.visibleRaf = null;
+    //   }
+    //   console.timeEnd("Handle Scroll");
+    // });
+    // this.visibleRaf = raf;
   };
 
   renderHeader = list => {
@@ -358,6 +464,10 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
         <ListHeaderComponent />
       </Animated.View>
     );
+  };
+
+  handleScrollEnd = event => {
+    this.props.onEndReached && this.props.onEndReached(event);
   };
 
   render() {
@@ -450,7 +560,7 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
                 // }
                 headerHeight={0}
                 style={this.listStyle}
-                onScrollEnd={onEndReached}
+                onScrollEnd={this.handleScrollEnd}
                 isFastList
                 alwaysBounceVertical
                 renderEmpty={
@@ -579,15 +689,10 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
   }
 }
 
-const _buildValue = memoize(
-  image => ({
-    image,
-    id: `${image.id}-cell`
-  }),
-  {
-    max: 1000
-  }
-);
+const _buildValue = image => ({
+  image,
+  id: `${image.id}-cell`
+});
 
 const buildValue = (data: Array<YeetImageContainer> = []) => {
   return (data || []).map(_buildValue);
@@ -611,7 +716,8 @@ const postToCell = memoize(
             duration,
             mimeType,
             id: _id,
-            url: coverUrl ?? previewUrl ?? url
+            url: url,
+            cover: coverUrl ?? previewUrl
           },
       post,
       id
@@ -646,7 +752,7 @@ export const SearchFilterList = ({
   const [isKeyboardVisible] = useKeyboard();
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
 
-  const filterListRef = React.useRef();
+  const filterListRef = React.useRef(null);
 
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
@@ -692,29 +798,22 @@ export const SearchFilterList = ({
     }
   }, [imagesQuery?.data, setData]);
 
-  React.useEffect(() => {
-    if (!show) {
-      const task = InteractionManager.runAfterInteractions(() => {
-        changeTransparent(defaultTransparent);
-        onChangeQuery("");
-        filterListRef.current?.scrollTop(false);
-        setData([]);
-      });
-
-      return () => {
-        task.cancel();
-      };
-    }
-  }, [show, onChangeQuery, setData, defaultTransparent]);
-
   const changeQuery = React.useCallback(
     // function
     (_query: string) => {
       onChangeQuery(_query);
 
-      filterListRef.current?.scrollTop();
+      filterListRef?.current?.scrollTop();
     },
-    [onChangeQuery, imagesQuery, setData, transparent, isFocused, show]
+    [
+      onChangeQuery,
+      imagesQuery,
+      setData,
+      transparent,
+      isFocused,
+      show,
+      filterListRef
+    ]
   );
 
   const toggleTransparent = React.useCallback(
@@ -723,9 +822,9 @@ export const SearchFilterList = ({
         return;
       }
       changeTransparent(value);
-      filterListRef.current?.scrollTop();
+      filterListRef?.current?.scrollTop();
     },
-    [changeTransparent, query, isFocused]
+    [changeTransparent, query, isFocused, filterListRef]
   );
 
   const imageSearchContext = React.useMemo(() => {
@@ -857,6 +956,7 @@ export const GIFsFilterList = ({
   ...otherProps
 }) => {
   const [query, onChangeQuery] = React.useState("");
+
   const [isKeyboardVisible] = useKeyboard();
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
 
@@ -988,6 +1088,7 @@ export const GIFsFilterList = ({
         headerHeight={IMAGE_SEARCH_HEIGHT}
         scrollY={scrollY}
         listKey="gifs"
+        paused={!isFocused}
         onEndReached={handleEndReached}
         isModal={isModal}
         insetValue={insetValue}
@@ -1018,7 +1119,6 @@ export const MemesFilterList = ({
   const [filter, onChangeFilter] = React.useState(MemeFilterType.spicy);
   const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
   const isHeaderSticky = query.length > 0 || isKeyboardVisible;
-  const lastContentOffset = React.useRef({ y: otherProps.offset || 0, x: 0 });
 
   const [loadMemes, memesQuery] = useLazyQuery<
     PostSearchQuery,
@@ -1037,7 +1137,6 @@ export const MemesFilterList = ({
   React.useEffect(() => {
     if (isFocused && typeof loadMemes === "function") {
       loadMemes();
-      lastContentOffset.current = { y: otherProps.offset || 0, x: 0 };
     }
   }, [loadMemes, isFocused, otherProps?.offset]);
 
@@ -1107,17 +1206,11 @@ export const MemesFilterList = ({
         return;
       }
 
-      const { contentOffset, targetContentOffset } = args?.nativeEvent ?? {};
-      if (contentOffset) {
-        if (targetContentOffset && targetContentOffset.y < contentOffset.y) {
-          return;
-        } else if (
-          lastContentOffset.current.y > contentOffset.y &&
-          contentOffset.y > 1
-        ) {
-          return;
-        }
-        lastContentOffset.current = contentOffset;
+      const { contentOffset, targetContentOffset, direction } =
+        args?.nativeEvent ?? {};
+
+      if (direction !== ScrollDirection.down) {
+        return;
       }
 
       if (
@@ -1186,6 +1279,7 @@ export const MemesFilterList = ({
         stickyHeader={isHeaderSticky}
         // removeClippedSubviews={isFocused}
         isFocused={isFocused}
+        paused
         hasNextPage={memesQuery?.data?.searchPosts?.hasMore ?? false}
         networkStatus={memesQuery.networkStatus}
       />
@@ -1212,7 +1306,7 @@ export const CameraRollFilterList = ({
 }) => {
   const ref = React.useRef<GalleryFilterListComponent>(null);
   const [assetType, setAssetType] = React.useState(defaultAssetType);
-  const lastContentOffset = React.useRef({ y: otherProps.offset || 0, x: 0 });
+  const [album, setAlbum] = React.useState(null);
 
   const client = useApolloClient();
   client.addResolvers(CameraRollGraphQL);
@@ -1226,20 +1320,62 @@ export const CameraRollFilterList = ({
     height = VERTICAL_ITEM_HEIGHT;
     width = VERTICAL_ITEM_WIDTH;
   }
-  const first = getPaginatedLimit(columnCount, height);
 
-  const [loadPhotos, photosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
+  const photosQuery = useQuery(CAMERA_ROLL_QUERY, {
+    skip:
+      global.MediaPlayerViewManager?.photosAuthorizationStatus !==
+      RESULTS.GRANTED,
     variables: {
       assetType,
       width,
       height,
       contentMode: "aspectFill",
-      first: first
+      album: album ? album.id : undefined,
+
+      first: getPaginatedLimit(columnCount, height) * 2
     },
-    notifyOnNetworkStatusChange: true
+    notifyOnNetworkStatusChange: true,
+    fetchPolicy: "network-only"
   });
 
+  const handleChangeAlbum = React.useCallback(
+    album => {
+      setAlbum(album);
+      setAssetType("all");
+    },
+    [
+      setAlbum,
+      setAssetType,
+      photosQuery,
+      width,
+      height,
+      columnCount,
+      height,
+      getPaginatedLimit
+    ]
+  );
+
   const isFirstLoad = React.useRef(false);
+
+  // const onVisibleItemsChange = React.useCallback(
+  //   items => {
+  //     const oldestItem = maxBy(items, "image.timestamp");
+  //     if (oldestItem) {
+  //       const newDate = new Date(oldestItem.image.timestamp);
+  //       const isDifferent = !_lastVisibleDate.current
+  //         ? true
+  //         : !isSameDay(_lastVisibleDate.current, newDate);
+  //       if (isDifferent) {
+  //         setVisibleDate(newDate);
+  //         _lastVisibleDate.current = newDate;
+  //       }
+  //     } else if (_lastVisibleDate.current) {
+  //       _lastVisibleDate.current = null;
+  //       setVisibleDate(null);
+  //     }
+  //   },
+  //   [maxBy, first, switcherRef, setVisibleDate, _lastVisibleDate]
+  // );
 
   React.useEffect(() => {
     const sessionId = photosQuery?.data?.cameraRoll?.sessionId;
@@ -1253,47 +1389,15 @@ export const CameraRollFilterList = ({
     }
   }, [photosQuery?.data?.cameraRoll?.sessionId]);
 
-  const _setAssetType = React.useCallback(
-    assetType => {
-      isFirstLoad.current = false;
-
-      ref.current.scrollTop(true);
-
-      setAssetType(assetType);
-
-      let columnCount = 3;
-      let height = SQUARE_ITEM_HEIGHT;
-      let width = SQUARE_ITEM_HEIGHT;
-
-      if (assetType === "videos") {
-        columnCount = 3;
-        height = VERTICAL_ITEM_HEIGHT;
-        width = VERTICAL_ITEM_WIDTH;
-      }
-
-      photosQuery?.refetch({
-        assetType,
-        width,
-        height,
-        contentMode: "aspectFill",
-        first: getPaginatedLimit(columnCount, height)
-      });
-    },
-    [setAssetType, photosQuery, ref]
-  );
-
-  React.useEffect(() => {
-    if (isFocused && typeof loadPhotos === "function" && !photosQuery?.called) {
-      loadPhotos();
-      lastContentOffset.current = { y: otherProps.offset || 0, x: 0 };
-    }
-  }, [loadPhotos, isFocused, otherProps?.offset]);
-
   const data: Array<GalleryValue> = React.useMemo(() => {
     const data = photosQuery?.data?.cameraRoll?.data ?? [];
 
     return buildValue(data);
-  }, [photosQuery?.data, photosQuery, photosQuery?.networkStatus]);
+  }, [
+    photosQuery?.data?.cameraRoll?.id,
+    photosQuery?.data?.cameraRoll?.data,
+    photosQuery?.data?.cameraRoll?.sessionId
+  ]);
 
   const handleEndReached = React.useCallback(
     args => {
@@ -1303,9 +1407,7 @@ export const CameraRollFilterList = ({
         return;
       }
 
-      const { contentOffset, targetContentOffset } = args?.nativeEvent ?? {};
-
-      lastContentOffset.current = contentOffset;
+      const { direction } = args?.nativeEvent ?? {};
 
       if (
         !(
@@ -1313,6 +1415,13 @@ export const CameraRollFilterList = ({
           networkStatus !== NetworkStatus.fetchMore &&
           typeof photosQuery?.fetchMore === "function"
         )
+      ) {
+        return;
+      }
+
+      if (
+        direction === ScrollDirection.up ||
+        direction === ScrollDirection.neutral
       ) {
         return;
       }
@@ -1331,6 +1440,7 @@ export const CameraRollFilterList = ({
           cache: true,
           first: getPaginatedLimit(columnCount, height)
         },
+
         updateQuery: (
           previousResult,
           { fetchMoreResult }: { fetchMoreResult }
@@ -1371,6 +1481,13 @@ export const CameraRollFilterList = ({
     };
   }, []);
 
+  const _setAssetType = React.useCallback(
+    assetType => {
+      setAssetType(assetType);
+    },
+    [setAssetType]
+  );
+
   return (
     <>
       <GalleryFilterListComponent
@@ -1382,6 +1499,8 @@ export const CameraRollFilterList = ({
         listKey={assetType}
         offset={offset}
         scrollY={scrollY}
+        paused
+        // onVisibleItemsChange={onVisibleItemsChange}
         numColumns={columnCount}
         itemHeight={height}
         itemWidth={width}
@@ -1395,7 +1514,10 @@ export const CameraRollFilterList = ({
 
       <CameraRollAssetTypeSwitcher
         isModal={isModal}
+        // visibleDate={visibleDate}
         assetType={assetType}
+        onChangeAlbum={handleChangeAlbum}
+        album={album}
         setAssetType={_setAssetType}
       />
     </>

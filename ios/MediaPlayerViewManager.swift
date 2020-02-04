@@ -47,8 +47,6 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     set (newValue) {
       super.bridge = newValue
 
-
-
       newValue.dispatchBlock({ [weak self] in
         guard let this = self else {
           return
@@ -56,7 +54,6 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
         MediaPlayerJSIModuleInstaller.install(this)
       }, queue: RCTJSThread)
-
     }
   }
 

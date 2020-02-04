@@ -193,4 +193,12 @@ RCT_ENUM_CONVERTER_WITH_REVERSED(PHAssetResourceType, (@{
     return [[CLLocation alloc] initWithCoordinate:CLLocationCoordinate2DMake(lat, lng) altitude:altitude horizontalAccuracy:0 verticalAccuracy:0 course:course speed:speed timestamp:timeStamp];
 }
 
+RCT_ENUM_CONVERTER_WITH_REVERSED(PHAuthorizationStatus, (@{
+@"denied": @(PHAuthorizationStatusNotDetermined),
+@"blocked": @(PHAuthorizationStatusDenied),
+@"granted": @(PHAuthorizationStatusAuthorized),
+@"unavailable": @(PHAuthorizationStatusRestricted)
+}), PHAuthorizationStatusNotDetermined, integerValue)
+
+
 @end

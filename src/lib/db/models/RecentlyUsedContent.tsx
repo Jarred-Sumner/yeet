@@ -113,7 +113,7 @@ export class RecentlyUsedContent extends Model {
     return {
       id: uid,
       __typename: "YeetImageContainer",
-
+      timestamp: this.createdAt.toString(),
       image: {
         uri: imageUri,
         width: imageWidth,

@@ -8,7 +8,6 @@ import {
 } from "react-native";
 import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import Carousel from "react-native-snap-carousel";
 import { TOP_Y, SCREEN_DIMENSIONS } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
 import { sendLightFeedback, sendSelectionFeedback } from "../../lib/Vibration";
@@ -221,8 +220,6 @@ export class FormatPicker extends React.PureComponent {
     this.props.onChangeLayout(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
-
-  carouselRef = React.createRef<Carousel>();
 
   translateX = Animated.multiply(
     Animated.multiply(this.props.position, LIST_ITEM_WIDTH),
