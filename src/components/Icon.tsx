@@ -17,6 +17,7 @@ export enum IconName {
   die2 = "die2",
   die3 = "die3",
   die4 = "die4",
+  clock = "clock",
   die5 = "die5",
   die6 = "die6",
   circleArrowUp = "circlearrowup",
@@ -143,6 +144,7 @@ export const IconClip = props => <Icon name={IconName.clip} {...props} />;
 export const IconClose = props => <Icon name={IconName.close} {...props} />;
 export const IconCrop = props => <Icon name={IconName.crop} {...props} />;
 export const IconHomeAlt = props => <Icon name={IconName.homeAlt} {...props} />;
+export const IconClock = props => <Icon name={IconName.clock} {...props} />;
 export const IconHome = props => <Icon name={IconName.home} {...props} />;
 export const IconLike = props => <Icon name={IconName.like} {...props} />;
 export const IconLikeAlt = props => <Icon name={IconName.likeAlt} {...props} />;

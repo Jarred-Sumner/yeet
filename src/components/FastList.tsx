@@ -550,6 +550,7 @@ export interface FastListProps {
 interface FastListState {
   batchSize: number;
   blockStart: number;
+  isEmpty: boolean;
   blockEnd: number;
   height?: number;
   items?: FastListItem[];
@@ -592,6 +593,7 @@ function getFastListState(
       batchSize,
       blockStart,
       blockEnd,
+      isEmpty: true,
       height: insetTop + insetBottom,
       items: []
     };
@@ -617,6 +619,10 @@ function getFastListState(
     batchSize,
     blockStart,
     blockEnd,
+    isEmpty:
+      sections.reduce((total, rowLength) => {
+        return total + rowLength;
+      }, 0) === 0,
     ...results
   };
 }
@@ -832,10 +838,9 @@ export default class FastList extends React.PureComponent<
       renderEmpty
     } = this.props;
 
-    const { items = [] } = this.state;
+    const { items = [], isEmpty } = this.state;
 
-    const _isEmpty = this.isEmpty();
-    if (renderEmpty != null && _isEmpty) {
+    if (renderEmpty != null && isEmpty) {
       return renderEmpty();
     }
 
@@ -1046,6 +1051,7 @@ export default class FastList extends React.PureComponent<
       scrollTopValue,
       style,
       renderEmpty,
+      isLoading = false,
       contentInsetAdjustmentBehavior,
       /* eslint-enable no-unused-vars */
       ...props
@@ -1054,6 +1060,10 @@ export default class FastList extends React.PureComponent<
     // well! in order to support continuous scrolling of a scrollview/list/whatever in an action sheet, we need
     // to wrap the scrollview in a NativeViewGestureHandler. This wrapper does that thing that need do
     const wrapper = renderActionSheetScrollViewWrapper || (val => val);
+    if (this.state.isEmpty && !isLoading && typeof renderEmpty === "function") {
+      return <View style={style}>{renderEmpty()}</View>;
+    }
+
     const scrollView = wrapper(
       <ScrollViewComponent
         {...props}

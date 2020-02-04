@@ -538,7 +538,7 @@ export class NewPost extends React.Component<{}, State> {
             pointerEvents={this.state.showGallery ? "none" : "auto"}
             style={styles.page}
           >
-            <StatusBar hidden showHideTransition="slide" />
+            <StatusBar hidden={false} showHideTransition="slide" />
 
             <View style={[styles.transitionContainer, { backgroundColor }]}>
               <MediaPlayerPauser isHidden={this.state.showGallery}>
@@ -589,21 +589,19 @@ export class NewPost extends React.Component<{}, State> {
             />
           </View>
         </Panner>
-        {this.state.showGallery && (
-          <GallerySheet
-            show={this.state.showGallery}
-            blockId={this.state.galleryBlockId}
-            onDismiss={this.dismissGallery}
-            post={this.state.post}
-            onPress={this.handlePressGallery}
-            isKeyboardVisible={this.state.isKeyboardVisible}
-            initialRoute={this.state.galleryFilter || "all"}
-            autoFocus={!!this.state.galleryAutoFocus}
-            transparentSearch={!!this.state.galleryTransparent}
-            keyboardVisibleValue={this.keyboardVisibleValue}
-            keyboardHeightValue={this.keyboardHeightValue}
-          />
-        )}
+        <GallerySheet
+          show={this.state.showGallery}
+          blockId={this.state.galleryBlockId}
+          onDismiss={this.dismissGallery}
+          post={this.state.post}
+          onPress={this.handlePressGallery}
+          isKeyboardVisible={this.state.isKeyboardVisible}
+          initialRoute={this.state.galleryFilter || "all"}
+          autoFocus={!!this.state.galleryAutoFocus}
+          transparentSearch={!!this.state.galleryTransparent}
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          keyboardHeightValue={this.keyboardHeightValue}
+        />
       </View>
     );
   }

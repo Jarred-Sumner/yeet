@@ -426,6 +426,7 @@ export const PostPreview = React.forwardRef(
       children,
       maxHeight,
       onLayoutBlock,
+      isFocused,
       minY,
       paddingTop,
       onChangePhoto,
@@ -518,6 +519,7 @@ export const PostPreview = React.forwardRef(
         waitFor={waitFor}
         maxDeltaX={10}
         maxDeltaY={10}
+        enabled={isFocused}
         maxDist={10}
       >
         <ScrollView

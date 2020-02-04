@@ -4,7 +4,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   View,
-  LayoutAnimation
+  LayoutAnimation,
+  StatusBar
 } from "react-native";
 import { useFocusState, useNavigationParam } from "react-navigation-hooks";
 import { NewPost } from "../components/NewPost/NewPost";

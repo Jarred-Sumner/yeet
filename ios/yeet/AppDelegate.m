@@ -90,6 +90,7 @@
   [[cache memoryCache] setCostLimit:600 * [[UIScreen mainScreen] scale] * 600 * [[UIScreen mainScreen] scale] * 100];
   [[cache diskCache] setByteLimit:100 * 1024 * 1024];
 
+  [[UITextField appearance] setTintColor:[UIColor whiteColor]];
 
   [SDImageCache.sharedImageCache.config setMaxMemoryCost:50 * 1024 * 1024];
   [SDImageCache.sharedImageCache.config setMaxDiskSize:100 * 1024 * 1024];

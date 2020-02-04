@@ -1542,6 +1542,7 @@ class RawwPostEditor extends React.Component<Props, State> {
             layout={post.layout}
             simultaneousHandlers={this.props.simultaneousHandlers}
             focusTypeValue={this.focusTypeValue}
+            isFocused={this.props.isFocused}
             minX={bounds.x}
             onTapBlock={this.handleTapBlock}
             positionsKey={_getPositionsKey(post.positions)}

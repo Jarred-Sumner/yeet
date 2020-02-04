@@ -6,6 +6,8 @@ import chroma from "chroma-js";
 import { SCREEN_DIMENSIONS } from "../../../../config";
 import { COLORS } from "../../../lib/styles";
 import { SemiBoldText } from "../../Text";
+import { BitmapIconLogoWaitlist } from "../../BitmapIcon";
+import { IconClock } from "../../Icon";
 
 export enum GallerySectionItem {
   clipboardImage = "clipboardImage",
@@ -33,11 +35,13 @@ export const LIST_HEADER_HEIGHT = 35;
 export const FILTERS = [
   {
     label: "SEARCH",
-    value: "all"
+    value: "all",
+    Icon: IconClock
   },
   {
     label: FILTER_LABELS[GallerySectionItem.memes],
-    value: GallerySectionItem.memes
+    value: GallerySectionItem.memes,
+    Icon: BitmapIconLogoWaitlist
   },
 
   {
@@ -135,6 +139,7 @@ export const ListHeaderRow = ({
   onPress,
   value,
   size,
+  iconOnly,
   inset
 }) => {
   const handlePress = React.useCallback(() => {
@@ -172,6 +177,7 @@ export const FilterBar = ({
   light,
   tabs,
   scrollY,
+  icons,
   inset,
   tabBarPosition
 }) => {
@@ -210,6 +216,7 @@ export const FilterBar = ({
         <ListHeaderRow
           key={filter.value}
           onPress={onChange}
+          iconOnly={icons}
           isActive={value === filter.value}
           inset={inset}
           value={filter.value}
@@ -219,7 +226,7 @@ export const FilterBar = ({
         </ListHeaderRow>
       );
     },
-    [onChange, value, inset, tabs.length]
+    [onChange, value, inset, tabs.length, icons]
   );
 
   return (

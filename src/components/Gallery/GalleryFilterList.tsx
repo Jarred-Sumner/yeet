@@ -529,105 +529,53 @@ class GalleryFilterListComponent extends React.PureComponent<Props> {
     return (
       <>
         <ContainerComponent height={containerHeight} style={containerStyles}>
-          {showScrollView &&
-            (useFastList && !isEmpty ? (
-              <FastList
-                ref={this.setFlatListRef}
-                contentInsetAdjustmentBehavior="never"
-                keyboardDismissMode="on-drag"
-                contentInset={this.contentInset}
-                contentOffset={this.contentOffset}
-                insetBottom={Math.abs(this.contentInset.bottom) * -1}
-                insetTop={Math.abs(this.contentInset.top) * -1}
-                scrollTopValue={this.props.scrollY}
-                scrollIndicatorInsets={this.scrollIndicatorInsets}
-                insetTopValue={this.props.insetValue}
-                automaticallyAdjustContentInsets={false}
-                keyboardShouldPersistTaps="always"
-                renderRow={this.handleRenderRow}
-                containerHeight={containerHeight}
-                translateY={this.translateY}
-                scrollToOverflowEnabled
-                overScrollMode="always"
-                scrollTopValue={this.props.scrollY}
-                footerHeight={0}
-                // refreshControl={
-                //   <RefreshControl
-                //     refreshing={refreshing}
-                //     onRefresh={this.handleRefresh}
-                //     tintColor="white"
-                //   />
-                // }
-                headerHeight={0}
-                style={this.listStyle}
-                onScrollEnd={this.handleScrollEnd}
-                isFastList
-                alwaysBounceVertical
-                renderEmpty={
-                  ListEmptyComponent ? this.renderListEmpty : undefined
-                }
-                rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
-                // sectionHeight={this.getTotalHeight}
-                sections={this.sectionCounts}
-                uniform
-              />
-            ) : (
-              <FlatList
-                ref={this.setFlatListRef}
-                data={this.sections}
-                // getItem={this.getItem}
-                directionalLockEnabled
-                nestedScrollEnabled
-                // getItemCount={this.getItemCount}
-                bounces
-                listKey={this.props.listKey}
-                // ListHeaderComponent={ListHeaderComponent}
-                ListEmptyComponent={
-                  ListEmptyComponent ? this.renderListEmpty : undefined
-                }
-                extraData={isFocused}
-                getItemLayout={this.getItemLayout}
-                keyboardShouldPersistTaps="always"
-                onScrollBeginDrag={this.onScrollBeginDrag}
-                scrollEventThrottle={scrollY ? 1 : undefined}
-                scrollIndicatorInsets={
-                  GalleryFilterListComponent.scrollIndicatorInsets
-                }
-                // refreshControl={
-                //   <RefreshControl
-                //     refreshing={networkStatus === NetworkStatus.refetch}
-                //     onRefresh={onRefresh}
-                //     tintColor="white"
-                //   />
-                // }
-                simultaneousHandlers={simultaneousHandlers}
-                ItemSeparatorComponent={ItemSeparatorComponent}
-                refreshing={networkStatus === NetworkStatus.refetch}
-                keyboardDismissMode="on-drag"
-                style={this.listStyle}
-                keyExtractor={this.keyExtractor}
-                contentInsetAdjustmentBehavior="automatic"
-                extraData={selectedIDs}
-                removeClippedSubviews={false}
-                contentInset={this.contentInset}
-                contentOffset={this.contentOffset}
-                overScrollMode="always"
-                // stickyHeaderIndices={
-                //   ListHeaderComponent
-                //     ? GalleryFilterListComponent.stickerHeaderIndices
-                //     : undefined
-                // }
-                alwaysBounceVertical
-                scrollToOverflowEnabled
-                renderItem={this._handleRenderRow}
-                onEndReached={
-                  networkStatus === NetworkStatus.ready && hasNextPage
-                    ? onEndReached
-                    : undefined
-                }
-                onEndReachedThreshold={0.75}
-              />
-            ))}
+          {showScrollView && useFastList && (
+            <FastList
+              ref={this.setFlatListRef}
+              contentInsetAdjustmentBehavior="never"
+              keyboardDismissMode="on-drag"
+              contentInset={this.contentInset}
+              contentOffset={this.contentOffset}
+              insetBottom={Math.abs(this.contentInset.bottom) * -1}
+              insetTop={Math.abs(this.contentInset.top) * -1}
+              scrollTopValue={this.props.scrollY}
+              scrollIndicatorInsets={this.scrollIndicatorInsets}
+              insetTopValue={this.props.insetValue}
+              automaticallyAdjustContentInsets={false}
+              keyboardShouldPersistTaps="always"
+              isLoading={
+                this.props.networkStatus === NetworkStatus.loading ||
+                this.props.networkStatus === NetworkStatus.refetch ||
+                this.props.networkStatus === NetworkStatus.fetchMore
+              }
+              renderRow={this.handleRenderRow}
+              containerHeight={containerHeight}
+              translateY={this.translateY}
+              scrollToOverflowEnabled
+              overScrollMode="always"
+              scrollTopValue={this.props.scrollY}
+              footerHeight={0}
+              // refreshControl={
+              //   <RefreshControl
+              //     refreshing={refreshing}
+              //     onRefresh={this.handleRefresh}
+              //     tintColor="white"
+              //   />
+              // }
+              headerHeight={0}
+              style={this.listStyle}
+              onScrollEnd={this.handleScrollEnd}
+              isFastList
+              alwaysBounceVertical
+              renderEmpty={
+                ListEmptyComponent ? this.renderListEmpty : undefined
+              }
+              rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
+              // sectionHeight={this.getTotalHeight}
+              sections={this.sectionCounts}
+              uniform
+            />
+          )}
 
           {ListHeaderComponent && isModal && (
             <Animated.View
@@ -1117,7 +1065,7 @@ export const MemesFilterList = ({
   const [query, onChangeQuery] = React.useState("");
   const [isKeyboardVisible] = useKeyboard();
   const [filter, onChangeFilter] = React.useState(MemeFilterType.spicy);
-  const _inset = isModal ? inset : Math.abs(inset) + IMAGE_SEARCH_HEIGHT;
+  const _inset = isModal ? inset : Math.abs(inset);
   const isHeaderSticky = query.length > 0 || isKeyboardVisible;
 
   const [loadMemes, memesQuery] = useLazyQuery<
@@ -1173,26 +1121,6 @@ export const MemesFilterList = ({
     },
     [onChangeQuery, memesQuery]
   );
-
-  const imageSearchContext = React.useMemo(() => {
-    return {
-      query,
-      scrollY,
-      additionalOffset: 4,
-      keyboardVisibleValue,
-      networkStatus: memesQuery?.networkStatus,
-      placeholder: "Search yeet",
-
-      onChange: changeQuery
-    };
-  }, [
-    query,
-    scrollY,
-    keyboardVisibleValue,
-
-    changeQuery,
-    memesQuery?.networkStatus
-  ]);
 
   const data = React.useMemo(() => {
     return buildPostValue(memesQuery?.data?.searchPosts?.data);
@@ -1257,25 +1185,22 @@ export const MemesFilterList = ({
   );
 
   return (
-    <ImageSearchContext.Provider value={imageSearchContext}>
+    <>
       <GalleryFilterListComponent
         {...otherProps}
         data={data}
-        offset={
-          isModal ? offset : (Math.abs(offset) + IMAGE_SEARCH_HEIGHT) * -1
-        }
+        offset={offset}
         onRefresh={memesQuery?.refetch}
         itemHeight={MEMES_ITEM_HEIGHT}
         itemWidth={MEMES_ITEM_WIDTH}
         numColumns={MEMES_COLUMN_COUNT}
-        headerHeight={IMAGE_SEARCH_HEIGHT}
+        headerHeight={0}
         scrollY={scrollY}
         listKey="memes"
         onEndReached={handleEndReached}
         isModal={isModal}
         insetValue={insetValue}
         inset={_inset}
-        ListHeaderComponent={ImageSearch}
         stickyHeader={isHeaderSticky}
         // removeClippedSubviews={isFocused}
         isFocused={isFocused}
@@ -1284,14 +1209,12 @@ export const MemesFilterList = ({
         networkStatus={memesQuery.networkStatus}
       />
 
-      {!isHeaderSticky && (
-        <MemeFilterControl
-          isModal={isModal}
-          value={filter}
-          onChange={onChangeFilter}
-        />
-      )}
-    </ImageSearchContext.Provider>
+      <MemeFilterControl
+        isModal={isModal}
+        value={filter}
+        onChange={onChangeFilter}
+      />
+    </>
   );
 };
 

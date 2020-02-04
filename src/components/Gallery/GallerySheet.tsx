@@ -1,24 +1,123 @@
 import * as React from "react";
-import { BackHandler, Modal, StyleSheet, View } from "react-native";
+import {
+  BackHandler,
+  Modal,
+  StyleSheet,
+  View,
+  StatusBar,
+  LayoutAnimation
+} from "react-native";
 import Animated from "react-native-reanimated";
-import { SCREEN_DIMENSIONS } from "../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y as _TOP_Y } from "../../../config";
 import { YeetImageContainer } from "../../lib/imageSearch";
 import Storage from "../../lib/Storage";
 import { getSelectedIDs } from "../../screens/ImagePickerPage";
 import { BlurView } from "../BlurView";
 import { MediaPlayerPauser } from "../MediaPlayer";
 import GalleryTabView, { SHEET_ROUTES_LIST } from "./GalleryTabView";
+import { GallerySheetHeader } from "./GallerySheet/Header";
+import { COLORS } from "../../lib/styles";
+import chroma from "chroma-js";
+import { CAROUSEL_HEIGHT } from "../NewPost/NewPostFormat";
+import {
+  FlingGestureHandler,
+  Directions,
+  FlingGestureHandlerEventExtra,
+  FlingGestureHandlerStateChangeEvent,
+  State
+} from "react-native-gesture-handler";
+import { GallerySectionList } from "./GallerySectionList";
+import FilterBar, {
+  GallerySectionItem
+} from "../NewPost/ImagePicker/FilterBar";
 
+const TOP_Y = _TOP_Y + 1;
+const FOCUSED_HEIGHT = SCREEN_DIMENSIONS.height - CAROUSEL_HEIGHT;
+const DEFAULT_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y;
 const styles = StyleSheet.create({
-  sheet: {
+  blurWrapper: {
+    flex: 1,
+    width: SCREEN_DIMENSIONS.width,
+    paddingTop: 8
+  },
+  focusedBlurWrapper: {
+    flex: 1,
+    width: SCREEN_DIMENSIONS.width,
+    paddingTop: 0
+  },
+
+  backdrop: {
     backgroundColor: "black",
+    position: "absolute",
+    top: 0,
+    opacity: 0.5,
+    bottom: 0,
+    overflow: "hidden",
+    left: 0,
+    right: 0,
+    zIndex: 99999,
     height: SCREEN_DIMENSIONS.height,
     width: SCREEN_DIMENSIONS.width
   },
-  blurWrapper: {
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    overflow: "hidden"
+  hint: {
+    position: "absolute",
+    width: 80,
+    height: 4,
+    backgroundColor: "#ccc",
+    borderRadius: 100,
+    left: (SCREEN_DIMENSIONS.width - 100) / 2,
+    overflow: "hidden",
+    alignSelf: "center",
+    zIndex: 9999
+  },
+
+  focusedModal: {
+    height: FOCUSED_HEIGHT,
+    width: SCREEN_DIMENSIONS.width,
+    overflow: "hidden",
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    backgroundColor: chroma(COLORS.primaryDark)
+      .alpha(0.75)
+      .css()
+  },
+  modal: {
+    width: SCREEN_DIMENSIONS.width,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+
+    position: "relative",
+    overflow: "hidden",
+    height: DEFAULT_HEIGHT,
+    backgroundColor: chroma(COLORS.primaryDark)
+      .alpha(0.75)
+      .css()
+  },
+  modalShadow: {
+    paddingTop: CAROUSEL_HEIGHT,
+    height: FOCUSED_HEIGHT,
+    width: SCREEN_DIMENSIONS.width,
+    overflow: "visible",
+    shadowOffset: {
+      width: 1,
+      height: 1
+    },
+    shadowRadius: 2,
+    shadowColor: "black",
+    shadowOpacity: 0
+  },
+  focusedModalShadow: {
+    paddingTop: TOP_Y,
+    height: FOCUSED_HEIGHT,
+    overflow: "visible",
+    width: SCREEN_DIMENSIONS.width,
+    shadowOffset: {
+      width: 1,
+      height: 1
+    },
+    shadowRadius: 2,
+    shadowColor: "black",
+    shadowOpacity: 1
   },
 
   transition: {
@@ -39,10 +138,13 @@ export class GallerySheet extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      show: false,
-      selectedImages: []
+      isInputFocused: false,
+      selectedImages: [],
+      filter: "all"
     };
   }
+
+  onChangeInputFocus = isInputFocused => this.setState({ isInputFocused });
 
   componentDidMount() {
     BackHandler.addEventListener(
@@ -80,11 +182,23 @@ export class GallerySheet extends React.Component {
 
   componentDidUpdate(prevProps) {
     if (this.props.show !== prevProps.show) {
-      if (!this.props.show) {
-        this.handleDismiss();
-      } else if (this.props.show) {
-        this.handleShow();
-      }
+      LayoutAnimation.configureNext({
+        duration: 200,
+        create: {
+          ...LayoutAnimation.Presets.easeInEaseOut.create,
+          property: "opacity"
+        },
+        delete: {
+          ...LayoutAnimation.Presets.easeInEaseOut.delete,
+          property: "opacity"
+        }
+      });
+
+      // if (!this.props.show) {
+      //   this.handleDismiss();
+      // } else if (this.props.show) {
+      //   this.handleShow();
+      // }
     }
   }
 
@@ -111,57 +225,120 @@ export class GallerySheet extends React.Component {
   height = SCREEN_DIMENSIONS.height;
 
   blurStyle = {
-    height: SCREEN_DIMENSIONS.height,
-    width: SCREEN_DIMENSIONS.width
+    flex: 1,
+    paddingTop: 0
   };
 
+  handleFling = (event: FlingGestureHandlerStateChangeEvent) => {
+    if (
+      event.nativeEvent.state === State.END &&
+      event.nativeEvent.oldState === State.ACTIVE
+    ) {
+      this.props.onDismiss();
+    }
+  };
   galleryTabView = React.createRef<View>();
+
+  filterPosition = new Animated.Value(0);
+
+  handleChangeFilter = filter => this.setState({ filter });
 
   render() {
     const { onDismiss, isKeyboardVisible } = this.props;
 
     const { height } = this;
+    const { isInputFocused } = this.state;
 
     return (
-      <BlurView
-        blurType="dark"
-        blurAmount={25}
-        viewRef={this.galleryTabView}
-        style={this.blurStyle}
-      >
+      <>
+        {this.props.show && (
+          <View pointerEvents="none" style={styles.backdrop} />
+        )}
+
         <Modal
           visible={this.props.show}
           presentationStyle="overFullScreen"
-          animated
           transparent
           onDismiss={this.props.onDismiss}
           onRequestClose={this.handleDismiss}
           animationType="slide"
         >
-          <MediaPlayerPauser isHidden={!this.props.show}>
-            <View style={{ width: "100%", height: "100%" }}>
-              <GalleryTabView
-                width={SCREEN_DIMENSIONS.width}
-                height={height}
-                routes={SHEET_ROUTES_LIST}
-                inset={GallerySheet.CONTENT_INSET}
-                bottomInset={0}
-                insetValue={this.insetValue}
-                autoFocusSearch={this.props.autoFocus}
-                transparentSearch={this.props.transparentSearch}
-                onPress={this.handlePress}
-                isModal
-                ref={this.galleryTabView}
-                keyboardVisibleValue={this.props.keyboardVisibleValue}
-                selectedIDs={getSelectedIDs(this.state.selectedImages)}
-                initialRoute={this.props.initialRoute}
-                show
-                scrollY={this.scrollY}
-              />
-            </View>
-          </MediaPlayerPauser>
+          <>
+            <FlingGestureHandler
+              enabled={this.props.show}
+              onHandlerStateChange={this.handleFling}
+              onGestureEvent={this.handleFling}
+              direction={Directions.DOWN}
+            >
+              <Animated.View
+                style={
+                  isInputFocused
+                    ? styles.focusedModalShadow
+                    : styles.modalShadow
+                }
+              >
+                <View
+                  style={isInputFocused ? styles.focusedModal : styles.modal}
+                >
+                  <BlurView
+                    blurType="dark"
+                    blurAmount={25}
+                    viewRef={this.galleryTabView}
+                    style={this.blurStyle}
+                  >
+                    <View
+                      style={
+                        isInputFocused
+                          ? styles.focusedBlurWrapper
+                          : styles.blurWrapper
+                      }
+                    >
+                      <GallerySheetHeader
+                        isInputFocused={this.state.isInputFocused}
+                        onChangeInputFocus={this.onChangeInputFocus}
+                        onPressClose={this.props.onDismiss}
+                        autoFocusSearch={this.props.autoFocus}
+                      />
+
+                      <FilterBar
+                        tabs={[
+                          "all",
+                          GallerySectionItem.cameraRoll,
+                          GallerySectionItem.gifs
+                        ]}
+                        position={this.filterPosition}
+                        icons
+                        light
+                        inset={0}
+                        value={this.state.filter}
+                        onChange={this.handleChangeFilter}
+                      />
+
+                      {this.props.show && (
+                        <GallerySectionList
+                          onPress={this.handlePress}
+                          isModal
+                          isFocused
+                        />
+                      )}
+                    </View>
+                  </BlurView>
+                </View>
+              </Animated.View>
+            </FlingGestureHandler>
+            <View
+              pointerEvents="none"
+              style={[
+                styles.hint,
+                {
+                  top: !isInputFocused ? CAROUSEL_HEIGHT + 8 : _TOP_Y,
+                  opacity: isInputFocused ? 0 : 0.5
+                }
+              ]}
+            />
+          </>
         </Modal>
-      </BlurView>
+      </>
     );
   }
 }
