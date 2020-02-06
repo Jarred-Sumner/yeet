@@ -10,7 +10,6 @@ import { COLUMN_GAP } from "./COLUMN_COUNT";
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: COLUMN_GAP * 8,
     paddingVertical: SPACING.half,
     height: 44,
     paddingHorizontal: SPACING.half,
@@ -42,6 +41,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexDirection: "row"
   },
+  icon: {
+    marginRight: SPACING.half
+  },
   viewAll: {
     color: COLORS.muted,
     fontSize: 14,
@@ -51,16 +53,28 @@ const styles = StyleSheet.create({
 });
 
 const ICON_SIZES = {
-  [GallerySectionItem.recent]: 28,
-  [GallerySectionItem.all]: 28,
-  [GallerySectionItem.internet]: 28,
-  [GallerySectionItem.search]: 28,
-  [GallerySectionItem.memes]: 28,
-  [GallerySectionItem.assets]: 28,
+  [GallerySectionItem.recent]: 22,
+  [GallerySectionItem.all]: 22,
+  [GallerySectionItem.internet]: 22,
+  [GallerySectionItem.search]: 22,
+  [GallerySectionItem.memes]: 22,
+  [GallerySectionItem.assets]: 22,
 
-  [GallerySectionItem.sticker]: 23,
-  [GallerySectionItem.cameraRoll]: 20,
-  [GallerySectionItem.gifs]: 18
+  [GallerySectionItem.sticker]: 20,
+  [GallerySectionItem.cameraRoll]: 16,
+  [GallerySectionItem.gifs]: 16
+};
+
+const condition = true;
+const HUGE = "";
+const SMALL = "";
+
+const blah = () => {
+  if (condition) {
+    return HUGE;
+  } else {
+    return SMALL;
+  }
 };
 
 export const SectionHeader = ({ label, onPress, showViewAll, value, Icon }) => (
@@ -71,7 +85,7 @@ export const SectionHeader = ({ label, onPress, showViewAll, value, Icon }) => (
   >
     <View style={styles.container}>
       <View style={styles.left}>
-        <Icon style={styles.icon} size={ICON_SIZES[value]} color="white" />
+        {/* <Icon style={styles.icon} size={ICON_SIZES[value]} color="white" /> */}
         <SemiBoldText style={styles.title}>{label}</SemiBoldText>
       </View>
 

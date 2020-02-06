@@ -44,7 +44,8 @@ import {
   VERTICAL_ITEM_WIDTH,
   SQUARE_ITEM_WIDTH,
   INSET_SQUARE_ITEM_WIDTH,
-  INSET_SQUARE_ITEM_HEIGHT
+  INSET_SQUARE_ITEM_HEIGHT,
+  INSET_SQUARE_INSET
 } from "./sizes";
 import Animated from "react-native-reanimated";
 import { ClipboardContext } from "../Clipboard/ClipboardContext";
@@ -184,6 +185,8 @@ class GallerySectionListComponent extends React.Component<Props> {
     );
   };
 
+  renderFooter = () => <View />;
+
   handleRenderRow = (section: number, row: number) => {
     const { itemWidth, itemHeight, numColumns, padding } = this.props;
     const type = this.props.sectionOrder[section];
@@ -241,7 +244,7 @@ class GallerySectionListComponent extends React.Component<Props> {
             keyboardShouldPersistTaps="always"
             isLoading={false}
             renderRow={this.handleRenderRow}
-            maintainVisibleContentPosition
+            // maintainVisibleContentPosition
             containerHeight={height}
             scrollToOverflowEnabled
             overScrollMode="never"
@@ -255,6 +258,10 @@ class GallerySectionListComponent extends React.Component<Props> {
             alwaysBounceVertical
             // renderEmpty={ListEmptyComponent ? this.renderListEmpty : undefined}
             rowHeight={this.props.itemHeight + COLUMN_GAP * 2}
+            sectionHeight={44}
+            sectionFooterHeight={SPACING.normal}
+            renderSectionFooter={this.renderFooter}
+            renderSection={this.renderSection}
             // sectionHeight={this.getTotalHeight}
             sections={this.sectionCounts}
             uniform={false}
@@ -302,7 +309,7 @@ export const GallerySectionList = ({
   let width = SQUARE_ITEM_HEIGHT;
   let height = SQUARE_ITEM_WIDTH;
 
-  const limit = columnCount * rowCount * 4;
+  const limit = columnCount * rowCount;
   const latest = false;
 
   const assetsQuery = useQuery<AssetSearchQuery, AssetSearchQueryVariables>(
@@ -539,7 +546,7 @@ export const GallerySectionList = ({
   }, [
     recentImagesSection,
     clipboardImageSection,
-    gifsSection,
+    gifsSection?.data,
     cameraRollSection,
     assetsSection,
     memesSection
@@ -560,6 +567,7 @@ export const GallerySectionList = ({
       itemWidth={width}
       selectedIDs={selectedIDs}
       onPressColumn={onPress}
+      padding={INSET_SQUARE_INSET}
       simultaneousHandlers={simultaneousHandlers}
       inset={inset}
     />

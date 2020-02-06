@@ -96,7 +96,6 @@ export default {
         console.time("Get Photos");
 
         const _offset = Math.max(offset, 0);
-        // const result = await getPhotos(params);
         const result = global.MediaPlayerViewManager.getPhotos({
           mediaType: assetType,
           albumId: album,
