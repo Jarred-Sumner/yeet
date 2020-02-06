@@ -627,6 +627,68 @@ function getFastListState(
   };
 }
 
+const FastListSectionRenderer = ({
+  layoutY,
+  layoutHeight,
+  sticky = true,
+  nextSectionLayoutY,
+  scrollTopValue,
+  children
+}: {
+  layoutY: number;
+  layoutHeight: number;
+  nextSectionLayoutY?: number;
+  scrollTopValue: Animated.Value<number>;
+  children: React.ReactElement<{ style?: ViewStyle }>;
+}) => {
+  let translateY;
+
+  if (sticky) {
+    const inputRange: number[] = [-1, 0];
+    const outputRange: number[] = [0, 0];
+
+    inputRange.push(layoutY);
+    outputRange.push(0);
+    const collisionPoint = (nextSectionLayoutY || 0) - layoutHeight;
+    if (collisionPoint >= layoutY) {
+      inputRange.push(collisionPoint, collisionPoint + 1);
+      outputRange.push(collisionPoint - layoutY, collisionPoint - layoutY);
+    } else {
+      inputRange.push(layoutY + 1);
+      outputRange.push(1);
+    }
+
+    translateY = scrollTopValue.interpolate({
+      inputRange,
+      outputRange
+    });
+  } else {
+    translateY = 0;
+  }
+
+  const child = React.Children.only(children);
+
+  return (
+    <Animated.View
+      style={[
+        React.isValidElement(child) && child.props.style
+          ? child.props.style
+          : undefined,
+        {
+          zIndex: 10,
+          height: layoutHeight,
+          transform: [{ translateY }]
+        }
+      ]}
+    >
+      {React.isValidElement(child) &&
+        React.cloneElement(child, {
+          style: { flex: 1 }
+        })}
+    </Animated.View>
+  );
+};
+
 export default class FastList extends React.PureComponent<
   FastListProps,
   FastListState
@@ -835,7 +897,8 @@ export default class FastList extends React.PureComponent<
       renderSection,
       renderRow,
       renderSectionFooter,
-      renderEmpty
+      renderEmpty,
+      stickyHeaders
     } = this.props;
 
     const { items = [], isEmpty } = this.state;
@@ -895,6 +958,7 @@ export default class FastList extends React.PureComponent<
             children.push(
               <FastListSectionRenderer
                 key={key}
+                sticky={stickyHeaders}
                 translateY={this.props.translateY}
                 minY={this.props.contentOffset.y - this.props.headerHeight ?? 0}
                 layoutY={layoutY}
@@ -1045,27 +1109,27 @@ export default class FastList extends React.PureComponent<
       insetBottom,
       actionSheetScrollRef,
       renderActionSheetScrollViewWrapper,
-      ScrollViewComponent = ScrollView,
       translateY,
+      height,
       insetTopValue,
       scrollTopValue,
       style,
       renderEmpty,
       isLoading = false,
       contentInsetAdjustmentBehavior,
+      maintainVisibleContentPosition,
       /* eslint-enable no-unused-vars */
       ...props
     } = this.props;
     // what is this??
     // well! in order to support continuous scrolling of a scrollview/list/whatever in an action sheet, we need
     // to wrap the scrollview in a NativeViewGestureHandler. This wrapper does that thing that need do
-    const wrapper = renderActionSheetScrollViewWrapper || (val => val);
     if (this.state.isEmpty && !isLoading && typeof renderEmpty === "function") {
       return <View style={style}>{renderEmpty()}</View>;
     }
 
-    const scrollView = wrapper(
-      <ScrollViewComponent
+    const scrollView = (
+      <ScrollView
         {...props}
         ref={ref => {
           this.scrollView.current = ref;
@@ -1074,8 +1138,12 @@ export default class FastList extends React.PureComponent<
           }
         }}
         removeClippedSubviews={false}
+        directionalLockEnabled
+        height={height}
+        alwaysBounceVertical={false}
         scrollEventThrottle={16}
         style={style}
+        // maintainVisibleContentPosition
         automaticallyAdjustContentInsets={false}
         contentContainerStyle={styles.contentContainer}
         contentInsetAdjustmentBehavior="never"
@@ -1086,14 +1154,19 @@ export default class FastList extends React.PureComponent<
         onScrollBeginDrag={this.handleScrollBeginDrag}
       >
         {this.renderItems()}
-      </ScrollViewComponent>
+      </ScrollView>
     );
-    return (
-      <React.Fragment>
-        {scrollView}
-        {renderAccessory != null ? renderAccessory(this) : null}
-      </React.Fragment>
-    );
+
+    if (!renderAccessory) {
+      return scrollView;
+    } else {
+      return (
+        <React.Fragment>
+          {scrollView}
+          {renderAccessory != null ? renderAccessory(this) : null}
+        </React.Fragment>
+      );
+    }
   }
 }
 

@@ -9,6 +9,7 @@ import { Platform } from "react-native";
 import DeviceInfo from "react-native-device-info";
 import { BASE_HOSTNAME } from "../../config";
 import { Storage } from "./Storage";
+import CameraRollGraphQL from "./CameraRollGraphQL";
 
 // import introspectionQueryResultData from "../../static/fragmentTypes.json";
 // import Alert from "../lib/Alert";
@@ -125,6 +126,8 @@ const client = new ApolloClient({
   },
   resolvers: {}
 });
+
+client.addResolvers(CameraRollGraphQL);
 
 export let hasLoadedCache = false;
 

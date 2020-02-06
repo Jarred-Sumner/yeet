@@ -4,32 +4,32 @@ import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import { useNavigation } from "react-navigation-hooks";
 import { SCREEN_DIMENSIONS } from "../../../config";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import { BlurView } from "../BlurView";
 import { BackButton, useBackButtonBehavior } from "../Button";
-import FilterBar, {
-  LIST_HEADER_HEIGHT
-} from "../NewPost/ImagePicker/FilterBar";
+import FilterBar from "../NewPost/ImagePicker/FilterBar";
+import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
+import chroma from "chroma-js";
 
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
     alignItems: "flex-end",
     justifyContent: "flex-end",
-    flex: 0,
-    position: "relative"
+    flex: 0
   },
   header: {
     width: "100%",
     opacity: 0.75,
-    position: "absolute",
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: SPACING.normal,
     flex: 1,
     height: "100%",
+    position: "absolute",
     top: 0,
-    left: 0
+    left: 0,
+    zIndex: 1
   },
 
   spacer: {
@@ -41,14 +41,13 @@ const styles = StyleSheet.create({
     overflow: "hidden"
   },
   dark: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 999
+    zIndex: 9,
 
-    // backgroundColor: CAROUSEL_BACKGROUND
-    // overflow: "visible"
+    backgroundColor: chroma
+      .blend(chroma(COLORS.primaryDark).alpha(0.98), "#333", "multiply")
+      .alpha(0.95)
+      .css(),
+    overflow: "visible"
   },
   lightTop: {
     borderTopLeftRadius: 12,
@@ -66,11 +65,11 @@ export const GalleryHeader = ({
   onChangeQuery,
   tabBarPosition,
   onDismiss,
+  tabViewRef,
   filter,
   position = new Animated.Value(0),
   jumpTo,
   filterBarInset = 50,
-  showHeader,
   tabs = [],
   scrollY,
   navigationState: { index, routes },
@@ -78,25 +77,33 @@ export const GalleryHeader = ({
 }) => {
   const navigation = useNavigation();
   const behavior = useBackButtonBehavior();
-  const viewRef = React.useRef(null);
 
   const { top, bottom } = React.useContext(SafeAreaContext);
 
-  const tabKeys = React.useMemo(() => tabs.map(({ key }) => key), [tabs]);
+  const tabKeys = React.useMemo(() => routes.map(({ key }) => key), [routes]);
 
-  const content = (
-    <View ref={viewRef}>
-      <FilterBar
-        value={routes[index].key}
-        tabs={tabKeys}
-        onChange={jumpTo}
-        light={!showHeader}
-        scrollY={scrollY}
-        inset={showHeader ? filterBarInset : 0}
-        tabBarPosition={tabBarPosition}
-        position={position}
-      />
-      {showHeader && (
+  const containerStyles = [
+    styles.container,
+    styles.dark,
+    {
+      paddingTop: top,
+      height: top + LIST_HEADER_HEIGHT
+    }
+  ];
+
+  return (
+    <View style={containerStyles}>
+      <View>
+        <FilterBar
+          value={routes[index].key}
+          tabs={tabKeys}
+          onChange={jumpTo}
+          light={false}
+          scrollY={scrollY}
+          inset={filterBarInset}
+          tabBarPosition={tabBarPosition}
+          position={position}
+        />
         <View style={[styles.header, { width: filterBarInset }]}>
           <BackButton
             color="white"
@@ -105,45 +112,7 @@ export const GalleryHeader = ({
             behavior={behavior}
           />
         </View>
-      )}
+      </View>
     </View>
   );
-
-  const containerStyles = [
-    styles.container,
-    showHeader ? styles.dark : styles.light,
-    tabBarPosition === "top" &&
-      showHeader && { paddingTop: top, height: top + LIST_HEADER_HEIGHT },
-    tabBarPosition === "top" && styles.lightTop,
-    tabBarPosition === "bottom" && {
-      paddingBottom: bottom
-    },
-    tabBarPosition === "bottom" && styles.lightBottom
-  ];
-
-  if (showHeader) {
-    return (
-      <BlurView
-        viewRef={viewRef}
-        blurType="dark"
-        blurAmount={25}
-        blurStyle={{
-          height: top + LIST_HEADER_HEIGHT,
-          width: SCREEN_DIMENSIONS.width,
-          top: 0,
-          left: 0,
-          right: 0
-        }}
-        style={containerStyles}
-      >
-        {content}
-      </BlurView>
-    );
-  } else {
-    return (
-      <Animated.View pointerEvents="box-none" style={containerStyles}>
-        {content}
-      </Animated.View>
-    );
-  }
 };

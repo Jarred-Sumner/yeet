@@ -341,19 +341,31 @@ class MediaSource : NSObject  {
   }
 
   @objc(fromDictionary:)
-  static func from(_ dictionary: Dictionary<String, Any>) -> MediaSource {
+  static func from(_ dictionary: Dictionary<String, Any>) -> MediaSource? {
+    guard let uri =  dictionary["url"] as? String else {
+      return nil
+    }
+
+    guard let width = dictionary["width"] as? NSNumber else {
+      return nil
+    }
+
+    guard let height = dictionary["height"] as? NSNumber else {
+      return nil
+    }
+
     let bounds = CGRect.from(json: JSON(dictionary["bounds"]))
-    let uri =  dictionary["url"] as! String
+
     let id = dictionary["id"] as? String ?? uri
 
 
     let duration = dictionary["duration"] as? NSNumber ?? NSNumber(value: 0)
     let playDuration = dictionary["playDuration"] as? NSNumber ?? NSNumber(value: 0)
 
-    let width = dictionary["width"] as! NSNumber
+
     let cover = dictionary["cover"] as? String
     let audioURI = dictionary["audioURI"] as? String
-    let height = dictionary["height"] as! NSNumber
+
     let pixelRatio = dictionary["pixelRatio"] as? NSNumber ?? NSNumber(value: 1)
     return MediaSource.from(uri: uri, mimeType: dictionary["mimeType"] as! String, duration: duration, playDuration: playDuration, id: id, width: width, height: height, bounds: bounds, pixelRatio: pixelRatio, cover: cover, audioURI: audioURI)
   }
@@ -385,7 +397,9 @@ class MediaSource : NSObject  {
 extension RCTConvert {
   @objc(MediaSource:)
   static func mediaSource(json: AnyObject) -> MediaSource?  {
-    let dictionary = self.nsDictionary(json) as! Dictionary<String, Any>
+    guard let dictionary = self.nsDictionary(json) as? Dictionary<String, Any> else {
+      return nil
+    }
 
     if dictionary.keys.count == 1 && dictionary["id"] != nil {
       return MediaSource.cached(uri: dictionary["id"] as! String)

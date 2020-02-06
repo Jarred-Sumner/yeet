@@ -99,35 +99,13 @@ export const MediaPlayerPauser = React.forwardRef(
     //   }, [pausePlayers, unpausePlayers])
     // );
 
-    const idleCallbackInterval = React.useRef(-1);
-
     React.useEffect(() => {
-      if (trackIsHidden.current === null || isHidden === null) {
-        return;
+      if (isHidden === true) {
+        pausePlayers();
+      } else if (isHidden === false) {
+        unpausePlayers();
       }
-
-      const idleCalbackTimer = window.requestIdleCallback(() => {
-        if (isHidden === true) {
-          pausePlayers();
-        } else if (isHidden === false) {
-          unpausePlayers();
-        }
-
-        if (idleCalbackTimer.current === idleCalbackTimer) {
-          idleCalbackTimer.current = -1;
-        }
-      });
-
-      idleCallbackInterval.current = idleCalbackTimer;
     }, [pausePlayers, unpausePlayers, isHidden]);
-
-    React.useEffect(() => {
-      return () => {
-        if (idleCallbackInterval.current > -1) {
-          window.cancelIdleCallback(idleCallbackInterval.current);
-        }
-      };
-    }, [idleCallbackInterval]);
 
     useImperativeHandle(ref, () => ({
       pausePlayers,

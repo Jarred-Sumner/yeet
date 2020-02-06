@@ -94,6 +94,9 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
  runtime.global().setProperty(runtime, reaModuleName, std::move(object));
 }
 
+
+
+
 jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
   auto methodName = name.utf8(runtime);
 

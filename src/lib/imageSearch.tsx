@@ -394,6 +394,7 @@ const _searchPhrase = (
       rating: "PG-13",
       offset,
       limit,
+
       q: query
     })
   );

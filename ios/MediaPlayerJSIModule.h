@@ -24,6 +24,8 @@ public:
      */
     jsi::Value get(jsi::Runtime &runtime, const jsi::PropNameID &name) override;
 
+    jsi::Value getOther(jsi::Runtime &runtime, const jsi::PropNameID &name);
+
 private:
     MediaPlayerViewManager* mediaPlayer_;
     std::shared_ptr<facebook::react::JSCallInvoker> _jsInvoker;

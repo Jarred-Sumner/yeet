@@ -8,12 +8,15 @@
 #import "AppDelegate.h"
 #import "yeet-Bridging-Header.h"
 
+#import "YeetBridge.h"
+
 #import <PINRemoteImage/PINRemoteImage.h>
 
 
-#import <React/RCTBridge.h>
-#import <React/RCTBundleURLProvider.h>
-#import <React/RCTRootView.h>
+//
+//#import <React/RCTBridge.h>
+//#import <React/RCTBundleURLProvider.h>
+//#import <React/RCTRootView.h>
 #import <SDWebImageWebPCoder.h>
 #import <SDWebImage/SDImageLoadersManager.h>
 #import <SDWebImagePhotosPlugin.h>
@@ -33,6 +36,36 @@
 #import <PINCache/PINCache.h>
 #import "NSNumber+CGFloat.h"
 
+#import <React/RCTBundleURLProvider.h>
+#import <React/RCTRootView.h>
+#import <React/JSCExecutorFactory.h>
+#import <React/RCTBridge.h>
+#import <React/RCTBundleURLProvider.h>
+#import <React/RCTCxxBridgeDelegate.h>
+//#import <React/RCTJavaScriptLoader.h>
+//#import <React/RCTLinkingManager.h>
+#import <React/RCTImageLoader.h>
+#import <React/RCTLocalAssetImageLoader.h>
+#import <React/RCTGIFImageDecoder.h>
+#import <React/RCTNetworking.h>
+#import <React/RCTHTTPRequestHandler.h>
+#import <React/RCTDataRequestHandler.h>
+#import <React/RCTFileRequestHandler.h>
+#import <ReactCommon/RCTTurboModuleManager.h>
+#import <FBReactNativeSpec/FBReactNativeSpec.h>
+#import <cxxreact/JSExecutor.h>
+
+#import <KTVHTTPCache/KTVHTTPCache.h>
+
+//#import <React/RCTCxxBridgeDelegate.h>
+//#import <ReactCommon/RCTTurboModuleManager.h>
+#import <React/CoreModulesPlugins.h>
+//#import <React/JSCExecutorFactory.h>
+
+@interface AppDelegate() <RCTCxxBridgeDelegate, RCTTurboModuleManagerDelegate>{
+  RCTTurboModuleManager *_turboModuleManager;
+}
+@end
 
 //#import <FlipperKit/FlipperClient.h>
 //#import <FlipperKitLayoutComponentKitSupport/FlipperKitLayoutComponentKitSupport.h>
@@ -41,10 +74,7 @@
 //#import <SKIOSNetworkPlugin/SKIOSNetworkAdapter.h>
 //
 
-#ifndef TEST
-@import Firebase;
-#endif
-@import SBObjectiveCWrapper;
+
 
 
 
@@ -54,6 +84,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+//  RCTEnableTurboModule(YES);
+
   [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
     [Cronet setHttp2Enabled:YES];
     [Cronet setQuicEnabled:YES];
@@ -117,14 +149,14 @@
   SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
   [[SDImageCodersManager sharedManager] addCoder:webPCoder];
 
-  RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
+  RCTBridge *bridge = [[YeetBridge alloc] initWithDelegate:self launchOptions:launchOptions];
   RCTRootView *rootView = [[RCTRootView alloc] initWithBridge:bridge
                                                    moduleName:@"yeet"
                                             initialProperties:nil];
 
   rootView.backgroundColor = [[UIColor alloc] initWithRed:0 green:0 blue:0 alpha:1];
 #ifndef TEST
-[FIRApp configure];
+//[FIRApp configure];
 [AppCenterReactNative register];
 //[AppCenterReactNativeAnalytics registerWithInitiallyEnabled:true];
 #endif
@@ -159,7 +191,66 @@
 }
 
 
+# pragma mark - RCTCxxBridgeDelegate
 
+- (std::unique_ptr<facebook::react::JSExecutorFactory>)jsExecutorFactoryForBridge:(RCTBridge *)bridge
+{
+  __weak __typeof(self) weakSelf = self;
+  return std::make_unique<facebook::react::JSCExecutorFactory>([weakSelf, bridge](facebook::jsi::Runtime &runtime) {
+    if (!bridge) {
+      return;
+    }
+    __typeof(self) strongSelf = weakSelf;
+    if (strongSelf) {
+      strongSelf->_turboModuleManager = [[RCTTurboModuleManager alloc] initWithBridge:bridge delegate:strongSelf];
+      [strongSelf->_turboModuleManager installJSBindingWithRuntime:&runtime];
+    }
+  });
+}
 
+#pragma mark RCTTurboModuleManagerDelegate
+
+- (Class)getModuleClassFromName:(const char *)name
+{
+  if (RCTCoreModulesClassProvider(name)) {
+    return RCTCoreModulesClassProvider(name);
+  } else {
+    return nil;
+  }
+}
+
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const std::string &)name
+                                                      jsInvoker:(std::shared_ptr<facebook::react::JSCallInvoker>)jsInvoker
+{
+  return nullptr;
+}
+
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:(const std::string &)name
+                                                       instance:(id<RCTTurboModule>)instance
+                                                      jsInvoker:(std::shared_ptr<facebook::react::JSCallInvoker>)jsInvoker
+{
+  return nullptr;
+}
+
+- (id<RCTTurboModule>)getModuleInstanceFromClass:(Class)moduleClass
+{
+  if (moduleClass == RCTImageLoader.class) {
+    return [[moduleClass alloc] initWithRedirectDelegate:nil loadersProvider:^NSArray<id<RCTImageURLLoader>> *{
+      return @[[RCTLocalAssetImageLoader new]];
+    } decodersProvider:^NSArray<id<RCTImageDataDecoder>> *{
+      return @[[RCTGIFImageDecoder new]];
+    }];
+  } else if (moduleClass == RCTNetworking.class) {
+    return [[moduleClass alloc] initWithHandlersProvider:^NSArray<id<RCTURLRequestHandler>> *{
+      return @[
+        [RCTHTTPRequestHandler new],
+        [RCTDataRequestHandler new],
+        [RCTFileRequestHandler new],
+      ];
+    }];
+  }
+  // No custom initializer here.
+  return [moduleClass new];
+}
 
 @end

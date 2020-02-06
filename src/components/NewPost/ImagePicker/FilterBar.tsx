@@ -1,61 +1,13 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import chroma from "chroma-js";
 import { SCREEN_DIMENSIONS } from "../../../../config";
-import { COLORS } from "../../../lib/styles";
-import { SemiBoldText } from "../../Text";
-import { BitmapIconLogoWaitlist } from "../../BitmapIcon";
-import { IconClock } from "../../Icon";
-
-export enum GallerySectionItem {
-  clipboardImage = "clipboardImage",
-  clipboardURL = "clipboardURL",
-  cameraRoll = "cameraRoll",
-  search = "search",
-  memes = "memes",
-  recent = "recent",
-  gifs = "gifs"
-}
-
-export const FILTER_LABELS = {
-  [GallerySectionItem.search]: "SEARCH",
-  [GallerySectionItem.clipboardImage]: "CLIPBOARD",
-  [GallerySectionItem.recent]: "RECENT",
-
-  [GallerySectionItem.clipboardURL]: "CLIPBOARD",
-  [GallerySectionItem.memes]: "MEMES",
-  [GallerySectionItem.gifs]: "GIFs",
-  [GallerySectionItem.cameraRoll]: "CAMERA ROLL"
-};
-
-export const LIST_HEADER_HEIGHT = 35;
-
-export const FILTERS = [
-  {
-    label: "SEARCH",
-    value: "all",
-    Icon: IconClock
-  },
-  {
-    label: FILTER_LABELS[GallerySectionItem.memes],
-    value: GallerySectionItem.memes,
-    Icon: BitmapIconLogoWaitlist
-  },
-
-  {
-    label: FILTER_LABELS[GallerySectionItem.cameraRoll],
-    value: GallerySectionItem.cameraRoll
-  },
-
-  {
-    label: FILTER_LABELS[GallerySectionItem.gifs],
-    value: GallerySectionItem.gifs
-  }
-];
-
-const count = FILTERS.length;
+import { FilterBarRow } from "./FilterBarRow";
+import { FILTERS, ICONS } from "./GallerySectionItem";
+import {
+  LIGHT_LIST_HEADER_HEIGHT,
+  LIST_HEADER_HEIGHT
+} from "./LIGHT_LIST_HEADER_HEIGHT";
 
 const styles = StyleSheet.create({
   container: {
@@ -72,13 +24,13 @@ const styles = StyleSheet.create({
     overflow: "visible",
     borderRadius: 0,
     flexDirection: "row",
-    justifyContent: "center",
-    position: "relative"
+    justifyContent: "center"
   },
   lightContainer: {
     alignItems: "center",
-    height: LIST_HEADER_HEIGHT,
+    height: LIGHT_LIST_HEADER_HEIGHT,
     width: SCREEN_DIMENSIONS.width,
+    paddingBottom: 4,
     overflow: "visible",
     shadowRadius: 1,
     shadowColor: "#000",
@@ -87,10 +39,14 @@ const styles = StyleSheet.create({
       width: 0,
       height: 1
     },
-    borderRadius: 12,
+    borderRadius: 0,
     flexDirection: "row",
     justifyContent: "center",
     position: "relative"
+  },
+  icon: {
+    textAlign: "center",
+    alignSelf: "center"
   },
   headerText: {
     fontSize: 13,
@@ -109,6 +65,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center"
   },
+  lightRow: { height: LIGHT_LIST_HEADER_HEIGHT },
 
   rowWrapper: {
     justifyContent: "center",
@@ -123,87 +80,61 @@ const styles = StyleSheet.create({
     zIndex: 10
   },
   lightIndicator: {
-    backgroundColor: COLORS.primary
+    bottom: 6
   },
   bottomIndicator: {
-    top: -4
+    top: 0
   },
   topIndicator: {
-    bottom: -3
+    bottom: 0
   }
 });
-
-export const ListHeaderRow = ({
-  isActive = true,
-  children,
-  onPress,
-  value,
-  size,
-  iconOnly,
-  inset
-}) => {
-  const handlePress = React.useCallback(() => {
-    onPress(value);
-  }, [onPress, value]);
-
-  return (
-    <RectButton
-      onPress={handlePress}
-      enabled={!isActive}
-      style={
-        isActive ? [styles.row, styles.activeRow, size] : [styles.row, size]
-      }
-      underlayColor={chroma(COLORS.primary)
-        .alpha(0.5)
-        .css()}
-    >
-      <View style={[size, styles.rowWrapper]}>
-        <SemiBoldText
-          adjustsFontSizeToFit
-          numberOfLines={1}
-          style={[styles.headerText, size]}
-        >
-          {children}
-        </SemiBoldText>
-      </View>
-    </RectButton>
-  );
-};
 
 export const FilterBar = ({
   position,
   onChange,
   value,
   light,
+  hidden = false,
+  rightInset = 0,
   tabs,
-  scrollY,
-  icons,
+  icons = false,
   inset,
+  indicatorWidth: _indicatorWidth,
+  containerWidth = SCREEN_DIMENSIONS.width,
   tabBarPosition
 }) => {
-  const width = (SCREEN_DIMENSIONS.width - inset) / tabs.length;
+  const width = (containerWidth - inset) / tabs.length;
   const count = tabs.length;
+  const _inset = light ? 8 : 0;
+  const indicatorWidth = _indicatorWidth ?? width - _inset - rightInset;
+
   const indicatorStyles = [
     styles.indicator,
-    light && styles.lightIndicator,
-    tabs.length === 3 ? { width } : { width },
     tabBarPosition === "bottom" && styles.bottomIndicator,
     tabBarPosition === "top" && styles.topIndicator,
+    light && styles.lightIndicator,
+    { width: indicatorWidth },
+
     {
       transform: [
         {
-          translateX: inset
+          translateX: light ? (width - indicatorWidth) / 2 : inset
         },
         {
           translateX: Animated.min(
             Animated.max(
               Animated.divide(
-                Animated.multiply(position, SCREEN_DIMENSIONS.width - inset),
+                Animated.multiply(
+                  position,
+                  containerWidth -
+                    (light ? (width - indicatorWidth) / 2 : inset)
+                ),
                 count
               ),
-              0
+              light ? (width - indicatorWidth) / -2 + inset : 0
             ),
-            SCREEN_DIMENSIONS.width - inset
+            containerWidth - inset - (light ? rightInset - indicatorWidth : 0)
           )
         }
       ]
@@ -213,24 +144,33 @@ export const FilterBar = ({
   const renderFilter = React.useCallback(
     filter => {
       return (
-        <ListHeaderRow
+        <FilterBarRow
           key={filter.value}
           onPress={onChange}
           iconOnly={icons}
           isActive={value === filter.value}
           inset={inset}
           value={filter.value}
+          light={light}
           size={{ width }}
+          Icon={icons ? ICONS[filter.value] : undefined}
         >
           {filter.label}
-        </ListHeaderRow>
+        </FilterBarRow>
       );
     },
-    [onChange, value, inset, tabs.length, icons]
+    [onChange, value, inset, tabs.length, icons, light]
   );
 
   return (
-    <Animated.View style={[light ? styles.lightContainer : styles.container]}>
+    <Animated.View
+      display={hidden ? "none" : undefined}
+      style={[
+        light
+          ? [styles.lightContainer, { width: containerWidth }]
+          : styles.container
+      ]}
+    >
       <View style={{ width: inset, height: 1 }} />
       {FILTERS.filter(({ value }) => tabs.includes(value)).map(renderFilter)}
       <Animated.View style={indicatorStyles} />

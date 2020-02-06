@@ -34,7 +34,9 @@ export enum IconName {
   justifyAll = "justifyall",
   justifyCenter = "justifycenter",
   dice = "dice",
+  star = "star",
   justifyLeft = "justifyleft",
+  globe = "globe",
   justifyRight = "justifyright",
   checkmark = "checkmark",
   hourglass = "hourglass",
@@ -85,6 +87,7 @@ export enum IconName {
   panels = "panels",
   photo = "photo",
   plus = "plus",
+  gif = "gif",
   send = "send",
   settings = "settings",
   skip = "skip",
@@ -167,6 +170,7 @@ export const IconSearchphoto = props => (
 );
 export const IconSearch = props => <Icon name={IconName.search} {...props} />;
 export const IconSticker = props => <Icon name={IconName.sticker} {...props} />;
+export const IconStar = props => <Icon name={IconName.star} {...props} />;
 export const IconText = props => <Icon name={IconName.text} {...props} />;
 export const IconTrash = props => <Icon name={IconName.trash} {...props} />;
 export const IconRepost = props => <Icon name={IconName.repost} {...props} />;
@@ -263,6 +267,9 @@ export const IconJustifyLeft = props => (
 export const IconJustifyRight = props => (
   <Icon name={IconName.justifyRight} {...props} />
 );
+
+export const IconGlobe = props => <Icon name={IconName.globe} {...props} />;
+export const IconGIF = props => <Icon name={IconName.gif} {...props} />;
 
 export const IconDie1 = props => <Icon name={IconName.die1} {...props} />;
 export const IconDie2 = props => <Icon name={IconName.die2} {...props} />;

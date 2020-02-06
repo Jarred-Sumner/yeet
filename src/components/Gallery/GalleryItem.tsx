@@ -18,6 +18,7 @@ import { MediaPlayer, MediaSource } from "../MediaPlayer";
 import { DurationLabel } from "../NewPost/ImagePicker/DurationLabel";
 import { MediumText } from "../Text";
 import { COLUMN_GAP } from "./COLUMN_COUNT";
+import chroma from "chroma-js";
 import {
   HORIZONTAL_ITEM_HEIGHT,
   HORIZONTAL_ITEM_WIDTH,
@@ -26,7 +27,10 @@ import {
   SQUARE_ITEM_HEIGHT,
   SQUARE_ITEM_WIDTH,
   VERTICAL_ITEM_HEIGHT,
-  VERTICAL_ITEM_WIDTH
+  VERTICAL_ITEM_WIDTH,
+  INSET_SQUARE_ITEM_HEIGHT,
+  INSET_SQUARE_ITEM_WIDTH,
+  INSET_SQUARE_INSET
 } from "./sizes";
 
 const BORDER_RADIUS = 0;
@@ -39,12 +43,13 @@ const photoCellStyles = StyleSheet.create({
   },
   button: {
     alignItems: "center",
-    backgroundColor: "#222",
     overflow: "visible",
 
     borderRadius: BORDER_RADIUS,
-    justifyContent: "center"
+    justifyContent: "center",
+    backgroundColor: "#222"
   },
+  transparentButton: { backgroundColor: "transparent" },
   insetBorder: {
     borderRadius: BORDER_RADIUS,
     borderWidth: 1,
@@ -115,6 +120,10 @@ const sizeStyles = StyleSheet.create({
     width: SQUARE_ITEM_WIDTH,
     height: SQUARE_ITEM_HEIGHT
   },
+  insetSquare: {
+    width: INSET_SQUARE_ITEM_WIDTH,
+    height: INSET_SQUARE_ITEM_HEIGHT
+  },
   horizontal: {
     width: HORIZONTAL_ITEM_WIDTH,
     height: HORIZONTAL_ITEM_HEIGHT
@@ -133,6 +142,18 @@ const rowStyles = StyleSheet.create({
   column: {
     justifyContent: "space-around",
     marginLeft: 0,
+    width: "100%",
+    flexDirection: "row"
+  },
+  padded: {
+    justifyContent: "space-evenly",
+    // paddingHorizontal: INSET_SQUARE_INSET,
+    height: INSET_SQUARE_ITEM_HEIGHT + COLUMN_GAP * 2,
+    paddingVertical: COLUMN_GAP * 2,
+    backgroundColor: chroma
+      .blend(chroma(COLORS.primary).alpha(0.95), "blue", "darken")
+      .alpha(0.55)
+      .css(),
     width: "100%",
     flexDirection: "row"
   },
@@ -187,6 +208,7 @@ const GalleryItemComponent = React.memo(
     mediaSource,
     image,
     resizeMode,
+    transparent,
     id,
     mediaPlayerStyle,
     borderStyle,
@@ -214,7 +236,7 @@ const GalleryItemComponent = React.memo(
               muted
               thumbnail
               paused={paused}
-              opaque
+              opaque={!transparent}
               loop
               resizeMode={resizeMode}
               id={id}
@@ -223,12 +245,14 @@ const GalleryItemComponent = React.memo(
               // onError={onError}
               style={mediaPlayerStyle}
             />
-            <View
-              width={width}
-              height={height}
-              pointerEvents="none"
-              style={borderStyle}
-            />
+            {!transparent && (
+              <View
+                width={width}
+                height={height}
+                pointerEvents="none"
+                style={borderStyle}
+              />
+            )}
 
             {username && (
               <View
@@ -276,7 +300,7 @@ const GalleryItemComponent = React.memo(
               loop
               resizeMode={resizeMode}
               id={id}
-              autoPlay={false}
+              autoPlay
               // onError={onError}
               style={mediaPlayerStyle}
             />
@@ -360,6 +384,8 @@ export const GalleryItem = ({
     sizeStyle = sizeStyles.fourColumn;
   } else if (height === HORIZONTAL_ITEM_HEIGHT) {
     sizeStyle = sizeStyles.horizontal;
+  } else if (height === INSET_SQUARE_ITEM_HEIGHT) {
+    sizeStyle = sizeStyles.insetSquare;
   }
 
   const viewStyle = useMemoOne(() => {
@@ -373,7 +399,11 @@ export const GalleryItem = ({
   }, [sizeStyle, isSelected, transparent]);
 
   const containerStyle = useMemoOne(() => {
-    return [photoCellStyles.button, sizeStyle];
+    return [
+      photoCellStyles.button,
+      transparent && photoCellStyles.transparentButton,
+      sizeStyle
+    ];
   }, [sizeStyle, isSelected, transparent]);
 
   // const onError = React.useCallback(() => {
@@ -418,6 +448,7 @@ export const GalleryItem = ({
       isSelected={isSelected}
       isVideo={_isVideo}
       borderStyle={borderStyles}
+      transparent={transparent}
       id={id}
       duration={duration}
       resizeMode={"aspectFill"}
@@ -475,6 +506,7 @@ export const GalleryRow = ({
   selectedIDs,
   paused,
   transparent,
+  padding,
 
   first,
   second,
@@ -545,7 +577,10 @@ export const GalleryRow = ({
     );
   } else if (numColumns === 3) {
     return (
-      <View height={height} style={rowStyles.column}>
+      <View
+        height={height}
+        style={padding ? rowStyles.padded : rowStyles.column}
+      >
         <GalleryRowItem
           onPress={onPress}
           width={width}

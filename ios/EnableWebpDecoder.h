@@ -201,6 +201,8 @@
 
 @class YeetTextAttributes;
 
+@class RCTBaseTextInputView;
+
 @protocol RCTUIManagerObserver;
 
 @interface YeetTextView : _RCTUITextView

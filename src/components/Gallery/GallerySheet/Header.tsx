@@ -23,13 +23,25 @@ const styles = StyleSheet.create({
     width: "100%",
 
     flexDirection: "row",
-    overflow: "hidden",
+    // overflow: "hidden",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "rgb(60, 50, 75)"
+    borderBottomColor: "rgba(200, 200, 200, 0.25)"
   },
   backgroundContainer: {
     backgroundColor: chroma(COLORS.primary)
-      .alpha(0.15)
+      .alpha(0.05)
+      .css(),
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1
+  },
+  unfocusedBackgroundContainer: {
+    backgroundColor: chroma
+      .blend(chroma(COLORS.primary).alpha(0.25), "#333", "multiply")
+      .alpha(0.5)
       .css(),
     position: "absolute",
     top: 0,
@@ -101,60 +113,60 @@ export const GallerySheetHeader = ({
   const { top } = React.useContext(SafeAreaContext);
   const _inputRef = React.useRef();
   const handleFocus = React.useCallback(() => {
-    LayoutAnimation.configureNext({
-      ...LayoutAnimation.Presets.easeInEaseOut,
-      create: {
-        ...LayoutAnimation.Presets.easeInEaseOut.create,
-        type: LayoutAnimation.Types.keyboard
-      },
-      update: {
-        ...LayoutAnimation.Presets.easeInEaseOut.update,
-        type: LayoutAnimation.Types.keyboard
-      },
-      delete: {
-        ...LayoutAnimation.Presets.easeInEaseOut.delete,
-        type: LayoutAnimation.Types.keyboard
-      }
-    });
+    // LayoutAnimation.configureNext({
+    //   ...LayoutAnimation.Presets.easeInEaseOut,
+    //   create: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.create,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   update: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.update,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   delete: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.delete,
+    //     type: LayoutAnimation.Types.keyboard
+    //   }
+    // });
     setInputFocus(true);
   }, [setInputFocus]);
 
   const handleBlur = React.useCallback(() => {
-    LayoutAnimation.configureNext({
-      ...LayoutAnimation.Presets.easeInEaseOut,
-      create: {
-        ...LayoutAnimation.Presets.easeInEaseOut.create,
-        type: LayoutAnimation.Types.keyboard
-      },
-      update: {
-        ...LayoutAnimation.Presets.easeInEaseOut.update,
-        type: LayoutAnimation.Types.keyboard
-      },
-      delete: {
-        ...LayoutAnimation.Presets.easeInEaseOut.delete,
-        type: LayoutAnimation.Types.keyboard
-      }
-    });
+    // LayoutAnimation.configureNext({
+    //   ...LayoutAnimation.Presets.easeInEaseOut,
+    //   create: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.create,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   update: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.update,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   delete: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.delete,
+    //     type: LayoutAnimation.Types.keyboard
+    //   }
+    // });
     setInputFocus(false);
   }, [setInputFocus]);
 
   const blurInput = React.useCallback(() => {
     _inputRef.current?.blur();
-    LayoutAnimation.configureNext({
-      ...LayoutAnimation.Presets.easeInEaseOut,
-      create: {
-        ...LayoutAnimation.Presets.easeInEaseOut.create,
-        type: LayoutAnimation.Types.keyboard
-      },
-      update: {
-        ...LayoutAnimation.Presets.easeInEaseOut.update,
-        type: LayoutAnimation.Types.keyboard
-      },
-      delete: {
-        ...LayoutAnimation.Presets.easeInEaseOut.delete,
-        type: LayoutAnimation.Types.keyboard
-      }
-    });
+    // LayoutAnimation.configureNext({
+    //   ...LayoutAnimation.Presets.easeInEaseOut,
+    //   create: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.create,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   update: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.update,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   delete: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.delete,
+    //     type: LayoutAnimation.Types.keyboard
+    //   }
+    // });
   }, [_inputRef]);
 
   const onEnter = React.useCallback(() => {}, []);
@@ -170,9 +182,14 @@ export const GallerySheetHeader = ({
         }
       ]}
     >
-      {isInputFocused && (
-        <View style={styles.backgroundContainer} pointerEvents="none" />
-      )}
+      <View
+        style={
+          isInputFocused
+            ? styles.backgroundContainer
+            : styles.unfocusedBackgroundContainer
+        }
+        pointerEvents="none"
+      />
 
       <View style={styles.searchBar}>
         <View pointerEvents="none" style={[styles.searchIcon]}>

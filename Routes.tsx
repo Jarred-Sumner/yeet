@@ -35,13 +35,11 @@ import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import NewThreadPage from "./src/screens/NewThreadPage";
 import WaitlistScreen from "./src/screens/WaitlistScreen";
 import { memoize } from "lodash";
-import { enableScreens } from "react-native-screens";
 
 const IS_SCREENS_ENABLED = true;
 
 let createStackNavigator = _createStackNavigator;
 if (IS_SCREENS_ENABLED) {
-  enableScreens();
   // createStackNavigator = __createStackNavigator;
 }
 

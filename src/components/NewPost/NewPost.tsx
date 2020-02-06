@@ -173,6 +173,7 @@ export class NewPost extends React.Component<{}, State> {
       showGallery: false,
       isKeyboardVisible: false,
       disableGallery: false,
+      keyboardHeight: 0,
       editToken: nanoid(),
       exampleIndex: -1,
       exampleCount: isEmpty(props.examples)
@@ -598,6 +599,7 @@ export class NewPost extends React.Component<{}, State> {
           isKeyboardVisible={this.state.isKeyboardVisible}
           initialRoute={this.state.galleryFilter || "all"}
           autoFocus={!!this.state.galleryAutoFocus}
+          keyboardHeight={this.state.keyboardHeight}
           transparentSearch={!!this.state.galleryTransparent}
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}

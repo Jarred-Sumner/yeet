@@ -1,6 +1,6 @@
 import { YeetImageContainer } from "../../lib/imageSearch";
 import { GallerySection } from "./GallerySection";
-import { GallerySectionItem } from "../NewPost/ImagePicker/FilterBar";
+import { GallerySectionItem } from "../NewPost/ImagePicker/GallerySectionItem";
 import { NetworkStatus } from "apollo-client";
 
 export const buildSection = (

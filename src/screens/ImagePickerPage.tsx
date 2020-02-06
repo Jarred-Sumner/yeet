@@ -6,16 +6,20 @@ import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import { useNavigation, useFocusState } from "react-navigation-hooks";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
-import { GalleryTabView } from "../components/Gallery/GalleryTabView";
+import {
+  GalleryTabView,
+  DEFAULT_TABS
+} from "../components/Gallery/GalleryTabView";
 
 import { YeetImageContainer } from "../lib/imageSearch";
 import { sendLightFeedback } from "../lib/Vibration";
-import { LIST_HEADER_HEIGHT } from "../components/NewPost/ImagePicker/FilterBar";
+import { LIST_HEADER_HEIGHT } from "../components/NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
 import { SPACING } from "../lib/styles";
 import { isArray } from "lodash";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
 import Storage from "../lib/Storage";
 import { cloneDeep } from "lodash";
+import { GalleryHeader } from "../components/Gallery/GalleryHeader";
 
 const styles = StyleSheet.create({
   container: {
@@ -73,6 +77,7 @@ class RawImagePickerPage extends React.Component {
   keyboardVisibleValue = new Animated.Value(0);
   handleKeyboardShow = () => this.setState({ isKeyboardVisible: true });
   handleKeyboardHide = () => this.setState({ isKeyboardVisible: false });
+  position = new Animated.Value(0);
 
   handlePickPhoto = (photo: YeetImageContainer, post) => {
     const { selectedImages, selectMultiple } = this.state;
@@ -141,6 +146,19 @@ class RawImagePickerPage extends React.Component {
     this.scrollRef = flatListRef?.getScrollableNode();
   };
 
+  renderTabBar = props => (
+    <GalleryHeader
+      navigationState={props.navigationState}
+      filter={props.navigationState.routes[0].key}
+      tabs={DEFAULT_TABS}
+      scrollY={this.scrollY}
+      showHeader
+      tabBarPosition="top"
+      keyboardVisibleValue={this.keyboardVisibleValue}
+      position={this.position}
+    />
+  );
+
   scrollY = new Animated.Value<number>(0);
 
   render() {
@@ -154,16 +172,18 @@ class RawImagePickerPage extends React.Component {
         <GalleryTabView
           width={this.props.width}
           isKeyboardVisible={this.state.isKeyboardVisible}
-          height={this.props.height}
+          height={this.props.height - LIST_HEADER_HEIGHT - TOP_Y}
           keyboardVisibleValue={this.keyboardVisibleValue}
           onPress={this.handlePickPhoto}
           show
-          inset={LIST_HEADER_HEIGHT + SPACING.normal}
           isModal={false}
-          offset={(LIST_HEADER_HEIGHT + SPACING.normal) * -1}
+          isFocused={this.props.isFocused}
+          position={this.position}
+          renderTabBar={this.renderTabBar}
           selectedIDs={getSelectedIDs(this.state.selectedImages)}
           tabBarPosition="top"
           showHeader
+          tabs={DEFAULT_TABS}
           scrollY={this.scrollY}
           initialRoute={this.props.navigation.getParam("initialRoute") || "all"}
         />
@@ -175,13 +195,15 @@ class RawImagePickerPage extends React.Component {
 export const ImagePickerPage = props => {
   const navigation = useNavigation();
   const { top, left, right } = React.useContext(SafeAreaContext);
+  const { isFocused } = useFocusState();
 
   return (
     <RawImagePickerPage
+      {...props}
       navigation={navigation}
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
-      {...props}
+      isFocused={isFocused}
     />
   );
 };

@@ -1,11 +1,19 @@
 #import "local/YeetImageContainerFragment.graphql"
 
-query GalleryListQuery($limit: Int!) {
-  recentImages(offset: 0, limit: $columnCount) @client {
+query RecentImagesQuery($offset: Int = 0, $columnCount: Int, $type: String) {
+  recentImages(offset: $offset, limit: $columnCount, type: $type) @client {
     id
+
+    page_info {
+      has_next_page
+      offset
+      limit
+      id
+    }
 
     data {
       id
+
       post {
         blocks
         bounds
@@ -23,20 +31,6 @@ query GalleryListQuery($limit: Int!) {
       image {
         ...YeetImageContainerFragment
       }
-    }
-  }
-
-  gifs(offset: 0, limit: $limit) @client {
-    id
-
-    data {
-      ...YeetImageContainerFragment
-    }
-
-    page_info {
-      has_next_page
-      offset
-      limit
     }
   }
 }

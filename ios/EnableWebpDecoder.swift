@@ -10,9 +10,11 @@ import Foundation
 import Vision
 import SwiftyBeaver
 import Firebase
+import SBObjectiveCWrapper
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
   @objc static func enable() {
+    FirebaseApp.initialize()
     #if TEST
       let logPath = #file.replacingOccurrences(of: "EnableWebpDecoder.swift", with: "").appending("test.log")
       let logDest = FileDestination.init()

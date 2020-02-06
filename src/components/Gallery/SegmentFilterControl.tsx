@@ -6,10 +6,11 @@ import {
   View,
   LayoutAnimation
 } from "react-native";
-import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
+import { BOTTOM_Y, SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
 import BlurView from "../BlurView";
 import { capitalize } from "lodash";
+import chroma from "chroma-js";
 import { SemiBoldText, MediumText } from "../Text";
 import { BaseButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -23,6 +24,7 @@ import { IconCircleArrowUp, IconChevronUp } from "../Icon";
 import { sendSelectionFeedback } from "../../lib/Vibration";
 import { format } from "date-fns/esm";
 import { Timestamp, shortDateFormat } from "../Timestamp";
+import { CAROUSEL_HEIGHT } from "../NewPost/NewPostFormat";
 const HEIGHT = 40;
 
 const styles = StyleSheet.create({
@@ -52,10 +54,11 @@ const styles = StyleSheet.create({
   modalBottom: {
     position: "absolute",
     marginBottom: 0,
-    bottom: SPACING.normal + BOTTOM_Y,
+    bottom: BOTTOM_Y,
     width: SCREEN_DIMENSIONS.width,
     left: 0,
-    right: 0
+    right: 0,
+    zIndex: 999
   },
   container: {
     width: SCREEN_DIMENSIONS.width - SPACING.normal * 2,
@@ -88,6 +91,19 @@ const styles = StyleSheet.create({
     height: HEIGHT,
     flexDirection: "row",
     backgroundColor: "rgba(14, 14, 14, 0.25)",
+
+    flex: 1,
+    borderRadius: 8,
+    overflow: "hidden"
+  },
+  modalBlur: {
+    width: SCREEN_DIMENSIONS.width - SPACING.normal * 2,
+    height: HEIGHT,
+    flexDirection: "row",
+    backgroundColor: chroma
+      .blend(chroma(COLORS.primaryDark).alpha(0.55), "#333", "overlay")
+      .alpha(0.25)
+      .css(),
 
     flex: 1,
     borderRadius: 8,
@@ -493,7 +509,10 @@ export const SegmentFilterControl = React.memo(
             onValueChange={onValueChange}
             onPressActionSheet={onPressActionSheet}
             actionSheetIndex={actionSheetIndex}
-            tintColor={"rgba(90, 90, 90, 0.95)"}
+            tintColor={chroma
+              .blend(chroma(COLORS.primaryDark).alpha(0.55), "#fff", "overlay")
+              .alpha(0.25)
+              .css()}
           />
           {/* <SegmentedControlIOS
               backgroundColor={"transparent"}

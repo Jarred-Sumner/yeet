@@ -1,4 +1,4 @@
-import perf from "@react-native-firebase/perf";
+// import perf from "@react-native-firebase/perf";
 import * as Sentry from "@sentry/react-native";
 import Bluebird from "bluebird";
 import { flatten, fromPairs, isArray, isEmpty, uniq, isFinite } from "lodash";
@@ -224,7 +224,7 @@ export const startExport = async (
 ): Promise<[ContentExport, ExportData]> => {
   let hasLongVideo = false;
   console.log("A");
-  const trace = await perf().startTrace("YeetExporter_startExport");
+  // const trace = await perf().startTrace("YeetExporter_startExport");
   let videoCount = 0;
   let imageCount = 0;
   let textCount = 0;
@@ -262,7 +262,7 @@ export const startExport = async (
 
   console.log("C");
   const measureDuration = new Date().getTime() - measureTime;
-  trace.putMetric("measure", measureDuration);
+  // trace.putMetric("measure", measureDuration);
 
   const blocks = _blocks.map(row =>
     row.map(block => {
@@ -329,9 +329,9 @@ export const startExport = async (
   });
 
   console.log("E");
-  trace.putMetric("imageCount", imageCount);
-  trace.putMetric("videoCount", videoCount);
-  trace.putMetric("textCount", textCount);
+  // trace.putMetric("imageCount", imageCount);
+  // trace.putMetric("videoCount", videoCount);
+  // trace.putMetric("textCount", textCount);
 
   const data: ExportData = {
     blocks: flatten(blocks).filter(Boolean),
@@ -368,7 +368,7 @@ export const startExport = async (
       JSON.stringify(data),
       isServerOnly,
       (err, result) => {
-        trace.stop();
+        // trace.stop();
 
         if (err) {
           Sentry.captureException(err);

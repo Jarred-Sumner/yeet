@@ -19,7 +19,8 @@ export interface PostSearchQuery_searchPosts_data_media {
   height: number | null;
   mimeType: string | null;
   duration: number;
-  previewUrl: string;
+  coverUrl: string;
+  url: string;
 }
 
 export interface PostSearchQuery_searchPosts_data {

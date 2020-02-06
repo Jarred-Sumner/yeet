@@ -1,0 +1,27 @@
+query AssetSearchQuery(
+  $offset: Int
+  $limit: Int
+  $query: String
+  $latest: Boolean
+) {
+  searchAssets(offset: $offset, limit: $limit, query: $query, latest: $latest) {
+    id
+
+    hasMore
+    limit
+    offset
+
+    data {
+      id
+      width
+      height
+      mimeType
+      duration
+
+      __typename
+
+      coverUrl
+      url
+    }
+  }
+}

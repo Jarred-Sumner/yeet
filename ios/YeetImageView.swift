@@ -386,7 +386,8 @@ class YeetImageView : PINAnimatedImageView {
       }
 
 
-      if self.image != nil || self.animatedImage != nil {
+      // Only clear the old image if it might take a little while to get the new one
+      if (self.image != nil || self.animatedImage != nil) && !PINRemoteImageManager.shared().cache.objectExists(forKey: PINRemoteImageManager.shared().cacheKey(for: url, processorKey: nil)) {
         self.pin_clearImages()
       }
 
@@ -686,26 +687,26 @@ class YeetImageView : PINAnimatedImageView {
 //
 //  }
 
-  override var animatedImage: PINCachedAnimatedImage? {
-    get {
-      return super.animatedImage
-    }
-
-    set (newValue) {
-
-//      if canShowCoverImage {
-//        if (newValue != nil && coverLayer.contents == nil && newValue != self.animatedImage) {
-//          if let firstFrame = newValue?.image(at: 0)?.takeUnretainedValue().copy() {
-//            coverLayer.contents = firstFrame
-//            coverLayer.isHidden = false
-//          }
-//        }
-//      }
-
-
-      super.animatedImage = newValue
-    }
-  }
+//  override var animatedImage: PINCachedAnimatedImage? {
+//    get {
+//      return super.animatedImage
+//    }
+//
+//    set (newValue) {
+//
+////      if canShowCoverImage {
+////        if (newValue != nil && coverLayer.contents == nil && newValue != self.animatedImage) {
+////          if let firstFrame = newValue?.image(at: 0)?.takeUnretainedValue().copy() {
+////            coverLayer.contents = firstFrame
+////            coverLayer.isHidden = false
+////          }
+////        }
+////      }
+//
+//
+//      super.animatedImage = newValue
+//    }
+//  }
 
   var canShowCoverImage : Bool = false
 

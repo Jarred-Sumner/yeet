@@ -2,9 +2,12 @@
 //  Use this file to import your target's public headers that you would like to expose to Swift.
 //
 
+#pragma once
+
 #import <UIKit/UIKit.h>
+
 #import <React/RCTBridgeModule.h>
-#import <React/RCTBridge.h>
+//#import <React/RCTBridge.h>
 #import <SDWebImage/SDAnimatedImage.h>
 #import <SDWebImageWebPCoder.h>
 
@@ -13,31 +16,31 @@
 #import <React/RCTUIManager.h>
 #import <React/RCTUIManagerUtils.h>
 
-#import <React/RCTMultilineTextInputView.h>
+//#import <React/RCTMultilineTextInputView.h>
 #import <React/RCTMultilineTextInputViewManager.h>
 #import <React/RCTScrollView.h>
-#import <React/UIView+React.h>
-#import <React/RCTUITextView.h>
+//#import <React/UIView+React.h>
+//#import <React/RCTUITextView.h>
 #import <React/RCTTextView.h>
-#import <React/RCTTextSelection.h>
+//#import <React/RCTTextSelection.h>
 #import <React/RCTConvert+Transform.h>
 #import "EnableWebpDecoder.h"
-#import <React/RCTBridge+Private.h>
+//#import <React/RCTBridge+Private.h>
 #import <React/RCTUIManagerObserverCoordinator.h>
-#import <React/RCTSurfacePresenterStub.h>
+//#import <React/RCTSurfacePresenterStub.h>
 #import <React/RCTUITextView.h>
 #import <React/RCTEventEmitter.h>
 #import <React/RCTInvalidating.h>
-#import <FFFastImageView.h>
+//#import <FFFastImageView.h>
 #import "YeetTextInputShadowView.h"
 
 #import "_RCTUITextView.h"
-#import <React/RCTInputAccessoryView.h>
-#import <React/RCTInputAccessoryViewContent.h>
+//#import <React/RCTInputAccessoryView.h>
+//#import <React/RCTInputAccessoryViewContent.h>
 #import <React/RCTTextAttributes.h>
 
 
-
+#import "KVCacheComplete-Swift.h"
 #import "NSNumber+CGFloat.h"
 
 #import "MediaPlayerJSIModuleInstaller.h"
@@ -47,7 +50,7 @@
 
 #import <DVURLAsset.h>
 #import <DVAssetLoaderDelegate/DVAssetLoaderDelegate.h>
-#import <KTVHTTPCache/KTVHTTPCache.h>
+
 
 #import <PINRemoteImage/PINAnimatedImageView.h>
 #import <PINRemoteImage/PINDisplayLink.h>
@@ -65,6 +68,10 @@
 
 @end
 
+
+@interface RCTBridge (otherPrivate)
+- (void)dispatchBlock:(dispatch_block_t)block queue:(dispatch_queue_t)queue;
+@end
 
 
 @interface UIView(PrivateMtehods)

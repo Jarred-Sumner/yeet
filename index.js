@@ -3,14 +3,30 @@
  */
 
 require("./src/lib/polyfills");
-import "react-native-gesture-handler";
-import "react-native-reanimated";
-import { AppRegistry, YellowBox, findNodeHandle } from "react-native";
-import _App from "./App";
+
+import {
+  AppRegistry,
+  YellowBox,
+  findNodeHandle,
+  NativeModules,
+  Platform,
+  View
+} from "react-native";
+import * as React from "react";
 import { name as appName } from "./app.json";
 import { memoize } from "lodash";
 import codePush from "react-native-code-push";
-import { IS_SIMULATOR } from "./config";
+import { enableScreens } from "react-native-screens";
+
+enableScreens();
+
+const { IS_SIMULATOR } = require("./config");
+
+require("react-native-gesture-handler");
+require("react-native-reanimated");
+
+let _App = require("./App").default;
+let App = _App;
 
 YellowBox.ignoreWarnings([
   "Module EmojiTextInputViewManager",
@@ -26,8 +42,7 @@ YellowBox.ignoreWarnings([
   "`-[RCTRootView cancelTouches]`"
 ]);
 
-let App = _App;
-if (!IS_SIMULATOR) {
+if (false) {
   App = codePush({
     checkFrequency: codePush.CheckFrequency.ON_APP_RESUME,
     installMode: codePush.InstallMode.ON_NEXT_RESUME

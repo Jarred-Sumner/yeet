@@ -45,7 +45,7 @@ import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";
 import { BlockActionType } from "./BlockActions";
 import { FOOTER_HEIGHT, isDeletePressed } from "./EditorFooter";
-import { GallerySectionItem } from "./ImagePicker/FilterBar";
+import { GallerySectionItem } from "./ImagePicker/GallerySectionItem";
 import { ActiveLayer } from "./layers/ActiveLayer";
 import {
   buildImageBlock,
@@ -403,7 +403,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handlePressToolbarButton = activeButton => {
     if (activeButton === ToolbarButtonType.photo) {
-      this.handleInsertPhoto(undefined, GallerySectionItem.photos);
+      this.handleInsertPhoto(undefined, GallerySectionItem.cameraRoll);
     } else if (activeButton === ToolbarButtonType.gif) {
       this.handleInsertPhoto(undefined, GallerySectionItem.gifs);
     } else if (activeButton === ToolbarButtonType.sticker) {

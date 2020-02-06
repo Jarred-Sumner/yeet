@@ -54,8 +54,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
         this.updateSkeletonView(status: status)
       }
 
-
-
       let paused = this.paused
 
       if status == .ready && mediaSource.mediaSource.isVideo && (this.isWaitingToPlay || !paused) {
@@ -766,6 +764,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   func haltContent() {
     imageView?.reset()
+    
 
     if let videoSource = self.videoSource {
       if videoSource.player != nil {

@@ -4,11 +4,11 @@ require_relative '../node_modules/@react-native-community/cli-platform-ios/nativ
 flipperkit_version = '0.23.6'
 
 target 'yeet' do
-  use_native_modules!
-  use_modular_headers!
 
-  pod "SnapSDK/SCSDKCreativeKit"
-  pod 'XExtensionItem'
+#  use_modular_headers!
+
+  pod "SnapSDK/SCSDKCreativeKit", modular_headers: true
+  pod 'XExtensionItem', modular_headers: true
   # Pods for yeet
     pod 'FBLazyVector', path: '../node_modules/react-native/Libraries/FBLazyVector', modular_headers: false
     pod 'FBReactNativeSpec', path: '../node_modules/react-native/Libraries/FBReactNativeSpec', modular_headers: false
@@ -29,12 +29,12 @@ target 'yeet' do
     pod 'React-RCTSettings', path: '../node_modules/react-native/Libraries/Settings', modular_headers: false
     pod 'React-RCTVibration', path: '../node_modules/react-native/Libraries/Vibration', modular_headers: false
     pod 'React-Core/RCTWebSocket', path: '../node_modules/react-native/', modular_headers: false
-    pod 'React-cxxreact', path: '../node_modules/react-native/ReactCommon/cxxreact', modular_headers: false
-    pod 'React-jsi', path: '../node_modules/react-native/ReactCommon/jsi', modular_headers: false
-    pod 'React-jsiexecutor', path: '../node_modules/react-native/ReactCommon/jsiexecutor', modular_headers: false
-    pod 'React-jsinspector', path: '../node_modules/react-native/ReactCommon/jsinspector', modular_headers: false
-    pod 'ReactCommon/jscallinvoker', path: '../node_modules/react-native/ReactCommon', modular_headers: false
-    pod 'ReactCommon/turbomodule/core', path: '../node_modules/react-native/ReactCommon', modular_headers: false
+    pod 'React-cxxreact', :path => '../node_modules/react-native/ReactCommon/cxxreact'
+    pod 'React-jsi', :path => '../node_modules/react-native/ReactCommon/jsi'
+    pod 'React-jsiexecutor', :path => '../node_modules/react-native/ReactCommon/jsiexecutor'
+    pod 'React-jsinspector', :path => '../node_modules/react-native/ReactCommon/jsinspector'
+    pod 'ReactCommon/jscallinvoker', :path => "../node_modules/react-native/ReactCommon"
+    pod 'ReactCommon/turbomodule/core', :path => "../node_modules/react-native/ReactCommon"
     pod 'Yoga', path: '../node_modules/react-native/ReactCommon/yoga', modular_headers: false
 
   pod 'DoubleConversion',
@@ -44,14 +44,12 @@ target 'yeet' do
   pod 'glog',
       podspec: '../node_modules/react-native/third-party-podspecs/glog.podspec',
       modular_headers: false
-  pod 'Folly',
-      podspec:
-        '../node_modules/react-native/third-party-podspecs/Folly.podspec',
-      modular_headers: false
-  pod 'ColorSlider', git: "https://github.com/Jarred-Sumner/ColorSlider.git"
+  pod 'Folly', :podspec => '../node_modules/react-native/third-party-podspecs/Folly.podspec'
+
+  pod 'ColorSlider', git: "https://github.com/Jarred-Sumner/ColorSlider.git", modular_headers: true
 
   pod 'SBObjectiveCWrapper',
-      git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git'
+      git: 'https://github.com/SwiftyBeaver/SBObjectiveCWrapper.git', modular_headers: true
 
   # pod 'FlipperKit', "~> #{flipperkit_version}"
   # pod 'FlipperKit/SKIOSNetworkPlugin', "~> #{flipperkit_version}"
@@ -61,18 +59,18 @@ target 'yeet' do
 
 
 
-  pod 'SDWebImageWebPCoder'
+  pod 'SDWebImageWebPCoder', modular_headers: true
   pod 'SDWebImage', '5.1.1', modular_headers: true
-  pod 'SDWebImagePhotosPlugin'
-  pod 'SwiftyJSON', '~> 4.0'
-  pod 'UIImageColors'
-  pod 'DVAssetLoaderDelegate'
-  pod 'SwiftyTimer'
-  pod 'KTVHTTPCache', '~> 2.0.0'
-  pod 'MulticastDelegateSwift'
+  pod 'SDWebImagePhotosPlugin', modular_headers: true
+  pod 'SwiftyJSON', '~> 4.0', modular_headers: true
+  pod 'UIImageColors', modular_headers: true
+  pod 'DVAssetLoaderDelegate', modular_headers: true
+  pod 'SwiftyTimer', modular_headers: true
+  pod 'KTVHTTPCache', '~> 2.0.0', modular_headers: true
+  pod 'MulticastDelegateSwift', modular_headers: true
   pod 'Promises', modular_headers: true
 
-  pod 'PINCache', git: 'https://github.com/pinterest/PINCache.git'
+  pod 'PINCache', git: 'https://github.com/pinterest/PINCache.git', modular_headers: true
   pod 'PINRemoteImage',
       modular_headers: true,
       git: 'https://github.com/pinterest/PINRemoteImage.git'
@@ -83,7 +81,7 @@ target 'yeet' do
   pod 'VFCabbage', modular_headers: true
   pod 'NextLevelSessionExporter', modular_headers: false
 
-  pod 'SwiftyBeaver'
+  pod 'SwiftyBeaver', modular_headers: true
 
   pod 'RNDeviceInfo',
       path: '../node_modules/react-native-device-info', modular_headers: false
@@ -137,16 +135,16 @@ target 'yeet' do
   pod 'RNSharedElement', path: '../node_modules/react-native-shared-element'
 
   pod 'RNFBAnalytics', path: '../node_modules/@react-native-firebase/analytics'
-  pod 'GoogleIDFASupport', '~> 3.14.0'
+  pod 'GoogleIDFASupport', '~> 3.14.0', modular_headers: true
 
 
   # pod 'appcenter', :path => '../node_modules/appcenter'
   # pod 'appcenter-analytics', :path => '../node_modules/appcenter-analytics'
 
-  pod 'CodePush', path: '../node_modules/react-native-code-push'
+  pod 'CodePush', path: '../node_modules/react-native-code-push', modular_headers: true
 
   permissions_path = '../node_modules/react-native-permissions/ios'
-  pod 'JGProgressHUD'
+  pod 'JGProgressHUD', modular_headers: true
 
   pod 'Permission-Contacts', :path => "#{permissions_path}/Contacts.podspec"
   pod 'Permission-LocationAlways', :path => "#{permissions_path}/LocationAlways.podspec"
@@ -155,14 +153,15 @@ target 'yeet' do
   pod 'Permission-Notifications', :path => "#{permissions_path}/Notifications.podspec"
   pod 'Permission-PhotoLibrary', :path => "#{permissions_path}/PhotoLibrary.podspec"
 
-  pod 'SwiftyImageIO'
-  pod 'RNFBApp', :path => '../node_modules/@react-native-firebase/app'
+  pod 'SwiftyImageIO', modular_headers: true
+  pod 'RNFBApp', :path => '../node_modules/@react-native-firebase/app', modular_headers: true
 
 
-  pod 'react-native-cameraroll', :path => '../node_modules/@react-native-community/cameraroll'
+  pod 'react-native-cameraroll', :path => '../node_modules/@react-native-community/cameraroll', modular_headers: true
 
 
 
+  use_native_modules!
   target 'yeetTests' do
     inherit! :search_paths
 
