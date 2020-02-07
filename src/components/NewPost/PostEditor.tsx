@@ -993,6 +993,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
+    console.log(image, dimensions, blockId);
     const minWidth = minImageWidthByFormat(PostFormat.sticker);
 
     const block = buildImageBlock({

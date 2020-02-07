@@ -232,7 +232,7 @@ export class MediaUpload {
       "content-type": this.media.mimeType
     };
 
-    console.log("Begin upload!", this.media.uri, { headers });
+    console.log("Begin upload!", this.media.uri);
 
     uploadFile({
       file: this.media.uri,
@@ -630,7 +630,7 @@ export class PostUploadTask {
       this.submit().then(() => {
         if (
           this.status !== PostUploadTaskStatus.error &&
-          this.status != PostUploadTaskStatus.complete
+          this.status !== PostUploadTaskStatus.complete
         ) {
           return this.task.start();
         }

@@ -53,6 +53,10 @@ export const FILTERS = [
     value: GallerySectionItem.assets
   },
   {
+    label: FILTER_LABELS[GallerySectionItem.clipboardImage],
+    value: GallerySectionItem.clipboardImage
+  },
+  {
     label: FILTER_LABELS[GallerySectionItem.recent],
     value: GallerySectionItem.recent
   },

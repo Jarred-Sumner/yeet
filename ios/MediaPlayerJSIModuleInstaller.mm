@@ -8,10 +8,16 @@
 
 #import "MediaPlayerJSIModuleInstaller.h"
 #import "MediaPlayerJSIModule.h"
+#import "YeetClipboardJSI.h"
 
 @implementation MediaPlayerJSIModuleInstaller
 
 +(void)install:(id)player {
   MediaPlayerJSIModule::install(player);
 }
+
++(void)installClipboard:(id)clipboard {
+  YeetClipboardJSIModule::install(clipboard);
+}
+
 @end

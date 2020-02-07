@@ -110,6 +110,7 @@ target 'yeet' do
 
       pod 'OpenCV2'
 
+  pod 'MMKV'
 
   pod 'RNFS', path: '../node_modules/react-native-fs', modular_headers: false
 
@@ -162,6 +163,8 @@ target 'yeet' do
 
 
   use_native_modules!
+  pod 'RealmJS', :path => '../node_modules/realm'
+
   target 'yeetTests' do
     inherit! :search_paths
 

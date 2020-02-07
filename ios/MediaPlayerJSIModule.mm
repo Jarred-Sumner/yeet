@@ -17,6 +17,7 @@
 #import <React/RCTUIManager.h>
 #import <React/RCTScrollView.h>
 #import "RCTConvert+PHotos.h"
+#import <MMKV/MMKV.h>
 
 
 
@@ -95,11 +96,10 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
 }
 
 
-
-
 jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
   auto methodName = name.utf8(runtime);
-
+ std::shared_ptr<facebook::react::JSCallInvoker> jsInvoker = _jsInvoker;
+  
   if (methodName == "isCached") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
 
@@ -120,7 +120,7 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
    });
   } else if (methodName == "startCaching") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-     return jsi::Function::createFromHostFunction(runtime, name, 3, [mediaPlayerViewManager](
+     return jsi::Function::createFromHostFunction(runtime, name, 3, [mediaPlayerViewManager, jsInvoker](
            jsi::Runtime &runtime,
            const jsi::Value &thisValue,
            const jsi::Value *arguments,
@@ -130,8 +130,8 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
       auto bounds = &arguments[1];
       auto contentMode = &arguments[2];
 
-       __block id _sources = convertJSIValueToObjCObject(runtime, sources->asObject(runtime));
-       __block CGRect _bounds = [RCTConvert CGRect:convertJSIObjectToNSDictionary(runtime, bounds->asObject(runtime))];
+       __block id _sources = convertJSIValueToObjCObject(runtime, sources->asObject(runtime), jsInvoker);
+       __block CGRect _bounds = [RCTConvert CGRect:convertJSIObjectToNSDictionary(runtime, bounds->asObject(runtime), jsInvoker)];
 
        __block NSString *__contentMode = convertJSIStringToNSString(runtime, contentMode->asString(runtime));
        UIViewContentMode _contentMode;
@@ -162,14 +162,14 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
     });
   } else if (methodName == "batchPlay") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-     return jsi::Function::createFromHostFunction(runtime, name, 2, [mediaPlayerViewManager](
+     return jsi::Function::createFromHostFunction(runtime, name, 2, [mediaPlayerViewManager, jsInvoker](
            jsi::Runtime &runtime,
            const jsi::Value &thisValue,
            const jsi::Value *arguments,
            size_t count) -> jsi::Value {
 
        auto ids = &arguments[1];
-       id _ids = convertJSIValueToObjCObject(runtime, ids->asObject(runtime));
+       id _ids = convertJSIValueToObjCObject(runtime, ids->asObject(runtime), jsInvoker);
 
        [mediaPlayerViewManager batchPlay:@(arguments[0].asNumber()) IDs:_ids];
 
@@ -177,7 +177,7 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
     });
   } else if (methodName == "batchPause") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-     return jsi::Function::createFromHostFunction(runtime, name, 2, [mediaPlayerViewManager](
+     return jsi::Function::createFromHostFunction(runtime, name, 2, [mediaPlayerViewManager, jsInvoker](
            jsi::Runtime &runtime,
            const jsi::Value &thisValue,
            const jsi::Value *arguments,
@@ -185,7 +185,7 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
 
 
          auto ids = &arguments[1];
-         id _ids = convertJSIValueToObjCObject(runtime, ids->asObject(runtime));
+         id _ids = convertJSIValueToObjCObject(runtime, ids->asObject(runtime), jsInvoker);
 
        [mediaPlayerViewManager batchPause:@(arguments[0].asNumber()) IDs:_ids];
 
@@ -217,13 +217,13 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        return jsi::Value::null();
     });
   } else if (methodName == "getPhotos") {
-     return jsi::Function::createFromHostFunction(runtime, name, 1, [](
+     return jsi::Function::createFromHostFunction(runtime, name, 1, [jsInvoker](
            jsi::Runtime &runtime,
            const jsi::Value &thisValue,
            const jsi::Value *arguments,
            size_t count) -> jsi::Value {
 
-       NSDictionary *params = convertJSIObjectToNSDictionary(runtime, arguments[0].asObject(runtime));
+       NSDictionary *params = convertJSIObjectToNSDictionary(runtime, arguments[0].asObject(runtime), jsInvoker);
 
        PHImageContentMode contentMode = PHImageContentModeAspectFill;
        if ([params[@"contentMode"] isEqualToString:@"aspectFit"]) {
@@ -251,14 +251,6 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
 
        return convertNSArrayToJSIArray(runtime, [CameraRoll assetCollectionDictionaries]);
     });
-  } else if (methodName == "photosAuthorizationStatus") {
-    NSString *value = [RCTConvert PHAuthorizationStatusValuesReversed][@([PHPhotoLibrary authorizationStatus])];
-
-    if (value != nil) {
-      return convertNSStringToJSIString(runtime, value);
-    } else {
-      return convertNSStringToJSIString(runtime, [RCTConvert PHAuthorizationStatusValuesReversed][@(PHAuthorizationStatusNotDetermined)]);
-    }
   } else if (methodName == "stopAlbumSession") {
      return jsi::Function::createFromHostFunction(runtime, name, 1, [](
            jsi::Runtime &runtime,
@@ -271,84 +263,9 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
 
        return jsi::Value::null();
     });
-  } else if (methodName == "scrollViewMetrics") {
-    MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerViewManager](
-           jsi::Runtime &runtime,
-           const jsi::Value &thisValue,
-           const jsi::Value *arguments,
-           size_t count) -> jsi::Value {
-
-
-
-        __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0]);
-       __block RCTScrollView *scrollView = [mediaPlayerViewManager.bridge.uiManager unsafeViewForReactTag:scrollViewTag];
-       __block NSDictionary *bodyValue;
-
-       dispatch_group_t group = dispatch_group_create();
-       dispatch_group_enter(group);
-       RCTExecuteOnMainQueue(^{
-         bodyValue = scrollView.body;
-          dispatch_group_leave(group);
-       });
-       dispatch_group_wait(group, DISPATCH_TIME_NOW + (1.0 * NSEC_PER_SEC));
-
-       if (scrollView != nil) {
-         return convertObjCObjectToJSIValue(runtime, bodyValue);
-       } else {
-         return jsi::Value::null();
-       }
-
-    });
-  } else if (methodName == "triggerScrollEvent") {
-    MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
-     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerViewManager](
-           jsi::Runtime &runtime,
-           const jsi::Value &thisValue,
-           const jsi::Value *arguments,
-           size_t count) -> jsi::Value {
-
-
-
-       __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0]);
-
-
-       if (scrollViewTag == nil) {
-         return jsi::Value::null();
-       }
-
-
-      __block NSDictionary *bodyValue = nil;
-
-       dispatch_group_t group = dispatch_group_create();
-       dispatch_group_enter(group);
-       RCTExecuteOnMainQueue(^{
-         RCTScrollView *scrollView = [mediaPlayerViewManager.bridge.uiManager viewForReactTag:scrollViewTag];
-         if (scrollView != nil) {
-           [scrollView scrollViewDidZoom:scrollView.scrollView];
-           bodyValue = scrollView.body;
-         }
-
-        dispatch_group_leave(group);
-       });
-
-
-       dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
-
-       if (bodyValue != nil) {
-         jsi::Value body = convertObjCObjectToJSIValue(runtime, bodyValue);
-         
-         return body;
-       } else {
-         return jsi::Value::null();
-       }
-    });
   }
-
 
 
 
   return jsi::Value::undefined();
 }
-
-

@@ -62,26 +62,9 @@ export const getClipboardContents = (): Promise<ClipboardResponse> => {
 };
 
 export const getClipboardMediaSource = (): Promise<MediaSource | null> => {
-  return new Promise((resolve, reject) => {
-    if (Platform.OS === "android") {
-      resolve(null);
-      return;
-    }
-    YeetClipboard.clipboardMediaSource((err, mediaSource) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      console.log(mediaSource);
+  if (Platform.OS === "android") {
+    return Promise.resolve(null);
+  }
 
-      if (
-        typeof mediaSource === "object" &&
-        typeof mediaSource.id === "string"
-      ) {
-        resolve(mediaSource);
-      } else {
-        resolve(null);
-      }
-    });
-  });
+  return global.Clipboard.getMediaSource();
 };

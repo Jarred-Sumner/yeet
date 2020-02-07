@@ -15,6 +15,7 @@ import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
 import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
+import { triggerScrollEvent } from "../lib/Yeet";
 
 const ScrollView = Animated.createAnimatedComponent(
   GestureScrollView
@@ -123,9 +124,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         const _scroll = this._rnkasv_keyboardView;
 
         if (_scroll) {
-          const fakeScroll = global.MediaPlayerViewManager?.triggerScrollEvent(
-            findNodeHandle(_scroll)
-          );
+          const fakeScroll = triggerScrollEvent(findNodeHandle(_scroll));
           console.log("FAKE SCROLL!!", fakeScroll);
         }
       });

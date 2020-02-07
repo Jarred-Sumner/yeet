@@ -63,7 +63,7 @@ export const FilterBarRow = ({
   inset
 }) => {
   const handlePress = React.useCallback(() => {
-    onPress(value);
+    onPress && onPress(value);
   }, [onPress, value]);
 
   const ButtonComponent = light ? BorderlessButton : RectButton;

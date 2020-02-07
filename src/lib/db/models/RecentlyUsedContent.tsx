@@ -1,72 +1,80 @@
-import { Model } from "@nozbe/watermelondb";
-import {
-  field,
-  relation,
-  date,
-  action,
-  json,
-  readonly
-} from "@nozbe/watermelondb/decorators";
-import { identity } from "lodash";
-import { YeetImageContainer } from "../../imageSearch";
 import { PostFragment } from "../../graphql/PostFragment";
-import { ImageContainer } from "./ImageContainer";
+import {
+  ImageMimeType,
+  ImageSourceType,
+  YeetImageContainer
+} from "../../imageSearch";
+import Realm from "realm";
 
-export class RecentlyUsedContent extends Model {
-  static table = "recently_used_contents";
-  @field("uid") uid;
-  @date("last_used_at") lastUsedAt;
-  @date("created_at") createdAt;
-  @date("updated_at") updatedAt;
-  @field("username") username;
-  @field("contentType") contentType;
-  @field("profile_id") profileId;
-  @json("blocks", identity) blocks;
-  @json("asset", identity) asset;
-  @json("nodes", identity) nodes;
-  @field("width") width;
-  @field("height") height;
-  @field("x") x;
-  @field("y") y;
-  @json("examples", identity) examples;
-  @readonly @date("created_at") createdAt;
-  @readonly @date("updated_at") updatedAt;
-  @field("image_uri") imageUri;
-  @field("image_width") imageWidth;
-  @field("image_height") imageHeight;
-  @field("image_pixel_ratio") imagePixelRatio;
-  @field("image_duration") imageDuration;
-  @field("image_mime_type") imageMimeType;
-  @field("preview_uri") previewUri;
-  @field("preview_width") previewWidth;
-  @field("preview_height") previewHeight;
-  @field("preview_pixel_ratio") previewPixelRatio;
-  @field("preview_duration") previewDuration;
-  @field("preview_mime_type") previewMimeType;
-  @field("source_type") sourceType;
-
-  _imageContainer: ImageContainer;
-
-  static associations = {
-    imageContainer: { type: "belongs_to", key: "image_container_id" }
+export class RecentlyUsedContent {
+  static schema = {
+    name: "RecentlyUsedContent",
+    primaryKey: "id",
+    properties: {
+      id: { type: "string" },
+      lastUsedAt: { type: "date", indexed: true },
+      createdAt: { type: "date", indexed: true },
+      username: { type: "string", optional: true },
+      contentType: { type: "int", indexed: true, default: 0 },
+      profileId: { type: "string", optional: true },
+      imageUri: { type: "string", optional: true },
+      imageWidth: { type: "int", optional: true },
+      imageHeight: { type: "int", optional: true },
+      imagePixelRatio: { type: "float", optional: true },
+      imageDuration: { type: "float", optional: true },
+      imageMimeType: { type: "string", optional: true },
+      previewUri: { type: "string", optional: true },
+      previewWidth: { type: "int", optional: true },
+      previewHeight: { type: "int", optional: true },
+      previewPixelRatio: { type: "float", optional: true },
+      previewDuration: { type: "float", optional: true },
+      previewMimeType: { type: "string", optional: true },
+      sourceType: { type: "string", optional: true }
+    }
   };
 
-  static fromPost(post: Partial<PostFragment>) {
+  static schemaVersion = 0;
+  static _realm: Realm | null = null;
+  static getRealm = async () => {
+    if (!RecentlyUsedContent._realm) {
+      RecentlyUsedContent._realm = await Realm.open({
+        schema: [RecentlyUsedContent],
+        schemaVersion: RecentlyUsedContent.schemaVersion
+      });
+    }
+
+    return RecentlyUsedContent._realm;
+  };
+
+  id: string;
+  lastUsedAt: Date;
+  createdAt: Date;
+  contentType: RecentlyUsedContentType;
+  username?: string;
+
+  profileId?: string;
+  imageUri?: string;
+  imageWidth?: number;
+  imageHeight?: number;
+  imagePixelRatio?: string;
+  imageDuration?: number;
+  imageMimeType?: ImageMimeType;
+  previewUri?: string;
+  previewWidth?: number;
+  previewHeight?: number;
+  previewPixelRatio?: string;
+  previewDuration?: number;
+  previewMimeType?: ImageMimeType;
+  sourceType?: string;
+
+  static fromPost(post: Partial<PostFragment>): RecentlyUsedContent {
     return {
-      uid: post.id,
       username: post.profile?.username,
       profileId: post.profile?.id,
-      blocks: post.blocks,
-      asset: post.assets,
-      nodes: post.nodes,
-      width: post.bounds?.width,
-      height: post.bounds?.height,
-      x: post.bounds?.x,
-      y: post.bounds?.y,
       contentType: RecentlyUsedContentType.post,
-      examples: post.examples,
 
-      previewUri: post.media.coverUrl ?? post.media.previewUrl,
+      previewUri:
+        post.media.coverUrl ?? post.media.previewUrl ?? post.media.url,
       previewWidth: post.media.width,
       previewHeight: post.media.height,
       previewDuration: post.media.duration,
@@ -76,9 +84,8 @@ export class RecentlyUsedContent extends Model {
 
   static fromYeetImageContainer(
     container: YeetImageContainer
-  ): Partial<ImageContainer> {
+  ): Partial<RecentlyUsedContent> {
     return {
-      uid: container.id,
       imageUri: container.image.uri,
       imageWidth: container.image.width,
       imageHeight: container.image.height,
@@ -96,7 +103,7 @@ export class RecentlyUsedContent extends Model {
 
   get yeetImageContainer(): YeetImageContainer {
     const {
-      uid,
+      id,
       imageUri,
       imageWidth,
       imageHeight,
@@ -107,13 +114,13 @@ export class RecentlyUsedContent extends Model {
       previewHeight,
       previewDuration,
       previewMimeType,
-      sourceType
+      sourceType = ImageSourceType.yeet
     } = this;
 
     return {
-      id: uid,
+      id,
       __typename: "YeetImageContainer",
-      timestamp: this.createdAt.toString(),
+      timestamp: this.lastUsedAt.toString(),
       image: {
         uri: imageUri,
         width: imageWidth,
@@ -137,39 +144,23 @@ export class RecentlyUsedContent extends Model {
   }
 
   get asPost(): Partial<PostFragment> {
-    const {
-      uid,
-      username,
-      profileId,
-      blocks,
-      asset,
-      nodes,
-      width,
-      height,
-      x = 0,
-      y = 0,
-      examples
-    } = this;
+    const { id, username, profileId } = this;
 
     return {
-      id: uid,
+      id,
       __typename: "_Post",
       profile: {
         id: profileId,
         username,
         __typename: "_Profile"
       },
-      blocks,
-      assets: asset,
-      nodes,
-      bounds: { width, height, x, y, __typename: "Rectangle" },
-      examples,
       media: this.mediaSource
     };
   }
 
   get mediaSource() {
     return {
+      id: `${this.id}/media`,
       previewUrl: this.previewUri,
       width: this.previewWidth,
       height: this.previewHeight,
@@ -185,7 +176,7 @@ export class RecentlyUsedContent extends Model {
   get graphql() {
     if (this.isPost) {
       return {
-        id: this.uid,
+        id: this.id,
         post: this.asPost,
         mediaSource: this.mediaSource,
         image: null,
@@ -193,7 +184,7 @@ export class RecentlyUsedContent extends Model {
       };
     } else {
       return {
-        id: this.uid,
+        id: this.id,
         post: null,
         mediaSource: null,
         image: this.yeetImageContainer,
@@ -204,6 +195,6 @@ export class RecentlyUsedContent extends Model {
 }
 
 export enum RecentlyUsedContentType {
-  post = "post",
-  image = "image"
+  post = 1,
+  image = 0
 }

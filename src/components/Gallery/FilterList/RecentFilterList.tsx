@@ -1,6 +1,7 @@
 import { NetworkStatus } from "apollo-client";
 import * as React from "react";
 import { useQuery } from "react-apollo";
+import { uniqBy } from "lodash";
 import RECENT_IMAGES_QUERY from "../../../lib/RecentImages.local.graphql";
 import { COLUMN_COUNT } from "../COLUMN_COUNT";
 import {
@@ -8,10 +9,13 @@ import {
   GalleryFilterListComponent,
   getPaginatedLimit,
   postToCell,
-  _buildValue
+  _buildValue,
+  getInitialLimit
 } from "../GalleryFilterList";
 import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "../sizes";
 import { buildPost } from "../../../lib/buildPost";
+import { RecentlyUsedContentType } from "../../../lib/db/models/RecentlyUsedContent";
+import { ScrollDirection } from "../../FastList";
 
 export const RecentFilterList = ({
   isFocused,
@@ -31,9 +35,12 @@ export const RecentFilterList = ({
 
   const recentImagesQuery = useQuery(RECENT_IMAGES_QUERY, {
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     variables: {
-      query: String(query).trim()
+      query: String(query).trim(),
+      limit: getInitialLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT),
+      offset: 0,
+      contentType: isModal ? RecentlyUsedContentType.image : null
     },
     notifyOnNetworkStatusChange: true
   });
@@ -52,52 +59,60 @@ export const RecentFilterList = ({
     } else {
       return [];
     }
-  }, [recentImagesQuery?.data]);
+  }, [recentImagesQuery?.data, postToCell, _buildValue]);
 
-  const handleEndReached = React.useCallback(() => {
-    const { networkStatus, loading } = recentImagesQuery;
+  const handleEndReached = React.useCallback(
+    ({ nativeEvent: { direction } }) => {
+      const { networkStatus, loading } = recentImagesQuery;
 
-    if (loading === true) {
-      return;
-    }
-
-    if (
-      !(
-        networkStatus !== NetworkStatus.fetchMore &&
-        typeof recentImagesQuery?.fetchMore === "function"
-      )
-    ) {
-      return;
-    }
-
-    const limit = getPaginatedLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT);
-    return;
-
-    return recentImagesQuery.fetchMore({
-      variables: {
-        offset: recentImagesQuery.data.page_info.offset + 20,
-        query,
-        limit
-      },
-      updateQuery: (
-        previousResult,
-        { fetchMoreResult }: { fetchMoreResult }
-      ) => {
-        return {
-          ...fetchMoreResult,
-          images: {
-            ...fetchMoreResult.images,
-            data: previousResult.images.data.concat(fetchMoreResult.images.data)
-          }
-        };
+      if (loading === true) {
+        return;
       }
-    });
-  }, [
-    recentImagesQuery?.networkStatus,
-    recentImagesQuery?.fetchMore,
-    recentImagesQuery?.data,
-    recentImagesQuery?.data?.recentImages?.page_info?.offset
-  ]);
+
+      if (
+        !(
+          networkStatus !== NetworkStatus.fetchMore &&
+          typeof recentImagesQuery?.fetchMore === "function"
+        ) ||
+        direction !== ScrollDirection.down
+      ) {
+        return;
+      }
+
+      const limit = getPaginatedLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT);
+
+      return recentImagesQuery.fetchMore({
+        variables: {
+          offset: recentImagesQuery?.data?.recentImages?.page_info?.offset ?? 0,
+          query,
+          limit
+        },
+        updateQuery: (
+          previousResult,
+          { fetchMoreResult }: { fetchMoreResult }
+        ) => {
+          return {
+            ...fetchMoreResult,
+            recentImages: {
+              ...fetchMoreResult.recentImages,
+              data: uniqBy(
+                previousResult.recentImages.data.concat(
+                  fetchMoreResult.recentImages.data
+                ),
+                "id"
+              )
+            }
+          };
+        }
+      });
+    },
+    [
+      recentImagesQuery?.networkStatus,
+      recentImagesQuery?.fetchMore,
+      recentImagesQuery?.data,
+      recentImagesQuery?.data?.recentImages?.page_info?.offset
+    ]
+  );
 
   return (
     <GalleryFilterListComponent

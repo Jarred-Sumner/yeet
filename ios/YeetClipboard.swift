@@ -74,11 +74,13 @@ class YeetClipboard: RCTEventEmitter  {
   }
 
   @objc func handleChangeEvent(_ notification: NSNotification) {
+    lastMediaSource = nil
     self.sendChangeEvent()
     YeetClipboard.changeCount = UIPasteboard.general.changeCount
   }
 
   @objc func handleRemoveEvent(_ notification: NSNotification) {
+    lastMediaSource = nil
     self.sendChangeEvent()
     YeetClipboard.changeCount = UIPasteboard.general.changeCount
   }
@@ -89,6 +91,25 @@ class YeetClipboard: RCTEventEmitter  {
 
   override init() {
     super.init()
+  }
+
+  override var bridge: RCTBridge! {
+    get {
+      return super.bridge
+    }
+
+    set (newValue) {
+      super.bridge = newValue
+
+      newValue?.dispatchBlock({ [weak self] in
+        guard let this = self else {
+          return
+        }
+
+
+        MediaPlayerJSIModuleInstaller.installClipboard(this)
+      }, queue: RCTJSThread)
+    }
   }
 
 
@@ -113,6 +134,7 @@ class YeetClipboard: RCTEventEmitter  {
   }
 
 
+  @objc(serializeContents)
   static func serializeContents() -> [String: Any] {
     var contents = [
       "urls": [],
@@ -147,6 +169,7 @@ class YeetClipboard: RCTEventEmitter  {
     return contents
   }
 
+
   override func supportedEvents() -> [String]! {
     return [
       EventNames.change.rawValue,
@@ -155,7 +178,7 @@ class YeetClipboard: RCTEventEmitter  {
   }
 
   override static func requiresMainQueueSetup() -> Bool {
-    return true
+    return false
   }
 
   override func constantsToExport() -> [AnyHashable : Any]! {
@@ -167,9 +190,11 @@ class YeetClipboard: RCTEventEmitter  {
     callback([nil, YeetClipboard.serializeContents()])
   }
 
+  @objc(lastMediaSource)
   var lastMediaSource: MediaSource? = nil
   var lastSavedImage: UIImage? = nil
 
+  @objc(hasImagesInClipboard)
   static var hasImagesInClipboard: Bool {
     let imageUTIs = MimeType.images().map {image in
       return image.utiType()
@@ -242,7 +267,6 @@ class YeetClipboard: RCTEventEmitter  {
 
       self.lastMediaSource = mediaSource
       self.lastSavedImage = image
-
 
       callback([nil, mediaSource.toDictionary])
     }

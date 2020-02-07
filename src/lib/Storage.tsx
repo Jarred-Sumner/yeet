@@ -1,15 +1,16 @@
-import { Q } from "@nozbe/watermelondb";
-import { cloneDeep, first, orderBy, uniqBy } from "lodash";
+import { cloneDeep } from "lodash";
 import nanoid from "nanoid/non-secure";
 import { basename, extname, join } from "path";
 import { Platform } from "react-native";
 import RNFS from "react-native-fs";
 import Keystore, { ACCESSIBLE } from "react-native-secure-key-store";
-import { database } from "./db/database";
-import { ImageContainer } from "./db/models/ImageContainer";
-import { RecentlyUsedContent } from "./db/models/RecentlyUsedContent";
+import {
+  RecentlyUsedContent,
+  RecentlyUsedContentType
+} from "./db/models/RecentlyUsedContent";
 import { PostFragment } from "./graphql/PostFragment";
 import { YeetImage, YeetImageContainer } from "./imageSearch";
+import { getItem, setItem, removeItem } from "./Yeet";
 
 const PRODUCTION_SUPER_STORE = "@yeetapp-production";
 const DEVELOPMENT_SUPER_STORE = "@yeetapp-dev-11";
@@ -23,9 +24,14 @@ const SUPER_STORE =
 const KEYS = {
   DISMISSED_PUSH_NOTIFICATION_MODAL: "DISMISSED_PUSH_NOTIFICATION_MODAL",
   DISMISSED_WELCOME_MODAL: "DISMISSED_WELCOME_MODAL",
-  RECENTLY_USED_IMAGES: "RECENTLY_USED_IMAGES",
   JWT: "JWT",
   CURRENT_USER_ID: "CURRENT_USER_ID"
+};
+
+const KEY_TYPES = {
+  [KEYS.CURRENT_USER_ID]: "string",
+  [KEYS.DISMISSED_WELCOME_MODAL]: "bool",
+  [KEYS.DISMISSED_PUSH_NOTIFICATION_MODAL]: "bool"
 };
 
 export const WATCH_KEYS = {
@@ -60,7 +66,7 @@ export class Storage {
   static setDismissedPushNotificationModal(value) {
     return Storage.setItem(
       KEYS.DISMISSED_PUSH_NOTIFICATION_MODAL,
-      !!value ? "true" : "false"
+      !!value ? 1 : 0
     );
   }
 
@@ -74,7 +80,7 @@ export class Storage {
   }
 
   static removeItem(key) {
-    return database.adapter.removeLocal(Storage.formatKey(key));
+    return removeItem(Storage.formatKey(key));
   }
 
   static setDismissedWelcomeModal(value) {
@@ -130,25 +136,8 @@ export class Storage {
 
   static getItem(key: string) {
     console.log(`[Storage] GET ${key}`);
-    return database.adapter.getLocal(Storage.formatKey(key));
+    return getItem(Storage.formatKey(key), KEY_TYPES[key] || "string");
     // return AsyncStorage.getItem(Storage.formatKey(key));
-  }
-
-  static getRecentlyUsed(): Promise<Array<RecentImage>> {
-    return fetchRecentlyUsedContent().then(contents => {
-      return contents;
-    });
-    // return this.getItem(KEYS.RECENTLY_USED_IMAGES).then(result => {
-    //   if (result && typeof result === "string") {
-    //     try {
-    //       return JSON.parse(result);
-    //     } catch {
-    //       return [];
-    //     }
-    //   } else {
-    //     return [];
-    //   }
-    // });
   }
 
   static async insertRecentlyUsed(imageContainer: YeetImageContainer, post) {
@@ -161,10 +150,10 @@ export class Storage {
 
   static setItem(key, value) {
     if (value) {
-      database.adapter.setLocal(Storage.formatKey(key), value);
+      return setItem(Storage.formatKey(key), value, KEY_TYPES[key]);
     } else {
       console.log(`[Storage] REMOVE ${key}`);
-      database.adapter.removeLocal(Storage.formatKey(key));
+      return Storage.removeItem(key);
     }
   }
 }
@@ -186,19 +175,34 @@ export const copyFileToDocuments = async (uri: string) => {
   return newPath;
 };
 
-export const fetchRecentlyUsedContent = async () => {
-  const contents: Query<RecentlyUsedContent> = await database.collections
-    .get("recently_used_contents")
-    .query()
-    .fetch();
+export const fetchRecentlyUsedContent = async (
+  limit: number,
+  offset: number,
+  contentType: RecentlyUsedContentType | null
+): Promise<[[Object], number]> => {
+  let realm = RecentlyUsedContent._realm;
 
-  return orderBy<RecentlyUsedContent>(
-    uniqBy(contents, "uid"),
-    ["lastUsedAt"],
-    ["desc"]
-  ).map(content => {
-    return content.graphql;
-  });
+  if (!realm) {
+    realm = await RecentlyUsedContent.getRealm();
+  }
+
+  let query = realm
+    .objects<RecentlyUsedContent>("RecentlyUsedContent")
+    .sorted("lastUsedAt", true);
+
+  if (typeof contentType === "number") {
+    query = query.filtered(`contentType == ${contentType}`);
+  }
+
+  const count = query.length;
+  const to = Math.min(limit + offset, count);
+
+  return [
+    query.slice(offset, to).map(row => {
+      return row.graphql;
+    }),
+    count
+  ];
 };
 
 export const addRecentlyUsedContent = async (
@@ -218,38 +222,33 @@ export const addRecentlyUsedContent = async (
   }
 
   const id = post?.id || image.id;
+  const realm = await RecentlyUsedContent.getRealm();
 
-  return database.action(async () => {
-    const contents = database.collections.get("recently_used_contents");
-    const existingContents = first<ImageContainer>(
-      await contents.query(Q.where("uid", id)).fetch()
-    );
+  const existingContents = await realm.objectForPrimaryKey(
+    "RecentlyUsedContent",
+    id
+  );
 
+  realm.write(() => {
     if (existingContents) {
-      await existingContents.update(record => {
-        if (post) {
-          Object.assign(record, RecentlyUsedContent.fromPost(post));
-        } else {
-          Object.assign(
-            record,
-            RecentlyUsedContent.fromYeetImageContainer(image)
-          );
-        }
+      if (post) {
+        Object.assign(existingContents, RecentlyUsedContent.fromPost(post));
+      } else {
+        Object.assign(
+          existingContents,
+          RecentlyUsedContent.fromYeetImageContainer(image)
+        );
+      }
 
-        record.lastUsedAt = new Date();
-      });
+      existingContents.lastUsedAt = new Date();
     } else {
-      return contents.create(record => {
-        if (post) {
-          Object.assign(record, RecentlyUsedContent.fromPost(post));
-        } else {
-          Object.assign(
-            record,
-            RecentlyUsedContent.fromYeetImageContainer(image)
-          );
-        }
-        record.lastUsedAt = new Date();
-      });
+      const props = { lastUsedAt: new Date(), createdAt: new Date(), id };
+      if (post) {
+        Object.assign(props, RecentlyUsedContent.fromPost(post));
+      } else {
+        Object.assign(props, RecentlyUsedContent.fromYeetImageContainer(image));
+      }
+      realm.create("RecentlyUsedContent", props, Realm.UpdateMode.All);
     }
   });
 };

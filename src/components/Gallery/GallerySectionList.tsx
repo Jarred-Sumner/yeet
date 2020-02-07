@@ -64,6 +64,8 @@ import memoize from "memoizee";
 import { MediaPlayerPauser } from "../MediaPlayer/MediaPlayerContext";
 import { GalleryRow } from "./GalleryItem";
 import SectionHeader from "./SectionHeader";
+import { RecentlyUsedContentType } from "../../lib/db/models/RecentlyUsedContent";
+import { photosAuthorizationStatus } from "../../lib/Yeet";
 
 const COLUMN_COUNT = 3;
 const COLUMN_GAP = 2;
@@ -134,10 +136,7 @@ class GallerySectionListComponent extends React.Component<Props> {
   };
 
   static getSections = memoize((data, numColumns) =>
-    chunk(
-      data.map((row, index) => index),
-      numColumns
-    )
+    chunk(data?.map((row, index) => index) ?? [], numColumns)
   );
 
   get sections() {
@@ -169,7 +168,9 @@ class GallerySectionListComponent extends React.Component<Props> {
     }
   };
 
-  handleChangeSection = () => {};
+  handleChangeSection = filter => {
+    this.props.onChangeFilter(filter);
+  };
 
   renderSection = (sectionNumber: number) => {
     const section = this.props.sectionOrder[sectionNumber];
@@ -180,7 +181,7 @@ class GallerySectionListComponent extends React.Component<Props> {
         Icon={ICONS[filter.value]}
         value={filter.value}
         onPress={this.handleChangeSection}
-        showViewAll
+        showViewAll={filter.value !== GallerySectionItem.clipboardImage}
       />
     );
   };
@@ -329,17 +330,23 @@ export const GallerySectionList = ({
 
   const recentImagesQuery = useQuery(RECENT_IMAGES_QUERY, {
     errorPolicy: "all",
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: "network-only",
     variables: {
-      query: String(query).trim()
+      query: String(query).trim(),
+      limit,
+      offset: 0,
+      contentType: isModal ? RecentlyUsedContentType.image : null
     },
     notifyOnNetworkStatusChange: true
   });
 
-  const gifsQuery = useLazyQuery(GIFS_QUERY, {
+  const gifsQuery = useQuery(GIFS_QUERY, {
+    errorPolicy: "all",
+    fetchPolicy: "network-only",
     variables: {
       query,
-      limit
+      limit,
+      offset: 0
     },
     notifyOnNetworkStatusChange: true
   });
@@ -360,9 +367,7 @@ export const GallerySectionList = ({
   );
 
   const photosQuery = useQuery(CAMERA_ROLL_QUERY, {
-    skip:
-      global.MediaPlayerViewManager?.photosAuthorizationStatus !==
-      RESULTS.GRANTED,
+    skip: photosAuthorizationStatus() !== RESULTS.GRANTED,
     variables: {
       assetType: "all",
       width,
@@ -383,13 +388,14 @@ export const GallerySectionList = ({
       mediaSource &&
       !sectionOrder.current.includes(GallerySectionItem.clipboardImage)
     ) {
-      sectionOrder.current.push(GallerySectionItem.clipboardImage);
+      sectionOrder.current.unshift(GallerySectionItem.clipboardImage);
     }
 
     if (mediaSource) {
-      return buildSection(GallerySectionItem.clipboardImage, [
-        buildMediaValue([{ mediaSource }])
-      ]);
+      return {
+        type: GallerySectionItem.clipboardImage,
+        data: buildMediaValue([mediaSource])
+      };
     } else {
       return null;
     }
@@ -404,12 +410,13 @@ export const GallerySectionList = ({
 
   const recentImagesSection = React.useMemo(() => {
     const images = recentImagesQuery?.data?.recentImages?.data || [];
-
-    const data = images.slice(0, limit).map(row => {
+    const data = images.map(row => {
       if (row.post) {
         return postToCell(row.post);
-      } else {
+      } else if (row.image) {
         return _buildValue(row.image);
+      } else {
+        return null;
       }
     });
 
@@ -449,7 +456,7 @@ export const GallerySectionList = ({
       data.length > 0 &&
       !sectionOrder.current.includes(GallerySectionItem.memes)
     ) {
-      sectionOrder.current.push(GallerySectionItem.memes);
+      sectionOrder.current.unshift(GallerySectionItem.memes);
     }
     return {
       type: GallerySectionItem.memes,
@@ -468,7 +475,7 @@ export const GallerySectionList = ({
       data.length > 0 &&
       !sectionOrder.current.includes(GallerySectionItem.assets)
     ) {
-      sectionOrder.current.push(GallerySectionItem.assets);
+      sectionOrder.current.unshift(GallerySectionItem.assets);
     }
 
     return {
@@ -518,8 +525,6 @@ export const GallerySectionList = ({
   }, [gifsQuery?.data, sectionOrder, buildValue]);
 
   const sections = React.useMemo(() => {
-    const seenIds = {};
-
     return fromPairs(
       [
         clipboardImageSection,
@@ -532,15 +537,7 @@ export const GallerySectionList = ({
       ]
         .filter(section => section?.data?.length ?? 0 > 0)
         .map(section => {
-          const rows = [];
-          for (const row of section.data) {
-            if (!seenIds[row.id]) {
-              rows.push(row);
-              seenIds[row.id] = true;
-            }
-          }
-
-          return [section.type, rows];
+          return [section.type, section.data];
         })
     );
   }, [

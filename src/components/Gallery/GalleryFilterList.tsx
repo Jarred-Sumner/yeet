@@ -539,7 +539,6 @@ export const postToCell = memoize(
       media: { width, height, previewUrl, coverUrl, url, duration, mimeType },
       id
     } = post;
-
     const _id = `${id}-cell`;
 
     return {

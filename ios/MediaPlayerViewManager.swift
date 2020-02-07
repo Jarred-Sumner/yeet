@@ -54,6 +54,7 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
         MediaPlayerJSIModuleInstaller.install(this)
       }, queue: RCTJSThread)
+
     }
   }
 

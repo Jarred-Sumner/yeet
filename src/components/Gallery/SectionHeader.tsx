@@ -65,39 +65,33 @@ const ICON_SIZES = {
   [GallerySectionItem.gifs]: 16
 };
 
-const condition = true;
-const HUGE = "";
-const SMALL = "";
+export const SectionHeader = ({ label, onPress, showViewAll, value, Icon }) => {
+  const press = React.useCallback(() => {
+    onPress && onPress(value);
+  }, [value, onPress]);
 
-const blah = () => {
-  if (condition) {
-    return HUGE;
-  } else {
-    return SMALL;
-  }
+  return (
+    <BaseButton
+      exclusive
+      enabled={!!(!!onPress && showViewAll)}
+      onPress={press}
+    >
+      <View style={styles.container}>
+        <View style={styles.left}>
+          {/* <Icon style={styles.icon} size={ICON_SIZES[value]} color="white" /> */}
+          <SemiBoldText style={styles.title}>{label}</SemiBoldText>
+        </View>
+
+        <View style={styles.right}>
+          {showViewAll && (
+            <>
+              <Text style={styles.viewAll}>View all</Text>
+              <IconChevronRight style={styles.chevron} color="#ccc" />
+            </>
+          )}
+        </View>
+      </View>
+    </BaseButton>
+  );
 };
-
-export const SectionHeader = ({ label, onPress, showViewAll, value, Icon }) => (
-  <BaseButton
-    exclusive
-    enabled={!!(!!onPress && showViewAll)}
-    onPress={onPress}
-  >
-    <View style={styles.container}>
-      <View style={styles.left}>
-        {/* <Icon style={styles.icon} size={ICON_SIZES[value]} color="white" /> */}
-        <SemiBoldText style={styles.title}>{label}</SemiBoldText>
-      </View>
-
-      <View style={styles.right}>
-        {showViewAll && (
-          <>
-            <Text style={styles.viewAll}>View all</Text>
-            <IconChevronRight style={styles.chevron} color="#ccc" />
-          </>
-        )}
-      </View>
-    </View>
-  </BaseButton>
-);
 export default SectionHeader;

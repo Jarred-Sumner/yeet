@@ -10,10 +10,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 @class MediaPlayerViewManager;
+@class YeetClipboardJSI;
+@class YeetClipboard;
 
 @interface MediaPlayerJSIModuleInstaller : NSObject
 
 +(void)install:(id)player;
++(void)installClipboard:(id)clipboard;
 
 @end
 

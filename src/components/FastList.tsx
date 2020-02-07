@@ -850,10 +850,6 @@ export default class FastList extends React.PureComponent<
     const { insetTop, insetBottom } = this.props;
     const { containerHeight, scrollTop } = this;
 
-    if (this.props.scrollTopValue && !this.hasScrolled) {
-      this.props.scrollTopValue.setValue(this.scrollTop);
-    }
-
     this.containerHeight = nativeEvent.layout.height;
 
     const nextState = computeBlock(this.containerHeight, this.scrollTop);
@@ -1140,7 +1136,6 @@ export default class FastList extends React.PureComponent<
         removeClippedSubviews={false}
         directionalLockEnabled
         height={height}
-        alwaysBounceVertical={false}
         scrollEventThrottle={16}
         style={style}
         // maintainVisibleContentPosition

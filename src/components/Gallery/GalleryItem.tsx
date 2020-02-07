@@ -9,7 +9,8 @@ import {
   mediaSourceFromImage,
   YeetImageContainer,
   isVideo,
-  ImageSourceType
+  ImageSourceType,
+  imageContainerFromMediaSource
 } from "../../lib/imageSearch";
 import { COLORS, SPACING } from "../../lib/styles";
 import { useMemoOne } from "use-memo-one";
@@ -371,8 +372,12 @@ export const GalleryItem = ({
   }, [image, width, height, id, galleryItemMediaSource, mediaSource]);
 
   const _onPress = React.useCallback(() => {
-    onPress(image, post);
-  }, [onPress, image, post, id]);
+    if (mediaSource) {
+      onPress(imageContainerFromMediaSource(mediaSource, null), post);
+    } else {
+      onPress(image, post);
+    }
+  }, [onPress, image, post, id, mediaSource]);
 
   let sizeStyle;
 

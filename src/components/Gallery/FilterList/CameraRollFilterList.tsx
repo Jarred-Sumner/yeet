@@ -19,6 +19,7 @@ import {
   VERTICAL_ITEM_WIDTH
 } from "../sizes";
 import { View } from "react-native";
+import { photosAuthorizationStatus } from "../../../lib/Yeet";
 
 export const CameraRollFilterList = ({
   query = "",
@@ -44,9 +45,7 @@ export const CameraRollFilterList = ({
   }
 
   const photosQuery = useQuery(CAMERA_ROLL_QUERY, {
-    skip:
-      global.MediaPlayerViewManager?.photosAuthorizationStatus !==
-      RESULTS.GRANTED,
+    skip: photosAuthorizationStatus() !== RESULTS.GRANTED,
     variables: {
       assetType,
       width,

@@ -70,36 +70,23 @@ export class ClipboardProvider extends React.Component<{}, State> {
 
   handleClipboardChange = async (clipboard: ClipboardResponse) => {
     console.warn("CLIPBOARD CHANGE", clipboard);
-    const changedHasImages =
-      clipboard.hasImages !== this.state.contextValue.clipboard.hasImages;
 
-    if (changedHasImages) {
-      try {
-        const mediaSource = await getClipboardMediaSource();
-        this.setState({
-          contextValue: ClipboardProvider.buildContextValue(
-            clipboard,
-            mediaSource,
-            this.state.contextValue.lastHandledId,
-            this.handleChangeLastHandledId
-          )
-        });
-      } catch (excpetion) {
-        console.error(exception);
-        this.setState({
-          contextValue: ClipboardProvider.buildContextValue(
-            clipboard,
-            null,
-            this.state.contextValue.lastHandledId,
-            this.handleChangeLastHandledId
-          )
-        });
-      }
-    } else {
+    try {
+      const mediaSource = await getClipboardMediaSource();
       this.setState({
         contextValue: ClipboardProvider.buildContextValue(
           clipboard,
-          this.state.contextValue.mediaSource,
+          mediaSource || null,
+          this.state.contextValue.lastHandledId,
+          this.handleChangeLastHandledId
+        )
+      });
+    } catch (excpetion) {
+      console.error(exception);
+      this.setState({
+        contextValue: ClipboardProvider.buildContextValue(
+          clipboard,
+          null,
           this.state.contextValue.lastHandledId,
           this.handleChangeLastHandledId
         )

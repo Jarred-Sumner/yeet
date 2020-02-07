@@ -65,7 +65,9 @@ class GalleryTabViewComponent extends React.Component {
           props.routes.findIndex(({ key }) => key === props.initialRoute),
           0
         ),
-        routes: cloneDeep(props.routes)
+        routes: cloneDeep(props.routes).sort((route, b) =>
+          props.tabs.indexOf(route.key) > props.tabs.indexOf(b.key) ? 1 : -1
+        )
       }
     };
 

@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     backgroundColor: "black",
     position: "absolute",
     top: 0,
-    opacity: 0.5,
     bottom: 0,
     overflow: "hidden",
     left: 0,
@@ -192,6 +191,8 @@ const SHEET_ROUTE_KEYS = [
   GallerySectionItem.gifs
 ];
 
+const DISMISS_THRESHOLD = 60;
+
 export const SHEET_ROUTES_LIST = FILTERS.filter(({ value }) =>
   SHEET_ROUTE_KEYS.includes(value)
 ).map(filter => {
@@ -258,6 +259,10 @@ export class GallerySheet extends React.Component {
     this.setState({ navigationState });
   componentDidUpdate(prevProps) {
     if (this.props.show !== prevProps.show) {
+      if (!this.props.show) {
+        window.requestAnimationFrame(() => this.scrollY.setValue(0));
+      }
+
       LayoutAnimation.configureNext({
         duration: 200,
         create: {
@@ -281,11 +286,12 @@ export class GallerySheet extends React.Component {
   scrollY = new Animated.Value(0);
   insetValue = new Animated.Value(0);
 
-  handlePress = (photo: YeetImageContainer) => {
+  handlePress = (photo: YeetImageContainer, post) => {
     let _photo = photo;
-    this.props.onPress(_photo);
+    this.props.onPress(_photo || post);
 
     this.handleDismiss();
+    this.scrollY.setValue(0);
 
     window.requestIdleCallback(() => {
       Storage.insertRecentlyUsed(_photo, null);
@@ -335,7 +341,19 @@ export class GallerySheet extends React.Component {
     return (
       <>
         {this.props.show && (
-          <View pointerEvents="none" style={styles.backdrop} />
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.backdrop,
+              {
+                opacity: Animated.interpolate(this.scrollY, {
+                  inputRange: [-DISMISS_THRESHOLD, 0],
+                  outputRange: [0, 0.5],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]}
+          />
         )}
 
         <Modal
@@ -354,18 +372,40 @@ export class GallerySheet extends React.Component {
               direction={Directions.DOWN}
             >
               <Animated.View
-                style={
+                style={[
                   isInputFocused
                     ? styles.focusedModalShadow
-                    : styles.modalShadow
-                }
+                    : styles.modalShadow,
+                  {
+                    transform: [
+                      {
+                        translateY: Animated.interpolate(this.scrollY, {
+                          inputRange: [-DISMISS_THRESHOLD, 0],
+                          outputRange: [DISMISS_THRESHOLD, 0],
+                          extrapolateRight: Animated.Extrapolate.CLAMP
+                        })
+                      }
+                    ]
+                  }
+                ]}
               >
                 {this.props.show && (
-                  <StatusBar
-                    animated
-                    showHideTransition="slide"
-                    hidden={isInputFocused}
-                  />
+                  <>
+                    <StatusBar
+                      animated
+                      showHideTransition="slide"
+                      hidden={isInputFocused}
+                    />
+
+                    <Animated.Code
+                      exec={Animated.block([
+                        Animated.cond(
+                          Animated.lessThan(this.scrollY, -DISMISS_THRESHOLD),
+                          Animated.call([], this.props.onDismiss)
+                        )
+                      ])}
+                    />
+                  </>
                 )}
                 <View
                   style={isInputFocused ? styles.focusedModal : styles.modal}
@@ -428,50 +468,73 @@ export class GallerySheet extends React.Component {
                             : styles.content
                         }
                       >
-                        <GalleryTabView
-                          width={SCREEN_DIMENSIONS.width}
-                          navigationState={this.state.navigationState}
-                          isFocused={this.props.show}
-                          onChangeNavigationState={
-                            this.handleChangeNavigationState
-                          }
-                          isKeyboardVisible={isInputFocused}
-                          height={
-                            isInputFocused
-                              ? FOCUSED_HEIGHT - keyboardHeight
-                              : DEFAULT_HEIGHT - 107
-                          }
-                          keyboardVisibleValue={this.keyboardVisibleValue}
-                          onPress={this.handlePress}
-                          show={this.props.show}
-                          position={this.position}
-                          renderTabBar={null}
-                          inset={0}
-                          isModal
-                          offset={0}
-                          routes={SHEET_ROUTES_LIST}
-                          selectedIDs={getSelectedIDs(
-                            this.state.selectedImages
-                          )}
-                          tabBarPosition="top"
-                          showHeader
-                          light
-                          isModal
-                          scrollY={this.scrollY}
-                          initialRoute={"all"}
-                        />
+                        <Animated.View
+                          style={{
+                            transform: [
+                              {
+                                translateY: Animated.interpolate(this.scrollY, {
+                                  inputRange: [-DISMISS_THRESHOLD, 0],
+                                  outputRange: [-DISMISS_THRESHOLD, 0],
+                                  extrapolateRight: Animated.Extrapolate.CLAMP
+                                })
+                              }
+                            ]
+                          }}
+                        >
+                          <GalleryTabView
+                            width={SCREEN_DIMENSIONS.width}
+                            navigationState={this.state.navigationState}
+                            isFocused={this.props.show}
+                            onChangeNavigationState={
+                              this.handleChangeNavigationState
+                            }
+                            isKeyboardVisible={isInputFocused}
+                            height={
+                              isInputFocused
+                                ? FOCUSED_HEIGHT - keyboardHeight
+                                : DEFAULT_HEIGHT - 107
+                            }
+                            keyboardVisibleValue={this.keyboardVisibleValue}
+                            onPress={this.handlePress}
+                            show={this.props.show}
+                            position={this.position}
+                            renderTabBar={null}
+                            inset={0}
+                            isModal
+                            offset={0}
+                            routes={SHEET_ROUTES_LIST}
+                            selectedIDs={getSelectedIDs(
+                              this.state.selectedImages
+                            )}
+                            tabBarPosition="top"
+                            showHeader
+                            light
+                            isModal
+                            scrollY={this.scrollY}
+                            initialRoute={"all"}
+                          />
+                        </Animated.View>
                       </View>
                     </View>
                   </BlurView>
                 </View>
               </Animated.View>
             </FlingGestureHandler>
-            <View
+            <Animated.View
               pointerEvents="none"
               style={[
                 styles.hint,
                 {
                   top: _TOP_Y + 6,
+                  transform: [
+                    {
+                      translateY: Animated.interpolate(this.scrollY, {
+                        inputRange: [-DISMISS_THRESHOLD, 0],
+                        outputRange: [DISMISS_THRESHOLD, 0],
+                        extrapolateRight: Animated.Extrapolate.CLAMP
+                      })
+                    }
+                  ],
                   opacity: isInputFocused ? 0 : 0.5
                 }
               ]}

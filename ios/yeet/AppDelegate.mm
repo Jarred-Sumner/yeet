@@ -12,7 +12,6 @@
 
 #import <PINRemoteImage/PINRemoteImage.h>
 
-
 //
 //#import <React/RCTBridge.h>
 //#import <React/RCTBundleURLProvider.h>
@@ -54,6 +53,7 @@
 #import <ReactCommon/RCTTurboModuleManager.h>
 #import <FBReactNativeSpec/FBReactNativeSpec.h>
 #import <cxxreact/JSExecutor.h>
+#import "YeetSplashScreen.h"
 
 #import <KTVHTTPCache/KTVHTTPCache.h>
 
@@ -61,6 +61,8 @@
 //#import <ReactCommon/RCTTurboModuleManager.h>
 #import <React/CoreModulesPlugins.h>
 //#import <React/JSCExecutorFactory.h>
+#import <MMKV/MMKV.h>
+#import "YeetJSIModule.h"
 
 @interface AppDelegate() <RCTCxxBridgeDelegate, RCTTurboModuleManagerDelegate>{
   RCTTurboModuleManager *_turboModuleManager;
@@ -85,6 +87,8 @@
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
 //  RCTEnableTurboModule(YES);
+  [MMKV initializeMMKV:nil];
+  
 
   [RCTCronetHTTPRequestHandler setCustomCronetBuilder:^{
     [Cronet setHttp2Enabled:YES];
@@ -149,7 +153,7 @@
   SDImageWebPCoder *webPCoder = [SDImageWebPCoder sharedCoder];
   [[SDImageCodersManager sharedManager] addCoder:webPCoder];
 
-  RCTBridge *bridge = [[YeetBridge alloc] initWithDelegate:self launchOptions:launchOptions];
+  RCTBridge *bridge = [[RCTBridge alloc] initWithDelegate:self launchOptions:launchOptions];
   RCTRootView *rootView = [[RCTRootView alloc] initWithBridge:bridge
                                                    moduleName:@"yeet"
                                             initialProperties:nil];
@@ -167,7 +171,7 @@
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;
   self.window.rootViewController = rootViewController;
-  [RNSplashScreen showSplash:@"LaunchScreen" inRootView:rootView];
+  [YeetSplashScreen showSplash:@"LaunchScreen" inRootView:rootView];
 
   [self.window makeKeyAndVisible];
 
@@ -200,8 +204,11 @@
     if (!bridge) {
       return;
     }
+
+
     __typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
+      YeetJSIModule::install(bridge);
       strongSelf->_turboModuleManager = [[RCTTurboModuleManager alloc] initWithBridge:bridge delegate:strongSelf];
       [strongSelf->_turboModuleManager installJSBindingWithRuntime:&runtime];
     }

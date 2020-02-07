@@ -67,6 +67,7 @@
 		834CDE6A236A324E006D5A74 /* YeetError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834CDE69236A324E006D5A74 /* YeetError.swift */; };
 		834DEDE923C06833006946AD /* KeyboardNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834DEDE823C06833006946AD /* KeyboardNotification.swift */; };
 		83532FB623701B9400BA0F1A /* DispatchQueue+throttle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */; };
+		8357BCAC23ED629C0089EB74 /* YeetSplashScreen.m in Sources */ = {isa = PBXBuildFile; fileRef = 8357BCAB23ED629C0089EB74 /* YeetSplashScreen.m */; };
 		835CA06623E962CD00829C71 /* YeetBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 835CA06523E962CD00829C71 /* YeetBridge.mm */; };
 		835EF07723E3B1290035C814 /* RCTConvert+YeetTextEnums.m in Sources */ = {isa = PBXBuildFile; fileRef = 835EF07623E3B1290035C814 /* RCTConvert+YeetTextEnums.m */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
@@ -81,6 +82,8 @@
 		837ABA4523E2BF0100E83F31 /* MediaPlayerJSIModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4423E2BF0100E83F31 /* MediaPlayerJSIModule.mm */; };
 		837ABA4923E2DA9A00E83F31 /* YeetJSIUTils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4823E2DA9A00E83F31 /* YeetJSIUTils.mm */; };
 		837ABA4C23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4B23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm */; };
+		837D6CE523ECE81200540A42 /* YeetJSIModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837D6CE423ECE81200540A42 /* YeetJSIModule.mm */; };
+		837D6CE823ED15AF00540A42 /* YeetClipboardJSI.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837D6CE723ED15AF00540A42 /* YeetClipboardJSI.mm */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
 		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
@@ -117,7 +120,6 @@
 		83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */; };
 		8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEF9871D096D405696E59228 /* digistrip_i.ttf */; };
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
-		94F86C43334D47A5A406C40C /* libWatermelonDB.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 7FF00C958CE64266A664DA02 /* libWatermelonDB.a */; };
 		AAB429CFB78E4321BFA32461 /* Impact.otf in Resources */ = {isa = PBXBuildFile; fileRef = A10799C78F3242539F062971 /* Impact.otf */; };
 		D6199777328941FA86FF2ED7 /* digistrip.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C343AA0F86574D3F9E225BA8 /* digistrip.ttf */; };
 		E89FAC1D34B2BB6AE4FD5D29 /* libPods-OneSignalNotificationServiceExtension.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F6ED82352AD3F99C2184A011 /* libPods-OneSignalNotificationServiceExtension.a */; };
@@ -138,13 +140,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
 			remoteInfo = yeet;
-		};
-		83B2435523DFE4B900915115 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = B85157E9BEBC4B46BA401AD7 /* WatermelonDB.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 6E660D5E213BCCD300189354;
-			remoteInfo = WatermelonDB;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -197,7 +192,6 @@
 		61BF90C6FFD44674B828B97A /* FontAwesome.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = FontAwesome.ttf; path = "../node_modules/react-native-vector-icons/Fonts/FontAwesome.ttf"; sourceTree = "<group>"; };
 		63AE1CAA636BE65F0051DE79 /* Pods-yeet-tvOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.release.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		6B61044DB5B14EBBA1A93907 /* Webcomic Bros.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Webcomic Bros.ttf"; path = "../assets/fonts/Webcomic Bros.ttf"; sourceTree = "<group>"; };
-		7FF00C958CE64266A664DA02 /* libWatermelonDB.a */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = archive.ar; path = libWatermelonDB.a; sourceTree = "<group>"; };
 		830303C62324AD8C00BD2260 /* ExportableImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableImage.swift; sourceTree = "<group>"; };
 		830418642345AAEE007C9E5A /* EnableWebpDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = EnableWebpDecoder.h; sourceTree = "<group>"; };
 		830554DF23C6F024008D8BD1 /* YeetTextInputShadowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetTextInputShadowView.h; sourceTree = "<group>"; };
@@ -271,6 +265,8 @@
 		834DEDE823C06833006946AD /* KeyboardNotification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardNotification.swift; sourceTree = "<group>"; };
 		83532FB523701B9400BA0F1A /* DispatchQueue+throttle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DispatchQueue+throttle.swift"; sourceTree = "<group>"; };
 		83573D35231648A400E0C179 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		8357BCAA23ED629C0089EB74 /* YeetSplashScreen.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetSplashScreen.h; sourceTree = "<group>"; };
+		8357BCAB23ED629C0089EB74 /* YeetSplashScreen.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = YeetSplashScreen.m; sourceTree = "<group>"; };
 		835CA06223E95A5C00829C71 /* KVCacheComplete-Swift.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "KVCacheComplete-Swift.h"; sourceTree = "<group>"; };
 		835CA06423E962CD00829C71 /* YeetBridge.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetBridge.h; sourceTree = "<group>"; };
 		835CA06523E962CD00829C71 /* YeetBridge.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = YeetBridge.mm; sourceTree = "<group>"; };
@@ -292,6 +288,12 @@
 		837ABA4A23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerJSIModuleInstaller.h; sourceTree = "<group>"; };
 		837ABA4B23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MediaPlayerJSIModuleInstaller.mm; sourceTree = "<group>"; };
 		837ABA4D23E2EE7B00E83F31 /* MediaPlayerViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerViewManager.h; sourceTree = "<group>"; };
+		837D6CE323ECE81200540A42 /* YeetJSIModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetJSIModule.h; sourceTree = "<group>"; };
+		837D6CE423ECE81200540A42 /* YeetJSIModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = YeetJSIModule.mm; sourceTree = "<group>"; };
+		837D6CE623ED15AF00540A42 /* YeetClipboardJSI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetClipboardJSI.h; sourceTree = "<group>"; };
+		837D6CE723ED15AF00540A42 /* YeetClipboardJSI.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = YeetClipboardJSI.mm; sourceTree = "<group>"; };
+		837D6CE923ED167900540A42 /* YeetClipboard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetClipboard.h; sourceTree = "<group>"; };
+		837D6CEA23ED1AB200540A42 /* MediaSource.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaSource.h; sourceTree = "<group>"; };
 		838A18B52328528E00FC8C22 /* WebPMux.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPMux.framework; sourceTree = "<group>"; };
 		838A18B62328528E00FC8C22 /* WebPDecoder.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebPDecoder.framework; sourceTree = "<group>"; };
 		838A18B72328528E00FC8C22 /* WebP.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebP.framework; sourceTree = "<group>"; };
@@ -344,7 +346,6 @@
 		AF4CA8C1A60F66FB76D46049 /* Pods-yeet-Tests-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-Tests-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-yeet-Tests-yeetTests/Pods-yeet-Tests-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
 		B034A7D51A402246D77EF6DF /* Pods-yeet-tvOSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-yeet-tvOSTests.debug.xcconfig"; path = "Target Support Files/Pods-yeet-tvOSTests/Pods-yeet-tvOSTests.debug.xcconfig"; sourceTree = "<group>"; };
 		B39C265FCA3E96E5584FD0B2 /* Pods-Tests-yeetTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests-yeetTests.release.xcconfig"; path = "Target Support Files/Pods-Tests-yeetTests/Pods-Tests-yeetTests.release.xcconfig"; sourceTree = "<group>"; };
-		B85157E9BEBC4B46BA401AD7 /* WatermelonDB.xcodeproj */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "wrapper.pb-project"; name = WatermelonDB.xcodeproj; path = "../node_modules/@nozbe/watermelondb/native/ios/WatermelonDB.xcodeproj"; sourceTree = "<group>"; };
 		C0875605D33A48F08FA502BE /* Ionicons.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Ionicons.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Ionicons.ttf"; sourceTree = "<group>"; };
 		C2631D106A9F4E2CBB7D0368 /* ProximaNova-Regular.otf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "ProximaNova-Regular.otf"; path = "../assets/fonts/ProximaNova-Regular.otf"; sourceTree = "<group>"; };
 		C343AA0F86574D3F9E225BA8 /* digistrip.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = digistrip.ttf; path = ../assets/fonts/digistrip.ttf; sourceTree = "<group>"; };
@@ -375,7 +376,6 @@
 			files = (
 				095E8D391E331E46769ABCB8 /* libPods-yeet.a in Frameworks */,
 				6C644D7EA51846C59656FE41 /* libz.tbd in Frameworks */,
-				94F86C43334D47A5A406C40C /* libWatermelonDB.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -401,6 +401,7 @@
 		13B07FAE1A68108700A75B9A /* yeet */ = {
 			isa = PBXGroup;
 			children = (
+				837D6CE223ECE7FA00540A42 /* JSI */,
 				8311793423B1860000EA8CB2 /* MovableView */,
 				83356DDC23A5C4D900943381 /* AI */,
 				8346978123A424FA00CDE5D8 /* Clipboard */,
@@ -511,6 +512,9 @@
 				83AAD7B323E546F0001F31EF /* RCTConvert+PHotost.m */,
 				83AAD7AE23E42C02001F31EF /* CameraRoll.swift */,
 				83AAD7B123E50446001F31EF /* CameraRoll.h */,
+				837D6CEA23ED1AB200540A42 /* MediaSource.h */,
+				8357BCAA23ED629C0089EB74 /* YeetSplashScreen.h */,
+				8357BCAB23ED629C0089EB74 /* YeetSplashScreen.m */,
 			);
 			name = MediaPlayer;
 			sourceTree = "<group>";
@@ -539,7 +543,6 @@
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				B85157E9BEBC4B46BA401AD7 /* WatermelonDB.xcodeproj */,
 			);
 			name = Libraries;
 			sourceTree = "<group>";
@@ -665,17 +668,21 @@
 			name = ColorSlider;
 			sourceTree = "<group>";
 		};
-		83B2435223DFE4B900915115 /* Products */ = {
+		837D6CE223ECE7FA00540A42 /* JSI */ = {
 			isa = PBXGroup;
 			children = (
-				83B2435623DFE4B900915115 /* libWatermelonDB.a */,
+				837D6CE323ECE81200540A42 /* YeetJSIModule.h */,
+				837D6CE423ECE81200540A42 /* YeetJSIModule.mm */,
+				837D6CE623ED15AF00540A42 /* YeetClipboardJSI.h */,
+				837D6CE723ED15AF00540A42 /* YeetClipboardJSI.mm */,
 			);
-			name = Products;
+			name = JSI;
 			sourceTree = "<group>";
 		};
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				837D6CE923ED167900540A42 /* YeetClipboard.h */,
 				835CA06223E95A5C00829C71 /* KVCacheComplete-Swift.h */,
 				835CA06423E962CD00829C71 /* YeetBridge.h */,
 				835CA06523E962CD00829C71 /* YeetBridge.mm */,
@@ -716,7 +723,6 @@
 			isa = PBXGroup;
 			children = (
 				5BA9E24A7965405FBCFAF1E7 /* libRNTextInputMask.a */,
-				7FF00C958CE64266A664DA02 /* libWatermelonDB.a */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -866,12 +872,6 @@
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = 83B2435223DFE4B900915115 /* Products */;
-					ProjectRef = B85157E9BEBC4B46BA401AD7 /* WatermelonDB.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* yeet */,
@@ -880,16 +880,6 @@
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		83B2435623DFE4B900915115 /* libWatermelonDB.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libWatermelonDB.a;
-			remoteRef = 83B2435523DFE4B900915115 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
@@ -1149,6 +1139,7 @@
 				83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */,
 				8324807323D9A75E000E537E /* ContextMenuViewManager.m in Sources */,
 				839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */,
+				837D6CE823ED15AF00540A42 /* YeetClipboardJSI.mm in Sources */,
 				83B0CAD523B6F7B40010DC66 /* YeetMedia.swift in Sources */,
 				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
 				8346978323A4250800CDE5D8 /* YeetClipboard.swift in Sources */,
@@ -1199,6 +1190,8 @@
 				83356DE923A5DD7600943381 /* UIImage+OpenCVConversion.mm in Sources */,
 				83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */,
 				83470520232B0C47004B2FF7 /* YeetTextInputViewManager.swift in Sources */,
+				837D6CE523ECE81200540A42 /* YeetJSIModule.mm in Sources */,
+				8357BCAC23ED629C0089EB74 /* YeetSplashScreen.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1279,7 +1272,6 @@
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-text-input-mask/ios/**",
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
-					"$(SRCROOT)/../node_modules/@nozbe/watermelondb/native/ios/WatermelonDB/SupportingFiles/**",
 					"\"${PODS_ROOT}/Headers/Public\"",
 					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
 					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
@@ -1304,11 +1296,7 @@
 				INFOPLIST_FILE = yeet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/yeet\"",
-					"\"$(SRCROOT)/yeet\"",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
@@ -1367,7 +1355,6 @@
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-text-input-mask/ios/**",
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
-					"$(SRCROOT)/../node_modules/@nozbe/watermelondb/native/ios/WatermelonDB/SupportingFiles/**",
 					"\"${PODS_ROOT}/Headers/Public\"",
 					"\"${PODS_ROOT}/Headers/Public/DoubleConversion\"",
 					"\"${PODS_ROOT}/Headers/Public/FBLazyVector\"",
@@ -1392,11 +1379,7 @@
 				INFOPLIST_FILE = yeet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/yeet\"",
-					"\"$(SRCROOT)/yeet\"",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",
@@ -1567,16 +1550,11 @@
 					"$(inherited)",
 					"$(SRCROOT)/../node_modules/react-native-text-input-mask/ios/**",
 					"$(SRCROOT)/../node_modules/react-native-webp-support",
-					"$(SRCROOT)/../node_modules/@nozbe/watermelondb/native/ios/WatermelonDB/SupportingFiles/**",
 				);
 				INFOPLIST_FILE = yeet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				LIBRARY_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/yeet\"",
-					"\"$(SRCROOT)/yeet\"",
-				);
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_CFLAGS = (
 					"$(inherited)",
 					"-DFB_SONARKIT_ENABLED=1",

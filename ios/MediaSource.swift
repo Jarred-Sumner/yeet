@@ -15,19 +15,19 @@ import Photos
 @objc(MediaSource)
 class MediaSource : NSObject  {
   let mimeType: MimeType
-  let duration: NSNumber
-  let playDuration: NSNumber
-  let id: String
-  let uri: URL
-  let audioURI: URL?
+  @objc(duration) let duration: NSNumber
+  @objc(playDuration) let playDuration: NSNumber
+  @objc(id) let id: String
+  @objc(uri) let uri: URL
+  @objc(audioURI) let audioURI: URL?
 
-  let width: NSNumber
-  let height: NSNumber
-  let pixelRatio: NSNumber
-  let bounds: CGRect
-  let coverUri: URL?
+  @objc(width) let width: NSNumber
+  @objc(height) let height: NSNumber
+  @objc(pixelRatio) let pixelRatio: NSNumber
+  @objc(bounds) let bounds: CGRect
+  @objc(coverUri) let coverUri: URL?
 
-  var toDictionary: [String: Any] {
+  @objc(toDictionary) var toDictionary: [String: Any] {
     return [
       "url": uri.absoluteString,
       "audio": audioURI?.absoluteString ?? nil,
@@ -264,7 +264,7 @@ class MediaSource : NSObject  {
 
   var videoOutput: AVPlayerItemVideoOutput? = nil
   
-  var isVideo: Bool {
+  @objc(isVideo) var isVideo: Bool {
     return (self.mimeType == .mp4 || self.mimeType == .mov || self.mimeType == .m4v) && !isLivePhoto
   }
 
@@ -280,7 +280,7 @@ class MediaSource : NSObject  {
     return phAsset.mediaSubtypes.contains(.photoLive)
   }()
 
-  var isImage: Bool {
+  @objc(isImage) var isImage: Bool {
     let isImageMimeType = [MimeType.png, MimeType.webp, MimeType.jpg, MimeType.heic, MimeType.heif, MimeType.tiff, MimeType.gif, MimeType.bmp].contains(self.mimeType)
 
     if isImageMimeType {
@@ -292,11 +292,11 @@ class MediaSource : NSObject  {
     }
   }
 
-  var naturalBounds: CGRect {
+  @objc(naturalBounds) var naturalBounds: CGRect {
     return bounds.applying(.init(scaleX: CGFloat(pixelRatio.doubleValue), y: CGFloat(pixelRatio.doubleValue)))
   }
 
-  lazy var coverMediaSource: MediaSource? = {
+  @objc(coverMediaSource) lazy var coverMediaSource: MediaSource? = {
     guard self.isVideo else {
       return nil
     }
@@ -332,7 +332,7 @@ class MediaSource : NSObject  {
     }
   }
 
-  var isMP4 : Bool {
+  @objc(isMP4) var isMP4 : Bool {
     return isVideo && uri.pathExtension == "mp4"
   }
 

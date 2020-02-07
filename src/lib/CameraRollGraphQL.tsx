@@ -153,6 +153,7 @@ export default {
       }
     },
     recentImages: async (_, args = {}, { cache }) => {
+      const { limit = 50, offset = 0, contentType = null } = args;
       const status = await ensureExternalStoragePermission();
       if (status !== RESULTS.GRANTED) {
         return {
@@ -169,17 +170,23 @@ export default {
         };
       }
       try {
-        const data = await fetchRecentlyUsedContent();
-
-        const id = `recent-images`;
+        console.time("Recent images");
+        const [data, count] = await fetchRecentlyUsedContent(
+          limit,
+          offset,
+          contentType
+        );
+        const _offset = offset + data.length;
+        console.timeEnd("Recent images");
+        const id = `recent-images-${limit}-${offset}-${contentType}`;
         return {
           __typename: "RecentImageSearchResponse",
           id: id,
           data,
           page_info: {
             __typename: "PageInfo",
-            has_next_page: false,
-            offset: 0,
+            has_next_page: count > _offset,
+            offset: _offset,
             limit: data.length,
             id: `${id}_pageinfo`
           }
