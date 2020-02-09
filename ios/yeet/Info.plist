@@ -132,6 +132,20 @@
 		<string>digistrip.ttf</string>
 		<string>Impact.otf</string>
 		<string>iconfont.ttf</string>
+		<string>SharpGroteskExp-Black.ttf</string>
+		<string>SharpGroteskExp-BlackItalic.ttf</string>
+		<string>SharpGroteskExp-Bold.ttf</string>
+		<string>SharpGroteskExp-BoldItalic.ttf</string>
+		<string>SharpGroteskExp-Book.ttf</string>
+		<string>SharpGroteskExp-BookItalic.ttf</string>
+		<string>SharpGroteskExp-Light.ttf</string>
+		<string>SharpGroteskExp-LightItalic.ttf</string>
+		<string>SharpGroteskExp-Medium.ttf</string>
+		<string>SharpGroteskExp-MediumItalic.ttf</string>
+		<string>SharpGroteskExp-SemBdIta.ttf</string>
+		<string>SharpGroteskExp-SemiBold.ttf</string>
+		<string>SharpGroteskExp-Thin.ttf</string>
+		<string>SharpGroteskExp-ThinItalic.ttf</string>
 	</array>
 	<key>UIBackgroundModes</key>
 	<array>

@@ -17,6 +17,7 @@ import {
 } from "../GalleryFilterList";
 import { MemeFilterControl, MemeFilterType } from "../SegmentFilterControl";
 import { MEMES_ITEM_HEIGHT, MEMES_ITEM_WIDTH } from "../sizes";
+import { GallerySectionItem } from "../../NewPost/ImagePicker/GallerySectionItem";
 
 export const AssetsFilterList = ({
   isFocused,
@@ -124,7 +125,7 @@ export const AssetsFilterList = ({
         numColumns={MEMES_COLUMN_COUNT}
         headerHeight={0}
         scrollY={scrollY}
-        listKey="memes"
+        listKey={GallerySectionItem.assets}
         onEndReached={handleEndReached}
         isModal={isModal}
         insetValue={insetValue}

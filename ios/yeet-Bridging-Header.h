@@ -282,28 +282,6 @@ RCT_REMAP_SHADOW_PROPERTY(textTransform, textAttributes.textTransform, RCTTextTr
 
 @end
 
-@interface RCT_EXTERN_MODULE(EmojiTextInputViewManager, RCTMultilineTextInputViewManager)
-
-RCT_EXPORT_VIEW_PROPERTY(highlightColor, UIColor);
-RCT_EXPORT_VIEW_PROPERTY(highlightCornerRadius, CGFloat);
-RCT_EXPORT_VIEW_PROPERTY(highlightInset, CGFloat);
-RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
-RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
-
-
-@end
-
-@interface RCT_EXTERN_MODULE(MediaFrameViewManager, RCTViewManager)
-
-RCT_EXPORT_VIEW_PROPERTY(source, MediaSource);
-RCT_EXPORT_VIEW_PROPERTY(percentage, Double);
-RCT_EXPORT_VIEW_PROPERTY(id, NSString);
-
-_RCT_EXTERN_REMAP_METHOD(updateFrame, updateFrame:(nonnull NSNumber*)node queueNode:(nonnull NSNumber*)queueNode async:(BOOL)async, FALSE)
-
-@end
-
-
 
 
 @interface RCT_EXTERN_MODULE(MediaPlayerViewManager, RCTViewManager)

@@ -34,23 +34,23 @@ export const LETTER_SPACING_MAPPING = {
 // }
 
 export enum AndroidFontFamily {
-  regular = "Inter",
-  thin = "Inter",
-  semiBold = "Inter",
-  medium = "Inter",
-  bold = "Inter",
-  extraBoldFont = "Inter",
-  black = "Inter"
+  regular = "Sharp Grotesk Exp",
+  thin = "Sharp Grotesk Exp",
+  semiBold = "Sharp Grotesk Exp",
+  medium = "Sharp Grotesk Exp",
+  bold = "Sharp Grotesk Exp",
+  extraBoldFont = "Sharp Grotesk Exp",
+  black = "Sharp Grotesk Exp"
 }
 
 export enum iOSFontFamily {
-  regular = "Inter",
-  thin = "Inter",
-  semiBold = "Inter",
-  medium = "Inter",
-  bold = "Inter",
-  extraBoldFont = "Inter",
-  black = "Inter"
+  regular = "Sharp Grotesk Exp",
+  thin = "Sharp Grotesk Exp",
+  semiBold = "Sharp Grotesk Exp",
+  medium = "Sharp Grotesk Exp",
+  bold = "Sharp Grotesk Exp",
+  extraBoldFont = "Sharp Grotesk Exp",
+  black = "Sharp Grotesk Exp"
 }
 
 export const FontFamily = Platform.select({
@@ -60,51 +60,46 @@ export const FontFamily = Platform.select({
 
 export const fontStyleSheets = StyleSheet.create({
   muted: {
-    color: "#ccc",
-    letterSpacing: LETTER_SPACING_MAPPING["16"]
+    color: "#ccc"
   },
   regularFont: {
     fontFamily: FontFamily.regular,
     fontWeight: "normal",
-    letterSpacing: LETTER_SPACING_MAPPING["16"],
+
     color: "white"
   },
   thinFont: {
     fontFamily: FontFamily.thin,
     fontWeight: "300",
-    letterSpacing: LETTER_SPACING_MAPPING["16"],
 
     color: "white"
   },
   semiBoldFont: {
     fontFamily: FontFamily.semiBold,
-    letterSpacing: LETTER_SPACING_MAPPING["16"],
+
     fontWeight: "600",
     color: "white"
   },
   mediumFont: {
     fontFamily: FontFamily.medium,
-    letterSpacing: LETTER_SPACING_MAPPING["16"],
+
     fontWeight: "500",
     color: "white"
   },
   boldFont: {
     fontFamily: FontFamily.bold,
     fontWeight: "bold",
-    color: "white",
-    letterSpacing: LETTER_SPACING_MAPPING["16"]
+    color: "white"
   },
   extraBoldFont: {
     fontFamily: FontFamily.extraBoldFont,
     fontWeight: "700",
-    color: "white",
-    letterSpacing: LETTER_SPACING_MAPPING["16"]
+    color: "white"
   },
   blackFont: {
     fontFamily: FontFamily.black,
     fontWeight: "900",
-    color: "white",
-    letterSpacing: LETTER_SPACING_MAPPING["16"]
+    color: "white"
   }
 });
 

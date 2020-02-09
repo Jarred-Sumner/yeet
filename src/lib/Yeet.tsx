@@ -11,3 +11,5 @@ export const removeItem = (key: string): any => global.YeetJSI?.removeItem(key);
 
 export const setItem = (key: string, value: any, type: string): any =>
   global.YeetJSI?.setItem(key, value, type);
+
+export const hideSplashScreen = () => global.YeetJSI?.hideSplashScreen();

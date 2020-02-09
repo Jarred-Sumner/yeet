@@ -106,7 +106,6 @@ const photoCellStyles = StyleSheet.create({
     zIndex: 2
   },
   author: {
-    backgroundColor: "rgba(0, 0, 0, 0.25)",
     borderBottomLeftRadius: BORDER_RADIUS,
     borderBottomRightRadius: BORDER_RADIUS,
     flex: 1,

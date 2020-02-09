@@ -43,6 +43,7 @@ import { throttle } from "lodash";
 import FastList from "../FastList";
 import { useSafeArea } from "react-native-safe-area-context";
 import { TAB_BAR_HEIGHT } from "../BottomTabBar";
+import { FeedHeader, FEED_HEADER_HEIGHT } from "./FeedHeader";
 
 const ITEM_SEPARATOR_HEIGHT = SPACING.half;
 
@@ -296,6 +297,10 @@ class FeedListComponent extends React.Component<Props, State> {
     });
   };
 
+  renderHeader = () => {
+    return <FeedHeader />;
+  };
+
   getRowHeight = (section: number, row?: number) => {
     const thread = this.props.threads[section];
 
@@ -328,7 +333,9 @@ class FeedListComponent extends React.Component<Props, State> {
         contentOffset={contentOffset}
         insetTop={insetTop}
         renderRow={this.handleRenderRow}
-        contentContainerStyle={styles.contentContainer}
+        renderHeader={this.renderHeader}
+        listKey="feed"
+        containerHeight={SCREEN_DIMENSIONS.height}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -336,7 +343,7 @@ class FeedListComponent extends React.Component<Props, State> {
             tintColor="white"
           />
         }
-        headerHeight={0}
+        headerHeight={FEED_HEADER_HEIGHT}
         uniform={false}
         insetBottom={ITEM_SEPARATOR_HEIGHT}
         onScrollEnd={this.handleEndReached}

@@ -12,7 +12,6 @@ import {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    height: LIST_HEADER_HEIGHT,
     width: SCREEN_DIMENSIONS.width,
     shadowRadius: 1,
     shadowColor: "#000",
@@ -23,26 +22,9 @@ const styles = StyleSheet.create({
     },
     overflow: "visible",
     borderRadius: 0,
+    flex: 1,
     flexDirection: "row",
     justifyContent: "center"
-  },
-  lightContainer: {
-    alignItems: "center",
-    height: LIGHT_LIST_HEADER_HEIGHT,
-    width: SCREEN_DIMENSIONS.width,
-    paddingBottom: 4,
-    overflow: "visible",
-    shadowRadius: 1,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowOffset: {
-      width: 0,
-      height: 1
-    },
-    borderRadius: 0,
-    flexDirection: "row",
-    justifyContent: "center",
-    position: "relative"
   },
   icon: {
     textAlign: "center",
@@ -57,8 +39,6 @@ const styles = StyleSheet.create({
     borderRightColor: "transparent"
   },
   row: {
-    height: LIST_HEADER_HEIGHT,
-
     opacity: 0.65,
 
     flexDirection: "row",
@@ -72,21 +52,27 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   indicator: {
-    height: 3,
-    borderRadius: 4,
-    backgroundColor: "white",
     position: "absolute",
     left: 0,
-    zIndex: 10
+    zIndex: 10,
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  indicatorCircle: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    overflow: "hidden",
+    backgroundColor: "white"
   },
   lightIndicator: {
-    bottom: 6
+    bottom: 3
   },
   bottomIndicator: {
-    top: 0
+    top: 3
   },
   topIndicator: {
-    bottom: 0
+    bottom: 8
   }
 });
 
@@ -107,39 +93,33 @@ export const FilterBar = ({
   const width = (containerWidth - inset) / tabs.length;
   const count = tabs.length;
   const _inset = light ? 8 : 0;
-  const indicatorWidth = _indicatorWidth ?? width - _inset - rightInset;
+  const indicatorWidth = width;
 
-  const indicatorStyles = [
-    styles.indicator,
-    tabBarPosition === "bottom" && styles.bottomIndicator,
-    tabBarPosition === "top" && styles.topIndicator,
-    light && styles.lightIndicator,
-    { width: indicatorWidth },
+  // const indicatorStyles = [
+  //   styles.indicator,
+  //   tabBarPosition === "bottom" && styles.bottomIndicator,
+  //   tabBarPosition === "top" && styles.topIndicator,
+  //   light && styles.lightIndicator,
+  //   { width: indicatorWidth },
 
-    {
-      transform: [
-        {
-          translateX: light ? (width - indicatorWidth) / 2 : inset
-        },
-        {
-          translateX: Animated.min(
-            Animated.max(
-              Animated.divide(
-                Animated.multiply(
-                  position,
-                  containerWidth -
-                    (light ? (width - indicatorWidth) / 2 : inset)
-                ),
-                count
-              ),
-              light ? (width - indicatorWidth) / -2 + inset : 0
-            ),
-            containerWidth - inset - (light ? rightInset - indicatorWidth : 0)
-          )
-        }
-      ]
-    }
-  ];
+  //   {
+  //     transform: [
+  //       { translateX: inset },
+  //       {
+  //         translateX: Animated.min(
+  //           Animated.max(
+  //             Animated.divide(
+  //               Animated.multiply(position, containerWidth - width + inset),
+  //               count
+  //             ),
+  //             0
+  //           ),
+  //           containerWidth - inset
+  //         )
+  //       }
+  //     ]
+  //   }
+  // ];
 
   const renderFilter = React.useCallback(
     filter => {
@@ -163,18 +143,13 @@ export const FilterBar = ({
   );
 
   return (
-    <Animated.View
-      display={hidden ? "none" : undefined}
-      style={[
-        light
-          ? [styles.lightContainer, { width: containerWidth }]
-          : styles.container
-      ]}
-    >
-      <View style={{ width: inset, height: 1 }} />
+    <View style={styles.container}>
+      {inset > 0 && <View style={{ width: inset, height: 1 }} />}
       {FILTERS.filter(({ value }) => tabs.includes(value)).map(renderFilter)}
-      <Animated.View style={indicatorStyles} />
-    </Animated.View>
+      {/* <Animated.View style={indicatorStyles}>
+        <View style={styles.indicatorCircle} />
+      </Animated.View> */}
+    </View>
   );
 };
 

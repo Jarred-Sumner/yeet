@@ -186,6 +186,8 @@ class GallerySectionListComponent extends React.Component<Props> {
     );
   };
 
+  static scrollIndicatorInsets = { right: 1, left: 0, top: 0, bottom: 0 };
+
   renderFooter = () => <View />;
 
   handleRenderRow = (section: number, row: number) => {
@@ -223,8 +225,11 @@ class GallerySectionListComponent extends React.Component<Props> {
       onEndReached,
       inset,
       isModal,
+      listKey,
       sectionOrder,
-      height
+      height,
+      headerHeight,
+      renderHeader
     } = this.props;
 
     return (
@@ -233,16 +238,19 @@ class GallerySectionListComponent extends React.Component<Props> {
           <FastList
             ref={this.setFlatListRef}
             contentInsetAdjustmentBehavior="never"
-            keyboardDismissMode="interactive"
+            keyboardDismissMode="on-drag"
             // contentInset={this.contentInset}
             // contentOffset={this.contentOffset}
             insetBottom={0}
             insetTop={0}
             scrollTopValue={this.props.scrollY}
-            scrollIndicatorInsets={this.scrollIndicatorInsets}
+            scrollIndicatorInsets={GallerySectionList.scrollIndicatorInsets}
             insetTopValue={this.props.insetValue}
             automaticallyAdjustContentInsets={false}
             keyboardShouldPersistTaps="always"
+            headerHeight={headerHeight}
+            renderHeader={renderHeader}
+            listKey={listKey}
             isLoading={false}
             renderRow={this.handleRenderRow}
             // maintainVisibleContentPosition
@@ -252,7 +260,6 @@ class GallerySectionListComponent extends React.Component<Props> {
             stickyHeaders={false}
             scrollTopValue={this.props.scrollY}
             footerHeight={0}
-            headerHeight={0}
             style={this.listStyle}
             onScrollEnd={this.handleScrollEnd}
             isFastList
@@ -559,6 +566,7 @@ export const GallerySectionList = ({
       offset={offset}
       isModal={isModal}
       numColumns={columnCount}
+      listKey={GallerySectionItem.all}
       rowCount={rowCount}
       itemHeight={height}
       itemWidth={width}

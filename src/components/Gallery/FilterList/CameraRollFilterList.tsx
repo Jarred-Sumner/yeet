@@ -20,6 +20,7 @@ import {
 } from "../sizes";
 import { View } from "react-native";
 import { photosAuthorizationStatus } from "../../../lib/Yeet";
+import { GallerySectionItem } from "../../NewPost/ImagePicker/GallerySectionItem";
 
 export const CameraRollFilterList = ({
   query = "",
@@ -217,14 +218,13 @@ export const CameraRollFilterList = ({
       onRefresh={photosQuery?.refetch}
       isFocused={isFocused}
       ref={ref}
-      listKey={assetType}
+      listKey={GallerySectionItem.cameraRoll}
       offset={offset}
       scrollY={scrollY}
       paused
       // onVisibleItemsChange={onVisibleItemsChange}
       numColumns={columnCount}
       itemHeight={height}
-      paused={!isFocused}
       itemWidth={width}
       isModal={isModal}
       onEndReached={handleEndReached}

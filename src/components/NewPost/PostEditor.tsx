@@ -1407,7 +1407,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           styles.wrapper,
           sizeStyle,
           {
-            backgroundColor: "black"
+            backgroundColor: COLORS.background
           }
         ]}
       >

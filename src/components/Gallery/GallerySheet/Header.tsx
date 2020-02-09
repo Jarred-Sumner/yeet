@@ -1,5 +1,5 @@
 import * as React from "react";
-import { View, StyleSheet, TextInput, LayoutAnimation } from "react-native";
+import { View, StyleSheet, LayoutAnimation } from "react-native";
 import { IconButton } from "../../Button";
 import {
   IconClose,
@@ -14,7 +14,9 @@ import { SemiBoldText } from "../../Text";
 import Animated from "react-native-reanimated";
 import {
   BorderlessButton,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  BaseButton,
+  TextInput
 } from "react-native-gesture-handler";
 import { SCREEN_DIMENSIONS } from "../../../../config";
 
@@ -152,6 +154,25 @@ export const GallerySheetHeader = ({
 
   const blurInput = React.useCallback(() => {
     _inputRef.current?.blur();
+    // LayoutAnimation.configureNext({
+    //   ...LayoutAnimation.Presets.easeInEaseOut,
+    //   create: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.create,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   update: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.update,
+    //     type: LayoutAnimation.Types.keyboard
+    //   },
+    //   delete: {
+    //     ...LayoutAnimation.Presets.easeInEaseOut.delete,
+    //     type: LayoutAnimation.Types.keyboard
+    //   }
+    // });
+  }, [_inputRef]);
+
+  const focusInput = React.useCallback(() => {
+    _inputRef.current?.focus();
     // LayoutAnimation.configureNext({
     //   ...LayoutAnimation.Presets.easeInEaseOut,
     //   create: {

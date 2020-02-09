@@ -50,6 +50,7 @@ interface FastListComputerProps {
   headerHeight: HeaderHeight;
   footerHeight: FooterHeight;
   sectionHeight: SectionHeight;
+  listKey: string | null;
   rowHeight: RowHeight;
   sectionFooterHeight: SectionFooterHeight;
   sections: number[];
@@ -76,6 +77,7 @@ export class FastListComputer {
   insetTop: number;
   insetBottom: number;
   uniform: boolean;
+  listKey: string | null;
 
   constructor({
     headerHeight,
@@ -83,6 +85,7 @@ export class FastListComputer {
     sectionHeight,
     rowHeight,
     sectionFooterHeight,
+    listKey,
     sections,
     insetTop,
     insetBottom
@@ -90,6 +93,7 @@ export class FastListComputer {
     this.headerHeight = headerHeight;
     this.footerHeight = footerHeight;
     this.sectionHeight = sectionHeight;
+    this.listKey = listKey;
     this.rowHeight = rowHeight;
     this.sectionFooterHeight = sectionFooterHeight;
     this.sections = sections;
@@ -100,12 +104,25 @@ export class FastListComputer {
 
   getHeightForHeader(): number {
     const { headerHeight } = this;
-    return typeof headerHeight === "number" ? headerHeight : headerHeight();
+    console.log(headerHeight);
+    if (typeof headerHeight === "number") {
+      return headerHeight;
+    } else if (typeof headerHeight === "function") {
+      return headerHeight({ listKey: this.listKey });
+    } else {
+      return 0;
+    }
   }
 
   getHeightForFooter(): number {
     const { footerHeight } = this;
-    return typeof footerHeight === "number" ? footerHeight : footerHeight();
+    if (typeof footerHeight === "number") {
+      return footerHeight;
+    } else if (typeof footerHeight === "function") {
+      return footerHeight({ listKey: this.listKey });
+    } else {
+      return 0;
+    }
   }
 
   getHeightForSection(section: number): number {
@@ -508,6 +525,7 @@ const FastListItemRenderer = ({
 );
 
 export interface FastListProps {
+  listKey: string | null;
   renderActionSheetScrollViewWrapper?: (
     wrapper: React.ReactNode
   ) => React.ReactNode;
@@ -584,7 +602,8 @@ function getFastListState(
     sectionFooterHeight,
     sections,
     insetTop,
-    insetBottom
+    insetBottom,
+    listKey
   }: FastListProps,
   { batchSize, blockStart, blockEnd, items: prevItems }: FastListState
 ): FastListState {
@@ -602,6 +621,7 @@ function getFastListState(
     headerHeight,
     footerHeight,
     sectionHeight,
+    listKey,
     rowHeight,
     sectionFooterHeight,
     sections,
@@ -926,11 +946,11 @@ export default class FastList extends React.PureComponent<
           break;
         }
         case FastListItemType.header: {
-          const child = renderHeader();
-          if (child != null) {
+          const HeaderComponent = renderHeader;
+          if (HeaderComponent != null) {
             children.push(
               <FastListItemRenderer key={key} layoutHeight={layoutHeight}>
-                {child}
+                <HeaderComponent listKey={this.props.listKey} />
               </FastListItemRenderer>
             );
           }
@@ -1102,12 +1122,15 @@ export default class FastList extends React.PureComponent<
       rowHeight,
       sections,
       insetTop,
+      renderHeader,
+      headerHeight,
       insetBottom,
       actionSheetScrollRef,
       renderActionSheetScrollViewWrapper,
       translateY,
       height,
       insetTopValue,
+      listKey,
       scrollTopValue,
       style,
       renderEmpty,

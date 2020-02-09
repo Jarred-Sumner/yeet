@@ -21,17 +21,17 @@ export enum GallerySectionItem {
   gifs = "gifs"
 }
 export const FILTER_LABELS = {
-  [GallerySectionItem.search]: "SEARCH",
-  [GallerySectionItem.all]: "FOR YOU",
-  [GallerySectionItem.clipboardImage]: "CLIPBOARD",
-  [GallerySectionItem.recent]: "RECENT",
-  [GallerySectionItem.assets]: "ASSETS",
-  [GallerySectionItem.sticker]: "STICKER",
-  [GallerySectionItem.internet]: "INTERNET",
-  [GallerySectionItem.clipboardURL]: "CLIPBOARD",
-  [GallerySectionItem.memes]: "MEMES",
-  [GallerySectionItem.gifs]: "GIFs",
-  [GallerySectionItem.cameraRoll]: "CAMERA ROLL"
+  [GallerySectionItem.search]: "Search",
+  [GallerySectionItem.all]: "For You",
+  [GallerySectionItem.clipboardImage]: "Clipboard",
+  [GallerySectionItem.recent]: "Recent",
+  [GallerySectionItem.assets]: "Assets",
+  [GallerySectionItem.sticker]: "Sticker",
+  [GallerySectionItem.internet]: "Internet",
+  [GallerySectionItem.clipboardURL]: "Clipboard",
+  [GallerySectionItem.memes]: "YEET!",
+  [GallerySectionItem.gifs]: "GIF",
+  [GallerySectionItem.cameraRoll]: "Library"
 };
 export const ICONS = {
   [GallerySectionItem.internet]: IconStar,

@@ -21,7 +21,7 @@ const POST_COUNT_BAR = 20 + SPACING.normal * 2;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#000"
+    backgroundColor: COLORS.background
   },
   mediaPlayerWrapper: {
     maxHeight: MAX_CONTENT_HEIGHT,

@@ -82,8 +82,8 @@ const SIZES_BY_NAME = {
     height: 19
   },
   [BitmapIconName.logo]: {
-    width: 114,
-    height: 59
+    width: 102,
+    height: 29
   },
   [BitmapIconName.circleCheckSelected]: {
     width: 29,

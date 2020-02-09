@@ -261,6 +261,7 @@ export const BackButton = ({
   routeName,
   size = 24,
   alwaysChevron,
+  color,
   onPress,
   ...otherProps
 }: {
@@ -297,6 +298,7 @@ export const BackButton = ({
       Icon={IconComponent}
       size={size}
       type="shadow"
+      color={color}
       onPress={handlePress}
       iconStyle={style}
     />

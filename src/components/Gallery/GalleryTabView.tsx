@@ -19,29 +19,32 @@ import { CameraRollFilterList } from "./FilterList/CameraRollFilterList";
 import { MemesFilterList } from "./FilterList/MemesFilterList";
 import { GIFsFilterList } from "./FilterList/GIFsFilterList";
 import { RecentFilterList } from "./FilterList/RecentFilterList";
+import { COLORS } from "../../lib/styles";
 
 const styles = StyleSheet.create({
   sceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
+    backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   modalSceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
+    backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   container: {
     flex: -1,
     width: "100%",
+
     overflow: "visible"
   }
 });
 
 export const DEFAULT_TABS = [
-  GallerySectionItem.all,
   GallerySectionItem.memes,
   GallerySectionItem.cameraRoll,
   GallerySectionItem.gifs
@@ -79,8 +82,7 @@ class GalleryTabViewComponent extends React.Component {
     this.sceneContainerStyle = [
       this.props.isModal ? styles.modalSceneContainer : styles.sceneContainer,
       {
-        height: this.initialLayout.height,
-        transform: [{ translateY: this.props.headerHeight * -1 }]
+        height: this.initialLayout.height
       }
     ];
 
@@ -148,6 +150,8 @@ class GalleryTabViewComponent extends React.Component {
       keyboardVisibleValue,
       selectedIDs,
       isFocused,
+      renderHeader,
+      headerHeight,
       query,
       ...otherProps
     } = this.props;
@@ -163,6 +167,8 @@ class GalleryTabViewComponent extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onPress={onPress}
             onChangeFilter={jumpTo}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             insetValue={this.props.insetValue}
             height={height}
             offset={this.props.offset}
@@ -184,6 +190,8 @@ class GalleryTabViewComponent extends React.Component {
             simultaneousHandlers={this.simultaneousHandlers}
             onPress={onPress}
             onChangeFilter={jumpTo}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             insetValue={this.props.insetValue}
             height={height}
             offset={this.props.offset}
@@ -207,6 +215,8 @@ class GalleryTabViewComponent extends React.Component {
             onChangeFilter={jumpTo}
             insetValue={this.props.insetValue}
             height={height}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             offset={this.props.offset}
             query={query}
             bottomInset={this.props.bottomInset}
@@ -229,6 +239,8 @@ class GalleryTabViewComponent extends React.Component {
             insetValue={this.props.insetValue}
             query={query}
             height={height}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             offset={this.props.offset}
             bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
@@ -248,6 +260,8 @@ class GalleryTabViewComponent extends React.Component {
             onPress={onPress}
             query={query}
             onChangeFilter={jumpTo}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             insetValue={this.props.insetValue}
             height={height}
             offset={this.props.offset}
@@ -271,6 +285,8 @@ class GalleryTabViewComponent extends React.Component {
             onChangeFilter={jumpTo}
             height={height}
             onPress={onPress}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             selectedIDs={selectedIDs}
             query={query}
             bottomInset={this.props.bottomInset}
@@ -291,6 +307,8 @@ class GalleryTabViewComponent extends React.Component {
             onChangeFilter={jumpTo}
             query={query}
             onPress={onPress}
+            renderHeader={renderHeader}
+            headerHeight={headerHeight}
             bottomInset={this.props.bottomInset}
             selectedIDs={selectedIDs}
             isModal={this.props.isModal}
@@ -344,7 +362,7 @@ class GalleryTabViewComponent extends React.Component {
   }
 
   render() {
-    const { width, height, tabBarPosition, showHeader } = this.props;
+    const { width, height, tabBarPosition } = this.props;
 
     return (
       <TabView

@@ -21,6 +21,7 @@ import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "./sizes";
 import { AssetSearchQuery_searchAssets_data } from "../../lib/graphql/AssetSearchQuery";
 import KeyboardAvoidingView from "../KeyboardAvoidingView";
 import { MediaPlayerPauser } from "../MediaPlayer/MediaPlayerContext";
+import { COLORS } from "../../lib/styles";
 
 const memoize = memoizee;
 const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
@@ -28,7 +29,7 @@ const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
-    backgroundColor: "black",
+    // backgroundColor: COLORS.primaryDark,
     flex: 0,
     overflow: "visible",
     position: "relative"
@@ -42,8 +43,8 @@ const styles = StyleSheet.create({
   wrapper: {
     width: SCREEN_DIMENSIONS.width,
     flex: 0,
-    overflow: "visible",
-    backgroundColor: "black"
+    overflow: "visible"
+    // backgroundColor: COLORS.primaryDark
   },
   modalWrapper: {
     flex: 1,
@@ -206,7 +207,7 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
     x: 0
   };
   contentInset = {
-    top: 0,
+    top: this.props.inset || 0,
     left: 0,
     right: 0,
     bottom: Math.abs(
@@ -405,20 +406,6 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
     // this.visibleRaf = raf;
   };
 
-  renderHeader = list => {
-    const { ListHeaderComponent } = this.props;
-
-    return (
-      <Animated.View
-        style={{
-          transform: []
-        }}
-      >
-        <ListHeaderComponent />
-      </Animated.View>
-    );
-  };
-
   handleScrollEnd = event => {
     this.props.onEndReached && this.props.onEndReached(event);
   };
@@ -449,22 +436,28 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
       height = 0,
       ListEmptyComponent,
       offset,
+      listKey,
       ...otherProps
     } = this.props;
     const { showScrollView } = this.state;
 
-    const ContainerComponent = View;
+    const ContainerComponent = Animated.View;
     const containerStyles = isModal
-      ? [
-          styles.modalWrapper,
-          height,
-          {
-            paddingTop: headerHeight
-          }
-        ]
+      ? [styles.modalWrapper, height]
       : [
           styles.wrapper,
-          { height }
+          { height },
+          {
+            transform: [
+              {
+                translateY: this.props.scrollY.interpolate({
+                  inputRange: [0, TOP_Y],
+                  outputRange: [0, TOP_Y],
+                  extrapolateRight: Animated.Extrapolate.CLAMP
+                })
+              }
+            ]
+          }
           // {
           //   paddingTop: inset + TOP_Y,
           //   paddingBottom: bottomInset ?? BOTTOM_Y
@@ -482,14 +475,15 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
             <FastList
               ref={this.setFlatListRef}
               contentInsetAdjustmentBehavior="never"
-              keyboardDismissMode="interactive"
+              keyboardDismissMode="on-drag"
               contentInset={this.contentInset}
               contentOffset={this.contentOffset}
               insetBottom={Math.abs(this.contentInset.bottom) * -1}
-              insetTop={Math.abs(this.contentInset.top) * -1}
+              insetTop={this.contentInset.top}
               scrollTopValue={this.props.scrollY}
               scrollIndicatorInsets={this.scrollIndicatorInsets}
               insetTopValue={this.props.insetValue}
+              renderHeader={this.props.renderHeader}
               automaticallyAdjustContentInsets={false}
               keyboardShouldPersistTaps="always"
               isLoading={
@@ -503,18 +497,17 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
               overScrollMode="never"
               scrollTopValue={this.props.scrollY}
               footerHeight={0}
-              headerHeight={0}
+              headerHeight={headerHeight}
               style={this.listStyle}
               onScrollEnd={this.handleScrollEnd}
               isFastList
-              alwaysBounceVertical
+              listKey={listKey}
               renderEmpty={
                 ListEmptyComponent ? this.renderListEmpty : undefined
               }
               rowHeight={this.props.itemHeight + SEPARATOR_HEIGHT}
               // sectionHeight={this.getTotalHeight}
               sections={this.sectionCounts}
-              uniform
             />
             {children}
           </ContainerComponent>

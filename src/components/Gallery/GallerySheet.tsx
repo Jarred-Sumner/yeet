@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
 
   backdrop: {
-    backgroundColor: "black",
+    backgroundColor: COLORS.background,
     position: "absolute",
     top: 0,
     bottom: 0,

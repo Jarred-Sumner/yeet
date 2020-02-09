@@ -16,21 +16,20 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   headerText: {
-    fontSize: 13,
+    fontSize: 17,
     textAlign: "center"
   },
   activeRow: {
     borderRightColor: "transparent"
   },
   row: {
-    height: LIST_HEADER_HEIGHT,
-    paddingBottom: 8,
+    height: 22,
+    marginTop: 20,
 
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center"
   },
-  lightRow: { height: LIGHT_LIST_HEADER_HEIGHT },
 
   rowWrapper: {
     justifyContent: "center",
@@ -83,7 +82,6 @@ export const FilterBarRow = ({
             size={ICON_SIZES[value] ?? 20}
             color="white"
             resizeMode="contain"
-            adjustsFontSizeToFit
             numberOfLines={1}
             style={styles.icon}
           />

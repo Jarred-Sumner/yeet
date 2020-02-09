@@ -3,20 +3,31 @@ import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import { useNavigation } from "react-navigation-hooks";
-import { SCREEN_DIMENSIONS } from "../../../config";
+import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
 import { BlurView } from "../BlurView";
 import { BackButton, useBackButtonBehavior } from "../Button";
 import FilterBar from "../NewPost/ImagePicker/FilterBar";
 import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
 import chroma from "chroma-js";
+import { ImagePickerSearch } from "./ImagePickerSearch";
+import { BorderlessButton } from "react-native-gesture-handler";
+import { MediumText } from "../Text";
+import { IconChevronDown } from "../Icon";
 
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
     alignItems: "flex-end",
+    height: LIST_HEADER_HEIGHT,
     justifyContent: "flex-end",
-    flex: 0
+    overflow: "hidden",
+    flex: 0,
+    backgroundColor: chroma(COLORS.primaryDark)
+      .alpha(0.98)
+      .css(),
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32
   },
   header: {
     width: "100%",
@@ -40,13 +51,16 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.25)",
     overflow: "hidden"
   },
+  filter: {
+    flexDirection: "row",
+    flex: 0,
+    alignItems: "center",
+    paddingBottom: 8
+  },
+
   dark: {
     zIndex: 9,
 
-    backgroundColor: chroma
-      .blend(chroma(COLORS.primaryDark).alpha(0.98), "#333", "multiply")
-      .alpha(0.95)
-      .css(),
     overflow: "visible"
   },
   lightTop: {
@@ -70,7 +84,12 @@ export const GalleryHeader = ({
   position = new Animated.Value(0),
   jumpTo,
   filterBarInset = 50,
+  headerCutoff,
+  isInputFocused,
+  onChangeInputFocus,
   tabs = [],
+  children,
+  onPressSectionFilter,
   scrollY,
   navigationState: { index, routes },
   ...otherProps
@@ -78,7 +97,7 @@ export const GalleryHeader = ({
   const navigation = useNavigation();
   const behavior = useBackButtonBehavior();
 
-  const { top, bottom } = React.useContext(SafeAreaContext);
+  const { bottom } = React.useContext(SafeAreaContext);
 
   const tabKeys = React.useMemo(() => routes.map(({ key }) => key), [routes]);
 
@@ -86,32 +105,23 @@ export const GalleryHeader = ({
     styles.container,
     styles.dark,
     {
-      paddingTop: top,
-      height: top + LIST_HEADER_HEIGHT
+      height: LIST_HEADER_HEIGHT
     }
   ];
 
   return (
     <View style={containerStyles}>
-      <View>
+      <View style={styles.filter}>
         <FilterBar
           value={routes[index].key}
           tabs={tabKeys}
           onChange={jumpTo}
           light={false}
           scrollY={scrollY}
-          inset={filterBarInset}
+          inset={0}
           tabBarPosition={tabBarPosition}
           position={position}
         />
-        <View style={[styles.header, { width: filterBarInset }]}>
-          <BackButton
-            color="white"
-            alwaysChevron
-            size={14}
-            behavior={behavior}
-          />
-        </View>
       </View>
     </View>
   );

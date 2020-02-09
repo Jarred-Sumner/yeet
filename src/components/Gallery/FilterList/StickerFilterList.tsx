@@ -10,6 +10,7 @@ import {
   getPaginatedLimit
 } from "../GalleryFilterList";
 import { HORIZONTAL_ITEM_HEIGHT, HORIZONTAL_ITEM_WIDTH } from "../sizes";
+import { GallerySectionItem } from "../../NewPost/ImagePicker/GallerySectionItem";
 
 export const StickerFilterList = ({
   isFocused,
@@ -88,7 +89,7 @@ export const StickerFilterList = ({
       itemWidth={HORIZONTAL_ITEM_WIDTH}
       numColumns={GIF_COLUMN_COUNT}
       scrollY={scrollY}
-      listKey="sticker"
+      listKey={GallerySectionItem.sticker}
       paused={!isFocused}
       onEndReached={handleEndReached}
       isModal={isModal}

@@ -16,6 +16,7 @@ import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "../sizes";
 import { buildPost } from "../../../lib/buildPost";
 import { RecentlyUsedContentType } from "../../../lib/db/models/RecentlyUsedContent";
 import { ScrollDirection } from "../../FastList";
+import { GallerySectionItem } from "../../NewPost/ImagePicker/GallerySectionItem";
 
 export const RecentFilterList = ({
   isFocused,
@@ -131,7 +132,7 @@ export const RecentFilterList = ({
       isModal={isModal}
       ref={filterListRef}
       insetValue={insetValue}
-      listKey="recent"
+      listKey={GallerySectionItem.recent}
       isFocused={isFocused}
       hasNextPage={
         recentImagesQuery?.data?.recentImages?.page_info?.has_next_page ?? false

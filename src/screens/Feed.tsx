@@ -10,12 +10,8 @@ import { StyleSheet, View } from "react-native";
 import { NavigationProp } from "react-navigation";
 import { useNavigation } from "react-navigation-hooks";
 import { NavigationStackProp } from "react-navigation-stack";
-import { BOTTOM_Y, TOP_Y, SCREEN_DIMENSIONS } from "../../config";
-import {
-  BottomTabBar,
-  TAB_BAR_HEIGHT,
-  TAB_BAR_OFFSET
-} from "../components/BottomTabBar";
+import { BOTTOM_Y, TOP_Y } from "../../config";
+import { TAB_BAR_HEIGHT, TAB_BAR_OFFSET } from "../components/BottomTabBar";
 import { FeedList } from "../components/Feed/FeedList";
 import { ModalContext } from "../components/ModalContext";
 import { NewThreadButton } from "../components/ThreadList/NewThreadButton";
@@ -31,15 +27,17 @@ import {
   ViewThreads_postThreads_data,
   ViewThreads_postThreads_data_posts_data
 } from "../lib/graphql/ViewThreads";
-import { SPACING } from "../lib/styles";
+import { SPACING, COLORS } from "../lib/styles";
 
 const styles = StyleSheet.create({
   postList: {},
   floatingPlus: {
     position: "absolute",
-    bottom: BOTTOM_Y + TAB_BAR_HEIGHT,
-    right: SPACING.double,
-    marginBottom: SPACING.double
+    bottom: BOTTOM_Y + SPACING.half,
+    left: 0,
+    right: 0,
+    justifyContent: "center",
+    flexDirection: "row"
   },
   tabBar: {
     position: "absolute",
@@ -57,7 +55,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: "100%",
     width: "100%",
-    backgroundColor: "black"
+    backgroundColor: COLORS.background
   }
 });
 
@@ -188,12 +186,6 @@ class FeedPageComponent extends React.Component<Props> {
         <View style={styles.floatingPlus}>
           <NewThreadButton />
         </View>
-
-        <BottomTabBar
-          onPressCurrentRoute={this.handleScrollTop}
-          currentRoute="FeedTab"
-          style={styles.tabBar}
-        />
       </View>
     );
   }

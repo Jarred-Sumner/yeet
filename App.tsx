@@ -10,12 +10,10 @@ import { ActionSheetProvider } from "@expo/react-native-action-sheet";
 import * as Sentry from "@sentry/react-native";
 import React from "react";
 import { ApolloProvider } from "react-apollo";
-import { Platform, StatusBar, StyleSheet, View } from "react-native";
+import { Platform, StatusBar, StyleSheet } from "react-native";
 import OneSignal from "react-native-onesignal";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { getInset } from "react-native-safe-area-view";
-import { enableScreens } from "react-native-screens";
-import SplashScreen from "react-native-splash-screen";
 import { NavigationState } from "react-navigation";
 import { ONESIGNAL_APP_ID } from "./config";
 import { Routes } from "./Routes";
@@ -25,12 +23,13 @@ import { MaterialThemeProvider } from "./src/components/MaterialThemeProvider";
 import { ModalContextProvider } from "./src/components/ModalContext";
 import { Toast } from "./src/components/Toast";
 import { UserContextProvider } from "./src/components/UserContext";
+import { RecentlyUsedContent } from "./src/lib/db/models/RecentlyUsedContent";
 import APOLLO_CLIENT from "./src/lib/graphql";
 import { ImagePickerProvider } from "./src/lib/ImagePickerContext";
 import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
 import NavigationService from "./src/lib/NavigationService";
 import { isWaitlisted } from "./src/lib/Settings";
-import { RecentlyUsedContent } from "./src/lib/db/models/RecentlyUsedContent";
+import { hideSplashScreen } from "./src/lib/Yeet";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",
@@ -113,7 +112,7 @@ export class App extends React.Component {
     window.requestIdleCallback(RecentlyUsedContent.getRealm);
 
     if (this.state.ready) {
-      global.YeetJSI.hideSplashScreen();
+      hideSplashScreen();
     } else {
       isWaitlisted().then(waitlisted =>
         this.setState({ ready: true, waitlisted })
