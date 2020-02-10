@@ -10,6 +10,10 @@ import Foundation
 
 @objc class YeetVideoView: UIView, TrackableMediaSourceDelegate {
   func onChangeStatus(status: TrackableMediaSource.Status, oldStatus: TrackableMediaSource.Status, mediaSource: TrackableMediaSource) {
+    if status == .loaded || status == .playing {
+
+    }
+
     if mediaSource.mediaSource.isVideo {
       guard let trackableVideo = mediaSource as? TrackableVideoSource else {
         return
@@ -35,6 +39,13 @@ import Foundation
   func onMediaProgress(elapsed: Double, mediaSource: TrackableMediaSource) {
   }
 
+  @objc(videoSize) var videoSize : CGSize {
+    if showCover {
+      return coverView.imageSize
+    } else {
+      return mediaSource?.asset?.resolution ?? .zero
+    }
+  }
 
   var showCover: Bool = false {
     didSet {
@@ -67,7 +78,6 @@ import Foundation
     return self.playerView.playerLayer.isReadyForDisplay
   }
 
-
   func configurePlayer(player: AVPlayer) {
     if playerView.superview != self {
       self.insertSubview(playerView, at: max(subviews.firstIndex(of: coverView) ?? 1 - 1, 0))
@@ -77,7 +87,7 @@ import Foundation
 
     observer?.invalidate()
     observer = self.playerView.playerLayer.observe(\AVPlayerLayer.isReadyForDisplay, options: [.new, .initial]) { [weak self] player, _ in
-      if player.isReadyForDisplay ?? false  && (self?.showCover ?? false) {
+      if player.isReadyForDisplay ?? false && (self?.showCover ?? false) {
         self?.showCover = false
         self?.observer?.invalidate()
         self?.observer = nil

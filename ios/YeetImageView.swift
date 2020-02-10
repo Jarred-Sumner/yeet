@@ -38,7 +38,6 @@ class YeetImageView : PINAnimatedImageView {
       
 
       if ((newValue != old && newValue?.mediaSource.uri != old?.mediaSource.uri) || [.pending, .error].contains(loadStatus)) {
-
         old?.hasLoaded = false
         old?.stop()
 
@@ -465,7 +464,27 @@ class YeetImageView : PINAnimatedImageView {
     } else {
         self._handleImageLoad(image: image, scale: scale, error: error)
     }
+  }
 
+
+  override func setCoverImage(_ coverImage: UIImage!) {
+    super.setCoverImage(coverImage)
+
+    if let _coverImage = coverImage {
+      self.imageSize = _coverImage.size.applying(CGAffineTransform.init(scaleX: _coverImage.scale, y: _coverImage.scale))
+    }
+  }
+
+  override var image: UIImage? {
+    get {
+      return super.image
+    }
+
+    set (newValue) {
+      super.image = newValue
+
+      self.imageSize = newValue?.size.applying(CGAffineTransform.init(scaleX: newValue?.scale ?? 1.0, y: newValue?.scale ?? 1.0)) ?? .zero
+    }
   }
 
   func _handleImageLoad(image: UIImage?, scale: CGFloat, error: Error? = nil) {
@@ -483,6 +502,7 @@ class YeetImageView : PINAnimatedImageView {
         }
       }
     } else {
+      self.imageSize = .zero
       self.pin_clearImages()
     }
 
@@ -496,15 +516,7 @@ class YeetImageView : PINAnimatedImageView {
   @objc (onLoad) var onLoadEvent: RCTDirectEventBlock? = nil
   @objc (onError) var onErrorEvent: RCTDirectEventBlock? = nil
 
-  var imageSize: CGSize {
-    if let animatedImage = self.animatedImage {
-      return animatedImage.coverImage.size
-    } else if let image = self.image {
-      return image.size.applying(CGAffineTransform.init(scaleX: 1 / image.scale, y: 1 / image.scale))
-    } else {
-      return .zero
-    }
-  }
+
 
 
   func handleLoad(success: Bool, error: Error? = nil) {
@@ -634,6 +646,8 @@ class YeetImageView : PINAnimatedImageView {
     case success
   }
   var loadStatus = LoadStatus.pending
+
+  @objc(imageSize) var imageSize = CGSize.zero
 
   func reset() {
     self.source = nil
