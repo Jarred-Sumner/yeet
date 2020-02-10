@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import { get, isFinite } from "lodash";
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import { BaseButton } from "react-native-gesture-handler";
@@ -33,6 +33,8 @@ import {
   INSET_SQUARE_ITEM_WIDTH,
   INSET_SQUARE_INSET
 } from "./sizes";
+import { cloneDeep } from "lodash";
+import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 
 const BORDER_RADIUS = 0;
 
@@ -143,7 +145,8 @@ const rowStyles = StyleSheet.create({
     justifyContent: "space-around",
     marginLeft: 0,
     width: "100%",
-    flexDirection: "row"
+    flexDirection: "row",
+    backgroundColor: COLORS.primaryDark
   },
   padded: {
     justifyContent: "space-evenly",
@@ -160,6 +163,7 @@ const rowStyles = StyleSheet.create({
   fourColumn: {
     justifyContent: "space-evenly",
     paddingHorizontal: COLUMN_GAP,
+    backgroundColor: COLORS.primaryDark,
     width: "100%",
     flexDirection: "row"
   }
@@ -202,6 +206,7 @@ const GalleryItemComponent = React.memo(
     isVideo,
     onPress,
     containerStyle,
+    playerRef,
     viewStyle,
     width,
     height,
@@ -234,6 +239,7 @@ const GalleryItemComponent = React.memo(
               mediaSource={mediaSource}
               sources={sources}
               muted
+              ref={playerRef}
               thumbnail
               paused={paused}
               opaque={!transparent}
@@ -297,6 +303,7 @@ const GalleryItemComponent = React.memo(
               muted
               thumbnail
               paused={paused}
+              ref={playerRef}
               loop
               resizeMode={resizeMode}
               id={id}
@@ -362,6 +369,7 @@ export const GalleryItem = ({
   mediaSource: MediaSource | null;
   paused: boolean;
 }) => {
+  const playerRef = React.useRef<MediaPlayerComponent | null>(null);
   const sources = React.useMemo(() => {
     if (mediaSource) {
       return [mediaSource];
@@ -372,11 +380,46 @@ export const GalleryItem = ({
 
   const _onPress = React.useCallback(() => {
     if (mediaSource) {
-      onPress(imageContainerFromMediaSource(mediaSource, null), post);
+      const hasSize =
+        isFinite(mediaSource.width) &&
+        mediaSource.width > 0 &&
+        isFinite(mediaSource.height) &&
+        mediaSource.height > 0;
+
+      let _mediaSource = mediaSource;
+      if (!hasSize && playerRef.current) {
+        return playerRef.current.getSize().then(size => {
+          _mediaSource = {
+            ...cloneDeep(mediaSource),
+            width: size.width,
+            height: size.height
+          };
+
+          onPress(imageContainerFromMediaSource(_mediaSource, null), post);
+        });
+      }
+      onPress(imageContainerFromMediaSource(_mediaSource, null), post);
     } else {
-      onPress(image, post);
+      const hasSize =
+        isFinite(image.image.width) &&
+        image.image.width > 0 &&
+        isFinite(image.image.height) &&
+        image.image.height > 0;
+
+      let _image = image;
+
+      if (!hasSize && playerRef.current) {
+        return playerRef.current.getSize().then(size => {
+          _image = cloneDeep(image);
+          _image.image.width = size.width;
+          _image.image.height = size.height;
+          onPress(_image, post);
+        });
+      }
+
+      onPress(_image, post);
     }
-  }, [onPress, image, post, id, mediaSource]);
+  }, [onPress, image, post, id, mediaSource, playerRef]);
 
   let sizeStyle;
 
@@ -452,6 +495,7 @@ export const GalleryItem = ({
       isSelected={isSelected}
       isVideo={_isVideo}
       borderStyle={borderStyles}
+      playerRef={playerRef}
       transparent={transparent}
       id={id}
       duration={duration}

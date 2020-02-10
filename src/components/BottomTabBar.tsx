@@ -2,7 +2,7 @@ import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import { RectButton, TouchableOpacity } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
 import { SPACING, COLORS } from "../lib/styles";
 import {

@@ -6,12 +6,9 @@ import {
 } from "react-native-gesture-handler";
 // import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import Animated from "react-native-reanimated";
-import { createNavigationAwareScrollable } from "@react-navigation/native";
 import hoistNonReactStatics from "hoist-non-react-statics";
 
-export const ScrollView = createNavigationAwareScrollable(
-  Animated.createAnimatedComponent(_ScrollView)
-);
+export const ScrollView = Animated.ScrollView;
 
 const FlatListComponent = Animated.createAnimatedComponent(
   GestureHandlerFlatList

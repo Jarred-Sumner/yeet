@@ -3,7 +3,7 @@ import * as React from "react";
 import { StyleProp, StyleSheet, View } from "react-native";
 import { BorderlessButton, RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import { useNavigation, useRoute } from "@react-navigation/core";
 import { COLORS, SPACING } from "../lib/styles";
 import { sendLightFeedback, sendSuccessNotification } from "../lib/Vibration";
 import {
@@ -246,9 +246,10 @@ export enum BackButtonBehavior {
 
 export const useBackButtonBehavior = (): BackButtonBehavior => {
   const navigation = useNavigation();
-  const isModal = useNavigationParam("isModal") ?? false;
+  const route = useRoute();
+  const { isModal } = route.params ?? {};
 
-  if (navigation.isFirstRouteInParent() || isModal) {
+  if (navigation.canGoBack() || isModal) {
     return BackButtonBehavior.close;
   } else {
     return BackButtonBehavior.back;

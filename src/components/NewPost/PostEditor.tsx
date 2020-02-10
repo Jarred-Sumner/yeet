@@ -15,7 +15,6 @@ import {
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import processTransform from "react-native/Libraries/StyleSheet/processTransform";
-import { NavigationEvents } from "react-navigation";
 import * as TransformMatrix from "transformation-matrix";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
 import {
@@ -1411,7 +1410,7 @@ class RawwPostEditor extends React.Component<Props, State> {
           }
         ]}
       >
-        <NavigationEvents onWillFocus={this.handleWillFocus} />
+        {/* <NavigationEvents onWillFocus={this.handleWillFocus} /> */}
 
         {this.props.isFocused && (
           <Animated.Code

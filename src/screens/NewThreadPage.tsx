@@ -2,7 +2,11 @@ import * as React from "react";
 import { MaskedViewIOS, PixelRatio, StyleSheet, View } from "react-native";
 import { TextInput } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import {
+  useNavigation,
+  useNavigationState,
+  useRoute
+} from "@react-navigation/core";
 import { TOP_Y } from "../../config";
 import { ProfileFeedComponent } from "../components/Feed/ProfileFeed";
 import MediaPlayer, { MediaPlayerComponent } from "../components/MediaPlayer";
@@ -570,15 +574,19 @@ class RawNewThreadPage extends React.Component<Props> {
 }
 
 export const NewThreadPage = props => {
-  const contentExport = useNavigationParam("contentExport");
-  const exportData = useNavigationParam("exportData");
-  const format = useNavigationParam("format");
-  const layout = useNavigationParam("layout");
-  const threadId = useNavigationParam("threadId");
-  const editToken = useNavigationParam("editToken");
-  const remixId = useNavigationParam("remixId");
-  const backKey = useNavigationParam("backKey");
+  const route = useRoute();
+  const {
+    contentExport,
+    exportData,
+    format,
+    layout,
+    threadId,
+    editToken,
+    remixId,
+    backKey
+  } = route.params ?? {};
   const navigation = useNavigation();
+
   const { setPostUploadTask } = React.useContext(MediaUploadContext);
 
   const onDismiss = React.useCallback(() => {

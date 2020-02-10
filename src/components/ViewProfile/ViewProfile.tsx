@@ -84,7 +84,7 @@ import {
   FollowProfileMutationVariables
 } from "../../lib/graphql/FollowProfileMutation";
 import { BackButtonBehavior } from "../Button";
-import { useNavigation, useIsFocused } from "react-navigation-hooks";
+import { useNavigation, useIsFocused } from "@react-navigation/core";
 import { NavigationProp } from "react-navigation";
 import {
   ListRemixesQuery,

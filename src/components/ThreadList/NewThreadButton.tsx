@@ -4,7 +4,7 @@ import { COLORS } from "../../lib/styles";
 import { UserContext, AuthState } from "../UserContext";
 import { View, StyleSheet } from "react-native";
 import * as React from "react";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import { RectButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { BlurView } from "../BlurView";

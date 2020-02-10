@@ -285,7 +285,13 @@ const SearchTagListItem = React.memo(
   }
 );
 
-const SearchTagListComponent = ({ results, onPress, query, hasMatches }) => {
+const SearchTagListComponent = ({
+  results,
+  onPress,
+  query,
+  hasMatches,
+  onPressResult
+}) => {
   return (
     <KeyboardAvoidingView behavior="height" style={styles.container}>
       <ScrollView
@@ -299,32 +305,38 @@ const SearchTagListComponent = ({ results, onPress, query, hasMatches }) => {
           query={query}
           result={results[0]}
           onPress={onPress}
+          onPressResult={onPressResult}
           skipNetwork={!hasMatches}
         />
         <SearchTagListItem
           query={query}
           result={results[1]}
           onPress={onPress}
+          onPressResult={onPressResult}
         />
         <SearchTagListItem
           query={query}
           result={results[2]}
           onPress={onPress}
+          onPressResult={onPressResult}
         />
         <SearchTagListItem
           query={query}
           result={results[3]}
           onPress={onPress}
+          onPressResult={onPressResult}
         />
         <SearchTagListItem
           query={query}
           result={results[4]}
           onPress={onPress}
+          onPressResult={onPressResult}
         />
         <SearchTagListItem
           query={query}
           result={results[5]}
           onPress={onPress}
+          onPressResult={onPressResult}
         />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -378,6 +390,7 @@ export const SearchTagList = ({ query = "", onPressTag, onPressResult }) => {
       results={results}
       hasMatches={hasMatches.current}
       onPress={onPressTag}
+      onPressResult={onPressResult}
     />
   );
 };

@@ -1,14 +1,18 @@
-import hoistNonReactStatics from "hoist-non-react-statics";
 import { isEmpty, omitBy } from "lodash";
+import nanoid from "nanoid/non-secure";
 import * as React from "react";
-import { StatusBar, StyleSheet, Platform, View, TextInput } from "react-native";
+import { Platform, StatusBar, StyleSheet, View } from "react-native";
 import {
   PanGestureHandler,
   State as GestureState
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { withNavigation, withNavigationFocus } from "react-navigation";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
+import {
+  ExampleMap,
+  layoutBlocksInPost,
+  presetsByFormat
+} from "../../lib/buildPost";
 import { ContentExport, ExportData } from "../../lib/Exporter";
 import { calculateAspectRatioFit } from "../../lib/imageResize";
 import {
@@ -17,7 +21,6 @@ import {
   YeetImageContainer,
   YeetImageRect
 } from "../../lib/imageSearch";
-
 import { scaleToWidth } from "../../lib/Rect";
 import { COLORS, SPACING } from "../../lib/styles";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
@@ -39,12 +42,6 @@ import { EditableNodeMap } from "./Node/BaseNode";
 import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
-import nanoid from "nanoid/non-secure";
-import {
-  layoutBlocksInPost,
-  ExampleMap,
-  presetsByFormat
-} from "../../lib/buildPost";
 import TextPostBlock from "./TextPostBlock";
 
 enum NewPostStep {

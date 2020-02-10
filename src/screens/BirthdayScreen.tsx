@@ -6,7 +6,7 @@ import { useMutation } from "react-apollo";
 import { StyleSheet, View, Keyboard } from "react-native";
 import { ScrollView, TouchableOpacity } from "react-native-gesture-handler";
 import SafeAreaView from "react-native-safe-area-view";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import { useNavigation, useRoute } from "@react-navigation/core";
 import { NavigationStackOptions } from "react-navigation-stack";
 import { DatePicker } from "../components/DatePicker";
 import { BoldText, Text, MediumText } from "../components/Text";
@@ -185,9 +185,8 @@ const _BirthdayScreen = props => {
     [setZodiac, setDate, setShowZodiac]
   );
 
-  const isOnboarding = useNavigationParam("isOnboarding");
-  const onNextParam = useNavigationParam("onNext");
-  const onFinish = useNavigationParam("onFinish");
+  const route = useRoute();
+  const { isOnboarding, onNextParam, onFinish } = route.params ?? {};
 
   React.useEffect(() => {
     navigation.setParams({

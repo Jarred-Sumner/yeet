@@ -293,6 +293,21 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
     });
   };
 
+  getSize = async (): DimensionsRect => {
+    const size = await global.MediaPlayerViewManager?.getSize(this.nativeNode);
+
+    if (
+      size &&
+      typeof size === "object" &&
+      typeof size.width === "number" &&
+      typeof size.height === "number"
+    ) {
+      return size;
+    } else {
+      return { width: 0, height: 0 };
+    }
+  };
+
   goBack = (cb: MediaPlayerCallbackFunction = function() {}) => {
     return new Promise((resolve, reject) => {
       MediaPlayerComponent.NativeModule?.goBack(

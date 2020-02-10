@@ -1,6 +1,10 @@
 import * as React from "react";
 import { Alert, StyleSheet, View } from "react-native";
-import { useNavigation, useNavigationParam } from "react-navigation-hooks";
+import {
+  useNavigation,
+  useNavigationState,
+  useRoute
+} from "@react-navigation/core";
 import { NewPost } from "../components/NewPost/NewPost";
 import { PostFormat, PostLayout } from "../components/NewPost/NewPostFormat";
 import {
@@ -37,10 +41,7 @@ class RawReplyPage extends React.Component<{}, State> {
     showUploader: false
   };
   handleCreate = () => {
-    const fromFeed = this.props.navigation.getParam("fromFeed") ?? false;
-
-    const threadId = this.props.navigation.getParam("threadId");
-
+    const { fromFeed = false, threadId } = this.props;
     if (fromFeed) {
       this.props.navigation.goBack();
       this.props.navigation.navigate("ViewThread", {
@@ -71,10 +72,7 @@ class RawReplyPage extends React.Component<{}, State> {
   };
 
   render() {
-    const { navigation } = this.props;
-    const post: PostFragment | null = navigation.getParam("post") || null;
-    const thread = navigation.getParam("thread");
-    const threadId = navigation.getParam("threadId");
+    const { post, thread, threadId } = this.props;
 
     let blocks = {};
     let positions = [];
@@ -116,8 +114,8 @@ class RawReplyPage extends React.Component<{}, State> {
 }
 
 export const ReplyPage = props => {
-  const threadId = useNavigationParam("threadId");
-  const fromFeed = useNavigationParam("fromFeed") || false;
+  const route = useRoute();
+  const { threadId = null, fromFeed = false, post = null } = route.params ?? {};
   const navigation = useNavigation();
 
   return (
@@ -125,6 +123,7 @@ export const ReplyPage = props => {
       {...props}
       navigation={navigation}
       threadId={threadId}
+      post={post}
       fromFeed={fromFeed}
     />
   );

@@ -23,12 +23,14 @@ declare namespace ImageSearchResponse {
   }
 }
 
-const URL = "https://st8j1p5h5j.execute-api.us-east-1.amazonaws.com/prod/s";
+// const URL = "https://st8j1p5h5j.execute-api.us-east-1.amazonaws.com/prod/s";
+const URL =
+  "https://us-central1-kapwing-181323.cloudfunctions.net/image_search";
 
 const normalizeSearchResponse = (
   result: ImageSearchResponse.Result
 ): YeetImageContainer => {
-  const { width = 0, height = 0, url, format } = result;
+  const { width = 0, height = 0, url, mime: format } = result;
 
   const image: YeetImage = {
     __typename: "YeetImage",
@@ -69,29 +71,72 @@ export const performSearch = ({
   limit: number;
   offset: number;
 }): Promise<YeetImageSearchResponse> => {
-  const params = {
-    q: query,
-    limit,
-    offset
-  };
+  // const params = {
+  //   q: query,
+  //   limit,
+  //   offset
+  // };
 
+  const params = { query };
   if (transparent) {
-    params.transparent = 1;
+    // params.transparent = 1;
   }
 
-  const url = `${URL}?${qs.stringify(params)}`;
+  const url = URL;
 
-  return fetch(url, {
-    headers: {
-      "Content-Type": "application/json"
+  return fetch(
+    "https://us-central1-kapwing-181323.cloudfunctions.net/image_search",
+    {
+      method: "POST",
+      body: JSON.stringify({ query }),
+      headers: {
+        "content-type": "application/json",
+        referer: "https://www.kapwing.com/studio/editor/overlay/search",
+        origin: "https://www.kapwing.com",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "cross-site",
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
+      }
     }
-  })
+  )
     .then(resp => resp.json())
-    .then((json: ImageSearchResponse.RootObject) => {
-      const { results, query } = json;
+    .then(json => {
+      if (!json?.images) {
+        return { query, results: [] };
+      }
+
       return {
         query,
-        results: results.map(normalizeSearchResponse)
+        results: json.images.map(normalizeSearchResponse)
       };
     });
+
+  // return fetch(url, {
+  //   method: "POST",
+  //   body: JSON.stringify(params),
+  //   credentials: "include",
+  //   headers: {
+  //     referer: "https://www.kapwing.com/studio/editor/overlay/search",
+  //     origin: "https://www.kapwing.com",
+  //     "sec-fetch-dest": "empty",
+  //     "sec-fetch-mode": "cors",
+  //     "sec-fetch-site": "cross-site",
+  //     "user-agent":
+  //       "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
+  //   }
+  // })
+  //   .then(resp => {
+  //     console.log(resp.status);
+  //     return resp.json();
+  //   }, console.error)
+  //   .then((json: ImageSearchResponse.RootObject) => {
+  //     const { images: results } = json;
+  //     console.log(json);
+  //     return {
+  //       query,
+  //       results: results.map(normalizeSearchResponse)
+  //     };
+  //   }, console.error);
 };

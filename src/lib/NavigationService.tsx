@@ -1,46 +1,45 @@
-import { NavigationActions } from "react-navigation";
-import { StackActions } from "react-navigation";
+// import { Navig } from "@react-navigation/core";
 
-let _navigator;
+// let _navigator;
 
-export function setTopLevelNavigator(navigatorRef) {
-  _navigator = navigatorRef;
-}
+// export function setTopLevelNavigator(navigatorRef) {
+//   _navigator = navigatorRef;
+// }
 
-export function navigate(routeName, params) {
-  _navigator.dispatch(
-    NavigationActions.navigate({
-      routeName,
-      params
-    })
-  );
-}
+// export function navigate(routeName, params) {
+//   _navigator.dispatch(
+//     NavigationAction.navigate({
+//       routeName,
+//       params
+//     })
+//   );
+// }
 
-export function resetTo(routeName, params) {
-  _navigator.dispatch(
-    NavigationActions.navigate({
-      routeName,
-      params
-    })
-  );
-}
+// export function resetTo(routeName, params) {
+//   _navigator.dispatch(
+//     NavigationAction.navigate({
+//       routeName,
+//       params
+//     })
+//   );
+// }
 
-export function navigateWithParent(routeName, parentRouteName, params) {
-  _navigator.dispatch(
-    NavigationActions.navigate({
-      routeName: parentRouteName,
+// export function navigateWithParent(routeName, parentRouteName, params) {
+//   _navigator.dispatch(
+//     NavigationAction.navigate({
+//       routeName: parentRouteName,
 
-      params: {},
+//       params: {},
 
-      action: NavigationActions.navigate({ routeName: routeName, params })
-    })
-  );
-}
+//       action: NavigationAction.navigate({ routeName: routeName, params })
+//     })
+//   );
+// }
 
-// add other navigation functions that you need and export them
+// // add other navigation functions that you need and export them
 
-export default {
-  navigate,
-  navigateWithParent,
-  setTopLevelNavigator
-};
+// export default {
+//   navigate,
+//   navigateWithParent,
+//   setTopLevelNavigator
+// };

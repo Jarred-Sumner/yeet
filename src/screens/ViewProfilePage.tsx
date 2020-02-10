@@ -7,11 +7,16 @@ import {
   HEADER_HEIGHT,
   COUNTER_HEIGHT
 } from "../components/ViewProfile/ViewProfileHeader";
-import { useNavigationParam, useNavigation } from "react-navigation-hooks";
+import {
+  useNavigationParam,
+  useNavigation,
+  useRoute
+} from "@react-navigation/core";
 import { useBackButtonBehavior } from "../components/Button";
 
 export const ViewProfilePage = () => {
-  const profileId = useNavigationParam("profileId");
+  const route = useRoute();
+  const { profileId } = route.params ?? {};
   const backButtonBehavior = useBackButtonBehavior();
 
   return (

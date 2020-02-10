@@ -19,8 +19,9 @@ import { NavigationProp } from "react-navigation";
 import {
   useFocusEffect,
   useNavigation,
-  useNavigationParam
-} from "react-navigation-hooks";
+  useNavigationParam,
+  useRoute
+} from "@react-navigation/core";
 import { NavigationStackProp } from "react-navigation-stack";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../config";
 import { AnimatedKeyboardTracker } from "../components/AnimatedKeyboardTracker";
@@ -592,8 +593,8 @@ class ThreadPageComponent extends React.Component<Props, State> {
 const _ThreadPage = () => {
   const navigation = useNavigation();
   const actionSheet = useActionSheet();
-  const threadId = useNavigationParam("threadId");
-  const defaultThread = useNavigationParam("thread");
+  const route = useRoute();
+  const { threadId, defaultThread, defaultPost } = route.params ?? {};
   const viewThreadQuery = useQuery<ViewThreadQuery, ViewThreadVariables>(
     VIEW_THREAD_QUERY,
     {
@@ -644,7 +645,6 @@ const _ThreadPage = () => {
     DeleteCommentMutationVariables
   >(DELETE_COMMENT_MUTATION);
 
-  const defaultPost = useNavigationParam("post");
   const thread = viewThreadQuery?.data?.postThread ?? defaultThread;
 
   return (

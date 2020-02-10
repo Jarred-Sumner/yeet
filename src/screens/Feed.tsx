@@ -8,7 +8,7 @@ import * as React from "react";
 import { useMutation } from "react-apollo";
 import { StyleSheet, View } from "react-native";
 import { NavigationProp } from "react-navigation";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import { NavigationStackProp } from "react-navigation-stack";
 import { BOTTOM_Y, TOP_Y } from "../../config";
 import { TAB_BAR_HEIGHT, TAB_BAR_OFFSET } from "../components/BottomTabBar";

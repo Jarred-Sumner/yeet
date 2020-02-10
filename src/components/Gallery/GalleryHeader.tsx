@@ -2,7 +2,7 @@ import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import { SPACING, COLORS } from "../../lib/styles";
 import { BlurView } from "../BlurView";

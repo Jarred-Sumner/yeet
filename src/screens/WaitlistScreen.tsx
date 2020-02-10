@@ -1,6 +1,6 @@
 import * as React from "react";
 import { View, StatusBar, StyleSheet, Alert, AlertIOS } from "react-native";
-import { useNavigation, useFocusEffect } from "react-navigation-hooks";
+import { useNavigation, useFocusEffect } from "@react-navigation/core";
 import { COLORS, SPACING } from "../lib/styles";
 import { BoldText, Text, SemiBoldText } from "../components/Text";
 import LinearGradient from "react-native-linear-gradient";

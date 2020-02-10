@@ -15,20 +15,20 @@ import { COLUMN_COUNT, COLUMN_GAP } from "./COLUMN_COUNT";
 import {
   buildPostValue,
   GalleryFilterListComponent,
-  getInitialLimit
+  getInitialLimit,
+  buildValue
 } from "./GalleryFilterList";
 import { GalleryRow } from "./GalleryItem";
 import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "./sizes";
-import { COLORS } from "../../lib/styles";
+import { COLORS, SPACING } from "../../lib/styles";
+import { MediumText, Text } from "../Text";
+import { IconGlobe } from "../Icon";
 
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
     backgroundColor: COLORS.primaryDark,
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
     flex: 0,
-    overflow: "hidden",
     position: "relative"
   },
   list: {
@@ -36,7 +36,37 @@ const styles = StyleSheet.create({
     flexShrink: 0,
     width: SCREEN_DIMENSIONS.width,
     overflow: "visible"
+  },
+  sectionHeader: {
+    height: 44,
+    backgroundColor: COLORS.primaryDark,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SPACING.normal
+  },
+  sectionHeaderLabel: {
+    fontSize: 16,
+    color: COLORS.mutedLabel
+  },
+
+  internetIcon: {
+    marginRight: SPACING.half
   }
+});
+
+const InternetImagesSection = React.memo(() => {
+  return (
+    <View style={styles.sectionHeader}>
+      <IconGlobe
+        size={24}
+        color={COLORS.mutedLabel}
+        style={styles.internetIcon}
+      />
+      <Text style={styles.sectionHeaderLabel} numberOfLines={1}>
+        Internet results
+      </Text>
+    </View>
+  );
 });
 
 const SCROLL_INSETS = { top: 0, left: 0, right: 1, bottom: 0 };
@@ -78,23 +108,25 @@ const GallerySearchListComponent = ({
 
   const renderRow = React.useCallback(
     (section: number, row: number) => {
-      const columns = chunkedSections[section][row];
+      const indexes = chunkedSections[section][row];
+      const rows = sections[section];
 
       return (
         <GalleryRow
           numColumns={columnCount}
           width={itemWidth}
           height={itemHeight}
-          first={columns[0]}
+          first={rows[indexes[0]]}
           selectedIDs={[]}
-          second={columns[1]}
+          second={rows[indexes[1]]}
           onPress={onPress}
           paused
-          third={columns[2]}
+          transparent
+          third={rows[indexes[2]]}
         />
       );
     },
-    [chunkedSections, itemHeight, itemWidth, columnCount, onPress]
+    [chunkedSections, itemHeight, itemWidth, columnCount, onPress, sections]
   );
 
   const contentInset = React.useMemo(
@@ -112,6 +144,36 @@ const GallerySearchListComponent = ({
       x: 0
     }),
     [offset]
+  );
+
+  const renderSection = React.useCallback(
+    (section: number) => {
+      if (
+        typeof sectionCounts[1] === "number" &&
+        sectionCounts[1] > 0 &&
+        section === 1
+      ) {
+        return <InternetImagesSection />;
+      } else {
+        return null;
+      }
+    },
+    [sectionCounts]
+  );
+
+  const getSectionHeight = React.useCallback(
+    (section: number) => {
+      if (
+        typeof sectionCounts[1] === "number" &&
+        sectionCounts[1] > 0 &&
+        section === 1
+      ) {
+        return 44;
+      } else {
+        return 0;
+      }
+    },
+    [sectionCounts]
   );
 
   return (
@@ -137,18 +199,19 @@ const GallerySearchListComponent = ({
         containerHeight={height}
         scrollToOverflowEnabled
         overScrollMode="automatic"
-        scrollTopValue={scrollY}
         footerHeight={0}
         isFastList
         headerHeight={headerHeight}
         renderHeader={renderHeader}
+        stickyHeaders={false}
         style={styles.list}
         // onScrollEnd={this.handleScrollEnd}
         isFastList
         listKey={listKey}
         renderEmpty={ListEmptyComponent}
         rowHeight={itemHeight + COLUMN_GAP}
-        // sectionHeight={this.getTotalHeight}
+        renderSection={renderSection}
+        sectionHeight={getSectionHeight}
         sections={sectionCounts}
       />
     </View>
@@ -186,7 +249,8 @@ export const GallerySearchList = ({
     variables: {
       query,
       limit: getInitialLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT),
-      offset: 0
+      offset: 0,
+      transparent: false
     },
     notifyOnNetworkStatusChange: true
   });
@@ -208,7 +272,7 @@ export const GallerySearchList = ({
   }, [memesQuery?.data, memesQuery?.networkStatus]);
 
   const images = React.useMemo(() => {
-    return buildPostValue(imagesQuery?.data?.images?.data);
+    return buildValue(imagesQuery?.data?.images?.data);
   }, [imagesQuery?.data, imagesQuery?.networkStatus]);
 
   const sections = React.useMemo(() => [memes, images], [memes, images]);
@@ -269,7 +333,6 @@ export const GallerySearchList = ({
   //   },
   //   [memesQuery?.networkStatus, memesQuery?.fetchMore, memesQuery?.data]
   // );
-
   return (
     <GallerySearchListComponent
       columnCount={COLUMN_COUNT}

@@ -1,6 +1,11 @@
 import memoizee from "memoizee";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
+import {
+  StyleSheet,
+  View,
+  LayoutAnimation,
+  InteractionManager
+} from "react-native";
 import {
   FlatList,
   TouchableOpacity,
@@ -9,7 +14,7 @@ import {
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
-import { useNavigation, useFocusState } from "react-navigation-hooks";
+import { useNavigation, useRoute, useIsFocused } from "@react-navigation/core";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
 import {
   GalleryTabView,
@@ -39,15 +44,21 @@ const TOP_HEADER = 48;
 const MEME_HEADER_HEIGHT = TOP_HEADER + TOP_Y;
 
 const styles = StyleSheet.create({
+  searchContainer: {
+    backgroundColor: COLORS.primaryDark,
+
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: "hidden"
+  },
   container: {
-    backgroundColor: COLORS.background,
-    display: "flex"
+    // backgroundColor: COLORS.primaryDark
   },
   page: {
     flex: 1
   },
   hiddenContainer: {
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.primaryDark,
     display: "none"
   },
   header: {
@@ -67,7 +78,20 @@ const styles = StyleSheet.create({
   memeHeader: {
     height: MEME_HEADER_HEIGHT,
     backgroundColor: COLORS.primaryDark,
-    width: "100%"
+    width: "100%",
+    position: "relative",
+    zIndex: 10
+  },
+  searchHeader: {
+    shadowRadius: 2,
+    overflow: "visible",
+    paddingTop: SPACING.half,
+    shadowOffset: {
+      width: 1,
+      height: 1
+    },
+    shadowOpacity: 0.25,
+    shadowColor: "black"
   },
 
   input: {
@@ -95,6 +119,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SPACING.normal,
     width: 48
   },
+  searchSpacer: { height: LIST_HEADER_HEIGHT, width: 1, marginTop: TOP_Y },
   headerCenter: {
     justifyContent: "center"
   },
@@ -151,7 +176,7 @@ class RawImagePickerPage extends React.Component {
     super(props);
 
     this.state = {
-      blockId: props.navigation.getParam("blockId"),
+      blockId: props.blockId,
       isKeyboardVisible: false,
       selectedImages: [],
       query: "",
@@ -194,12 +219,12 @@ class RawImagePickerPage extends React.Component {
       ? _selectedImages
       : this.state.selectedImages;
 
-    const onChange = this.props.navigation.getParam("onChange");
+    const { onChange } = this.props;
 
     let photo = selectedImages[0];
 
     if (onChange) {
-      onChange(this.props.navigation.getParam("blockId"), photo, post);
+      onChange(this.state.blockId, photo, post);
       this.goBack(true);
     } else {
       this.props.navigation.navigate("NewPost", {
@@ -235,7 +260,12 @@ class RawImagePickerPage extends React.Component {
     this.scrollRef = flatListRef?.getScrollableNode();
   };
 
-  handleChangeQuery = query => this.setState({ query });
+  handleChangeQuery = query => {
+    this.setState({ query });
+    if (query.length === 0) {
+    }
+  };
+
   handleOpenSearch = () => {
     this.props.navigation.navigate("ImagePickerSearch", {
       onSearch: this.handleChangeQuery
@@ -278,44 +308,63 @@ class RawImagePickerPage extends React.Component {
     </Animated.View>
   );
 
+  clearSearch = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.linear);
+    this.setState({ query: "" });
+  };
+
+  renderSearchHeader = isSearch => (
+    <Animated.View
+      style={
+        isSearch ? [styles.memeHeader, styles.searchHeader] : styles.memeHeader
+      }
+    >
+      <View style={styles.input}>
+        <ImagePickerSearch
+          autoFocusSearch={false}
+          openSearch={this.handleChangeFocusInput}
+          editable={false}
+          onPressClose={this.clearSearch}
+          query={this.state.query}
+        />
+      </View>
+
+      {!isSearch && (
+        <View style={styles.footer}>
+          <BorderlessButton style={styles.sectionFilterButton}>
+            <Animated.View style={styles.sectionFilter}>
+              <MediumText style={styles.sectionFilterLabel}>
+                Trending
+              </MediumText>
+              <IconChevronDown
+                size={8}
+                color={COLORS.mutedLabel}
+                style={styles.sectionFilterChevron}
+              />
+            </Animated.View>
+          </BorderlessButton>
+        </View>
+      )}
+    </Animated.View>
+  );
+
   renderHeader = props => {
     if (
       props.listKey === GallerySectionItem.memes ||
       props.listKey === GallerySectionItem.search
     ) {
-      return (
-        <Animated.View style={styles.memeHeader}>
-          <View style={styles.input}>
-            <ImagePickerSearch
-              autoFocusSearch={false}
-              openSearch={this.handleChangeFocusInput}
-              editable={false}
-              query={this.state.query}
-            />
-          </View>
-
-          <View style={styles.footer}>
-            <BorderlessButton style={styles.sectionFilterButton}>
-              <Animated.View style={styles.sectionFilter}>
-                <MediumText style={styles.sectionFilterLabel}>
-                  Trending
-                </MediumText>
-                <IconChevronDown
-                  size={8}
-                  color={COLORS.mutedLabel}
-                  style={styles.sectionFilterChevron}
-                />
-              </Animated.View>
-            </BorderlessButton>
-          </View>
-        </Animated.View>
+      return this.renderSearchHeader(
+        props.listKey === GallerySectionItem.search
       );
     } else {
       return null;
     }
   };
   headerHeight = props => {
-    if (props.listKey === GallerySectionItem.memes) {
+    if (
+      props.listKey === GallerySectionItem.memes ||
+      props.listKey === GallerySectionItem.search
+    ) {
       return MEME_HEADER_HEIGHT;
     } else {
       return 0;
@@ -323,7 +372,6 @@ class RawImagePickerPage extends React.Component {
   };
 
   get showSearchResults() {
-    return true;
     return this.state.query.length > 0;
   }
 
@@ -332,92 +380,89 @@ class RawImagePickerPage extends React.Component {
   render() {
     return (
       <View style={styles.page}>
-        <View
-          style={
-            this.showSearchResults ? styles.hiddenContainer : styles.container
-          }
-        >
-          <GalleryTabView
-            width={this.props.width}
-            isKeyboardVisible={this.state.isKeyboardVisible}
-            height={this.props.height - TOP_Y - LIST_HEADER_HEIGHT}
-            keyboardVisibleValue={this.keyboardVisibleValue}
-            onPress={this.handlePickPhoto}
-            show
-            isModal={false}
-            isFocused={this.props.isFocused && !this.showSearchResults}
-            position={this.position}
-            renderTabBar={this.renderTabBar}
-            selectedIDs={getSelectedIDs(this.state.selectedImages)}
-            headerHeight={this.headerHeight}
-            renderHeader={this.renderHeader}
-            tabBarPosition="top"
-            tabs={DEFAULT_TABS}
-            scrollY={this.scrollY}
-            initialRoute={
-              this.props.navigation.getParam("initialRoute") || "all"
-            }
-          />
-        </View>
-
-        <View
-          style={
-            this.showSearchResults ? styles.container : styles.hiddenContainer
-          }
-        >
-          <GallerySearchList
-            query={this.state.isSearching}
-            isFocused={this.props.isFocused && this.showSearchResults}
-            isModal={false}
-            headerHeight={this.headerHeight}
-            renderHeader={this.renderHeader}
-            scrollY={this.scrollY}
-            height={this.props.height - TOP_Y - LIST_HEADER_HEIGHT}
-          />
-        </View>
-
-        <Animated.View
-          style={[
-            styles.header,
-            {
-              opacity: this.scrollY.interpolate({
-                inputRange: [0, TOP_Y],
-                outputRange: [1, 0],
-                extrapolate: Animated.Extrapolate.CLAMP
-              }),
-              transform: [
-                {
-                  translateY: this.scrollY.interpolate({
-                    inputRange: [0, TOP_Y],
-                    outputRange: [0, -TOP_Y],
-                    extrapolate: Animated.Extrapolate.CLAMP
-                  })
-                }
-              ]
-            }
-          ]}
-        >
-          <View style={[styles.headerSide, styles.headerLeft]}>
-            <BackButton
-              behavior={BackButtonBehavior.close}
-              size={17}
-              color={COLORS.mutedLabel}
+        {this.showSearchResults && <View style={styles.searchSpacer} />}
+        <View key="container" style={styles.container}>
+          {!this.showSearchResults && (
+            <GalleryTabView
+              width={this.props.width}
+              isKeyboardVisible={this.state.isKeyboardVisible}
+              height={this.props.height - TOP_Y - LIST_HEADER_HEIGHT}
+              keyboardVisibleValue={this.keyboardVisibleValue}
+              onPress={this.handlePickPhoto}
+              show
+              isModal={false}
+              isFocused={this.props.isFocused && !this.showSearchResults}
+              position={this.position}
+              renderTabBar={this.renderTabBar}
+              selectedIDs={getSelectedIDs(this.state.selectedImages)}
+              headerHeight={this.headerHeight}
+              renderHeader={this.renderHeader}
+              tabBarPosition="top"
+              tabs={DEFAULT_TABS}
+              scrollY={this.scrollY}
+              initialRoute={this.props.initialRoute || "all"}
             />
-          </View>
+          )}
 
-          <View style={[styles.headerSide, styles.headerCenter]}>
-            <Text style={styles.headerTitle}>Start from</Text>
-          </View>
+          {this.showSearchResults && (
+            <View style={styles.searchContainer}>
+              {this.renderSearchHeader(true)}
+              <GallerySearchList
+                query={this.state.query}
+                isFocused={this.props.isFocused && this.showSearchResults}
+                isModal={false}
+                onPress={this.handlePickPhoto}
+                scrollY={this.scrollY}
+                height={this.props.height - TOP_Y - LIST_HEADER_HEIGHT}
+              />
+            </View>
+          )}
+        </View>
 
-          <View style={[styles.headerSide, styles.headerRight]}>
-            <BorderlessButton>
-              <View style={styles.headerTextButon}>
-                <MediumText style={styles.headerButtonLabel}>Skip</MediumText>
-                <IconChevronRight size={12} color={COLORS.mutedLabel} />
-              </View>
-            </BorderlessButton>
-          </View>
-        </Animated.View>
+        {this.props.isFinishedAnimating && !this.showSearchResults && (
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                opacity: this.scrollY.interpolate({
+                  inputRange: [0, TOP_Y],
+                  outputRange: [1, 0],
+                  extrapolate: Animated.Extrapolate.CLAMP
+                }),
+                transform: [
+                  {
+                    translateY: this.scrollY.interpolate({
+                      inputRange: [0, TOP_Y],
+                      outputRange: [0, -TOP_Y],
+                      extrapolate: Animated.Extrapolate.CLAMP
+                    })
+                  }
+                ]
+              }
+            ]}
+          >
+            <View style={[styles.headerSide, styles.headerLeft]}>
+              <BackButton
+                behavior={BackButtonBehavior.close}
+                size={17}
+                color={COLORS.mutedLabel}
+              />
+            </View>
+
+            <View style={[styles.headerSide, styles.headerCenter]}>
+              <Text style={styles.headerTitle}>Start from</Text>
+            </View>
+
+            <View style={[styles.headerSide, styles.headerRight]}>
+              <BorderlessButton>
+                <View style={styles.headerTextButon}>
+                  <MediumText style={styles.headerButtonLabel}>Skip</MediumText>
+                  <IconChevronRight size={12} color={COLORS.mutedLabel} />
+                </View>
+              </BorderlessButton>
+            </View>
+          </Animated.View>
+        )}
       </View>
     );
   }
@@ -426,7 +471,20 @@ class RawImagePickerPage extends React.Component {
 export const ImagePickerPage = props => {
   const navigation = useNavigation();
   const { top, left, right } = React.useContext(SafeAreaContext);
-  const { isFocused } = useFocusState();
+  const isFocused = useIsFocused();
+  const route = useRoute();
+  const { onChange, initialRoute, blockId } = route.params ?? {};
+  const [isFinishedAnimating, setFinishedAnimating] = React.useState(
+    !isFocused
+  );
+
+  React.useLayoutEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setFinishedAnimating(true);
+    });
+
+    return () => task.cancel();
+  }, [setFinishedAnimating]);
 
   return (
     <RawImagePickerPage
@@ -435,6 +493,10 @@ export const ImagePickerPage = props => {
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
       isFocused={isFocused}
+      isFinishedAnimating={isFinishedAnimating}
+      onChange={onChange}
+      initialRoute={initialRoute}
+      blockId={blockId}
     />
   );
 };

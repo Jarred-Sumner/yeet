@@ -7,7 +7,7 @@ import {
   LayoutAnimation,
   StatusBar
 } from "react-native";
-import { useFocusState, useNavigationParam } from "react-navigation-hooks";
+import { useIsFocused, useRoute } from "@react-navigation/core";
 import { NewPost } from "../components/NewPost/NewPost";
 import {
   buildImageBlock,
@@ -67,11 +67,7 @@ export class NewPostPage extends React.Component {
   constructor(props) {
     super(props);
 
-    const image = props.navigation.getParam("image");
-    const post: Partial<PostFragment> | null = this.props.navigation.getParam(
-      "post"
-    );
-    const blockId = props.navigation.getParam("blockId");
+    const { image, post, blockId } = props;
 
     if (post) {
       if (props.postQuery.networkStatus !== NetworkStatus.ready) {
@@ -286,8 +282,9 @@ export class NewPostPage extends React.Component {
 
 export default pageProps => {
   const userContext = React.useContext(UserContext);
-  const postParam = useNavigationParam("post");
-  const { isFocused, isFocusing } = useFocusState();
+  const route = useRoute();
+  const { post: postParam = {}, image, blockId } = route.params ?? {};
+  const isFocused = useIsFocused();
   const postId = postParam?.id;
   const postQuery = useQuery<LoadEditorPostQuery, LoadEditorPostQueryVariables>(
     LOAD_POST_QUERY,
@@ -309,9 +306,11 @@ export default pageProps => {
       requireAuthentication={userContext.requireAuthentication}
       authState={userContext.authState}
       userId={userContext.userId}
+      image={image}
+      blockId={blockId}
       postQuery={postQuery}
       isFocused={isFocused}
-      isFocusing={isFocusing}
+      isFocusing={isFocused}
     />
   );
 };

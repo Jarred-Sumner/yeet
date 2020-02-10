@@ -1,14 +1,17 @@
 import * as React from "react";
-import { SectionList as RNSectionList, SectionListProps } from "react-native";
+import {
+  SectionList as RNSectionList,
+  SectionListProps,
+  ScrollView as RNScrollView
+} from "react-native";
 import createNativeWrapper from "react-native-gesture-handler/createNativeWrapper";
 import Animated from "react-native-reanimated";
-import { ScrollView as NavigationScrollView } from "react-navigation";
 import hoistNonReactStatics from "hoist-non-react-statics";
 
 const GestureHandlerSectionList = createNativeWrapper(RNSectionList);
 
 export const ScrollView = createNativeWrapper(
-  Animated.createAnimatedComponent(NavigationScrollView),
+  Animated.createAnimatedComponent(RNScrollView),
   {
     disallowInterruption: true
   }

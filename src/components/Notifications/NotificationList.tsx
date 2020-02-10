@@ -3,7 +3,7 @@ import { uniqBy } from "lodash";
 import * as React from "react";
 import { useQuery, useMutation, MutationFunction } from "react-apollo";
 import { StyleSheet, InteractionManager } from "react-native";
-import { useFocusEffect } from "react-navigation-hooks";
+import { useFocusEffect } from "@react-navigation/core";
 import { NotificationsListItemFragment } from "../../lib/graphql/NotificationsListItemFragment";
 import {
   NotificationsListQuery,

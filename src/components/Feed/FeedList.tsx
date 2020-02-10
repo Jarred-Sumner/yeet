@@ -28,7 +28,7 @@ import {
 import FlatList from "../FlatList";
 import VIEW_THREADS_QUERY from "../../lib/ViewThreads.graphql";
 import { FeedListItem, getItemHeight } from "./FeedListItem";
-import { useIsFocused } from "react-navigation-hooks";
+import { useIsFocused } from "@react-navigation/core";
 import memoizee from "memoizee";
 import Animated from "react-native-reanimated";
 import { SPACING, COLORS } from "../../lib/styles";

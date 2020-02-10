@@ -90,7 +90,7 @@ export const ImagePickerSearch = ({
   onPressClose,
   onChangeQuery,
   editable,
-  query,
+  query = "",
   placeholder = "Search",
   openSearch,
   onSubmit,
@@ -176,6 +176,8 @@ export const ImagePickerSearch = ({
     // });
   }, [_inputRef]);
 
+  const showCancel = isInputFocused || query.length > 0;
+
   return (
     <TouchableWithoutFeedback enabled={!editable} onPress={openSearch}>
       <View style={styles.container}>
@@ -226,15 +228,15 @@ export const ImagePickerSearch = ({
           style={[
             styles.right,
             {
-              display: isInputFocused ? "flex" : "none",
+              display: showCancel ? "flex" : "none",
 
-              right: isInputFocused ? -16 : -100
+              right: showCancel ? -16 : -100
             }
           ]}
         >
           <TouchableWithoutFeedback
             style={{ flexDirection: "row", flex: 0 }}
-            onPress={blurInput}
+            onPress={onPressClose}
           >
             <Animated.View style={styles.cancelButton}>
               <MediumText

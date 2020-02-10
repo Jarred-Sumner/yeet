@@ -2,7 +2,7 @@ import * as React from "react";
 import { View } from "react-native";
 import { BottomTabBar, TAB_BAR_HEIGHT } from "../components/BottomTabBar";
 import { NotificationsList } from "../components/Notifications/NotificationList";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import {
   NotificationPressAvatarFunction,
   NotificationPressFunction,

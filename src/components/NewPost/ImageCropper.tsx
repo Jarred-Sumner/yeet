@@ -14,8 +14,7 @@ import {
   BorderlessButton
 } from "react-native-gesture-handler";
 import { Transition, Transitioning } from "react-native-reanimated";
-import { getInset } from "react-native-safe-area-view";
-import { SafeAreaView } from "react-navigation";
+import { getInset, SafeAreaView } from "react-native-safe-area-view";
 import { COLORS, SPACING } from "../../lib/styles";
 import { IconChevronRight, IconChevronLeft } from "../Icon";
 import { ResizableImage } from "./ResizableImage";

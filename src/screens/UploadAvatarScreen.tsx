@@ -5,7 +5,7 @@ import { useMutation } from "react-apollo";
 import { StyleSheet, View } from "react-native";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import LinearGradient from "react-native-linear-gradient";
-import { useNavigation } from "react-navigation-hooks";
+import { useNavigation } from "@react-navigation/core";
 import { NavigationStackOptions } from "react-navigation-stack";
 import { SCREEN_DIMENSIONS } from "../../config";
 import { EditableAvatar } from "../components/EditableAvatar";

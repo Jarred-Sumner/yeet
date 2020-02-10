@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/core";
 import * as React from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import {
@@ -9,7 +10,6 @@ import Animated, {
   Transitioning,
   TransitioningView
 } from "react-native-reanimated";
-import { useFocusState } from "react-navigation-hooks";
 import { TOP_Y } from "../../../config";
 import {
   MediaUploadContext,
@@ -187,7 +187,7 @@ export const ThreadHeader = ({ thread, threadId }) => {
     transitionRef.current.animateNextTransition();
   };
 
-  const { isFocused } = useFocusState();
+  const isFocused = useIsFocused();
 
   const showExpandIcon =
     status !== PostUploadTaskStatus.waiting &&

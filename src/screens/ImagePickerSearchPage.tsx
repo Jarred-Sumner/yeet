@@ -11,10 +11,11 @@ import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import {
-  useFocusState,
+  useIsFocused,
   useNavigation,
-  useNavigationParam
-} from "react-navigation-hooks";
+  useNavigationParam,
+  useRoute
+} from "@react-navigation/core";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
 import { GalleryHeader } from "../components/Gallery/GalleryHeader";
 import { GallerySectionList } from "../components/Gallery/GallerySectionList";
@@ -85,7 +86,7 @@ class RawImagePickerSearchPage extends React.Component {
     super(props);
 
     this.state = {
-      blockId: props.navigation.getParam("blockId"),
+      blockId: props.blockId,
       isKeyboardVisible: false,
       selectedImages: [],
       query: "",
@@ -125,12 +126,12 @@ class RawImagePickerSearchPage extends React.Component {
   };
 
   handleFinish = (selectedImages, post) => {
-    const onChange = this.props.navigation.getParam("onChange");
+    const { onChange, blockId } = this.props;
 
     let photo = selectedImages[0];
 
     if (onChange) {
-      onChange(this.props.navigation.getParam("blockId"), photo, post);
+      onChange(blockId, photo, post);
       this.goBack(true);
     } else {
       this.props.navigation.navigate("NewPost", {
@@ -212,6 +213,7 @@ class RawImagePickerSearchPage extends React.Component {
     }
   };
 
+  handleClose = () => this.search("");
   scrollY = new Animated.Value<number>(0);
   handlePressTag = tag => {
     console.log(tag);
@@ -243,6 +245,8 @@ class RawImagePickerSearchPage extends React.Component {
               autoFocusSearch
               onChangeQuery={this.handleChangeQuery}
               isInputFocused
+              query={this.state.query}
+              onPressClose={this.handleClose}
               onSubmit={this.handleSubmit}
             />
           </View>
@@ -260,14 +264,14 @@ class RawImagePickerSearchPage extends React.Component {
 
 export const ImagePickerSearchPage = props => {
   const navigation = useNavigation();
-  const onSearch = useNavigationParam("onSearch");
+  const { onSearch, blockId } = useRoute().params;
   const { top, left, right } = React.useContext(SafeAreaContext);
-  const { isFocused } = useFocusState();
+  const isFocused = useIsFocused();
 
   const _onSearch = React.useCallback(
     (query: string) => {
       onSearch(query);
-      navigation.pop();
+      navigation.goBack();
     },
     [navigation, onSearch]
   );
@@ -276,7 +280,9 @@ export const ImagePickerSearchPage = props => {
     <RawImagePickerSearchPage
       {...props}
       navigation={navigation}
+      blockId={blockId}
       onSearch={_onSearch}
+      goBack={navigation.goBack}
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
       isFocused={isFocused}
