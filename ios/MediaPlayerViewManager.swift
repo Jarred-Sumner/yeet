@@ -100,6 +100,15 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
   }
 
+  @objc(mediaSize:)
+  func mediaSize(_ tag: NSNumber) -> NSDictionary {
+    guard let mediaPlayer = bridge.uiManager.unsafeView(forReactTag: tag) as? MediaPlayer else {
+      return [:]
+    }
+
+    return mediaPlayer.mediaSize.dictionaryValue() as NSDictionary
+  }
+
   @objc(batchPlay:IDs:)
   func batchPlay(_ tag: NSNumber, _ IDs: Array<NSNumber>) {
     DispatchQueue.main.async {

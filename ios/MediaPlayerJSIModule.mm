@@ -21,17 +21,7 @@
 
 
 
-@interface RCTUIManager (ext)
-  - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
-  - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
-    - (NSMutableDictionary<NSNumber *, RCTShadowView *> *)shadowViewRegistry;
-@end
 
-@implementation RCTUIManager (ext)
-- (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag {
-  return self.viewRegistry[reactTag];
-}
-@end
 
 @interface RCTScrollView (hacks)
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView;
@@ -98,7 +88,13 @@ void MediaPlayerJSIModule::install(MediaPlayerViewManager *mediaPlayerManager) {
 
 jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
   auto methodName = name.utf8(runtime);
+  if (_jsInvoker == nullptr) {
+      RCTCxxBridge* bridge = mediaPlayer_.bridge;
+    _jsInvoker = std::make_shared<react::BridgeJSCallInvoker>(bridge.reactInstance);
+  }
+
  std::shared_ptr<facebook::react::JSCallInvoker> jsInvoker = _jsInvoker;
+
   
   if (methodName == "isCached") {
     MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
@@ -215,6 +211,41 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
        [mediaPlayerViewManager pause:@(arguments[0].asNumber())];
 
        return jsi::Value::null();
+    });
+  } else if (methodName == "getSize") {
+    MediaPlayerViewManager* mediaPlayerViewManager = mediaPlayer_;
+     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerViewManager, jsInvoker](
+           jsi::Runtime &runtime,
+           const jsi::Value &thisValue,
+           const jsi::Value *arguments,
+           size_t count) -> jsi::Value {
+
+
+       __block NSNumber *viewTag = @(arguments[0].asNumber());
+       return createPromise(runtime, jsInvoker, ^(jsi::Runtime &rt, std::shared_ptr<PromiseWrapper> wrapper) {
+           __block NSMutableArray *retained = [[NSMutableArray alloc] initWithCapacity:2];
+           RCTPromiseResolveBlock resolver = wrapper->resolveBlock();
+           RCTPromiseRejectBlock rejecter = wrapper->rejectBlock();
+           [retained addObject:resolver];
+           [retained addObject:rejecter];
+
+           RCTExecuteOnMainQueue(^{
+             __block NSDictionary *size = [mediaPlayerViewManager mediaSize:viewTag];
+
+             if (!mediaPlayerViewManager.bridge.isValid) {
+               [retained removeAllObjects];
+               retained = nil;
+               return;
+             }
+
+             [mediaPlayerViewManager.bridge dispatchBlock:^{
+               resolver(size);
+               [retained removeAllObjects];
+               retained = nil;
+             } queue:RCTJSThread];
+           });
+         });
+
     });
   } else if (methodName == "getPhotos") {
      return jsi::Function::createFromHostFunction(runtime, name, 1, [jsInvoker](

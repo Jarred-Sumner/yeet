@@ -10,6 +10,8 @@
 
 @interface MediaPlayerViewManager : RCTViewManager
 
+
+- (NSDictionary*)mediaSize:(nonnull NSNumber*)_id;
 - (BOOL)isRegistered:(nonnull NSString*)_id;
 - (void)batchPlay:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids;
 - (void)batchPause:(nonnull NSNumber*)tag IDs:(nonnull NSArray*)ids;

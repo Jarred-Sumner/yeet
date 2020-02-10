@@ -1022,6 +1022,17 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
+  @objc(mediaSize)
+  var mediaSize : CGSize {
+    if imageSource != nil {
+      return imageView?.imageSize ?? .zero
+    } else if videoSource != nil {
+      return videoView?.videoSize ?? .zero
+    } else {
+      return .zero
+    }
+  }
+
   override func willMove(toWindow newWindow: UIWindow?) {
     super.willMove(toWindow: newWindow)
 
