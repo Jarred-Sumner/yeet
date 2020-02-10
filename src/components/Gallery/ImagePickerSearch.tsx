@@ -9,7 +9,7 @@ import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import { COLORS, SPACING } from "../../lib/styles";
 import { IconSearchAlt } from "../Icon";
-import { SemiBoldText } from "../Text";
+import { SemiBoldText, MediumText } from "../Text";
 import { SCREEN_DIMENSIONS } from "../../../config";
 
 const styles = StyleSheet.create({
@@ -23,21 +23,23 @@ const styles = StyleSheet.create({
     flex: 0,
     flexDirection: "row",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    flexShrink: 1
   },
   cancelButton: {
     paddingHorizontal: SPACING.normal,
-    paddingVertical: 8,
     paddingLeft: 0,
-    marginRight: SPACING.normal,
+    paddingRight: SPACING.double,
+    paddingVertical: 8,
     justifyContent: "center",
     alignItems: "center",
     flex: 0,
     flexDirection: "row"
   },
   cancelLabel: {
-    fontSize: 18,
+    fontSize: 14,
     flex: 0,
+    color: COLORS.mutedLabel,
     textAlign: "center"
   },
   searchBar: {
@@ -88,8 +90,10 @@ export const ImagePickerSearch = ({
   onPressClose,
   onChangeQuery,
   editable,
+  query,
   placeholder = "Search",
   openSearch,
+  onSubmit,
   isInputFocused,
   onChangeInputFocus: setInputFocus,
   textInputRef
@@ -172,8 +176,6 @@ export const ImagePickerSearch = ({
     // });
   }, [_inputRef]);
 
-  const onEnter = React.useCallback(() => {}, []);
-
   return (
     <TouchableWithoutFeedback enabled={!editable} onPress={openSearch}>
       <View style={styles.container}>
@@ -213,10 +215,11 @@ export const ImagePickerSearch = ({
             autoCorrect={false}
             clearButtonMode="always"
             tintColor="white"
+            value={query}
             textContentType="none"
             placeholderTextColor="#ccc"
             onChangeText={onChangeQuery}
-            onSubmitEditing={onEnter}
+            onSubmitEditing={onSubmit}
           />
         </Animated.View>
         <View
@@ -234,13 +237,13 @@ export const ImagePickerSearch = ({
             onPress={blurInput}
           >
             <Animated.View style={styles.cancelButton}>
-              <SemiBoldText
+              <MediumText
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 style={styles.cancelLabel}
               >
                 Cancel
-              </SemiBoldText>
+              </MediumText>
             </Animated.View>
           </TouchableWithoutFeedback>
         </View>

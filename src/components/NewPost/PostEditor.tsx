@@ -39,7 +39,7 @@ import {
   YeetImageRect
 } from "../../lib/imageSearch";
 import { Rectangle } from "../../lib/Rectangle";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import { sendLightFeedback, sendSelectionFeedback } from "../../lib/Vibration";
 import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
 import { MediaPlayerContext } from "../MediaPlayer/MediaPlayerContext";

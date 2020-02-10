@@ -254,7 +254,7 @@ const GalleryItemComponent = React.memo(
               />
             )}
 
-            {username && (
+            {/* {username && (
               <View
                 width={width}
                 pointerEvents="none"
@@ -262,7 +262,7 @@ const GalleryItemComponent = React.memo(
               >
                 <AuthorLabel username={username} width={width} />
               </View>
-            )}
+            )} */}
 
             <DurationLabel
               duration={duration}
@@ -313,7 +313,7 @@ const GalleryItemComponent = React.memo(
               style={borderStyle}
             />
 
-            {username && (
+            {/* {username && (
               <View
                 testId="footer"
                 width={width}
@@ -322,7 +322,7 @@ const GalleryItemComponent = React.memo(
               >
                 <AuthorLabel username={username} width={width} />
               </View>
-            )}
+            )} */}
 
             {isSelected && (
               <View style={photoCellStyles.selectedIcon}>

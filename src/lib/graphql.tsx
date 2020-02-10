@@ -10,6 +10,7 @@ import DeviceInfo from "react-native-device-info";
 import { BASE_HOSTNAME } from "../../config";
 import { Storage } from "./Storage";
 import CameraRollGraphQL from "./CameraRollGraphQL";
+import { join } from "path";
 
 // import introspectionQueryResultData from "../../static/fragmentTypes.json";
 // import Alert from "../lib/Alert";
@@ -55,11 +56,19 @@ const errorLink = onError(({ graphQLErrors, networkError }) => {
 
 const GRAPHQL_URL = `${BASE_HOSTNAME}/graphql`;
 
+export const fetchWith = async (path, options): Promise<Response> => {
+  return customFetch(join(BASE_HOSTNAME, path), {
+    ...options,
+    headers: await getRequestHeaders()
+  });
+};
+
 export const getRequestHeaders = (headers: Object = {}) =>
   Storage.getJWT().then(jwt => {
     return {
       ...headers,
       Authorization: jwt ? `Bearer ${jwt}` : undefined,
+      "Content-Type": "application/json",
       "X-Device-ID": DEVICE_ID,
       "X-App-Version": APP_VERSION,
       "X-Device-Timezone": TIMEZONE,

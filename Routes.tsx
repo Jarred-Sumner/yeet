@@ -144,14 +144,22 @@ const _AppContainer = memoize(initialRouteName => {
                       },
                       {
                         // initialRouteName: "ImagePickerSearch",
-                        headerMode: "none",
 
                         navigationOptions: {
                           stackAnimation: "fade"
                         },
-
                         defaultNavigationOptions: {
-                          ...MyTransition
+                          header: () => null,
+                          safeAreaInsets: {
+                            top: 0,
+                            bottom: 0,
+                            left: 0,
+                            right: 0
+                          },
+                          headerMode: "none",
+                          cardStyle: { backgroundColor: COLORS.background },
+                          headerTransparent: false,
+                          gestureEnabled: true
                         }
                       }
                     ),
@@ -161,22 +169,25 @@ const _AppContainer = memoize(initialRouteName => {
                   {
                     translucent: false,
                     // initialRouteName: "NewThread",
-                    cardStyle: {
-                      backgroundColor: "#000"
-                    },
+                    cardStyle: { backgroundColor: COLORS.background },
 
                     headerMode: "none",
-                    mode: "modal",
                     // initialRouteName: IS_SIMULATOR ? "NewPost" : undefined,
                     defaultNavigationOptions: {
                       header: () => null,
                       headerMode: "none",
                       cardStyle: { backgroundColor: COLORS.background },
                       headerTransparent: false,
-                      gestureEnabled: true
+                      gestureEnabled: true,
+                      safeAreaInsets: {
+                        top: 0,
+                        bottom: 0,
+                        left: 0,
+                        right: 0
+                      }
                     },
                     navigationOptions: {
-                      gestureEnabled: false
+                      gestureEnabled: true
                     }
                   }
                 )
@@ -185,6 +196,7 @@ const _AppContainer = memoize(initialRouteName => {
                 cardStyle: {
                   backgroundColor: COLORS.background
                 },
+                mode: "modal",
 
                 headerMode: "none",
                 // initialRouteName: "NewPostStack",

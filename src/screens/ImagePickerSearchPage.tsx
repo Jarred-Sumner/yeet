@@ -1,11 +1,20 @@
 import { cloneDeep, isArray } from "lodash";
 import memoizee from "memoizee";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
+import {
+  StyleSheet,
+  View,
+  NativeSyntheticEvent,
+  TextInputSubmitEditingEventData
+} from "react-native";
 import { FlatList } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
-import { useFocusState, useNavigation } from "react-navigation-hooks";
+import {
+  useFocusState,
+  useNavigation,
+  useNavigationParam
+} from "react-navigation-hooks";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../config";
 import { GalleryHeader } from "../components/Gallery/GalleryHeader";
 import { GallerySectionList } from "../components/Gallery/GallerySectionList";
@@ -20,19 +29,28 @@ import { YeetImageContainer } from "../lib/imageSearch";
 import Storage from "../lib/Storage";
 import { sendLightFeedback } from "../lib/Vibration";
 import { SearchTagList } from "../components/Search/SearchTagList";
+import { COLORS, SPACING } from "../lib/styles";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000"
+    backgroundColor: COLORS.background,
+    paddingTop: TOP_Y
+  },
+  content: {
+    backgroundColor: COLORS.primaryDark,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: "hidden",
+    flex: 1
   },
   header: {
-    paddingTop: TOP_Y,
+    paddingTop: SPACING.normal,
     top: 0,
     left: 0,
     right: 0,
     paddingBottom: 12,
-    backgroundColor: "black",
+    backgroundColor: COLORS.primaryDark,
     shadowColor: "#333",
     shadowOpacity: 0.25,
     shadowOffset: {
@@ -89,28 +107,24 @@ class RawImagePickerSearchPage extends React.Component {
     const { selectedImages, selectMultiple } = this.state;
     sendLightFeedback();
 
-    const index = selectedImages.findIndex(image => photo.id === image.id);
+    // const index = selectedImages.findIndex(image => photo.id === image.id);
 
-    const _selectedImages = [...selectedImages];
-    if (typeof index === "number" && index > -1) {
-      _selectedImages.splice(index, 1);
-    } else {
-      _selectedImages.push(photo);
-    }
+    // const _selectedImages = [...selectedImages];
+    // if (typeof index === "number" && index > -1) {
+    //   _selectedImages.splice(index, 1);
+    // } else {
+    //   _selectedImages.push(photo);
+    // }
 
-    if (selectMultiple) {
-      this.setState({ selectedImages: _selectedImages });
-    } else {
-      console.log(_selectedImages);
-      this.handleFinish(_selectedImages, post);
-    }
+    // if (selectMultiple) {
+    //   this.setState({ selectedImages: _selectedImages });
+    // } else {
+    // console.log(_selectedImages);
+    this.handleFinish([photo], post);
+    // }
   };
 
-  handleFinish = (_selectedImages, post) => {
-    const selectedImages = isArray(_selectedImages)
-      ? _selectedImages
-      : this.state.selectedImages;
-
+  handleFinish = (selectedImages, post) => {
     const onChange = this.props.navigation.getParam("onChange");
 
     let photo = selectedImages[0];
@@ -161,6 +175,7 @@ class RawImagePickerSearchPage extends React.Component {
       <ImagePickerSearch
         onChangeInputFocus={this.handleChangeFocusInput}
         isInputFocused={this.state.isSearching}
+        onSubmit={this.handleSubmit}
         editable
         onPressClose={this.handleClose}
         placeholder={
@@ -198,7 +213,19 @@ class RawImagePickerSearchPage extends React.Component {
   };
 
   scrollY = new Animated.Value<number>(0);
-  handlePressTag = tag => {};
+  handlePressTag = tag => {
+    console.log(tag);
+    this.search(tag);
+  };
+
+  handleSubmit = ({
+    nativeEvent
+  }: NativeSyntheticEvent<TextInputSubmitEditingEventData>) =>
+    this.search(nativeEvent.text);
+
+  search = query => {
+    this.props.onSearch(query);
+  };
 
   render() {
     const tabs = [
@@ -210,18 +237,22 @@ class RawImagePickerSearchPage extends React.Component {
 
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
-          <ImagePickerSearch
-            autoFocusSearch
-            onChangeQuery={this.handleChangeQuery}
-            isInputFocused
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <ImagePickerSearch
+              autoFocusSearch
+              onChangeQuery={this.handleChangeQuery}
+              isInputFocused
+              onSubmit={this.handleSubmit}
+            />
+          </View>
+
+          <SearchTagList
+            onPressTag={this.handlePressTag}
+            onPressResult={this.handlePickPhoto}
+            query={this.state.query}
           />
         </View>
-
-        <SearchTagList
-          query={this.state.query}
-          onPressTag={this.handlePressTag}
-        />
       </View>
     );
   }
@@ -229,13 +260,23 @@ class RawImagePickerSearchPage extends React.Component {
 
 export const ImagePickerSearchPage = props => {
   const navigation = useNavigation();
+  const onSearch = useNavigationParam("onSearch");
   const { top, left, right } = React.useContext(SafeAreaContext);
   const { isFocused } = useFocusState();
+
+  const _onSearch = React.useCallback(
+    (query: string) => {
+      onSearch(query);
+      navigation.pop();
+    },
+    [navigation, onSearch]
+  );
 
   return (
     <RawImagePickerSearchPage
       {...props}
       navigation={navigation}
+      onSearch={_onSearch}
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
       isFocused={isFocused}

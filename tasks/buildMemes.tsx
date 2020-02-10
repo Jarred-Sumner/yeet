@@ -1758,7 +1758,7 @@ const createOldTextBlock = (isTop, size) => {
       overrides: {
         textAlign: "center",
         color: "white",
-        backgroundColor: "black",
+        backgroundColor: "#000",
         maxWidth: size.width
       }
     }

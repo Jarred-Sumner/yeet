@@ -50,7 +50,7 @@ export const MemesFilterList = ({
     if (isFocused && typeof loadMemes === "function") {
       loadMemes();
     }
-  }, [loadMemes, isFocused, otherProps?.offset]);
+  }, [loadMemes, isFocused]);
 
   const data = React.useMemo(() => {
     return buildPostValue(memesQuery?.data?.searchPosts?.data);
@@ -132,12 +132,6 @@ export const MemesFilterList = ({
         paused
         hasNextPage={memesQuery?.data?.searchPosts?.hasMore ?? false}
         networkStatus={memesQuery.networkStatus}
-      />
-
-      <MemeFilterControl
-        isModal={isModal}
-        value={filter}
-        onChange={onChangeFilter}
       />
     </>
   );

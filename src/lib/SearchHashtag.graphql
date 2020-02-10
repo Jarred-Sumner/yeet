@@ -1,0 +1,26 @@
+query SearchHashtag($hashtag: String!, $limit: Int, $offset: Int) {
+  searchHashtag(hashtag: $hashtag, limit: $limit, offset: $offset) {
+    id
+    data {
+      id
+
+      profile {
+        id
+        username
+      }
+
+      media {
+        id
+        width
+        height
+        mimeType
+        duration
+
+        __typename
+
+        coverUrl
+        url
+      }
+    }
+  }
+}

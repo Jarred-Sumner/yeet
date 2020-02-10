@@ -1162,6 +1162,7 @@ export default class FastList extends React.PureComponent<
         scrollEventThrottle={16}
         style={style}
         // maintainVisibleContentPosition
+        scrollToOverflowEnabled
         automaticallyAdjustContentInsets={false}
         contentContainerStyle={styles.contentContainer}
         contentInsetAdjustmentBehavior="never"

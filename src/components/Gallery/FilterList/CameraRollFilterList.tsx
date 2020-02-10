@@ -232,15 +232,6 @@ export const CameraRollFilterList = ({
       hasNextPage={
         photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
       }
-    >
-      <CameraRollAssetTypeSwitcher
-        isModal={isModal}
-        // visibleDate={visibleDate}
-        assetType={assetType}
-        onChangeAlbum={handleChangeAlbum}
-        album={album}
-        setAssetType={_setAssetType}
-      />
-    </GalleryFilterListComponent>
+    ></GalleryFilterListComponent>
   );
 };

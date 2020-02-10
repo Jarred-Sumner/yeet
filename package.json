@@ -50,9 +50,9 @@
     "date-fns": "^2.4.0",
     "euclidean-distance": "^1.0.0",
     "events": "^3.0.0",
+    "flexsearch": "^0.6.32",
     "flubber": "^0.4.2",
     "formik": "^1.5.8",
-    "fuse.js": "^3.4.6",
     "giphy-api": "^2.0.1",
     "graphql": "^14.5.8",
     "graphql-anywhere": "^4.2.4",
@@ -62,11 +62,13 @@
     "horoscope": "^2.0.1",
     "intersects": "^2.7.1",
     "lodash": "^4.17.15",
+    "match-sorter": "^4.0.2",
     "memoizee": "^0.4.14",
     "metro": "0.56.0",
     "nanoid": "^2.0.4",
     "numbro": "^2.1.2",
     "path": "^0.12.7",
+    "porter-stemmer": "^0.9.1",
     "qs": "^6.9.0",
     "react": "16.9.0",
     "react-apollo": "3.1.3",
@@ -126,6 +128,11 @@
       "./assets/fonts/"
     ]
   },
+  "resolutions": {
+    "@react-native-community/cli": "4.0.0",
+    "@react-native-community/cli-platform-android": "4.0.0",
+    "@react-native-community/cli-platform-ios": "4.0.0"
+  },
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/node": "^7.7.7",
@@ -134,7 +141,7 @@
     "@babel/plugin-proposal-optional-chaining": "^7.8.3",
     "@babel/preset-typescript": "^7.8.3",
     "@babel/runtime": "^7.5.5",
-    "@react-native-community/cli": "3.0.4",
+    "@react-native-community/cli": "4.0.0",
     "@types/chroma-js": "^1.4.3",
     "@types/giphy-api": "^2.0.2",
     "@types/lodash": "^4.14.138",

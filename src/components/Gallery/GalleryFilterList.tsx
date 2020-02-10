@@ -203,7 +203,7 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
     right: 1
   };
   contentOffset = {
-    y: 0,
+    y: this.props.offset || 0,
     x: 0
   };
   contentInset = {
@@ -441,22 +441,22 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
     } = this.props;
     const { showScrollView } = this.state;
 
-    const ContainerComponent = Animated.View;
+    const ContainerComponent = View;
     const containerStyles = isModal
       ? [styles.modalWrapper, height]
       : [
           styles.wrapper,
           { height },
           {
-            transform: [
-              {
-                translateY: this.props.scrollY.interpolate({
-                  inputRange: [0, TOP_Y],
-                  outputRange: [0, TOP_Y],
-                  extrapolateRight: Animated.Extrapolate.CLAMP
-                })
-              }
-            ]
+            // transform: [
+            //   {
+            //     translateY: this.props.scrollY.interpolate({
+            //       inputRange: [0, TOP_Y],
+            //       outputRange: [0, TOP_Y],
+            //       extrapolateRight: Animated.Extrapolate.CLAMP
+            //     })
+            //   }
+            // ]
           }
           // {
           //   paddingTop: inset + TOP_Y,
@@ -494,7 +494,7 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
               renderRow={this.handleRenderRow}
               containerHeight={height}
               scrollToOverflowEnabled
-              overScrollMode="never"
+              overScrollMode="automatic"
               scrollTopValue={this.props.scrollY}
               footerHeight={0}
               headerHeight={headerHeight}
