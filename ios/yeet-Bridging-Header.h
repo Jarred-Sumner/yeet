@@ -61,6 +61,18 @@
 #import "YeetTextEnums.h"
 #import "PINRemoteImageMacros.h"
 
+@interface RCTUIManager (ext)
+  - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
+  - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
+    - (NSMutableDictionary<NSNumber *, RCTShadowView *> *)shadowViewRegistry;
+@end
+
+@implementation RCTUIManager (ext)
+- (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag {
+  return self.viewRegistry[reactTag];
+}
+@end
+
 
 @interface PINAnimatedImageView (Private)
 
@@ -312,6 +324,7 @@ RCT_EXPORT_VIEW_PROPERTY(onEditVideo, RCTDirectEventBlock);
 
 
 RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(isRegistered:);
+RCT_EXTERN__BLOCKING_SYNCHRONOUS_METHOD(mediaSize:);
 
 
 
