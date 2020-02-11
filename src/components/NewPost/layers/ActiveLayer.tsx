@@ -93,9 +93,26 @@ class ActiveLayerComponent extends React.Component<Props> {
   }
 }
 
-const Toolbar = ({ type, onPress, onBack, opacity }) => {
+const Toolbar = ({
+  type,
+  onPress,
+  onBack,
+  opacity,
+  exampleCount,
+  hasExamples,
+  onPressExample
+}) => {
   if (type === ToolbarType.default || type === ToolbarType.text) {
-    return <DefaultToolbar onPress={onPress} onBack={onBack} type={type} />;
+    return (
+      <DefaultToolbar
+        exampleCount={exampleCount}
+        hasExamples={hasExamples}
+        onPressExample={onPressExample}
+        onPress={onPress}
+        onBack={onBack}
+        type={type}
+      />
+    );
   } else if (type === ToolbarType.panning) {
     return <Animated.View pointerEvents="none" />;
   } else {
@@ -116,6 +133,8 @@ const Footer = ({
   exampleIndex,
   waitFor,
   panX,
+  layout,
+  onChangeLayout,
   toolbar,
   panY
 }) => {
@@ -128,6 +147,8 @@ const Footer = ({
         panY={panY}
         toolbar={toolbar}
         hasExamples={hasExamples}
+        layout={layout}
+        onChangeLayout={onChangeLayout}
         exampleIndex={exampleIndex}
         exampleCount={exampleCount}
         onPressExample={onPressExample}
@@ -168,8 +189,10 @@ export const ActiveLayer = ({
   exampleIndex = -1,
   focusType,
   currentScale,
+  onChangeLayout,
   onBack,
   keyboardVisibleOpacity,
+  layout,
   panX,
   panY,
   ...otherProps
@@ -192,6 +215,7 @@ export const ActiveLayer = ({
           onChangeBorderType={onChangeBorderType}
           height={relativeHeight}
           isModal={isPageModal}
+          onSend={onSend}
           panX={panX}
           panY={panY}
           onPress={onPressToolbarButton}
@@ -206,11 +230,9 @@ export const ActiveLayer = ({
           currentScale={currentScale}
           panX={panX}
           panY={panY}
-          hasExamples={exampleCount > 0}
-          exampleCount={exampleCount}
-          exampleIndex={exampleIndex}
-          onPressExample={onPressExample}
           onSend={onSend}
+          onChangeLayout={onChangeLayout}
+          layout={layout}
           toolbar={
             <Toolbar
               type={toolbarType}
@@ -218,6 +240,10 @@ export const ActiveLayer = ({
               key={`toolbar-${toolbarType}`}
               isModal={isPageModal}
               panX={panX}
+              hasExamples={exampleCount > 0}
+              exampleCount={exampleCount}
+              exampleIndex={exampleIndex}
+              onPressExample={onPressExample}
               panY={panY}
               onPress={onPressToolbarButton}
               onBack={onBack}

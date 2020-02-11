@@ -30,9 +30,25 @@ export const ScrollView = KeyboardAwareScrollView;
 const isTextBlock = (block: PostBlockType) => block.type === "text";
 
 const styles = StyleSheet.create({
-  horizontalList: { flexDirection: "row", flex: 0, zIndex: 1 },
-  horizontalMultiList: { flexDirection: "row", flex: 1, zIndex: 1 },
-  verticalList: { flexDirection: "column", flex: 0, zIndex: 1 }
+  horizontalList: {
+    flexDirection: "row",
+    flex: 0,
+    zIndex: 1,
+    justifyContent: "center"
+  },
+  horizontalMultiList: {
+    flexDirection: "row",
+    flex: 1,
+    zIndex: 1,
+    justifyContent: "center"
+  },
+  verticalList: { flexDirection: "column", flex: 0, zIndex: 1 },
+  content: {
+    marginHorizontal: 12,
+    borderRadius: 16,
+    overflow: "hidden",
+    width: SCREEN_DIMENSIONS.width - 24
+  }
 });
 
 const BlockLayoutContainer = ({
@@ -469,10 +485,10 @@ export const PostPreview = React.forwardRef(
 
     const scrollViewStyle = React.useMemo(
       () => ({
-        width: bounds.width,
-        flex: 1,
+        width: SCREEN_DIMENSIONS.width,
+        flexGrow: 1,
         // overflow: "visible",
-        backgroundColor: "#111"
+        backgroundColor: "#000"
       }),
       [maxHeight, bounds.width, backgroundColor, paddingBottom]
     );
@@ -484,8 +500,9 @@ export const PostPreview = React.forwardRef(
           // maxHeight,
           justifyContent: "center",
           alignSelf: "center",
+
           flexGrow: 1,
-          width: bounds.width
+          width: SCREEN_DIMENSIONS.width
         }
       ],
       [backgroundColor, maxHeight, scrollHeight]
@@ -497,6 +514,9 @@ export const PostPreview = React.forwardRef(
         // backgroundColor: "red",
         overflow: "visible",
         marginTop: paddingTop,
+        width: SCREEN_DIMENSIONS.width,
+        alignItems: "center",
+
         marginBottom: paddingBottom
       }),
       [paddingTop, bottomY, paddingBottom, backgroundColor]
@@ -562,27 +582,29 @@ export const PostPreview = React.forwardRef(
             onLayout={onLayout}
             style={contenViewStyle}
           >
-            <BlockList
-              setBlockInputRef={setBlockInputRef}
-              blocks={blocks}
-              positions={positions}
-              layout={postLayout}
-              key={positionsKey}
-              onFocus={onFocus}
-              onAction={onAction}
-              focusTypeValue={focusTypeValue}
-              onOpenImagePicker={onOpenImagePicker}
-              onChangePhoto={onChangePhoto}
-              focusType={focusType}
-              onTap={onTapBlock}
-              disabled={!scrollEnabled}
-              scrollRef={scrollRef}
-              onLayout={onLayoutBlock}
-              focusedBlockId={focusedBlockId}
-              focusedBlockValue={focusedBlockValue}
-              onBlur={onBlur}
-              setBlockAtIndex={setBlockAtIndex}
-            />
+            <View style={styles.content}>
+              <BlockList
+                setBlockInputRef={setBlockInputRef}
+                blocks={blocks}
+                positions={positions}
+                layout={postLayout}
+                key={positionsKey}
+                onFocus={onFocus}
+                onAction={onAction}
+                focusTypeValue={focusTypeValue}
+                onOpenImagePicker={onOpenImagePicker}
+                onChangePhoto={onChangePhoto}
+                focusType={focusType}
+                onTap={onTapBlock}
+                disabled={!scrollEnabled}
+                scrollRef={scrollRef}
+                onLayout={onLayoutBlock}
+                focusedBlockId={focusedBlockId}
+                focusedBlockValue={focusedBlockValue}
+                onBlur={onBlur}
+                setBlockAtIndex={setBlockAtIndex}
+              />
+            </View>
 
             {children}
           </Animated.View>

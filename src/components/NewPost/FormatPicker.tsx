@@ -4,7 +4,8 @@ import {
   ImageProps,
   StyleSheet,
   View,
-  PixelRatio
+  PixelRatio,
+  LayoutAnimation
 } from "react-native";
 import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
@@ -20,31 +21,35 @@ import {
   BitmapIconFormatVerticalMediaText,
   BitmapIconFormatVerticalTextMedia
 } from "../BitmapIcon";
-import { CAROUSEL_HEIGHT, PostLayout } from "./NewPostFormat";
+import { PostLayout } from "./NewPostFormat";
 import MediaPlayer from "../MediaPlayer/MediaPlayer";
 import Image from "../Image";
+import { ScrollView } from "../ScrollView";
 
-const LIST_ITEM_HEIGHT = 46;
-const LIST_ITEM_WIDTH = 60;
+const LIST_ITEM_HEIGHT = 35;
+const LIST_ITEM_WIDTH = 45;
 const SCREEN_WIDTH = Dimensions.get("screen").width;
 
 const BORDER_RADIUS = 4;
-const ICON_WIDTH = 39;
+const ICON_WIDTH = 35;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "black",
     alignItems: "center",
     width: "100%",
     flexDirection: "row",
     overflow: "visible",
-    height: CAROUSEL_HEIGHT
+    height: LIST_ITEM_HEIGHT
+  },
+  content: {
+    justifyContent: "center",
+    minWidth: "100%"
   },
   list: {
-    height: CAROUSEL_HEIGHT,
+    height: LIST_ITEM_HEIGHT,
     width: "100%",
-    flexDirection: "row",
-    alignItems: "center"
+    flexDirection: "row"
+    // alignItems: "center"
   },
 
   unselectedBorder: {
@@ -52,10 +57,12 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS,
     borderColor: "transparent",
     overflow: "hidden",
-    width: ICON_WIDTH - BORDER_RADIUS / 2,
-    height: ICON_WIDTH,
-    margin: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.25)",
+    width: ICON_WIDTH - BORDER_RADIUS,
+    margin: BORDER_RADIUS / 2,
+    height: ICON_WIDTH - BORDER_RADIUS,
+
+    backgroundColor: "black",
+    opacity: 0.25,
     ...StyleSheet.absoluteFillObject
   },
   selectedBorder: {
@@ -66,6 +73,8 @@ const styles = StyleSheet.create({
     width: ICON_WIDTH - BORDER_RADIUS,
     margin: BORDER_RADIUS / 2,
     height: ICON_WIDTH - BORDER_RADIUS,
+    backgroundColor: "transparent",
+    opacity: 1.0,
     ...StyleSheet.absoluteFillObject
   },
   icon: {
@@ -73,13 +82,22 @@ const styles = StyleSheet.create({
     height: ICON_WIDTH,
     position: "relative"
   },
+  selectedIcon: {
+    width: ICON_WIDTH,
+    height: ICON_WIDTH,
+    opacity: 1
+  },
+  unselectedIcon: {
+    width: ICON_WIDTH,
+    height: ICON_WIDTH,
+    opacity: 0.5
+  },
 
   mediaIcon: {
     flex: 1,
     margin: BORDER_RADIUS
   },
   item: {
-    marginTop: TOP_Y,
     justifyContent: "center",
     alignItems: "center",
     width: LIST_ITEM_WIDTH,
@@ -135,7 +153,7 @@ export const FORMATS: Array<PostLayoutData> = [
   }
 ];
 
-const offsets = FORMATS.map(({ width }, index) => width * index);
+const offsets = FORMATS.map((_, index) => LIST_ITEM_WIDTH * index);
 
 const FormatPickerListItem = ({
   item: format,
@@ -168,7 +186,9 @@ const FormatPickerListItem = ({
               borderRadius={2}
             />
           ) : (
-            <Icon />
+            <Icon
+              style={isSelected ? styles.selectedIcon : styles.unselectedIcon}
+            />
           )}
 
           <View
@@ -217,34 +237,38 @@ export class FormatPicker extends React.PureComponent {
 
   handleSnap = index => {
     sendSelectionFeedback();
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    const maxX = FORMATS.length * LIST_ITEM_WIDTH;
+
+    this.scrollRef.current.getNode().scrollTo({
+      x: index * LIST_ITEM_WIDTH,
+      animated: true,
+      y: 0
+    });
     this.props.onChangeLayout(FORMATS[index].value);
   };
   keyExtractor = item => item.value;
-
-  translateX = Animated.multiply(
-    Animated.multiply(this.props.position, LIST_ITEM_WIDTH),
-    -1
-  );
+  scrollRef = React.createRef<ScrollView>();
 
   render() {
     return (
-      <Animated.View style={styles.container}>
-        <Animated.View
-          style={[
-            styles.list,
-            {
-              transform: [
-                {
-                  translateX: SCREEN_DIMENSIONS.width / 2 - LIST_ITEM_WIDTH / 2
-                },
-                { translateX: this.translateX }
-              ]
-            }
-          ]}
+      <View style={styles.container}>
+        <ScrollView
+          horizontal
+          decelerationRate="fast"
+          scrollToOverflowEnabled
+          contentContainerStyle={styles.content}
+          centerContent
+          // disableScrollViewPanResponder
+          overScrollMode="auto"
+          ref={this.scrollRef}
+          showsHorizontalScrollIndicator={false}
+          directionalLockEnabled
+          style={styles.list}
         >
           {FORMATS.map(this.renderItem)}
-        </Animated.View>
-      </Animated.View>
+        </ScrollView>
+      </View>
     );
   }
 }

@@ -71,10 +71,13 @@ const styles = StyleSheet.create({
     color: "#FFF"
   },
   transitionContainer: {
-    width: POST_WIDTH,
+    width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height
   },
-  transitioningView: { width: POST_WIDTH, height: SCREEN_DIMENSIONS.height },
+  transitioningView: {
+    width: SCREEN_DIMENSIONS.width,
+    height: SCREEN_DIMENSIONS.height
+  },
   page: {
     flex: 1,
     width: SCREEN_DIMENSIONS.width,
@@ -368,14 +371,6 @@ export class NewPost extends React.Component<{}, State> {
       positions: _positions
     } = this.state.post;
 
-    if (
-      layout !== this.state.post.layout &&
-      this.props.defaultLayout === layout
-    ) {
-      this.resetToDefault();
-      return;
-    }
-
     const [blocks, positions] = layoutBlocksInPost(
       format,
       layout,
@@ -409,28 +404,10 @@ export class NewPost extends React.Component<{}, State> {
   stepContainerRef = React.createRef();
   scrollY: Animated.Value<number>;
 
-  onFlingLeft = ({ nativeEvent: { state, ...other } }) => {
-    if (state === GestureState.ACTIVE) {
-      this.formatPickerRef.current.goNext();
-    }
-  };
-
-  onFlingRight = ({ nativeEvent: { state, ...other } }) => {
-    if (state === GestureState.ACTIVE) {
-      this.formatPickerRef.current.goPrevious();
-    }
-  };
-
-  formatPickerRef = React.createRef<FormatPicker>();
   pauser = React.createRef();
   handleChangeLayoutIndex = (index: number) => {
     this.handleChangeLayout(FORMATS[index].value);
   };
-
-  pannerRef = React.createRef<PanGestureHandler>();
-  layoutIndexValue = new Animated.Value(
-    Math.max(FORMATS.indexOf(this.props.defaultLayout), 0)
-  );
 
   openGalleryCallback: Function | null = null;
 
@@ -482,7 +459,6 @@ export class NewPost extends React.Component<{}, State> {
   keyboardVisibleValue = new Animated.Value<number>(0);
   keyboardHeightValue = new Animated.Value<number>(0);
   animatedKeyboardVisibleValue = new Animated.Value<number>(0);
-  headerOffset = new Animated.Value(0);
   headerOpacity = new Animated.Value(0);
   postEditor = React.createRef<View>();
 
@@ -515,78 +491,47 @@ export class NewPost extends React.Component<{}, State> {
           animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
         />
 
-        <Panner
-          onIndexChange={this.handleChangeLayoutIndex}
-          swipeEnabled={Platform.select({
-            ios: !this.state.showGallery && !this.state.isKeyboardVisible,
-            android: false
-          })}
-          position={this.layoutIndexValue}
-          gestureHandlerProps={{
-            ref: this.pannerRef
-          }}
-          index={
-            FORMATS.findIndex(
-              format => this.state.post.layout === format.value
-            ) ?? 0
-          }
-          length={FORMATS.length}
+        <View
+          pointerEvents={this.state.showGallery ? "none" : "auto"}
+          style={styles.page}
         >
-          <View
-            pointerEvents={this.state.showGallery ? "none" : "auto"}
-            style={styles.page}
-          >
-            <StatusBar hidden={false} showHideTransition="slide" />
+          <StatusBar hidden={false} showHideTransition="slide" />
 
-            <View style={[styles.transitionContainer, { backgroundColor }]}>
-              <MediaPlayerPauser isHidden={this.state.showGallery}>
-                <PostEditor
-                  bounds={this.state.bounds}
-                  post={this.state.post}
-                  onBack={this.handleBack}
-                  exampleCount={this.state.exampleCount}
-                  exampleIndex={this.state.exampleIndex}
-                  offsetY={this.offsetY}
-                  onPressExample={this.handlePressExample}
-                  scrollY={this.scrollY}
-                  ref={this.postEditor}
-                  keyboardVisibleValue={this.keyboardVisibleValue}
-                  keyboardHeightValue={this.keyboardHeightValue}
-                  animatedKeyboardVisibleValue={
-                    this.animatedKeyboardVisibleValue
-                  }
-                  keyboardHeight={this.state.keyboardHeight ?? 0}
-                  headerOpacity={this.headerOpacity}
-                  navigation={this.props.navigation}
-                  onChange={this.handleChangePost}
-                  isReply={!this.props.threadId}
-                  onChangeFormat={this.handleChangeLayout}
-                  isFocused={this.props.isFocused && !this.state.showGallery}
-                  controlsOpacityValue={this.controlsOpacityValue}
-                  onOpenGallery={this.handleOpenGallery}
-                  inlineNodes={inlineNodes}
-                  simultaneousHandlers={[this.pannerRef]}
-                  paddingTop={this.paddingTop}
-                  onChangeNodes={this.handleChangeNodes}
-                  onBeforeExport={this.handleBeforeExport}
-                  onSubmit={this.handleSubmit}
-                />
-              </MediaPlayerPauser>
-            </View>
-
-            <PostHeader
-              position={this.layoutIndexValue}
-              layout={this.state.post.layout}
-              defaultLayout={this.props.defaultLayout}
-              thumbnail={this.props.thumbnail}
-              onChangeLayout={this.handleChangeLayout}
-              ref={this.formatPickerRef}
-              translateY={this.headerOffset}
-              opacity={this.headerOpacity}
-              controlsOpacityValue={this.controlsOpacityValue}
-            />
+          <View style={[styles.transitionContainer, { backgroundColor }]}>
+            <MediaPlayerPauser isHidden={this.state.showGallery}>
+              <PostEditor
+                bounds={this.state.bounds}
+                post={this.state.post}
+                onBack={this.handleBack}
+                exampleCount={this.state.exampleCount}
+                exampleIndex={this.state.exampleIndex}
+                offsetY={this.offsetY}
+                onPressExample={this.handlePressExample}
+                scrollY={this.scrollY}
+                ref={this.postEditor}
+                keyboardVisibleValue={this.keyboardVisibleValue}
+                keyboardHeightValue={this.keyboardHeightValue}
+                animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
+                keyboardHeight={this.state.keyboardHeight ?? 0}
+                headerOpacity={this.headerOpacity}
+                navigation={this.props.navigation}
+                onChange={this.handleChangePost}
+                isReply={!this.props.threadId}
+                onChangeFormat={this.handleChangeLayout}
+                isFocused={this.props.isFocused && !this.state.showGallery}
+                controlsOpacityValue={this.controlsOpacityValue}
+                onOpenGallery={this.handleOpenGallery}
+                inlineNodes={inlineNodes}
+                simultaneousHandlers={[]}
+                onChangeLayout={this.handleChangeLayout}
+                paddingTop={this.paddingTop}
+                onChangeNodes={this.handleChangeNodes}
+                onBeforeExport={this.handleBeforeExport}
+                onSubmit={this.handleSubmit}
+              />
+            </MediaPlayerPauser>
           </View>
-        </Panner>
+        </View>
         <GallerySheet
           show={this.state.showGallery}
           blockId={this.state.galleryBlockId}

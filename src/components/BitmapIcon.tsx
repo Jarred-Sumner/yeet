@@ -93,34 +93,34 @@ const SIZES_BY_NAME = {
     width: 41,
     height: 38
   },
-  [BitmapIconName.formatHorizontalTextMedia]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatVerticalTextMedia]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatVerticalMediaText]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatHorizontalMediaText]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatMedia]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatVerticalMediaMedia]: {
-    width: 39,
-    height: 39
-  },
-  [BitmapIconName.formatHorizontalMediaMedia]: {
-    width: 39,
-    height: 39
-  },
+  // [BitmapIconName.formatHorizontalTextMedia]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatVerticalTextMedia]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatVerticalMediaText]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatHorizontalMediaText]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatMedia]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatVerticalMediaMedia]: {
+  //   width: 39,
+  //   height: 39
+  // },
+  // [BitmapIconName.formatHorizontalMediaMedia]: {
+  //   width: 39,
+  //   height: 39
+  // },
   [BitmapIconName.addSticker]: {
     width: 43,
     height: 43
@@ -256,7 +256,6 @@ export const BitmapIconTwitterDiscuss = ({
 );
 
 export const BitmapIconFormatHorizontalTextMedia = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage
@@ -265,7 +264,6 @@ export const BitmapIconFormatHorizontalTextMedia = ({
   />
 );
 export const BitmapIconFormatVerticalTextMedia = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage
@@ -274,7 +272,6 @@ export const BitmapIconFormatVerticalTextMedia = ({
   />
 );
 export const BitmapIconFormatVerticalMediaText = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage
@@ -283,7 +280,6 @@ export const BitmapIconFormatVerticalMediaText = ({
   />
 );
 export const BitmapIconFormatHorizontalMediaText = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage
@@ -292,13 +288,11 @@ export const BitmapIconFormatHorizontalMediaText = ({
   />
 );
 export const BitmapIconFormatMedia = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage {...otherProps} name={BitmapIconName.formatMedia} />
 );
 export const BitmapIconFormatVerticalMediaMedia = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage
@@ -307,7 +301,6 @@ export const BitmapIconFormatVerticalMediaMedia = ({
   />
 );
 export const BitmapIconFormatHorizontalMediaMedia = ({
-  style,
   ...otherProps
 }: Partial<ImageProps>) => (
   <BitmapIconImage

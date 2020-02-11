@@ -5,14 +5,22 @@ const options = {
   ignoreAndroidSystemSettings: false
 };
 
+const trigger = (type, opts) => {
+  if (global.YeetJSI?.hapticFeedback) {
+    return global.YeetJSI?.hapticFeedback(type, opts);
+  } else {
+    return ReactNativeHapticFeedback.trigger(type, opts);
+  }
+};
+
 export const sendLightFeedback = () => {
-  ReactNativeHapticFeedback.trigger("impactLight", options);
+  trigger("impactLight", options);
 };
 
 export const sendSelectionFeedback = () => {
-  ReactNativeHapticFeedback.trigger("selection", options);
+  trigger("selection", options);
 };
 
 export const sendSuccessNotification = () => {
-  ReactNativeHapticFeedback.trigger("notificationSuccess", options);
+  trigger("notificationSuccess", options);
 };

@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
-    width: POST_WIDTH,
+    width: SCREEN_DIMENSIONS.width,
     flex: 1,
     position: "relative"
   },
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   container: {
-    width: POST_WIDTH
+    width: SCREEN_DIMENSIONS.width
   },
   wrapper: {
     position: "relative",
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flex: 1,
     flexShrink: 0,
-    width: POST_WIDTH,
+    width: SCREEN_DIMENSIONS.width,
     alignSelf: "center"
   },
 
@@ -556,7 +556,8 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleChangeFocusedBlock = (block: PostBlockType) => {
     if (this.state.focusType === FocusType.absolute) {
-      const node = { ...this.props.inlineNodes[block.id], block };
+      const node = { ...this.focusedNode, block };
+
       this.props.onChangeNodes({
         ...this.props.inlineNodes,
         [node.block.id]: node
@@ -1285,31 +1286,21 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
   handleChangeOverrides = overrides => {
-    const _block: TextPostBlock = {
-      ...this.focusedBlock,
-      config: {
-        ...this.focusedBlock.config,
-        overrides: { ...this.focusedBlock.config.overrides, ...overrides }
-      }
-    };
+    const _block: TextPostBlock = cloneDeep(this.focusedBlock);
+    Object.assign(_block.config.overrides ?? {}, overrides);
 
     this.handleChangeFocusedBlock(_block);
   };
 
   handleChangeBorderType = (border: TextBorderType, overrides: Object) => {
-    let block = {
-      ...this.focusedBlock,
-      config: {
-        ...this.focusedBlock.config,
-        overrides: { ...this.focusedBlock.config.overrides, ...overrides },
-        border
-      }
-    };
+    const _block: TextPostBlock = cloneDeep(this.focusedBlock);
 
+    _block.config.border = border;
     if (overrides) {
-      block.config.overrides = overrides;
+      Object.assign(_block.config.overrides, overrides);
     }
-    this.handleChangeFocusedBlock(block);
+
+    this.handleChangeFocusedBlock(_block);
   };
 
   handleBack = () => {
@@ -1334,10 +1325,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   });
 
   get postContainerStyle() {
-    return this.getPostContainerStyle(
-      this.props.post,
-      this.props.bounds?.width || POST_WIDTH
-    );
+    return this.getPostContainerStyle(this.props.post, SCREEN_DIMENSIONS.width);
   }
 
   _handleUpdateBlockFrame = async (
@@ -1388,7 +1376,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     const {
       bounds = {
-        width: POST_WIDTH,
+        width: SCREEN_DIMENSIONS.width,
         height: SCREEN_DIMENSIONS.height,
         x: minX,
         y: minY
@@ -1396,7 +1384,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     } = this.state;
 
     const sizeStyle = {
-      width: bounds.width || POST_WIDTH,
+      width: bounds.width || SCREEN_DIMENSIONS.width,
       height: bounds.height || SCREEN_DIMENSIONS.height
     };
 
@@ -1468,13 +1456,13 @@ class RawwPostEditor extends React.Component<Props, State> {
                         this.keyboardHeightValue,
                         this.props.offsetY
                       ),
-                      -20
+                      -40
                     ),
                     Animated.add(
                       this.keyboardHeightValue,
                       Animated.sub(
                         Animated.sub(this.props.scrollY, this.props.offsetY),
-                        20
+                        40
                       )
                     )
                   )
@@ -1692,6 +1680,8 @@ class RawwPostEditor extends React.Component<Props, State> {
               keyboardVisibleValue={this.keyboardVisibleValue}
               focusTypeValue={this.focusTypeValue}
               nodeListRef={this.nodeListRef}
+              onChangeLayout={this.props.onChangeLayout}
+              layout={this.props.post.layout}
             ></ActiveLayer>
           </Layer>
         </View>

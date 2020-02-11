@@ -1,13 +1,11 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { TouchableOpacity } from "react-native-gesture-handler";
-import Animated from "react-native-reanimated";
 import {
-  BitmapIconAddGif,
-  BitmapIconAddPhoto,
-  BitmapIconAddSticker,
-  BitmapIconAddText
-} from "../BitmapIcon";
+  TouchableOpacity,
+  BorderlessButton
+} from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import { IconAddText, IconCameraRoll, IconSearch, IconShuffle } from "../Icon";
 
 export enum ToolbarType {
   default = "default",
@@ -18,20 +16,25 @@ export enum ToolbarType {
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    justifyContent: "space-evenly",
+    justifyContent: "center",
 
     overflow: "visible",
 
     alignItems: "center",
+    paddingLeft: 20,
     flex: 1,
-    maxWidth: 240
+    maxWidth: "100%"
+  },
+  spacer: {
+    width: 20,
+    height: 0,
+    opacity: 0
   },
   buttonContainer: {
     position: "relative",
     justifyContent: "center",
-    flexShrink: 0,
-    flexGrow: 1,
-    height: 50,
+    height: 44,
+    width: 48,
     overflow: "visible"
   },
   plusIcon: {
@@ -43,15 +46,15 @@ const styles = StyleSheet.create({
 });
 
 export const ToolbarButton = ({ icon, size, onPress, color, isActive }) => (
-  <TouchableOpacity style={styles.touchable} onPressIn={onPress}>
+  <BorderlessButton style={styles.touchable} onPress={onPress}>
     <View style={styles.buttonContainer}>{icon}</View>
-  </TouchableOpacity>
+  </BorderlessButton>
 );
 
 export const TextToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      icon={<BitmapIconAddText />}
+      icon={<IconAddText size={20} color="white" />}
       size={30}
       isActive={isActive}
       color="white"
@@ -63,19 +66,7 @@ export const TextToolbarButton = ({ isActive, onPress }) => {
 const PhotoToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      icon={<BitmapIconAddPhoto />}
-      size={30}
-      isActive={isActive}
-      color="white"
-      onPress={onPress}
-    />
-  );
-};
-
-const GifToolbarButton = ({ isActive, onPress }) => {
-  return (
-    <ToolbarButton
-      icon={<BitmapIconAddGif />}
+      icon={<IconCameraRoll size={20} color="white" />}
       size={30}
       isActive={isActive}
       color="white"
@@ -87,7 +78,7 @@ const GifToolbarButton = ({ isActive, onPress }) => {
 const StickerToolbarButton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
-      icon={<BitmapIconAddSticker />}
+      icon={<IconSearch size={24} color="white" />}
       size={36}
       isActive={isActive}
       color="white"
@@ -95,6 +86,16 @@ const StickerToolbarButton = ({ isActive, onPress }) => {
     />
   );
 };
+
+const ExampleToolbarButton = ({ onPress }) => (
+  <ToolbarButton
+    icon={<IconShuffle size={20} color="white" />}
+    size={36}
+    isActive={false}
+    color="white"
+    onPress={onPress}
+  />
+);
 
 export enum ToolbarButtonType {
   sticker = "sticker",
@@ -113,6 +114,9 @@ export const DefaultToolbar = ({
   onPress,
   children,
   onBack,
+  exampleCount,
+  hasExamples,
+  onPressExample,
   isModal,
   type = ToolbarType.default
 }) => {
@@ -153,22 +157,26 @@ export const DefaultToolbar = ({
         isActive={activeButton === ToolbarButtonType.text}
         onPress={onPressText}
       />
+      <View style={styles.spacer} />
       <PhotoToolbarButton
         isActive={activeButton === ToolbarButtonType.photo}
         onPress={onPressPhoto}
       />
+      <View style={styles.spacer} />
       <StickerToolbarButton
         isActive={activeButton === ToolbarButtonType.sticker}
         onPress={onPressSticker}
       />
+      {hasExamples && (
+        <>
+          <View style={styles.spacer} />
+          <ExampleToolbarButton isActive={false} onPress={onPressExample} />
+        </>
+      )}
     </>
   );
 
-  return (
-    <Animated.View pointerEvents="box-none" style={styles.container}>
-      {_children}
-    </Animated.View>
-  );
+  return <View style={styles.container}>{_children}</View>;
 };
 
 export default DefaultToolbar;

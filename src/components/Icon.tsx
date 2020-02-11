@@ -10,6 +10,7 @@ export const AnimatedIcon = Animated.createAnimatedComponent(Icon);
 // ➜ cat src/components/icon/config.json | jq .glyphs[].search[0]
 export enum IconName {
   add = "add",
+  addText = "addtext",
   arrowLeft = "arrow-left",
   back = "back",
   background = "background",
@@ -19,6 +20,7 @@ export enum IconName {
   die4 = "die4",
   clock = "clock",
   die5 = "die5",
+  shuffle = "shuffle",
   die6 = "die6",
   circleArrowUp = "circlearrowup",
   circleArrowRight = "circlearrowright",
@@ -284,6 +286,7 @@ export const IconDice = props => <Icon name={IconName.dice} {...props} />;
 export const IconCircleArrowUp = props => (
   <Icon name={IconName.circleArrowUp} {...props} />
 );
+export const IconShuffle = props => <Icon name={IconName.shuffle} {...props} />;
 export const IconCircleArrowRight = props => (
   <Icon name={IconName.circleArrowRight} {...props} />
 );
@@ -293,3 +296,4 @@ export const IconCircleArrowLeft = props => (
 export const IconCircleArrowDown = props => (
   <Icon name={IconName.circleArrowDown} {...props} />
 );
+export const IconAddText = props => <Icon name={IconName.addText} {...props} />;

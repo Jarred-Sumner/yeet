@@ -9277,9 +9277,9 @@ react-native-permissions@2.0.0-rc.0:
   resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-2.0.0-rc.0.tgz#b2a272d23636d35596e3f6b18ec57c52b7214014"
   integrity sha512-uyHS/e+Nyp3B4MOce7Gh5UITMuHNFZUL/iYVRiR73JWOK8XJ9OywoLu+A/MreyQBVjuaSVZTT/e5xzYj/MzqFw==
 
-"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#ef88d65":
+"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#yeet":
   version "1.4.0"
-  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#ef88d6595b666b07959eddc44d1b684665094f9f"
+  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#d94c6606178acc8a2e42c44264ec47f9143d43ae"
 
 react-native-redash@^7.5.1:
   version "7.5.1"

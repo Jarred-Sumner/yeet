@@ -1,9 +1,9 @@
 import chroma from "chroma-js";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
-import { BaseButton } from "react-native-gesture-handler";
+import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { COLORS, SPACING } from "../../lib/styles";
 import { normalizeBackgroundColor } from "../Posts/_normalizedBackgroundColor";
+import { BaseButton } from "react-native-gesture-handler";
 
 export type ColorSwatch = {
   backgroundColor: string;
@@ -19,41 +19,41 @@ export const colorSwatchKey = ({ backgroundColor, color }: ColorSwatch) =>
 
 export const COMMENT_COLORS: Array<ColorSwatch> = [
   {
-    backgroundColor: normalizeBackgroundColor("#000"),
+    backgroundColor: "#FFFFFF",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("#FC6767"),
-    color: "white"
-  },
-
-  {
-    backgroundColor: normalizeBackgroundColor("#FCC067"),
+    backgroundColor: "#000000",
     color: "white"
   },
 
   {
-    backgroundColor: normalizeBackgroundColor("#C3FC67"),
+    backgroundColor: "#1B30ED",
+    color: "white"
+  },
+
+  {
+    backgroundColor: "#25F4C3",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("#67ABFC"),
+    backgroundColor: "#D42A53",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("#67FCCF"),
+    backgroundColor: "#FDC638",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("#A067FC"),
+    backgroundColor: "#A067FC",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("#F967FC"),
+    backgroundColor: "#F967FC",
     color: "white"
   },
   {
-    backgroundColor: normalizeBackgroundColor("rgb(212,18,15)"),
+    backgroundColor: "rgb(212,18,15)",
     color: "white"
   }
 ];
@@ -70,14 +70,14 @@ const styles = StyleSheet.create({
   },
   color: {
     overflow: "hidden",
-    borderWidth: 3
+    borderWidth: 2
   },
   selectableContainer: {
     paddingHorizontal: SPACING.half,
     alignItems: "center",
+
     justifyContent: "center",
-    paddingBottom: 3,
-    borderBottomWidth: 3
+    paddingBottom: 2
   },
   selectedBorder: {
     backgroundColor: COLORS.primary
@@ -124,6 +124,7 @@ export const SelectableColorSwatch = ({
   size,
   height,
   waitFor,
+  selectedSize,
   selected,
   selectedStyle,
   bottomBorderSelected = true,
@@ -131,34 +132,29 @@ export const SelectableColorSwatch = ({
 }) => {
   const handlePress = React.useCallback(() => {
     // if (handlerState === State.END) {
-    onPress({ backgroundColor, color });
+    onPress(backgroundColor);
     // }
   }, [backgroundColor, color]);
 
-  const selectedColor =
-    backgroundColor && backgroundColor !== "transparent"
-      ? chroma(backgroundColor)
-          .alpha(0.5)
-          .css()
-      : COLORS.primaryDark;
-
   return (
-    <BaseButton onPress={handlePress}>
+    <BaseButton style={{ overflow: "visible" }} onPress={handlePress}>
       <View
         style={[
           styles.selectableContainer,
           {
             height
           },
-          selected &&
-            (selectedStyle || {
-              borderBottomColor: selected ? selectedColor : "transparent"
-            })
+          selected && selectedStyle,
+          {
+            transform: [
+              { scale: selectedSize && selected ? selectedSize / size : 1 }
+            ]
+          }
         ]}
       >
         <ColorSwatchComponent
-          backgroundColor={backgroundColor}
           color={color}
+          backgroundColor={backgroundColor}
           size={size}
         />
       </View>

@@ -11,6 +11,9 @@ import {
 } from "../Button";
 import { SPACING, COLORS } from "../../lib/styles";
 import Animated from "react-native-reanimated";
+import { BaseButton, BorderlessButton } from "react-native-gesture-handler";
+import { MediumText } from "../Text";
+import { IconChevronRight } from "../Icon";
 
 export const CAROUSEL_BACKGROUND = "rgba(15, 10, 15, 0.97)";
 
@@ -21,14 +24,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 9999,
+
     overflow: "visible",
     height: CAROUSEL_HEIGHT
+  },
+  finishButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: SPACING.normal,
+    overflow: "visible"
+  },
+  finishLabel: {
+    fontSize: 14,
+    color: "rgb(204, 204, 204)"
+  },
+  finishChevron: {
+    marginLeft: 8
   },
   content: {
     height: CAROUSEL_HEIGHT,
     flexDirection: "row",
+    paddingLeft: SPACING.normal,
+    paddingTop: TOP_Y,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    alignItems: "center",
+
+    justifyContent: "space-between",
     overflow: "visible",
-    backgroundColor: CAROUSEL_BACKGROUND,
     flexShrink: 0,
     shadowRadius: 1,
     shadowOffset: {
@@ -36,82 +58,11 @@ const styles = StyleSheet.create({
       height: 1
     },
     shadowColor: "rgb(0, 0, 30)",
-    shadowOpacity: 0.8,
+    shadowOpacity: 0.25,
 
     position: "relative"
-  },
-  backButtonLayer: {
-    position: "absolute",
-    width: "100%",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0
-  },
-  backButtonGradientContainer: {
-    zIndex: 0,
-    flex: 0,
-    width: "100%",
-    height: CAROUSEL_HEIGHT
-  },
-  backButton: {
-    alignSelf: "center"
-  },
-  backButtonContainer: {
-    zIndex: 1,
-    alignSelf: "center",
-    top: 0,
-    left: SPACING.normal,
-
-    height: CAROUSEL_HEIGHT,
-    paddingTop: TOP_Y,
-    flexDirection: "row",
-    alignItems: "center"
   }
 });
-
-const BackButtonGradient = ({
-  width = SCREEN_DIMENSIONS.width,
-  height = CAROUSEL_HEIGHT
-}) => (
-  <LinearGradient
-    // useAngle
-    width={width}
-    height={height}
-    pointerEvents="none"
-    start={{ x: 0, y: 0 }}
-    end={{ x: 1, y: 1 }}
-    locations={[0.0, 0.4]}
-    colors={["rgba(0,0,0, 0.95)", "rgba(0,0,0, 0)"]}
-  />
-);
-
-const BackButtonLayer = () => {
-  const backButtonBehavior = useBackButtonBehavior();
-
-  return (
-    <View pointerEvents="box-none" style={styles.backButtonLayer}>
-      <View
-        pointerEvents="none"
-        style={[StyleSheet.absoluteFill, styles.backButtonGradientContainer]}
-      >
-        <BackButtonGradient />
-      </View>
-
-      <View
-        pointerEvents="box-none"
-        style={[StyleSheet.absoluteFill, styles.backButtonContainer]}
-      >
-        <BackButton
-          color="white"
-          style={styles.backButton}
-          size={18}
-          behavior={backButtonBehavior}
-        />
-      </View>
-    </View>
-  );
-};
 
 export const PostHeader = React.forwardRef(
   (
@@ -122,42 +73,35 @@ export const PostHeader = React.forwardRef(
       translateY = 0,
       onChangeLayout,
       defaultLayout,
-      thumbnail
+      thumbnail,
+      onFinish
     },
     ref
   ) => {
+    const backButtonBehavior = useBackButtonBehavior();
+
     return (
-      <Animated.View
-        style={[
-          styles.wrapper,
-          {
-            opacity,
-            transform: [
-              { translateY },
-              {
-                translateY: Animated.cond(
-                  Animated.eq(opacity, 0),
-                  CAROUSEL_HEIGHT * -1,
-                  0
-                )
-              }
-            ]
-          }
-        ]}
-      >
+      <View style={styles.wrapper}>
         <View style={styles.content}>
-          <FormatPicker
-            value={layout}
-            ref={ref}
-            defaultLayout={defaultLayout}
-            thumbnail={thumbnail}
-            position={position}
-            onChangeLayout={onChangeLayout}
+          <BackButton
+            color={COLORS.muted}
+            style={styles.backButton}
+            size={14}
+            behavior={backButtonBehavior}
           />
 
-          <BackButtonLayer />
+          <BorderlessButton onPress={onFinish}>
+            <Animated.View style={styles.finishButton}>
+              <MediumText style={styles.finishLabel}>Finish</MediumText>
+              <IconChevronRight
+                style={styles.finishChevron}
+                color={COLORS.muted}
+                size={12}
+              />
+            </Animated.View>
+          </BorderlessButton>
         </View>
-      </Animated.View>
+      </View>
     );
   }
 );

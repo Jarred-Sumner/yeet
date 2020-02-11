@@ -1,4 +1,5 @@
 import chroma from "chroma-js";
+import { cloneDeep } from "lodash";
 import * as React from "react";
 import { ImageProps, ScrollView, StyleSheet, View } from "react-native";
 import { RectButton } from "react-native-gesture-handler";
@@ -23,8 +24,12 @@ import {
   BitmapIconTemplateMonospace,
   BitmapIconTemplatePixel
 } from "../BitmapIcon";
-import { ColorSlider } from "../ColorSlider";
 import { InputAccessoryView } from "../InputAccessoryView";
+import {
+  ColorSwatch,
+  COMMENT_COLORS,
+  SelectableColorSwatch
+} from "./ColorSwatch";
 import { BorderTypeButton, TextAlignmentButton } from "./EditorFooter";
 import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
 import { getTextBlockColor } from "./Text/TextBlockUtils";
@@ -37,18 +42,26 @@ const styles = StyleSheet.create({
     marginTop: SPACING.normal,
     flexDirection: "row",
     width: SCREEN_DIMENSIONS.width,
-    paddingHorizontal: SPACING.normal
+    overflow: "visible",
+    paddingLeft: SPACING.normal
+  },
+  colorSliderScrollView: {
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "visible"
   },
   staticWrapper: {
     backgroundColor: "rgba(0, 0, 0, 0.75)",
+    overflow: "visible",
     height: 120
   },
   wrapper: {
-    height: 120
+    height: 120,
+    overflow: "visible"
   },
   spacer: {
     marginLeft: SPACING.half,
-    marginRight: SPACING.normal,
+    marginRight: SPACING.half,
     width: 1,
     marginTop: SPACING.half,
     marginBottom: SPACING.half,
@@ -71,15 +84,17 @@ const styles = StyleSheet.create({
   },
   colorSlider: {
     flex: 1,
-    height: 13,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center"
+    // height: 13,
+    // alignItems: "center",
+    // justifyContent: "center",
+    alignSelf: "center",
+    overflow: "visible"
   },
   colorSliderContainer: {
     flex: 1,
     flexDirection: "row",
-    paddingLeft: SPACING.normal
+    alignItems: "center",
+    overflow: "hidden"
   },
   template: {
     alignItems: "center",
@@ -244,11 +259,9 @@ const RawTextInputToolbar = React.memo(
       insets
     ]);
 
-    const _overrides = block?.config?.overrides ?? {};
-
     const onChangeColor = React.useCallback(
-      ({ nativeEvent: { color } }) => {
-        let overides = { ..._overrides, color };
+      color => {
+        const overides = { color };
 
         if (isColorLight(color)) {
           overides.backgroundColor = getDarkColor(color);
@@ -263,8 +276,7 @@ const RawTextInputToolbar = React.memo(
       },
       [
         onChangeOverrides,
-        _overrides,
-
+        block,
         isColorLight,
         getDarkColor,
         isColorDark,
@@ -276,16 +288,37 @@ const RawTextInputToolbar = React.memo(
 
     const onChangeTextAlign = React.useCallback(
       textAlign => {
-        const overrides = { ..._overrides, textAlign };
+        const overrides = { textAlign };
 
         sendSelectionFeedback();
 
         onChangeOverrides(overrides);
       },
-      [onChangeOverrides, _overrides]
+      [onChangeOverrides]
     );
 
     const color = block ? getTextBlockColor(block) : "rgb(255, 255, 255)";
+
+    const renderColor = React.useCallback(
+      (swatch: ColorSwatch) => {
+        const selected =
+          chroma(swatch.backgroundColor).css("rgb") ===
+          chroma(color).css("rgb");
+
+        return (
+          <SelectableColorSwatch
+            color={swatch.color}
+            key={`${swatch.backgroundColor}-${selected}`}
+            backgroundColor={swatch.backgroundColor}
+            onPress={onChangeColor}
+            selected={selected}
+            size={24}
+            selectedSize={30}
+          />
+        );
+      },
+      [onChangeColor, color]
+    );
     return (
       <View
         onLayout={onLayout}
@@ -310,11 +343,24 @@ const RawTextInputToolbar = React.memo(
           <View style={styles.spacer} />
 
           <View style={styles.colorSliderContainer}>
-            <ColorSlider
+            <ScrollView
+              contentContainerStyle={styles.colorSliderScrollView}
+              horizontal
+              keyboardShouldPersistTaps="never"
+              disableScrollViewPanResponder
+              keyboardDismissMode="none"
+              // disableIntervalMomentum
+              alwaysBounceHorizontal
+              shouldCancelWhenOutside
+              showsHorizontalScrollIndicator={false}
+              showsVerticalScrollIndicator={false}
+              directionalLockEnabled
+              contentInsetAdjustmentBehavior="never"
+              contentInset={{ right: SPACING.double }}
               style={styles.colorSlider}
-              color={color}
-              onPress={onChangeColor}
-            />
+            >
+              {COMMENT_COLORS.map(renderColor)}
+            </ScrollView>
           </View>
         </View>
 

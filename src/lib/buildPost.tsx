@@ -48,7 +48,7 @@ if (typeof globalThis.SCREEN_DIMENSIONS === "undefined") {
   var { SCREEN_DIMENSIONS, TOP_Y } = globalThis;
 }
 
-export const POST_WIDTH = SCREEN_DIMENSIONS.width;
+export const POST_WIDTH = SCREEN_DIMENSIONS.width - 24;
 
 export const MAX_POST_HEIGHT = SCREEN_DIMENSIONS.height - TOP_Y - 100;
 export type ExampleMap = { [id: string]: Array<string> };

@@ -22,9 +22,9 @@ import {
   IconText,
   IconTrash
 } from "../Icon";
-import { SemiBoldText } from "../Text";
+import { SemiBoldText, MediumText } from "../Text";
 import { CAROUSEL_HEIGHT, TextBorderType, TextTemplate } from "./NewPostFormat";
-import { CAROUSEL_BACKGROUND } from "./PostHeader";
+import { CAROUSEL_BACKGROUND, PostHeader } from "./PostHeader";
 import {
   isTextBlockAlignEnabled,
   getTextBlockColor,
@@ -37,8 +37,9 @@ import {
 import { ToolbarType } from "./Toolbar";
 import { sendSelectionFeedback } from "../../lib/Vibration";
 import { snapButtonValue } from "../../lib/animations";
+import FormatPicker from "./FormatPicker";
 
-export const FOOTER_HEIGHT = BOTTOM_Y + 50 + SPACING.half * 2;
+export const FOOTER_HEIGHT = BOTTOM_Y + 120;
 
 const styles = StyleSheet.create({
   footerSide: {
@@ -140,26 +141,25 @@ const styles = StyleSheet.create({
     // shadowColor: "rgb(0, 0, 30)",
     // shadowOpacity: 0.8,
 
-    justifyContent: "space-between",
     width: "100%",
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
     overflow: "visible",
-    flexDirection: "row",
-    paddingRight: SPACING.normal,
-    backgroundColor: CAROUSEL_BACKGROUND
+
+    justifyContent: "center"
   },
   doneButton: {
-    paddingLeft: SPACING.normal,
+    paddingHorizontal: SPACING.normal,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center"
   },
   doneButtonLabel: {
-    fontSize: 18,
+    fontSize: 17,
     color: "white"
   },
   footerContainer: {
     paddingTop: SPACING.half,
-    paddingBottom: BOTTOM_Y
+    paddingBottom: SPACING.half
   },
   header: {
     height: CAROUSEL_HEIGHT,
@@ -167,6 +167,14 @@ const styles = StyleSheet.create({
   },
   footer: {
     bottom: 0
+  },
+  formatPicker: {
+    paddingTop: 12,
+    paddingBottom: BOTTOM_Y,
+    width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    flexDirection: "row"
   }
 });
 
@@ -208,9 +216,6 @@ export const BorderTypeButton = ({
 
   const { template = TextTemplate.basic } = block?.config ?? {};
   const border = block ? getBorderType(block) : TextBorderType.hidden;
-  const overrides = React.useMemo(() => block?.config?.overrides ?? {}, [
-    block
-  ]);
 
   let iconType = "fill";
   const Icon = IconText;
@@ -253,7 +258,6 @@ export const BorderTypeButton = ({
 
     if (shouldFlipColors) {
       onChange(border, {
-        ...overrides,
         color: backgroundColor,
         backgroundColor: color
       });
@@ -261,16 +265,13 @@ export const BorderTypeButton = ({
       let currentIndex = supportedTypes.indexOf(border);
       const nextType = supportedTypes[currentIndex + 1] ?? supportedTypes[0];
 
-      onChange(nextType, {
-        ...overrides
-      });
+      onChange(nextType);
     }
   }, [
     backgroundColor,
     color,
     supportedTypes,
     block,
-    overrides,
     template,
     border,
     onChange
@@ -414,7 +415,7 @@ export const TextHeader = ({
         <View style={[styles.footerSide, styles.rightHeaderSide]}>
           <BorderlessButton onPress={onBack}>
             <View style={styles.doneButton}>
-              <SemiBoldText style={styles.doneButtonLabel}>Done</SemiBoldText>
+              <MediumText style={styles.doneButtonLabel}>Done</MediumText>
             </View>
           </BorderlessButton>
         </View>
@@ -436,6 +437,7 @@ export const EditorHeader = ({
   onChangeBorderType,
   focusType,
   onChangeOverrides,
+  onSend,
   inputRef,
   onBack
 }) => {
@@ -451,6 +453,8 @@ export const EditorHeader = ({
         focusType={focusType}
       />
     );
+  } else if (!focusType) {
+    return <PostHeader onFinish={onSend} />;
   } else {
     return null;
   }
@@ -499,34 +503,20 @@ export const EditorFooter = ({
   exampleIndex,
   onPressSend,
   onPressExample,
+  layout,
+  onChangeLayout,
   hasExamples = false,
   waitFor,
   toolbar
 }) => {
   return (
-    <View pointerEvents="box-none" style={[styles.wrapper, styles.footer]}>
-      {hasExamples && (
-        <View pointerEvents="box-none" style={styles.subfooter}>
-          <ExampleCountButton
-            exampleCount={exampleCount}
-            exampleIndex={exampleIndex}
-            onPress={onPressExample}
-          />
-        </View>
-      )}
-
-      <View
-        pointerEvents="box-none"
-        style={[styles.container, styles.footerContainer]}
-      >
-        {toolbar}
-
-        <View
-          pointerEvents="box-none"
-          style={[styles.footerSide, styles.footerSideRight]}
-        >
-          <NextButton onPress={onPressSend} waitFor={waitFor} />
-        </View>
+    <View
+      pointerEvents="box-none"
+      style={[styles.wrapper, styles.footer, styles.container]}
+    >
+      <View style={styles.footerContainer}>{toolbar}</View>
+      <View style={styles.formatPicker}>
+        <FormatPicker value={layout} onChangeLayout={onChangeLayout} />
       </View>
     </View>
   );

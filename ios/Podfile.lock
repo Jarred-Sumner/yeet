@@ -458,7 +458,13 @@ PODS:
   - RNReactNativeHapticFeedback (1.8.2):
     - React
   - RNReanimated (1.4.0):
+    - Folly
     - React
+    - React-cxxreact
+    - React-jsi
+    - React-jsiexecutor
+    - React-jsinspector
+    - ReactCommon/jscallinvoker
   - RNScreens (2.0.0-beta.1):
     - React
   - RNSecureKeyStore (1.0.0):
@@ -930,7 +936,7 @@ SPEC CHECKSUMS:
   RNInAppBrowser: 0800f17fd7ed9fc503eb68e427befebb41ee719b
   RNPermissions: 86932e45b170515f71f76751bc9fa055910b049f
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
-  RNReanimated: b2ab0b693dddd2339bd2f300e770f6302d2e960c
+  RNReanimated: 501bc8bf00109c2d18f2e5ad8d72e6a031ca6702
   RNScreens: 9d9519aa32b6bc9c4a3ab8ea4d3d86932aa29588
   RNSecureKeyStore: f1ad870e53806453039f650720d2845c678d89c8
   RNSentry: 9b1d983b2d5d1c215ba6490348fd2a4cc23a8a9d

@@ -44,7 +44,9 @@ import { MediumText } from "../components/Text";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000"
+    backgroundColor: "#000",
+    width: "100%",
+    height: "100%"
   },
   loadingWrapper: {
     height: "100%",
