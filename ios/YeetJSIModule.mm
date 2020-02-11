@@ -17,6 +17,11 @@
 #import "RCTConvert+PHotos.h"
 #import <MMKV/MMKV.h>
 #import "YeetSplashScreen.h"
+#import <RNReactNativeHapticFeedback/RNReactNativeHapticFeedback.h>
+
+@interface RNReactNativeHapticFeedback (ext)
+- (void)trigger:(NSString *)type options:(NSDictionary *)options;
+@end
 
 
 @interface RCTUIManager (ext)
@@ -91,6 +96,9 @@ void YeetJSIModule::install(RCTCxxBridge *bridge) {
 jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name) {
   auto methodName = name.utf8(runtime);
 
+  RCTCxxBridge* _bridge = bridge_;
+  std::shared_ptr<facebook::react::JSCallInvoker> jsInvoker = _jsInvoker;
+
   if (methodName == "photosAuthorizationStatus") {
     NSString *value = [RCTConvert PHAuthorizationStatusValuesReversed][@([PHPhotoLibrary authorizationStatus])];
 
@@ -101,8 +109,7 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
     }
 
   } else if (methodName == "scrollViewMetrics") {
-    RCTCxxBridge* _bridge = bridge_;
-    std::shared_ptr<facebook::react::JSCallInvoker> jsInvoker = _jsInvoker;
+
 
      return jsi::Function::createFromHostFunction(runtime, name, 1, [_bridge, jsInvoker](
            jsi::Runtime &runtime,
@@ -259,6 +266,25 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
       return jsi::Value(true);
     });
 
+  } else if (methodName == "hapticFeedback") {
+    RCTBridge *rctBridge = _bridge;
+    RNReactNativeHapticFeedback *haptic = [rctBridge moduleForClass:[RNReactNativeHapticFeedback class]];
+
+
+    return jsi::Function::createFromHostFunction(runtime, name, 2, [haptic, jsInvoker](
+             jsi::Runtime &runtime,
+             const jsi::Value &thisValue,
+             const jsi::Value *arguments,
+             size_t count) -> jsi::Value {
+
+      NSDictionary *options = convertJSIObjectToNSDictionary(runtime, arguments[1].asObject(runtime), jsInvoker);
+      NSString *type = convertJSIStringToNSString(runtime, arguments[0].asString(runtime));
+
+      [haptic trigger:type options:options];
+
+
+      return jsi::Value(true);
+    });
   }
 
   return jsi::Value::undefined();

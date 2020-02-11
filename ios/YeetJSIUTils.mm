@@ -12,6 +12,7 @@
 #import <React/RCTBridge+Private.h>
 #import <React/RCTBridgeModule.h>
 
+
 jsi::Value convertObjCObjectToJSIValue(jsi::Runtime &runtime, id value)
 {
   if ([value isKindOfClass:[NSString class]]) {
@@ -73,9 +74,6 @@ std::vector<jsi::Value> convertNSArrayToStdVector(jsi::Runtime &runtime, NSArray
   }
   return result;
 }
-
-
-
 
 NSString *convertJSIStringToNSString(jsi::Runtime &runtime, const jsi::String &value)
 {
