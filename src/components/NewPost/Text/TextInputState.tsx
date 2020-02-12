@@ -1,4 +1,5 @@
 import { UIManager, Platform } from "react-native";
+import { blurYeetTextInput, focusYeetTextInput } from "../../../lib/Yeet";
 
 let currentlyFocusedID: number | null = null;
 const inputs = new Set();
@@ -32,7 +33,7 @@ function focusTextInput(textFieldID: number | null) {
   if (currentlyFocusedID !== textFieldID && textFieldID != null) {
     focusField(textFieldID);
     if (Platform.OS === "ios") {
-      UIManager.focus(textFieldID);
+      focusYeetTextInput(textFieldID);
     } else if (Platform.OS === "android") {
       UIManager.dispatchViewManagerCommand(
         textFieldID,
@@ -53,7 +54,7 @@ function blurTextInput(textFieldID: number | null) {
   if (currentlyFocusedID === textFieldID && textFieldID != null) {
     blurField(textFieldID);
     if (Platform.OS === "ios") {
-      UIManager.blur(textFieldID);
+      blurYeetTextInput(textFieldID);
     } else if (Platform.OS === "android") {
       UIManager.dispatchViewManagerCommand(
         textFieldID,

@@ -2039,6 +2039,11 @@
   version "1.1.1"
   resolved "https://github.com/Jarred-Sumner/react-native-segmented-control.git#6fc687a2d2b73f0167f47050bc79ec137d6129d3"
 
+"@react-native-community/viewpager@^3.3.0":
+  version "3.3.0"
+  resolved "https://registry.yarnpkg.com/@react-native-community/viewpager/-/viewpager-3.3.0.tgz#e613747a43a31a6f3278f817ba96fdaaa7941f23"
+  integrity sha512-tyzh79l4t/hxiyS9QD3LRmWMs8KVkZzjrkQ8U8+8To1wmvVCBtp8BenvNsDLTBO7CpO/YmiThpmIdEZMr1WuVw==
+
 "@react-native-firebase/analytics@6.0.3":
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/@react-native-firebase/analytics/-/analytics-6.0.3.tgz#5a11edeb48a1c4086a1acf91d741f45bed1a9cba"
@@ -2063,7 +2068,19 @@
   resolved "https://registry.yarnpkg.com/@react-native-firebase/perf/-/perf-6.0.3.tgz#34a09ad22bddbd4f7350e1c651a7a627d1e3d931"
   integrity sha512-rtJW10xXqeC4w9poCa4iSGhMbCRXT24c4T7DgMS8b5PYGFwJ7aZfWk97PXhTkiSDcXrfqr2SrWndZaAebs9Rhg==
 
-"@react-navigation/core@5.0.0", "@react-navigation/core@^5.0.0":
+"@react-navigation/core@5.1.1", "@react-navigation/core@^5.1.1":
+  version "5.1.1"
+  resolved "https://registry.yarnpkg.com/@react-navigation/core/-/core-5.1.1.tgz#0b2430e0e6c3658b2fb1e9a23e6abb7fd4103a7a"
+  integrity sha512-2/yerej7vjD2IOX8+P45oqkYXW6fhDSTJEdTc6FRsUHVbOH8goiSp9hoMdRRWx1HJIZXF0s4AWL0UDsMdQksIQ==
+  dependencies:
+    "@react-navigation/routers" "^5.0.1"
+    escape-string-regexp "^2.0.0"
+    query-string "^6.10.1"
+    react-is "^16.12.0"
+    shortid "^2.2.15"
+    use-subscription "^1.3.0"
+
+"@react-navigation/core@^5.0.0":
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/@react-navigation/core/-/core-5.0.0.tgz#66f5b948a92e7a7f913d2acdbe4e5de516c836cb"
   integrity sha512-5OmyhTA+3gRsCJqaXIrw99OzvBq2qDW0Jiyih30UyiBbtgOPK0asp43EZFuY8JnoAHaWtqbnT7Wa0uCjr7owpg==
@@ -2074,19 +2091,17 @@
     shortid "^2.2.15"
     use-subscription "^1.3.0"
 
-"@react-navigation/native-stack@^5.0.0":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@react-navigation/native-stack/-/native-stack-5.0.0.tgz#51ed9ae993dc10a4964c7850573c3a77022b200d"
-  integrity sha512-ue+vwAr4HYRe84Wo7Gddx+jh3ukUFqWi2KCOncn1WXCAG3snV5cZS6ewg1SMvtohzwa92Vi0dVPNxBtx258lUQ==
-  dependencies:
-    "@react-navigation/routers" "^5.0.0"
+"@react-navigation/native-stack@5.0.2":
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/@react-navigation/native-stack/-/native-stack-5.0.2.tgz#2bdfc3921323503876a5e278a8a646c1876541ff"
+  integrity sha512-bHWnJ7IHbKbdVLlnaSOvrzIX2456N/EyaKjBJqcNizOINUjbgNb8MoyKHwaqZgplm95QNmpD5DNpyNLGiSZoUw==
 
-"@react-navigation/native@latest":
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/@react-navigation/native/-/native-5.0.0.tgz#6fcf4a24249229005ddfaf40be1d35fcbe0e16c2"
-  integrity sha512-+lXBHKFEsA99D7b0B4AngM1b8hjNYdKSGUyz4JtoVY9FYLEJgCUp6EhNyouMWq5yr2x+z9mPIuIMbitHKF04SA==
+"@react-navigation/native@5.0.2":
+  version "5.0.2"
+  resolved "https://registry.yarnpkg.com/@react-navigation/native/-/native-5.0.2.tgz#6812fe50b76a39a0a5d02bcdfeed2b573dce3b34"
+  integrity sha512-nav1zgAt4aYDDvVzlrdxrOIpha/KjhJcPu/pKoOqtATinYjpFI/eAu2SnxeM63V98/7fZH5yz7lPDngjJJ8HIg==
   dependencies:
-    "@react-navigation/core" "^5.0.0"
+    "@react-navigation/core" "^5.1.1"
 
 "@react-navigation/routers@^5.0.0":
   version "5.0.0"
@@ -2094,6 +2109,13 @@
   integrity sha512-FVjYTCASs52bQJO6Y54GpRAVWABiePfPvVFohRmkpXbSFB46CCTRtAndDZPWt1UwWIm0JedWJigD9IXB66KBjw==
   dependencies:
     "@react-navigation/core" "^5.0.0"
+    shortid "^2.2.15"
+
+"@react-navigation/routers@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@react-navigation/routers/-/routers-5.0.1.tgz#211969a60ec8ea84b308713a3d3f341ef5d82547"
+  integrity sha512-uMwjDCoCaPLegEcEOs34ocmJOIy1JMkKv9nWShMdBokk3cISv9oJYhv2Yr2YmhLaMQ3ZMzFjMQJh0DsvZ/7UOQ==
+  dependencies:
     shortid "^2.2.15"
 
 "@react-navigation/stack@latest":
@@ -9020,7 +9042,7 @@ qs@~6.5.2:
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.5.2.tgz#cb3ae806e8740444584ef154ce8ee98d403f3e36"
   integrity sha512-N5ZAX4/LxJmF+7wN74pUD6qAh9/wnvdQcjq9TZjevvXzSUo7bfmw91saqMjzGS2xq91/odN2dW/WOl7qQHNDGA==
 
-query-string@^6.9.0:
+query-string@^6.10.1, query-string@^6.9.0:
   version "6.10.1"
   resolved "https://registry.yarnpkg.com/query-string/-/query-string-6.10.1.tgz#30b3505f6fca741d5ae541964d1b3ae9dc2a0de8"
   integrity sha512-SHTUV6gDlgMXg/AQUuLpTiBtW/etZ9JT6k6RCtCyqADquApLX0Aq5oK/s5UeTUAWBG50IExjIr587GqfXRfM4A==
@@ -9277,9 +9299,9 @@ react-native-permissions@2.0.0-rc.0:
   resolved "https://registry.yarnpkg.com/react-native-permissions/-/react-native-permissions-2.0.0-rc.0.tgz#b2a272d23636d35596e3f6b18ec57c52b7214014"
   integrity sha512-uyHS/e+Nyp3B4MOce7Gh5UITMuHNFZUL/iYVRiR73JWOK8XJ9OywoLu+A/MreyQBVjuaSVZTT/e5xzYj/MzqFw==
 
-"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#yeet":
+"react-native-reanimated@ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#ef88d65":
   version "1.4.0"
-  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#d94c6606178acc8a2e42c44264ec47f9143d43ae"
+  resolved "ssh://git@github.com:Jarred-Sumner/react-native-reanimated.git#ef88d6595b666b07959eddc44d1b684665094f9f"
 
 react-native-redash@^7.5.1:
   version "7.5.1"
@@ -9436,11 +9458,6 @@ react-navigation-animated-switch@^0.4.1:
   version "0.4.1"
   resolved "https://registry.yarnpkg.com/react-navigation-animated-switch/-/react-navigation-animated-switch-0.4.1.tgz#5928d0cff40d2bfcb2a60f1baabebf09ed6c1b09"
   integrity sha512-p3W/2ecwet2w1mkZzzH3x9KXnnRTLUq3Z4MD+QlsCm/dPSVAz/4UZwT+1iYfqS0D7Zl6K/RXol7aNOrcuDldxA==
-
-react-navigation-hooks@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/react-navigation-hooks/-/react-navigation-hooks-1.1.0.tgz#337c41a50ebc7b9030bb9d9333cd4fd6e1f86b68"
-  integrity sha512-ZY/aiYJ88KXaOo8iOa4171O/0x6ztGhUPd2OYzdaJhLT/tP64zi5HB/RZFImuKhaBTODXjoSpFaOTA5xpePG4g==
 
 react-navigation-shared-element@^0.5.0:
   version "0.5.0"

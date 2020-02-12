@@ -13,3 +13,6 @@ export const setItem = (key: string, value: any, type: string): any =>
   global.YeetJSI?.setItem(key, value, type);
 
 export const hideSplashScreen = () => global.YeetJSI?.hideSplashScreen();
+
+export const focusYeetTextInput = inputTag => global.YeetJSI?.focus(inputTag);
+export const blurYeetTextInput = inputTag => global.YeetJSI?.blur(inputTag);

@@ -43,6 +43,7 @@ import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import { PostHeader } from "./PostHeader";
 import TextPostBlock from "./TextPostBlock";
+import { GallerySectionItem } from "./ImagePicker/GallerySectionItem";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -419,19 +420,17 @@ export class NewPost extends React.Component<{}, State> {
     transparent = false,
     autoFocus = false
   }) => {
-    if (this.state.showGallery) {
-      return;
+    if (initialRoute === GallerySectionItem.search) {
+      this.props.navigation.push("ImagePickerSearch", {
+        onChange,
+        blockId
+      });
+    } else {
+      this.props.navigation.push("ImagePicker", {
+        onChange,
+        blockId
+      });
     }
-
-    this.setState({
-      showGallery: true,
-      galleryBlockId: blockId,
-      disableGallery: false,
-      galleryFilter: initialRoute,
-      galleryAutoFocus: autoFocus,
-      galleryTransparent: transparent
-    });
-    this.openGalleryCallback = onChange;
   };
 
   handlePressGallery = (image: YeetImageContainer) => {
@@ -498,7 +497,7 @@ export class NewPost extends React.Component<{}, State> {
           <StatusBar hidden={false} showHideTransition="slide" />
 
           <View style={[styles.transitionContainer, { backgroundColor }]}>
-            <MediaPlayerPauser isHidden={this.state.showGallery}>
+            <MediaPlayerPauser isHidden={!this.props.isFocused}>
               <PostEditor
                 bounds={this.state.bounds}
                 post={this.state.post}
@@ -518,7 +517,7 @@ export class NewPost extends React.Component<{}, State> {
                 onChange={this.handleChangePost}
                 isReply={!this.props.threadId}
                 onChangeFormat={this.handleChangeLayout}
-                isFocused={this.props.isFocused && !this.state.showGallery}
+                isFocused={this.props.isFocused}
                 controlsOpacityValue={this.controlsOpacityValue}
                 onOpenGallery={this.handleOpenGallery}
                 inlineNodes={inlineNodes}
@@ -532,7 +531,7 @@ export class NewPost extends React.Component<{}, State> {
             </MediaPlayerPauser>
           </View>
         </View>
-        <GallerySheet
+        {/* <GallerySheet
           show={this.state.showGallery}
           blockId={this.state.galleryBlockId}
           onDismiss={this.dismissGallery}
@@ -545,7 +544,7 @@ export class NewPost extends React.Component<{}, State> {
           transparentSearch={!!this.state.galleryTransparent}
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
-        />
+        /> */}
       </View>
     );
   }

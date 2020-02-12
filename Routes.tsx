@@ -73,7 +73,6 @@ const FeedStack = () => (
     <Feed.Screen name="SharePost" component={NewThreadPage} />
   </Feed.Navigator>
 );
-
 const NewPostStack = () => (
   <NewPost.Navigator screenOptions={{ headerShown: false }}>
     <NewPost.Screen
@@ -84,13 +83,7 @@ const NewPostStack = () => (
       name="ImagePicker"
       component={ImagePickerPage}
     />
-    <NewPost.Screen
-      name="ImagePickerSearch"
-      options={{
-        stackAnimation: "none"
-      }}
-      component={ImagePickerSearchPage}
-    />
+
     <NewPost.Screen name="NewPost" component={NewPostPage} />
     <NewPost.Screen name="NewThread" component={NewThreadPage} />
   </NewPost.Navigator>

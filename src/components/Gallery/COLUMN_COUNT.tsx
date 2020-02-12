@@ -1,4 +1,3 @@
-import { StyleSheet } from "react-native";
 export const COLUMN_COUNT = 3;
 export const GIF_COLUMN_COUNT = 2;
 export const MEMES_COLUMN_COUNT = 4;

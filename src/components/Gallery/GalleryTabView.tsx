@@ -1,39 +1,36 @@
-import * as React from "react";
-import { View, StyleSheet, Dimensions, Platform } from "react-native";
-import { TabView, SceneMap } from "react-native-tab-view";
-import { MediaPlayerPauser } from "../MediaPlayer";
-import {
-  GallerySectionItem,
-  FILTERS
-} from "../NewPost/ImagePicker/GallerySectionItem";
-import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
-import { GallerySectionList } from "./GallerySectionList";
-import { GalleryHeader } from "./GalleryHeader";
-import Animated from "react-native-reanimated";
-import { PanGestureHandler, FlatList } from "react-native-gesture-handler";
-import { SCREEN_DIMENSIONS } from "../../../config";
 import { cloneDeep } from "lodash";
-import { StickerFilterList } from "./FilterList/StickerFilterList";
+import * as React from "react";
+import { StyleSheet } from "react-native";
+import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
+import Animated from "react-native-reanimated";
+import { TabView } from "react-native-tab-view";
+import { SCREEN_DIMENSIONS } from "../../../config";
+import { COLORS } from "../../lib/styles";
+import {
+  FILTERS,
+  GallerySectionItem
+} from "../NewPost/ImagePicker/GallerySectionItem";
 import { AssetsFilterList } from "./FilterList/AssetFilterList";
 import { CameraRollFilterList } from "./FilterList/CameraRollFilterList";
-import { MemesFilterList } from "./FilterList/MemesFilterList";
 import { GIFsFilterList } from "./FilterList/GIFsFilterList";
+import { MemesFilterList } from "./FilterList/MemesFilterList";
 import { RecentFilterList } from "./FilterList/RecentFilterList";
-import { COLORS } from "../../lib/styles";
+import { StickerFilterList } from "./FilterList/StickerFilterList";
+import { GallerySectionList } from "./GallerySectionList";
 
 const styles = StyleSheet.create({
   sceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   modalSceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   container: {

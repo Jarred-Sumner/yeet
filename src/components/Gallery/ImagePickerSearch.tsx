@@ -179,7 +179,11 @@ export const ImagePickerSearch = ({
   const showCancel = isInputFocused || query.length > 0;
 
   return (
-    <TouchableWithoutFeedback enabled={!editable} onPress={openSearch}>
+    <TouchableWithoutFeedback
+      key="yes"
+      enabled={!editable}
+      onPress={openSearch}
+    >
       <View style={styles.container}>
         <Animated.View style={styles.searchBar}>
           <View pointerEvents="none" style={[styles.searchIcon]}>

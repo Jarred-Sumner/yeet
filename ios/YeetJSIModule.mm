@@ -18,6 +18,7 @@
 #import <MMKV/MMKV.h>
 #import "YeetSplashScreen.h"
 #import <RNReactNativeHapticFeedback/RNReactNativeHapticFeedback.h>
+#import <React/RCTShadowView.h>
 
 @interface RNReactNativeHapticFeedback (ext)
 - (void)trigger:(NSString *)type options:(NSDictionary *)options;
@@ -26,6 +27,8 @@
 
 @interface RCTUIManager (ext)
   - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
+   - (void)focus:(NSNumber *)reactTag;
+ - (void)blur:(NSNumber *)reactTag;
   - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
     - (NSMutableDictionary<NSNumber *, RCTShadowView *> *)shadowViewRegistry;
 @end
@@ -284,6 +287,42 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
 
 
       return jsi::Value(true);
+    });
+  } else if (methodName == "focus") {
+    RCTBridge *rctBridge = _bridge;
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, [rctBridge, jsInvoker](
+             jsi::Runtime &runtime,
+             const jsi::Value &thisValue,
+             const jsi::Value *arguments,
+             size_t count) -> jsi::Value {
+
+      __block NSNumber *tag = @(arguments[0].asNumber());
+
+      RCTExecuteOnMainQueue(^{
+        UIView *view = [rctBridge.uiManager viewForReactTag:tag];
+        [view reactFocus];
+        tag = nil;
+      });
+
+      return jsi::Value::undefined();
+    });
+  } else if (methodName == "blur") {
+    RCTBridge *rctBridge = _bridge;
+
+    return jsi::Function::createFromHostFunction(runtime, name, 1, [rctBridge, jsInvoker](
+             jsi::Runtime &runtime,
+             const jsi::Value &thisValue,
+             const jsi::Value *arguments,
+             size_t count) -> jsi::Value {
+
+      __block NSNumber *tag = @(arguments[0].asNumber());
+      RCTExecuteOnMainQueue(^{
+        UIView *view = [rctBridge.uiManager viewForReactTag:tag];
+        [view reactBlur];
+        tag = nil;
+      });
+      return jsi::Value::undefined();
     });
   }
 
