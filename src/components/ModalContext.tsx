@@ -1,19 +1,24 @@
 import * as React from "react";
 import ReportModal from "./ReportModal";
 import PushNotificationModal from "./PushNotificationModal";
+import ImagePickerPage from "../screens/ImagePickerPage";
 
 type ModalContextValue = {
   isReportModalShown: boolean;
   isPushNotificationModalShown: boolean;
+  isImagePickerModalShown: boolean;
   openReportModal: (id: string, type: string) => void;
   openPushNotificationModal: () => void;
+  openImagePickerModal: () => void;
 };
 
 const DEFAULT_VALUE: ModalContextValue = {
   isReportModalShown: false,
   isPushNotificationModalShown: false,
+  isImagePickerModalShown: false,
   openReportModal: (id: string, type: string) => {},
-  openPushNotificationModal: () => {}
+  openPushNotificationModal: () => {},
+  openImagePickerModal: () => {}
 };
 
 export const ModalContext = React.createContext<ModalContextValue>(
@@ -37,10 +42,18 @@ export class ModalContextProvider extends React.Component<
       contextValue: {
         ...DEFAULT_VALUE,
         openReportModal: this.openReportModal,
-        openPushNotificationModal: this.openPushNotificationModal
+        openPushNotificationModal: this.openPushNotificationModal,
+        openImagePickerModal: this.openImagePickerModal
       }
     };
   }
+  openImagePickerModal = () =>
+    this.setState({
+      contextValue: {
+        ...this.state.contextValue,
+        isImagePickerModalShown: true
+      }
+    });
 
   openPushNotificationModal = () =>
     this.setState({
@@ -77,15 +90,32 @@ export class ModalContextProvider extends React.Component<
       reportModalProps: {}
     });
 
+  dismissImagePickerModal = () =>
+    this.setState({
+      contextValue: {
+        ...this.state.contextValue,
+        isImagePickerModalShown: false
+      },
+      reportModalProps: {}
+    });
+
   render() {
     const { contextValue } = this.state;
-    const { isReportModalShown, isPushNotificationModalShown } = contextValue;
+    const {
+      isReportModalShown,
+      isPushNotificationModalShown,
+      isImagePickerModalShown
+    } = contextValue;
 
     return (
       <>
         <ModalContext.Provider value={contextValue}>
           {this.props.children}
         </ModalContext.Provider>
+
+        {isImagePickerModalShown && (
+          <ImagePickerPage isFocused onDismiss={this.dismissImagePickerModal} />
+        )}
 
         {isReportModalShown && (
           <ReportModal

@@ -55,7 +55,6 @@ export const styles = StyleSheet.create({
     flexDirection: "row"
   },
 
-  searchSpacer: { height: LIST_HEADER_HEIGHT, width: 1, marginTop: TOP_Y },
   sectionFilterButton: {
     flexDirection: "row",
     justifyContent: "center",

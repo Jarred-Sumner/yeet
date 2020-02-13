@@ -91,15 +91,11 @@ export const GalleryHeader = ({
   children,
   onPressSectionFilter,
   scrollY,
-  navigationState: { index, routes },
+  route,
+
   ...otherProps
 }) => {
-  const navigation = useNavigation();
-  const behavior = useBackButtonBehavior();
-
   const { bottom } = React.useContext(SafeAreaContext);
-
-  const tabKeys = React.useMemo(() => routes.map(({ key }) => key), [routes]);
 
   const containerStyles = [
     styles.container,
@@ -113,8 +109,8 @@ export const GalleryHeader = ({
     <View style={containerStyles}>
       <View style={styles.filter}>
         <FilterBar
-          value={routes[index].key}
-          tabs={tabKeys}
+          value={route}
+          tabs={tabs}
           onChange={jumpTo}
           light={false}
           scrollY={scrollY}

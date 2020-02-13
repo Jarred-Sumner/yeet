@@ -47,13 +47,18 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     set (newValue) {
       super.bridge = newValue
 
-      newValue.dispatchBlock({ [weak self] in
-        guard let this = self else {
-          return
-        }
+      if newValue.isLoading {
+        MediaPlayerJSIModuleInstaller.install(self)
+      } else {
+        newValue?.dispatchBlock({ [weak self] in
+          guard let this = self else {
+            return
+          }
 
-        MediaPlayerJSIModuleInstaller.install(this)
-      }, queue: RCTJSThread)
+
+          MediaPlayerJSIModuleInstaller.install(this)
+        }, queue: RCTJSThread)
+      }
 
     }
   }

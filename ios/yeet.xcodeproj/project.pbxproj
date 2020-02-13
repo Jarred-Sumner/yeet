@@ -104,6 +104,7 @@
 		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
 		83AAD7AF23E42C02001F31EF /* CameraRoll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83AAD7AE23E42C02001F31EF /* CameraRoll.swift */; };
 		83AAD7B423E546F0001F31EF /* RCTConvert+PHotost.m in Sources */ = {isa = PBXBuildFile; fileRef = 83AAD7B323E546F0001F31EF /* RCTConvert+PHotost.m */; };
+		83AF134023F3DC6B00D6924C /* PanShadowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 83AF133F23F3DC6B00D6924C /* PanShadowView.m */; };
 		83B0CACB23B6F7300010DC66 /* ExportType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CACA23B6F7300010DC66 /* ExportType.swift */; };
 		83B0CACD23B6F7490010DC66 /* MimeType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CACC23B6F7490010DC66 /* MimeType.swift */; };
 		83B0CACF23B6F77C0010DC66 /* YeetImageRect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83B0CACE23B6F77C0010DC66 /* YeetImageRect.swift */; };
@@ -120,6 +121,9 @@
 		83DC88DC2340559A00FBD467 /* MediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DB2340559A00FBD467 /* MediaSource.swift */; };
 		83DC88DE23405F0800FBD467 /* MediaPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88DD23405F0800FBD467 /* MediaPlayer.swift */; };
 		83DC88E22340607C00FBD467 /* MediaQueuePlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */; };
+		83DCFEF523F3A6C0001572E1 /* PanViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DCFEF423F3A6C0001572E1 /* PanViewController.swift */; };
+		83DCFEF723F3A75D001572E1 /* PanViewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DCFEF623F3A75D001572E1 /* PanViewSheet.swift */; };
+		83DCFEF923F3B0D8001572E1 /* PanViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83DCFEF823F3B0D8001572E1 /* PanViewManager.swift */; };
 		83E34D1E23442467001321C0 /* MediaFrameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E34D1D23442467001321C0 /* MediaFrameView.swift */; };
 		83E3E82E23B985F4007AC944 /* ContentExportResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E3E82D23B985F4007AC944 /* ContentExportResult.swift */; };
 		83E3E83023B987C4007AC944 /* ContentExportTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83E3E82F23B987C4007AC944 /* ContentExportTask.swift */; };
@@ -332,6 +336,8 @@
 		83AAD7B123E50446001F31EF /* CameraRoll.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CameraRoll.h; sourceTree = "<group>"; };
 		83AAD7B223E546F0001F31EF /* RCTConvert+PHotos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RCTConvert+PHotos.h"; sourceTree = "<group>"; };
 		83AAD7B323E546F0001F31EF /* RCTConvert+PHotost.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+PHotost.m"; sourceTree = "<group>"; };
+		83AF133E23F3DC6B00D6924C /* PanShadowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PanShadowView.h; sourceTree = "<group>"; };
+		83AF133F23F3DC6B00D6924C /* PanShadowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PanShadowView.m; sourceTree = "<group>"; };
 		83B0CACA23B6F7300010DC66 /* ExportType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportType.swift; sourceTree = "<group>"; };
 		83B0CACC23B6F7490010DC66 /* MimeType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MimeType.swift; sourceTree = "<group>"; };
 		83B0CACE23B6F77C0010DC66 /* YeetImageRect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetImageRect.swift; sourceTree = "<group>"; };
@@ -349,6 +355,10 @@
 		83DC88DB2340559A00FBD467 /* MediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaSource.swift; sourceTree = "<group>"; };
 		83DC88DD23405F0800FBD467 /* MediaPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaPlayer.swift; sourceTree = "<group>"; };
 		83DC88E12340607C00FBD467 /* MediaQueuePlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaQueuePlayer.swift; sourceTree = "<group>"; };
+		83DCFEF423F3A6C0001572E1 /* PanViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanViewController.swift; sourceTree = "<group>"; };
+		83DCFEF623F3A75D001572E1 /* PanViewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanViewSheet.swift; sourceTree = "<group>"; };
+		83DCFEF823F3B0D8001572E1 /* PanViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanViewManager.swift; sourceTree = "<group>"; };
+		83DCFEFA23F3B65C001572E1 /* PanViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PanViewManager.h; sourceTree = "<group>"; };
 		83E34D1D23442467001321C0 /* MediaFrameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaFrameView.swift; sourceTree = "<group>"; };
 		83E3E82D23B985F4007AC944 /* ContentExportResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportResult.swift; sourceTree = "<group>"; };
 		83E3E82F23B987C4007AC944 /* ContentExportTask.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportTask.swift; sourceTree = "<group>"; };
@@ -454,6 +464,9 @@
 				83304887232098D600E816E8 /* YeetWebImageDecoder.h */,
 				834CDE69236A324E006D5A74 /* YeetError.swift */,
 				8341A1EA238E1D8F00632E88 /* Log.swift */,
+				83DCFEF423F3A6C0001572E1 /* PanViewController.swift */,
+				83DCFEF623F3A75D001572E1 /* PanViewSheet.swift */,
+				83DCFEF823F3B0D8001572E1 /* PanViewManager.swift */,
 			);
 			name = yeet;
 			sourceTree = "<group>";
@@ -705,6 +718,9 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				83DCFEFA23F3B65C001572E1 /* PanViewManager.h */,
+				83AF133E23F3DC6B00D6924C /* PanShadowView.h */,
+				83AF133F23F3DC6B00D6924C /* PanShadowView.m */,
 				837D6CE923ED167900540A42 /* YeetClipboard.h */,
 				835CA06223E95A5C00829C71 /* KVCacheComplete-Swift.h */,
 				835CA06423E962CD00829C71 /* YeetBridge.h */,
@@ -1148,6 +1164,7 @@
 			files = (
 				83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */,
 				83E3E83023B987C4007AC944 /* ContentExportTask.swift in Sources */,
+				83DCFEF723F3A75D001572E1 /* PanViewSheet.swift in Sources */,
 				8371AB59237EB8A50034EF15 /* VideoPlayerView.swift in Sources */,
 				83E3E83423B9B220007AC944 /* RepeatingTimer.swift in Sources */,
 				83EF944F23B81CFF00EC37CF /* ContentExportThumbnail.swift in Sources */,
@@ -1187,13 +1204,16 @@
 				839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */,
 				837D6CE823ED15AF00540A42 /* YeetClipboardJSI.mm in Sources */,
 				83B0CAD523B6F7B40010DC66 /* YeetMedia.swift in Sources */,
+				83AF134023F3DC6B00D6924C /* PanShadowView.m in Sources */,
 				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
+				83DCFEF523F3A6C0001572E1 /* PanViewController.swift in Sources */,
 				8346978323A4250800CDE5D8 /* YeetClipboard.swift in Sources */,
 				83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */,
 				8336FE54236EC6050076F8AA /* VideoPool.swift in Sources */,
 				83B0CAD723B6F7C40010DC66 /* YeetImage.swift in Sources */,
 				8330489C23222D4800E816E8 /* EditorExport.swift in Sources */,
 				832E37EC232379FD0033E3A3 /* ContentExport.swift in Sources */,
+				83DCFEF923F3B0D8001572E1 /* PanViewManager.swift in Sources */,
 				83D57E3A23CBC797002178AC /* UIView+keyboardAnimation.swift in Sources */,
 				837ABA4523E2BF0100E83F31 /* MediaPlayerJSIModule.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,

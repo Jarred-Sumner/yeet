@@ -35,6 +35,8 @@ import {
 import SEARCH_HASHTAG_QUERY from "../../lib/SearchHashtag.graphql";
 import GalleryItem from "../Gallery/GalleryItem";
 import { postToCell } from "../Gallery/GalleryFilterList";
+import { PanSheetContext } from "../Gallery/PanSheetView";
+import { PanSheetViewSize } from "../../lib/Yeet";
 
 const styles = StyleSheet.create({
   activeSearchTagButton: {
@@ -290,8 +292,27 @@ const SearchTagListComponent = ({
   onPress,
   query,
   hasMatches,
+  waitFor,
+  simultaneousHandlers,
   onPressResult
 }) => {
+  const { setActiveScrollView, setSize } = React.useContext(PanSheetContext);
+  const scrollRef = React.useRef<ScrollView>();
+
+  React.useEffect(() => {
+    const scrollView = scrollRef.current;
+
+    if (scrollView) {
+      setActiveScrollView(scrollView);
+    }
+
+    setSize(PanSheetViewSize.tall);
+
+    return () => {
+      setActiveScrollView(null);
+    };
+  }, [setActiveScrollView, setSize, scrollRef]);
+
   return (
     <KeyboardAvoidingView behavior="height" style={styles.container}>
       <ScrollView
@@ -300,6 +321,10 @@ const SearchTagListComponent = ({
         style={styles.list}
         keyboardDismissMode="on-drag"
         alwaysBounceVertical={false}
+        ref={scrollRef}
+        waitFor={waitFor}
+        simultaneousHandlers={simultaneousHandlers}
+        directionalLockEnabled
       >
         <SearchTagListItem
           query={query}
@@ -343,7 +368,13 @@ const SearchTagListComponent = ({
   );
 };
 
-export const SearchTagList = ({ query = "", onPressTag, onPressResult }) => {
+export const SearchTagList = ({
+  query = "",
+  onPressTag,
+  onPressResult,
+  waitFor,
+  simultaneousHandlers
+}) => {
   const tagsQuery = useQuery<SearchTags>(TAGS_QUERY, {
     fetchPolicy: "cache-first",
     notifyOnNetworkStatusChange: true
@@ -390,6 +421,8 @@ export const SearchTagList = ({ query = "", onPressTag, onPressResult }) => {
       results={results}
       hasMatches={hasMatches.current}
       onPress={onPressTag}
+      waitFor={waitFor}
+      simultaneousHandlers={simultaneousHandlers}
       onPressResult={onPressResult}
     />
   );

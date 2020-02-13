@@ -1,15 +1,18 @@
-import { cloneDeep } from "lodash";
+import _ViewPager, {
+  ViewPagerOnPageSelectedEventData,
+  ViewPagerProps
+} from "@react-native-community/viewpager";
 import * as React from "react";
-import { StyleSheet } from "react-native";
-import { FlatList, PanGestureHandler } from "react-native-gesture-handler";
+import { findNodeHandle, StyleSheet, View } from "react-native";
+import {
+  createNativeWrapper,
+  FlatList,
+  NativeViewGestureHandlerProperties
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { TabView } from "react-native-tab-view";
 import { SCREEN_DIMENSIONS } from "../../../config";
 import { COLORS } from "../../lib/styles";
-import {
-  FILTERS,
-  GallerySectionItem
-} from "../NewPost/ImagePicker/GallerySectionItem";
+import { GallerySectionItem } from "../NewPost/ImagePicker/GallerySectionItem";
 import { AssetsFilterList } from "./FilterList/AssetFilterList";
 import { CameraRollFilterList } from "./FilterList/CameraRollFilterList";
 import { GIFsFilterList } from "./FilterList/GIFsFilterList";
@@ -17,24 +20,29 @@ import { MemesFilterList } from "./FilterList/MemesFilterList";
 import { RecentFilterList } from "./FilterList/RecentFilterList";
 import { StickerFilterList } from "./FilterList/StickerFilterList";
 import { GallerySectionList } from "./GallerySectionList";
+import { PanSheetContext } from "./PanSheetView";
+import { NativeScreen } from "react-native-screens";
+
+const ViewPager = createNativeWrapper(_ViewPager, {
+  disallowInterruption: false
+}) as React.ComponentType<ViewPagerProps & NativeViewGestureHandlerProperties>;
 
 const styles = StyleSheet.create({
   sceneContainer: {
     overflow: "visible",
-    flex: -1,
+    flex: 0,
     flexGrow: 0,
-    // backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   modalSceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
-    // backgroundColor: COLORS.primaryDark,
+    backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   container: {
-    flex: -1,
+    flex: 0,
     width: "100%",
 
     overflow: "visible"
@@ -46,48 +54,37 @@ export const DEFAULT_TABS = [
   GallerySectionItem.cameraRoll,
   GallerySectionItem.gifs
 ];
-export const ROUTE_LIST = FILTERS.filter(({ value }) =>
-  DEFAULT_TABS.includes(value)
-).map(filter => {
-  return {
-    key: filter.value || "all",
-    title: filter.label
-  };
-});
+export const ROUTE_LIST = DEFAULT_TABS;
 
-class GalleryTabViewComponent extends React.Component {
+type Props = {
+  initialRoute: GallerySectionItem;
+  routes: Array<GallerySectionItem>;
+  tabBarPosition: "top" | "bottom";
+  inset: number;
+  headerHeight: Function;
+  width: number;
+  height: number;
+  bottomInset: number;
+  offset: number;
+  query: string;
+  renderHeader: Function;
+  scrollY: Animated.Value<number>;
+  position: Animated.Value<number>;
+};
+
+class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
   constructor(props) {
     super(props);
 
     this.state = {
-      navigationState: props.navigationState || {
-        index: Math.max(
-          props.routes.findIndex(({ key }) => key === props.initialRoute),
-          0
-        ),
-        routes: cloneDeep(props.routes).sort((route, b) =>
-          props.tabs.indexOf(route.key) > props.tabs.indexOf(b.key) ? 1 : -1
-        )
-      }
+      page: Math.max(props.routes.indexOf(props.initialRoute), 0)
     };
+    this.loadedScreens = new Set([this.currentRoute]);
 
     this.position = this.props.position;
-    this.initialLayout = {
-      width: this.props.width,
-      height: this.props.height
-    };
-    this.sceneContainerStyle = [
-      this.props.isModal ? styles.modalSceneContainer : styles.sceneContainer,
-      {
-        height: this.initialLayout.height
-      }
-    ];
-
-    this.containerStyle = [
-      styles.container,
-      { height: this.initialLayout.height }
-    ];
   }
+
+  loadedScreens: Set<GallerySectionItem>;
 
   static defaultProps = {
     initialRoute: "all",
@@ -98,36 +95,47 @@ class GalleryTabViewComponent extends React.Component {
     width: SCREEN_DIMENSIONS.width,
     height: 0,
     bottomInset: 0,
-    offset: 0,
-    icons: false,
-    light: false
+    offset: 0
   };
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.props.show !== prevProps.show && this.props.show) {
-      const newNavigationState = {
-        index: Math.max(
-          this.navigationState.routes.findIndex(
-            ({ key }) => key === this.props.initialRoute
-          ),
-          0
-        ),
-        routes: this.navigationState.routes
-      };
-
-      if (this.props.onChangeNavigationState) {
-        this.props.onChangeNavigationState(newNavigationState);
-      } else {
-        this.setState({ navigationState: newNavigationState });
+  onPageScrollEvent = Animated.event(
+    [
+      {
+        nativeEvent: {
+          position: this.props.position
+        }
       }
+    ],
+    { useNativeDriver: true }
+  );
+
+  viewPagerRef = React.createRef();
+
+  componentDidMount() {
+    const { viewPagerRef } = this;
+
+    if (viewPagerRef.current) {
+      this.onPageScrollEvent.attachEvent(
+        findNodeHandle(this.viewPagerRef.current),
+        "onPageScroll"
+      );
     }
 
-    if (prevProps.height !== this.props.height) {
-      this.forceUpdate();
-    }
+    this.props.setActiveScrollView(this.activeListRef);
   }
 
-  panRef = React.createRef<PanGestureHandler>();
+  componentWillUnmount() {
+    const { viewPagerRef } = this;
+
+    if (viewPagerRef.current) {
+      this.onPageScrollEvent.detachEvent(
+        findNodeHandle(this.viewPagerRef.current),
+        "onPageScroll"
+      );
+    }
+
+    this.props.setActiveScrollView(null);
+  }
 
   cameraRollListRef = React.createRef<FlatList>();
   gifsListRef = React.createRef<FlatList>();
@@ -136,9 +144,39 @@ class GalleryTabViewComponent extends React.Component {
   stickerListRef = React.createRef<FlatList>();
   searchListRef = React.createRef<FlatList>();
 
-  simultaneousHandlers = this.panRef;
+  routesToRef = {
+    [GallerySectionItem.cameraRoll]: this.cameraRollListRef,
+    [GallerySectionItem.gifs]: this.gifsListRef,
+    [GallerySectionItem.memes]: this.memesListRef,
+    [GallerySectionItem.assets]: this.assetsListRef,
+    [GallerySectionItem.sticker]: this.stickerListRef,
+    [GallerySectionItem.search]: this.searchListRef
+  };
 
-  renderScene = ({ route, jumpTo, position }) => {
+  get currentRoute() {
+    return this.props.routes[this.state.page];
+  }
+
+  simultaneousHandlers = this.viewPagerRef;
+  get viewPagerSimultaneousHandlers() {
+    return [
+      this.cameraRollListRef,
+      this.gifsListRef,
+      this.memesListRef,
+      this.assetsListRef,
+      this.stickerListRef,
+      this.searchListRef,
+      ...this.props.simultaneousHandlers
+    ];
+  }
+
+  waitFor = this.props.waitFor;
+
+  get activeListRef() {
+    return this.routesToRef[this.currentRoute].current;
+  }
+
+  renderScene = route => {
     const {
       width,
       height,
@@ -152,18 +190,17 @@ class GalleryTabViewComponent extends React.Component {
       query,
       ...otherProps
     } = this.props;
-    const { navigationState } = this;
-    const currentRoute = navigationState.routes[navigationState.index].key;
+    const currentRoute = this.currentRoute;
 
-    switch (route.key) {
+    switch (route) {
       case GallerySectionItem.all:
         return (
           <GallerySectionList
             isFocused={isFocused && currentRoute === GallerySectionItem.all}
             flatListRef={this.allListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            waitFor={this.waitFor}
             onPress={onPress}
-            onChangeFilter={jumpTo}
             renderHeader={renderHeader}
             headerHeight={headerHeight}
             insetValue={this.props.insetValue}
@@ -185,8 +222,8 @@ class GalleryTabViewComponent extends React.Component {
             isFocused={isFocused && currentRoute === GallerySectionItem.assets}
             flatListRef={this.assetsListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            waitFor={this.waitFor}
             onPress={onPress}
-            onChangeFilter={jumpTo}
             renderHeader={renderHeader}
             headerHeight={headerHeight}
             insetValue={this.props.insetValue}
@@ -208,8 +245,8 @@ class GalleryTabViewComponent extends React.Component {
             isFocused={isFocused && currentRoute === GallerySectionItem.recent}
             flatListRef={this.assetsListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            waitFor={this.waitFor}
             onPress={onPress}
-            onChangeFilter={jumpTo}
             insetValue={this.props.insetValue}
             height={height}
             renderHeader={renderHeader}
@@ -231,8 +268,8 @@ class GalleryTabViewComponent extends React.Component {
             isFocused={isFocused && currentRoute === GallerySectionItem.sticker}
             flatListRef={this.stickerListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            waitFor={this.waitFor}
             onPress={onPress}
-            onChangeFilter={jumpTo}
             insetValue={this.props.insetValue}
             query={query}
             height={height}
@@ -254,9 +291,9 @@ class GalleryTabViewComponent extends React.Component {
             isFocused={isFocused && currentRoute === GallerySectionItem.memes}
             flatListRef={this.memesListRef}
             simultaneousHandlers={this.simultaneousHandlers}
+            waitFor={this.waitFor}
             onPress={onPress}
             query={query}
-            onChangeFilter={jumpTo}
             renderHeader={renderHeader}
             headerHeight={headerHeight}
             insetValue={this.props.insetValue}
@@ -279,7 +316,7 @@ class GalleryTabViewComponent extends React.Component {
             }
             flatListRef={this.cameraRollListRef}
             simultaneousHandlers={this.simultaneousHandlers}
-            onChangeFilter={jumpTo}
+            waitFor={this.waitFor}
             height={height}
             onPress={onPress}
             renderHeader={renderHeader}
@@ -301,7 +338,7 @@ class GalleryTabViewComponent extends React.Component {
             isFocused={isFocused && currentRoute === GallerySectionItem.gifs}
             flatListRef={this.gifsListRef}
             simultaneousHandlers={this.simultaneousHandlers}
-            onChangeFilter={jumpTo}
+            waitFor={this.waitFor}
             query={query}
             onPress={onPress}
             renderHeader={renderHeader}
@@ -326,73 +363,93 @@ class GalleryTabViewComponent extends React.Component {
   };
 
   renderTabBar = props =>
-    this.props.renderTabBar({ ...props, tabViewRef: this.currentRef });
+    this.props.renderTabBar({
+      ...props,
+      route: this.currentRoute,
+      tabViewRef: this.currentRef
+    });
 
   position: Animated.Value<number>;
   initialLayout: { width: number; height: number };
 
   onIndexChange = index => {
-    const newNavigationState = { ...this.navigationState, index };
+    this.loadedScreens.add(this.props.routes[index]);
+    this.setState({ page: index });
+  };
 
-    if (this.props.onChangeNavigationState) {
-      this.props.onChangeNavigationState(newNavigationState);
-    } else {
-      this.setState({ navigationState: newNavigationState });
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.page !== this.state.page) {
+      this.props.setActiveScrollView(this.activeListRef);
     }
+  }
+
+  onPageSelected = ({
+    nativeEvent
+  }: {
+    nativeEvent: ViewPagerOnPageSelectedEventData;
+  }) => {
+    this.onIndexChange(nativeEvent.position);
   };
 
   tabViewRef = React.createRef();
 
   get currentRef() {
-    return {
-      [GallerySectionItem.cameraRoll]: this.cameraRollListRef,
-      [GallerySectionItem.gifs]: this.gifsListRef,
-      [GallerySectionItem.memes]: this.memesListRef,
-      [GallerySectionItem.assets]: this.assetsListRef,
-      [GallerySectionItem.sticker]: this.stickerListRef,
-      [GallerySectionItem.all]: this.searchListRef
-    }[this.navigationState.routes[this.navigationState.index].key];
+    return this.routesToRef[this.currentRoute];
   }
 
-  get navigationState() {
-    return this.props.navigationState || this.state.navigationState;
-  }
+  renderSceneContainer = route => {
+    return (
+      <NativeScreen
+        active={this.currentRoute === route}
+        key={route}
+        style={[
+          styles.sceneContainer,
+          {
+            height: this.props.height,
+            width: this.props.width,
+            backgroundColor: COLORS.primaryDark
+          }
+        ]}
+      >
+        {this.loadedScreens.has(route) && this.renderScene(route)}
+      </NativeScreen>
+    );
+  };
 
   render() {
-    const { width, height, tabBarPosition } = this.props;
+    const { width, height, tabBarPosition, routes } = this.props;
 
     return (
-      <TabView
-        navigationState={this.navigationState}
-        renderScene={this.renderScene}
-        tabBarPosition={"top"}
-        removeClippedSubviews={false}
-        swipeEnabled
-        lazy
-        swipeVelocityImpact={0.25}
-        ref={this.tabViewRef}
-        gestureHandlerProps={{
-          ref: this.panRef,
-          simultaneousHandlers: [
-            this.gifsListRef,
-            this.memesListRef,
-            this.cameraRollListRef,
-            this.assetsListRef
-          ]
-        }}
-        sceneContainerStyle={this.sceneContainerStyle}
-        style={this.containerStyle}
-        renderTabBar={this.props.renderTabBar ? this.renderTabBar : () => null}
-        onIndexChange={this.onIndexChange}
-        initialLayout={this.initialLayout}
-        position={this.props.position}
-        // keyboardDismissMode="none"
-      />
+      <>
+        {this.renderTabBar(this.state)}
+        <ViewPager
+          transitionStyle="scroll"
+          style={[styles.container, { height }]}
+          orientation="horizontal"
+          onPageSelected={this.onPageSelected}
+          ref={this.viewPagerRef}
+          scrollEnabled
+          pageMargin={0}
+          keyboardDismissMode="none"
+          simultaneousRecognizers={this.viewPagerSimultaneousHandlers}
+          showPageIndicator={false}
+        >
+          {routes.map(this.renderSceneContainer)}
+        </ViewPager>
+      </>
     );
   }
 }
 
-export const GalleryTabView = React.memo(GalleryTabViewComponent);
+export const GalleryTabView = React.memo(props => {
+  const { setActiveScrollView } = React.useContext(PanSheetContext);
+  return (
+    <GalleryTabViewComponent
+      {...props}
+      setActiveScrollView={setActiveScrollView}
+    />
+  );
+});
 
 GalleryTabView.defaultProps = GalleryTabViewComponent.defaultProps;
 

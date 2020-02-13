@@ -18,6 +18,8 @@ import { MediumText } from "../Text";
 import { MEME_HEADER_HEIGHT, styles } from "./galleryContainerStyles";
 import { GalleryTabBar } from "./GalleryTabBar";
 import { StartFromHeader, TOP_HEADER } from "./StartFromHeader";
+import { PanSheetContext } from "./PanSheetView";
+import { PanSheetViewSize } from "../../lib/Yeet";
 
 export const getSelectedIDs = memoizee((images: Array<YeetImageContainer>) => {
   return images.map(image => image.id);
@@ -70,7 +72,7 @@ class RawGalleryBrowseContainer extends React.PureComponent {
 
   renderTabBar = props => (
     <GalleryTabBar
-      navigationState={props.navigationState}
+      route={props.route}
       onChangeInputFocus={this.props.onChangeInputFocus}
       onChangeQuery={this.props.onChangeQuery}
       scrollY={this.scrollY}
@@ -131,12 +133,12 @@ class RawGalleryBrowseContainer extends React.PureComponent {
     }
   };
 
-  scrollY = new Animated.Value<number>(0);
+  scrollY = this.props.scrollY;
 
   render() {
     return (
       <>
-        {this.props.showStart && <StartFromHeader scrollY={this.scrollY} />}
+        <StartFromHeader scrollY={this.scrollY} />
         <View style={styles.page}>
           <View key="container" style={styles.container}>
             <GalleryTabView
@@ -145,9 +147,11 @@ class RawGalleryBrowseContainer extends React.PureComponent {
               onPress={this.handlePickPhoto}
               show
               isModal={false}
-              offset={TOP_HEADER}
+              offset={this.props.offset}
               isFocused={this.props.isFocused}
               position={this.position}
+              waitFor={this.props.waitFor}
+              simultaneousHandlers={this.props.simultaneousHandlers}
               renderTabBar={this.renderTabBar}
               selectedIDs={getSelectedIDs(this.state.selectedImages)}
               headerHeight={this.headerHeight}
@@ -166,6 +170,11 @@ class RawGalleryBrowseContainer extends React.PureComponent {
 
 export const GalleryBrowseContainer = props => {
   const { left, right } = React.useContext(SafeAreaContext);
+  const { setSize } = React.useContext(PanSheetContext);
+
+  React.useEffect(() => {
+    setSize(PanSheetViewSize.short);
+  }, [setSize]);
 
   return (
     <RawGalleryBrowseContainer

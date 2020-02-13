@@ -3,15 +3,16 @@ import * as React from "react";
 import Animated from "react-native-reanimated";
 import {
   View,
-  ScrollView,
   ViewStyle,
   StyleSheet,
   NativeScrollEvent,
   LayoutChangeEvent,
   findNodeHandle,
+  ScrollView,
   ScrollViewProps
 } from "react-native";
 import { ViewabilityHelper } from "./ViewabilityHelper";
+import { NativeViewGestureHandler } from "react-native-gesture-handler";
 import { SCREEN_DIMENSIONS } from "../../config";
 
 type HeaderHeight = number | (() => number);
@@ -593,6 +594,27 @@ const computeBlock = (
   return { batchSize, blockStart, blockEnd };
 };
 
+const NATIVE_WRAPPER_PROPS_FILTER = [
+  "id",
+  "minPointers",
+  "enabled",
+  "waitFor",
+  "simultaneousHandlers",
+  "shouldCancelWhenOutside",
+  "hitSlop",
+  "onGestureEvent",
+  "onHandlerStateChange",
+  "onBegan",
+  "onFailed",
+  "onCancelled",
+  "onActivated",
+  "onEnded",
+  "shouldActivateOnStart",
+  "disallowInterruption",
+  "onGestureHandlerEvent",
+  "onGestureHandlerStateChange"
+];
+
 function getFastListState(
   {
     headerHeight,
@@ -1061,6 +1083,10 @@ export default class FastList extends React.PureComponent<
     return length === 0;
   };
 
+  getScrollView() {
+    return this.scrollView.current;
+  }
+
   handleScrollBeginDrag = event => {
     const {
       nativeEvent: {
@@ -1133,10 +1159,30 @@ export default class FastList extends React.PureComponent<
       listKey,
       scrollTopValue,
       style,
+      contentContainerStyle = styles.contentContainer,
+      contentOffset,
       renderEmpty,
       isLoading = false,
       contentInsetAdjustmentBehavior,
       maintainVisibleContentPosition,
+      id,
+      minPointers,
+      enabled,
+      waitFor,
+      simultaneousHandlers,
+      shouldCancelWhenOutside,
+      hitSlop,
+      onGestureEvent,
+      onHandlerStateChange,
+      onBegan,
+      onFailed,
+      onCancelled,
+      onActivated,
+      onEnded,
+      shouldActivateOnStart,
+      disallowInterruption,
+      onGestureHandlerEvent,
+      onGestureHandlerStateChange,
       /* eslint-enable no-unused-vars */
       ...props
     } = this.props;
@@ -1148,32 +1194,57 @@ export default class FastList extends React.PureComponent<
     }
 
     const scrollView = (
-      <ScrollView
-        {...props}
-        ref={ref => {
-          this.scrollView.current = ref;
-          if (actionSheetScrollRef) {
-            actionSheetScrollRef.current = ref;
-          }
-        }}
-        removeClippedSubviews={false}
-        directionalLockEnabled
-        height={height}
-        scrollEventThrottle={16}
-        style={style}
-        // maintainVisibleContentPosition
-        scrollToOverflowEnabled
-        automaticallyAdjustContentInsets={false}
-        contentContainerStyle={styles.contentContainer}
-        contentInsetAdjustmentBehavior="never"
-        onScroll={this.handleScroll}
-        onLayout={this.handleLayout}
-        onMomentumScrollEnd={this.handleScrollEnd}
-        onScrollEndDrag={this.handleScrollEndDrag}
-        onScrollBeginDrag={this.handleScrollBeginDrag}
+      <NativeViewGestureHandler
+        id={id}
+        minPointers={minPointers}
+        enabled={enabled}
+        waitFor={waitFor}
+        simultaneousHandlers={simultaneousHandlers}
+        shouldCancelWhenOutside={shouldCancelWhenOutside}
+        hitSlop={hitSlop}
+        onGestureEvent={onGestureEvent}
+        onHandlerStateChange={onHandlerStateChange}
+        onBegan={onBegan}
+        onFailed={onFailed}
+        onCancelled={onCancelled}
+        onActivated={onActivated}
+        onEnded={onEnded}
+        shouldActivateOnStart={shouldActivateOnStart}
+        disallowInterruption={disallowInterruption}
+        onGestureHandlerEvent={onGestureHandlerEvent}
+        onGestureHandlerStateChange={onGestureHandlerStateChange}
       >
-        {this.renderItems()}
-      </ScrollView>
+        <ScrollView
+          {...props}
+          ref={ref => {
+            this.scrollView.current = ref;
+            if (actionSheetScrollRef) {
+              actionSheetScrollRef.current = ref;
+            }
+          }}
+          removeClippedSubviews={false}
+          directionalLockEnabled
+          height={height}
+          scrollEventThrottle={16}
+          style={style}
+          // maintainVisibleContentPosition
+          scrollToOverflowEnabled
+          disallowInterruption={false}
+          contentOffset={contentOffset}
+          waitFor={waitFor}
+          simultaneousHandlers={simultaneousHandlers}
+          automaticallyAdjustContentInsets={false}
+          contentContainerStyle={contentContainerStyle}
+          contentInsetAdjustmentBehavior="never"
+          onScroll={this.handleScroll}
+          onLayout={this.handleLayout}
+          onMomentumScrollEnd={this.handleScrollEnd}
+          onScrollEndDrag={this.handleScrollEndDrag}
+          onScrollBeginDrag={this.handleScrollBeginDrag}
+        >
+          {this.renderItems()}
+        </ScrollView>
+      </NativeViewGestureHandler>
     );
 
     if (!renderAccessory) {

@@ -13,6 +13,7 @@ import Firebase
 import SBObjectiveCWrapper
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
+  @objc(reactTag) static var reactTag: NSNumber? = nil
   @objc static func enable() {
     FirebaseApp.initialize()
     #if TEST

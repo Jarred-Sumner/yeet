@@ -16,3 +16,11 @@ export const hideSplashScreen = () => global.YeetJSI?.hideSplashScreen();
 
 export const focusYeetTextInput = inputTag => global.YeetJSI?.focus(inputTag);
 export const blurYeetTextInput = inputTag => global.YeetJSI?.blur(inputTag);
+
+export enum PanSheetViewSize {
+  tall = "longForm",
+  short = "shortForm"
+}
+
+export const transitionPanSheetView = (tag: number, size: PanSheetViewSize) =>
+  global.YeetJSI?.transitionPanView(tag, size);

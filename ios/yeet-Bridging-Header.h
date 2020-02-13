@@ -12,6 +12,10 @@
 #import <SDWebImageWebPCoder.h>
 
 #import "RCTConvert+PHotos.h"
+#import <React/RCTTouchHandler.h>
+#import <React/RCTModalHostViewController.h>
+#import "PanShadowView.h"
+#import <React/RCTModalHostView.h>
 
 #import <React/RCTUIManager.h>
 #import <React/RCTUIManagerUtils.h>
@@ -295,6 +299,22 @@ RCT_REMAP_SHADOW_PROPERTY(textTransform, textAttributes.textTransform, RCTTextTr
 @end
 
 
+@interface RCT_EXTERN_MODULE(PanViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(screenOffset, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(shortHeight, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(longHeight, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(screenMinY, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(panScrollTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(onDismiss, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onWillDismiss, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(defaultPresentationState, NSString);
+
+RCT_EXTERN_METHOD(transition:(nonnull NSNumber*)tag to:(nonnull NSString*)state);
+
+
+@end
 
 @interface RCT_EXTERN_MODULE(MediaPlayerViewManager, RCTViewManager)
 

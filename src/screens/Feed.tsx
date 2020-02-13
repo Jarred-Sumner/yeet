@@ -6,9 +6,9 @@ import {
 import * as Sentry from "@sentry/react-native";
 import * as React from "react";
 import { useMutation } from "react-apollo";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Modal, InteractionManager } from "react-native";
 import { NavigationProp } from "react-navigation";
-import { useNavigation } from "@react-navigation/core";
+import { useNavigation, useIsFocused } from "@react-navigation/core";
 import { NavigationStackProp } from "react-navigation-stack";
 import { BOTTOM_Y, TOP_Y } from "../../config";
 import { TAB_BAR_HEIGHT, TAB_BAR_OFFSET } from "../components/BottomTabBar";
@@ -28,6 +28,8 @@ import {
   ViewThreads_postThreads_data_posts_data
 } from "../lib/graphql/ViewThreads";
 import { SPACING, COLORS } from "../lib/styles";
+import ImagePickerPage from "./ImagePickerPage";
+import { PanSheetView } from "../components/Gallery/PanSheetView";
 
 const styles = StyleSheet.create({
   postList: {},
@@ -68,6 +70,7 @@ type Props = {
 };
 
 class FeedPageComponent extends React.Component<Props> {
+  state = { showNewPostSheet: false };
   handlePressPost = (
     thread: ViewThreads_postThreads_data,
     post: ViewThreads_postThreads_data_posts_data
@@ -171,22 +174,23 @@ class FeedPageComponent extends React.Component<Props> {
 
   render() {
     return (
-      <View style={styles.page}>
-        <FeedList
-          onPressPost={this.handlePressPost}
-          onPressThread={this.handlePressThread}
-          onPressNewPost={this.handleNewPost}
-          onPressProfile={this.handlePressProfile}
-          onLongPressThread={this.handleLongPressThread}
-          contentOffset={this.contentOffset}
-          contentInset={this.contentInset}
-          ref={this.feedListRef}
-        />
-
-        <View style={styles.floatingPlus}>
-          <NewThreadButton />
+      <>
+        <View style={styles.page}>
+          <FeedList
+            onPressPost={this.handlePressPost}
+            onPressThread={this.handlePressThread}
+            onPressNewPost={this.handleNewPost}
+            onPressProfile={this.handlePressProfile}
+            onLongPressThread={this.handleLongPressThread}
+            contentOffset={this.contentOffset}
+            contentInset={this.contentInset}
+            ref={this.feedListRef}
+          />
+          <View style={styles.floatingPlus}>
+            <NewThreadButton />
+          </View>
         </View>
-      </View>
+      </>
     );
   }
 }
@@ -200,11 +204,13 @@ export const FeedPage = React.forwardRef((props, ref) => {
     DeletePostThreadMutation,
     DeletePostThreadMutationVariables
   >(DELETE_POST_THREAD_MUTATION);
+  const isFocused = useIsFocused();
 
   return (
     <FeedPageComponent
       pageRef={ref}
       userId={userId}
+      isFocused={isFocused}
       navigation={navigation}
       deletePostThread={deletePostThread}
       openReportModal={openReportModal}

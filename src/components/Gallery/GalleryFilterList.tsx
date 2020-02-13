@@ -29,10 +29,13 @@ const SEPARATOR_HEIGHT = COLUMN_GAP * 2;
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
-    // backgroundColor: COLORS.primaryDark,
     flex: 0,
     overflow: "visible",
     position: "relative"
+  },
+  contentContainer: {
+    backgroundColor: COLORS.primaryDark,
+    flexGrow: 1
   },
   modalContainer: {
     flex: 1,
@@ -108,13 +111,19 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
 
   flatListRef: FastList | null = null;
 
-  setFlatListRef = (flatList: FlatList) => {
+  setFlatListRef = (flatList: FastList) => {
     this.flatListRef = flatList;
 
     const { flatListRef } = this.props;
 
     if (flatListRef && typeof flatListRef === "function") {
       flatListRef(flatList.scrollView.current);
+    } else if (
+      typeof flatListRef === "object" &&
+      flatListRef &&
+      typeof flatList?.getScrollView === "function"
+    ) {
+      flatListRef.current = flatList.getScrollView();
     }
 
     if (this.flatListRef) {
@@ -485,6 +494,9 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
               insetTopValue={this.props.insetValue}
               renderHeader={this.props.renderHeader}
               automaticallyAdjustContentInsets={false}
+              bounces={false}
+              alwaysBounceVertically={false}
+              contentContainerStyle={styles.contentContainer}
               keyboardShouldPersistTaps="always"
               isLoading={
                 this.props.networkStatus === NetworkStatus.loading ||
@@ -495,7 +507,6 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
               containerHeight={height}
               scrollToOverflowEnabled
               overScrollMode="automatic"
-              scrollTopValue={this.props.scrollY}
               footerHeight={0}
               headerHeight={headerHeight}
               style={this.listStyle}

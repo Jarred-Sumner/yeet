@@ -101,14 +101,19 @@ class YeetClipboard: RCTEventEmitter  {
     set (newValue) {
       super.bridge = newValue
 
-      newValue?.dispatchBlock({ [weak self] in
-        guard let this = self else {
-          return
-        }
+      if newValue.isLoading {
+        MediaPlayerJSIModuleInstaller.installClipboard(self)
+      } else {
+        newValue?.dispatchBlock({ [weak self] in
+          guard let this = self else {
+            return
+          }
 
 
-        MediaPlayerJSIModuleInstaller.installClipboard(this)
-      }, queue: RCTJSThread)
+          MediaPlayerJSIModuleInstaller.installClipboard(this)
+        }, queue: RCTJSThread)
+      }
+
     }
   }
 

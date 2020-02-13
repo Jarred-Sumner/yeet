@@ -17,7 +17,7 @@ export const getSelectedIDs = memoizee((images: Array<YeetImageContainer>) => {
 class RawGallerySearchInputContainer extends React.Component {
   renderTabBar = props => (
     <GalleryTabBar
-      navigationState={props.navigationState}
+      route={props?.route}
       onChangeInputFocus={this.props.onChangeInputFocus}
       onChangeQuery={this.props.onChangeQuery}
       scrollY={this.scrollY}
@@ -45,30 +45,29 @@ class RawGallerySearchInputContainer extends React.Component {
   render() {
     return (
       <View style={styles.page}>
-        <View style={styles.searchSpacer} />
-        <View style={styles.container}>
-          <View style={styles.searchContainer}>
-            <Animated.View style={[styles.memeHeader, styles.searchHeader]}>
-              <View style={styles.input}>
-                <ImagePickerSearch
-                  autoFocusSearch
-                  openSearch={this.props.openSearch}
-                  editable
-                  isInputFocused
-                  onChangeQuery={this.props.onChangeQuery}
-                  onPressClose={this.props.onPressClose}
-                  query={this.props.query}
-                  onSubmit={this.handleSubmit}
-                />
-              </View>
-            </Animated.View>
+        <View style={styles.searchContainer}>
+          <Animated.View style={[styles.memeHeader, styles.searchHeader]}>
+            <View style={styles.input}>
+              <ImagePickerSearch
+                autoFocusSearch
+                openSearch={this.props.openSearch}
+                editable
+                isInputFocused
+                onChangeQuery={this.props.onChangeQuery}
+                onPressClose={this.props.onPressClose}
+                query={this.props.query}
+                onSubmit={this.handleSubmit}
+              />
+            </View>
+          </Animated.View>
 
-            <SearchTagList
-              onPressTag={this.handlePressTag}
-              onPressResult={this.props.onFinish}
-              query={this.props.query}
-            />
-          </View>
+          <SearchTagList
+            onPressTag={this.handlePressTag}
+            onPressResult={this.props.onFinish}
+            waitFor={this.props.waitFor}
+            simultaneousHandlers={this.props.simultaneousHandlers}
+            query={this.props.query}
+          />
         </View>
       </View>
     );

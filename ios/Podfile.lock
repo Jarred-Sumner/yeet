@@ -160,6 +160,7 @@ PODS:
   - Nimble (8.0.4)
   - OneSignal (2.12.3)
   - OpenCV2 (4.1.2)
+  - PanModal (1.2.5)
   - Permission-Contacts (2.0.0-rc.0):
     - RNPermissions
   - Permission-LocationAlways (2.0.0-rc.0):
@@ -526,6 +527,7 @@ DEPENDENCIES:
   - Nimble (from `https://github.com/Quick/Nimble.git`)
   - OneSignal (< 3.0, >= 2.9.3)
   - OpenCV2
+  - PanModal
   - Permission-Contacts (from `../node_modules/react-native-permissions/ios/Contacts.podspec`)
   - Permission-LocationAlways (from `../node_modules/react-native-permissions/ios/LocationAlways.podspec`)
   - Permission-LocationWhenInUse (from `../node_modules/react-native-permissions/ios/LocationWhenInUse.podspec`)
@@ -646,6 +648,7 @@ SPEC REPOS:
     - NextLevelSessionExporter
     - OneSignal
     - OpenCV2
+    - PanModal
     - PINOperation
     - Promises
     - Protobuf
@@ -878,6 +881,7 @@ SPEC CHECKSUMS:
   Nimble: 66110543b37eed1302fa50f2ad411f22d2548373
   OneSignal: 30b6e03a1f14169c4313e301a7b7bdf467b5a575
   OpenCV2: 3ac0512dabaddda936f112507f9095697d392551
+  PanModal: 7c5af3ad4fe22b91508040965bebffb89fb607ae
   Permission-Contacts: 807e3482b1d3957a5a321bff0955333ef3babe77
   Permission-LocationAlways: 5fc356db1e7907c818f69e390ac1d8f19b121af2
   Permission-LocationWhenInUse: 390e9625c1d31c0211bfecefa2d069b05fd0ac3c
@@ -960,6 +964,6 @@ SPEC CHECKSUMS:
   XExtensionItem: 12959ad75ca5d6174bda1c1d596853fd0b0817e4
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: 22740b8b0085fe837c58ce12e09f06d0695b17a6
+PODFILE CHECKSUM: a669962f137e4bfbc7413be2fd3d8ceddda22611
 
 COCOAPODS: 1.8.4

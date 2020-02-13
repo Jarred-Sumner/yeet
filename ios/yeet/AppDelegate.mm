@@ -158,6 +158,7 @@
                                                    moduleName:@"yeet"
                                             initialProperties:nil];
 
+  [EnableWebpDecoder setReactTag:rootView.reactTag];
   rootView.backgroundColor = [[UIColor alloc] initWithRed:0 green:0 blue:0 alpha:1];
 #ifndef TEST
 //[FIRApp configure];
@@ -170,6 +171,7 @@
   self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
   UIViewController *rootViewController = [UIViewController new];
   rootViewController.view = rootView;
+
   self.window.rootViewController = rootViewController;
   [YeetSplashScreen showSplash:@"LaunchScreen" inRootView:rootView];
 

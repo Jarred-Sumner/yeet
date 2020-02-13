@@ -89,6 +89,8 @@ class RawGallerySearchResultsContainer extends React.Component {
               query={this.props.query}
               isFocused={this.props.isFocused}
               isModal={false}
+              waitFor={this.props.waitFor}
+              simultaneousHandlers={this.props.simultaneousHandlers}
               onPress={this.handlePickPhoto}
               scrollY={this.scrollY}
               height={this.props.height - TOP_Y - LIST_HEADER_HEIGHT}

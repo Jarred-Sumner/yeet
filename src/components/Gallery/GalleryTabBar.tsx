@@ -11,6 +11,7 @@ export const GalleryTabBar = ({
   onChangeInputFocus,
   onChangeQuery,
   scrollY,
+  route,
   isInputFocused = false,
   position,
   query
@@ -24,18 +25,14 @@ export const GalleryTabBar = ({
       justifyContent: "flex-end",
       transform: [
         {
-          translateY: scrollY.interpolate({
-            inputRange: [0, TOP_Y],
-            outputRange: [0, -TOP_Y],
-            extrapolateRight: Animated.Extrapolate.CLAMP
-          })
+          translateY: Animated.multiply(Animated.min(scrollY, 0), -1)
         }
       ]
     }}
   >
     <GalleryHeader
       navigationState={navigationState}
-      filter={navigationState.routes[0].key}
+      filter={route}
       tabs={DEFAULT_TABS}
       scrollY={scrollY}
       showHeader

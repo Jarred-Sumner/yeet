@@ -1,15 +1,15 @@
-import { IconPlus, IconCircleAdd } from "../Icon";
-import { IconButton } from "../Button";
-import { COLORS } from "../../lib/styles";
-import { UserContext, AuthState } from "../UserContext";
-import { View, StyleSheet } from "react-native";
-import * as React from "react";
 import { useNavigation } from "@react-navigation/core";
-import { RectButton } from "react-native-gesture-handler";
+import * as React from "react";
+import { StyleSheet, View } from "react-native";
+import {
+  RectButton,
+  TouchableWithoutFeedback
+} from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { BlurView } from "../BlurView";
+import { COLORS } from "../../lib/styles";
+import { IconCircleAdd } from "../Icon";
 import { SemiBoldText } from "../Text";
-import chroma from "chroma-js";
+import { AuthState, UserContext } from "../UserContext";
 
 const styles = StyleSheet.create({
   text: {
@@ -42,8 +42,9 @@ const styles = StyleSheet.create({
   }
 });
 
-export const NewThreadButton = () => {
+export const NewThreadButton = ({ onPress }) => {
   const { requireAuthentication, authState } = React.useContext(UserContext);
+  // const { openImagePickerModal } = React.useContext(ModalContext);
   const navigation = useNavigation();
 
   const handlePress = React.useCallback(() => {
@@ -51,12 +52,12 @@ export const NewThreadButton = () => {
       requireAuthentication();
       return;
     }
-
-    navigation.navigate("NewPostStack");
-  }, [requireAuthentication, navigation, authState]);
+    navigation.navigate("ImagePicker");
+    // openImagePickerModal();
+  }, [requireAuthentication, authState, navigation]);
 
   return (
-    <RectButton onPress={handlePress}>
+    <TouchableWithoutFeedback onPress={handlePress}>
       <Animated.View style={styles.container}>
         <View style={styles.iconContainer}>
           <IconCircleAdd size={24} color="#fff" />
@@ -66,6 +67,6 @@ export const NewThreadButton = () => {
           <SemiBoldText style={styles.label}>New post</SemiBoldText>
         </View>
       </Animated.View>
-    </RectButton>
+    </TouchableWithoutFeedback>
   );
 };

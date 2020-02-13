@@ -8,14 +8,18 @@ import { BackButtonBehavior, BackButton } from "../Button";
 import { BorderlessButton } from "react-native-gesture-handler";
 import { IconChevronRight } from "../Icon";
 import { Text, MediumText } from "../Text";
+import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
 
 export const TOP_HEADER = 48;
 
 const styles = StyleSheet.create({
   header: {
     flex: 0,
+    height: 50,
+    top: 0,
     paddingTop: TOP_Y,
-    height: TOP_HEADER + TOP_Y,
+    left: 0,
+    right: 0,
     flexDirection: "row",
     position: "absolute",
     width: "100%",
@@ -62,32 +66,12 @@ export const StartFromHeader = ({
 }: {
   scrollY: Animated.Value<number>;
 }) => {
-  const behavior = BackButtonBehavior.close;
+  // const behavior = BackButtonBehavior.close;
 
   return (
-    <Animated.View
-      style={[
-        styles.header,
-        {
-          opacity: scrollY.interpolate({
-            inputRange: [0, TOP_Y],
-            outputRange: [1, 0],
-            extrapolate: Animated.Extrapolate.CLAMP
-          }),
-          transform: [
-            {
-              translateY: scrollY.interpolate({
-                inputRange: [0, TOP_Y],
-                outputRange: [0, -TOP_Y],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            }
-          ]
-        }
-      ]}
-    >
+    <Animated.View style={[styles.header]}>
       <View style={[styles.headerSide, styles.headerLeft]}>
-        <BackButton behavior={behavior} size={17} color={COLORS.mutedLabel} />
+        {/* <BackButton behavior={behavior} size={17} color={COLORS.mutedLabel} /> */}
       </View>
 
       <View style={[styles.headerSide, styles.headerCenter]}>

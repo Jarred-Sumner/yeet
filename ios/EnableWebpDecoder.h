@@ -196,6 +196,7 @@
 
 @interface EnableWebpDecoder : NSObject
 + (void)enable;
++ (void)setReactTag:(NSNumber*)tag;
 @end
 
 

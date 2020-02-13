@@ -30,6 +30,7 @@ import { MediaUploadProvider } from "./src/lib/MediaUploadTask";
 import NavigationService from "./src/lib/NavigationService";
 import { isWaitlisted } from "./src/lib/Settings";
 import { hideSplashScreen } from "./src/lib/Yeet";
+import ImagePickerPage from "./src/screens/ImagePickerPage";
 
 Sentry.init({
   dsn: "https://bb66d2e2c6e448108a088854b419e539@sentry.io/1816224",

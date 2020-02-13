@@ -65,25 +65,26 @@ const AuthStack = () => (
 );
 
 const FeedStack = () => (
-  <Feed.Navigator screenOptions={{ headerShown: false }}>
+  <Feed.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
     <Feed.Screen name="ThreadList" component={FeedPage} />
     <Feed.Screen name="ViewThread" component={ThreadPage} />
     <Feed.Screen name="ViewProfile" component={GlobalViewProfilePage} />
     <Feed.Screen name="ReplyToPost" component={ReplyPage} />
     <Feed.Screen name="SharePost" component={NewThreadPage} />
+
+    <Feed.Screen
+      options={{
+        stackPresentation: "transparentModal",
+        gestureEnabled: true,
+        contentStyle: { backgroundColor: "transparent" }
+      }}
+      name="NewPostStack"
+      component={NewPostStack}
+    />
   </Feed.Navigator>
 );
 const NewPostStack = () => (
   <NewPost.Navigator screenOptions={{ headerShown: false }}>
-    <NewPost.Screen
-      options={{
-        contentStyle: { backgroundColor: "transparent" },
-        stackPresentation: "transparentModal"
-      }}
-      name="ImagePicker"
-      component={ImagePickerPage}
-    />
-
     <NewPost.Screen name="NewPost" component={NewPostPage} />
     <NewPost.Screen name="NewThread" component={NewThreadPage} />
   </NewPost.Navigator>
@@ -95,6 +96,7 @@ const RootStack = React.forwardRef(({ initialRouteName }, ref) => (
     screenOptions={{
       stackPresentation: "modal",
       headerShown: false,
+      stackAnimation: "none",
       contentStyle: { flex: 1, backgroundColor: COLORS.background }
     }}
     initialRouteName={initialRouteName}
@@ -102,13 +104,13 @@ const RootStack = React.forwardRef(({ initialRouteName }, ref) => (
     <Root.Screen name="FeedTab" component={FeedStack} />
     <Root.Screen
       options={{
-        stackPresentation: "transparentModal",
-
-        contentStyle: { backgroundColor: "transparent" }
+        contentStyle: { backgroundColor: "transparent" },
+        stackPresentation: "transparentModal"
       }}
-      name="NewPostStack"
-      component={NewPostStack}
+      name="ImagePicker"
+      component={ImagePickerPage}
     />
+
     <Root.Screen name="ViewProfile" component={GlobalViewProfilePage} />
     <Root.Screen name="ViewPost" component={ThreadPage} />
   </Root.Navigator>

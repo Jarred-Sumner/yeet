@@ -9,39 +9,38 @@ import { cloneDeep } from "lodash";
 export const ImagePickerPage = props => {
   const navigation = useNavigation();
   const { top, left, right } = React.useContext(SafeAreaContext);
-  const isFocused = useIsFocused();
-  const [isFinishedAnimating, setFinishedAnimating] = React.useState(
-    !isFocused
-  );
-
-  React.useLayoutEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setFinishedAnimating(true);
-    });
-
-    return () => task.cancel();
-  }, [setFinishedAnimating]);
 
   const onChange = React.useCallback(
     ({ photo, post }) => {
-      navigation.navigate("NewPost", {
-        image: cloneDeep(photo),
-        post: cloneDeep(post)
+      navigation.navigate("FeedTab", {
+        screen: "NewPostStack",
+        params: {
+          screen: "NewPost",
+          params: {
+            image: cloneDeep(photo),
+            post: cloneDeep(post)
+          }
+        }
       });
     },
+
     [navigation]
   );
+
+  const onDismiss = React.useCallback(() => {
+    navigation.goBack();
+  }, [navigation]);
 
   return (
     <GalleryContainer
       {...props}
-      navigation={navigation}
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
-      showStart={isFinishedAnimating}
-      isFocused={isFocused}
-      isFinishedAnimating={isFinishedAnimating}
+      showStart
+      isFocused
+      offset={0}
       onChange={onChange}
+      onDismiss={onDismiss}
     />
   );
 };

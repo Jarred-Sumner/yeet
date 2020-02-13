@@ -23,6 +23,8 @@ import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "./sizes";
 import { COLORS, SPACING } from "../../lib/styles";
 import { MediumText, Text } from "../Text";
 import { IconGlobe } from "../Icon";
+import { PanSheetContext } from "./PanSheetView";
+import { PanSheetViewSize } from "../../lib/Yeet";
 
 const styles = StyleSheet.create({
   container: {
@@ -83,6 +85,8 @@ const GallerySearchListComponent = ({
   onPress,
   inset,
   bottomInset = 0,
+  waitFor,
+  simultaneousHandlers,
   isModal,
   offset,
   networkStatus,
@@ -90,6 +94,8 @@ const GallerySearchListComponent = ({
   renderHeader,
   ...otherProps
 }) => {
+  const fastListRef = React.useRef<FastList>();
+  const { setActiveScrollView, setSize } = React.useContext(PanSheetContext);
   const sectionCounts = React.useMemo(
     () => [
       Math.ceil(sections[0].length / columnCount),
@@ -176,6 +182,20 @@ const GallerySearchListComponent = ({
     [sectionCounts]
   );
 
+  React.useEffect(() => {
+    const scrollView = fastListRef.current?.getScrollView();
+
+    if (scrollView) {
+      setActiveScrollView(scrollView);
+    }
+
+    setSize(PanSheetViewSize.tall);
+
+    return () => {
+      setActiveScrollView(null);
+    };
+  }, [setActiveScrollView, setSize, fastListRef]);
+
   return (
     <View height={height} style={styles.container}>
       <FastList
@@ -185,10 +205,13 @@ const GallerySearchListComponent = ({
         contentOffset={contentOffset}
         insetBottom={Math.abs(contentInset.bottom) * -1}
         insetTop={contentInset.top}
+        ref={fastListRef}
         scrollTopValue={scrollY}
         scrollIndicatorInsets={SCROLL_INSETS}
         // renderHeader={this.props.renderHeader}
         automaticallyAdjustContentInsets={false}
+        waitFor={waitFor}
+        simultaneousHandlers={simultaneousHandlers}
         keyboardShouldPersistTaps="always"
         isLoading={
           networkStatus === NetworkStatus.loading ||

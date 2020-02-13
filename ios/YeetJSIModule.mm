@@ -19,6 +19,7 @@
 #import "YeetSplashScreen.h"
 #import <RNReactNativeHapticFeedback/RNReactNativeHapticFeedback.h>
 #import <React/RCTShadowView.h>
+#import "PanViewManager.h"
 
 @interface RNReactNativeHapticFeedback (ext)
 - (void)trigger:(NSString *)type options:(NSDictionary *)options;
@@ -323,6 +324,21 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
         tag = nil;
       });
       return jsi::Value::undefined();
+    });
+  } else if (methodName == "transitionPanView") {
+    RCTBridge *rctBridge = _bridge;
+    PanViewManager *panViewManager = [rctBridge moduleForClass:[PanViewManager class]];
+
+    return jsi::Function::createFromHostFunction(runtime, name, 2, [rctBridge, jsInvoker, panViewManager](
+             jsi::Runtime &runtime,
+             const jsi::Value &thisValue,
+             const jsi::Value *arguments,
+             size_t count) -> jsi::Value {
+
+      __block NSNumber *toTag = @(arguments[0].asNumber());
+
+      [panViewManager transition:toTag to:convertJSIStringToNSString(runtime, arguments[1].asString(runtime))];
+      return jsi::Value::null();
     });
   }
 
