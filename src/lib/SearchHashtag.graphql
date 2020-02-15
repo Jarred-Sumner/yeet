@@ -9,6 +9,16 @@ query SearchHashtag($hashtag: String!, $limit: Int, $offset: Int) {
         username
       }
 
+      blocks
+      nodes
+      bounds {
+        x
+        y
+        width
+        height
+      }
+      attachments
+
       media {
         id
         width

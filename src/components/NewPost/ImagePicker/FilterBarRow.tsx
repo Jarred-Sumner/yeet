@@ -15,6 +15,7 @@ const styles = StyleSheet.create({
   icon: {
     textAlign: "center"
   },
+
   headerText: {
     fontSize: 17,
     textAlign: "center"
@@ -23,8 +24,7 @@ const styles = StyleSheet.create({
     borderRightColor: "transparent"
   },
   row: {
-    height: 22,
-    marginTop: 20,
+    height: LIST_HEADER_HEIGHT,
 
     flexDirection: "row",
     justifyContent: "center",
@@ -58,6 +58,7 @@ export const FilterBarRow = ({
   size,
   Icon,
   light,
+  isLast,
   iconOnly,
   inset
 }) => {
@@ -68,33 +69,37 @@ export const FilterBarRow = ({
   const ButtonComponent = light ? BorderlessButton : RectButton;
 
   return (
-    <ButtonComponent
-      onPress={handlePress}
-      enabled={!isActive}
-      style={[styles.row, light && styles.lightRow, size]}
-      underlayColor={chroma(COLORS.primary)
-        .alpha(0.5)
-        .css()}
-    >
-      <View style={[size, { opacity: isActive ? 1 : 0.65 }, styles.rowWrapper]}>
-        {Icon ? (
-          <Icon
-            size={ICON_SIZES[value] ?? 20}
-            color="white"
-            resizeMode="contain"
-            numberOfLines={1}
-            style={styles.icon}
-          />
-        ) : (
-          <SemiBoldText
-            adjustsFontSizeToFit
-            numberOfLines={1}
-            style={[styles.headerText, size]}
-          >
-            {children}
-          </SemiBoldText>
-        )}
-      </View>
-    </ButtonComponent>
+    <View style={[size, !isLast && styles.separator]}>
+      <ButtonComponent
+        onPress={handlePress}
+        enabled={!isActive}
+        style={[styles.row, light && styles.lightRow, size]}
+        underlayColor={chroma(COLORS.secondary)
+          .alpha(0.9)
+          .css()}
+      >
+        <View
+          style={[size, { opacity: isActive ? 1 : 0.65 }, styles.rowWrapper]}
+        >
+          {Icon ? (
+            <Icon
+              size={ICON_SIZES[value] ?? 20}
+              color="white"
+              resizeMode="contain"
+              numberOfLines={1}
+              style={styles.icon}
+            />
+          ) : (
+            <SemiBoldText
+              adjustsFontSizeToFit
+              numberOfLines={1}
+              style={[styles.headerText, size]}
+            >
+              {children}
+            </SemiBoldText>
+          )}
+        </View>
+      </ButtonComponent>
+    </View>
   );
 };

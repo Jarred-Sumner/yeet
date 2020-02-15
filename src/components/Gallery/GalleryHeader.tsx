@@ -17,17 +17,16 @@ import { IconChevronDown } from "../Icon";
 
 const styles = StyleSheet.create({
   container: {
-    width: SCREEN_DIMENSIONS.width,
-    alignItems: "flex-end",
-    height: LIST_HEADER_HEIGHT,
-    justifyContent: "flex-end",
-    overflow: "hidden",
     flex: 0,
-    backgroundColor: chroma(COLORS.primaryDark)
-      .alpha(0.98)
-      .css(),
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32
+    width: SCREEN_DIMENSIONS.width,
+    height: LIST_HEADER_HEIGHT
+    // shadowRadius: 1,
+    // shadowOffset: {
+    //   width: 0,
+    //   height: StyleSheet.hairlineWidth
+    // },
+    // shadowOpacity: 0.9,
+    // shadowColor: "black"
   },
   header: {
     width: "100%",
@@ -53,9 +52,13 @@ const styles = StyleSheet.create({
   },
   filter: {
     flexDirection: "row",
-    flex: 0,
-    alignItems: "center",
-    paddingBottom: 8
+    flex: 1,
+    overflow: "hidden",
+    backgroundColor: chroma(COLORS.primaryDark).css(),
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    width: SCREEN_DIMENSIONS.width,
+    height: LIST_HEADER_HEIGHT
   },
 
   dark: {
@@ -81,8 +84,7 @@ export const GalleryHeader = ({
   onDismiss,
   tabViewRef,
   filter,
-  position = new Animated.Value(0),
-  jumpTo,
+  onChangeRoute,
   filterBarInset = 50,
   headerCutoff,
   isInputFocused,
@@ -111,12 +113,10 @@ export const GalleryHeader = ({
         <FilterBar
           value={route}
           tabs={tabs}
-          onChange={jumpTo}
+          onChange={onChangeRoute}
           light={false}
-          scrollY={scrollY}
           inset={0}
           tabBarPosition={tabBarPosition}
-          position={position}
         />
       </View>
     </View>

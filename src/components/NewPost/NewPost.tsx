@@ -420,17 +420,11 @@ export class NewPost extends React.Component<{}, State> {
     transparent = false,
     autoFocus = false
   }) => {
-    if (initialRoute === GallerySectionItem.search) {
-      this.props.navigation.push("ImagePickerSearch", {
-        onChange,
-        blockId
-      });
-    } else {
-      this.props.navigation.push("ImagePicker", {
-        onChange,
-        blockId
-      });
-    }
+    console.log({ initialRoute });
+    this.props.navigation.push("ImagePicker", {
+      onChange: (image, post) => onChange(blockId, image, post),
+      initialRoute: initialRoute
+    });
   };
 
   handlePressGallery = (image: YeetImageContainer) => {

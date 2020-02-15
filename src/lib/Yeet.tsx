@@ -1,3 +1,7 @@
+import { TextInput } from "react-native";
+
+const { currentlyFocusedField } = TextInput.State;
+
 export const photosAuthorizationStatus = (): string =>
   global.YeetJSI?.photosAuthorizationStatus;
 
@@ -16,6 +20,15 @@ export const hideSplashScreen = () => global.YeetJSI?.hideSplashScreen();
 
 export const focusYeetTextInput = inputTag => global.YeetJSI?.focus(inputTag);
 export const blurYeetTextInput = inputTag => global.YeetJSI?.blur(inputTag);
+
+export const dismissKeyboard = () => {
+  if (currentlyFocusedField()) {
+    const id = currentlyFocusedField();
+
+    blurYeetTextInput(id);
+    window.requestIdleCallback(() => TextInput.State.blurTextInput(id));
+  }
+};
 
 export enum PanSheetViewSize {
   tall = "longForm",

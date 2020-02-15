@@ -21,6 +21,9 @@ class PanViewSheet : UIView {
       self.panViewController?.panViewTag = reactTag
     }
 
+    self._defaultPresentationState = PanViewSheet.PAN_PRESENTATION_STATE_CONVERTER[defaultPresentationState as String? ?? "shortForm"] ?? .shortForm
+
+
     RCTExecuteOnMainQueue {
       self.panViewController?.panModalSetNeedsLayoutUpdate()
     }
@@ -28,6 +31,11 @@ class PanViewSheet : UIView {
 
   override func didMoveToWindow() {
     super.didMoveToWindow()
+
+    if superview == nil && window == nil {
+
+      return
+    }
 
     guard superview != nil else {
       return
@@ -37,12 +45,19 @@ class PanViewSheet : UIView {
       return
     }
 
+    if isDetached {
+      return
+    }
+
+
+    guard panViewController != nil else {
+      return
+    }
+
 
     if (!self.isUserInteractionEnabled && !(superview?.reactSubviews()?.contains(self) ?? false)) {
        return;
    }
-
-    assert(self.panViewController != nil, "Can't present modal view controller without a presenting view controller")
 
 
     self.panViewController?.panViewTag = reactTag
@@ -54,7 +69,9 @@ class PanViewSheet : UIView {
 
     if let reactSubview = self.reactSubview {
       self.panViewController?.view.insertSubview(reactSubview, at: 0)
+      self.panViewController?.reloadHeader()
       panViewController?.panModalSetNeedsLayoutUpdate()
+
     }
 
 
@@ -72,30 +89,63 @@ class PanViewSheet : UIView {
   var delegate: PanHostViewInteractor? = nil
 
 
+  var invalidated = false
 
   @objc(invalidate) func invalidate() {
-    dismissController()
-    reactSubview = nil
+    guard !invalidated else {
+      return
+    }
+
+    self.invalidated = true
+    if presented {
+      dismissController()
+    }
+
+    resetTouch()
   }
 
+  func resetTouch() {
+    guard let touchHandler = self.touchHandler else {
+         return
+       }
+
+    if RCTIsMainQueue() {
+      if let reactSubview = self.reactSubview {
+          if touchHandler.view == reactSubview {
+            touchHandler.detach(from: reactSubview)
+          }
+        }
+    }
+
+
+     touchHandler.cancel()
+     touchHandler.reset()
+     touchHandler.isEnabled = false
+     self.touchHandler = nil
+  }
   var presented = false
   override func didMoveToSuperview() {
     super.didMoveToSuperview()
 
-    if (!presented && superview == nil) {
+    if (presented && superview == nil) {
       self.dismissController()
     }
   }
 
   func dismissController() {
+
+
     presented = false
-    self.delegate?.dismiss(self, with: reactViewController(), animated: true)
+    RCTExecuteOnMainQueue {
+      self.delegate?.dismiss(self, with: self.reactViewController(), animated: true)
+    }
   }
 
   @objc(containerTag) var containerTag: NSNumber? = nil
-  lazy var touchHandler = RCTTouchHandler(bridge: bridge)
+  var touchHandler: RCTTouchHandler?
   init(bridge: RCTBridge) {
     self.bridge = bridge
+    touchHandler = RCTTouchHandler(bridge: bridge)
     super.init(frame: .zero)
 
     self.backgroundColor = .clear
@@ -106,9 +156,13 @@ class PanViewSheet : UIView {
     super.insertReactSubview(subview, at: atIndex)
     touchHandler?.attach(to: subview)
    reactSubview = subview
-
-
   }
+
+  @objc(headerTag) var headerTag: NSNumber? = nil {
+     didSet {
+       self.panViewController?.headerTag = self.headerTag
+     }
+   }
 
   override func removeReactSubview(_ subview: UIView!) {
     super.removeReactSubview(subview)
@@ -183,13 +237,9 @@ class PanViewSheet : UIView {
   static let PAN_PRESENTATION_TO_STRING = Dictionary(grouping: PAN_PRESENTATION_STATE_CONVERTER.keys.sorted(), by: { PAN_PRESENTATION_STATE_CONVERTER[$0]! })
 
   @objc(defaultPresentationState)
-  var _defaultPresentationState : String? = nil {
-    didSet (newValue) {
-      defaultPresentationState = PanViewSheet.PAN_PRESENTATION_STATE_CONVERTER[newValue ?? "shortForm"] ?? .shortForm
-    }
-  }
+  var defaultPresentationState : NSString? = nil
 
-  var defaultPresentationState: PanModalPresentationController.PresentationState = .shortForm
+  var _defaultPresentationState: PanModalPresentationController.PresentationState = .shortForm
 
   @objc(onTransition)
   var onTransition: RCTDirectEventBlock? = nil
@@ -199,15 +249,23 @@ class PanViewSheet : UIView {
       return
     }
 
+    
+
     let from: PanModalPresentationController.PresentationState = to == .longForm ? .shortForm : .longForm
-    DispatchQueue.global(qos: .background).async {
-      _onTransition([
-        "from": PanViewSheet.PAN_PRESENTATION_TO_STRING[from],
-        "to": PanViewSheet.PAN_PRESENTATION_TO_STRING[to]
-      ])
-    }
+    _onTransition([
+      "from": PanViewSheet.PAN_PRESENTATION_TO_STRING[from]?.first,
+      "to": PanViewSheet.PAN_PRESENTATION_TO_STRING[to]?.first
+    ])
+
 
   }
+
+
+  @objc(didAppear)
+  var didAppear: RCTDirectEventBlock? = nil
+
+
+
 
   @objc(bridge)
   var bridge: RCTBridge? = nil
@@ -234,7 +292,7 @@ class PanViewSheet : UIView {
 
 
   deinit {
-
+    resetTouch()
   }
 
 

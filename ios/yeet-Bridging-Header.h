@@ -65,6 +65,12 @@
 #import "YeetTextEnums.h"
 #import "PINRemoteImageMacros.h"
 
+typedef void (^RCTPendingCall)();
+
+@interface RCTBridge (ext)
+- (void)_runAfterLoad:(RCTPendingCall)block;
+@end
+
 @interface RCTUIManager (ext)
   - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
   - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
@@ -305,10 +311,13 @@ RCT_EXPORT_VIEW_PROPERTY(screenOffset, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(shortHeight, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(longHeight, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(headerTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(screenMinY, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(panScrollTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(onDismiss, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(onWillDismiss, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(didAppear, RCTDirectEventBlock);
+RCT_EXPORT_VIEW_PROPERTY(onTransition, RCTDirectEventBlock);
 RCT_EXPORT_VIEW_PROPERTY(defaultPresentationState, NSString);
 
 RCT_EXTERN_METHOD(transition:(nonnull NSNumber*)tag to:(nonnull NSString*)state);

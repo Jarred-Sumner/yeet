@@ -228,6 +228,7 @@ const RawTextInputToolbar = React.memo(
     block: TextPostBlock;
     onChooseTemplate: Function;
   }) => {
+    console.log(block);
     const selectedTemplate = block?.config?.template ?? TextTemplate.basic;
 
     const renderTemplate = React.useCallback(

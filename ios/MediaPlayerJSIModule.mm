@@ -294,6 +294,28 @@ jsi::Value MediaPlayerJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameI
 
        return jsi::Value::null();
     });
+  } else if (methodName == "getStatus") {
+    MediaPlayerViewManager* mediaPlayerManager = mediaPlayer_;
+     return jsi::Function::createFromHostFunction(runtime, name, 1, [mediaPlayerManager, jsInvoker](
+           jsi::Runtime &runtime,
+           const jsi::Value &thisValue,
+           const jsi::Value *arguments,
+           size_t count) -> jsi::Value {
+
+       if (!arguments[0].isNumber()) {
+         return jsi::Value::null();
+       }
+
+       auto tag = arguments[0].asNumber();
+       MediaPlayer *mediaPlayer = [mediaPlayerManager.bridge.uiManager unsafeViewForReactTag:@(tag)];
+
+       if (mediaPlayer) {
+         return convertNSStringToJSIString(runtime, mediaPlayer.status);
+       } else {
+         return jsi::Value::null();
+       }
+
+    });
   }
 
 

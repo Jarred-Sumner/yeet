@@ -8,11 +8,9 @@ export const MEME_HEADER_HEIGHT = TOP_HEADER + TOP_Y;
 
 export const styles = StyleSheet.create({
   searchContainer: {
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     flex: 1,
 
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
     overflow: "hidden"
   },
   container: {
@@ -20,10 +18,11 @@ export const styles = StyleSheet.create({
     flex: 1
   },
   page: {
-    flex: 1
+    flex: 1,
+    overflow: "hidden"
   },
   hiddenContainer: {
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     display: "none"
   },
   content: {
@@ -31,7 +30,7 @@ export const styles = StyleSheet.create({
   },
   memeHeader: {
     height: MEME_HEADER_HEIGHT,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     width: "100%",
     position: "relative",
     zIndex: 10
@@ -40,6 +39,7 @@ export const styles = StyleSheet.create({
     shadowRadius: 2,
     overflow: "visible",
     paddingTop: SPACING.half,
+    backgroundColor: COLORS.primaryDark,
     shadowOffset: {
       width: 1,
       height: 1

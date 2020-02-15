@@ -68,13 +68,17 @@ class RawGalleryBrowseContainer extends React.PureComponent {
     onChange(photo, post);
   };
 
+  handleChangeRoute = (route: GallerySectionItem) => {};
+
   position = new Animated.Value<number>(0);
 
   renderTabBar = props => (
     <GalleryTabBar
       route={props.route}
+      navigationState={props.navigationState}
       onChangeInputFocus={this.props.onChangeInputFocus}
       onChangeQuery={this.props.onChangeQuery}
+      onChangeRoute={props.onChangeRoute}
       scrollY={this.scrollY}
       position={this.position}
       query={this.props.query}
@@ -137,8 +141,7 @@ class RawGalleryBrowseContainer extends React.PureComponent {
 
   render() {
     return (
-      <>
-        <StartFromHeader scrollY={this.scrollY} />
+      <View style={{ width: "100%", height: "100%", position: "relative" }}>
         <View style={styles.page}>
           <View key="container" style={styles.container}>
             <GalleryTabView
@@ -149,6 +152,7 @@ class RawGalleryBrowseContainer extends React.PureComponent {
               isModal={false}
               offset={this.props.offset}
               isFocused={this.props.isFocused}
+              ref={this.galleryTabViewRef}
               position={this.position}
               waitFor={this.props.waitFor}
               simultaneousHandlers={this.props.simultaneousHandlers}
@@ -163,7 +167,7 @@ class RawGalleryBrowseContainer extends React.PureComponent {
             />
           </View>
         </View>
-      </>
+      </View>
     );
   }
 }

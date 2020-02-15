@@ -1,6 +1,6 @@
 import chroma from "chroma-js";
 import * as React from "react";
-import { StyleSheet, View, TextInput } from "react-native";
+import { StyleSheet, View, TextInput, LayoutAnimation } from "react-native";
 import {
   TouchableWithoutFeedback,
   BaseButton
@@ -27,10 +27,6 @@ const styles = StyleSheet.create({
     flexShrink: 1
   },
   cancelButton: {
-    paddingHorizontal: SPACING.normal,
-    paddingLeft: 0,
-    paddingRight: SPACING.double,
-    paddingVertical: 8,
     justifyContent: "center",
     alignItems: "center",
     flex: 0,
@@ -38,6 +34,9 @@ const styles = StyleSheet.create({
   },
   cancelLabel: {
     fontSize: 14,
+    paddingHorizontal: SPACING.normal,
+    paddingRight: SPACING.double,
+    paddingVertical: 8,
     flex: 0,
     color: COLORS.mutedLabel,
     textAlign: "center"
@@ -56,12 +55,12 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     position: "relative",
     height: 36,
-    marginRight: 0,
     backgroundColor: COLORS.input,
     fontSize: 18,
     color: "white",
     paddingLeft: 28 + SPACING.normal,
     paddingRight: 0,
+    marginLeft: 0,
     marginTop: 0,
     borderRadius: 36,
     overflow: "hidden",
@@ -91,7 +90,7 @@ export const ImagePickerSearch = ({
   onChangeQuery,
   editable,
   query = "",
-  placeholder = "Search",
+  placeholder = "Search yeet, the internet",
   openSearch,
   onSubmit,
   isInputFocused,
@@ -100,6 +99,7 @@ export const ImagePickerSearch = ({
 }) => {
   const { top } = React.useContext(SafeAreaContext);
   const _inputRef = React.useRef();
+
   const handleFocus = React.useCallback(() => {
     // LayoutAnimation.configureNext({
     //   ...LayoutAnimation.Presets.easeInEaseOut,
@@ -184,8 +184,8 @@ export const ImagePickerSearch = ({
       enabled={!editable}
       onPress={openSearch}
     >
-      <View style={styles.container}>
-        <Animated.View style={styles.searchBar}>
+      <View nativeID="imagepickersearch" style={styles.container}>
+        <View style={styles.searchBar}>
           <View pointerEvents="none" style={[styles.searchIcon]}>
             <IconSearchAlt
               color={isInputFocused ? "white" : "#ccc"}
@@ -200,6 +200,7 @@ export const ImagePickerSearch = ({
             style={[
               styles.textInputStyle,
               {
+                marginRight: isInputFocused ? -SPACING.normal : 0
                 // backgroundColor: isInputFocused
                 //   ? "rgba(0,0,0,0)"
                 //   : "rgba(25,25,25,0.75)"
@@ -227,7 +228,7 @@ export const ImagePickerSearch = ({
             onChangeText={onChangeQuery}
             onSubmitEditing={onSubmit}
           />
-        </Animated.View>
+        </View>
         <View
           style={[
             styles.right,

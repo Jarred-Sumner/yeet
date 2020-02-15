@@ -5,6 +5,7 @@ import { COLORS } from "../../lib/styles";
 import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
 import { GalleryHeader } from "./GalleryHeader";
 import { DEFAULT_TABS } from "./GalleryTabView";
+import { View } from "react-native";
 
 export const GalleryTabBar = ({
   navigationState,
@@ -12,27 +13,23 @@ export const GalleryTabBar = ({
   onChangeQuery,
   scrollY,
   route,
+  onChangeRoute,
   isInputFocused = false,
   position,
   query
 }) => (
-  <Animated.View
+  <View
     style={{
       position: "relative",
       zIndex: 9999,
       backgroundColor: COLORS.background,
       height: LIST_HEADER_HEIGHT,
-      justifyContent: "flex-end",
-      transform: [
-        {
-          translateY: Animated.multiply(Animated.min(scrollY, 0), -1)
-        }
-      ]
+      justifyContent: "flex-end"
     }}
   >
     <GalleryHeader
       navigationState={navigationState}
-      filter={route}
+      route={route}
       tabs={DEFAULT_TABS}
       scrollY={scrollY}
       showHeader
@@ -41,7 +38,8 @@ export const GalleryTabBar = ({
       tabBarPosition="top"
       position={position}
       query={query}
+      onChangeRoute={onChangeRoute}
       onChangeQuery={onChangeQuery}
     ></GalleryHeader>
-  </Animated.View>
+  </View>
 );

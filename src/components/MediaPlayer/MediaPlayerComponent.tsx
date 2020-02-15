@@ -17,6 +17,29 @@ import memoizee from "memoizee";
 
 type MediaPlayerCallbackFunction = (error: Error | null, result: any) => void;
 
+export enum MediaPlayerLoadingStatus {
+  pending = "pending",
+  loading = "loading",
+  loaded = "loaded",
+  ready = "ready",
+  playing = "playing",
+  paused = "paused",
+  ended = "ended",
+  error = "error"
+}
+
+export const isMediaPlayerLoadingStatusLoaded = (
+  status: MediaPlayerLoadingStatus
+) => {
+  return [
+    MediaPlayerLoadingStatus.loaded,
+    MediaPlayerLoadingStatus.ready,
+    MediaPlayerLoadingStatus.playing,
+    MediaPlayerLoadingStatus.paused,
+    MediaPlayerLoadingStatus.ended
+  ].includes(status);
+};
+
 export const registrations = {};
 
 export type MediaSource = {
@@ -119,6 +142,10 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
   nativeRef = React.createRef();
 
   get nativeNode() {
+    if (!this.nativeRef.current) {
+      return null;
+    }
+
     return findNodeHandle(this.nativeRef.current);
   }
 
@@ -292,6 +319,17 @@ export class MediaPlayerComponent extends React.Component<MediaPlayerProps> {
       );
     });
   };
+
+  get currentStatus(): MediaPlayerLoadingStatus {
+    if (!this.nativeNode) {
+      return MediaPlayerLoadingStatus.pending;
+    }
+
+    return (
+      global.MediaPlayerViewManager?.getStatus(this.nativeNode) ||
+      MediaPlayerLoadingStatus.pending
+    );
+  }
 
   getSize = async (): DimensionsRect => {
     const size = await global.MediaPlayerViewManager?.getSize(this.nativeNode);

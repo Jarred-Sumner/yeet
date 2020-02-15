@@ -22,7 +22,8 @@ import {
   isEmptyTextBlock,
   isFixedSizeBlock,
   NewPostType,
-  isTextBlock
+  isTextBlock,
+  getImageBlocks
 } from "../../lib/buildPost";
 import { SnapPoint } from "../../lib/enums";
 import {
@@ -87,6 +88,7 @@ import Alert from "../../lib/Alert";
 import { sendToast, ToastType } from "../Toast";
 import { SnapGuides } from "./Node/SnapGuides";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
+import { PostFragment } from "../../lib/graphql/PostFragment";
 
 const { block, cond, set, eq, sub } = Animated;
 
@@ -405,8 +407,14 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.handleInsertPhoto(undefined, GallerySectionItem.cameraRoll);
     } else if (activeButton === ToolbarButtonType.gif) {
       this.handleInsertPhoto(undefined, GallerySectionItem.gifs);
-    } else if (activeButton === ToolbarButtonType.sticker) {
-      this.handleInsertPhoto(undefined, "all", true, true, true);
+    } else if (activeButton === ToolbarButtonType.search) {
+      this.handleInsertPhoto(
+        undefined,
+        GallerySectionItem.search,
+        true,
+        true,
+        true
+      );
     } else if (activeButton === ToolbarButtonType.text) {
       this.handleInsertText({
         x: SPACING.half,
@@ -852,15 +860,14 @@ class RawwPostEditor extends React.Component<Props, State> {
     if (block.value) {
       if (block.value.image.source === ImageSourceType.giphy) {
         initialRoute = GallerySectionItem.gifs;
-      } else if (isVideo(block.value.image.mimeType)) {
-        initialRoute = GallerySectionItem.videos;
+      } else if (block.value.image.source === ImageSourceType.cameraRoll) {
+        initialRoute = GallerySectionItem.cameraRoll;
       } else if (block.value.image?.mimeType) {
-        initialRoute = GallerySectionItem.photos;
+        initialRoute = GallerySectionItem.all;
       }
     }
 
     this.props.onOpenGallery({
-      blockId: block?.id,
       initialRoute,
       shouldAnimate,
       onChange: this.handleChangeImageBlockPhoto
@@ -973,7 +980,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleInsertPhoto = (
     block,
-    initialRoute = "all",
+    initialRoute = GallerySectionItem.all,
     shouldAnimate = false,
     transparent: boolean = false,
     autoFocus: boolean = false
@@ -990,10 +997,24 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleInsertSticker = (
     blockId: string = null,
-    image: YeetImageContainer,
-    dimensions?: YeetImageRect
+    _image: YeetImageContainer,
+    post: Partial<PostFragment>
   ) => {
-    console.log(image, dimensions, blockId);
+    let image = _image;
+
+    if (post) {
+      const imageBlocks = getImageBlocks(post);
+
+      if (imageBlocks[0]) {
+        const container: YeetImageContainer = {
+          image: imageBlocks[0].value,
+          preview: imageBlocks[0].value,
+          id: imageBlocks[0].id
+        };
+        image = container;
+      }
+    }
+
     const minWidth = minImageWidthByFormat(PostFormat.sticker);
 
     const block = buildImageBlock({
@@ -1002,7 +1023,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       layout: PostLayout.media,
       width: minWidth,
       height: image.image.height * (minWidth / image.image.width),
-      dimensions,
       autoInserted: false,
       format: PostFormat.sticker
     });
@@ -1686,14 +1706,16 @@ class RawwPostEditor extends React.Component<Props, State> {
           </Layer>
         </View>
 
-        <TextInputToolbar
-          nativeID="new-post-input"
-          onChooseTemplate={this.handleChangeTemplate}
-          block={this.focusedBlock}
-          onChangeOverrides={this.handleChangeOverrides}
-          focusType={this.state.focusType}
-          onChangeBorderType={this.handleChangeBorderType}
-        />
+        {this.focusedBlock?.type !== "image" && (
+          <TextInputToolbar
+            nativeID="new-post-input"
+            onChooseTemplate={this.handleChangeTemplate}
+            block={this.focusedBlock}
+            onChangeOverrides={this.handleChangeOverrides}
+            focusType={this.state.focusType}
+            onChangeBorderType={this.handleChangeBorderType}
+          />
+        )}
       </View>
     );
   }

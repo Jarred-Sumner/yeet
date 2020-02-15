@@ -5,7 +5,8 @@ import {
   findNodeHandle,
   View,
   StyleSheet,
-  ScrollView as ScrollViewType
+  ScrollView as ScrollViewType,
+  LayoutAnimation
 } from "react-native";
 import FastList from "../FastList";
 import {
@@ -34,12 +35,14 @@ const NativePanSheetView = requireNativeComponent(
 type PanSheetContextValue = {
   setActiveScrollView: (ref) => void;
   setSize: (size: PanSheetViewSize) => void;
+  size: PanSheetViewSize;
   panScrollTag: number | null;
 };
 export const PanSheetContext = React.createContext<PanSheetContextValue>({
   setActiveScrollView: ref => null,
   setSize: (size: PanSheetViewSize) => null,
-  panScrollTag: 0
+  panScrollTag: 0,
+  size: PanSheetViewSize.short
 });
 
 export class PanSheetView extends React.Component<
@@ -100,6 +103,7 @@ export class PanSheetView extends React.Component<
 
     this.state = {
       panSheetValue: {
+        size: props.defaultPresentationState,
         setActiveScrollView: this.setActiveScrollView,
         panScrollTag: null,
         setSize: this.setSize
@@ -115,11 +119,45 @@ export class PanSheetView extends React.Component<
 
   componentDidMount() {}
 
+  handleTransition = (
+    event: NativeSyntheticEvent<{
+      from: PanSheetViewSize;
+      to: PanSheetViewSize;
+    }>
+  ) => {
+    if (event.nativeEvent.to === this.state.panSheetValue.size) {
+      return;
+    }
+    this.setState({
+      panSheetValue: {
+        ...this.state.panSheetValue,
+        size: event.nativeEvent.to
+      }
+    });
+  };
+
   setSize = (size: PanSheetViewSize) => {
+    if (!this.nativePanSheetView.current) {
+      return;
+    }
+
+    if (this.state.panSheetValue.size !== size) {
+      this.setState({
+        panSheetValue: {
+          ...this.state.panSheetValue,
+          size
+        }
+      });
+    }
+
     transitionPanSheetView(
       findNodeHandle(this.nativePanSheetView.current),
       size
     );
+  };
+
+  setNativeProps = props => {
+    this.nativePanSheetView.current.setNativeProps(props);
   };
 
   render() {
@@ -130,9 +168,13 @@ export class PanSheetView extends React.Component<
         ref={this.nativePanSheetView}
         longHeight={this.props.longHeight}
         shortHeight={this.props.shortHeight}
-        onStartShouldSetResponder={this._shouldSetResponder}
+        headerTag={this.props.headerTag}
+        // onStartShouldSetResponder={this._shouldSetResponder}
+        onTransition={this.handleTransition}
+        didAppear={this.props.didAppear}
         defaultPresentationState={this.props.defaultPresentationState}
         onDismiss={this.props.onDismiss}
+        onTransition={this.handleTransition}
         style={styles.modal}
         onWillDismiss={this.props.onWillDismiss}
         panScrollTag={this.state.panSheetValue.panScrollTag}
@@ -149,7 +191,8 @@ export class PanSheetView extends React.Component<
 
 const styles = StyleSheet.create({
   modal: {
-    position: "absolute"
+    position: "absolute",
+    overflow: "visible"
   },
   container: {
     /* $FlowFixMe(>=0.111.0 site=react_native_fb) This comment suppresses an

@@ -172,6 +172,17 @@ class FeedPageComponent extends React.Component<Props> {
   feedListRef = React.createRef();
   handleScrollTop = () => this.feedListRef.current.scrollToTop();
 
+  componentDidMount() {
+    // console.time("RENDER TIME");
+    // window.setTimeout(
+    //   () =>
+    //     this.setState({ showNewPostSheet: true }, () =>
+    //       console.timeEnd("RENDER TIME")
+    //     ),
+    //   1000
+    // );
+  }
+
   render() {
     return (
       <>
@@ -189,6 +200,8 @@ class FeedPageComponent extends React.Component<Props> {
           <View style={styles.floatingPlus}>
             <NewThreadButton />
           </View>
+
+          {/* {this.state.showNewPostSheet && <ImagePickerPage />} */}
         </View>
       </>
     );

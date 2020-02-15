@@ -64,7 +64,6 @@ class YeetClipboard: RCTEventEmitter  {
 
   func observePasteboardChange() {
     NotificationCenter.default.addObserver(self, selector: #selector(handleChangeEvent(_:)), name: UIPasteboard.changedNotification, object: nil)
-
     NotificationCenter.default.addObserver(self, selector: #selector(handleRemoveEvent(_:)), name: UIPasteboard.removedNotification, object: nil)
   }
 
@@ -100,20 +99,14 @@ class YeetClipboard: RCTEventEmitter  {
 
     set (newValue) {
       super.bridge = newValue
+      
+      newValue?._run(afterLoad: { [weak self] in
+        guard let this = self else {
+          return
+        }
 
-      if newValue.isLoading {
-        MediaPlayerJSIModuleInstaller.installClipboard(self)
-      } else {
-        newValue?.dispatchBlock({ [weak self] in
-          guard let this = self else {
-            return
-          }
-
-
-          MediaPlayerJSIModuleInstaller.installClipboard(this)
-        }, queue: RCTJSThread)
-      }
-
+        MediaPlayerJSIModuleInstaller.installClipboard(this)
+      })
     }
   }
 
@@ -137,7 +130,6 @@ class YeetClipboard: RCTEventEmitter  {
   override static func moduleName() -> String! {
     return "YeetClipboard";
   }
-
 
   @objc(serializeContents)
   static func serializeContents() -> [String: Any] {

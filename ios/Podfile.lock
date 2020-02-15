@@ -462,7 +462,7 @@ PODS:
     - React
   - RNReanimated (1.4.0):
     - React
-  - RNScreens (2.0.0-beta.1):
+  - RNScreens (2.0.0-beta.4):
     - React
   - RNSecureKeyStore (1.0.0):
     - React
@@ -527,7 +527,7 @@ DEPENDENCIES:
   - Nimble (from `https://github.com/Quick/Nimble.git`)
   - OneSignal (< 3.0, >= 2.9.3)
   - OpenCV2
-  - PanModal
+  - PanModal (from `https://github.com/KyoheiG3/PanModal.git`, branch `fix-background-dimming-animation`)
   - Permission-Contacts (from `../node_modules/react-native-permissions/ios/Contacts.podspec`)
   - Permission-LocationAlways (from `../node_modules/react-native-permissions/ios/LocationAlways.podspec`)
   - Permission-LocationWhenInUse (from `../node_modules/react-native-permissions/ios/LocationWhenInUse.podspec`)
@@ -648,7 +648,6 @@ SPEC REPOS:
     - NextLevelSessionExporter
     - OneSignal
     - OpenCV2
-    - PanModal
     - PINOperation
     - Promises
     - Protobuf
@@ -688,6 +687,9 @@ EXTERNAL SOURCES:
     :podspec: "../node_modules/react-native/third-party-podspecs/glog.podspec"
   Nimble:
     :git: https://github.com/Quick/Nimble.git
+  PanModal:
+    :branch: fix-background-dimming-animation
+    :git: https://github.com/KyoheiG3/PanModal.git
   Permission-Contacts:
     :path: "../node_modules/react-native-permissions/ios/Contacts.podspec"
   Permission-LocationAlways:
@@ -824,6 +826,9 @@ CHECKOUT OPTIONS:
   Nimble:
     :commit: 795fb77fe534f7514e2801bf8581b40597d1110c
     :git: https://github.com/Quick/Nimble.git
+  PanModal:
+    :commit: 3ffac6bd05c941669fba172e5cd266d5cda3ed62
+    :git: https://github.com/KyoheiG3/PanModal.git
   PINCache:
     :commit: 79f0d30d440f44e29a460bf50b293808b3542c1a
     :git: https://github.com/pinterest/PINCache.git
@@ -941,7 +946,7 @@ SPEC CHECKSUMS:
   RNPermissions: 86932e45b170515f71f76751bc9fa055910b049f
   RNReactNativeHapticFeedback: e11a4da0ce174e9f88b03cbaf5d76d94633cdee2
   RNReanimated: b2ab0b693dddd2339bd2f300e770f6302d2e960c
-  RNScreens: 9d9519aa32b6bc9c4a3ab8ea4d3d86932aa29588
+  RNScreens: 6053a007667bea81a69087caadf103bba04c032e
   RNSecureKeyStore: f1ad870e53806453039f650720d2845c678d89c8
   RNSentry: 9b1d983b2d5d1c215ba6490348fd2a4cc23a8a9d
   RNSharedElement: 83dc1bd2e0e04e4cc54af825382976a797106d19
@@ -964,6 +969,6 @@ SPEC CHECKSUMS:
   XExtensionItem: 12959ad75ca5d6174bda1c1d596853fd0b0817e4
   Yoga: ba3d99dbee6c15ea6bbe3783d1f0cb1ffb79af0f
 
-PODFILE CHECKSUM: a669962f137e4bfbc7413be2fd3d8ceddda22611
+PODFILE CHECKSUM: b21a1fbc16bb3bb3da74e2f608cf712725dea300
 
 COCOAPODS: 1.8.4

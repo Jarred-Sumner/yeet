@@ -50,6 +50,7 @@ class RawGallerySearchResultsContainer extends React.Component {
   renderTabBar = props => (
     <GalleryTabBar
       navigationState={props.navigationState}
+      route={props.route}
       onChangeInputFocus={this.props.onChangeInputFocus}
       onChangeQuery={this.props.onChangeQuery}
       scrollY={this.scrollY}

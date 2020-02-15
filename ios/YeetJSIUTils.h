@@ -13,6 +13,7 @@
 #import <React/RCTConvert.h>
 #import <React/RCTBridgeModule.h>
 #import <ReactCommon/TurboModuleUtils.h>
+#import "YeetJSIExtensions.h"
 
 using namespace facebook;
 /**
@@ -147,3 +148,4 @@ struct PromiseWrapper : public react::LongLivedObject {
 using PromiseInvocationBlock = void (^)(jsi::Runtime &rt, std::shared_ptr<PromiseWrapper> wrapper);
 jsi::Value
 createPromise(jsi::Runtime &runtime, std::shared_ptr<react::JSCallInvoker> jsInvoker, PromiseInvocationBlock invoke);
+

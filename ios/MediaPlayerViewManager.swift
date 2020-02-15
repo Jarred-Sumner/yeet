@@ -13,16 +13,24 @@ import Vision
 @objc(MediaPlayerViewManager)
 class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
 
-  func invalidate() {
-//    MediaSource.clearCache()
+  @objc(invalidate) func invalidate() {
+    RCTExecuteOnMainQueue {
+      self.views.allObjects.forEach { player in
+        player.invalidate()
+      }
+    }
+
   }
 
   override static func moduleName() -> String! {
     return "MediaPlayerView";
   }
 
+  var views = NSHashTable<MediaPlayer>(options: .weakMemory)
   override func view() -> MediaPlayer? {
-   return MediaPlayer(bridge: self.bridge)
+   let _view = MediaPlayer(bridge: self.bridge)
+    views.add(_view)
+    return _view
   }
 
   @objc
@@ -47,18 +55,15 @@ class MediaPlayerViewManager: RCTViewManager, RCTInvalidating {
     set (newValue) {
       super.bridge = newValue
 
-      if newValue.isLoading {
-        MediaPlayerJSIModuleInstaller.install(self)
-      } else {
-        newValue?.dispatchBlock({ [weak self] in
-          guard let this = self else {
-            return
-          }
+
+      newValue?._run(afterLoad: { [weak self] in
+        guard let this = self else {
+          return
+        }
 
 
-          MediaPlayerJSIModuleInstaller.install(this)
-        }, queue: RCTJSThread)
-      }
+        MediaPlayerJSIModuleInstaller.install(this)
+      })
 
     }
   }

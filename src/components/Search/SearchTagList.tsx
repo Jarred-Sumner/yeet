@@ -299,7 +299,7 @@ const SearchTagListComponent = ({
   const { setActiveScrollView, setSize } = React.useContext(PanSheetContext);
   const scrollRef = React.useRef<ScrollView>();
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     const scrollView = scrollRef.current;
 
     if (scrollView) {
@@ -307,10 +307,6 @@ const SearchTagListComponent = ({
     }
 
     setSize(PanSheetViewSize.tall);
-
-    return () => {
-      setActiveScrollView(null);
-    };
   }, [setActiveScrollView, setSize, scrollRef]);
 
   return (

@@ -22,6 +22,7 @@ import { StickerFilterList } from "./FilterList/StickerFilterList";
 import { GallerySectionList } from "./GallerySectionList";
 import { PanSheetContext } from "./PanSheetView";
 import { NativeScreen } from "react-native-screens";
+import { sendSelectionFeedback } from "../../lib/Vibration";
 
 const ViewPager = createNativeWrapper(_ViewPager, {
   disallowInterruption: false
@@ -29,21 +30,19 @@ const ViewPager = createNativeWrapper(_ViewPager, {
 
 const styles = StyleSheet.create({
   sceneContainer: {
-    overflow: "visible",
-    flex: 0,
-    flexGrow: 0,
-    width: "100%"
+    overflow: "visible"
   },
   modalSceneContainer: {
     overflow: "visible",
     flex: -1,
     flexGrow: 0,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     width: "100%"
   },
   container: {
     flex: 0,
     width: "100%",
+    // backgroundColor: COLORS.primaryDark,
 
     overflow: "visible"
   }
@@ -77,11 +76,15 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
     super(props);
 
     this.state = {
-      page: Math.max(props.routes.indexOf(props.initialRoute), 0)
+      page: this.initialPage
     };
     this.loadedScreens = new Set([this.currentRoute]);
 
     this.position = this.props.position;
+  }
+
+  get initialPage() {
+    return Math.max(this.props.routes.indexOf(this.props.initialRoute), 0);
   }
 
   loadedScreens: Set<GallerySectionItem>;
@@ -109,7 +112,7 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
     { useNativeDriver: true }
   );
 
-  viewPagerRef = React.createRef();
+  viewPagerRef = React.createRef<ViewPager>();
 
   componentDidMount() {
     const { viewPagerRef } = this;
@@ -133,8 +136,6 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
         "onPageScroll"
       );
     }
-
-    this.props.setActiveScrollView(null);
   }
 
   cameraRollListRef = React.createRef<FlatList>();
@@ -362,10 +363,26 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
     }
   };
 
+  handleChangeRoute = route => {
+    const index = this.props.routes.indexOf(route);
+
+    if (index < 0) {
+      return;
+    }
+
+    if (!this.viewPagerRef.current) {
+      return;
+    }
+
+    this.viewPagerRef.current.setPage(index);
+    sendSelectionFeedback();
+    window.requestAnimationFrame(() => this.onIndexChange(index));
+  };
   renderTabBar = props =>
     this.props.renderTabBar({
       ...props,
       route: this.currentRoute,
+      onChangeRoute: this.handleChangeRoute,
       tabViewRef: this.currentRef
     });
 
@@ -373,6 +390,10 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
   initialLayout: { width: number; height: number };
 
   onIndexChange = index => {
+    if (this.routesToRef[index]) {
+      this.props.setActiveScrollView(this.routesToRef[index].current);
+    }
+
     this.loadedScreens.add(this.props.routes[index]);
     this.setState({ page: index });
   };
@@ -405,13 +426,12 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
         style={[
           styles.sceneContainer,
           {
-            height: this.props.height,
-            width: this.props.width,
-            backgroundColor: COLORS.primaryDark
+            height: this.props.height || SCREEN_DIMENSIONS.width,
+            width: this.props.width || SCREEN_DIMENSIONS.height
           }
         ]}
       >
-        {this.loadedScreens.has(route) && this.renderScene(route)}
+        {this.renderScene(route)}
       </NativeScreen>
     );
   };
@@ -429,8 +449,10 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
           onPageSelected={this.onPageSelected}
           ref={this.viewPagerRef}
           scrollEnabled
+          lazy={false}
           pageMargin={0}
           keyboardDismissMode="none"
+          initialPage={this.initialPage}
           simultaneousRecognizers={this.viewPagerSimultaneousHandlers}
           showPageIndicator={false}
         >

@@ -84,10 +84,7 @@ export class Storage {
   }
 
   static setDismissedWelcomeModal(value) {
-    return Storage.setItem(
-      KEYS.DISMISSED_WELCOME_MODAL,
-      !!value ? "true" : "false"
-    );
+    return Storage.setItem(KEYS.DISMISSED_WELCOME_MODAL, !!value ? 1 : 0);
   }
 
   static setJWT(value) {

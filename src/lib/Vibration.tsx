@@ -7,9 +7,9 @@ const options = {
 
 const trigger = (type, opts) => {
   if (global.YeetJSI?.hapticFeedback) {
-    return global.YeetJSI?.hapticFeedback(type, opts);
+    global.YeetJSI?.hapticFeedback(type, opts);
   } else {
-    return ReactNativeHapticFeedback.trigger(type, opts);
+    ReactNativeHapticFeedback.trigger(type, opts);
   }
 };
 

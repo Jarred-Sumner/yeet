@@ -36,7 +36,7 @@ target 'yeet' do
     pod 'ReactCommon/jscallinvoker', :path => "../node_modules/react-native/ReactCommon"
     pod 'ReactCommon/turbomodule/core', :path => "../node_modules/react-native/ReactCommon"
     pod 'Yoga', path: '../node_modules/react-native/ReactCommon/yoga', modular_headers: false
-    pod 'PanModal'
+    pod 'PanModal', git: 'https://github.com/KyoheiG3/PanModal.git', branch: 'fix-background-dimming-animation'
 
   pod 'DoubleConversion',
       podspec:

@@ -122,16 +122,17 @@ export const FilterBar = ({
   // ];
 
   const renderFilter = React.useCallback(
-    filter => {
+    (filter, index) => {
       return (
         <FilterBarRow
-          key={filter.value}
+          key={`${filter.value}-${value === filter.value}`}
           onPress={onChange}
           iconOnly={icons}
           isActive={value === filter.value}
           inset={inset}
           value={filter.value}
           light={light}
+          isLast={index === tabs.length - 1}
           size={{ width }}
           Icon={icons ? ICONS[filter.value] : undefined}
         >

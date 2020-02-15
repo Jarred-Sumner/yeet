@@ -35,8 +35,8 @@ class PanViewController : UIViewController, PanModalPresentable {
   override func loadView() {
     super.loadView()
 
+    self.view.clipsToBounds = false
   }
-
 
 
   override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation { get { return .portrait } }
@@ -45,7 +45,6 @@ class PanViewController : UIViewController, PanModalPresentable {
   func supportedInterfaceOrientations(for window: UIWindow?) -> UIInterfaceOrientationMask {
     return .portrait
   }
-
 
 
   required init?(coder: NSCoder) {
@@ -108,8 +107,8 @@ class PanViewController : UIViewController, PanModalPresentable {
     hasLoaded = true
 
 
-    panModalSetNeedsLayoutUpdate()
-    panModalTransition(to: panPresentationState)
+//    panModalSetNeedsLayoutUpdate()
+//    panModalTransition(to: panPresentationState)
   }
 
 
@@ -130,6 +129,8 @@ class PanViewController : UIViewController, PanModalPresentable {
 
 
 
+
+
 //   var panScrollable: UIScrollView? {
 //         return nil
 //     }
@@ -147,13 +148,26 @@ class PanViewController : UIViewController, PanModalPresentable {
   }
 
  var anchorModalToLongForm: Bool {
-  get { return panView?.defaultPresentationState == .longForm }
+  get { return panView?._defaultPresentationState == .longForm }
  }
 
  var shouldRoundTopCorners: Bool {
-     return true
+     return false
  }
 
+  func reloadHeader() {
+    RCTExecuteOnMainQueue {
+      guard let headerView = self.headerView else {
+         return
+      }
+
+      guard let reactSubview = self.panView?.reactSubview ?? nil else {
+        return
+      }
+
+      self.view.insertSubview(headerView, belowSubview: reactSubview)
+    }
+  }
 
   var minY: CGFloat = 0
 
@@ -185,7 +199,40 @@ class PanViewController : UIViewController, PanModalPresentable {
    Default value is an empty implementation.
    */
   func willRespond(to panModalGestureRecognizer: UIPanGestureRecognizer) {
+    guard let reactSubview = panView?.reactSubview else {
+          return
+        }
 
+        guard let headerView = self.headerView else {
+          return
+        }
+
+    guard let superview  =  view.superview else {
+      return
+    }
+
+    guard let window = UIApplication.shared.keyWindow else {
+      return
+    }
+
+    let dist = panModalGestureRecognizer.translation(in: window)
+
+
+    let totalDistance = dist.y + (headerView.frame.size.height - superview.frame.y)
+
+    let endY = totalDistance > 0 ? totalDistance : 0
+
+    if let dragIndicatorView = self.dragIndicatorView {
+      let endValue: Float = endY == 0 ? 1 : 0
+
+      if endValue != dragIndicatorView.layer.opacity {
+        panModalAnimate({
+          dragIndicatorView.layer.opacity = endValue
+        })
+      }
+    }
+
+    headerView.transform = CGAffineTransform.identity.translatedBy(x: .zero, y: endY)
   }
 
 
@@ -201,6 +248,8 @@ class PanViewController : UIViewController, PanModalPresentable {
    Default return value is false.
    */
   func shouldPrioritize(panModalGestureRecognizer: UIPanGestureRecognizer) -> Bool {
+
+
     return false
   }
 
@@ -219,12 +268,70 @@ class PanViewController : UIViewController, PanModalPresentable {
 
    Default value is an empty implementation.
    */
+  func adjustHeaderPosition(state: PanModalPresentationController.PresentationState) {
+    if let headerView = self.headerView {
+      if state == .longForm {
+        panModalAnimate({
+          headerView.transform = CGAffineTransform.init(translationX: 0, y: (self.longHeight - self.shortHeight) )
+        })
+      } else {
+        panModalAnimate({
+          headerView.transform = .identity
+        })
+      }
+    }
+  }
   func willTransition(to state: PanModalPresentationController.PresentationState) {
+     adjustHeaderPosition(state: state)
+    panView?.willTransition(to: state)
     panPresentationState = state
+    panModalSetNeedsLayoutUpdate()
+
+
+    if let dragIndicatorView = self.dragIndicatorView {
+      let _alpha: Float = state == .longForm ? 0.0 : 1.0
+      if _alpha != dragIndicatorView.layer.opacity {
+        panModalAnimate({
+          dragIndicatorView.layer.opacity = _alpha
+        })
+      }
+    }
   }
 
+  var dragIndicatorView: UIView? {
+    guard let panPresentationController = self.panPresentationController else {
+      return nil
+    }
+
+    return view.superview?.subviews.first(where: { view -> Bool in
+      return view.backgroundColor == self.dragIndicatorBackgroundColor
+    })
+  }
+
+  var panPresentationController: PanModalPresentationController?  { return presentationController as? PanModalPresentationController }
   var showDragIndicator: Bool {
-    return panPresentationState == .shortForm
+    return headerTag == nil
+  }
+
+  var headerTag: NSNumber? = nil  {
+    didSet {
+      reloadHeader()
+    }
+  }
+  var headerView: UIView? {
+    guard let headerTag = self.headerTag else {
+      return nil
+    }
+
+    guard bridge?.isValid ?? false else {
+      return nil
+    }
+
+    guard let uiManager = bridge?.uiManager else {
+      return nil
+    }
+
+    return uiManager.view(forReactTag: headerTag)
   }
   /**
    Notifies the delegate that the pan modal is about to be dismissed.
@@ -232,9 +339,68 @@ class PanViewController : UIViewController, PanModalPresentable {
    Default value is an empty implementation.
    */
   func panModalWillDismiss() {
+    panView?.resetTouch()
     panView?.onWillDismiss?([:])
 
+    if let headerView = self.headerView {
+        panModalAnimate({
+          self.headerView?.layer.opacity = 0
+        })
+      }
   }
+
+
+
+  override func viewWillAppear(_ animated: Bool) {
+     super.viewWillAppear(animated)
+
+    reloadHeader()
+
+    if let headerView = self.headerView {
+      headerView.layer.opacity = 0
+      panModalAnimate({
+        self.headerView?.layer.opacity = 1
+      })
+    }
+
+    // Force it to start in the long form
+    if panView?._defaultPresentationState == .longForm {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+        self.transition(to: .longForm)
+      }
+    }
+
+   }
+
+  override func viewDidAppear(_ animated: Bool) {
+    super.viewDidAppear(animated)
+    panView?.didAppear?([:])
+    reloadHeader()
+    headerView?.layer.opacity = 1
+  }
+
+
+  override func viewWillDisappear(_ animated: Bool) {
+    super.viewWillDisappear(animated)
+
+    if let headerView = self.headerView {
+       panModalAnimate({
+         self.headerView?.layer.opacity = 0
+       })
+     }
+  }
+
+
+  func transition(to: PanModalPresentationController.PresentationState) {
+    panModalTransition(to: to)
+  }
+
+  override func viewDidDisappear(_ animated: Bool) {
+    super.viewDidDisappear(animated)
+    panView?.presented = false
+    panView?.resetTouch()
+  }
+
 
   /**
    Notifies the delegate after the pan modal is dismissed.
@@ -242,13 +408,6 @@ class PanViewController : UIViewController, PanModalPresentable {
    Default value is an empty implementation.
    */
   func panModalDidDismiss() {
-
-    if let reactSubview = panView?.reactSubview {
-      panView?.touchHandler?.detach(from: reactSubview)
-      panView?.panViewController = nil
-      panView?.reactSubview = nil
-    }
-
 
     panView?.onDismiss?([:])
   }

@@ -145,25 +145,25 @@ const rowStyles = StyleSheet.create({
     justifyContent: "space-around",
     marginLeft: 0,
     width: "100%",
-    flexDirection: "row",
-    backgroundColor: COLORS.primaryDark
+    flexDirection: "row"
+    // backgroundColor: COLORS.primaryDark
   },
   padded: {
     justifyContent: "space-evenly",
     // paddingHorizontal: INSET_SQUARE_INSET,
     height: INSET_SQUARE_ITEM_HEIGHT + COLUMN_GAP * 2,
     paddingVertical: COLUMN_GAP * 2,
-    backgroundColor: chroma
-      .blend(chroma(COLORS.primary).alpha(0.95), "blue", "darken")
-      .alpha(0.55)
-      .css(),
+    // backgroundColor: chroma
+    //   .blend(chroma(COLORS.primary).alpha(0.95), "blue", "darken")
+    //   .alpha(0.55)
+    //   .css(),
     width: "100%",
     flexDirection: "row"
   },
   fourColumn: {
     justifyContent: "space-evenly",
     paddingHorizontal: COLUMN_GAP,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     width: "100%",
     flexDirection: "row"
   }
@@ -223,7 +223,7 @@ const GalleryItemComponent = React.memo(
     sources,
     paused
   }) => {
-    if (isVideo) {
+    if (isVideo && duration > 0) {
       return (
         <BaseButton
           shouldCancelWhenOutside
@@ -555,7 +555,7 @@ export const GalleryRow = ({
   paused,
   transparent,
   padding,
-
+  ItemComponent = GalleryRowItem,
   first,
   second,
   third,
@@ -564,7 +564,7 @@ export const GalleryRow = ({
   if (numColumns === 4) {
     return (
       <View height={height} style={rowStyles.fourColumn}>
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -579,7 +579,7 @@ export const GalleryRow = ({
           paused={paused}
         />
 
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -593,7 +593,7 @@ export const GalleryRow = ({
           username={get(second, "post.profile.username")}
           paused={paused}
         />
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -607,7 +607,7 @@ export const GalleryRow = ({
           username={get(third, "post.profile.username")}
           paused={paused}
         />
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -629,7 +629,7 @@ export const GalleryRow = ({
         height={height}
         style={padding ? rowStyles.padded : rowStyles.column}
       >
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           mediaSource={first?.mediaSource}
@@ -644,7 +644,7 @@ export const GalleryRow = ({
           paused={paused}
         />
 
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -658,7 +658,7 @@ export const GalleryRow = ({
           username={get(second, "post.profile.username")}
           paused={paused}
         />
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -677,7 +677,7 @@ export const GalleryRow = ({
   } else if (numColumns === 2) {
     return (
       <View style={rowStyles.column}>
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -692,7 +692,7 @@ export const GalleryRow = ({
           paused={paused}
         />
 
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}
@@ -711,7 +711,7 @@ export const GalleryRow = ({
   } else if (numColumns === 1) {
     return (
       <View style={rowStyles.column}>
-        <GalleryRowItem
+        <ItemComponent
           onPress={onPress}
           width={width}
           height={height}

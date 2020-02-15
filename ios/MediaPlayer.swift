@@ -276,6 +276,10 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     }
   }
 
+  @objc(status) var status : NSString {
+    return self.source?.status.stringValue as NSString? ?? TrackableMediaSource.Status.pending.stringValue as NSString
+  }
+
   var imageView: YeetImageView? {
     let imageViewTag = self.imageViewTag
     return viewWithTag(imageViewTag) as? YeetImageView
@@ -384,14 +388,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
     self.bridge = bridge
     super.init(frame: .zero)
     self.backgroundColor = .clear
-
-    bridgeObserver = bridge?.observe(\RCTBridge.isValid) { [weak self] bridge, changes in
-      if !bridge.isValid {
-        self?.invalidate()
-      }
-
-
-    }
   }
 
 
@@ -537,7 +533,7 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   var isContentViewImage: Bool { return contentView?.tag == imageViewTag }
   var isContentViewVideo: Bool { return contentView?.tag == videoViewTag }
   var mediaQueueObserver: NSKeyValueObservation? = nil
-  var bridgeObserver: NSKeyValueObservation? = nil
+
 
 
 
@@ -990,8 +986,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
   @objc(invalidate)
   func invalidate() {
     invalidated = true
-    bridgeObserver?.invalidate()
-    bridgeObserver = nil
     source?.delegate.removeDelegate(self)
     imageView?.invalidate()
   }
@@ -1102,7 +1096,6 @@ final class MediaPlayer : UIView, RCTUIManagerObserver, RCTInvalidating, Trackab
 
   deinit {
     source?.stop()
-    bridgeObserver?.invalidate()
     Log.debug("DEINIT \(source?.mediaSource.id)-\(id)")
 
     if let videoSource = self.videoSource {

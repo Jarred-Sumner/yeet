@@ -1,6 +1,6 @@
 import * as React from "react";
 import Animated from "react-native-reanimated";
-import { View, StyleSheet } from "react-native";
+import { View, StyleSheet, LayoutAnimation } from "react-native";
 import { TOP_Y } from "../../../config";
 import { COLORS, SPACING } from "../../lib/styles";
 import { SafeAreaContext } from "react-native-safe-area-context";
@@ -9,14 +9,16 @@ import { BorderlessButton } from "react-native-gesture-handler";
 import { IconChevronRight } from "../Icon";
 import { Text, MediumText } from "../Text";
 import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
+import { PanSheetContext } from "./PanSheetView";
+import { PanSheetViewSize } from "../../lib/Yeet";
 
 export const TOP_HEADER = 48;
 
 const styles = StyleSheet.create({
   header: {
     flex: 0,
-    height: 50,
-    top: 0,
+    height: TOP_HEADER + TOP_Y,
+    top: -(TOP_HEADER + TOP_Y),
     paddingTop: TOP_Y,
     left: 0,
     right: 0,
@@ -61,17 +63,15 @@ const styles = StyleSheet.create({
   }
 });
 
-export const StartFromHeader = ({
-  scrollY
-}: {
-  scrollY: Animated.Value<number>;
-}) => {
-  // const behavior = BackButtonBehavior.close;
+export const StartFromHeader = React.forwardRef((props, ref) => {
+  const { size } = React.useContext(PanSheetContext);
+
+  const behavior = BackButtonBehavior.close;
 
   return (
-    <Animated.View style={[styles.header]}>
+    <View ref={ref} style={styles.header}>
       <View style={[styles.headerSide, styles.headerLeft]}>
-        {/* <BackButton behavior={behavior} size={17} color={COLORS.mutedLabel} /> */}
+        <BackButton behavior={behavior} size={17} color={COLORS.mutedLabel} />
       </View>
 
       <View style={[styles.headerSide, styles.headerCenter]}>
@@ -86,6 +86,6 @@ export const StartFromHeader = ({
           </View>
         </BorderlessButton>
       </View>
-    </Animated.View>
+    </View>
   );
-};
+});

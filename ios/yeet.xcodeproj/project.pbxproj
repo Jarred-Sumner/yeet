@@ -47,6 +47,7 @@
 		8330489A23222C3F00E816E8 /* YeetExportData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489923222C3F00E816E8 /* YeetExportData.swift */; };
 		8330489C23222D4800E816E8 /* EditorExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489B23222D4800E816E8 /* EditorExport.swift */; };
 		8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8330489D23223B0D00E816E8 /* VideoProducer.swift */; };
+		8332B0FA23F774C9003FB121 /* YeetJSIExtensions.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8332B0F923F774C9003FB121 /* YeetJSIExtensions.mm */; };
 		83356DDE23A5C4E300943381 /* FeatureDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83356DDD23A5C4E300943381 /* FeatureDetector.swift */; };
 		83356DE323A5D53800943381 /* FindContours.mm in Sources */ = {isa = PBXBuildFile; fileRef = 83356DE223A5D53800943381 /* FindContours.mm */; };
 		83356DE923A5DD7600943381 /* UIImage+OpenCVConversion.mm in Sources */ = {isa = PBXBuildFile; fileRef = 83356DE823A5DD7600943381 /* UIImage+OpenCVConversion.mm */; };
@@ -254,6 +255,8 @@
 		8330489B23222D4800E816E8 /* EditorExport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorExport.swift; sourceTree = "<group>"; };
 		8330489D23223B0D00E816E8 /* VideoProducer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoProducer.swift; sourceTree = "<group>"; };
 		83328F692345A07A00DD9C84 /* EnableWebpDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnableWebpDecoder.swift; sourceTree = "<group>"; };
+		8332B0F823F774C9003FB121 /* YeetJSIExtensions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetJSIExtensions.h; sourceTree = "<group>"; };
+		8332B0F923F774C9003FB121 /* YeetJSIExtensions.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = YeetJSIExtensions.mm; sourceTree = "<group>"; };
 		83356DDD23A5C4E300943381 /* FeatureDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureDetector.swift; sourceTree = "<group>"; };
 		83356DE123A5D53800943381 /* FindContours.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FindContours.h; sourceTree = "<group>"; };
 		83356DE223A5D53800943381 /* FindContours.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = FindContours.mm; sourceTree = "<group>"; };
@@ -718,6 +721,8 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				8332B0F823F774C9003FB121 /* YeetJSIExtensions.h */,
+				8332B0F923F774C9003FB121 /* YeetJSIExtensions.mm */,
 				83DCFEFA23F3B65C001572E1 /* PanViewManager.h */,
 				83AF133E23F3DC6B00D6924C /* PanShadowView.h */,
 				83AF133F23F3DC6B00D6924C /* PanShadowView.m */,
@@ -1193,6 +1198,7 @@
 				8378997D23CD73C500CCD6E1 /* YeetViewManager.swift in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
+				8332B0FA23F774C9003FB121 /* YeetJSIExtensions.mm in Sources */,
 				83E3E83223B990CC007AC944 /* ExportSessionProgress.swift in Sources */,
 				834B3D102322FDCA00377BE6 /* AnimatedImageResource.swift in Sources */,
 				837ABA4C23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm in Sources */,

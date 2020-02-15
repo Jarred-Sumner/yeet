@@ -14,7 +14,7 @@ protocol PanHostViewInteractor {
 }
 
 @objc(PanViewManager)
-class PanViewManager : RCTViewManager, PanHostViewInteractor  {
+class PanViewManager : RCTViewManager, PanHostViewInteractor, RCTInvalidating  {
   func present(_ modalHostView: PanViewSheet!, with viewController: UIViewController!, animated: Bool) {
 
     let panView: PanViewSheet = modalHostView as! PanViewSheet
@@ -36,14 +36,27 @@ class PanViewManager : RCTViewManager, PanHostViewInteractor  {
       return
     }
 
-    panView.panViewController?.panPresentationState = panView.defaultPresentationState
-    _viewController.presentPanModal(panView.panViewController!)
+    panView.panViewController?.panPresentationState = panView._defaultPresentationState
 
 
     panView.presented = true
-   panView.onPresent(_viewController)
+
+    // Wait a tick.
+
+      _viewController.presentPanModal(panView.panViewController!)
+       panView.onPresent(_viewController)
+    
 
   }
+
+  @objc(invalidate) func invalidate() {
+    hostViews.allObjects.forEach { view in
+      view.invalidate()
+    }
+
+    hostViews.removeAllObjects()
+  }
+
 
   func dismiss(_ modalHostView: PanViewSheet!, with viewController: UIViewController!, animated: Bool) {
 
@@ -53,6 +66,7 @@ class PanViewManager : RCTViewManager, PanHostViewInteractor  {
   }
 
 
+  
   override func view() -> UIView! {
     Log.debug("BEFORE")
     var _view = PanViewSheet(bridge: bridge)
@@ -96,6 +110,7 @@ class PanViewManager : RCTViewManager, PanHostViewInteractor  {
     return PanShadowView()
   }
 
+ 
   @objc(presentViewManagerFrom:to:) func presentViewManager(_ from: NSNumber, _ to: NSNumber) {
     guard var bridge = self.bridge else {
       return
@@ -133,8 +148,7 @@ class PanViewManager : RCTViewManager, PanHostViewInteractor  {
         return
       }
 
-      panViewController.panModalTransition(to: presentationState)
-      panViewController.panModalSetNeedsLayoutUpdate()
+      panViewController.transition(to: presentationState)
     }
 
   }

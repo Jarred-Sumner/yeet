@@ -1,7 +1,7 @@
 import { NetworkStatus } from "apollo-client";
 import { uniqBy } from "lodash";
 import * as React from "react";
-import { useQuery } from "react-apollo";
+import { useQuery, useLazyQuery } from "react-apollo";
 import { RESULTS } from "react-native-permissions";
 import CAMERA_ROLL_QUERY from "../../../lib/CameraRollQuery.local.graphql";
 import { ScrollDirection } from "../../FastList";
@@ -18,9 +18,10 @@ import {
   VERTICAL_ITEM_HEIGHT,
   VERTICAL_ITEM_WIDTH
 } from "../sizes";
-import { View } from "react-native";
-import { photosAuthorizationStatus } from "../../../lib/Yeet";
+import { View, LayoutAnimation } from "react-native";
+import { photosAuthorizationStatus, PanSheetViewSize } from "../../../lib/Yeet";
 import { GallerySectionItem } from "../../NewPost/ImagePicker/GallerySectionItem";
+import { PanSheetView, PanSheetContext } from "../PanSheetView";
 
 export const CameraRollFilterList = ({
   query = "",
@@ -35,6 +36,8 @@ export const CameraRollFilterList = ({
   const [assetType, setAssetType] = React.useState(defaultAssetType);
   const [album, setAlbum] = React.useState(null);
 
+  const { size: sheetSize } = React.useContext(PanSheetContext);
+
   let columnCount = 3;
   let height = SQUARE_ITEM_HEIGHT;
   let width = SQUARE_ITEM_HEIGHT;
@@ -45,7 +48,7 @@ export const CameraRollFilterList = ({
     width = VERTICAL_ITEM_WIDTH;
   }
 
-  const photosQuery = useQuery(CAMERA_ROLL_QUERY, {
+  const [loadPhotos, photosQuery] = useLazyQuery(CAMERA_ROLL_QUERY, {
     skip: photosAuthorizationStatus() !== RESULTS.GRANTED,
     variables: {
       assetType,
@@ -61,6 +64,12 @@ export const CameraRollFilterList = ({
     notifyOnNetworkStatusChange: true,
     fetchPolicy: "network-only"
   });
+
+  React.useEffect(() => {
+    if (isFocused && typeof loadPhotos === "function" && !photosQuery?.called) {
+      loadPhotos();
+    }
+  }, [loadPhotos, isFocused, photosQuery]);
 
   const handleChangeAlbum = React.useCallback(
     album => {
@@ -212,26 +221,37 @@ export const CameraRollFilterList = ({
   );
 
   return (
-    <GalleryFilterListComponent
-      {...otherProps}
-      data={data}
-      onRefresh={photosQuery?.refetch}
-      isFocused={isFocused}
-      ref={ref}
-      listKey={GallerySectionItem.cameraRoll}
-      offset={offset}
-      scrollY={scrollY}
-      paused
-      // onVisibleItemsChange={onVisibleItemsChange}
-      numColumns={columnCount}
-      itemHeight={height}
-      itemWidth={width}
-      isModal={isModal}
-      onEndReached={handleEndReached}
-      networkStatus={photosQuery.networkStatus}
-      hasNextPage={
-        photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
-      }
-    ></GalleryFilterListComponent>
+    <>
+      <GalleryFilterListComponent
+        {...otherProps}
+        data={data}
+        onRefresh={photosQuery?.refetch}
+        isFocused={isFocused}
+        ref={ref}
+        listKey={GallerySectionItem.cameraRoll}
+        offset={offset}
+        scrollY={scrollY}
+        paused
+        // onVisibleItemsChange={onVisibleItemsChange}
+        numColumns={columnCount}
+        itemHeight={height}
+        itemWidth={width}
+        isModal={isModal}
+        onEndReached={handleEndReached}
+        networkStatus={photosQuery.networkStatus}
+        hasNextPage={
+          photosQuery?.data?.cameraRoll?.page_info?.has_next_page ?? false
+        }
+      ></GalleryFilterListComponent>
+
+      {sheetSize === PanSheetViewSize.tall && (
+        <CameraRollAssetTypeSwitcher
+          assetType={assetType}
+          setAssetType={setAssetType}
+          album={album}
+          onChangeAlbum={handleChangeAlbum}
+        />
+      )}
+    </>
   );
 };

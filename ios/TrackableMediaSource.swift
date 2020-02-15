@@ -65,6 +65,8 @@ class TrackableMediaSource : NSObject {
     }
   }
 
+  
+
   var assetDuration : Double {
     get {
       return mediaSource.duration.doubleValue

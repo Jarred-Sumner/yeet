@@ -35,6 +35,7 @@ import {
 } from "./Rect";
 import { Rectangle } from "./Rectangle";
 import { SPACING } from "./styles";
+import { PostFragment } from "./graphql/PostFragment";
 
 export const generateBlockId = nanoid;
 
@@ -699,6 +700,33 @@ export const snapBlock = (
   } else {
     return { blocks, positions };
   }
+};
+
+export const getAllBlocks = (post: Partial<PostFragment>) => {
+  let blocks = [];
+  if (isArray(post.blocks)) {
+    blocks = blocks.concat(
+      flatMap(post.blocks, block => {
+        if (isArray(block)) {
+          return block.map(block => block);
+        } else {
+          return block;
+        }
+      })
+    );
+  }
+
+  if (typeof post.nodes === "object") {
+    blocks = blocks.concat(Object.values(post.nodes).map(node => node.block));
+  }
+
+  return blocks;
+};
+
+export const getImageBlocks = (
+  post: Partial<PostFragment>
+): Array<ImagePostBlock> => {
+  return getAllBlocks(post).filter(isImageBlockWithImage);
 };
 
 export const layoutBlocksInPost = (

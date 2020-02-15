@@ -1,5 +1,49 @@
 #import <Foundation/Foundation.h>
 #import <React/RCTViewManager.h>
+#import "MediaSource.h"
+
+@class TrackableMediaSource;
+
+@interface MediaPlayer : UIView <UINavigationControllerDelegate, UIVideoEditorControllerDelegate, RCTInvalidating>
+@property (nonatomic) BOOL prefetch;
+- (void)didSetProps:(NSArray<NSString *> * _Nonnull)changedProps;
+@property (nonatomic) BOOL allowSkeleton;
+@property (nonatomic, strong) NSString * _Nullable id;
+@property (nonatomic, copy) NSArray<MediaSource *> * _Nullable sources;
+@property (nonatomic, strong) TrackableMediaSource * _Nullable source;
+@property (nonatomic) BOOL paused;
+@property (nonatomic) BOOL autoPlay;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onChangeItem;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onLoad;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onPlay;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onPause;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onEnd;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onError;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onProgress;
+@property (nonatomic) CGFloat borderRadius;
+- (BOOL)editVideo;
+@property (nonatomic, copy) RCTDirectEventBlock _Nullable onEditVideo;
+- (void)videoEditorController:(UIVideoEditorController * _Nonnull)editor didSaveEditedVideoToPath:(NSString * _Nonnull)editedVideoPath;
+- (void)layoutSubviews;
+- (void)pause;
+- (void)reset;
+
+@property (nonatomic, readonly) NSString *status;
+@property (nonatomic, strong) NSNumber * _Nullable containerTag;
+@property (nonatomic, copy) NSString * _Nonnull resizeMode;
+- (void)play;
+- (void)advance:(NSInteger)to :(BOOL)withFrame :(void (^ _Nullable)(TrackableMediaSource * _Nonnull))cb;
+@property (nonatomic) BOOL isActive;
+@property (nonatomic) BOOL muted;
+- (void)invalidate;
+@property (nonatomic) BOOL thumbnail;
+- (void)didMoveToWindow;
+@property (nonatomic, readonly) CGSize mediaSize;
+- (void)willMoveToWindow:(UIWindow * _Nullable)newWindow;
+- (nonnull instancetype)initWithFrame:(CGRect)frame;
+@end
+
+
 //
 //  MediaPlayerViewManager.h
 //  yeet

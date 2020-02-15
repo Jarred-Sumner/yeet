@@ -1,6 +1,6 @@
 import { NetworkStatus } from "apollo-client";
 import * as React from "react";
-import { useLazyQuery } from "react-apollo";
+import { useLazyQuery, useQuery } from "react-apollo";
 import { StyleSheet, View } from "react-native";
 import { SCREEN_DIMENSIONS, BOTTOM_Y } from "../../../config";
 import {
@@ -22,14 +22,16 @@ import { GalleryRow } from "./GalleryItem";
 import { SQUARE_ITEM_HEIGHT, SQUARE_ITEM_WIDTH } from "./sizes";
 import { COLORS, SPACING } from "../../lib/styles";
 import { MediumText, Text } from "../Text";
-import { IconGlobe } from "../Icon";
+import { IconGlobe, IconGIF } from "../Icon";
 import { PanSheetContext } from "./PanSheetView";
 import { PanSheetViewSize } from "../../lib/Yeet";
+import ContentLoader, { Rect } from "react-content-loader/native";
+import GIFS_QUERY from "../../lib/GIFSearchQuery.local.graphql";
 
 const styles = StyleSheet.create({
   container: {
     width: SCREEN_DIMENSIONS.width,
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     flex: 0,
     position: "relative"
   },
@@ -53,7 +55,22 @@ const styles = StyleSheet.create({
 
   internetIcon: {
     marginRight: SPACING.half
+  },
+  noResultsFound: {
+    textAlign: "center",
+
+    color: COLORS.mutedLabel
   }
+});
+
+const GIFSection = React.memo(() => {
+  return (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderLabel} numberOfLines={1}>
+        GIFs from Giphy
+      </Text>
+    </View>
+  );
 });
 
 const InternetImagesSection = React.memo(() => {
@@ -72,6 +89,22 @@ const InternetImagesSection = React.memo(() => {
 });
 
 const SCROLL_INSETS = { top: 0, left: 0, right: 1, bottom: 0 };
+
+const NoContentComponent = ({ height }) => {
+  return (
+    <View style={{ height, width: "100%", paddingVertical: SPACING.double }}>
+      <MediumText style={styles.noResultsFound}>No results found</MediumText>
+    </View>
+  );
+};
+
+const ListEmptyComponent = ({ isLoading, height = 400 }) => {
+  if (!isLoading) {
+    return <NoContentComponent height={height} />;
+  } else {
+    return null;
+  }
+};
 
 const GallerySearchListComponent = ({
   itemWidth,
@@ -99,7 +132,8 @@ const GallerySearchListComponent = ({
   const sectionCounts = React.useMemo(
     () => [
       Math.ceil(sections[0].length / columnCount),
-      Math.ceil(sections[1].length / columnCount)
+      Math.ceil(sections[1].length / columnCount),
+      Math.ceil(sections[2].length / columnCount)
     ],
     [sections, columnCount]
   );
@@ -107,7 +141,8 @@ const GallerySearchListComponent = ({
   const chunkedSections = React.useMemo(
     () => [
       GalleryFilterListComponent.getSections(sections[0], columnCount),
-      GalleryFilterListComponent.getSections(sections[1], columnCount)
+      GalleryFilterListComponent.getSections(sections[1], columnCount),
+      GalleryFilterListComponent.getSections(sections[2], columnCount)
     ],
     [GalleryFilterListComponent.getSections, sections, columnCount]
   );
@@ -126,7 +161,8 @@ const GallerySearchListComponent = ({
           selectedIDs={[]}
           second={rows[indexes[1]]}
           onPress={onPress}
-          paused
+          paused={false}
+          muted
           transparent
           third={rows[indexes[2]]}
         />
@@ -155,11 +191,17 @@ const GallerySearchListComponent = ({
   const renderSection = React.useCallback(
     (section: number) => {
       if (
+        typeof sectionCounts[2] === "number" &&
+        sectionCounts[2] > 0 &&
+        section === 2
+      ) {
+        return <InternetImagesSection />;
+      } else if (
         typeof sectionCounts[1] === "number" &&
         sectionCounts[1] > 0 &&
         section === 1
       ) {
-        return <InternetImagesSection />;
+        return <GIFSection />;
       } else {
         return null;
       }
@@ -170,9 +212,12 @@ const GallerySearchListComponent = ({
   const getSectionHeight = React.useCallback(
     (section: number) => {
       if (
-        typeof sectionCounts[1] === "number" &&
-        sectionCounts[1] > 0 &&
-        section === 1
+        (typeof sectionCounts[2] === "number" &&
+          sectionCounts[2] > 0 &&
+          section === 2) ||
+        (typeof sectionCounts[1] === "number" &&
+          sectionCounts[1] > 0 &&
+          section === 1)
       ) {
         return 44;
       } else {
@@ -190,10 +235,6 @@ const GallerySearchListComponent = ({
     }
 
     setSize(PanSheetViewSize.tall);
-
-    return () => {
-      setActiveScrollView(null);
-    };
   }, [setActiveScrollView, setSize, fastListRef]);
 
   return (
@@ -216,6 +257,7 @@ const GallerySearchListComponent = ({
         isLoading={
           networkStatus === NetworkStatus.loading ||
           networkStatus === NetworkStatus.refetch ||
+          networkStatus === NetworkStatus.setVariables ||
           networkStatus === NetworkStatus.fetchMore
         }
         renderRow={renderRow}
@@ -253,21 +295,21 @@ export const GallerySearchList = ({
   scrollY,
   ...otherProps
 }) => {
-  const [loadMemes, memesQuery] = useLazyQuery<
-    PostSearchQuery,
-    PostSearchQueryVariables
-  >(POST_SEARCH_QUERY, {
-    fetchPolicy: "cache-and-network",
-    variables: {
-      query,
-      limit: getInitialLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT),
-      offset: 0,
-      latest: true
-    },
-    notifyOnNetworkStatusChange: true
-  });
+  const memesQuery = useQuery<PostSearchQuery, PostSearchQueryVariables>(
+    POST_SEARCH_QUERY,
+    {
+      fetchPolicy: "cache-and-network",
+      variables: {
+        query,
+        limit: getInitialLimit(COLUMN_COUNT, SQUARE_ITEM_HEIGHT),
+        offset: 0,
+        latest: true
+      },
+      notifyOnNetworkStatusChange: true
+    }
+  );
 
-  const [loadImages, imagesQuery] = useLazyQuery(IMAGE_SEARCH_QUERY, {
+  const imagesQuery = useQuery(IMAGE_SEARCH_QUERY, {
     fetchPolicy: "cache-and-network",
     variables: {
       query,
@@ -278,17 +320,34 @@ export const GallerySearchList = ({
     notifyOnNetworkStatusChange: true
   });
 
-  React.useEffect(() => {
-    if (isFocused && typeof loadMemes === "function") {
-      loadMemes();
-    }
-  }, [loadMemes, isFocused]);
+  const gifsQuery = useQuery(GIFS_QUERY, {
+    fetchPolicy: "cache-and-network",
+    variables: {
+      query,
+      limit: COLUMN_COUNT * 3,
+      offset: 0,
+      transparent: false
+    },
+    notifyOnNetworkStatusChange: true
+  });
 
-  React.useEffect(() => {
-    if (isFocused && typeof loadImages === "function") {
-      loadImages();
-    }
-  }, [loadImages, isFocused]);
+  // React.useEffect(() => {
+  //   if (isFocused && typeof loadMemes === "function") {
+  //     loadMemes();
+  //   }
+  // }, [loadMemes, isFocused]);
+
+  // React.useEffect(() => {
+  //   if (isFocused && typeof loadImages === "function") {
+  //     loadImages();
+  //   }
+  // }, [loadImages, isFocused]);
+
+  // React.useEffect(() => {
+  //   if (isFocused && typeof loadGifs === "function") {
+  //     loadGifs();
+  //   }
+  // }, [loadGifs, isFocused]);
 
   const memes = React.useMemo(() => {
     return buildPostValue(memesQuery?.data?.searchPosts?.data);
@@ -298,7 +357,15 @@ export const GallerySearchList = ({
     return buildValue(imagesQuery?.data?.images?.data);
   }, [imagesQuery?.data, imagesQuery?.networkStatus]);
 
-  const sections = React.useMemo(() => [memes, images], [memes, images]);
+  const gifs = React.useMemo(() => {
+    return buildValue(gifsQuery?.data?.gifs?.data);
+  }, [gifsQuery?.data, gifsQuery?.networkStatus]);
+
+  const sections = React.useMemo(() => [memes, gifs, images], [
+    memes,
+    gifs,
+    images
+  ]);
 
   // const handleEndReached = React.useCallback(
   //   args => {
@@ -363,8 +430,13 @@ export const GallerySearchList = ({
       itemHeight={SQUARE_ITEM_HEIGHT}
       inset={inset}
       offset={offset}
+      ListEmptyComponent={ListEmptyComponent}
       listKey={GallerySectionItem.search}
-      networkStatus={imagesQuery.networkStatus}
+      networkStatus={Math.min(
+        imagesQuery.networkStatus,
+        gifsQuery.networkStatus,
+        memesQuery.networkStatus
+      )}
       scrollY={scrollY}
       isFocused={isFocused}
       sections={sections}

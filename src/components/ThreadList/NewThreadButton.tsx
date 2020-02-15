@@ -52,12 +52,11 @@ export const NewThreadButton = ({ onPress }) => {
       requireAuthentication();
       return;
     }
-    navigation.navigate("ImagePicker");
-    // openImagePickerModal();
+    navigation.navigate("ImagePicker", { showStart: true });
   }, [requireAuthentication, authState, navigation]);
 
   return (
-    <TouchableWithoutFeedback onPress={handlePress}>
+    <TouchableWithoutFeedback onPressOut={handlePress}>
       <Animated.View style={styles.container}>
         <View style={styles.iconContainer}>
           <IconCircleAdd size={24} color="#fff" />

@@ -75,7 +75,7 @@ const PhotoToolbarButton = ({ isActive, onPress }) => {
   );
 };
 
-const StickerToolbarButton = ({ isActive, onPress }) => {
+const SearchToolbarbutton = ({ isActive, onPress }) => {
   return (
     <ToolbarButton
       icon={<IconSearch size={24} color="white" />}
@@ -98,7 +98,7 @@ const ExampleToolbarButton = ({ onPress }) => (
 );
 
 export enum ToolbarButtonType {
-  sticker = "sticker",
+  search = "sticker",
   text = "text",
   gif = "gif",
   redact = "redact",
@@ -124,8 +124,8 @@ export const DefaultToolbar = ({
     onPress
   ]);
 
-  const onPressSticker = React.useCallback(
-    () => onPress(ToolbarButtonType.sticker),
+  const onPressSearch = React.useCallback(
+    () => onPress(ToolbarButtonType.search),
     [onPress]
   );
 
@@ -163,9 +163,9 @@ export const DefaultToolbar = ({
         onPress={onPressPhoto}
       />
       <View style={styles.spacer} />
-      <StickerToolbarButton
-        isActive={activeButton === ToolbarButtonType.sticker}
-        onPress={onPressSticker}
+      <SearchToolbarbutton
+        isActive={activeButton === ToolbarButtonType.search}
+        onPress={onPressSearch}
       />
       {hasExamples && (
         <>

@@ -1,7 +1,14 @@
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import assert from "assert";
 import * as React from "react";
-import { findNodeHandle, StyleProp, StyleSheet, View } from "react-native";
+import {
+  findNodeHandle,
+  StyleProp,
+  StyleSheet,
+  View,
+  ActivityIndicator
+} from "react-native";
+import chroma from "chroma-js";
 import {
   LongPressGestureHandler,
   State as GestureState,
@@ -14,11 +21,15 @@ import {
   isVideo
 } from "../../lib/imageSearch";
 import { BoundsRect, scaleRectByFactor } from "../../lib/Rect";
-import { SPACING } from "../../lib/styles";
+import { SPACING, COLORS } from "../../lib/styles";
 import { BitmapIconAddPhoto } from "../BitmapIcon";
 import { PlaceholderOverlayGradient } from "../Feed/PostPreviewList";
 import MediaPlayer from "../MediaPlayer";
-import { MediaPlayerComponent } from "../MediaPlayer/MediaPlayerComponent";
+import {
+  MediaPlayerComponent,
+  MediaPlayerProps,
+  isMediaPlayerLoadingStatusLoaded
+} from "../MediaPlayer/MediaPlayerComponent";
 import { AnimatedContextMenu, ContextMenuAction } from "../ContextMenu";
 import { IS_IOS_13 } from "../../../config";
 import {
@@ -28,6 +39,8 @@ import {
   PostLayout
 } from "../../lib/enums";
 import { BlockActionType } from "./BlockActions";
+import { MediumText } from "../Text";
+import { isPlaceholderImageBlock } from "../../lib/buildPost";
 // import Image from "../Image";
 
 type Props = {
@@ -39,6 +52,34 @@ const styles = StyleSheet.create({
   placeholderGradient: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 0
+  },
+  spinner: {
+    justifyContent: "center",
+    alignItems: "center"
+  },
+  errorContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+
+    backgroundColor: chroma(COLORS.error)
+      .alpha(0.25)
+      .css(),
+    flexDirection: "row"
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+    position: "absolute",
+
+    backgroundColor: chroma(COLORS.primaryDark)
+      .desaturate(1)
+      .css(),
+    flexDirection: "row"
+  },
+  error: {
+    fontSize: 32,
+    textAlign: "center"
   },
   placeholderContent: {
     ...StyleSheet.absoluteFillObject,
@@ -151,7 +192,8 @@ const LibraryImage = ({
   paused,
   muted,
   containerTag,
-  scale = 1.0
+  scale = 1.0,
+  ...otherProps
 }: {
   block: ImagePostBlockType;
   usePreview: boolean;
@@ -159,6 +201,7 @@ const LibraryImage = ({
 }) => {
   return (
     <MediaComponent
+      {...otherProps}
       playerRef={playerRef}
       source={block.value}
       id={block.id}
@@ -189,7 +232,8 @@ const StickerImage = ({
   muted,
   usePreview,
   playerRef,
-  scale = 1.0
+  scale = 1.0,
+  ...otherProps
 }: {
   block: ImagePostBlockType;
   usePreview: boolean;
@@ -197,6 +241,7 @@ const StickerImage = ({
 }) => {
   return (
     <MediaComponent
+      {...otherProps}
       playerRef={playerRef}
       source={block.value}
       usePreview={usePreview}
@@ -222,12 +267,43 @@ const StickerImage = ({
   );
 };
 
-class RawImagePostBlock extends React.Component<Props> {
+enum LoadStatus {
+  pending = -1,
+  loading = 0,
+  complete = 1,
+  error = 2
+}
+
+type State = {
+  loadStatus: LoadStatus;
+};
+
+class RawImagePostBlock extends React.Component<Props, State> {
   constructor(props) {
     super(props);
 
     this.setActions();
+    this.state = {
+      loadStatus: LoadStatus.pending
+    };
   }
+
+  showLoadingTimer: number | null = null;
+
+  showLoading = () => {
+    if (this.state.loadStatus === LoadStatus.pending) {
+      if (
+        this.imageRef.current &&
+        isMediaPlayerLoadingStatusLoaded(this.imageRef.current.currentStatus)
+      ) {
+        return;
+      }
+
+      this.setState({ loadStatus: LoadStatus.loading });
+    }
+
+    this.showLoadingTimer = null;
+  };
   handleChangeImage = (photo: YeetImageContainer) => {
     this.props.onChangePhoto(this.props.block.id, photo);
   };
@@ -314,6 +390,26 @@ class RawImagePostBlock extends React.Component<Props> {
     if (this.containerRef.current) {
       this.containerTag = findNodeHandle(this.containerRef.current);
     }
+
+    if (!isPlaceholderImageBlock(this.props.block)) {
+      this.enqueueLoadingState();
+    }
+  }
+
+  cancelLoadingState = () => {
+    if (this.showLoadingTimer) {
+      window.clearTimeout(this.showLoadingTimer);
+      this.showLoadingTimer = null;
+    }
+  };
+
+  enqueueLoadingState = () => {
+    this.cancelLoadingState();
+    this.showLoadingTimer = window.setTimeout(this.showLoading, 300);
+  };
+
+  componentWillUnmount() {
+    this.cancelLoadingState();
   }
 
   componentDidUpdate(prevProps) {
@@ -324,8 +420,19 @@ class RawImagePostBlock extends React.Component<Props> {
       if (this.containerRef.current) {
         this.containerTag = findNodeHandle(this.containerRef.current);
       }
-
       this.setActions();
+
+      if (
+        this.imageRef.current &&
+        !isMediaPlayerLoadingStatusLoaded(this.imageRef.current.currentStatus)
+      ) {
+        this.cancelLoadingState();
+        this.setState({ loadStatus: LoadStatus.pending });
+
+        if (!isPlaceholderImageBlock(this.props.block)) {
+          this.enqueueLoadingState();
+        }
+      }
     }
   }
 
@@ -415,6 +522,23 @@ class RawImagePostBlock extends React.Component<Props> {
 
   actions: Array<ContextMenuAction> = [];
 
+  hideLoading = () => {
+    if (this.showLoadingTimer) {
+      window.clearTimeout(this.showLoadingTimer);
+      this.showLoadingTimer = null;
+    }
+
+    this.setState({ loadStatus: LoadStatus.complete });
+  };
+  showError = () => {
+    if (this.showLoadingTimer) {
+      window.clearTimeout(this.showLoadingTimer);
+      this.showLoadingTimer = null;
+    }
+
+    this.setState({ loadStatus: LoadStatus.error });
+  };
+
   render() {
     const {
       block,
@@ -426,7 +550,7 @@ class RawImagePostBlock extends React.Component<Props> {
       usePreview = false
     } = this.props;
 
-    const ImageComponent =
+    const ImageComponent: React.ComponentType<MediaPlayerProps> =
       {
         [PostFormat.sticker]: StickerImage,
         [PostFormat.post]: LibraryImage
@@ -436,6 +560,8 @@ class RawImagePostBlock extends React.Component<Props> {
       assert(ImageComponent, `must exist for format: ${block.format}`);
     }
     const sizeStyle = this.sizeStyle;
+
+    const { loadStatus } = this.state;
 
     if (block.value) {
       return (
@@ -461,17 +587,47 @@ class RawImagePostBlock extends React.Component<Props> {
               }
             ]}
           >
-            <ImageComponent
-              block={block}
-              playerRef={this.updateImageRef}
-              usePreview={usePreview}
-              muted={this.props.muted}
-              paused={this.props.paused}
-              containerTag={this.containerTag}
-              scale={scale}
-            />
+            <View>
+              <ImageComponent
+                block={block}
+                playerRef={this.updateImageRef}
+                usePreview={usePreview}
+                muted={this.props.muted}
+                paused={this.props.paused}
+                containerTag={this.containerTag}
+                onLoad={this.hideLoading}
+                onPlay={this.hideLoading}
+                onError={this.showError}
+                scale={scale}
+              />
 
-            {this.props.children}
+              {this.props.children}
+
+              {loadStatus === LoadStatus.loading && (
+                <View
+                  height={sizeStyle.height}
+                  width={sizeStyle.width}
+                  style={styles.loadingContainer}
+                >
+                  <ActivityIndicator
+                    size="small"
+                    animating
+                    color={COLORS.muted}
+                    style={styles.spinner}
+                  />
+                </View>
+              )}
+
+              {loadStatus === LoadStatus.error && (
+                <View
+                  height={sizeStyle.height}
+                  width={sizeStyle.width}
+                  style={styles.errorContainer}
+                >
+                  <MediumText style={styles.error}>⚠️</MediumText>
+                </View>
+              )}
+            </View>
           </AnimatedContextMenu>
         </LongPressGestureHandler>
       );

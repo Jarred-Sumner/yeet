@@ -13,6 +13,7 @@ import BirthdayScreen from "./src/screens/BirthdayScreen";
 import FeedPage from "./src/screens/Feed";
 import ImagePickerPage from "./src/screens/ImagePickerPage";
 import ImagePickerSearchPage from "./src/screens/ImagePickerSearchPage";
+import { createStackNavigator } from "@react-navigation/stack";
 import LoginScreen from "./src/screens/LoginScreen";
 import NewPostPage from "./src/screens/NewPostPage";
 import NewThreadPage from "./src/screens/NewThreadPage";
@@ -74,9 +75,9 @@ const FeedStack = () => (
 
     <Feed.Screen
       options={{
-        stackPresentation: "transparentModal",
-        gestureEnabled: true,
-        contentStyle: { backgroundColor: "transparent" }
+        stackPresentation: "push",
+        stackAnimation: "default",
+        gestureEnabled: true
       }}
       name="NewPostStack"
       component={NewPostStack}
@@ -90,31 +91,51 @@ const NewPostStack = () => (
   </NewPost.Navigator>
 );
 
+const AppStackContainer = createStackNavigator();
+
 const RootStack = React.forwardRef(({ initialRouteName }, ref) => (
   <Root.Navigator
     ref={ref}
     screenOptions={{
-      stackPresentation: "modal",
+      stackPresentation: "push",
       headerShown: false,
-      stackAnimation: "none",
+
+      stackAnimation: "default",
       contentStyle: { flex: 1, backgroundColor: COLORS.background }
     }}
     initialRouteName={initialRouteName}
   >
     <Root.Screen name="FeedTab" component={FeedStack} />
-    <Root.Screen
-      options={{
-        contentStyle: { backgroundColor: "transparent" },
-        stackPresentation: "transparentModal"
-      }}
-      name="ImagePicker"
-      component={ImagePickerPage}
-    />
 
     <Root.Screen name="ViewProfile" component={GlobalViewProfilePage} />
     <Root.Screen name="ViewPost" component={ThreadPage} />
   </Root.Navigator>
 ));
+
+const AppStack = ({ initialRouteName }) => (
+  <AppStackContainer.Navigator
+    mode="modal"
+    screenOptions={{
+      animationEnabled: false,
+      gestureEnabled: false,
+      headerShown: false,
+      cardStyle: {
+        backgroundColor: "transparent",
+        flex: 1,
+        overflow: "visible"
+      },
+      cardOverlayEnabled: false,
+      cardShadowEnabled: false
+    }}
+  >
+    <AppStackContainer.Screen name="Root" component={RootStack} />
+    <AppStackContainer.Screen
+      name="ImagePicker"
+      component={ImagePickerPage}
+      initialParams={{}}
+    />
+  </AppStackContainer.Navigator>
+);
 
 GlobalViewProfilePage.navigationOptions = {
   header: null
@@ -122,7 +143,7 @@ GlobalViewProfilePage.navigationOptions = {
 
 export const Routes = React.forwardRef((props, ref) => (
   <NavigationContainer>
-    <RootStack {...props} ref={ref} />
+    <AppStack {...props} ref={ref} />
   </NavigationContainer>
 ));
 

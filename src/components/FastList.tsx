@@ -936,13 +936,16 @@ export default class FastList extends React.PureComponent<
       renderRow,
       renderSectionFooter,
       renderEmpty,
+      isLoading,
+      height,
+      listKey,
       stickyHeaders
     } = this.props;
 
     const { items = [], isEmpty } = this.state;
 
     if (renderEmpty != null && isEmpty) {
-      return renderEmpty();
+      return renderEmpty({ isLoading, height, listKey });
     }
 
     const sectionLayoutYs = [] as number[];
@@ -1190,7 +1193,7 @@ export default class FastList extends React.PureComponent<
     // well! in order to support continuous scrolling of a scrollview/list/whatever in an action sheet, we need
     // to wrap the scrollview in a NativeViewGestureHandler. This wrapper does that thing that need do
     if (this.state.isEmpty && !isLoading && typeof renderEmpty === "function") {
-      return <View style={style}>{renderEmpty()}</View>;
+      return renderEmpty({ isLoading: false, height: height });
     }
 
     const scrollView = (
@@ -1229,10 +1232,7 @@ export default class FastList extends React.PureComponent<
           style={style}
           // maintainVisibleContentPosition
           scrollToOverflowEnabled
-          disallowInterruption={false}
           contentOffset={contentOffset}
-          waitFor={waitFor}
-          simultaneousHandlers={simultaneousHandlers}
           automaticallyAdjustContentInsets={false}
           contentContainerStyle={contentContainerStyle}
           contentInsetAdjustmentBehavior="never"

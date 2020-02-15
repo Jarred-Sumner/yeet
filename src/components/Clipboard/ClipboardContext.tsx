@@ -14,15 +14,11 @@ import { memoize } from "lodash";
 export type Clipboard = {
   clipboard: ClipboardResponse;
   mediaSource: MediaSource | null;
-  lastHandledId: string | null;
-  setLastHandledId: (id: string | null) => void;
 };
 
 export const ClipboardContext = React.createContext<Clipboard>({
   clipboard: YeetClipboard.clipboard,
-  mediaSource: YeetClipboard.mediaSource || null,
-  lastHandledId: null,
-  setLastHandledId: () => {}
+  mediaSource: YeetClipboard.mediaSource || null
 });
 
 type State = {
@@ -36,35 +32,18 @@ export class ClipboardProvider extends React.Component<{}, State> {
     this.state = {
       contextValue: ClipboardProvider.buildContextValue(
         YeetClipboard.clipboard,
-        YeetClipboard.mediaSource || null,
-        null,
-        this.handleChangeLastHandledId
+        YeetClipboard.mediaSource || null
       )
     };
   }
 
-  handleChangeLastHandledId = (id: string | null) => {
-    this.setState({
-      contextValue: ClipboardProvider.buildContextValue(
-        YeetClipboard.clipboard,
-        this.state.contextValue.mediaSource,
-        id,
-        this.handleChangeLastHandledId
-      )
-    });
-  };
-
   static _buildContextValue(
     clipboard: ClipboardResponse,
-    mediaSource: MediaSource | null,
-    lastHandledId: string | null,
-    setLastHandledId: (id: string) => void
+    mediaSource: MediaSource | null
   ): Clipboard {
     return {
       clipboard,
-      mediaSource,
-      lastHandledId,
-      setLastHandledId
+      mediaSource
     };
   }
 
@@ -76,20 +55,13 @@ export class ClipboardProvider extends React.Component<{}, State> {
       this.setState({
         contextValue: ClipboardProvider.buildContextValue(
           clipboard,
-          mediaSource || null,
-          this.state.contextValue.lastHandledId,
-          this.handleChangeLastHandledId
+          mediaSource || null
         )
       });
     } catch (excpetion) {
       console.error(exception);
       this.setState({
-        contextValue: ClipboardProvider.buildContextValue(
-          clipboard,
-          null,
-          this.state.contextValue.lastHandledId,
-          this.handleChangeLastHandledId
-        )
+        contextValue: ClipboardProvider.buildContextValue(clipboard, null)
       });
     }
   };
@@ -113,9 +85,7 @@ export class ClipboardProvider extends React.Component<{}, State> {
     this.setState({
       contextValue: ClipboardProvider.buildContextValue(
         this.state.contextValue.clipboard,
-        mediaSource,
-        this.state.contextValue.lastHandledId,
-        this.handleChangeLastHandledId
+        mediaSource
       )
     });
   };

@@ -17,13 +17,24 @@ import { GalleryBrowseContainer } from "./GalleryBrowseContainer";
 import GallerySearchInputContainer from "./GallerySearchInputContainer";
 import { GallerySearchResultsContainer } from "./GallerySearchResultsContainer";
 import { PanSheetView } from "./PanSheetView";
-import { presentPanSheetView } from "../../lib/Yeet";
+import {
+  presentPanSheetView,
+  dismissKeyboard,
+  PanSheetViewSize
+} from "../../lib/Yeet";
 import { LIST_HEADER_HEIGHT } from "../NewPost/ImagePicker/LIGHT_LIST_HEADER_HEIGHT";
+import BottomSheet from "reanimated-bottom-sheet";
+import { StartFromHeader, TOP_HEADER } from "./StartFromHeader";
+import { COLORS } from "../../lib/styles";
+import LinearGradient from "react-native-linear-gradient";
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    overflow: "visible"
+    overflow: "hidden",
+    backgroundColor: COLORS.primaryDark,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24
   },
   page: { flex: 1, width: "100%", height: "100%" }
 });
@@ -32,7 +43,7 @@ export const getSelectedIDs = memoizee((images: Array<YeetImageContainer>) => {
   return images.map(image => image.id);
 });
 
-enum GalleryStep {
+export enum GalleryStep {
   searchInput = "searchInput",
   searchResults = "searchResults",
   browse = "browse"
@@ -45,16 +56,16 @@ type State = {
 
 class RawGalleryContainer extends React.PureComponent<{}, State> {
   static defaultProps = {
-    step: GalleryStep.browse
+    initialStep: GalleryStep.browse,
+    initialQuery: ""
   };
 
   constructor(props) {
     super(props);
 
     this.state = {
-      showPanSheetView: false,
-      query: "",
-      step: props.step
+      query: props.initialQuery,
+      step: props.initialStep
     };
   }
 
@@ -63,11 +74,12 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
   };
 
   handleClearSearch = () => {
-    Keyboard.dismiss();
+    dismissKeyboard();
     this.setState({ query: "", step: GalleryStep.browse });
   };
 
   handleSearch = query => {
+    dismissKeyboard();
     this.setState({
       query,
       step: query.length > 0 ? GalleryStep.searchResults : GalleryStep.browse
@@ -86,6 +98,10 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
       __photo = null;
       _post = null;
     });
+  };
+
+  handleChangeFocusInput = isInputFocused => {
+    console.log({ isInputFocused });
   };
 
   handleChangeQuery = query => {
@@ -129,6 +145,7 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
           onChangeInputFocus={this.handleChangeFocusInput}
           query={query}
           isFocused={isFocused}
+          initialRoute={this.props.initialRoute}
           offset={this.props.offset}
           showStart={showStart}
           scrollY={this.scrollY}
@@ -218,7 +235,7 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
 
   simultaneousHandlers = [];
   handleDismiss = () => {
-    this.props.onDismiss();
+    this.props?.onDismiss();
   };
   handleWillDismiss = () => {};
 
@@ -234,19 +251,50 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
     // });
   }
 
+  showHeader = () => {
+    this.setState({ showHeader: true });
+    console.warn("DDI APPER");
+  };
+
+  startFromHeader = header => {
+    if (header) {
+      this.headerTag = findNodeHandle(header);
+      this.panSheet.current.setNativeProps({ headerTag: this.headerTag });
+    }
+  };
+  headerTag: number | null;
+
   render() {
+    const { showStart } = this.props;
+
     return (
-      <PanSheetView
-        ref={this.panSheet}
-        screenOffset={LIST_HEADER_HEIGHT}
-        screenMinY={TOP_Y}
-        longHeight={SCREEN_DIMENSIONS.height - TOP_Y}
-        shortHeight={SCREEN_DIMENSIONS.height - TOP_Y - LIST_HEADER_HEIGHT}
-        onDismiss={this.handleDismiss}
-        onWillDismiss={this.handleWillDismiss}
-      >
-        <View style={styles.container}>{this.renderStep()}</View>
-      </PanSheetView>
+      <View style={{ flex: 1 }}>
+        <PanSheetView
+          ref={this.panSheet}
+          screenOffset={showStart ? TOP_HEADER : LIST_HEADER_HEIGHT + 8}
+          headerTag={this.headerTag}
+          screenMinY={TOP_Y}
+          longHeight={SCREEN_DIMENSIONS.height - TOP_Y}
+          defaultPresentationState={
+            this.props.initialStep === GalleryStep.searchInput
+              ? PanSheetViewSize.tall
+              : PanSheetViewSize.short
+          }
+          shortHeight={
+            SCREEN_DIMENSIONS.height -
+            TOP_Y -
+            (showStart ? TOP_HEADER : LIST_HEADER_HEIGHT)
+          }
+          onDismiss={this.handleDismiss}
+          onWillDismiss={this.handleWillDismiss}
+          didAppear={this.showHeader}
+        >
+          <View style={styles.container}>{this.renderStep()}</View>
+        </PanSheetView>
+        {showStart && (
+          <StartFromHeader ref={this.startFromHeader} scrollY={this.scrollY} />
+        )}
+      </View>
     );
   }
 }

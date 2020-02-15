@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
     position: "relative"
   },
   contentContainer: {
-    backgroundColor: COLORS.primaryDark,
+    // backgroundColor: COLORS.primaryDark,
     flexGrow: 1
   },
   modalContainer: {
@@ -494,8 +494,6 @@ export class GalleryFilterListComponent extends React.PureComponent<Props> {
               insetTopValue={this.props.insetValue}
               renderHeader={this.props.renderHeader}
               automaticallyAdjustContentInsets={false}
-              bounces={false}
-              alwaysBounceVertically={false}
               contentContainerStyle={styles.contentContainer}
               keyboardShouldPersistTaps="always"
               isLoading={

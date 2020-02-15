@@ -286,7 +286,7 @@ const segmentStyles = StyleSheet.create({
     borderRightColor: "transparent"
   },
   notLastItem: {
-    borderRightColor: "#444"
+    borderRightColor: chroma.blend("#444", COLORS.primary, "darken").css()
   },
   button: {
     justifyContent: "center",
@@ -296,19 +296,17 @@ const segmentStyles = StyleSheet.create({
   },
   selectedBackground: {},
   label: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.white,
     flex: 1,
-    textAlign: "center",
-    fontWeight: "500"
+    textAlign: "center"
   },
   selectedLabel: {
-    fontSize: 18,
+    fontSize: 16,
     color: COLORS.white,
     flex: 1,
     paddingHorizontal: SPACING.half,
-    textAlign: "center",
-    fontWeight: "600"
+    textAlign: "center"
   },
   selectedContainer: {
     position: "absolute",
@@ -379,7 +377,7 @@ const CustomSegmentItem = ({
     <BaseButton style={segmentStyles.button} onPress={onPress}>
       <Animated.View onLayout={onLayout} style={containerStyle}>
         <View style={segmentStyles.labelContainer}>
-          <SemiBoldText
+          <MediumText
             adjustsFontSizeToFit
             numberOfLines={1}
             style={
@@ -387,12 +385,12 @@ const CustomSegmentItem = ({
             }
           >
             {item}
-          </SemiBoldText>
+          </MediumText>
         </View>
 
         {_onPress && (
           <View width={16} style={segmentStyles.chevron}>
-            <IconChevronUp color="white" size={18} />
+            <IconChevronUp color="white" size={6} />
           </View>
         )}
       </Animated.View>

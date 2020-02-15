@@ -7,76 +7,15 @@
 //
 
 #import "YeetJSIModule.h"
-#import <React/RCTBridge+Private.h>
 #import "MediaPlayerViewManager.h"
 #import "YeetJSIUTils.h"
-#import <ReactCommon/TurboModule.h>
-#import <Foundation/Foundation.h>
-#import <React/RCTUIManager.h>
-#import <React/RCTScrollView.h>
 #import "RCTConvert+PHotos.h"
 #import <MMKV/MMKV.h>
 #import "YeetSplashScreen.h"
-#import <RNReactNativeHapticFeedback/RNReactNativeHapticFeedback.h>
 #import <React/RCTShadowView.h>
 #import "PanViewManager.h"
 
-@interface RNReactNativeHapticFeedback (ext)
-- (void)trigger:(NSString *)type options:(NSDictionary *)options;
-@end
 
-
-@interface RCTUIManager (ext)
-  - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag;
-   - (void)focus:(NSNumber *)reactTag;
- - (void)blur:(NSNumber *)reactTag;
-  - (NSMutableDictionary<NSNumber *, UIView *> *)viewRegistry;
-    - (NSMutableDictionary<NSNumber *, RCTShadowView *> *)shadowViewRegistry;
-@end
-
-@implementation RCTUIManager (ext)
-- (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag {
-  return self.viewRegistry[reactTag];
-}
-@end
-
-@interface RCTScrollView (hacks)
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView;
-- (NSDictionary*)body;
-@end
-
-
-@implementation RCTScrollView (hacks)
-
-- (NSDictionary*)body {
-  return @{
-    @"contentOffset": @{
-      @"x": @(self.scrollView.contentOffset.x),
-      @"y": @(self.scrollView.contentOffset.y)
-    },
-    @"contentInset": @{
-      @"top": @(self.contentInset.top),
-      @"left": @(self.contentInset.left),
-      @"bottom": @(self.contentInset.bottom),
-      @"right": @(self.contentInset.right)
-    },
-    @"contentSize": @{
-      @"width": @(self.contentSize.width),
-      @"height": @(self.contentSize.height)
-    },
-    @"layoutMeasurement": @{
-      @"width": @(self.frame.size.width),
-      @"height": @(self.frame.size.height)
-    },
-    @"zoomScale": @(self.scrollView.zoomScale ?: 1),
-  };
-}
-@end
-
-
-@interface RCTBridge (ext)
-- (std::weak_ptr<facebook::react::Instance>)reactInstance;
-@end
 
 YeetJSIModule::YeetJSIModule(RCTCxxBridge *bridge)
 : bridge_(bridge) {
