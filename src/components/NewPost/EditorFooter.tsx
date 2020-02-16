@@ -1,7 +1,7 @@
 import euclideanDistance from "euclidean-distance";
 import * as React from "react";
-import { StyleSheet, View } from "react-native";
-import { BorderlessButton } from "react-native-gesture-handler";
+import { StyleSheet, View, TouchableOpacity } from "react-native";
+// import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import { SafeAreaContext } from "react-native-safe-area-context";
 import { BOTTOM_Y, SCREEN_DIMENSIONS } from "../../../config";
@@ -38,6 +38,7 @@ import { ToolbarType } from "./Toolbar";
 import { sendSelectionFeedback } from "../../lib/Vibration";
 import { snapButtonValue } from "../../lib/animations";
 import FormatPicker from "./FormatPicker";
+import { BorderlessButton } from "react-native-gesture-handler";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 120;
 
@@ -150,6 +151,7 @@ const styles = StyleSheet.create({
   doneButton: {
     paddingHorizontal: SPACING.normal,
     flexDirection: "row",
+    paddingVertical: SPACING.normal,
     justifyContent: "center",
     alignItems: "center"
   },
@@ -407,7 +409,7 @@ export const TextHeader = ({
 
   return (
     <Animated.View style={opacityStyle}>
-      <Animated.View pointerEvents="box-none" style={textHeaderStyle}>
+      <Animated.View style={textHeaderStyle}>
         <View style={[styles.footerSide, styles.leftHeaderSide]}></View>
 
         <View style={[styles.footerSide, styles.centerHeaderSide]}></View>
@@ -510,10 +512,7 @@ export const EditorFooter = ({
   toolbar
 }) => {
   return (
-    <View
-      pointerEvents="box-none"
-      style={[styles.wrapper, styles.footer, styles.container]}
-    >
+    <View style={[styles.wrapper, styles.footer, styles.container]}>
       <View style={styles.footerContainer}>{toolbar}</View>
       <View style={styles.formatPicker}>
         <FormatPicker value={layout} onChangeLayout={onChangeLayout} />

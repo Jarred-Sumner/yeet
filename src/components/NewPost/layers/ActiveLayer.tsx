@@ -78,16 +78,8 @@ class ActiveLayerComponent extends React.Component<Props> {
 
     return (
       <>
-        <View
-          pointerEvents="box-none"
-          style={[styles.layer, { width, height }]}
-        >
-          <View pointerEvents="box-none" style={styles.container}>
-            <View style={styles.header}>{header}</View>
-
-            <View style={styles.footer}>{footer}</View>
-          </View>
-        </View>
+        {header}
+        {footer}
       </>
     );
   }

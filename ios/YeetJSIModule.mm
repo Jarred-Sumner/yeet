@@ -90,11 +90,13 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
            const jsi::Value *arguments,
            size_t count) -> jsi::Value {
 
-       __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0], jsInvoker);
+       double tag = arguments[0].asNumber();
 
-       if (scrollViewTag == nil) {
+       if (!tag) {
          return jsi::Value::null();
        }
+
+       __block NSNumber *scrollViewTag = @(tag);
 
        RCTExecuteOnMainQueue(^{
          RCTScrollView *scrollView = [_bridge.uiManager viewForReactTag:scrollViewTag];
