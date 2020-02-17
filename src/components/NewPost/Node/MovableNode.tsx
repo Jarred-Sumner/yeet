@@ -48,6 +48,8 @@ export const TransformableView = React.forwardRef((props, ref) => {
     unfocusedBottom,
     unfocusedLeft,
     onContentSizeChange,
+    left,
+    translateY,
     isFixedSize,
     top,
     zIndex,
@@ -72,9 +74,15 @@ export const TransformableView = React.forwardRef((props, ref) => {
           {
             opacity,
             bottom,
-            left: translateX,
+            left,
             zIndex,
             transform: [
+              {
+                translateY
+              },
+              {
+                translateX
+              },
               {
                 scale
               },
@@ -99,9 +107,15 @@ export const TransformableView = React.forwardRef((props, ref) => {
           {
             opacity,
             top,
-            left: translateX,
+            left,
             zIndex,
             transform: [
+              {
+                translateY
+              },
+              {
+                translateX
+              },
               {
                 scale
               },
@@ -127,14 +141,14 @@ export const TransformableView = React.forwardRef((props, ref) => {
             opacity,
             zIndex,
             bottom,
-            left: translateX,
+            left,
             transform: [
-              // {
-              //   translateY
-              // },
-              // {
-              //   translateX
-              // },
+              {
+                translateY
+              },
+              {
+                translateX
+              },
               {
                 scale
               },
@@ -184,18 +198,14 @@ const keyboardVisibleCond = Animated.proc((keyboardVisibleValue, start, end) =>
 
 const keyboardVisibleInterpolater = keyboardVisibleCond;
 
-const fixedSizeInterpolator = Animated.proc((fixedSize, yes, no) =>
-  Animated.cond(Animated.eq(fixedSize, 1), yes, no)
-);
+const fixedSizeInterpolator = (fixedSize, yes, no) => (fixedSize ? yes : no);
 
-const scaleValueProc = Animated.proc(
-  (fixedSizeValue, Z, keyboardVisibleFocusedValue) =>
-    fixedSizeInterpolator(
-      fixedSizeValue,
-      Z,
-      keyboardVisibleCond(keyboardVisibleFocusedValue, Z, 1.0)
-    )
-);
+const scaleValueProc = (fixedSizeValue, Z, keyboardVisibleFocusedValue) =>
+  fixedSizeInterpolator(
+    fixedSizeValue,
+    Z,
+    keyboardVisibleCond(keyboardVisibleFocusedValue, Z, 1.0)
+  );
 
 type Props = {
   xLiteral: number;
@@ -213,17 +223,27 @@ type Props = {
 
 const styles = StyleSheet.create({
   gestureView: {
+    width: SCREEN_DIMENSIONS.width,
+    height: 0,
+
+    overflow: "visible"
+  },
+  gestureRootView: {
+    width: SCREEN_DIMENSIONS.width,
+    height: 0,
     flex: 0,
-    width: "100%",
+    overflow: "visible",
     position: "absolute",
     top: 0,
     left: 0,
     bottom: 0
   },
   childGestureView: {
+    width: SCREEN_DIMENSIONS.width,
     flex: 0,
-    width: "100%",
     top: 0,
+    position: "relative",
+    overflow: "visible",
     left: 0,
     bottom: 0,
     height: 0
@@ -362,8 +382,8 @@ export class MovableNode extends Component<Props> {
       this.scaleGestureState,
       this.rotationGestureState
     );
+    this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
-    this._X = new Animated.Value(props.xLiteral);
     this._Y = new Animated.Value(yLiteral);
     this._R = new Animated.Value(props.rLiteral);
     this._Z = new Animated.Value(props.scaleLiteral);
@@ -378,25 +398,6 @@ export class MovableNode extends Component<Props> {
             y: this.props.panY,
             absoluteX: this.props.absoluteX,
             absoluteY: this.props.absoluteY
-          }
-        }
-      ],
-      { useNativeDriver: true }
-    );
-
-    this.handlePan = event(
-      [
-        {
-          nativeEvent: {
-            translationX: this._X,
-            translationY: this._Y,
-            x: this.props.panX,
-            y: this.props.panY,
-            absoluteX: this.props.absoluteX,
-            absoluteY: this.props.absoluteY,
-            // velocityX: this.props.velocityX,
-            // velocityY: this.props.velocityY,
-            state: this.panGestureState
           }
         }
       ],
@@ -427,15 +428,52 @@ export class MovableNode extends Component<Props> {
       { useNativeDriver: true }
     );
 
-    this.X = preserveOffset(this._X, this.panGestureState, props.x);
-    this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
+    this._X = new Animated.Value(props.xLiteral);
+    this.left = keyboardVisibleCond(
+      this.keyboardVisibleFocusedValue,
+      this._X,
+      0
+    );
+
+    this._translateX = new Animated.Value(0);
+    this._translateY = new Animated.Value(0);
+    this.translateX = fixedSizeInterpolator(
+      fixedSizeValue,
+      this._translateX,
+      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this._translateX, 0)
+    );
+
+    this.translateY = fixedSizeInterpolator(
+      fixedSizeValue,
+      this._translateY,
+      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this._translateY, 0)
+    );
+
+    this.handlePan = event(
+      [
+        {
+          nativeEvent: {
+            translationX: this._translateX,
+            translationY: this._translateY,
+            x: this.props.panX,
+            y: this.props.panY,
+            absoluteX: this.props.absoluteX,
+            absoluteY: this.props.absoluteY,
+            // velocityX: this.props.velocityX,
+            // velocityY: this.props.velocityY,
+            state: this.panGestureState
+          }
+        }
+      ],
+      { useNativeDriver: true }
+    );
+
+    this.Y = this._Y;
     this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
     this.Z = Animated.min(
       preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
       props.maxScale || 100
     );
-
-    this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
     this.isFocusedValue = Animated.eq(
       this.props.focusedBlockValue,
@@ -501,12 +539,6 @@ export class MovableNode extends Component<Props> {
         this.rotateTransform,
         this.unrotatedTransform
       )
-    );
-
-    this.translateX = fixedSizeInterpolator(
-      fixedSizeValue,
-      this.X,
-      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this.X, 0)
     );
   }
 
@@ -722,10 +754,20 @@ export class MovableNode extends Component<Props> {
                     )
                   ]),
                   Animated.block([
+                    Animated.set(
+                      this._X,
+                      Animated.add(this._translateX, this._X)
+                    ),
+                    Animated.set(this._translateX, 0),
+                    Animated.set(
+                      this._Y,
+                      Animated.add(this._translateY, this._Y)
+                    ),
+                    Animated.set(this._translateY, 0),
                     Animated.call(
                       [
-                        this.X,
-                        this.Y,
+                        this._X,
+                        this._Y,
                         this.R,
                         this.Z,
                         this.panGestureState,
@@ -771,7 +813,11 @@ export class MovableNode extends Component<Props> {
             onGestureEvent={this.handleTap}
             onHandlerStateChange={this.handleTap}
           >
-            <Animated.View pointerEvents="box-none" style={[]}>
+            <Animated.View
+              pointerEvents="box-none"
+              width={SCREEN_DIMENSIONS.width}
+              style={styles.gestureRootView}
+            >
               <PanGestureHandler
                 ref={this.panRef}
                 enabled={isDragEnabled}
@@ -782,6 +828,8 @@ export class MovableNode extends Component<Props> {
               >
                 <Animated.View
                   pointerEvents="box-none"
+                  width={SCREEN_DIMENSIONS.width}
+                  height={0}
                   style={styles.gestureView}
                 >
                   <PinchGestureHandler
@@ -794,6 +842,8 @@ export class MovableNode extends Component<Props> {
                   >
                     <Animated.View
                       pointerEvents="box-none"
+                      width={SCREEN_DIMENSIONS.width}
+                      height={0}
                       style={styles.gestureView}
                     >
                       {isFixedSize ? (
@@ -821,6 +871,8 @@ export class MovableNode extends Component<Props> {
                       >
                         <Animated.View
                           pointerEvents="box-none"
+                          width={SCREEN_DIMENSIONS.width}
+                          height={0}
                           style={styles.childGestureView}
                         >
                           <TransformableView
@@ -830,6 +882,8 @@ export class MovableNode extends Component<Props> {
                             }
                             overlayTag={this.overlayTag}
                             translateX={this.translateX}
+                            translateY={this.translateY}
+                            left={this.left}
                             isFixedSize={isFixedSize}
                             verticalAlign={this.props.verticalAlign}
                             bottom={this.bottomValue}

@@ -64,44 +64,30 @@ const styles = StyleSheet.create({
   }
 });
 
-export const PostHeader = React.forwardRef(
-  (
-    {
-      layout,
-      position,
-      opacity,
-      translateY = 0,
-      onChangeLayout,
-      defaultLayout,
-      thumbnail,
-      onFinish
-    },
-    ref
-  ) => {
-    const backButtonBehavior = useBackButtonBehavior();
+export const PostHeader = React.memo(({ onFinish }) => {
+  const backButtonBehavior = useBackButtonBehavior();
 
-    return (
-      <View style={styles.wrapper}>
-        <View style={styles.content}>
-          <BackButton
-            color={COLORS.muted}
-            style={styles.backButton}
-            size={14}
-            behavior={backButtonBehavior}
-          />
+  return (
+    <View style={styles.wrapper}>
+      <View style={styles.content}>
+        <BackButton
+          color={COLORS.muted}
+          style={styles.backButton}
+          size={14}
+          behavior={backButtonBehavior}
+        />
 
-          <BorderlessButton onPress={onFinish}>
-            <Animated.View style={styles.finishButton}>
-              <MediumText style={styles.finishLabel}>Finish</MediumText>
-              <IconChevronRight
-                style={styles.finishChevron}
-                color={COLORS.muted}
-                size={12}
-              />
-            </Animated.View>
-          </BorderlessButton>
-        </View>
+        <BorderlessButton onPress={onFinish}>
+          <Animated.View style={styles.finishButton}>
+            <MediumText style={styles.finishLabel}>Finish</MediumText>
+            <IconChevronRight
+              style={styles.finishChevron}
+              color={COLORS.muted}
+              size={12}
+            />
+          </Animated.View>
+        </BorderlessButton>
       </View>
-    );
-  }
-);
+    </View>
+  );
+});

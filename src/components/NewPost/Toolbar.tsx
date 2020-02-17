@@ -109,74 +109,69 @@ export enum ToolbarButtonType {
 
 export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
-export const DefaultToolbar = ({
-  activeButton,
-  onPress,
-  children,
-  onBack,
-  exampleCount,
-  hasExamples,
-  onPressExample,
-  isModal,
-  type = ToolbarType.default
-}) => {
-  const onPressText = React.useCallback(() => onPress(ToolbarButtonType.text), [
-    onPress
-  ]);
+export const DefaultToolbar = React.memo(
+  ({ activeButton, onPress, children, hasExamples, onPressExample }) => {
+    const onPressText = React.useCallback(
+      () => onPress(ToolbarButtonType.text),
+      [onPress]
+    );
 
-  const onPressSearch = React.useCallback(
-    () => onPress(ToolbarButtonType.search),
-    [onPress]
-  );
+    const onPressSearch = React.useCallback(
+      () => onPress(ToolbarButtonType.search),
+      [onPress]
+    );
 
-  const onPressRedact = React.useCallback(
-    () => onPress(ToolbarButtonType.redact),
-    [onPress]
-  );
+    const onPressRedact = React.useCallback(
+      () => onPress(ToolbarButtonType.redact),
+      [onPress]
+    );
 
-  const onPressDraw = React.useCallback(() => onPress(ToolbarButtonType.draw), [
-    onPress
-  ]);
+    const onPressDraw = React.useCallback(
+      () => onPress(ToolbarButtonType.draw),
+      [onPress]
+    );
 
-  const onPressPlus = React.useCallback(() => onPress(ToolbarButtonType.plus), [
-    onPress
-  ]);
+    const onPressPlus = React.useCallback(
+      () => onPress(ToolbarButtonType.plus),
+      [onPress]
+    );
 
-  const onPressPhoto = React.useCallback(
-    () => onPress(ToolbarButtonType.photo),
-    [onPress]
-  );
+    const onPressPhoto = React.useCallback(
+      () => onPress(ToolbarButtonType.photo),
+      [onPress]
+    );
 
-  const onPressGif = React.useCallback(() => onPress(ToolbarButtonType.gif), [
-    onPress
-  ]);
+    const onPressGif = React.useCallback(() => onPress(ToolbarButtonType.gif), [
+      onPress
+    ]);
 
-  const _children = children || (
-    <>
-      <TextToolbarButton
-        isActive={activeButton === ToolbarButtonType.text}
-        onPress={onPressText}
-      />
-      <View style={styles.spacer} />
-      <PhotoToolbarButton
-        isActive={activeButton === ToolbarButtonType.photo}
-        onPress={onPressPhoto}
-      />
-      <View style={styles.spacer} />
-      <SearchToolbarbutton
-        isActive={activeButton === ToolbarButtonType.search}
-        onPress={onPressSearch}
-      />
-      {hasExamples && (
-        <>
-          <View style={styles.spacer} />
-          <ExampleToolbarButton isActive={false} onPress={onPressExample} />
-        </>
-      )}
-    </>
-  );
+    const _children = children || (
+      <>
+        <TextToolbarButton
+          isActive={activeButton === ToolbarButtonType.text}
+          onPress={onPressText}
+        />
+        <View style={styles.spacer} />
+        <PhotoToolbarButton
+          isActive={activeButton === ToolbarButtonType.photo}
+          onPress={onPressPhoto}
+        />
+        <View style={styles.spacer} />
+        <SearchToolbarbutton
+          isActive={activeButton === ToolbarButtonType.search}
+          onPress={onPressSearch}
+        />
+        {hasExamples && (
+          <>
+            <View style={styles.spacer} />
+            <ExampleToolbarButton isActive={false} onPress={onPressExample} />
+          </>
+        )}
+      </>
+    );
 
-  return <View style={styles.container}>{_children}</View>;
-};
+    return <View style={styles.container}>{_children}</View>;
+  }
+);
 
 export default DefaultToolbar;

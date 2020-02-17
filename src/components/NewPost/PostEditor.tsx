@@ -120,9 +120,8 @@ const styles = StyleSheet.create({
     position: "relative",
     justifyContent: "center",
     alignItems: "center",
-    flex: 1,
-    flexShrink: 0,
-    width: SCREEN_DIMENSIONS.width,
+    width: "100%",
+    height: "100%",
     alignSelf: "center"
   },
 
@@ -950,8 +949,6 @@ class RawwPostEditor extends React.Component<Props, State> {
           ...position
         });
 
-        console.log({ position });
-
         this.props.onChangeNodes({
           ...this.props.inlineNodes,
           [block.id]: editableNode
@@ -1409,132 +1406,116 @@ class RawwPostEditor extends React.Component<Props, State> {
     };
 
     return (
-      <View
-        style={[
-          styles.wrapper,
-          sizeStyle,
-          {
-            backgroundColor: COLORS.background
-          }
-        ]}
-      >
+      <View style={styles.wrapper}>
         {/* <NavigationEvents onWillFocus={this.handleWillFocus} /> */}
 
-        {this.props.isFocused && (
-          <Animated.Code
-            exec={Animated.block([
-              Animated.onChange(this.keyboardVisibleValue, [
-                set(
-                  this.props.headerOpacity,
-                  sub(1.0, this.keyboardVisibleValue)
-                ),
-                set(this.props.controlsOpacityValue, 1.0)
-              ]),
-
-              Animated.onChange(
-                this.focusTypeValue,
-                block([
-                  cond(eq(this.focusTypeValue, FocusType.absolute), [
-                    set(this.props.controlsOpacityValue, 1.0),
-                    set(
-                      this.props.headerOpacity,
-                      sub(1.0, this.keyboardVisibleValue)
-                    )
-                  ]),
-
-                  cond(eq(this.focusTypeValue, FocusType.static), [
-                    set(
-                      this.props.controlsOpacityValue,
-                      sub(1.0, this.keyboardVisibleValue)
-                    ),
-                    set(
-                      this.props.headerOpacity,
-                      sub(1.0, this.keyboardVisibleValue)
-                    )
-                  ]),
-                  cond(eq(this.focusTypeValue, -1), [
-                    set(this.props.controlsOpacityValue, 1.0),
-                    set(this.currentScale, 1.0),
-                    set(this.props.headerOpacity, 1.0)
-                  ]),
-                  cond(eq(this.focusTypeValue, FocusType.panning), [
-                    set(this.props.headerOpacity, 0)
-                  ])
-                ])
+        <Animated.Code
+          exec={Animated.block([
+            Animated.onChange(this.keyboardVisibleValue, [
+              set(
+                this.props.headerOpacity,
+                sub(1.0, this.keyboardVisibleValue)
               ),
+              set(this.props.controlsOpacityValue, 1.0)
+            ]),
 
-              Animated.onChange(this.keyboardHeightValue, [
-                Animated.set(
-                  this.relativeKeyboardHeightValue,
-                  Animated.cond(
-                    Animated.greaterThan(
-                      this.props.offsetY,
-                      this.props.scrollY
-                    ),
-                    Animated.add(
-                      Animated.sub(
-                        this.keyboardHeightValue,
-                        this.props.offsetY
-                      ),
-                      -40
-                    ),
-                    Animated.add(
-                      this.keyboardHeightValue,
-                      Animated.sub(
-                        Animated.sub(this.props.scrollY, this.props.offsetY),
-                        40
-                      )
+            Animated.onChange(
+              this.focusTypeValue,
+              block([
+                cond(eq(this.focusTypeValue, FocusType.absolute), [
+                  set(this.props.controlsOpacityValue, 1.0),
+                  set(
+                    this.props.headerOpacity,
+                    sub(1.0, this.keyboardVisibleValue)
+                  )
+                ]),
+
+                cond(eq(this.focusTypeValue, FocusType.static), [
+                  set(
+                    this.props.controlsOpacityValue,
+                    sub(1.0, this.keyboardVisibleValue)
+                  ),
+                  set(
+                    this.props.headerOpacity,
+                    sub(1.0, this.keyboardVisibleValue)
+                  )
+                ]),
+                cond(eq(this.focusTypeValue, -1), [
+                  set(this.props.controlsOpacityValue, 1.0),
+                  set(this.currentScale, 1.0),
+                  set(this.props.headerOpacity, 1.0)
+                ]),
+                cond(eq(this.focusTypeValue, FocusType.panning), [
+                  set(this.props.headerOpacity, 0)
+                ])
+              ])
+            ),
+
+            Animated.onChange(this.keyboardHeightValue, [
+              Animated.set(
+                this.relativeKeyboardHeightValue,
+                Animated.cond(
+                  Animated.greaterThan(this.props.offsetY, this.props.scrollY),
+                  Animated.add(
+                    Animated.sub(this.keyboardHeightValue, this.props.offsetY),
+                    -40
+                  ),
+                  Animated.add(
+                    this.keyboardHeightValue,
+                    Animated.sub(
+                      Animated.sub(this.props.scrollY, this.props.offsetY),
+                      40
                     )
                   )
                 )
-              ]),
-
-              Animated.onChange(
-                this.postBottomY,
-                Animated.call(
-                  [this.postBottomY, this.props.offsetY],
-                  this.handleSetPostBottom
-                )
-              ),
-              Animated.onChange(
-                this.props.offsetY,
-                Animated.call(
-                  [this.postBottomY, this.props.offsetY],
-                  this.handleSetPostBottom
-                )
-              ),
-
-              // Ignore background taps when keyboard is showing/hiding
-              Animated.onChange(
-                this.tapGestureState,
-                block([
-                  cond(
-                    Animated.and(
-                      eq(this.tapGestureState, GestureState.END),
-                      Animated.or(
-                        eq(this.keyboardVisibleValue, 0),
-                        eq(this.keyboardVisibleValue, 1)
-                      )
-                    ),
-                    [
-                      Animated.call(
-                        [
-                          this.tapGestureState,
-                          this.panX,
-                          this.panY,
-                          this.focusTypeValue,
-                          this.focusedBlockValue,
-                          this.keyboardHeightValue
-                        ],
-                        this.handleTapBackground
-                      )
-                    ]
-                  )
-                ])
               )
-            ])}
-          />
-        )}
+            ]),
+
+            Animated.onChange(
+              this.postBottomY,
+              Animated.call(
+                [this.postBottomY, this.props.offsetY],
+                this.handleSetPostBottom
+              )
+            ),
+            Animated.onChange(
+              this.props.offsetY,
+              Animated.call(
+                [this.postBottomY, this.props.offsetY],
+                this.handleSetPostBottom
+              )
+            ),
+
+            // Ignore background taps when keyboard is showing/hiding
+            Animated.onChange(
+              this.tapGestureState,
+              block([
+                cond(
+                  Animated.and(
+                    eq(this.tapGestureState, GestureState.END),
+                    Animated.or(
+                      eq(this.keyboardVisibleValue, 0),
+                      eq(this.keyboardVisibleValue, 1)
+                    )
+                  ),
+                  [
+                    Animated.call(
+                      [
+                        this.tapGestureState,
+                        this.panX,
+                        this.panY,
+                        this.focusTypeValue,
+                        this.focusedBlockValue,
+                        this.keyboardHeightValue
+                      ],
+                      this.handleTapBackground
+                    )
+                  ]
+                )
+              ])
+            )
+          ])}
+        />
 
         <View style={this.postContainerStyle}>
           <PostPreview
@@ -1638,73 +1619,64 @@ class RawwPostEditor extends React.Component<Props, State> {
                   />
                 )}
             </Layer>
-          </PostPreview>
 
-          {this.state.focusType === FocusType.panning &&
-            this.state.showSnapGuide && (
-              <Layer
-                isShown
-                width={sizeStyle.width}
-                height={sizeStyle.height}
-                zIndex={LayerZIndex.icons}
-                pointerEvents="box-none"
-              >
-                <SnapPreview
-                  key={_getPositionsKey(this.props.post.positions)}
-                  snapPoint={snapPoint}
-                  focusTypeValue={this.focusTypeValue}
-                  onDismiss={this.hideSnapGuide}
-                  offsetY={this.props.offsetY}
-                  bottom={this.postBottomY}
-                  positionKey={_getPositionsKey(this.props.post.positions)}
-                />
-              </Layer>
-            )}
-          <Layer
-            isShown
-            width={sizeStyle.width}
-            height={this.postBottomY}
-            zIndex={LayerZIndex.icons}
-            pointerEvents="box-none"
-          >
-            <ActiveLayer
-              onBack={this.handleBack}
-              onSend={this.handleSend}
-              focusedBlock={this.focusedBlock}
-              keyboardVisibleOpacity={this.keyboardVisibleValue}
-              panX={this.absoluteX}
-              inputRef={this._blockInputRefs[this.state.focusedBlockId]}
-              panY={this.absoluteY}
-              isPageModal={this.props.isReply}
-              waitFor={this.postPreviewHandlers}
-              width={sizeStyle.width}
-              height={sizeStyle.height}
-              currentScale={this.currentScale}
-              relativeHeight={this.relativeKeyboardHeightValue}
-              isTappingEnabled={
-                this.state.activeButton === ToolbarButtonType.text
-              }
-              onPressToolbarButton={this.handlePressToolbarButton}
-              isFocused={!!this.state.focusedBlockId}
-              insertTextNode={this.handleInsertText}
-              controlsOpacity={this.props.controlsOpacityValue}
-              blur={this.handleBlur}
-              focusType={this.state.focusType}
-              onChangeFooterHeight={this.handleChangeBottomInset}
-              exampleCount={this.props.exampleCount}
-              exampleIndex={this.props.exampleIndex}
-              onPressExample={this.props.onPressExample}
-              toolbarType={this.toolbarType}
-              isNodeFocused={this.state.focusType === FocusType.absolute}
-              activeButton={this.state.activeButton}
-              keyboardVisibleValue={this.keyboardVisibleValue}
-              focusTypeValue={this.focusTypeValue}
-              nodeListRef={this.nodeListRef}
-              onChangeLayout={this.props.onChangeLayout}
-              layout={this.props.post.layout}
-            ></ActiveLayer>
-          </Layer>
+            {this.state.focusType === FocusType.panning &&
+              this.state.showSnapGuide && (
+                <Layer
+                  isShown
+                  width={sizeStyle.width}
+                  height={sizeStyle.height}
+                  zIndex={LayerZIndex.icons}
+                  pointerEvents="box-none"
+                >
+                  <SnapPreview
+                    key={_getPositionsKey(this.props.post.positions)}
+                    snapPoint={snapPoint}
+                    focusTypeValue={this.focusTypeValue}
+                    onDismiss={this.hideSnapGuide}
+                    offsetY={this.props.offsetY}
+                    bottom={this.postBottomY}
+                    positionKey={_getPositionsKey(this.props.post.positions)}
+                  />
+                </Layer>
+              )}
+          </PostPreview>
         </View>
+
+        <ActiveLayer
+          onBack={this.handleBack}
+          onSend={this.handleSend}
+          focusedBlock={this.focusedBlock}
+          keyboardVisibleOpacity={this.keyboardVisibleValue}
+          panX={this.absoluteX}
+          inputRef={this._blockInputRefs[this.state.focusedBlockId]}
+          panY={this.absoluteY}
+          isPageModal={this.props.isReply}
+          waitFor={this.postPreviewHandlers}
+          width={sizeStyle.width}
+          height={sizeStyle.height}
+          currentScale={this.currentScale}
+          relativeHeight={this.relativeKeyboardHeightValue}
+          isTappingEnabled={this.state.activeButton === ToolbarButtonType.text}
+          onPressToolbarButton={this.handlePressToolbarButton}
+          isFocused={!!this.state.focusedBlockId}
+          insertTextNode={this.handleInsertText}
+          controlsOpacity={this.props.controlsOpacityValue}
+          blur={this.handleBlur}
+          focusType={this.state.focusType}
+          onChangeFooterHeight={this.handleChangeBottomInset}
+          exampleCount={this.props.exampleCount}
+          exampleIndex={this.props.exampleIndex}
+          onPressExample={this.props.onPressExample}
+          toolbarType={this.toolbarType}
+          isNodeFocused={this.state.focusType === FocusType.absolute}
+          activeButton={this.state.activeButton}
+          keyboardVisibleValue={this.keyboardVisibleValue}
+          focusTypeValue={this.focusTypeValue}
+          nodeListRef={this.nodeListRef}
+          onChangeLayout={this.props.onChangeLayout}
+          layout={this.props.post.layout}
+        ></ActiveLayer>
 
         {this.focusedBlock?.type !== "image" && (
           <TextInputToolbar

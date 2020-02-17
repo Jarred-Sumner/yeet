@@ -122,6 +122,10 @@ const styles = StyleSheet.create({
     width: "100%",
     overflow: "visible",
     flexDirection: "row",
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingRight: SPACING.normal
   },
   deleteFooterContent: {
@@ -370,30 +374,8 @@ export const TextAlignmentButton = ({
   );
 };
 
-export const TextHeader = ({
-  opacity,
-  onBack,
-  onChangeOverrides,
-  onChangeBorderType,
-  focusType,
-  block,
-  height
-}) => {
+export const TextHeader = React.memo(({ opacity, onBack }) => {
   const { top } = React.useContext(SafeAreaContext);
-
-  const color = getTextBlockColor(block);
-  const backgroundColor = getTextBlockBackgroundColor(block);
-
-  const textSidebarStyles = React.useMemo(
-    () => [
-      styles.sidebar,
-      styles.textSidebar,
-      {
-        paddingBottom: height
-      }
-    ],
-    [height, styles.sidebar, styles.textSidebar]
-  );
 
   const textHeaderStyle = React.useMemo(
     () => [
@@ -424,7 +406,7 @@ export const TextHeader = ({
       </Animated.View>
     </Animated.View>
   );
-};
+});
 
 export const EditorHeader = ({
   type,
@@ -444,17 +426,7 @@ export const EditorHeader = ({
   onBack
 }) => {
   if (type === ToolbarType.text) {
-    return (
-      <TextHeader
-        opacity={opacity}
-        height={height}
-        block={block}
-        onBack={onBack}
-        onChangeOverrides={onChangeOverrides}
-        onChangeBorderType={onChangeBorderType}
-        focusType={focusType}
-      />
-    );
+    return <TextHeader opacity={opacity} onBack={onBack} />;
   } else if (!focusType) {
     return <PostHeader onFinish={onSend} />;
   } else {
@@ -499,27 +471,18 @@ const ExampleCountButton = ({ onPress, exampleCount, exampleIndex }) => {
   );
 };
 
-export const EditorFooter = ({
-  onPressDownload,
-  exampleCount,
-  exampleIndex,
-  onPressSend,
-  onPressExample,
-  layout,
-  onChangeLayout,
-  hasExamples = false,
-  waitFor,
-  toolbar
-}) => {
-  return (
-    <View style={[styles.wrapper, styles.footer, styles.container]}>
-      <View style={styles.footerContainer}>{toolbar}</View>
-      <View style={styles.formatPicker}>
-        <FormatPicker value={layout} onChangeLayout={onChangeLayout} />
+export const EditorFooter = React.memo(
+  ({ layout, onChangeLayout, toolbar }) => {
+    return (
+      <View style={[styles.wrapper, styles.footer, styles.container]}>
+        <View style={styles.footerContainer}>{toolbar}</View>
+        <View style={styles.formatPicker}>
+          <FormatPicker value={layout} onChangeLayout={onChangeLayout} />
+        </View>
       </View>
-    </View>
-  );
-};
+    );
+  }
+);
 
 const DELETE_SIZE = 36;
 const MID_Y_DELETE_BUTTON =
