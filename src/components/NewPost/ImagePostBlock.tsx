@@ -565,71 +565,64 @@ class RawImagePostBlock extends React.Component<Props, State> {
 
     if (block.value) {
       return (
-        <LongPressGestureHandler
-          onGestureEvent={this.handleLongPress}
-          enabled={!IS_IOS_13 && !this.props.disabled}
-          ref={this.props.gestureRef}
-          onHandlerStateChange={this.handleLongPress}
+        <AnimatedContextMenu
+          ref={this.containerRef}
+          onPress={this.handlePressAction}
+          actions={this.actions}
+          onLayout={onLayout}
+          style={[
+            styles.container,
+            stylesByFormat[block.format].container,
+            stylesByLayout[block.layout]?.container,
+            {
+              overflow: "hidden",
+              flex: 0,
+              position: "relative"
+            }
+          ]}
         >
-          <AnimatedContextMenu
-            ref={this.containerRef}
-            onPress={this.handlePressAction}
-            actions={this.actions}
-            onLayout={onLayout}
-            style={[
-              styles.container,
-              stylesByFormat[block.format].container,
-              stylesByLayout[block.layout]?.container,
-              {
-                overflow: "hidden",
-                flex: 0,
-                position: "relative"
-              }
-            ]}
-          >
-            <View>
-              <ImageComponent
-                block={block}
-                playerRef={this.updateImageRef}
-                usePreview={usePreview}
-                muted={this.props.muted}
-                paused={this.props.paused}
-                containerTag={this.containerTag}
-                onLoad={this.hideLoading}
-                onPlay={this.hideLoading}
-                onError={this.showError}
-                scale={scale}
-              />
+          <View>
+            <ImageComponent
+              block={block}
+              playerRef={this.updateImageRef}
+              usePreview={usePreview}
+              muted={this.props.muted}
+              paused={this.props.paused}
+              containerTag={this.containerTag}
+              onLoad={this.hideLoading}
+              onPlay={this.hideLoading}
+              onError={this.showError}
+              scale={scale}
+            />
 
-              {this.props.children}
+            {this.props.children}
 
-              {loadStatus === LoadStatus.loading && (
-                <View
-                  height={sizeStyle.height}
-                  width={sizeStyle.width}
-                  style={styles.loadingContainer}
-                >
-                  <ActivityIndicator
-                    size="small"
-                    animating
-                    color={COLORS.muted}
-                    style={styles.spinner}
-                  />
-                </View>
-              )}
+            {loadStatus === LoadStatus.loading && (
+              <View
+                height={sizeStyle.height}
+                width={sizeStyle.width}
+                style={styles.loadingContainer}
+              >
+                <ActivityIndicator
+                  size="small"
+                  animating
+                  color={COLORS.muted}
+                  style={styles.spinner}
+                />
+              </View>
+            )}
 
-              {loadStatus === LoadStatus.error && (
-                <View
-                  height={sizeStyle.height}
-                  width={sizeStyle.width}
-                  style={styles.errorContainer}
-                >
-                  <MediumText style={styles.error}>⚠️</MediumText>
-                </View>
-              )}
-            </View>
-          </AnimatedContextMenu>
-        </LongPressGestureHandler>
+            {loadStatus === LoadStatus.error && (
+              <View
+                height={sizeStyle.height}
+                width={sizeStyle.width}
+                style={styles.errorContainer}
+              >
+                <MediumText style={styles.error}>⚠️</MediumText>
+              </View>
+            )}
+          </View>
+        </AnimatedContextMenu>
       );
     } else {
       return (
