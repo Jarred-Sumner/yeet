@@ -15,7 +15,7 @@ class YeetTextView: _RCTUITextView {
     super.init(frame: frame, textContainer: textContainer)
     self.highlightLayer.isOpaque = false
     self.backgroundColor = .clear
-
+    self.isMultipleTouchEnabled = true
     self.textContainer.lineFragmentPadding = lineFragmentPadding
 
     highlightLayer.contentsScale = UIScreen.main.scale

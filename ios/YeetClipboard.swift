@@ -16,13 +16,7 @@ import Promise
 
 @objc(YeetClipboard)
 class YeetClipboard: RCTEventEmitter  {
-  static let clipboardOperationQueue: OperationQueue = {
-    var queue = OperationQueue()
-    queue.name = "YeetClipboard"
-    queue.maxConcurrentOperationCount = 1
-
-    return queue
-  }()
+  static let clipboardOperationQueue = DispatchQueue(label: "com.codeblogcorp.yeet.ClipboardOperations", qos: .background, attributes: [], autoreleaseFrequency: .workItem, target: nil)
 
   enum EventNames : String {
     case change = "YeetClipboardChange"
@@ -202,71 +196,68 @@ class YeetClipboard: RCTEventEmitter  {
 
   @objc(clipboardMediaSource:)
   func clipboardMediaSource(_ callback: @escaping RCTResponseSenderBlock) {
+    YeetClipboard.clipboardOperationQueue.async { [weak self] in
+      self?._clipboardMediaSource(callback)
+    }
+  }
+
+  func _clipboardMediaSource(_ callback: @escaping RCTResponseSenderBlock) {
     guard YeetClipboard.hasImagesInClipboard else {
       callback([nil, [:]])
       return
     }
 
-    let image = UIPasteboard.general.image
+    guard let image = UIPasteboard.general.image else {
+      callback([nil, [:]])
+      return
+    }
 
     if lastSavedImage != nil && lastSavedImage == image && lastMediaSource != nil {
       callback([nil, lastMediaSource!.toDictionary])
     }
 
-    var exportType: ExportType? = nil
+    var _exportType: ExportType? = nil
     if UIPasteboard.general.contains(pasteboardTypes: [MimeType.jpg.utiType()]) {
-      exportType = ExportType.jpg
+      _exportType = ExportType.jpg
     } else if UIPasteboard.general.contains(pasteboardTypes: [MimeType.png.utiType()]) {
-      exportType = ExportType.png
+      _exportType = ExportType.png
     }
-    
 
-    guard exportType != nil else {
+
+    guard let exportType = _exportType else {
       callback([YeetError.init(code: .genericError)])
       return
     }
 
-    DispatchQueue.global(qos: .background).async {
-      guard let image = image else {
-        callback([YeetError.init(code: .genericError)])
-        return
-      }
+    let url = VideoProducer.generateExportURL(type: exportType)
+    var data: Data? = nil
 
-      guard let exportType = exportType else {
-        callback([YeetError.init(code: .genericError)])
-        return
-      }
-
-      let url = VideoProducer.generateExportURL(type: exportType)
-      var data: Data? = nil
-
-      if exportType == .jpg {
-        data = image.jpegData(compressionQuality: CGFloat(1.0))
-      } else if exportType == .png {
-         data = image.pngData()
-      }
-
-      guard data != nil else {
-        callback([YeetError.init(code: .writingDataFailure)])
-        return
-      }
-
-       do {
-          try data?.write(to: url)
-       } catch {
-          callback([YeetError.init(code: .writingDataFailure)])
-         return
-       }
-
-      let size = image.size
-
-      let mediaSource = MediaSource(url, exportType.mimeType(), .init(value: 0), .init(value: 0), url.absoluteString, .init(value: Double(size.width)), .init(value: Double(size.height)), CGRect(origin: .zero, size: size), NSNumber(value: Double(image.scale)))
-
-      self.lastMediaSource = mediaSource
-      self.lastSavedImage = image
-
-      callback([nil, mediaSource.toDictionary])
+    if exportType == .jpg {
+      data = image.jpegData(compressionQuality: CGFloat(1.0))
+    } else if exportType == .png {
+       data = image.pngData()
     }
+
+    guard data != nil else {
+      callback([YeetError.init(code: .writingDataFailure)])
+      return
+    }
+
+     do {
+        try data?.write(to: url)
+     } catch {
+        callback([YeetError.init(code: .writingDataFailure)])
+       return
+     }
+
+    let size = image.size
+
+    let mediaSource = MediaSource(url, exportType.mimeType(), .init(value: 0), .init(value: 0), url.absoluteString, .init(value: Double(size.width)), .init(value: Double(size.height)), CGRect(origin: .zero, size: size), NSNumber(value: Double(image.scale)))
+
+    self.lastMediaSource = mediaSource
+    self.lastSavedImage = image
+
+    callback([nil, mediaSource.toDictionary])
   }
 
   deinit {
