@@ -91,7 +91,14 @@ class SnapContainerComponent extends React.Component {
     );
   };
   unsubscribeFromEvents = () => {
-    SnapContainerEventEmitter.removeAllListeners();
+    SnapContainerEventEmitter.removeAllListeners(
+      SnapContainerEvent.onMoveStart
+    );
+    SnapContainerEventEmitter.removeAllListeners(SnapContainerEvent.onMoveEnd);
+    SnapContainerEventEmitter.removeAllListeners(SnapContainerEvent.onDelete);
+    SnapContainerEventEmitter.removeAllListeners(
+      SnapContainerEvent.onTapBackground
+    );
   };
 
   handleMoveStart = event => {
