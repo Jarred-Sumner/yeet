@@ -1,29 +1,23 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
-import { TapGestureHandler } from "react-native-gesture-handler";
-import { useLayout } from "react-native-hooks";
 import Animated from "react-native-reanimated";
+import { SCREEN_DIMENSIONS } from "../../../config";
 import {
   BlockMap,
   BlockPositionList,
-  PostBlockID,
-  getPositionsKey,
   getRowKey,
-  MAX_POST_HEIGHT
+  PostBlockID
 } from "../../lib/buildPost";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
-import {
-  FocusType,
-  PostBlockType,
-  PostLayout,
-  CAROUSEL_HEIGHT
-} from "./NewPostFormat";
+import { FocusType, PostBlockType, PostLayout } from "./NewPostFormat";
 import { BaseNode, EditableNode, EditableNodeMap } from "./Node/BaseNode";
 import { Block } from "./Node/Block";
-import { currentlyFocusedField } from "./Text/TextInputState";
 import { PostLayoutContext } from "./PostLayoutContext";
-import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
-import { getEstimatedBounds } from "../../lib/Exporter";
+import {
+  SnapContainerView,
+  AnimatedSnapContainerView
+} from "./SnapContainerView";
+import { currentlyFocusedField } from "./Text/TextInputState";
 
 export const ScrollView = KeyboardAwareScrollView;
 
@@ -290,7 +284,8 @@ export const EditableNodeList = ({
   panY,
   format,
   onPan,
-  focusedBlockId
+  focusedBlockId,
+  onMoveStart
 }: EditableNodeListProps) => {
   const containerRef = React.useCallback(
     id => ref => {
@@ -431,7 +426,6 @@ export const PostPreview = React.forwardRef(
       inlineNodes,
       onTapNode,
       onChangeNode,
-      onTapBackground,
       onAction,
       contentTranslate,
       focusType,
@@ -464,7 +458,15 @@ export const PostPreview = React.forwardRef(
       onSwipe,
       bounces,
       positionsKey,
-      waitFor
+      waitFor,
+      onShowSnapPreview,
+      onHideSnapPreview,
+      onDelete,
+      onTapBackground,
+      onMoveStart,
+      onMoveEnd,
+      onSnap,
+      snapPoints
     },
     ref
   ) => {
@@ -513,14 +515,16 @@ export const PostPreview = React.forwardRef(
         position: "relative",
         // backgroundColor: "red",
         overflow: "visible",
-        marginTop: paddingTop,
+        paddingTop: paddingTop,
         width: SCREEN_DIMENSIONS.width,
         alignItems: "center",
 
-        marginBottom: paddingBottom
+        paddingBottom: paddingBottom
       }),
       [paddingTop, bottomY, paddingBottom, backgroundColor]
     );
+
+    const _true = React.useCallback(() => true, []);
 
     // React.useLayoutEffect(() => {
     //   scrollRef.current.getScrollResponder().scrollTo({
@@ -531,85 +535,95 @@ export const PostPreview = React.forwardRef(
     // }, [scrollRef.current, paddingTop]);
 
     const isCentered = !willContentScroll(bounds.height, paddingTop);
-    return (
-      <TapGestureHandler
-        onHandlerStateChange={onTapBackground}
-        onGestureEvent={onTapBackground}
-        shouldCancelWhenOutside={false}
-        waitFor={waitFor}
-        maxDeltaX={10}
-        maxDeltaY={10}
-        enabled={isFocused}
-        maxDist={10}
-      >
-        <ScrollView
-          directionalLockEnabled
-          horizontal={false}
-          bounces={bounces}
-          alwaysBounceVertical={false}
-          overScrollMode="always"
-          defaultPosition={initialOffset}
-          contentOffset={initialOffset}
-          scrollEnabled
-          getFocusedField={currentlyFocusedField}
-          scrollToOverflowEnabled
-          onScroll={onScroll}
-          onScrollBeginDrag={onScroll}
-          onMomentumScrollBegin={onScroll}
-          nestedScrollEnabled
-          scrollY={scrollY}
-          topInsetValue={topInsetValue}
-          keyboardShouldPersistTaps="always"
-          contentInsetAdjustmentBehavior="never"
-          keyboardOpeningTime={0}
-          extraScrollHeight={0}
-          ref={scrollRef}
-          centerContent={false}
-          paddingTop={0}
-          enableResetScrollToCoords
-          resetScrollToCoords={null}
-          pinchGestureEnabled
-          bouncesZoom
-          minimumZoomScale={1}
-          maximumZoomScale={4}
-          paddingBottom={0}
-          style={scrollViewStyle}
-          contentContainerStyle={contentContainerStyle}
-        >
-          <Animated.View
-            nativeID="content-container"
-            ref={contentViewRef}
-            onLayout={onLayout}
-            style={contenViewStyle}
-          >
-            <View style={styles.content}>
-              <BlockList
-                setBlockInputRef={setBlockInputRef}
-                blocks={blocks}
-                positions={positions}
-                layout={postLayout}
-                key={positionsKey}
-                onFocus={onFocus}
-                onAction={onAction}
-                focusTypeValue={focusTypeValue}
-                onOpenImagePicker={onOpenImagePicker}
-                onChangePhoto={onChangePhoto}
-                focusType={focusType}
-                onTap={onTapBlock}
-                disabled={!scrollEnabled}
-                scrollRef={scrollRef}
-                onLayout={onLayoutBlock}
-                focusedBlockId={focusedBlockId}
-                focusedBlockValue={focusedBlockValue}
-                onBlur={onBlur}
-                setBlockAtIndex={setBlockAtIndex}
-              />
-            </View>
 
+    return (
+      <ScrollView
+        directionalLockEnabled
+        horizontal={false}
+        bounces={bounces}
+        alwaysBounceVertical={false}
+        overScrollMode="always"
+        defaultPosition={initialOffset}
+        contentOffset={initialOffset}
+        scrollEnabled
+        getFocusedField={currentlyFocusedField}
+        scrollToOverflowEnabled
+        onScroll={onScroll}
+        onScrollBeginDrag={onScroll}
+        onMomentumScrollBegin={onScroll}
+        nestedScrollEnabled
+        scrollY={scrollY}
+        topInsetValue={topInsetValue}
+        keyboardShouldPersistTaps="always"
+        contentInsetAdjustmentBehavior="never"
+        keyboardOpeningTime={0}
+        extraScrollHeight={0}
+        cancelsTouchesInView={false}
+        ref={scrollRef}
+        centerContent={false}
+        paddingTop={0}
+        enableResetScrollToCoords
+        resetScrollToCoords={null}
+        pinchGestureEnabled={false}
+        // bouncesZoom
+        // minimumZoomScale={1}
+        // maximumZoomScale={4}
+        paddingBottom={0}
+        style={scrollViewStyle}
+        contentContainerStyle={contentContainerStyle}
+      >
+        <SnapContainerView
+          nativeID="content-container"
+          ref={contentViewRef}
+          onShowSnapPreview={onShowSnapPreview}
+          onHideSnapPreview={onHideSnapPreview}
+          onDelete={onDelete}
+          onTapBackground={onTapBackground}
+          onMoveStart={onMoveStart}
+          onMoveEnd={onMoveEnd}
+          onSnap={onSnap}
+          snapPoints={snapPoints}
+          // onMoveShouldSetResponder={_true}
+          // onStartShouldSetResponder={_true}
+          // onLayout={onLayout}
+          style={contenViewStyle}
+        >
+          <View style={styles.content}>
+            <BlockList
+              setBlockInputRef={setBlockInputRef}
+              blocks={blocks}
+              positions={positions}
+              layout={postLayout}
+              key={positionsKey}
+              onFocus={onFocus}
+              onAction={onAction}
+              focusTypeValue={focusTypeValue}
+              onOpenImagePicker={onOpenImagePicker}
+              onChangePhoto={onChangePhoto}
+              focusType={focusType}
+              onTap={onTapBlock}
+              disabled={!scrollEnabled}
+              scrollRef={scrollRef}
+              onLayout={onLayoutBlock}
+              focusedBlockId={focusedBlockId}
+              focusedBlockValue={focusedBlockValue}
+              onBlur={onBlur}
+              setBlockAtIndex={setBlockAtIndex}
+            />
+          </View>
+          <View
+            style={[
+              {
+                position: "absolute",
+                top: paddingTop,
+                left: 0
+              }
+            ]}
+          >
             {children}
-          </Animated.View>
-        </ScrollView>
-      </TapGestureHandler>
+          </View>
+        </SnapContainerView>
+      </ScrollView>
     );
   }
 );

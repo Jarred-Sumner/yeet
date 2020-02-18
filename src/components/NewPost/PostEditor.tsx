@@ -5,10 +5,18 @@ import {
   isEmpty,
   memoize,
   throttle,
+  uniq,
   debounce
 } from "lodash";
 import * as React from "react";
-import { InteractionManager, StyleSheet, Task, View } from "react-native";
+import {
+  InteractionManager,
+  StyleSheet,
+  Task,
+  View,
+  findNodeHandle
+} from "react-native";
+import ReactNative from "react-native/Libraries/Renderer/shims/ReactNative";
 import {
   ScrollView,
   State as GestureState
@@ -17,6 +25,7 @@ import Animated from "react-native-reanimated";
 import processTransform from "react-native/Libraries/StyleSheet/processTransform";
 import * as TransformMatrix from "transformation-matrix";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
+import { ContentContainerContext } from "./ContentContainerContext";
 import {
   getPositionsKey,
   isEmptyTextBlock,
@@ -89,10 +98,15 @@ import { sendToast, ToastType } from "../Toast";
 import { SnapGuides } from "./Node/SnapGuides";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
 import { PostFragment } from "../../lib/graphql/PostFragment";
+import {
+  MovableViewPositionChangeEvent,
+  MovableViewPositionChange
+} from "./SnapContainerView";
 
 const { block, cond, set, eq, sub } = Animated;
 
 export const HEADER_HEIGHT = 30 + SPACING.normal;
+console.log(ReactNative);
 
 const _getPositionsKey = memoize(getPositionsKey);
 const styles = StyleSheet.create({
@@ -157,28 +171,7 @@ const Layer = ({
     return null;
   }
 
-  return (
-    <Animated.View
-      pointerEvents={pointerEvents}
-      needsOffscreenAlphaCompositing={isFrozen}
-      shouldRasterizeIOS={isFrozen}
-      renderToHardwareTextureAndroid={isFrozen}
-      style={[
-        StyleSheet.absoluteFillObject,
-        {
-          width,
-          height,
-          zIndex,
-          opacity,
-          alignSelf: "stretch",
-          overflow: "visible",
-          backgroundColor: "transparent"
-        }
-      ]}
-    >
-      {children}
-    </Animated.View>
-  );
+  return children;
 };
 
 type Props = {
@@ -211,7 +204,13 @@ class RawwPostEditor extends React.Component<Props, State> {
       isSaving: false,
       bottomInset: 0,
       snapPoint: null,
-      showSnapGuide: false
+      showSnapGuide: false,
+      contentContainerContextValue: {
+        contentContainerTag: null,
+        movableViewTags: [],
+        addMovableViewTag: this.insertMovableViewTag,
+        removeMovableViewTag: this.removeMovableViewTag
+      }
     };
 
     this._blockInputRefs = new Map([
@@ -311,22 +310,6 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   nodeFrameTask: Task | null = null;
-  componentDidMount() {
-    this.nodeFrameTask = InteractionManager.runAfterInteractions(() => {
-      this.getNodeFrames();
-    });
-  }
-
-  getNodeFrames = async () => {
-    const newNodes = { ...this.props.inlineNodes };
-
-    for (let node of Object.values(this.props.inlineNodes)) {
-      const frame = await this.getNodeFrame(node);
-      newNodes[node.block.id].block.frame = frame;
-    }
-
-    this.props.onChangeNodes(newNodes);
-  };
 
   componentDidUpdate(prevProps, prevState) {
     if (
@@ -357,42 +340,6 @@ class RawwPostEditor extends React.Component<Props, State> {
   //     this
   //   }
   // };
-
-  getNodeFrame = async (editableNode: EditableNode) => {
-    const bounds = await getEstimatedBoundsToContainer(
-      this._blockInputRefs.get(editableNode.block.id).current.boundsHandle,
-      this.contentViewRef.current
-    );
-
-    const transform = processTransform([
-      {
-        scale: editableNode.position.scale
-      }
-      // {
-      //   rotate: `${editableNode.position.rotate}rad`
-      // }
-    ]);
-
-    const rect = new Rectangle(bounds.x, bounds.y, bounds.width, bounds.height);
-    const points = TransformMatrix.applyToPoints(
-      TransformMatrix.compose(
-        TransformMatrix.scale(transform[0].scale, transform[0].scale)
-      ),
-      [
-        [rect.left, rect.top],
-        [rect.left, rect.bottom],
-        [rect.right, rect.top],
-        [rect.right, rect.bottom]
-      ]
-    );
-
-    return {
-      x: points[0][0],
-      y: points[0][1],
-      width: Math.abs(points[3][0] - points[0][0]),
-      height: Math.abs(points[3][1] - points[0][1])
-    };
-  };
 
   componentWillUnmount() {
     this.nodeFrameTask?.cancel();
@@ -496,18 +443,10 @@ class RawwPostEditor extends React.Component<Props, State> {
     this.handleChangeBlock(block, this.props.post.blocks.length);
   };
 
-  handleInlineNodeChange = async (editableNode: EditableNode) => {
+  handleInlineNodeChange = (editableNode: EditableNode) => {
     const currentNode = this.props.inlineNodes[editableNode.block.id];
     if (!currentNode) {
       return;
-    }
-
-    let frame = editableNode.block.frame;
-
-    try {
-      editableNode.block.frame = await this.getNodeFrame(editableNode);
-    } catch (exception) {
-      console.error(exception);
     }
 
     const isFirstInsertion =
@@ -793,6 +732,23 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   setNodeRef = (id: string, node: View) => {
     this._inlineNodeRefs.set(id, node);
+    const { contentContainerContextValue } = this.state;
+
+    const tag = findNodeHandle(node);
+    if (tag) {
+      let tags = contentContainerContextValue.movableViewTags.slice();
+
+      if (!tags.includes(tag)) {
+        tags.push(tag);
+        console.log("RENDER ", tag);
+        this.setState({
+          contentContainerContextValue: {
+            ...contentContainerContextValue,
+            movableViewTags: tags
+          }
+        });
+      }
+    }
   };
 
   scrollRef = React.createRef<KeyboardAwareScrollView>();
@@ -1050,7 +1006,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       },
       async () => {
         const node = { ...this.props.inlineNodes[block.id] };
-        node.block.frame = await this.getNodeFrame(node);
         this.props.onChangeNodes({
           ...this.props.inlineNodes,
           [block.id]: node
@@ -1170,13 +1125,13 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     if (isPanning) {
       const focusType = FocusType.panning;
-      if (blockId !== this.state.focusedBlockId) {
-        this.focusedBlockValue.setValue(blockId.hashCode());
-      }
+      // if (blockId !== this.state.focusedBlockId) {
+      //   this.focusedBlockValue.setValue(blockId.hashCode());
+      // }
 
-      if (this.state.focusType !== focusType) {
-        this.focusTypeValue.setValue(focusType);
-      }
+      // if (this.state.focusType !== focusType) {
+      //   this.focusTypeValue.setValue(focusType);
+      // }
 
       this.setState({
         focusedBlockId: blockId,
@@ -1249,18 +1204,18 @@ class RawwPostEditor extends React.Component<Props, State> {
       : 0
   );
 
-  onTapBackground = Animated.event(
-    [
-      {
-        nativeEvent: {
-          state: this.tapGestureState,
-          x: this.panX,
-          y: this.panY
-        }
-      }
-    ],
-    { useNativeDriver: true }
-  );
+  // onTapBackground = Animated.event(
+  //   [
+  //     {
+  //       nativeEvent: {
+  //         state: this.tapGestureState,
+  //         x: this.panX,
+  //         y: this.panY
+  //       }
+  //     }
+  //   ],
+  //   { useNativeDriver: true }
+  // );
 
   absoluteX = new Animated.Value(0);
   absoluteY = new Animated.Value(0);
@@ -1364,27 +1319,91 @@ class RawwPostEditor extends React.Component<Props, State> {
   postPreviewHandlers = [];
   postBottomY = new Animated.Value<number>(0);
 
-  // onContentLayout = ({ nativeEvent: { layout } }) =>
-  //   console.log("ON LAYOUT", { layout });
+  onContentLayout = ({ nativeEvent: { layout } }) =>
+    console.log("ON LAYOUT", { layout });
 
   handleSetPostBottom = ([postBottomY, postTopY]) =>
     this.setState({ postBottomY, postTopY });
 
-  onContentLayout = Animated.event(
-    [
-      {
-        nativeEvent: {
-          layout: {
-            y: this.props.offsetY,
-            height: this.postBottomY
+  // onContentLayout = Animated.event(
+  //   [
+  //     {
+  //       nativeEvent: {
+  //         layout: {
+  //           y: this.props.offsetY,
+  //           height: this.postBottomY
+  //         }
+  //       }
+  //     }
+  //   ],
+  //   { useNativeDriver: true }
+  // );
+  hideSnapGuide = () => this.setState({ showSnapGuide: false });
+  _contentViewRef = contentView => {
+    this.contentViewRef.current = contentView;
+    if (contentView) {
+      const contextValue = cloneDeep(this.state.contentContainerContextValue);
+
+      contextValue.contentContainerTag = findNodeHandle(contentView);
+
+      this.setState({
+        contentContainerContextValue: contextValue
+      });
+    }
+  };
+
+  handleStartMoving = (data: MovableViewPositionChange) => {
+    console.log("HHIIHOIjasoidjasdoij");
+    this.handlePan({
+      blockId: data.uid,
+      x: data.transform.x,
+      y: data.transform.y,
+      isPanning: true
+    });
+  };
+
+  handleStopMoving = (data: MovableViewPositionChange) => {
+    ReactNative.unstable_batchedUpdates(() => {
+      this.handlePan({
+        blockId: data.uid,
+        x: data.transform.x,
+        y: data.transform.y,
+        isPanning: false
+      });
+
+      const node = this.props.inlineNodes[data.uid];
+
+      if (node) {
+        const { x, y, scaleX: scale, rotate } = data.transform;
+        this.handleInlineNodeChange({
+          ...node,
+          position: {
+            ...node.position,
+            x,
+            y,
+            scale,
+            rotate
           }
+        });
+
+        const needsForceTransformUpdpate =
+          x !== node.position.x || y !== node.position.y;
+
+        if (needsForceTransformUpdpate) {
+          const transform = [
+            scale !== 1.0 && {
+              scale
+            },
+            rotate && { rotate: rotate + "rad" }
+          ].filter(Boolean);
+
+          this._inlineNodeRefs.get(node.block.id).setNativeProps({
+            transform: transform.length !== 0 ? transform : null
+          });
         }
       }
-    ],
-    { useNativeDriver: true }
-  );
-
-  hideSnapGuide = () => this.setState({ showSnapGuide: false });
+    });
+  };
 
   render() {
     const { post, minX, minY } = this.props;
@@ -1408,13 +1427,48 @@ class RawwPostEditor extends React.Component<Props, State> {
     return (
       <View style={styles.wrapper}>
         {/* <NavigationEvents onWillFocus={this.handleWillFocus} /> */}
+        {/*
+        {this.props.isFocused && (
+          <Animated.Code
+            exec={Animated.block([
+              Animated.onChange(this.keyboardVisibleValue, [
+                set(
+                  this.props.headerOpacity,
+                  sub(1.0, this.keyboardVisibleValue)
+                ),
+                set(this.props.controlsOpacityValue, 1.0)
+              ]),
 
-        <Animated.Code
-          exec={Animated.block([
-            Animated.onChange(this.keyboardVisibleValue, [
-              set(
-                this.props.headerOpacity,
-                sub(1.0, this.keyboardVisibleValue)
+              Animated.onChange(
+                this.focusTypeValue,
+                block([
+                  cond(eq(this.focusTypeValue, FocusType.absolute), [
+                    set(this.props.controlsOpacityValue, 1.0),
+                    set(
+                      this.props.headerOpacity,
+                      sub(1.0, this.keyboardVisibleValue)
+                    )
+                  ]),
+
+                  cond(eq(this.focusTypeValue, FocusType.static), [
+                    set(
+                      this.props.controlsOpacityValue,
+                      sub(1.0, this.keyboardVisibleValue)
+                    ),
+                    set(
+                      this.props.headerOpacity,
+                      sub(1.0, this.keyboardVisibleValue)
+                    )
+                  ]),
+                  cond(eq(this.focusTypeValue, -1), [
+                    set(this.props.controlsOpacityValue, 1.0),
+                    set(this.currentScale, 1.0),
+                    set(this.props.headerOpacity, 1.0)
+                  ]),
+                  cond(eq(this.focusTypeValue, FocusType.panning), [
+                    set(this.props.headerOpacity, 0)
+                  ])
+                ])
               ),
               set(this.props.controlsOpacityValue, 1.0)
             ]),
@@ -1477,148 +1531,106 @@ class RawwPostEditor extends React.Component<Props, State> {
                 [this.postBottomY, this.props.offsetY],
                 this.handleSetPostBottom
               )
-            ),
-            Animated.onChange(
-              this.props.offsetY,
-              Animated.call(
-                [this.postBottomY, this.props.offsetY],
-                this.handleSetPostBottom
-              )
-            ),
+            ])}
+          />
+        )} */}
 
-            // Ignore background taps when keyboard is showing/hiding
-            Animated.onChange(
-              this.tapGestureState,
-              block([
-                cond(
-                  Animated.and(
-                    eq(this.tapGestureState, GestureState.END),
-                    Animated.or(
-                      eq(this.keyboardVisibleValue, 0),
-                      eq(this.keyboardVisibleValue, 1)
-                    )
-                  ),
-                  [
-                    Animated.call(
-                      [
-                        this.tapGestureState,
-                        this.panX,
-                        this.panY,
-                        this.focusTypeValue,
-                        this.focusedBlockValue,
-                        this.keyboardHeightValue
-                      ],
-                      this.handleTapBackground
-                    )
-                  ]
-                )
-              ])
-            )
-          ])}
-        />
-
-        <View style={this.postContainerStyle}>
-          <PostPreview
-            bounds={bounds}
-            blocks={post.blocks}
-            positions={post.positions}
-            paddingTop={this.props.paddingTop}
-            paddingBottom={FOOTER_HEIGHT}
-            inlineNodes={this.props.inlineNodes}
-            focusedBlockId={this.state.focusedBlockId}
-            onLayoutBlock={this.handleUpdateBlockFrame}
-            topInsetValue={this.topInsetValue}
-            layout={post.layout}
-            simultaneousHandlers={this.props.simultaneousHandlers}
-            focusTypeValue={this.focusTypeValue}
-            isFocused={this.props.isFocused}
-            minX={bounds.x}
-            onTapBlock={this.handleTapBlock}
-            positionsKey={_getPositionsKey(post.positions)}
-            offsetY={this.props.offsetY}
-            minY={bounds.y}
-            contentViewRef={this.contentViewRef}
-            onLayout={this.onContentLayout}
-            setPostBottom={this.handleSetPostBottom}
-            backgroundColor={post.backgroundColor || "#000"}
-            focusedBlockValue={this.focusedBlockValue}
-            bottomY={this.postBottomY}
-            onTapBackground={this.onTapBackground}
-            scrollY={this.props.scrollY}
-            ref={this.scrollRef}
-            maxX={bounds.width}
-            scrollEnabled
-            onFocus={this.handleFocusBlock}
-            onOpenImagePicker={this.handleOpenImagePicker}
-            onChangePhoto={this.handleChangeImageBlockPhoto}
-            onAction={this.handleBlockAction}
-            waitFor={this.postPreviewHandlers}
-            maxY={bounds.height}
-            onlyShow={this.state.focusedBlockId}
-            onBlur={this.handleBlurBlock}
-            focusType={this.state.focusType}
-            setBlockInputRef={this.setBlockInputRef}
-            onChangeNode={this.handleInlineNodeChange}
-            setBlockAtIndex={this.handleChangeBlock}
-            showEditableNodes={this.state.isSaving}
-          >
-            <Layer
-              flipY
-              pointerEvents="box-none"
-              zIndex={LayerZIndex.inlineNodes}
-              opacity={this.props.controlsOpacityValue}
+        <ContentContainerContext.Provider
+          value={this.state.contentContainerContextValue}
+        >
+          <View style={this.postContainerStyle}>
+            <PostPreview
+              bounds={bounds}
+              blocks={post.blocks}
+              positions={post.positions}
+              paddingTop={this.props.paddingTop}
+              paddingBottom={FOOTER_HEIGHT}
+              inlineNodes={this.props.inlineNodes}
+              focusedBlockId={this.state.focusedBlockId}
+              onLayoutBlock={this.handleUpdateBlockFrame}
+              topInsetValue={this.topInsetValue}
+              layout={post.layout}
+              simultaneousHandlers={this.props.simultaneousHandlers}
+              focusTypeValue={this.focusTypeValue}
+              isFocused={this.props.isFocused}
+              minX={bounds.x}
+              onTapBlock={this.handleTapBlock}
+              positionsKey={_getPositionsKey(post.positions)}
+              offsetY={this.props.offsetY}
+              minY={bounds.y}
+              contentViewRef={this._contentViewRef}
+              onLayout={this.onContentLayout}
+              setPostBottom={this.handleSetPostBottom}
+              backgroundColor={post.backgroundColor || "#000"}
+              focusedBlockValue={this.focusedBlockValue}
+              bottomY={this.postBottomY}
+              onTapBackground={this.onTapBackground}
+              scrollY={this.props.scrollY}
+              ref={this.scrollRef}
+              maxX={bounds.width}
+              scrollEnabled
+              onFocus={this.handleFocusBlock}
+              onOpenImagePicker={this.handleOpenImagePicker}
+              onChangePhoto={this.handleChangeImageBlockPhoto}
+              onAction={this.handleBlockAction}
+              waitFor={this.postPreviewHandlers}
+              maxY={bounds.height}
+              onlyShow={this.state.focusedBlockId}
+              onBlur={this.handleBlurBlock}
+              focusType={this.state.focusType}
+              setBlockInputRef={this.setBlockInputRef}
+              onChangeNode={this.handleInlineNodeChange}
+              setBlockAtIndex={this.handleChangeBlock}
+              showEditableNodes={this.state.isSaving}
+              onMoveStart={this.handleStartMoving}
+              onMoveEnd={this.handleStopMoving}
             >
-              <EditableNodeList
-                inlineNodes={this.props.inlineNodes}
-                format={post.format}
-                setNodeRef={this.setNodeRef}
-                focusedBlockId={this.state.focusedBlockId}
-                focusedBlockValue={this.focusedBlockValue}
-                setBlockInputRef={this.setBlockInputRef}
-                panX={this.panX}
-                panY={this.panY}
-                absoluteX={this.absoluteX}
-                absoluteY={this.absoluteY}
-                scrollY={this.props.scrollY}
-                topInsetValue={this.topInsetValue}
-                focusTypeValue={this.focusTypeValue}
-                keyboardVisibleValue={this.keyboardVisibleValue}
-                keyboardHeightValue={this.relativeKeyboardHeightValue}
-                animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
-                keyboardHeight={this.props.keyboardHeight}
-                waitFor={this.postPreviewHandlers}
-                focusType={this.state.focusType}
-                currentScale={this.currentScale}
-                height={this.postBottomY}
-                minX={bounds.x}
-                minY={bounds.y}
-                maxX={sizeStyle.width}
-                offsetY={this.props.offsetY}
-                onAction={this.handleBlockAction}
-                bottomY={this.postBottomY}
-                onFocus={this.handleFocusBlock}
-                maxY={bounds.height}
-                onTapNode={this.handleTapNode}
-                onlyShow={this.state.focusedBlockId}
-                onBlur={this.handleBlurNode}
-                onChangeNode={this.handleInlineNodeChange}
-                onPan={this.handlePan}
-              />
-              {this.state.focusType === FocusType.panning &&
-                this.focusedNode?.block?.frame && (
-                  <SnapGuides
-                    blocks={this.props.post.blocks}
-                    block={this.focusedNode?.block}
-                    positions={this.props.post.positions}
-                    snapPoint={snapPoint}
-                    currentScale={this.currentScale}
-                    x={this.panX}
-                    focusTypeValue={this.focusTypeValue}
-                    y={this.panY}
-                    onChange={this.handleChangeSnapPoint}
-                  />
-                )}
-            </Layer>
+              <Layer
+                flipY
+                pointerEvents="box-none"
+                zIndex={LayerZIndex.inlineNodes}
+                opacity={this.props.controlsOpacityValue}
+              >
+                <EditableNodeList
+                  inlineNodes={this.props.inlineNodes}
+                  format={post.format}
+                  setNodeRef={this.setNodeRef}
+                  focusedBlockId={this.state.focusedBlockId}
+                  focusedBlockValue={this.focusedBlockValue}
+                  setBlockInputRef={this.setBlockInputRef}
+                  panX={this.panX}
+                  panY={this.panY}
+                  absoluteX={this.absoluteX}
+                  absoluteY={this.absoluteY}
+                  scrollY={this.props.scrollY}
+                  topInsetValue={this.topInsetValue}
+                  focusTypeValue={this.focusTypeValue}
+                  keyboardVisibleValue={this.keyboardVisibleValue}
+                  keyboardHeightValue={this.relativeKeyboardHeightValue}
+                  animatedKeyboardVisibleValue={
+                    this.animatedKeyboardVisibleValue
+                  }
+                  keyboardHeight={this.props.keyboardHeight}
+                  waitFor={this.postPreviewHandlers}
+                  focusType={this.state.focusType}
+                  currentScale={this.currentScale}
+                  height={this.postBottomY}
+                  minX={bounds.x}
+                  minY={bounds.y}
+                  maxX={sizeStyle.width}
+                  offsetY={this.props.offsetY}
+                  onAction={this.handleBlockAction}
+                  bottomY={this.postBottomY}
+                  onFocus={this.handleFocusBlock}
+                  maxY={bounds.height}
+                  onTapNode={this.handleTapNode}
+                  onlyShow={this.state.focusedBlockId}
+                  onBlur={this.handleBlurNode}
+                  onChangeNode={this.handleInlineNodeChange}
+                  onPan={this.handlePan}
+                />
+              </Layer>
+            </PostPreview>
 
             {this.state.focusType === FocusType.panning &&
               this.state.showSnapGuide && (
@@ -1640,43 +1652,52 @@ class RawwPostEditor extends React.Component<Props, State> {
                   />
                 </Layer>
               )}
-          </PostPreview>
-        </View>
-
-        <ActiveLayer
-          onBack={this.handleBack}
-          onSend={this.handleSend}
-          focusedBlock={this.focusedBlock}
-          keyboardVisibleOpacity={this.keyboardVisibleValue}
-          panX={this.absoluteX}
-          inputRef={this._blockInputRefs[this.state.focusedBlockId]}
-          panY={this.absoluteY}
-          isPageModal={this.props.isReply}
-          waitFor={this.postPreviewHandlers}
-          width={sizeStyle.width}
-          height={sizeStyle.height}
-          currentScale={this.currentScale}
-          relativeHeight={this.relativeKeyboardHeightValue}
-          isTappingEnabled={this.state.activeButton === ToolbarButtonType.text}
-          onPressToolbarButton={this.handlePressToolbarButton}
-          isFocused={!!this.state.focusedBlockId}
-          insertTextNode={this.handleInsertText}
-          controlsOpacity={this.props.controlsOpacityValue}
-          blur={this.handleBlur}
-          focusType={this.state.focusType}
-          onChangeFooterHeight={this.handleChangeBottomInset}
-          exampleCount={this.props.exampleCount}
-          exampleIndex={this.props.exampleIndex}
-          onPressExample={this.props.onPressExample}
-          toolbarType={this.toolbarType}
-          isNodeFocused={this.state.focusType === FocusType.absolute}
-          activeButton={this.state.activeButton}
-          keyboardVisibleValue={this.keyboardVisibleValue}
-          focusTypeValue={this.focusTypeValue}
-          nodeListRef={this.nodeListRef}
-          onChangeLayout={this.props.onChangeLayout}
-          layout={this.props.post.layout}
-        ></ActiveLayer>
+            <Layer
+              isShown
+              width={sizeStyle.width}
+              height={this.postBottomY}
+              zIndex={LayerZIndex.icons}
+              pointerEvents="box-none"
+            >
+              <ActiveLayer
+                onBack={this.handleBack}
+                onSend={this.handleSend}
+                focusedBlock={this.focusedBlock}
+                keyboardVisibleOpacity={this.keyboardVisibleValue}
+                panX={this.absoluteX}
+                inputRef={this._blockInputRefs[this.state.focusedBlockId]}
+                panY={this.absoluteY}
+                isPageModal={this.props.isReply}
+                waitFor={this.postPreviewHandlers}
+                width={sizeStyle.width}
+                height={sizeStyle.height}
+                currentScale={this.currentScale}
+                relativeHeight={this.relativeKeyboardHeightValue}
+                isTappingEnabled={
+                  this.state.activeButton === ToolbarButtonType.text
+                }
+                onPressToolbarButton={this.handlePressToolbarButton}
+                isFocused={!!this.state.focusedBlockId}
+                insertTextNode={this.handleInsertText}
+                controlsOpacity={this.props.controlsOpacityValue}
+                blur={this.handleBlur}
+                focusType={this.state.focusType}
+                onChangeFooterHeight={this.handleChangeBottomInset}
+                exampleCount={this.props.exampleCount}
+                exampleIndex={this.props.exampleIndex}
+                onPressExample={this.props.onPressExample}
+                toolbarType={this.toolbarType}
+                isNodeFocused={this.state.focusType === FocusType.absolute}
+                activeButton={this.state.activeButton}
+                keyboardVisibleValue={this.keyboardVisibleValue}
+                focusTypeValue={this.focusTypeValue}
+                nodeListRef={this.nodeListRef}
+                onChangeLayout={this.props.onChangeLayout}
+                layout={this.props.post.layout}
+              ></ActiveLayer>
+            </Layer>
+          </View>
+        </ContentContainerContext.Provider>
 
         {this.focusedBlock?.type !== "image" && (
           <TextInputToolbar

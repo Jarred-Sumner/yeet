@@ -5,92 +5,72 @@ import {
   StyleSheet,
   View
 } from "react-native";
-import {
-  LongPressGestureHandler,
-  PanGestureHandler,
-  PinchGestureHandler,
-  RotationGestureHandler,
-  State,
-  TapGestureHandler
-} from "react-native-gesture-handler";
+import { State } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
 import Svg, { Rect } from "react-native-svg";
-import { SCREEN_DIMENSIONS, TOP_Y } from "../../../../config";
-import {
-  preserveMultiplicativeOffset,
-  preserveOffset,
-  isCurrentlyGesturingProc
-} from "../../../lib/animations";
+import { SCREEN_DIMENSIONS } from "../../../../config";
 import { Rectangle } from "../../../lib/Rectangle";
 import { sendSelectionFeedback } from "../../../lib/Vibration";
 import { ClipContext, ClipProvider } from "./ClipContext";
 import { TransformableViewComponent } from "./TransformableView";
-import { CAROUSEL_HEIGHT } from "../NewPostFormat";
 
 const transformableStyles = StyleSheet.create({
   topContainer: {
     position: "absolute",
-    left: 0,
-    top: 0
+    top: 0,
+    left: 0
   },
   bottomContainer: {
-    position: "absolute"
+    position: "absolute",
+    bottom: 0,
+    left: 0
   }
 });
 
 export const TransformableView = React.forwardRef((props, ref) => {
   const {
-    translateX = 0,
-    Component = TransformableViewComponent,
-    overlayTag,
-    rotate = 0,
+    bottom,
     verticalAlign,
-    unfocusedBottom,
-    unfocusedLeft,
-    onContentSizeChange,
-    left,
-    translateY,
-    isFixedSize,
     top,
-    zIndex,
+    left,
+    blockId,
+    rotate,
+    scale,
+    id,
     inputRef,
-    scale = 1.0,
-
-    keyboardVisibleValue,
-    bottom = undefined,
-    opacity = 1.0,
-    rasterize,
+    overlayTag,
+    Component = TransformableViewComponent,
     children
   } = props;
+
+  const transform = React.useMemo(() => {
+    const _transform = [
+      rotate && {
+        rotate: rotate + "rad"
+      },
+      scale &&
+        scale !== 1.0 && {
+          scale
+        }
+    ].filter(Boolean);
+
+    if (_transform.length > 0) {
+      return _transform;
+    } else {
+      return undefined;
+    }
+  }, [rotate, scale]);
 
   if (verticalAlign === "bottom" || !verticalAlign) {
     return (
       <Component
         ref={ref}
         inputRef={inputRef}
+        uid={blockId}
         overlayTag={overlayTag}
         style={[
           transformableStyles.bottomContainer,
-          {
-            opacity,
-            bottom,
-            left,
-            zIndex,
-            transform: [
-              {
-                translateY
-              },
-              {
-                translateX
-              },
-              {
-                scale
-              },
-              {
-                rotate
-              }
-            ]
-          }
+          { bottom, left, transform }
         ]}
       >
         {children}
@@ -101,30 +81,9 @@ export const TransformableView = React.forwardRef((props, ref) => {
       <Component
         ref={ref}
         inputRef={inputRef}
+        uid={blockId}
         overlayTag={overlayTag}
-        style={[
-          transformableStyles.bottomContainer,
-          {
-            opacity,
-            top,
-            left,
-            zIndex,
-            transform: [
-              {
-                translateY
-              },
-              {
-                translateX
-              },
-              {
-                scale
-              },
-              {
-                rotate
-              }
-            ]
-          }
-        ]}
+        style={[transformableStyles.topContainer, { top, left, transform }]}
       >
         {children}
       </Component>
@@ -133,31 +92,10 @@ export const TransformableView = React.forwardRef((props, ref) => {
     return (
       <Component
         ref={ref}
+        uid={blockId}
         overlayTag={overlayTag}
         inputRef={inputRef}
-        style={[
-          transformableStyles.topContainer,
-          {
-            opacity,
-            zIndex,
-            bottom,
-            left,
-            transform: [
-              {
-                translateY
-              },
-              {
-                translateX
-              },
-              {
-                scale
-              },
-              {
-                rotate
-              }
-            ]
-          }
-        ]}
+        style={[transformableStyles.topContainer, { top, left, transform }]}
       >
         {children}
       </Component>
@@ -238,7 +176,7 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0
   },
-  childGestureView: {
+  wrap: {
     width: SCREEN_DIMENSIONS.width,
     flex: 0,
     top: 0,
@@ -374,172 +312,160 @@ export class MovableNode extends Component<Props> {
     const yLiteral =
       verticalAlign === "top" ? Math.max(props.yLiteral, 0) : props.yLiteral;
 
-    this.panGestureState = new Animated.Value(State.UNDETERMINED);
-    this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
-    this.rotationGestureState = new Animated.Value(State.UNDETERMINED);
-    this.isCurrentlyGesturingValue = isCurrentlyGesturingProc(
-      this.panGestureState,
-      this.scaleGestureState,
-      this.rotationGestureState
-    );
-    this.keyboardVisibleFocusedValue = new Animated.Value(0);
+    // this.panGestureState = new Animated.Value(State.UNDETERMINED);
+    // this.scaleGestureState = new Animated.Value(State.UNDETERMINED);
+    // this.rotationGestureState = new Animated.Value(State.UNDETERMINED);
+    // this.isCurrentlyGesturingValue = isCurrentlyGesturingProc(
+    //   this.panGestureState,
+    //   this.scaleGestureState,
+    //   this.rotationGestureState
+    // );
 
-    this._Y = new Animated.Value(yLiteral);
-    this._R = new Animated.Value(props.rLiteral);
-    this._Z = new Animated.Value(props.scaleLiteral);
+    // this._X = new Animated.Value(props.xLiteral);
+    // this._Y = new Animated.Value(yLiteral);
+    // this._R = new Animated.Value(props.rLiteral);
+    // this._Z = new Animated.Value(props.scaleLiteral);
 
-    this.blockId = new Animated.Value(props.blockId.hashCode());
+    // this.blockId = new Animated.Value(props.blockId.hashCode());
 
-    this.handleTap = event(
-      [
-        {
-          nativeEvent: {
-            x: this.props.panX,
-            y: this.props.panY,
-            absoluteX: this.props.absoluteX,
-            absoluteY: this.props.absoluteY
-          }
-        }
-      ],
-      { useNativeDriver: true }
-    );
+    // this.handleTap = event(
+    //   [
+    //     {
+    //       nativeEvent: {
+    //         x: this.props.panX,
+    //         y: this.props.panY,
+    //         absoluteX: this.props.absoluteX,
+    //         absoluteY: this.props.absoluteY
+    //       }
+    //     }
+    //   ],
+    //   { useNativeDriver: true }
+    // );
 
-    this.handleRotate = event(
-      [
-        {
-          nativeEvent: {
-            rotation: this._R,
-            state: this.rotationGestureState
-          }
-        }
-      ],
-      { useNativeDriver: true }
-    );
+    // this.handlePan = event(
+    //   [
+    //     {
+    //       nativeEvent: {
+    //         translationX: this._X,
+    //         translationY: this._Y,
+    //         x: this.props.panX,
+    //         y: this.props.panY,
+    //         absoluteX: this.props.absoluteX,
+    //         absoluteY: this.props.absoluteY,
+    //         // velocityX: this.props.velocityX,
+    //         // velocityY: this.props.velocityY,
+    //         state: this.panGestureState
+    //       }
+    //     }
+    //   ],
+    //   { useNativeDriver: true }
+    // );
 
-    this.handleZoom = event(
-      [
-        {
-          nativeEvent: {
-            scale: this._Z,
-            state: this.scaleGestureState
-          }
-        }
-      ],
-      { useNativeDriver: true }
-    );
+    // this.handleRotate = event(
+    //   [
+    //     {
+    //       nativeEvent: {
+    //         rotation: this._R,
+    //         state: this.rotationGestureState
+    //       }
+    //     }
+    //   ],
+    //   { useNativeDriver: true }
+    // );
 
-    this._X = new Animated.Value(props.xLiteral);
-    this.left = keyboardVisibleCond(
-      this.keyboardVisibleFocusedValue,
-      this._X,
-      0
-    );
+    // this.handleZoom = event(
+    //   [
+    //     {
+    //       nativeEvent: {
+    //         scale: this._Z,
+    //         state: this.scaleGestureState
+    //       }
+    //     }
+    //   ],
+    //   { useNativeDriver: true }
+    // );
 
-    this._translateX = new Animated.Value(0);
-    this._translateY = new Animated.Value(0);
-    this.translateX = fixedSizeInterpolator(
-      fixedSizeValue,
-      this._translateX,
-      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this._translateX, 0)
-    );
+    // this.X = preserveOffset(this._X, this.panGestureState, props.x);
+    // this.Y = preserveOffset(this._Y, this.panGestureState, props.y);
+    // this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
+    // this.Z = Animated.min(
+    //   preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
+    //   props.maxScale || 100
+    // );
 
-    this.translateY = fixedSizeInterpolator(
-      fixedSizeValue,
-      this._translateY,
-      keyboardVisibleCond(this.keyboardVisibleFocusedValue, this._translateY, 0)
-    );
+    // this.keyboardVisibleFocusedValue = new Animated.Value(0);
 
-    this.handlePan = event(
-      [
-        {
-          nativeEvent: {
-            translationX: this._translateX,
-            translationY: this._translateY,
-            x: this.props.panX,
-            y: this.props.panY,
-            absoluteX: this.props.absoluteX,
-            absoluteY: this.props.absoluteY,
-            // velocityX: this.props.velocityX,
-            // velocityY: this.props.velocityY,
-            state: this.panGestureState
-          }
-        }
-      ],
-      { useNativeDriver: true }
-    );
+    // this.isFocusedValue = Animated.eq(
+    //   this.props.focusedBlockValue,
+    //   this.blockId
+    // );
 
-    this.Y = this._Y;
-    this.R = preserveOffset(this._R, this.rotationGestureState, props.r);
-    this.Z = Animated.min(
-      preserveMultiplicativeOffset(this._Z, this.scaleGestureState),
-      props.maxScale || 100
-    );
+    // this.opacityValue = new Animated.Value(1);
 
-    this.isFocusedValue = Animated.eq(
-      this.props.focusedBlockValue,
-      this.blockId
-    );
+    // // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
+    // //   ? keyboardVisibleCond(
+    // //       this.keyboardVisibleFocusedValue,
+    // //       0,
+    // //       Animated.multiply(
+    // //         Animated.sub(
+    // //           SCREEN_DIMENSIONS.height,
+    // //           props.keyboardHeightValue,
+    // //           props.topInsetValue
+    // //         ),
+    // //         -1
+    // //       )
+    // //     )
+    // //   : 0;
+    // //  = 0;
 
-    this.opacityValue = new Animated.Value(1);
-
-    // this.bottomValue = props.keyboardHeightValue //&& props.isTextBlock
-    //   ? keyboardVisibleCond(
-    //       this.keyboardVisibleFocusedValue,
-    //       0,
-    //       Animated.multiply(
-    //         Animated.sub(
-    //           SCREEN_DIMENSIONS.height,
-    //           props.keyboardHeightValue,
-    //           props.topInsetValue
-    //         ),
-    //         -1
+    // this.bottomValue =
+    //   verticalAlign === "bottom"
+    //     ? fixedSizeInterpolator(
+    //         fixedSizeValue,
+    //         Animated.multiply(this.Y, -1),
+    //         keyboardVisibleCond(
+    //           this.keyboardVisibleFocusedValue,
+    //           Animated.multiply(this.Y, -1),
+    //           Animated.multiply(props.keyboardHeightValue, -1)
+    //         )
     //       )
-    //     )
-    //   : 0;
-    //  = 0;
+    //     : null;
 
-    this.bottomValue =
-      verticalAlign === "bottom"
-        ? fixedSizeInterpolator(
-            fixedSizeValue,
-            Animated.multiply(this.Y, -1),
-            keyboardVisibleCond(
-              this.keyboardVisibleFocusedValue,
-              Animated.multiply(this.Y, -1),
-              Animated.multiply(props.keyboardHeightValue, -1)
-            )
-          )
-        : null;
+    // this.topValue =
+    //   verticalAlign === "top"
+    //     ? Animated.min(
+    //         Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
+    //         props.maxY
+    //       )
+    //     : null;
 
-    this.topValue =
-      verticalAlign === "top"
-        ? Animated.min(
-            Animated.sub(this.Y, Animated.sub(props.topInsetValue, TOP_Y)),
-            props.maxY
-          )
-        : null;
+    // this.scale = Animated.multiply(
+    //   scaleValueProc(
+    //     this.fixedSizeValue,
+    //     this.Z,
+    //     this.keyboardVisibleFocusedValue
+    //   ),
+    //   Animated.cond(this.isFocusedValue, props.currentScale, 1.0)
+    // );
 
-    this.scale = Animated.multiply(
-      scaleValueProc(
-        this.fixedSizeValue,
-        this.Z,
-        this.keyboardVisibleFocusedValue
-      ),
-      Animated.cond(this.isFocusedValue, props.currentScale, 1.0)
-    );
+    // this.rotateTransform = Animated.concat(this.R, "rad");
+    // this.unrotatedTransform = Animated.concat(0, "rad");
 
-    this.rotateTransform = Animated.concat(this.R, "rad");
-    this.unrotatedTransform = Animated.concat(0, "rad");
+    // this.rotate = fixedSizeInterpolator(
+    //   fixedSizeValue,
+    //   this.rotateTransform,
+    //   keyboardVisibleCond(
+    //     this.keyboardVisibleFocusedValue,
+    //     this.rotateTransform,
+    //     this.unrotatedTransform
+    //   )
+    // );
 
-    this.rotate = fixedSizeInterpolator(
-      fixedSizeValue,
-      this.rotateTransform,
-      keyboardVisibleCond(
-        this.keyboardVisibleFocusedValue,
-        this.rotateTransform,
-        this.unrotatedTransform
-      )
-    );
+    // this.translateX = fixedSizeInterpolator(
+    //   fixedSizeValue,
+    //   this.X,
+    //   keyboardVisibleCond(this.keyboardVisibleFocusedValue, this.X, 0)
+    // );
   }
 
   static defaultProps = {
@@ -729,182 +655,44 @@ export class MovableNode extends Component<Props> {
       frame,
       isHidden,
       isEditing,
-      isFixedSize
+      isFixedSize,
+      // verticalAlign,
+      yLiteral: _yLiteral = 0,
+      xLiteral = 0,
+      rLiteral = 0,
+      blockId,
+      scaleLiteral = 1.0
     } = this.props;
 
-    const ActivationGestureHandler = TapGestureHandler;
+    const yLiteral = _yLiteral || 0;
+
+    let verticalAlign = "top";
+    const bottom =
+      verticalAlign === "bottom"
+        ? (SCREEN_DIMENSIONS.height - yLiteral) * -1
+        : undefined;
+
+    const top = verticalAlign === "top" ? yLiteral : undefined;
 
     return (
-      <>
-        <Animated.Code
-          exec={Animated.block([
-            Animated.onChange(
-              this.isCurrentlyGesturingValue,
-              Animated.block([
-                Animated.cond(
-                  Animated.eq(this.isCurrentlyGesturingValue, 1),
-                  Animated.block([
-                    Animated.call(
-                      [
-                        this.props.absoluteX,
-                        this.props.absoluteY,
-                        this.panGestureState
-                      ],
-                      this.handlePanChange
-                    )
-                  ]),
-                  Animated.block([
-                    Animated.set(
-                      this._X,
-                      Animated.add(this._translateX, this._X)
-                    ),
-                    Animated.set(this._translateX, 0),
-                    Animated.set(
-                      this._Y,
-                      Animated.add(this._translateY, this._Y)
-                    ),
-                    Animated.set(this._translateY, 0),
-                    Animated.call(
-                      [
-                        this._X,
-                        this._Y,
-                        this.R,
-                        this.Z,
-                        this.panGestureState,
-                        this.props.absoluteX,
-                        this.props.absoluteY
-                      ],
-                      this.updatePosition
-                    )
-                  ])
-                )
-              ])
-            ),
-
-            Animated.onChange(this.isFocusedValue, [
-              Animated.set(
-                this.keyboardVisibleFocusedValue,
-                Animated.multiply(
-                  this.isFocusedValue,
-                  this.props.keyboardVisibleValue
-                )
-              )
-            ]),
-            Animated.onChange(
-              this.props.keyboardVisibleValue,
-              Animated.set(
-                this.keyboardVisibleFocusedValue,
-                Animated.multiply(
-                  this.isFocusedValue,
-                  this.props.keyboardVisibleValue
-                )
-              )
-            )
-          ])}
-        />
-
-        <ClipProvider value={frame}>
-          <ActivationGestureHandler
-            waitFor={this.tapGestureWaitFor}
-            ref={this.tapRef}
-            enabled={isDragEnabled}
-            minDurationMs={isFixedSize ? 50 : undefined}
-            maxDist={isFixedSize ? 3 : undefined}
-            onGestureEvent={this.handleTap}
-            onHandlerStateChange={this.handleTap}
-          >
-            <Animated.View
-              pointerEvents="box-none"
-              width={SCREEN_DIMENSIONS.width}
-              style={styles.gestureRootView}
-            >
-              <PanGestureHandler
-                ref={this.panRef}
-                enabled={isDragEnabled}
-                waitFor={waitFor}
-                simultaneousHandlers={this.panGestureHandlers}
-                onGestureEvent={this.handlePan}
-                onHandlerStateChange={this.handlePan}
-              >
-                <Animated.View
-                  pointerEvents="box-none"
-                  width={SCREEN_DIMENSIONS.width}
-                  height={0}
-                  style={styles.gestureView}
-                >
-                  <PinchGestureHandler
-                    ref={this.pinchRef}
-                    enabled={isDragEnabled}
-                    waitFor={waitFor}
-                    simultaneousHandlers={this.pinchGestureHandlers}
-                    onGestureEvent={this.handleZoom}
-                    onHandlerStateChange={this.handleZoom}
-                  >
-                    <Animated.View
-                      pointerEvents="box-none"
-                      width={SCREEN_DIMENSIONS.width}
-                      height={0}
-                      style={styles.gestureView}
-                    >
-                      {isFixedSize ? (
-                        <OverlaySheet
-                          ref={this.overlayRef}
-                          rotate={this.props.rLiteral}
-                          scale={this.props.scaleLiteral}
-                          visible={this.props.isEditing}
-                        />
-                      ) : (
-                        <Animated.View
-                          pointerEvents="none"
-                          ref={this.overlayRef}
-                          style={styles.overlaySheet}
-                        />
-                      )}
-
-                      <RotationGestureHandler
-                        ref={this.rotationRef}
-                        enabled={isDragEnabled}
-                        waitFor={waitFor}
-                        simultaneousHandlers={this.rotationGestureHandlers}
-                        onGestureEvent={this.handleRotate}
-                        onHandlerStateChange={this.handleRotate}
-                      >
-                        <Animated.View
-                          pointerEvents="box-none"
-                          width={SCREEN_DIMENSIONS.width}
-                          height={0}
-                          style={styles.childGestureView}
-                        >
-                          <TransformableView
-                            ref={this.props.containerRef}
-                            opacity={
-                              isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1
-                            }
-                            overlayTag={this.overlayTag}
-                            translateX={this.translateX}
-                            translateY={this.translateY}
-                            left={this.left}
-                            isFixedSize={isFixedSize}
-                            verticalAlign={this.props.verticalAlign}
-                            bottom={this.bottomValue}
-                            top={this.topValue}
-                            keyboardVisibleValue={keyboardVisibleValue}
-                            inputRef={inputRef}
-                            rotate={this.rotate}
-                            scale={this.scale}
-                          >
-                            {this.props.children}
-                          </TransformableView>
-                        </Animated.View>
-                      </RotationGestureHandler>
-                    </Animated.View>
-                  </PinchGestureHandler>
-                </Animated.View>
-              </PanGestureHandler>
-            </Animated.View>
-          </ActivationGestureHandler>
-        </ClipProvider>
-      </>
+      <ClipProvider value={frame}>
+        <TransformableView
+          ref={this.props.containerRef}
+          opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
+          overlayTag={this.overlayTag}
+          isFixedSize={isFixedSize}
+          blockId={blockId}
+          verticalAlign={verticalAlign}
+          left={xLiteral}
+          bottom={bottom}
+          top={top}
+          inputRef={inputRef}
+          rotate={rLiteral}
+          scale={scaleLiteral}
+        >
+          {this.props.children}
+        </TransformableView>
+      </ClipProvider>
     );
   }
 }

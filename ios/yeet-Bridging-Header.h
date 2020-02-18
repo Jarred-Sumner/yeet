@@ -145,6 +145,10 @@ RCT_EXTERN_METHOD(startExport:(NSString*)data isServerOnly:(BOOL)isServerOnly ca
 
 @end
 
+@interface RCT_EXTERN_MODULE(SnapContainerEventEmitter, RCTEventEmitter)
+
+@end
+
 @interface RCT_EXTERN_MODULE(YeetClipboard, RCTEventEmitter)
 
 RCT_EXTERN_METHOD(getContent:(RCTResponseSenderBlock)callback);
@@ -163,13 +167,27 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 
 @end
 
+@interface RCT_EXTERN_MODULE(SnapContainerViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(movableViewTags, NSArray);
+RCT_EXPORT_VIEW_PROPERTY(snapPoints, NSDictionary);
+RCT_EXPORT_VIEW_PROPERTY(deleteX, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(deleteY, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(deleteTag, NSNumber);
+
+@end
+
+
 @interface RCT_EXTERN_MODULE(MovableViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedBottom, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedLeft, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(overlayTag, NSNumber);
-RCT_REMAP_VIEW_PROPERTY(transform, yeetTransform, CATransform3D);
+RCT_EXPORT_VIEW_PROPERTY(contentContainerTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(uid, NSString);
+
+
 //RCT_CUSTOM_VIEW_PROPERTY(transform, CATransform3D, MovableView) {
 //  view.yeetTransform = json ? [RCTConvert CATransform3D:json] : CATransform3DIdentity;
 //}

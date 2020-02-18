@@ -10,6 +10,16 @@ import UIKit
 
 extension UIView {
 
+  @objc(reactTransform) var reactTransform : CGAffineTransform {
+    get {
+      return CATransform3DGetAffineTransform(layer.transform)
+    }
+
+    set (newValue) {
+      layer.transform = CATransform3DMakeAffineTransform(newValue)
+    }
+  }
+
    public func snapshot(scale: CGFloat = 0, isOpaque: Bool = false, afterScreenUpdates: Bool = true) -> UIImage? {
       UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, scale)
       drawHierarchy(in: bounds, afterScreenUpdates: afterScreenUpdates)

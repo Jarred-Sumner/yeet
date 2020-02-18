@@ -9,17 +9,18 @@ import {
   TextInput,
   findNodeHandle,
   ScrollViewProps,
-  InteractionManager
+  InteractionManager,
+  ScrollView
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
-import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+// import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
 import { triggerScrollEvent } from "../lib/Yeet";
 
-const ScrollView = Animated.createAnimatedComponent(
-  GestureScrollView
-) as React.ComponentType<ScrollViewProps>;
+// const ScrollView = Animated.createAnimatedComponent(
+//   GestureScrollView
+// ) as React.ComponentType<ScrollViewProps>;
 
 const _KAM_DEFAULT_TAB_BAR_HEIGHT = isIphoneX() ? 83 : 49;
 const _KAM_KEYBOARD_OPENING_TIME = 250;
@@ -500,7 +501,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         scrollIntoView={this.scrollIntoView}
         handleOnScroll={this._handleOnScroll}
         update={this.update}
-        onScroll={this.onScrollEvent}
+        // onScroll={this.onScrollEvent}
       />
     );
   }

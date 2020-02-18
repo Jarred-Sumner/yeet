@@ -5,7 +5,11 @@
  * @format
  */
 
-import { NavigationContainer } from "@react-navigation/native";
+import {
+  NavigationContainer,
+  ThemeProvider,
+  useTheme
+} from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as React from "react";
 import { COLORS } from "./src/lib/styles";
@@ -22,6 +26,7 @@ import SignUpScreen from "./src/screens/SignUpScreen";
 import AvatarScreen from "./src/screens/UploadAvatarScreen";
 import GlobalViewProfilePage from "./src/screens/ViewProfilePage";
 import ThreadPage from "./src/screens/ViewThreadPage";
+import { cloneDeep } from "lodash";
 
 const Auth = createNativeStackNavigator();
 const Feed = createNativeStackNavigator();
@@ -66,7 +71,12 @@ const AuthStack = () => (
 );
 
 const FeedStack = () => (
-  <Feed.Navigator screenOptions={{ headerShown: false, gestureEnabled: true }}>
+  <Feed.Navigator
+    screenOptions={{
+      headerShown: false,
+      gestureEnabled: true
+    }}
+  >
     <Feed.Screen name="ThreadList" component={FeedPage} />
     <Feed.Screen name="ViewThread" component={ThreadPage} />
     <Feed.Screen name="ViewProfile" component={GlobalViewProfilePage} />
@@ -92,12 +102,13 @@ const NewPostStack = () => (
 );
 
 const AppStackContainer = createStackNavigator();
+// const AppStackContainer = createNativeStackNavigator();
 
 const RootStack = React.forwardRef(({ initialRouteName }, ref) => (
   <Root.Navigator
     ref={ref}
     screenOptions={{
-      stackPresentation: "push",
+      stackPresentation: "modal",
       headerShown: false,
 
       stackAnimation: "default",
@@ -112,10 +123,22 @@ const RootStack = React.forwardRef(({ initialRouteName }, ref) => (
   </Root.Navigator>
 ));
 
+const TransparentThemeProvider = ({ children }) => {
+  const currentTheme = useTheme();
+  const newTheme = React.useMemo(() => {
+    const theme = cloneDeep(currentTheme);
+    theme.colors.background = "transparent";
+    return theme;
+  }, [currentTheme]);
+  return <ThemeProvider value={newTheme}>{children}</ThemeProvider>;
+};
+
 const AppStack = ({ initialRouteName }) => (
   <AppStackContainer.Navigator
     mode="modal"
     screenOptions={{
+      stackPresentation: "transparentModal",
+      // stackAnimation: "none",
       animationEnabled: false,
       gestureEnabled: false,
       headerShown: false,
@@ -128,7 +151,12 @@ const AppStack = ({ initialRouteName }) => (
       cardShadowEnabled: false
     }}
   >
-    <AppStackContainer.Screen name="Root" component={RootStack} />
+    <AppStackContainer.Screen
+      name="Root"
+      component={RootStack}
+      options={{ stackPresentation: "push" }}
+    />
+
     <AppStackContainer.Screen
       name="ImagePicker"
       component={ImagePickerPage}
@@ -143,7 +171,9 @@ GlobalViewProfilePage.navigationOptions = {
 
 export const Routes = React.forwardRef((props, ref) => (
   <NavigationContainer>
-    <AppStack {...props} ref={ref} />
+    <TransparentThemeProvider>
+      <AppStack {...props} ref={ref} />
+    </TransparentThemeProvider>
   </NavigationContainer>
 ));
 

@@ -72,6 +72,7 @@
 		835CA06623E962CD00829C71 /* YeetBridge.mm in Sources */ = {isa = PBXBuildFile; fileRef = 835CA06523E962CD00829C71 /* YeetBridge.mm */; };
 		835EF07723E3B1290035C814 /* RCTConvert+YeetTextEnums.m in Sources */ = {isa = PBXBuildFile; fileRef = 835EF07623E3B1290035C814 /* RCTConvert+YeetTextEnums.m */; };
 		835F44722353BF9A00AC2144 /* ExportableMediaSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */; };
+		83633AA723FA6E9B00B95EFF /* SnapContainerEventEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83633AA623FA6E9B00B95EFF /* SnapContainerEventEmitter.swift */; };
 		8366FB2E239F000F00F73311 /* YeetColorSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8366FB2D239F000F00F73311 /* YeetColorSlider.swift */; };
 		8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8366FB2F239F001F00F73311 /* YeetColorSliderViewManager.swift */; };
 		836A61A823BC4EB6001CF427 /* UIViewScreensExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 836A61A723BC4EB6001CF427 /* UIViewScreensExtension.swift */; };
@@ -97,6 +98,10 @@
 		837ABA4523E2BF0100E83F31 /* MediaPlayerJSIModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4423E2BF0100E83F31 /* MediaPlayerJSIModule.mm */; };
 		837ABA4923E2DA9A00E83F31 /* YeetJSIUTils.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4823E2DA9A00E83F31 /* YeetJSIUTils.mm */; };
 		837ABA4C23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837ABA4B23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm */; };
+		837B746B23F7D65100EF79AC /* SnapGesture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837B746A23F7D65100EF79AC /* SnapGesture.swift */; };
+		837B746D23F88A7600EF79AC /* SnapContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837B746C23F88A7600EF79AC /* SnapContainerView.swift */; };
+		837B746F23F8B03700EF79AC /* SnapContainerViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837B746E23F8B03700EF79AC /* SnapContainerViewManager.swift */; };
+		837B747123F9437F00EF79AC /* SnapTransform.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837B747023F9437F00EF79AC /* SnapTransform.swift */; };
 		837D6CE523ECE81200540A42 /* YeetJSIModule.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837D6CE423ECE81200540A42 /* YeetJSIModule.mm */; };
 		837D6CE823ED15AF00540A42 /* YeetClipboardJSI.mm in Sources */ = {isa = PBXBuildFile; fileRef = 837D6CE723ED15AF00540A42 /* YeetClipboardJSI.mm */; };
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
@@ -291,6 +296,7 @@
 		835EF07523E3B1290035C814 /* RCTConvert+YeetTextEnums.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RCTConvert+YeetTextEnums.h"; sourceTree = "<group>"; };
 		835EF07623E3B1290035C814 /* RCTConvert+YeetTextEnums.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "RCTConvert+YeetTextEnums.m"; sourceTree = "<group>"; };
 		835F44712353BF9A00AC2144 /* ExportableMediaSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportableMediaSource.swift; sourceTree = "<group>"; };
+		83633AA623FA6E9B00B95EFF /* SnapContainerEventEmitter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapContainerEventEmitter.swift; sourceTree = "<group>"; };
 		8366FB2D239F000F00F73311 /* YeetColorSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetColorSlider.swift; sourceTree = "<group>"; };
 		8366FB2F239F001F00F73311 /* YeetColorSliderViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetColorSliderViewManager.swift; sourceTree = "<group>"; };
 		836A61A723BC4EB6001CF427 /* UIViewScreensExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIViewScreensExtension.swift; sourceTree = "<group>"; };
@@ -320,6 +326,10 @@
 		837ABA4A23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerJSIModuleInstaller.h; sourceTree = "<group>"; };
 		837ABA4B23E2EA6800E83F31 /* MediaPlayerJSIModuleInstaller.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = MediaPlayerJSIModuleInstaller.mm; sourceTree = "<group>"; };
 		837ABA4D23E2EE7B00E83F31 /* MediaPlayerViewManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MediaPlayerViewManager.h; sourceTree = "<group>"; };
+		837B746A23F7D65100EF79AC /* SnapGesture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapGesture.swift; sourceTree = "<group>"; };
+		837B746C23F88A7600EF79AC /* SnapContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapContainerView.swift; sourceTree = "<group>"; };
+		837B746E23F8B03700EF79AC /* SnapContainerViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapContainerViewManager.swift; sourceTree = "<group>"; };
+		837B747023F9437F00EF79AC /* SnapTransform.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapTransform.swift; sourceTree = "<group>"; };
 		837D6CE323ECE81200540A42 /* YeetJSIModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetJSIModule.h; sourceTree = "<group>"; };
 		837D6CE423ECE81200540A42 /* YeetJSIModule.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = YeetJSIModule.mm; sourceTree = "<group>"; };
 		837D6CE623ED15AF00540A42 /* YeetClipboardJSI.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YeetClipboardJSI.h; sourceTree = "<group>"; };
@@ -721,6 +731,11 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				837B746A23F7D65100EF79AC /* SnapGesture.swift */,
+				837B746C23F88A7600EF79AC /* SnapContainerView.swift */,
+				837B746E23F8B03700EF79AC /* SnapContainerViewManager.swift */,
+				837B747023F9437F00EF79AC /* SnapTransform.swift */,
+				83633AA623FA6E9B00B95EFF /* SnapContainerEventEmitter.swift */,
 				8332B0F823F774C9003FB121 /* YeetJSIExtensions.h */,
 				8332B0F923F774C9003FB121 /* YeetJSIExtensions.mm */,
 				83DCFEFA23F3B65C001572E1 /* PanViewManager.h */,
@@ -1175,11 +1190,13 @@
 				83EF944F23B81CFF00EC37CF /* ContentExportThumbnail.swift in Sources */,
 				833867E123B6F3FC0054778D /* CGRect+extensions.swift in Sources */,
 				8341A1EB238E1D8F00632E88 /* Log.swift in Sources */,
+				837B746D23F88A7600EF79AC /* SnapContainerView.swift in Sources */,
 				8324807623D9A75E000E537E /* ContextMenuView.m in Sources */,
 				830554E323C8187E008D8BD1 /* YeetTextView.swift in Sources */,
 				8313ACE12346AAD3003108B6 /* TrackableMediaSource.swift in Sources */,
 				830303C72324AD8C00BD2260 /* ExportableImage.swift in Sources */,
 				8366FB30239F001F00F73311 /* YeetColorSliderViewManager.swift in Sources */,
+				837B747123F9437F00EF79AC /* SnapTransform.swift in Sources */,
 				8378997B23CD735300CCD6E1 /* YeetView.swift in Sources */,
 				83B0CAD923B6F7D10010DC66 /* YeetVideo.swift in Sources */,
 				83356DDE23A5C4E300943381 /* FeatureDetector.swift in Sources */,
@@ -1190,12 +1207,14 @@
 				8324807423D9A75E000E537E /* ContextMenuAction.m in Sources */,
 				83B0CAD123B6F7900010DC66 /* PostFormat.swift in Sources */,
 				8349A29D2357A87D00795FAA /* CombinedAsset.swift in Sources */,
+				837B746F23F8B03700EF79AC /* SnapContainerViewManager.swift in Sources */,
 				83E3E82E23B985F4007AC944 /* ContentExportResult.swift in Sources */,
 				83356DF523A8671300943381 /* MediaPlayerShare.swift in Sources */,
 				83EF944D23B81CB700EC37CF /* ContentExportError.swift in Sources */,
 				830554E823C858A2008D8BD1 /* _RCTUITextView.m in Sources */,
 				83161E8C2344758D00C271F3 /* AVCachableAsset.swift in Sources */,
 				8378997D23CD73C500CCD6E1 /* YeetViewManager.swift in Sources */,
+				837B746B23F7D65100EF79AC /* SnapGesture.swift in Sources */,
 				8330489E23223B0D00E816E8 /* VideoProducer.swift in Sources */,
 				83304886232098C200E816E8 /* YeetWebImageDecoder.m in Sources */,
 				8332B0FA23F774C9003FB121 /* YeetJSIExtensions.mm in Sources */,
@@ -1210,6 +1229,7 @@
 				839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */,
 				837D6CE823ED15AF00540A42 /* YeetClipboardJSI.mm in Sources */,
 				83B0CAD523B6F7B40010DC66 /* YeetMedia.swift in Sources */,
+				83633AA723FA6E9B00B95EFF /* SnapContainerEventEmitter.swift in Sources */,
 				83AF134023F3DC6B00D6924C /* PanShadowView.m in Sources */,
 				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
 				83DCFEF523F3A6C0001572E1 /* PanViewController.swift in Sources */,

@@ -21,33 +21,24 @@ protocol TransformableView : UIView {
 }
 
 @objc(MovableView)
-class MovableView: UIView, RCTUIManagerObserver {
+class MovableView: UIView, RCTUIManagerObserver, UIGestureRecognizerDelegate {
   @objc(didSetProps:)
   override func didSetProps(_ changedProps: Array<String>) {
     super.didSetProps(changedProps)
 
 
-
     if changedProps.contains("inputTag") || changedProps.contains("shouldRasterizeIOS")  {
-      if Thread.isMainThread {
-        self.updateContentScale()
-        self.transformableView?.movableViewTag = self.reactTag
-      } else {
-        DispatchQueue.main.async { [weak self] in
-          self?.updateContentScale()
-          self?.transformableView?.movableViewTag = self?.reactTag
-        }
+      RCTExecuteOnMainQueue { [weak self] in
+        self?.updateContentScale()
+        self?.transformableView?.movableViewTag = self?.reactTag
       }
     }
   }
-  
-
-  @objc(yeetTransformLayout) var yeetTransformLayout: RCTDirectEventBlock? = nil
 
   var didAutoAnimate = false
 
-
   override func reactSetFrame(_ frame: CGRect) {
+   updateContentScale()
     if textInput?.isFixedSize ?? false {
       super.reactSetFrame(frame)
       sendTransformEvent()
@@ -133,9 +124,11 @@ class MovableView: UIView, RCTUIManagerObserver {
         }
       }
 
-
-
     }
+  }
+
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+    return true
   }
 
   var hasTransform : Bool { return layer.affineTransform() != .identity }
@@ -221,7 +214,7 @@ class MovableView: UIView, RCTUIManagerObserver {
             self?.updateContentScale()
           }
 
-          self?._sendTransformEvent()
+          self?.sendTransformEvent()
         }
 
         incrementReadyCount()
@@ -234,21 +227,11 @@ class MovableView: UIView, RCTUIManagerObserver {
 
 
 
+
   func sendTransformEvent() {
-    DispatchQueue.main.debounce(interval: 0.25) { [weak self] in
-      self?._sendTransformEvent()
-    }
-  }
-
-
-
-  func _sendTransformEvent() {
-    guard let yeetTransformLayout = self.yeetTransformLayout else {
-      return
-    }
-
 
   }
+
 
   func setTransformValue(_ newValue: CATransform3D) {
 
@@ -259,30 +242,24 @@ class MovableView: UIView, RCTUIManagerObserver {
     DispatchQueue.main.throttle(deadline: .now() + 0.1) { [weak self] in
       self?.updateContentScale()
     }
-
-
   }
 
-  private var contentContainerTag: NSNumber? = nil
-
-  var contentContainerView: UIView? {
-    if contentContainerTag != nil {
-      return bridge?.uiManager.view(forReactTag: contentContainerTag!)
+  override var reactTransform: CGAffineTransform {
+    get {
+      return super.reactTransform
     }
 
-    var _current: UIView? = superview
+    set (newValue) {
+      self.setTransformValue(CATransform3DMakeAffineTransform(newValue))
+    }
+  }
 
-    for _ in 0...10 {
-      if _current == nil {
-        return nil
-      }
 
-      if _current?.nativeID == "content-container" {
-        contentContainerTag = _current?.reactTag
-        return _current
-      } else {
-        _current = _current?.superview
-      }
+  @objc(contentContainerTag) var contentContainerTag: NSNumber? = nil
+
+  var contentContainerView: SnapContainerView? {
+    if contentContainerTag != nil {
+      return bridge?.uiManager.view(forReactTag: contentContainerTag!) as! SnapContainerView
     }
 
     return nil
@@ -317,15 +294,18 @@ class MovableView: UIView, RCTUIManagerObserver {
   init(bridge: RCTBridge?) {
     self.bridge = bridge
     super.init(frame: .zero)
+
+    isUserInteractionEnabled = true
   }
 
+  @objc(uid)
+  var uid: String? = nil
 
 
   @objc(inputTag)
   var inputTag: NSNumber? = nil
 
   @objc(onTransform) var onTransform: RCTDirectEventBlock? = nil
-  @objc(transformedLayoutEventThrottleMs) var transformedLayoutEventThrottleMs: Int = Int(10)
 
   var shouldSendTransform: Bool {
     guard bridge?.isValid ?? false else {
@@ -346,22 +326,6 @@ class MovableView: UIView, RCTUIManagerObserver {
 
     return true
   }
-
-
-  var transformRect: CGRect {
-    let transform = CGAffineTransform.init(scaleX: self.transform.scaleX, y: self.transform.scaleY).rotated(by: self.transform.rotationRadians())
-    var _rect = CGRect(origin: frame.origin, size: transformableView!.reactContentFrame.size.applying(transform))
-    let origin = frame.origin
-
-    if let inputView = self.textInput {
-      _rect = CGRect(origin: .zero, size: inputView.textView.contentSize).insetBy(dx: inputView.frame.origin.x * -1, dy: inputView.frame.origin.y * -1).inset(by: inputView.textView.textContainerInset).applying(transform)
-      _rect.origin.x += origin.x
-      _rect.origin.y += origin.y
-    }
-
-    return _rect
-  }
-
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
@@ -419,6 +383,8 @@ class MovableView: UIView, RCTUIManagerObserver {
     }
   }
 
+
+
   override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
     let superValue = super.hitTest(point, with: event)
 
@@ -432,7 +398,6 @@ class MovableView: UIView, RCTUIManagerObserver {
       return nil
     } else {
       return superValue
-
     }
 
    }
