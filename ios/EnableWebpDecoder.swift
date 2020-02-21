@@ -11,6 +11,7 @@ import Vision
 import SwiftyBeaver
 import Firebase
 import SBObjectiveCWrapper
+import IQKeyboardManagerSwift
 
 @objc(EnableWebpDecoder) class EnableWebpDecoder : NSObject {
   @objc(reactTag) static var reactTag: NSNumber? = nil
@@ -24,6 +25,12 @@ import SBObjectiveCWrapper
     #else
       SwiftyBeaver.addDestination(ConsoleDestination())
     #endif
+//    IQKeyboardManager.shared.enable = true
+//    IQKeyboardManager.shared.enableAutoToolbar = false
+//    IQKeyboardManager.shared.disabledDistanceHandlingClasses = [PanViewController.self]
+//    IQKeyboardManager.shared.enableDebugging = true
+//    IQKeyboardManager.shared.registerTextFieldViewClass(YeetTextInputView.self, didBeginEditingNotificationName: UITextView.textDidBeginEditingNotification.rawValue, didEndEditingNotificationName: UITextView.textDidEndEditingNotification.rawValue)
+    
 
 //    Firebase
 //    [FIRPerformance sharedInstance].dataCollectionEnabled = false;

@@ -55,23 +55,23 @@ class MovableView: UIView, RCTUIManagerObserver, UIGestureRecognizerDelegate {
       let isShowingKeyboard = textInput?.isShowingKeyboard ?? false
        let isHidingKeyboard = textInput?.isHidingKeyboard ?? false
 
-      animator.addAnimations { [weak self] in
-        if isShowingKeyboard {
-          self?.overlayView?.layer.opacity = 1.0
-        } else if isHidingKeyboard {
-          self?.overlayView?.layer.opacity = 0.0
-        }
-      }
+//      animator.addAnimations { [weak self] in
+//        if isShowingKeyboard {
+//          self?.overlayView?.layer.opacity = 1.0
+//        } else if isHidingKeyboard {
+//          self?.overlayView?.layer.opacity = 0.0
+//        }
+//      }
+//
+//      animator.addCompletion { [weak self] _ in
+//        if isShowingKeyboard {
+//          self?.overlayView?.layer.opacity = 1.0
+//        } else if isHidingKeyboard {
+//          self?.overlayView?.layer.opacity = 0.0
+//        }
 
-      animator.addCompletion { [weak self] _ in
-        if isShowingKeyboard {
-          self?.overlayView?.layer.opacity = 1.0
-        } else if isHidingKeyboard {
-          self?.overlayView?.layer.opacity = 0.0
-        }
-
-        self?.sendTransformEvent()
-      }
+//        self?.sendTransformEvent()
+//      }
 
       incrementReadyCount()
 
@@ -335,11 +335,6 @@ class MovableView: UIView, RCTUIManagerObserver, UIGestureRecognizerDelegate {
     super.layoutSubviews()
   }
 
-  @objc(unfocusedBottom)
-  var unfocusedBottom: NSNumber? = nil
-
-  @objc(unfocusedLeft)
-  var unfocusedLeft: NSNumber? = nil
 
 
   @objc (onMaybeNeedsAdjustment) var onMaybeNeedsAdjustment: RCTDirectEventBlock? = nil

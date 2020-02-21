@@ -49,8 +49,16 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       }
     }
 
+    if isSecondMount {
+      subscribeToTaps()
+    }
 
     setPropsCount += 1
+  }
+
+
+  func subscribeToTaps() {
+    NotificationCenter.default.addObserver(self, selector: #selector(handleTap), name: .onTapTextInputView, object: reactTag)
   }
 
   func invalidate() {
@@ -58,8 +66,10 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     self.movableViewTag = nil
     self.bridge = nil
 
+    NotificationCenter.default.removeObserver(self, name: .onTapTextInputView, object: reactTag)
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidHideNotification, object: nil)
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
   }
@@ -101,7 +111,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
   }
 
-  var tapRecognizer: UITapGestureRecognizer? = nil
+
  @objc(textView) dynamic var textView: YeetTextView
 
   var canFocus: Bool {
@@ -112,10 +122,12 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 //
 //    return !isSingleFocus || YeetTextInputView.focusedReactTag == nil || YeetTextInputView.focusedReactTag == self
   }
-  @objc(handleTap:)
-  func handleTap(_ gesture: UIGestureRecognizer) {
-    self.reactFocus()
+  @objc(handleTap)
+  func handleTap() {
+    self.onRequestFocus?([:])
   }
+
+  @objc(onRequestFocus) var onRequestFocus: RCTDirectEventBlock? = nil
 
   var bridge: RCTBridge? = nil
   var isShowingKeyboard: Bool = false
@@ -148,9 +160,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     multiplier: 1.0,
     constant: 0
   )
-
-
-
 
   override init(bridge: RCTBridge) {
     let storage = NSTextStorage()
@@ -189,10 +198,6 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
     bridge.uiManager.observerCoordinator.add(self)
     self.clipsToBounds = false
-
-    tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
-    self.addGestureRecognizer(tapRecognizer!)
-
   }
 
 
@@ -219,18 +224,18 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   override func didMoveToSuperview() {
     super.didMoveToSuperview()
 
-    self.updateTapGestureRecognizer()
-    if isDetached && YeetTextInputView.focusedReactTag == reactTag {
-      YeetTextInputView.focusedReactTag = nil
+
+    if isDetached && isFocusedReactTag {
+      resignFocusedReactTag()
     }
   }
 
   override func didMoveToWindow() {
     super.didMoveToWindow()
-    self.updateTapGestureRecognizer()
 
-    if isDetached && YeetTextInputView.focusedReactTag == reactTag {
-      YeetTextInputView.focusedReactTag = nil
+
+    if isDetached && isFocusedReactTag {
+      resignFocusedReactTag()
     }
 
     if isDetached && bridge?.isValid ?? false {
@@ -254,25 +259,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     return self.bridge?.uiManager.view(forReactTag: tag) as? YeetView
   }
 
-  func updateTapGestureRecognizer() {
-    if superview != nil && isSticker && movableView != nil {
-      let movableView = self.movableView!
 
-      if let tapRecognizer = self.tapRecognizer {
-        if self.gestureRecognizers?.contains(tapRecognizer) ?? false {
-          self.removeGestureRecognizer(tapRecognizer)
-          self.tapRecognizer?.isEnabled = false
-           self.tapRecognizer = nil
-        } else if movableView.gestureRecognizers?.contains(tapRecognizer) ?? false{
-          movableView.removeGestureRecognizer(tapRecognizer)
-        }
-      }
-      tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(YeetTextInputView.handleTap(_:)))
-      movableView.addGestureRecognizer(tapRecognizer!)
-    }
-  }
-
-
+  @objc(focusedMovableViewReactTag) static var focusedMovableViewReactTag: NSNumber? = nil
   @objc(focusedReactTag) static var focusedReactTag: NSNumber? = nil {
     didSet {
       var userInfo: [String: NSNumber] = [:]
@@ -295,6 +283,18 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
   }
 
+  var isFocusedReactTag : Bool { return YeetTextInputView.focusedReactTag == reactTag }
+  func becomeFocusedReactTag() {
+    YeetTextInputView.focusedMovableViewReactTag = movableViewTag
+    YeetTextInputView.focusedReactTag = reactTag
+  }
+
+  func resignFocusedReactTag() {
+    if isFocusedReactTag {
+      YeetTextInputView.focusedMovableViewReactTag = nil
+      YeetTextInputView.focusedReactTag = nil
+    }
+  }
 
 
   func textInputReactSetFrame(_ frame: CGRect, _ _animator: UIViewPropertyAnimator? = nil) {
@@ -413,16 +413,9 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
     self.enableSelection()
 
-    YeetTextInputView.focusedReactTag = reactTag
+    becomeFocusedReactTag()
 
     super.reactFocus()
-
-    DispatchQueue.main.async { [unowned self] in
-      if self.textView.isFirstResponder && self.willAutoFocus {
-          Log.debug("PRoBBLAYpaoskd")
-        }
-    }
-
   }
 
   func enableSelection() {
@@ -488,14 +481,12 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     return isSticker
   }
 
-
-
   override func textInputDidBeginEditing() {
     super.textInputDidBeginEditing()
 
     textView.drawHighlight(true)
-    tapRecognizer?.isEnabled = false
-    YeetTextInputView.focusedReactTag = reactTag
+
+    becomeFocusedReactTag()
 
     if isInitialMount {
 
@@ -517,9 +508,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     }
 
     movableView?.setNeedsLayout()
+
   }
-
-
 
   @objc(onFinishEditing)
   var onFinishEditing: RCTDirectEventBlock? = nil
@@ -543,14 +533,16 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       self.disableSelection()
     }
 
-    tapRecognizer?.isEnabled = true
 
 
 
-    YeetTextInputView.focusedReactTag = nil
+
+    resignFocusedReactTag()
 
     if onFinishEditing != nil {
       DispatchQueue.main.async { [weak self] in
+
+
         guard self?.bridge?.isValid ?? false else {
           return
         }
@@ -596,15 +588,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   var keyboardHideNotification: NSObjectProtocol? = nil
   @objc(handleKeyboardWillShow:)
   func handleKeyboardWillShow(notif: NSNotification) {
-    guard isSticker || willAutoFocus else {
-      return
-    }
-
     guard textView.isFirstResponder else {
-      return
-    }
-
-    guard let  movableView = self.movableView else {
       return
     }
 
@@ -616,15 +600,27 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return
     }
 
+    keyboardNotification = KeyboardNotification(notif)
+
+
+    guard isSticker || willAutoFocus else {
+      return
+    }
+
     guard sentWillShowKeyboard == false else {
+      return
+    }
+
+    guard let movableView = self.movableView else {
       return
     }
 
     isShowingKeyboard = true
     sentWillShowKeyboard = true
 
-    keyboardNotification = KeyboardNotification(notif)
+
     stickerContainer?.textAlign = textView.textAlignment
+
 
 
     if willAutoFocus && movableView.animator != nil && movableView.animator?.state == UIViewAnimatingState.inactive {
@@ -636,6 +632,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       movableView.animator = keyboardNotification!.createPropertyAnimator()
       stickerContainer?.animator = movableView.animator
     }
+
 
 
     NotificationCenter.default.addObserver(self, selector: #selector(handleShowKeyboard), name: UIResponder.keyboardDidShowNotification, object: nil)
@@ -693,6 +690,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
      self.stickerContainer?.animator = nil
 
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidHideNotification, object: nil)
+    NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
   }
 
   @objc(handleShowKeyboard)
@@ -700,6 +698,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     keyboardNotification = nil
     isShowingKeyboard = false
     sentWillShowKeyboard = false
+
+
 
     if movableView?.animator?.state != UIViewAnimatingState.inactive {
       movableView?.animator?.stopAnimation(false)
@@ -713,18 +713,9 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardDidShowNotification, object: nil)
   }
 
-
   @objc(handleKeyboardWillHide:)
   func handleKeyboardWillHide(notif: NSNotification) {
-    guard YeetTextInputView.focusedReactTag == reactTag else {
-      return
-    }
-
-    guard isSticker else {
-      return
-    }
-
-    guard let movableView = self.movableView else {
+    guard isFocusedReactTag else {
       return
     }
 
@@ -736,17 +727,28 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
       return
     }
 
-    isHidingKeyboard = true
     keyboardNotification = KeyboardNotification(notif)
 
+
+    guard isSticker else {
+      return
+    }
+
+    guard let movableView = self.movableView else {
+      return
+    }
+
+
+
+    isHidingKeyboard = true
     NotificationCenter.default.addObserver(self, selector: #selector(handleHideKeyboard), name: UIResponder.keyboardDidHideNotification, object: nil)
 
     movableView.animator = keyboardNotification!.createPropertyAnimator()
     stickerContainer?.textAlign = textView.textAlignment
     stickerContainer?.animator = movableView.animator!
 
-    if YeetTextInputView.focusedReactTag == reactTag {
-      YeetTextInputView.focusedReactTag = nil
+    if isFocusedReactTag {
+      resignFocusedReactTag()
       self.setNeedsLayout()
       self.layoutIfNeeded()
     }
@@ -844,7 +846,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
     super.reactBlur()
     let didResign = !textView.isFirstResponder
 
-    tapRecognizer?.isEnabled = true
+
 
     if didResign && isSticker {
       self.disableSelection()
@@ -894,8 +896,8 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
   deinit {
     self.invalidate()
 
-    if YeetTextInputView.focusedReactTag == reactTag {
-      YeetTextInputView.focusedReactTag = nil
+    if isFocusedReactTag {
+      resignFocusedReactTag()
     }
   }
 }
@@ -903,6 +905,7 @@ class YeetTextInputView : RCTBaseTextInputView, TransformableView, RCTInvalidati
 
 extension Notification.Name {
     static let onChangeTextInputFocus = Notification.Name("onChangeTextInputFocus")
+    static let onTapTextInputView = Notification.Name("onTapTextInputView")
 }
 
 

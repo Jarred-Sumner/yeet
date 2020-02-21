@@ -14,6 +14,7 @@
 #import "YeetSplashScreen.h"
 #import <React/RCTShadowView.h>
 #import "PanViewManager.h"
+#import "EnableWebpDecoder.h"
 
 
 
@@ -61,24 +62,24 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
            size_t count) -> jsi::Value {
 
 
-
-        __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0], jsInvoker);
-       __block RCTScrollView *scrollView = [_bridge.uiManager unsafeViewForReactTag:scrollViewTag];
-       __block NSDictionary *bodyValue;
-
-       dispatch_group_t group = dispatch_group_create();
-       dispatch_group_enter(group);
-       RCTExecuteOnMainQueue(^{
-         bodyValue = scrollView.body;
-          dispatch_group_leave(group);
-       });
-       dispatch_group_wait(group, DISPATCH_TIME_NOW + (1.0 * NSEC_PER_SEC));
-
-       if (scrollView != nil) {
-         return convertObjCObjectToJSIValue(runtime, bodyValue);
-       } else {
+//
+//        __block NSNumber *scrollViewTag = convertJSIValueToObjCObject(runtime, arguments[0], jsInvoker);
+//       __block RCTScrollView *scrollView = [_bridge.uiManager unsafeViewForReactTag:scrollViewTag];
+//       __block NSDictionary *bodyValue;
+//
+//       dispatch_group_t group = dispatch_group_create();
+//       dispatch_group_enter(group);
+//       RCTExecuteOnMainQueue(^{
+//         bodyValue = scrollView.body;
+//          dispatch_group_leave(group);
+//       });
+//       dispatch_group_wait(group, DISPATCH_TIME_NOW + (1.0 * NSEC_PER_SEC));
+//
+//       if (scrollView != nil) {
+//         return convertObjCObjectToJSIValue(runtime, bodyValue);
+//       } else {
          return jsi::Value::null();
-       }
+//       }
 
     });
   } else if (methodName == "triggerScrollEvent") {
@@ -90,20 +91,20 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
            const jsi::Value *arguments,
            size_t count) -> jsi::Value {
 
-       double tag = arguments[0].asNumber();
-
-       if (!tag) {
-         return jsi::Value::null();
-       }
-
-       __block NSNumber *scrollViewTag = @(tag);
-
-       RCTExecuteOnMainQueue(^{
-         RCTScrollView *scrollView = [_bridge.uiManager viewForReactTag:scrollViewTag];
-         if (scrollView != nil) {
-           [scrollView scrollViewDidZoom:scrollView.scrollView];
-         }
-       });
+//       double tag = arguments[0].asNumber();
+//
+//       if (!tag) {
+//         return jsi::Value::null();
+//       }
+//
+//       __block NSNumber *scrollViewTag = @(tag);
+//
+//       RCTExecuteOnMainQueue(^{
+//         RCTScrollView *scrollView = [_bridge.uiManager viewForReactTag:scrollViewTag];
+//         if (scrollView != nil) {
+//           [scrollView scrollViewDidZoom:scrollView.scrollView];
+//         }
+//       });
 
        return jsi::Value(true);
    });
@@ -230,6 +231,13 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
 
       return jsi::Value(true);
     });
+  } else if (methodName == "focusedTextInputTag") {
+    NSNumber *tag = YeetTextInputView.focusedReactTag;
+    if (tag == nil) {
+      return jsi::Value::null();
+    } else {
+      return jsi::Value([tag intValue]);
+    }
   } else if (methodName == "focus") {
     RCTBridge *rctBridge = _bridge;
 
@@ -240,12 +248,17 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
              size_t count) -> jsi::Value {
 
       __block NSNumber *tag = @(arguments[0].asNumber());
+      NSNumber *focusedTag = YeetTextInputView.focusedReactTag;
 
-      RCTExecuteOnMainQueue(^{
-        UIView *view = [rctBridge.uiManager viewForReactTag:tag];
-        [view reactFocus];
-        tag = nil;
-      });
+      BOOL isAlreadyFocused = focusedTag != nil && [tag intValue] == focusedTag.intValue;
+
+      if (!isAlreadyFocused) {
+        RCTExecuteOnMainQueue(^{
+          UIView *view = [rctBridge.uiManager viewForReactTag:tag];
+          [view reactFocus];
+          tag = nil;
+        });
+      }
 
       return jsi::Value::undefined();
     });

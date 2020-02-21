@@ -249,6 +249,7 @@
 @property (nonatomic) UIEdgeInsets reactPaddingInsets;
 
 + (NSNumber*_Nullable)focusedReactTag;
++ (NSNumber*_Nullable)focusedMovableViewReactTag;
 
 - (void)didSetProps:(NSArray<NSString *> * _Nonnull)changedProps;
 - (void)invalidate;

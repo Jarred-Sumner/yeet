@@ -35,6 +35,10 @@ export class TextPostBlock extends React.Component<Props> {
     // this.props.onChange({ ...this.props.block, value: text });
   };
 
+  get isFocused() {
+    return this.input.isFocused();
+  }
+
   handleFocus = () => this.props.onFocus(this.props.block);
 
   handleBlur = ({ nativeEvent: { text } }) => {
@@ -154,6 +158,7 @@ export class TextPostBlock extends React.Component<Props> {
         isBlockFocused={isFocused}
         blockRef={this.containerRef}
         containerTag={this.containerTag}
+        onRequestFocus={this.handleFocus}
         isSticker={isSticker}
         stickerTag={this.stickerTag}
         ref={this.textInput}

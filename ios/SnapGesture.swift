@@ -33,19 +33,76 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
     }
 
     // MARK: - private method
-    private weak var weakGestureView: UIView?
-    private weak var weakTransformView: UIView?
+    weak var weakGestureView: UIView?
+    weak var weakTransformView: UIView?
 
     private var panGesture: UIPanGestureRecognizer?
     private var pinchGesture: UIPinchGestureRecognizer?
     private var rotationGesture: UIRotationGestureRecognizer?
+    private var backgroundGestureRecognizer : UITapGestureRecognizer?
+    private var activationGestureHandler: UILongPressGestureRecognizer?
+
+    var onGestureStart: ((_ location: CGPoint) -> Void)? = nil
+    var onGestureStop: ((_ location: CGPoint) -> Void)? = nil
+    var onPressBackground : ((_ location: CGPoint) -> Void)? = nil
+
+    var hasSentPressInBackground = false
+  @objc func handleActivationGesture(_ gesture: UILongPressGestureRecognizer) {
+    if gesture.state == .began {
+      hasSentPressInBackground = false
+    }
+
+    guard !isGestureEnabled else {
+      return
+    }
+
+    guard !hasSentPressInBackground else {
+      return
+    }
+
+    guard let gestureView = self.weakGestureView else {
+      return
+    }
+
+    if gesture.state == .changed || gesture.state == .recognized {
+      startTheGesturing(gesture.location(in: gestureView))
+    }
+  }
+
 
     private func addGestures(v: UIView) {
       v.isUserInteractionEnabled = true
       let gestureRecognizers = v.gestureRecognizers ?? []
 
+      if backgroundGestureRecognizer == nil || !gestureRecognizers.contains(backgroundGestureRecognizer!) {
+        let backgroundGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleBackgroundPress(_:)))
+        backgroundGestureRecognizer.cancelsTouchesInView = true
+
+//        backgroundGestureRecognizer.allowableMovement = 10
+        backgroundGestureRecognizer.delaysTouchesBegan = true
+        backgroundGestureRecognizer.delaysTouchesEnded = true
+        backgroundGestureRecognizer.delegate = self
+        v.addGestureRecognizer(backgroundGestureRecognizer)
+        self.backgroundGestureRecognizer = backgroundGestureRecognizer
+      }
+
+      if activationGestureHandler == nil || !gestureRecognizers.contains(activationGestureHandler!) {
+        let activationGestureHandler = UILongPressGestureRecognizer(target: self, action: #selector(handleActivationGesture(_:)))
+        activationGestureHandler.cancelsTouchesInView = false
+        activationGestureHandler.minimumPressDuration = 0.1
+//        backgroundGestureRecognizer.allowableMovement = 10
+        activationGestureHandler.delaysTouchesBegan = false
+        activationGestureHandler.delaysTouchesEnded = false
+        activationGestureHandler.delegate = self
+        v.addGestureRecognizer(activationGestureHandler)
+        self.activationGestureHandler = activationGestureHandler
+      }
+
       if panGesture == nil || !gestureRecognizers.contains(panGesture!) {
         panGesture = UIPanGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+        panGesture?.delaysTouchesBegan = false
+        panGesture?.delaysTouchesEnded = false
+
         panGesture?.cancelsTouchesInView = false
 
         panGesture?.minimumNumberOfTouches = 1
@@ -55,8 +112,11 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
 
       if pinchGesture == nil || !gestureRecognizers.contains(pinchGesture!) {
         pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
+
         pinchGesture?.delegate = self   // for simultaneous recog
         pinchGesture?.cancelsTouchesInView = false
+        pinchGesture?.delaysTouchesBegan = false
+        pinchGesture?.delaysTouchesEnded = false
         v.addGestureRecognizer(pinchGesture!)
       }
 
@@ -64,10 +124,14 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
       if rotationGesture == nil || !gestureRecognizers.contains(rotationGesture!) {
         rotationGesture = UIRotationGestureRecognizer(target: self, action: #selector(handleGesture(_:)))
         rotationGesture?.delegate = self
+        rotationGesture?.delaysTouchesBegan = false
+        rotationGesture?.delaysTouchesEnded = false
 
         rotationGesture?.cancelsTouchesInView = false
         v.addGestureRecognizer(rotationGesture!)
       }
+
+
 
       self.weakGestureView = v
     }
@@ -89,6 +153,17 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
                 view.removeGestureRecognizer(rotationGesture!)
                 rotationGesture = nil
             }
+
+          if backgroundGestureRecognizer != nil {
+              view.removeGestureRecognizer(backgroundGestureRecognizer!)
+              backgroundGestureRecognizer = nil
+          }
+
+          if activationGestureHandler != nil {
+               view.removeGestureRecognizer(activationGestureHandler!)
+               activationGestureHandler = nil
+           }
+
         }
         self.weakGestureView = nil
         self.weakTransformView = nil
@@ -105,6 +180,9 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
 
     func setTransformView(_ transformView: UIView?, gestgureView:UIView?) {
         if let v = gestgureView  {
+          if v != self.weakGestureView {
+            self.cleanGesture()
+          }
             self.addGestures(v: v)
         }
         self.weakTransformView = transformView
@@ -120,6 +198,10 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
   open var maxScale = CGFloat(3.0)
   open var minScale = CGFloat(0.5)
 
+
+
+
+
     // MARK: - gesture handle
 
     // location will jump when finger number change
@@ -129,22 +211,33 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
     private var lastScale:CGFloat = 1.0
 
    private var lastPinchPoint:CGPoint = CGPoint(x: 0, y: 0)
+  var panStartPoint = CGPoint.zero
 
     @objc func handleGesture(_ gesture: UIGestureRecognizer) {
+      guard let gestureView = self.weakGestureView as? YeetScrollView else {
+        return
+      }
+
+      let isPan = gesture == panGesture
+      let isPinch = gesture == pinchGesture
+      let isRotate = gesture == rotationGesture
+
       guard isGestureEnabled else {
+        if (isRotate || isPinch) && [UIGestureRecognizer.State.began, UIGestureRecognizer.State.changed, UIGestureRecognizer.State.recognized].contains(gesture.state) {
+          startTheGesturing(gesture.location(in: gestureView))
+        }
         return
       }
 
       guard let view = self.weakTransformView else {
         return
       }
-      var isPan = gesture == panGesture
-      var isPinch = gesture == pinchGesture
-      var isRotate = gesture == rotationGesture
+
 
 
       if isPan && panGesture?.numberOfTouches ?? 0 > 1 {
         panGesture?.setTranslation(.zero, in: view)
+        panGesture!.setTranslation(.zero, in: gestureView)
         return
       }
 
@@ -185,15 +278,155 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
           view.reactTransform = transform
         }
 //      }
+
+      if isPan && (gesture.state == .ended || gesture.state == .failed) {
+        panGesture!.setTranslation(.zero, in: gestureView)
+
+        if [.ended, .failed].contains(rotationGesture?.state) && [.ended, .failed].contains(pinchGesture?.state) {
+          stopTheGesturing(gesture.location(in: gestureView))
+        }
+
+      } else if (isRotate || isPinch) && [.ended, .failed].contains(rotationGesture?.state) && [.ended, .failed].contains(pinchGesture?.state) && !isPanGestureActive {
+        stopTheGesturing(gesture.location(in: gestureView))
+      }
     }
 
+  func stopTheGesturing(_ location: CGPoint) {
+    guard isGestureEnabled else {
+      return
+    }
+
+    onGestureStop?(location)
+  }
+
+  func startTheGesturing(_ location: CGPoint) {
+    guard !isGestureEnabled else {
+      return
+    }
+
+    onGestureStart?(location)
+
+    hasSentPressInBackground = true
+  }
+
+  var backgroundPressStartedAt: Int64? = nil
+  var hasPressedLongEnough: Bool {
+    return Int64(Date.timeIntervalSinceReferenceDate.rounded() * 1000) - (backgroundPressStartedAt ?? 0) > 50
+  }
+
+  var hasActiveGesture: Bool {
+    guard !isPanGestureActive else {
+      return true
+    }
+
+    return [rotationGesture!.state, pinchGesture!.state].contains(UIGestureRecognizer.State.recognized)
+  }
+
+  var isPanGestureActive : Bool {
+    guard let gestureView = self.weakGestureView else {
+      return false
+    }
+
+    let _trans = panGesture!.translation(in: gestureView)
+    return abs(_trans.x) + abs(_trans.y) > 2
+  }
 
 
+  @objc func handleBackgroundPress(_ background: UITapGestureRecognizer) {
+    if background.state == .failed && isGestureEnabled {
+      stopTheGesturing(background.location(in: weakGestureView!))
+    }
+
+    if background.state == .ended {
+      if let gestureView = self.weakGestureView {
+        if isGestureEnabled {
+          stopTheGesturing(background.location(in: weakGestureView!))
+        } else {
+          self.onPressBackground?(background.location(in: gestureView))
+        }
+      }
+    }
+  }
+
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    if gestureRecognizer == backgroundGestureRecognizer {
+      return touch.view?.reactTag != YeetTextInputView.focusedReactTag && touch.view?.reactTag != YeetTextInputView.focusedMovableViewReactTag
+    } else {
+      return true
+    }
+//    return true
+  }
+
+//  func gestureRecognizer(_ first: UIGestureRecognizer, shouldRequireFailureOf second: UIGestureRecognizer) -> Bool {
+//    guard let gestureView = weakGestureView else {
+//      return false
+//    }
+//
+//
+//    if first == backgroundGestureRecognizer && (second.view is YeetTextInputView || second.view is UITextView || second.view is MovableView) {
+//      return true
+//    }
+//
+////    if  {
+////      return true
+////    } else {
+//      return false
+////    }
+//  }
+
+//  func gestureRecognizer(_ first: UIGestureRecognizer, shouldBeRequiredToFailBy second: UIGestureRecognizer) -> Bool {
+//    guard let gestureView = self.weakGestureView else {
+//      return false
+//    }
+//
+//    var _scrollView: UIScrollView? = first.view as? UIScrollView
+//
+//    if _scrollView == nil {
+//      _scrollView = second.view as? UIScrollView
+//    }
+//
+//
+//
+//
+//
+////    else if (first == backgroundGestureRecognizer && [panGesture, rotationGesture, pinchGesture].contains(second) || second == backgroundGestureRecognizer && [panGesture, rotationGesture, pinchGesture].contains(first)) {
+////      return true
+////    } else {
+//
+//      return false
+//
+////    }
+//  }
+
+
+  var gestureRecognizers: [UIGestureRecognizer] {
+    return [ panGesture,backgroundGestureRecognizer,rotationGesture,pinchGesture, activationGestureHandler].compactMap { $0 }
+  }
 
     //MARK:- UIGestureRecognizerDelegate Methods
   func gestureRecognizer(_ first: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith second:UIGestureRecognizer) -> Bool {
+    var _scrollView = first.view as? YeetScrollView
+
+    if _scrollView == nil {
+      _scrollView = second.view as? YeetScrollView
+    }
+
+    guard let gestureView = self.weakGestureView else {
       return true
     }
+
+    return true
+
+//    if first == activationGestureHandler {
+//      return true
+//    }
+//
+//    guard !(gestureRecognizers.contains(first) && gestureRecognizers.contains(second)) else  {
+//      return true
+//    }
+//
+//    return !isGestureEnabled
+  }
 
 }

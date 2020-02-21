@@ -116,6 +116,7 @@ class SnapContainerComponent extends React.Component {
   };
 
   handleTapBackground = event => {
+    console.log("TAP BACKGROUND", event);
     this.props.onTapBackground && this.props.onTapBackground(event);
   };
 
@@ -130,6 +131,7 @@ class SnapContainerComponent extends React.Component {
       style,
       containerRef,
       children,
+      onLayout,
       NativeComponent = NativeSnapContainerView
     } = this.props;
 
@@ -139,6 +141,7 @@ class SnapContainerComponent extends React.Component {
         movableViewTags={movableViewTags}
         style={style}
         ref={containerRef}
+        onLayout={onLayout}
       >
         {children}
       </NativeComponent>

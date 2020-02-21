@@ -1,5 +1,7 @@
 import { TextInput } from "react-native";
 
+import { isNumber, throttle } from "lodash";
+
 const { currentlyFocusedField } = TextInput.State;
 
 export const photosAuthorizationStatus = (): string =>
@@ -13,18 +15,26 @@ export const getItem = (key: string, type: string): any =>
 
 export const removeItem = (key: string): any => global.YeetJSI?.removeItem(key);
 
+export const getFocusedYeetInputTag = (): any =>
+  global.YeetJSI?.focusedTextInputTag;
+
 export const setItem = (key: string, value: any, type: string): any =>
   global.YeetJSI?.setItem(key, value, type);
 
 export const hideSplashScreen = () => global.YeetJSI?.hideSplashScreen();
 
-export const focusYeetTextInput = inputTag => global.YeetJSI?.focus(inputTag);
-export const blurYeetTextInput = inputTag => global.YeetJSI?.blur(inputTag);
+const _focusYeetTextInput = inputTag => global.YeetJSI?.focus(inputTag);
+const _blurYeetTextInput = inputTag => global.YeetJSI?.blur(inputTag);
+
+export const focusYeetTextInput = throttle(_focusYeetTextInput, 50);
+export const blurYeetTextInput = throttle(_blurYeetTextInput, 50);
 
 export const dismissKeyboard = () => {
-  if (currentlyFocusedField()) {
-    const id = currentlyFocusedField();
+  const id = [getFocusedYeetInputTag(), currentlyFocusedField()].filter(
+    isNumber
+  )[0];
 
+  if (id) {
     blurYeetTextInput(id);
     window.requestIdleCallback(() => TextInput.State.blurTextInput(id));
   }

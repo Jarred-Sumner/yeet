@@ -57,7 +57,7 @@ export const TransformableView = React.forwardRef((props, ref) => {
     if (_transform.length > 0) {
       return _transform;
     } else {
-      return undefined;
+      return [];
     }
   }, [rotate, scale]);
 
@@ -198,7 +198,6 @@ const styles = StyleSheet.create({
   },
   overlaySheet: {
     zIndex: 0,
-    opacity: 0,
     position: "absolute",
     width: SCREEN_DIMENSIONS.width,
     height: SCREEN_DIMENSIONS.height,
@@ -644,6 +643,7 @@ export class MovableNode extends Component<Props> {
       r,
       isDragEnabled,
       isPanning,
+      isFocused,
       isOtherNodeFocused,
       height,
       focusedBlockValue,
@@ -656,42 +656,51 @@ export class MovableNode extends Component<Props> {
       isHidden,
       isEditing,
       isFixedSize,
-      // verticalAlign,
+      verticalAlign,
       yLiteral: _yLiteral = 0,
-      xLiteral = 0,
+      xLiteral: _xLiteral = 0,
       rLiteral = 0,
       blockId,
-      scaleLiteral = 1.0
+      scaleLiteral = 1.0,
+      keyboardHeight = 0
     } = this.props;
 
     const yLiteral = _yLiteral || 0;
 
-    let verticalAlign = "top";
-    const bottom =
-      verticalAlign === "bottom"
-        ? (SCREEN_DIMENSIONS.height - yLiteral) * -1
-        : undefined;
+    const bottom = verticalAlign === "bottom" ? yLiteral * -1 : undefined;
+
+    const isCurrentlyEditing = isEditing && !isOtherNodeFocused;
 
     const top = verticalAlign === "top" ? yLiteral : undefined;
+    const xLiteral = isCurrentlyEditing && !isFixedSize ? 0 : _xLiteral;
 
     return (
       <ClipProvider value={frame}>
-        <TransformableView
-          ref={this.props.containerRef}
-          opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
-          overlayTag={this.overlayTag}
-          isFixedSize={isFixedSize}
-          blockId={blockId}
-          verticalAlign={verticalAlign}
-          left={xLiteral}
-          bottom={bottom}
-          top={top}
-          inputRef={inputRef}
-          rotate={rLiteral}
-          scale={scaleLiteral}
-        >
-          {this.props.children}
-        </TransformableView>
+        <>
+          {isCurrentlyEditing && (
+            <View
+              ref={this.overlayRef}
+              pointerEvents="none"
+              style={styles.overlaySheet}
+            ></View>
+          )}
+          <TransformableView
+            ref={this.props.containerRef}
+            opacity={isHidden ? 1 : isOtherNodeFocused ? 0.9 : 1}
+            overlayTag={this.overlayTag}
+            isFixedSize={isFixedSize}
+            blockId={blockId}
+            verticalAlign={verticalAlign}
+            left={xLiteral}
+            bottom={bottom}
+            top={top}
+            inputRef={inputRef}
+            rotate={isCurrentlyEditing ? 0 : rLiteral}
+            scale={isCurrentlyEditing ? 1.0 : scaleLiteral}
+          >
+            {this.props.children}
+          </TransformableView>
+        </>
       </ClipProvider>
     );
   }

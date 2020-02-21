@@ -9,18 +9,18 @@ import {
   TextInput,
   findNodeHandle,
   ScrollViewProps,
-  InteractionManager,
-  ScrollView
+  InteractionManager
+  // ScrollView
 } from "react-native";
 import Animated from "react-native-reanimated";
 import { isIphoneX } from "react-native-iphone-x-helper";
-// import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
 import { currentlyFocusedField } from "./NewPost/Text/TextInputState";
 import { triggerScrollEvent } from "../lib/Yeet";
 
-// const ScrollView = Animated.createAnimatedComponent(
-//   GestureScrollView
-// ) as React.ComponentType<ScrollViewProps>;
+const ScrollView = Animated.createAnimatedComponent(
+  GestureScrollView
+) as React.ComponentType<ScrollViewProps>;
 
 const _KAM_DEFAULT_TAB_BAR_HEIGHT = isIphoneX() ? 83 : 49;
 const _KAM_KEYBOARD_OPENING_TIME = 250;
@@ -95,6 +95,9 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     extraScrollHeight: ScrollIntoViewDefaultOptions.extraScrollHeight,
     enableResetScrollToCoords:
       ScrollIntoViewDefaultOptions.enableResetScrollToCoords,
+    minScrollHeight: 0,
+    maxScrollHeight: 9999,
+
     getFocusedField: currentlyFocusedField,
     keyboardOpeningTime: ScrollIntoViewDefaultOptions.keyboardOpeningTime,
     viewIsInsideTabBar: ScrollIntoViewDefaultOptions.viewIsInsideTabBar,
@@ -192,6 +195,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     if (keyboardOpeningTime === undefined) {
       keyboardOpeningTime = this.props.keyboardOpeningTime || 0;
     }
+
     setTimeout(() => {
       if (!this.mountedComponent) {
         return;
@@ -207,7 +211,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
     }, keyboardOpeningTime);
   };
 
-  scrollIntoView = async (element, options = {}) => {
+  scrollIntoView = async element => {
     if (!this._rnkasv_keyboardView || !element) {
       return;
     }
@@ -217,14 +221,13 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
       this._measureElement(element)
     ]);
 
-    const getScrollPosition =
-      options.getScrollPosition || this._defaultGetScrollPosition;
+    const getScrollPosition = this._defaultGetScrollPosition;
     const { x, y, animated } = getScrollPosition(
       parentLayout,
       childLayout,
       this.position
     );
-    this.scrollToPosition(x, y, animated);
+    this.scrollToPosition(x, y + this.props.minScrollHeight, animated);
   };
 
   _defaultGetScrollPosition = (parentLayout, childLayout, contentOffset) => {
@@ -263,57 +266,11 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         currentlyFocusedField,
         responder.getInnerViewNode(),
         isAncestor => {
-          if (isAncestor) {
-            // Check if the TextInput will be hidden by the keyboard
-            UIManager.measureInWindow(
-              currentlyFocusedField,
-              (x, y, width, height) => {
-                const textInputBottomPosition = y + height;
-                const keyboardPosition = frames.endCoordinates.screenY;
-                const totalExtraHeight =
-                  this.props.extraScrollHeight +
-                  this.props.extraHeight -
-                  this.props.paddingTop;
-                console.log({
-                  textInputBottomPosition,
-                  keyboardPosition,
-                  totalExtraHeight
-                });
-
-                if (Platform.OS === "ios") {
-                  if (
-                    textInputBottomPosition >
-                    keyboardPosition - totalExtraHeight
-                  ) {
-                    this._scrollToFocusedInputWithNodeHandle(
-                      currentlyFocusedField
-                    );
-                  }
-                } else {
-                  // On android, the system would scroll the text input just
-                  // above the keyboard so we just neet to scroll the extra
-                  // height part
-                  if (textInputBottomPosition > keyboardPosition) {
-                    // Since the system already scrolled the whole view up
-                    // we should reduce that amount
-                    keyboardSpace =
-                      keyboardSpace -
-                      (textInputBottomPosition - keyboardPosition);
-                    this.setState({ keyboardSpace });
-                    this.scrollForExtraHeightOnAndroid(totalExtraHeight);
-                  } else if (
-                    textInputBottomPosition >
-                    keyboardPosition - totalExtraHeight
-                  ) {
-                    this.scrollForExtraHeightOnAndroid(
-                      totalExtraHeight -
-                        (keyboardPosition - textInputBottomPosition)
-                    );
-                  }
-                }
-              }
-            );
+          if (!isAncestor) {
+            return;
           }
+
+          this.scrollIntoView(currentlyFocusedField);
         }
       );
     }
@@ -501,7 +458,7 @@ export class KeyboardAwareScrollView extends React.Component<ScrollViewProps> {
         scrollIntoView={this.scrollIntoView}
         handleOnScroll={this._handleOnScroll}
         update={this.update}
-        // onScroll={this.onScrollEvent}
+        onScroll={this.onScrollEvent}
       />
     );
   }

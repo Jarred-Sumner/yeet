@@ -46,12 +46,12 @@ import UIKit
     return ["events": supportedEvents()!]
   }
 
-  func dispatchBackgroundTap(_ touch: UITouch, view: UIView) {
+  func dispatchBackgroundTap(_ location: CGPoint) {
     guard hasListeners else {
       return
     }
 
-    let location = touch.location(in: view)
+
     self.sendEvent(withName: EventName.onTapBackground.rawValue, body: ["x": location.x, "y": location.y])
   }
 

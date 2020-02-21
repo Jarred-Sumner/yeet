@@ -20,6 +20,10 @@ protocol SnapContainerViewDelegate : UIView {
     }
   }
 
+  func sendBackgroundTapEvent(_ location: CGPoint) {
+    self.eventEmitter?.dispatchBackgroundTap(location)
+  }
+
   var snapGesture: SnapGesture? = nil
   @objc(snapPoints) var snapPoints: Dictionary<String, Any> = [:]
 
@@ -27,9 +31,8 @@ protocol SnapContainerViewDelegate : UIView {
     willSet (newValue) {
       if (newValue != draggingViewTag) {
         if let draggingView = self.draggingView {
-          DispatchQueue.main.async {
             self.sendStopMoving(draggingView)
-          }
+
         }
       }
     }
@@ -37,7 +40,7 @@ protocol SnapContainerViewDelegate : UIView {
     didSet {
       if let snapGesture = self.snapGesture {
         if let draggingView = self.draggingView {
-          snapGesture.setTransformView(draggingView, gestgureView: superview!)
+          snapGesture.setTransformView(draggingView, gestgureView: gestureView)
           snapGesture.isGestureEnabled = true
           DispatchQueue.main.async {
             self.sendStartMoving(draggingView)
@@ -85,9 +88,10 @@ protocol SnapContainerViewDelegate : UIView {
 
     super.init(frame: .zero)
 
-
+    
     isUserInteractionEnabled = true
 //    isMultipleTouchEnabled = true
+
 
     textInputFocusObserver = NotificationCenter.default.addObserver(forName: .onChangeTextInputFocus, object: nil, queue: .main) { [weak self] _ in
       self?.isMovingEnabled = YeetTextInputView.focusedReactTag == nil
@@ -124,18 +128,76 @@ protocol SnapContainerViewDelegate : UIView {
     if superview != nil && snapGesture == nil {
       self.isUserInteractionEnabled = true
 
-      self.snapGesture = SnapGesture(transformView: self, gestureView: superview!)
+      self.snapGesture = SnapGesture(transformView: self, gestureView: gestureView)
+      snapGesture?.onGestureStart = { [weak self] point in
+        self?.handlePressDown(point)
+      }
+
+      snapGesture?.onGestureStop = { [weak self] point in
+        self?.draggingViewTag = nil
+      }
+
+      snapGesture?.onPressBackground = { [weak self] point in
+        self?.handlePressBackground(point)
+      }
+      
       self.snapGesture?.isGestureEnabled = false
     }
   }
 
-  override func layoutSubviews() {
-    super.layoutSubviews()
+
+
+  func handleGestureStop(_ point: CGPoint) {
+    guard self.draggingViewTag == nil else {
+      self.draggingViewTag = nil
+      return
+    }
+
+
   }
 
-  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesBegan(touches, with: event)
+  func handlePressBackground(_ _point: CGPoint) {
+    var view : UIView? = nil
+     if var reactTag = YeetTextInputView.focusedReactTag {
+       if YeetTextInputView.focusedMovableViewReactTag != nil {
+         reactTag = YeetTextInputView.focusedMovableViewReactTag!
+       }
 
+      view = bridge?.uiManager.view(forReactTag: reactTag)
+       if view != nil {
+         let _point = self.convert(_point, to: view!)
+         if view!.hitTest(_point, with: nil) == nil {
+            sendBackgroundTapEvent(_point)
+           return
+         }
+
+        }
+     }
+
+    if view == nil {
+      view = hitTest(_point, with: nil)
+    }
+
+    if view == nil {
+      view = movableViews.first { view in
+        return view.hitTest(self.convert(_point, to: view), with: nil) != nil
+      }
+    }
+
+    if let _movableView = view as? MovableView {
+      view = _movableView.textInput
+    }
+
+    if let _view = view as? YeetTextInputView {
+      _view.handleTap()
+    } else {
+      sendBackgroundTapEvent(_point)
+    }
+  }
+
+
+  func handlePressDown(_ _point: CGPoint) {
+    let point = gestureView.convert(_point, to: self)
     guard draggingViewTag == nil else {
       return
     }
@@ -144,36 +206,61 @@ protocol SnapContainerViewDelegate : UIView {
       return
     }
 
-    for touch in touches {
-      let movableViews = self.movableViews
+    let movableViews = self.movableViews
 
-      let tag = movableViews.first { view -> Bool in
-        return view.hitTest(touch.location(in: view), with: event) != nil
-      }?.reactTag
-
-      if tag != nil {
-        self.draggingViewTag = tag
-        break
+    var tag: NSNumber? = nil
+    if self.bounds.contains(point) {
+      guard let _view = hitTest(point, with: nil) else {
+        return
       }
+
+      tag = movableViews.first { view -> Bool in
+        return _view.isDescendant(of: view)
+      }?.reactTag
+    } else {
+      tag = movableViews.first { view -> Bool in
+        return view.hitTest(self.convert(point, to: view), with: nil) != nil
+      }?.reactTag
     }
 
-    if self.draggingViewTag == nil && touches.count == 1 {
-      eventEmitter?.dispatchBackgroundTap(touches.first!, view: self)
+    if tag != nil {
+      self.draggingViewTag = tag
     }
   }
 
-  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesEnded(touches, with: event)
-
-    
-    self.draggingViewTag = nil
+  override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    super.touchesBegan(touches, with: event)
   }
 
-  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-    super.touchesEnded(touches, with: event)
 
-    self.draggingViewTag = nil
+  override func layoutSubviews() {
+    super.layoutSubviews()
+
+    if let snapGesture = self.snapGesture {
+      if snapGesture.weakGestureView != gestureView {
+         snapGesture.setTransformView(snapGesture.weakTransformView, gestgureView: gestureView)
+       }
+    }
   }
+
+
+
+//  override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+//    super.touchesEnded(touches, with: event)
+//
+//    let skipBackgroundTap = draggingViewTag != nil
+//    self.draggingViewTag = nil
+//  }
+
+  func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+      return touch.view == gestureRecognizer.view
+  }
+//
+//  override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+//    super.touchesCancelled(touches, with: event)
+//
+//    self.draggingViewTag = nil
+//  }
 
   func sendStopMoving(_ view: MovableView) {
     eventEmitter?.dispatchMoveEnd(view, snapContainer: self)
@@ -205,6 +292,20 @@ protocol SnapContainerViewDelegate : UIView {
     }
   }
 
+  var scrollView : YeetScrollView? { reactSuperview() as? YeetScrollView }
+  var gestureView : UIView! {
+    return superview
+//    guard let scrollView = self.scrollView else {
+//      return self
+//    }
+//
+//    if scrollView.isContentCentered {
+//      return scrollView
+//    } else {
+//      return self
+//    }
+  }
+
   deinit {
     if let textInputFocusObserver = self.textInputFocusObserver {
       NotificationCenter.default.removeObserver(textInputFocusObserver, name: .onChangeTextInputFocus, object: nil)
@@ -212,3 +313,4 @@ protocol SnapContainerViewDelegate : UIView {
   }
 
 }
+

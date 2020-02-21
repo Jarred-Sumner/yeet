@@ -10,7 +10,7 @@
 //#import <React/RCTBridge.h>
 #import <SDWebImage/SDAnimatedImage.h>
 #import <SDWebImageWebPCoder.h>
-
+#import "MovableShadowView.h"
 #import "RCTConvert+PHotos.h"
 #import <React/RCTTouchHandler.h>
 #import <React/RCTModalHostViewController.h>
@@ -81,6 +81,10 @@ typedef void (^RCTPendingCall)();
 - (UIView *)unsafeViewForReactTag:(NSNumber *)reactTag {
   return self.viewRegistry[reactTag];
 }
+@end
+
+@interface RCTScrollView (ext)
+- (void)refreshContentInset;
 @end
 
 
@@ -184,13 +188,31 @@ RCT_EXPORT_VIEW_PROPERTY(inputTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedBottom, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(unfocusedLeft, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(overlayTag, NSNumber);
-RCT_EXPORT_VIEW_PROPERTY(contentContainerTag, NSNumber);
 RCT_EXPORT_VIEW_PROPERTY(uid, NSString);
+
+//RCT_EXPORT_SHADOW_PROPERTY(contentContainerTag, NSNumber);
 
 
 //RCT_CUSTOM_VIEW_PROPERTY(transform, CATransform3D, MovableView) {
 //  view.yeetTransform = json ? [RCTConvert CATransform3D:json] : CATransform3DIdentity;
 //}
+
+@end
+
+@interface RCT_EXTERN_MODULE(YeetScrollViewManager, RCTViewManager)
+
+RCT_EXPORT_VIEW_PROPERTY(headerHeight, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(footerHeight, CGFloat);
+
+// overflow is used both in css-layout as well as by react-native. In css-layout
+// we always want to treat overflow as scroll but depending on what the overflow
+// is set to from js we want to clip drawing or not. This piece of code ensures
+// that css-layout is always treating the contents of a scroll container as
+// overflow: 'scroll'.
+RCT_CUSTOM_SHADOW_PROPERTY(overflow, YGOverflow, RCTShadowView) {
+#pragma unused (json)
+  view.overflow = YGOverflowScroll;
+}
 
 @end
 
@@ -206,6 +228,7 @@ RCT_EXPORT_VIEW_PROPERTY(fontSizeRnge, NSDictionary);
 RCT_EXPORT_VIEW_PROPERTY(showHighlight, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(willAutoFocus, BOOL);
 RCT_EXPORT_VIEW_PROPERTY(containerTag, NSNumber);
+RCT_EXPORT_VIEW_PROPERTY(onRequestFocus, RCTDirectEventBlock);
 
 RCT_REMAP_VIEW_PROPERTY(autoCapitalize, backedTextInputView.autocapitalizationType, UITextAutocapitalizationType)
 RCT_REMAP_VIEW_PROPERTY(autoCorrect, backedTextInputView.autocorrectionType, UITextAutocorrectionType)

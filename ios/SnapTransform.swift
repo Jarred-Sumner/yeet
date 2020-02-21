@@ -24,15 +24,31 @@ import SwiftyJSON
     var yValue : Float = 0
 
 
-//    let top = YGNodeStyleGetPosition(shadowView.yogaNode, YGEdge.top)
-//    let bottom = YGNodeStyleGetPosition(shadowView.yogaNode, YGEdge.bottom)
+
+    let top = shadowView.top
+    let bottom = shadowView.bottom
+    let left = shadowView.left
+
+    let sign = bottom.unit == YGUnit.undefined ? CGFloat(-1) : CGFloat(1)
 
 //    let centerOffset = CGPoint(x: center.x - shadowView.layoutMetrics.frame.width / 2, y: center.y - shadowView.layoutMetrics.frame.height / 2)
 
     let _frame = shadowView.measureLayoutRelative(toAncestor: containerShadowView)
 
-    let x = _frame.x  - containerShadowView.layoutMetrics.contentFrame.origin.x + transform.translation().x
-    let y = _frame.y -  containerShadowView.layoutMetrics.contentFrame.origin.y + transform.translation().y
+
+    let translation = transform.translation()
+    let x = RCTCoreGraphicsFloatFromYogaFloat(left.value) + translation.x
+
+
+
+    var y : CGFloat
+    if bottom.unit == YGUnit.undefined {
+      y = RCTCoreGraphicsFloatFromYogaFloat(top.value) + transform.translation().y
+    } else {
+      y = (RCTCoreGraphicsFloatFromYogaFloat(bottom.value) * -1) + transform.translation().y 
+    }
+
+
 
     self.init(x: x, y: y, scaleX: transform.scaleX, scaleY: transform.scaleY, rotate: transform.rotationRadians())
   }

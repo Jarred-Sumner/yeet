@@ -142,6 +142,9 @@
 		83EF944F23B81CFF00EC37CF /* ContentExportThumbnail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83EF944E23B81CFF00EC37CF /* ContentExportThumbnail.swift */; };
 		83F0FBBA237BC450005A4A47 /* EmojiTextInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */; };
 		83F0FBBC237BC45A005A4A47 /* EmojiTextInputViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */; };
+		83FE6CEF23FB8EDE00CFC37E /* MovableShadowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 83FE6CEE23FB8EDE00CFC37E /* MovableShadowView.m */; };
+		83FE6CF123FD038C00CFC37E /* YeetScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FE6CF023FD038C00CFC37E /* YeetScrollView.swift */; };
+		83FE6CF323FD062200CFC37E /* YeetScrollViewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83FE6CF223FD062200CFC37E /* YeetScrollViewManager.swift */; };
 		8652483045CC4E8997458517 /* digistrip_i.ttf in Resources */ = {isa = PBXBuildFile; fileRef = DEF9871D096D405696E59228 /* digistrip_i.ttf */; };
 		911D062DE115D4145DA320C3 /* libPods-yeetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 11DCCEF6819A964AF40B465F /* libPods-yeetTests.a */; };
 		AAB429CFB78E4321BFA32461 /* Impact.otf in Resources */ = {isa = PBXBuildFile; fileRef = A10799C78F3242539F062971 /* Impact.otf */; };
@@ -384,6 +387,10 @@
 		83EF944E23B81CFF00EC37CF /* ContentExportThumbnail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentExportThumbnail.swift; sourceTree = "<group>"; };
 		83F0FBB9237BC450005A4A47 /* EmojiTextInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiTextInput.swift; sourceTree = "<group>"; };
 		83F0FBBB237BC45A005A4A47 /* EmojiTextInputViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmojiTextInputViewManager.swift; sourceTree = "<group>"; };
+		83FE6CED23FB8EDE00CFC37E /* MovableShadowView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MovableShadowView.h; sourceTree = "<group>"; };
+		83FE6CEE23FB8EDE00CFC37E /* MovableShadowView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MovableShadowView.m; sourceTree = "<group>"; };
+		83FE6CF023FD038C00CFC37E /* YeetScrollView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetScrollView.swift; sourceTree = "<group>"; };
+		83FE6CF223FD062200CFC37E /* YeetScrollViewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YeetScrollViewManager.swift; sourceTree = "<group>"; };
 		8C160B6697D042629D1797A5 /* Fontisto.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = Fontisto.ttf; path = "../node_modules/react-native-vector-icons/Fonts/Fontisto.ttf"; sourceTree = "<group>"; };
 		90C026A7B5982C8F5D65835D /* Pods-OneSignalNotificationServiceExtension.staging.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-OneSignalNotificationServiceExtension.staging.xcconfig"; path = "Target Support Files/Pods-OneSignalNotificationServiceExtension/Pods-OneSignalNotificationServiceExtension.staging.xcconfig"; sourceTree = "<group>"; };
 		91F298074E284CF6B08FFFBF /* libz.tbd */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
@@ -738,6 +745,10 @@
 				83633AA623FA6E9B00B95EFF /* SnapContainerEventEmitter.swift */,
 				8332B0F823F774C9003FB121 /* YeetJSIExtensions.h */,
 				8332B0F923F774C9003FB121 /* YeetJSIExtensions.mm */,
+				83FE6CED23FB8EDE00CFC37E /* MovableShadowView.h */,
+				83FE6CEE23FB8EDE00CFC37E /* MovableShadowView.m */,
+				83FE6CF023FD038C00CFC37E /* YeetScrollView.swift */,
+				83FE6CF223FD062200CFC37E /* YeetScrollViewManager.swift */,
 				83DCFEFA23F3B65C001572E1 /* PanViewManager.h */,
 				83AF133E23F3DC6B00D6924C /* PanShadowView.h */,
 				83AF133F23F3DC6B00D6924C /* PanShadowView.m */,
@@ -1233,6 +1244,7 @@
 				83AF134023F3DC6B00D6924C /* PanShadowView.m in Sources */,
 				839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */,
 				83DCFEF523F3A6C0001572E1 /* PanViewController.swift in Sources */,
+				83FE6CEF23FB8EDE00CFC37E /* MovableShadowView.m in Sources */,
 				8346978323A4250800CDE5D8 /* YeetClipboard.swift in Sources */,
 				83E45AC82341A6F60091D443 /* YeetVideoView.swift in Sources */,
 				8336FE54236EC6050076F8AA /* VideoPool.swift in Sources */,
@@ -1277,6 +1289,8 @@
 				83AAD7B423E546F0001F31EF /* RCTConvert+PHotost.m in Sources */,
 				83B0CACF23B6F77C0010DC66 /* YeetImageRect.swift in Sources */,
 				835CA06623E962CD00829C71 /* YeetBridge.mm in Sources */,
+				83FE6CF323FD062200CFC37E /* YeetScrollViewManager.swift in Sources */,
+				83FE6CF123FD038C00CFC37E /* YeetScrollView.swift in Sources */,
 				830418632345A212007C9E5A /* EnableWebpDecoder.swift in Sources */,
 				8330488A23209F3E00E816E8 /* YeetAnimatedImage.m in Sources */,
 				83356DE923A5DD7600943381 /* UIImage+OpenCVConversion.mm in Sources */,

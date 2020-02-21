@@ -433,6 +433,7 @@ export const TextInput = React.forwardRef((props, ref) => {
     inputRef,
     onBlur,
     photoURL,
+    onRequestFocus,
     onContentSizeChange,
     disabled,
     stickerTag,
@@ -720,6 +721,7 @@ export const TextInput = React.forwardRef((props, ref) => {
         minimumFontScale={0.4}
         selectionColor={selectionColor}
         willAutoFocus={willAutoFocus.current}
+        onRequestFocus={onRequestFocus}
         template={template}
         highlightInset={highlightInset}
         highlightCornerRadius={highlightCornerRadius}

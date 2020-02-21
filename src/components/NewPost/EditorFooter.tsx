@@ -387,24 +387,20 @@ export const TextHeader = React.memo(({ opacity, onBack }) => {
     [styles.container, styles.header, top]
   );
 
-  const opacityStyle = React.useMemo(() => ({ opacity }), [opacity]);
-
   return (
-    <Animated.View style={opacityStyle}>
-      <Animated.View style={textHeaderStyle}>
-        <View style={[styles.footerSide, styles.leftHeaderSide]}></View>
+    <View style={textHeaderStyle}>
+      <View style={[styles.footerSide, styles.leftHeaderSide]}></View>
 
-        <View style={[styles.footerSide, styles.centerHeaderSide]}></View>
+      <View style={[styles.footerSide, styles.centerHeaderSide]}></View>
 
-        <View style={[styles.footerSide, styles.rightHeaderSide]}>
-          <BorderlessButton onPress={onBack}>
-            <View style={styles.doneButton}>
-              <MediumText style={styles.doneButtonLabel}>Done</MediumText>
-            </View>
-          </BorderlessButton>
-        </View>
-      </Animated.View>
-    </Animated.View>
+      <View style={[styles.footerSide, styles.rightHeaderSide]}>
+        <BorderlessButton onPress={onBack}>
+          <View style={styles.doneButton}>
+            <MediumText style={styles.doneButtonLabel}>Done</MediumText>
+          </View>
+        </BorderlessButton>
+      </View>
+    </View>
   );
 });
 
@@ -426,7 +422,7 @@ export const EditorHeader = ({
   onBack
 }) => {
   if (type === ToolbarType.text) {
-    return <TextHeader opacity={opacity} onBack={onBack} />;
+    return <TextHeader opacity={1} onBack={onBack} />;
   } else if (!focusType) {
     return <PostHeader onFinish={onSend} />;
   } else {

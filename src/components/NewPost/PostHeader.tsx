@@ -1,19 +1,13 @@
 import * as React from "react";
-import { View, StyleSheet } from "react-native";
-import { CAROUSEL_HEIGHT } from "./NewPostFormat";
-import FormatPicker from "./FormatPicker";
-import LinearGradient from "react-native-linear-gradient";
-import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
-import {
-  BackButton,
-  BackButtonBehavior,
-  useBackButtonBehavior
-} from "../Button";
-import { SPACING, COLORS } from "../../lib/styles";
+import { StyleSheet, View } from "react-native";
+import { BorderlessButton } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { BaseButton, BorderlessButton } from "react-native-gesture-handler";
-import { MediumText } from "../Text";
+import { TOP_Y } from "../../../config";
+import { COLORS, SPACING } from "../../lib/styles";
+import { BackButton, useBackButtonBehavior } from "../Button";
 import { IconChevronRight } from "../Icon";
+import { MediumText } from "../Text";
+import { CAROUSEL_HEIGHT } from "./NewPostFormat";
 
 export const CAROUSEL_BACKGROUND = "rgba(15, 10, 15, 0.97)";
 

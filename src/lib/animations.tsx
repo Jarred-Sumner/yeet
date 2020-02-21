@@ -1,7 +1,7 @@
 import Animated, { Easing } from "react-native-reanimated";
 import { State } from "react-native-gesture-handler";
 import * as React from "react";
-import { findNodeHandle } from "react-native";
+import { findNodeHandle, LayoutAnimation } from "react-native";
 import euclideanDistance from "euclidean-distance";
 
 const {
@@ -354,3 +354,21 @@ export const isCurrentlyGesturingProc = Animated.proc(
       0
     )
 );
+
+export const doKeyboardAnimation = () => {
+  LayoutAnimation.configureNext({
+    ...LayoutAnimation.Presets.linear,
+    create: {
+      ...LayoutAnimation.Presets.linear.create,
+      type: LayoutAnimation.Types.keyboard
+    },
+    update: {
+      ...LayoutAnimation.Presets.linear.update,
+      type: LayoutAnimation.Types.keyboard
+    },
+    delete: {
+      ...LayoutAnimation.Presets.linear.delete,
+      type: LayoutAnimation.Types.keyboard
+    }
+  });
+};

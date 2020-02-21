@@ -14,7 +14,9 @@ import {
   StyleSheet,
   Task,
   View,
-  findNodeHandle
+  findNodeHandle,
+  LayoutChangeEvent,
+  LayoutAnimation
 } from "react-native";
 import ReactNative from "react-native/Libraries/Renderer/shims/ReactNative";
 import {
@@ -91,7 +93,7 @@ import {
   ToolbarType
 } from "./Toolbar";
 import { scaleRectByFactor } from "../../lib/Rect";
-import { moving } from "../../lib/animations";
+import { moving, doKeyboardAnimation } from "../../lib/animations";
 import { SnapPreview } from "./SnapPreview";
 import Alert from "../../lib/Alert";
 import { sendToast, ToastType } from "../Toast";
@@ -523,36 +525,37 @@ class RawwPostEditor extends React.Component<Props, State> {
       placeholder: " ",
       autoInserted: false
     });
-    const editableNode = buildEditableNode({
-      block,
-      x,
-      y
-    });
-
-    this.props.onChangeNodes({
-      ...this.props.inlineNodes,
-      [block.id]: editableNode
-    });
     this._blockInputRefs.set(block.id, React.createRef());
-
-    this.focusTypeValue.setValue(FocusType.absolute);
-    this.focusedBlockValue.setValue(block.id.hashCode());
 
     this.postPreviewHandlers = [
       this.scrollRef,
       ...this._blockInputRefs.values()
     ];
 
-    this.setState(
-      {
-        focusedBlockId: block.id,
-        focusType: FocusType.absolute,
-        snapPoint: null
-      },
-      () => {
-        this._blockInputRefs.get(block.id)?.current?.focus();
-      }
-    );
+    const editableNode = buildEditableNode({
+      block,
+      x,
+      y
+    });
+
+    ReactNative.unstable_batchedUpdates(() => {
+      doKeyboardAnimation();
+      this.props.onChangeNodes({
+        ...this.props.inlineNodes,
+        [block.id]: editableNode
+      });
+
+      this.setState(
+        {
+          focusedBlockId: block.id,
+          focusType: FocusType.absolute,
+          snapPoint: null
+        },
+        () => {
+          // this._blockInputRefs.get(block.id)?.current?.focus();
+        }
+      );
+    });
   };
 
   nodeListRef = React.createRef();
@@ -610,6 +613,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleFocusBlock = (block: PostBlockType) => {
+    console.log("FOUCS BLOCK", block);
+
     const focusType = this.props.inlineNodes[block.id]
       ? FocusType.absolute
       : FocusType.static;
@@ -621,9 +626,6 @@ class RawwPostEditor extends React.Component<Props, State> {
       return;
     }
 
-    this.focusedBlockValue.setValue(block.id.hashCode());
-    this.focusTypeValue.setValue(focusType);
-
     this.setState(
       {
         focusedBlockId: block.id,
@@ -631,7 +633,10 @@ class RawwPostEditor extends React.Component<Props, State> {
       },
       () => {
         if (block.type === "text") {
-          this._blockInputRefs.get(block.id).current?.focus();
+          const ref = this._blockInputRefs.get(block.id).current;
+          if (!ref?.isFocused) {
+            ref?.focus();
+          }
         }
       }
     );
@@ -640,18 +645,12 @@ class RawwPostEditor extends React.Component<Props, State> {
   clearFocus = () => {
     this.dismissKeyboard();
 
-    this.setState(
-      {
-        focusedBlockId: null,
-        focusType: null,
-        snapPoint: null,
-        showSnapGuide: false
-      },
-      () => {
-        this.focusedBlockValue.setValue(-1);
-        this.focusTypeValue.setValue(-1);
-      }
-    );
+    this.setState({
+      focusedBlockId: null,
+      focusType: null,
+      snapPoint: null,
+      showSnapGuide: false
+    });
   };
 
   get currentTextInput() {
@@ -766,44 +765,8 @@ class RawwPostEditor extends React.Component<Props, State> {
   //   })
   // };
 
-  handleTapBackground = async ([
-    tapGestureState,
-    x,
-    y,
-    focusTypeValue,
-    focusBlockValue,
-    keyboardHeightValue,
-    tapYAbsolute
-  ]) => {
-    if (!this.props.isFocused) {
-      return;
-    }
-
-    const { focusedBlockId, focusType } = this.state;
-
-    if (focusedBlockId && focusType === FocusType.absolute) {
-      const _bounds = await getEstimatedBounds(
-        this._inlineNodeRefs.get(focusedBlockId)
-      );
-      const bounds = new Rectangle(
-        _bounds.x - SPACING.normal * 2,
-        _bounds.y - SPACING.normal,
-        _bounds.width + SPACING.normal * 3,
-        _bounds.height + SPACING.normal * 2
-      );
-
-      if (bounds.contains(new Rectangle(x, y, 1, 1))) {
-        return;
-      }
-    }
-
-    console.log("TAP BACKGROUND", x, y);
-
-    this.handlePressBackground({ x, y, focusTypeValue, focusBlockValue });
-  };
-
-  handlePressBackground = ({ x, y, focusTypeValue, focusBlockValue }) => {
-    if (this.state.focusType === null && focusTypeValue === -1) {
+  handlePressBackground = ({ x, y }) => {
+    if (this.state.focusType === null) {
       this.handlePressToolbarButton(ToolbarButtonType.text);
     } else {
       this.clearFocus();
@@ -823,6 +786,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     }
 
     this.props.onOpenGallery({
+      blockId: block.id,
       initialRoute,
       shouldAnimate,
       onChange: this.handleChangeImageBlockPhoto
@@ -1021,6 +985,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
+    console.log({ blockId, image });
     const node = this.props.inlineNodes[blockId];
     const _block = node?.block ?? this.props.post.blocks[blockId];
     const minWidth = minImageWidthByFormat(_block.format);
@@ -1237,23 +1202,21 @@ class RawwPostEditor extends React.Component<Props, State> {
     });
 
   handleShowKeyboard = (event, hasHappened) => {
-    window.requestAnimationFrame(() => {
-      hasHappened &&
-        (isFixedSizeBlock(this.focusedBlock) ||
-          (isTextBlock(this.focusedBlock) && !this.focusedNode)) &&
-        this.scrollRef.current.handleKeyboardEvent(event);
-    });
+    console.log("POST BOTTOM Y", this.state.postBottomY);
+    // window.requestAnimationFrame(() =>
+    //   // this.scrollRef.current.handleKeyboardEvent(event)
+    // );
 
     // if (this.state.focusType === FocusType.absolute) {
     // this.scrollToTop();
     // }
   };
   handleHideKeyboard = (event, hasHappened) => {
-    this.scrollRef.current.handleKeyboardEvent(event);
-    hasHappened && this.scrollRef.current.resetKeyboardSpace();
+    // this.scrollRef.current.handleKeyboardEvent(event);
+    // hasHappened && this.scrollRef.current.resetKeyboardSpace();
   };
   handleChangeFrame = event => {
-    this.scrollRef.current.handleKeyboardEvent(event);
+    // this.scrollRef.current.handleKeyboardEvent(event);
   };
 
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
@@ -1319,8 +1282,11 @@ class RawwPostEditor extends React.Component<Props, State> {
   postPreviewHandlers = [];
   postBottomY = new Animated.Value<number>(0);
 
-  onContentLayout = ({ nativeEvent: { layout } }) =>
-    console.log("ON LAYOUT", { layout });
+  onContentLayout = (event: LayoutChangeEvent) =>
+    this.setState({
+      postBottomY: event.nativeEvent.layout.height + event.nativeEvent.layout.y,
+      postTopY: event.nativeEvent.layout.y
+    });
 
   handleSetPostBottom = ([postBottomY, postTopY]) =>
     this.setState({ postBottomY, postTopY });
@@ -1426,115 +1392,6 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     return (
       <View style={styles.wrapper}>
-        {/* <NavigationEvents onWillFocus={this.handleWillFocus} /> */}
-        {/*
-        {this.props.isFocused && (
-          <Animated.Code
-            exec={Animated.block([
-              Animated.onChange(this.keyboardVisibleValue, [
-                set(
-                  this.props.headerOpacity,
-                  sub(1.0, this.keyboardVisibleValue)
-                ),
-                set(this.props.controlsOpacityValue, 1.0)
-              ]),
-
-              Animated.onChange(
-                this.focusTypeValue,
-                block([
-                  cond(eq(this.focusTypeValue, FocusType.absolute), [
-                    set(this.props.controlsOpacityValue, 1.0),
-                    set(
-                      this.props.headerOpacity,
-                      sub(1.0, this.keyboardVisibleValue)
-                    )
-                  ]),
-
-                  cond(eq(this.focusTypeValue, FocusType.static), [
-                    set(
-                      this.props.controlsOpacityValue,
-                      sub(1.0, this.keyboardVisibleValue)
-                    ),
-                    set(
-                      this.props.headerOpacity,
-                      sub(1.0, this.keyboardVisibleValue)
-                    )
-                  ]),
-                  cond(eq(this.focusTypeValue, -1), [
-                    set(this.props.controlsOpacityValue, 1.0),
-                    set(this.currentScale, 1.0),
-                    set(this.props.headerOpacity, 1.0)
-                  ]),
-                  cond(eq(this.focusTypeValue, FocusType.panning), [
-                    set(this.props.headerOpacity, 0)
-                  ])
-                ])
-              ),
-              set(this.props.controlsOpacityValue, 1.0)
-            ]),
-
-            Animated.onChange(
-              this.focusTypeValue,
-              block([
-                cond(eq(this.focusTypeValue, FocusType.absolute), [
-                  set(this.props.controlsOpacityValue, 1.0),
-                  set(
-                    this.props.headerOpacity,
-                    sub(1.0, this.keyboardVisibleValue)
-                  )
-                ]),
-
-                cond(eq(this.focusTypeValue, FocusType.static), [
-                  set(
-                    this.props.controlsOpacityValue,
-                    sub(1.0, this.keyboardVisibleValue)
-                  ),
-                  set(
-                    this.props.headerOpacity,
-                    sub(1.0, this.keyboardVisibleValue)
-                  )
-                ]),
-                cond(eq(this.focusTypeValue, -1), [
-                  set(this.props.controlsOpacityValue, 1.0),
-                  set(this.currentScale, 1.0),
-                  set(this.props.headerOpacity, 1.0)
-                ]),
-                cond(eq(this.focusTypeValue, FocusType.panning), [
-                  set(this.props.headerOpacity, 0)
-                ])
-              ])
-            ),
-
-            Animated.onChange(this.keyboardHeightValue, [
-              Animated.set(
-                this.relativeKeyboardHeightValue,
-                Animated.cond(
-                  Animated.greaterThan(this.props.offsetY, this.props.scrollY),
-                  Animated.add(
-                    Animated.sub(this.keyboardHeightValue, this.props.offsetY),
-                    -40
-                  ),
-                  Animated.add(
-                    this.keyboardHeightValue,
-                    Animated.sub(
-                      Animated.sub(this.props.scrollY, this.props.offsetY),
-                      40
-                    )
-                  )
-                )
-              )
-            ]),
-
-            Animated.onChange(
-              this.postBottomY,
-              Animated.call(
-                [this.postBottomY, this.props.offsetY],
-                this.handleSetPostBottom
-              )
-            ])}
-          />
-        )} */}
-
         <ContentContainerContext.Provider
           value={this.state.contentContainerContextValue}
         >
@@ -1550,6 +1407,9 @@ class RawwPostEditor extends React.Component<Props, State> {
               onLayoutBlock={this.handleUpdateBlockFrame}
               topInsetValue={this.topInsetValue}
               layout={post.layout}
+              postTopY={this.state.postTopY}
+              postBottomY={this.state.postBottomY}
+              keyboardHeight={this.props.keyboardHeight}
               simultaneousHandlers={this.props.simultaneousHandlers}
               focusTypeValue={this.focusTypeValue}
               isFocused={this.props.isFocused}
@@ -1564,7 +1424,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               backgroundColor={post.backgroundColor || "#000"}
               focusedBlockValue={this.focusedBlockValue}
               bottomY={this.postBottomY}
-              onTapBackground={this.onTapBackground}
+              onTapBackground={this.handlePressBackground}
               scrollY={this.props.scrollY}
               ref={this.scrollRef}
               maxX={bounds.width}

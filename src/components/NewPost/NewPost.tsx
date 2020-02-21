@@ -1,11 +1,7 @@
 import { isEmpty, omitBy } from "lodash";
 import nanoid from "nanoid/non-secure";
 import * as React from "react";
-import { Platform, StatusBar, StyleSheet, View } from "react-native";
-import {
-  PanGestureHandler,
-  State as GestureState
-} from "react-native-gesture-handler";
+import { LayoutAnimation, StatusBar, StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
 import { SCREEN_DIMENSIONS, TOP_Y } from "../../../config";
 import {
@@ -24,9 +20,8 @@ import {
 import { scaleToWidth } from "../../lib/Rect";
 import { COLORS, SPACING } from "../../lib/styles";
 import { AnimatedKeyboardTracker } from "../AnimatedKeyboardTracker";
-import { GallerySheet } from "../Gallery/GallerySheet";
 import { MediaPlayerPauser } from "../MediaPlayer";
-import FormatPicker, { FORMATS } from "./FormatPicker";
+import { FORMATS } from "./FormatPicker";
 import {
   buildImageBlock,
   buildPost,
@@ -39,11 +34,9 @@ import {
   POST_WIDTH
 } from "./NewPostFormat";
 import { EditableNodeMap } from "./Node/BaseNode";
-import { Panner } from "./Panner";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
-import { PostHeader } from "./PostHeader";
 import TextPostBlock from "./TextPostBlock";
-import { GallerySectionItem } from "./ImagePicker/GallerySectionItem";
+import { doKeyboardAnimation } from "../../lib/animations";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -460,9 +453,12 @@ export class NewPost extends React.Component<{}, State> {
       endCoordinates: { height: keyboardHeight = 0 }
     } = event;
     this.postEditor?.current?.handleShowKeyboard(event, true);
+
+    doKeyboardAnimation();
     this.setState({ isKeyboardVisible: true, keyboardHeight });
   };
   hideKeyboard = event => {
+    doKeyboardAnimation();
     this.postEditor?.current?.handleHideKeyboard(event, true);
     this.setState({ isKeyboardVisible: false, keyboardHeight: 0 });
   };

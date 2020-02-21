@@ -4,6 +4,11 @@ public struct KeyboardNotification {
     let notification: NSNotification
     let userInfo: NSDictionary
 
+
+    var isHiding : Bool {
+      screenFrameEnd.y > screenFrameBegin.y
+    }
+
     /// Initializer
     ///
     /// :param: notification Keyboard-related notification

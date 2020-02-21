@@ -1,7 +1,10 @@
 import { UIManager, Platform } from "react-native";
-import { blurYeetTextInput, focusYeetTextInput } from "../../../lib/Yeet";
+import {
+  blurYeetTextInput,
+  focusYeetTextInput,
+  getFocusedYeetInputTag
+} from "../../../lib/Yeet";
 
-let currentlyFocusedID: number | null = null;
 const inputs = new Set();
 
 /**
@@ -9,20 +12,11 @@ const inputs = new Set();
  * If no text field is focused it returns null
  */
 function currentlyFocusedField(): number | null {
-  return currentlyFocusedID;
+  return getFocusedYeetInputTag();
 }
 
-function focusField(textFieldID: number | null): void {
-  if (currentlyFocusedID !== textFieldID && textFieldID != null) {
-    currentlyFocusedID = textFieldID;
-  }
-}
-
-function blurField(textFieldID: number | null) {
-  if (currentlyFocusedID === textFieldID && textFieldID != null) {
-    currentlyFocusedID = null;
-  }
-}
+function focusField(textFieldID: number | null): void {}
+function blurField(textFieldID: number | null) {}
 
 /**
  * @param {number} TextInputID id of the text field to focus
@@ -30,7 +24,7 @@ function blurField(textFieldID: number | null) {
  * noop if the text field was already focused
  */
 function focusTextInput(textFieldID: number | null) {
-  if (currentlyFocusedID !== textFieldID && textFieldID != null) {
+  if (currentlyFocusedField() !== textFieldID && textFieldID != null) {
     focusField(textFieldID);
     if (Platform.OS === "ios") {
       focusYeetTextInput(textFieldID);
@@ -51,7 +45,7 @@ function focusTextInput(textFieldID: number | null) {
  * noop if it wasn't focused
  */
 function blurTextInput(textFieldID: number | null) {
-  if (currentlyFocusedID === textFieldID && textFieldID != null) {
+  if (currentlyFocusedField() === textFieldID && textFieldID != null) {
     blurField(textFieldID);
     if (Platform.OS === "ios") {
       blurYeetTextInput(textFieldID);

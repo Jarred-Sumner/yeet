@@ -11,28 +11,30 @@ export const VIEW_NAME = "MovableView";
 
 const NativeTransformableView = requireNativeComponent(VIEW_NAME);
 
-const TransformableView = React.forwardRef(({ inputRef, ...props }, ref) => {
-  const _ref = React.useRef();
-  // const { contentContainerTag } = React.useContext(ContentContainerContext);
+const TransformableView = React.forwardRef(
+  ({ inputRef, top, left, bottom, ...props }, ref) => {
+    const _ref = React.useRef();
+    const { contentContainerTag } = React.useContext(ContentContainerContext);
 
-  React.useImperativeHandle(ref, () => _ref.current);
+    React.useImperativeHandle(ref, () => _ref.current);
 
-  let handleRef = inputRef?.current ?? inputRef;
-  let handle = null;
-  if (handleRef?.isTextPostBlock) {
-    handle = findNodeHandle(handleRef.textInput.current);
-  } else if (handleRef?.isImagePostBlock) {
-    handle = handleRef.imageHandle;
+    let handleRef = inputRef?.current ?? inputRef;
+    let handle = null;
+    if (handleRef?.isTextPostBlock) {
+      handle = findNodeHandle(handleRef.textInput.current);
+    } else if (handleRef?.isImagePostBlock) {
+      handle = handleRef.imageHandle;
+    }
+
+    return (
+      <NativeTransformableView
+        inputTag={handle}
+        {...props}
+        contentContainerTag={contentContainerTag}
+        ref={_ref}
+      />
+    );
   }
-
-  return (
-    <NativeTransformableView
-      inputTag={handle}
-      {...props}
-      // contentContainerTag={contentContainerTag}
-      ref={_ref}
-    />
-  );
-});
+);
 
 export const TransformableViewComponent = TransformableView;

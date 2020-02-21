@@ -25,7 +25,6 @@ class YeetTextInputViewManager: RCTBaseTextViewManager, RCTUIManagerObserver {
   override init() {
     super.init()
 
-
     NotificationCenter.default.addObserver(forName: .onChangeTextInputFocus, object: nil, queue: nil) { [weak self] notification in
       let firstTag = notification.userInfo?["oldValue"] as? NSNumber?
       let secondTag = notification.userInfo?["newValue"] as? NSNumber?
@@ -35,6 +34,7 @@ class YeetTextInputViewManager: RCTBaseTextViewManager, RCTUIManagerObserver {
       }
 
       RCTExecuteOnUIManagerQueue { [weak self] in
+        
         for shadowView in self?.shadowViews.allObjects ?? [] {
           if shadowView.reactTag == firstTag || shadowView.reactTag == secondTag {
             shadowView.dirtyLayout()
