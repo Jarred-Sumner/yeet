@@ -46,8 +46,10 @@ export enum PanSheetViewSize {
   short = "shortForm"
 }
 
-export const transitionPanSheetView = (tag: number, size: PanSheetViewSize) =>
-  global.YeetJSI?.transitionPanView(tag, size);
+export const transitionPanSheetView = (
+  tag: number,
+  size: PanSheetViewSize | "dismiss"
+) => global.YeetJSI?.transitionPanView(tag, size);
 
 export const measureRelativeTo = (
   containerTag: number,

@@ -420,8 +420,7 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
 
   renderSceneContainer = route => {
     return (
-      <NativeScreen
-        active={this.currentRoute === route}
+      <View
         key={route}
         style={[
           styles.sceneContainer,
@@ -432,7 +431,7 @@ class GalleryTabViewComponent extends React.Component<Props, { page: number }> {
         ]}
       >
         {this.renderScene(route)}
-      </NativeScreen>
+      </View>
     );
   };
 

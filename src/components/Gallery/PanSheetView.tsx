@@ -156,6 +156,13 @@ export class PanSheetView extends React.Component<
     );
   };
 
+  dismiss = () => {
+    transitionPanSheetView(
+      findNodeHandle(this.nativePanSheetView.current),
+      "dismiss"
+    );
+  };
+
   setNativeProps = props => {
     this.nativePanSheetView.current.setNativeProps(props);
   };

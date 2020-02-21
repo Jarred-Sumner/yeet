@@ -16,7 +16,6 @@ import com.microsoft.appcenter.reactnative.appcenter.AppCenterReactNativePackage
 import io.invertase.firebase.analytics.ReactNativeFirebaseAnalyticsPackage;
 import com.dylanvann.fastimage.FastImageViewPackage;
 import com.akshetpandey.rncronet.RNCronetNetworkingPackage;
-import com.lugg.ReactNativeConfig.ReactNativeConfigPackage;
 import com.swmansion.reanimated.ReanimatedPackage;
 import com.swmansion.gesturehandler.react.RNGestureHandlerPackage;
 import com.ijzerenhein.sharedelement.RNSharedElementPackage;

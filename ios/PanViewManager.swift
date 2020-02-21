@@ -148,7 +148,12 @@ class PanViewManager : RCTViewManager, PanHostViewInteractor, RCTInvalidating  {
         return
       }
 
-      panViewController.transition(to: presentationState)
+      if to == "dismiss" {
+        panViewController.dismiss(animated: true, completion: nil)
+      } else {
+        panViewController.transition(to: presentationState)
+      }
+
     }
 
   }

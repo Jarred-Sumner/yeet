@@ -293,6 +293,8 @@ class PanViewSheet : UIView {
 
   deinit {
     resetTouch()
+    Log.debug("DEINIT PAN VIEW SHEET")
+    
   }
 
 

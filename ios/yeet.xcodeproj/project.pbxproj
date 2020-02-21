@@ -107,7 +107,6 @@
 		838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 83573D35231648A400E0C179 /* GoogleService-Info.plist */; };
 		839E8B402348142F004BC67E /* TrackableVideoSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */; };
 		839E8B4223481460004BC67E /* TrackableImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839E8B4123481460004BC67E /* TrackableImageSource.swift */; };
-		83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 83A72AFE23302EDD00453B25 /* Config.xcconfig */; };
 		83AAD7AF23E42C02001F31EF /* CameraRoll.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83AAD7AE23E42C02001F31EF /* CameraRoll.swift */; };
 		83AAD7B423E546F0001F31EF /* RCTConvert+PHotost.m in Sources */ = {isa = PBXBuildFile; fileRef = 83AAD7B323E546F0001F31EF /* RCTConvert+PHotost.m */; };
 		83AF134023F3DC6B00D6924C /* PanShadowView.m in Sources */ = {isa = PBXBuildFile; fileRef = 83AF133F23F3DC6B00D6924C /* PanShadowView.m */; };
@@ -347,7 +346,6 @@
 		839D024B7611A22740447179 /* Pods-Tests-yeetTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Tests-yeetTests.debug.xcconfig"; path = "Target Support Files/Pods-Tests-yeetTests/Pods-Tests-yeetTests.debug.xcconfig"; sourceTree = "<group>"; };
 		839E8B3F2348142F004BC67E /* TrackableVideoSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableVideoSource.swift; sourceTree = "<group>"; };
 		839E8B4123481460004BC67E /* TrackableImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackableImageSource.swift; sourceTree = "<group>"; };
-		83A72AFE23302EDD00453B25 /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		83AAD7AE23E42C02001F31EF /* CameraRoll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraRoll.swift; sourceTree = "<group>"; };
 		83AAD7B123E50446001F31EF /* CameraRoll.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CameraRoll.h; sourceTree = "<group>"; };
 		83AAD7B223E546F0001F31EF /* RCTConvert+PHotos.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "RCTConvert+PHotos.h"; sourceTree = "<group>"; };
@@ -757,7 +755,6 @@
 				835CA06423E962CD00829C71 /* YeetBridge.h */,
 				835CA06523E962CD00829C71 /* YeetBridge.mm */,
 				831F27B6237902A2005E18FF /* AppCenter-Config.plist */,
-				83A72AFE23302EDD00453B25 /* Config.xcconfig */,
 				834B3D1223230BAB00377BE6 /* blank_1080p.mp4 */,
 				838A18B72328528E00FC8C22 /* WebP.framework */,
 				838A18B62328528E00FC8C22 /* WebPDecoder.framework */,
@@ -855,7 +852,6 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "yeet" */;
 			buildPhases = (
 				3B1DF004F7A6A9A80BB27D3D /* [CP] Check Pods Manifest.lock */,
-				FD10A7F022414F080027D42C /* Start Packager */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
@@ -918,7 +914,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1110;
-				LastUpgradeCheck = 940;
+				LastUpgradeCheck = 1130;
 				ORGANIZATIONNAME = Yeet;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
@@ -970,7 +966,6 @@
 				838A18BD232855BB00FC8C22 /* GoogleService-Info.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				831F27B7237902A2005E18FF /* AppCenter-Config.plist in Resources */,
-				83A72AFF23302EDD00453B25 /* Config.xcconfig in Resources */,
 				13B07FBD1A68108700A75B9A /* LaunchScreen.xib in Resources */,
 				832E37ED232382300033E3A3 /* blank_1080p.mp4 in Resources */,
 				6C92BED453B640C7954F3717 /* Inter.var.ttf in Resources */,
@@ -1165,25 +1160,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		FD10A7F022414F080027D42C /* Start Packager */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "Start Packager";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "export RCT_METRO_PORT=\"${RCT_METRO_PORT:=8081}\"\necho \"export RCT_METRO_PORT=${RCT_METRO_PORT}\" > \"${SRCROOT}/../node_modules/react-native/scripts/.packager.env\"\nif [ -z \"${RCT_NO_LAUNCH_PACKAGER+xxx}\" ] ; then\n  if nc -w 5 -z localhost ${RCT_METRO_PORT} ; then\n    if ! curl -s \"http://localhost:${RCT_METRO_PORT}/status\" | grep -q \"packager-status:running\" ; then\n      echo \"Port ${RCT_METRO_PORT} already in use, packager is either not running or not running correctly\"\n      exit 2\n    fi\n  else\n    open \"$SRCROOT/../node_modules/react-native/scripts/launchPackager.command\" || echo \"Can't start packager automatically\"\n  fi\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -1580,7 +1556,6 @@
 		};
 		831F27B823790598005E18FF /* Staging */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 83A72AFE23302EDD00453B25 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -1819,7 +1794,6 @@
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 83A72AFE23302EDD00453B25 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -1875,7 +1849,6 @@
 		};
 		83CBBA211A601CBA00E9B192 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 83A72AFE23302EDD00453B25 /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -1918,6 +1891,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

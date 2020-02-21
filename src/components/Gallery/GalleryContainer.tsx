@@ -243,8 +243,11 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
   scrollY = new Animated.Value<number>(0);
 
   presenter = React.createRef();
-  panSheet = React.createRef();
+  panSheet = React.createRef<PanSheetView>();
 
+  dismiss = () => {
+    this.panSheet.current.dismiss();
+  };
   componentDidMount() {
     // this.setState({ showPanSheetView: true }, () => {
     //   // presentPanSheetView(0, findNodeHandle(this.panSheet.current));
@@ -299,18 +302,19 @@ class RawGalleryContainer extends React.PureComponent<{}, State> {
   }
 }
 
-export const GalleryContainer = props => {
+export const GalleryContainer = React.forwardRef((props, ref) => {
   const { left, right } = React.useContext(SafeAreaContext);
 
   return (
     <RawGalleryContainer
       {...props}
+      ref={ref}
       showStart={props.showStart || false}
       height={SCREEN_DIMENSIONS.height}
       isFocused={props.isFocused}
       width={SCREEN_DIMENSIONS.width - left - right}
     />
   );
-};
+});
 
 export default GalleryContainer;

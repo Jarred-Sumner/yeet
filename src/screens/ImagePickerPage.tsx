@@ -11,6 +11,7 @@ import { GallerySectionItem } from "../components/NewPost/ImagePicker/GallerySec
 
 export const ImagePickerPage = props => {
   const navigation = useNavigation();
+  const galleryContainerRef = React.useRef();
   const { top, left, right } = React.useContext(SafeAreaContext);
   const {
     showStart = false,
@@ -25,11 +26,13 @@ export const ImagePickerPage = props => {
     initialStep = GalleryStep.searchInput;
   }
 
+  const handleDismiss = React.useRef(null);
+
   const onChange = React.useCallback(
     ({ photo, post }) => {
-      navigation.goBack();
       if (_onChange) {
         _onChange(cloneDeep(photo), cloneDeep(post));
+        navigation.goBack();
       } else {
         navigation.navigate("Root", {
           screen: "FeedTab",
@@ -45,14 +48,16 @@ export const ImagePickerPage = props => {
           }
         });
       }
+
+      galleryContainerRef.current.dismiss();
     },
 
-    [navigation, _onChange]
+    [navigation, _onChange, galleryContainerRef]
   );
 
   const onDismiss = React.useCallback(() => {
     navigation.goBack();
-  }, [navigation]);
+  }, [navigation, handleDismiss]);
 
   return (
     <GalleryContainer
@@ -60,6 +65,7 @@ export const ImagePickerPage = props => {
       height={SCREEN_DIMENSIONS.height}
       width={SCREEN_DIMENSIONS.width - left - right}
       isFocused
+      ref={galleryContainerRef}
       showStart={showStart}
       offset={0}
       initialStep={initialStep}

@@ -126,9 +126,6 @@ target 'yeet' do
       path: '../node_modules/react-native-reanimated', modular_headers: false
 
 
-  pod 'react-native-config',
-      path: '../node_modules/react-native-config', modular_headers: false
-
   pod 'react-native-cronet',
       path: '../node_modules/react-native-cronet', modular_headers: false
 
