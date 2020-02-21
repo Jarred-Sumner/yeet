@@ -20,26 +20,14 @@ import SwiftyJSON
     return SnapTransform(x: .zero, y: .zero, scaleX: 1, scaleY: 1, rotate: 0)
   }
 
-  convenience init(transform: CGAffineTransform, center: CGPoint, containerShadowView: RCTShadowView, shadowView: RCTShadowView) {
-    var yValue : Float = 0
-
-
-
+  convenience init(transform: CGAffineTransform, containerShadowView: RCTShadowView, shadowView: RCTShadowView) {
     let top = shadowView.top
     let bottom = shadowView.bottom
     let left = shadowView.left
 
-    let sign = bottom.unit == YGUnit.undefined ? CGFloat(-1) : CGFloat(1)
-
-//    let centerOffset = CGPoint(x: center.x - shadowView.layoutMetrics.frame.width / 2, y: center.y - shadowView.layoutMetrics.frame.height / 2)
-
-    let _frame = shadowView.measureLayoutRelative(toAncestor: containerShadowView)
-
 
     let translation = transform.translation()
     let x = RCTCoreGraphicsFloatFromYogaFloat(left.value) + translation.x
-
-
 
     var y : CGFloat
     if bottom.unit == YGUnit.undefined {

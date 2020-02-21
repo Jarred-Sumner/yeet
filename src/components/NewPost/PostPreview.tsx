@@ -611,9 +611,10 @@ export const PostPreview = React.forwardRef(
           onMoveEnd={onMoveEnd}
           onSnap={onSnap}
           snapPoints={snapPoints}
+          onLayout={onLayout}
           // onMoveShouldSetResponder={_true}
           // onStartShouldSetResponder={_true}
-          onLayout={onLayout}
+
           style={contenViewStyle}
         >
           <View style={styles.contentWrapper}>

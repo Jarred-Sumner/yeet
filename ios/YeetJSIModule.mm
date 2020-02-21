@@ -15,6 +15,7 @@
 #import <React/RCTShadowView.h>
 #import "PanViewManager.h"
 #import "EnableWebpDecoder.h"
+#import <React/RCTUIManagerUtils.h>
 
 
 
@@ -292,6 +293,68 @@ jsi::Value YeetJSIModule::get(jsi::Runtime &runtime, const jsi::PropNameID &name
       __block NSNumber *toTag = @(arguments[0].asNumber());
 
       [panViewManager transition:toTag to:convertJSIStringToNSString(runtime, arguments[1].asString(runtime))];
+      return jsi::Value::null();
+    });
+  } else if (methodName == "measureRelativeTo") {
+    RCTBridge *rctBridge = _bridge;
+
+
+    return jsi::Function::createFromHostFunction(runtime, name, 3, [rctBridge, jsInvoker](
+             jsi::Runtime &runtime,
+             const jsi::Value &thisValue,
+             const jsi::Value *arguments,
+             size_t count) -> jsi::Value {
+
+      __block NSNumber *containerTag = @(arguments[0].asNumber());
+      __block NSArray<NSNumber*> *blocks = convertJSIArrayToNSArray(runtime, arguments[1].getObject(runtime).getArray(runtime), jsInvoker);
+
+      __block RCTResponseSenderBlock callback = convertJSIFunctionToCallback(runtime, arguments[2].asObject(runtime).getFunction(runtime), jsInvoker);
+
+
+      __block RCTBridge *bridge = rctBridge;
+
+      RCTExecuteOnUIManagerQueue(^{
+       
+
+        __block NSMutableArray *measurements = [[NSMutableArray alloc] initWithCapacity: blocks.count];
+
+        RCTShadowView *containerView = [rctBridge.uiManager shadowViewForReactTag:containerTag];
+
+        if (!containerView) {
+          __block NSDictionary *result = @{ @"measurements": measurements};
+          [rctBridge dispatchBlock:^{
+            callback(@[NSNull.null, result]);
+            [measurements removeAllObjects];
+                            measurements = nil;
+            result = nil;
+           } queue:RCTJSThread];
+          return;
+        }
+
+        RCTShadowView *block;
+        for (NSNumber *blockTag in blocks) {
+          block = [rctBridge.uiManager shadowViewForReactTag:blockTag];
+          if (block != nil) {
+            CGRect rect = [block measureLayoutRelativeToAncestor:containerView];
+            [measurements addObject:@{ @"x": @(rect.origin.x) ,@"y": @(rect.origin.y), @"width": @(rect.size.width), @"height": @(rect.size.height) }];
+          }
+
+        }
+
+        containerView = nil;
+        block = nil;
+
+        __block NSDictionary *result = @{ @"measurements": [[NSArray alloc] initWithArray:measurements copyItems:YES]};
+        [measurements removeAllObjects];
+         measurements = nil;
+
+        [bridge dispatchBlock:^{
+
+          callback(@[NSNull.null, result]);
+         result = nil;
+
+        } queue:RCTJSThread];
+      });
       return jsi::Value::null();
     });
   }

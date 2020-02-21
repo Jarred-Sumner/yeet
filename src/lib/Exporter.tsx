@@ -198,7 +198,7 @@ export const getEstimatedBoundsToContainer = (
 
     UIManager.measureLayout(
       refHandle,
-      findNodeHandle(container?.getNode() ?? container),
+      findNodeHandle(container),
       err => reject(err),
       (x, y, width, height) => {
         resolve({

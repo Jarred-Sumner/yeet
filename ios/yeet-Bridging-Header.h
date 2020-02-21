@@ -124,6 +124,8 @@ typedef void (^RCTPendingCall)();
 
 
 
+
+
 @interface PINAnimatedImageView(PrivateMethods)
 
 @property (nonatomic, assign) CGImageRef frameImage;
@@ -174,7 +176,7 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 @interface RCT_EXTERN_MODULE(SnapContainerViewManager, RCTViewManager)
 
 RCT_EXPORT_VIEW_PROPERTY(movableViewTags, NSArray);
-RCT_EXPORT_VIEW_PROPERTY(snapPoints, NSDictionary);
+RCT_EXPORT_VIEW_PROPERTY(snapPoints, NSArray);
 RCT_EXPORT_VIEW_PROPERTY(deleteX, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(deleteY, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(deleteTag, NSNumber);

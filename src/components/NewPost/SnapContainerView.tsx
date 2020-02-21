@@ -12,6 +12,7 @@ import Animated from "react-native-reanimated";
 import { ContentContainerContext } from "./ContentContainerContext";
 import { BoundsRect } from "../../lib/Rect";
 import { createNativeWrapper } from "react-native-gesture-handler";
+import { SnapPoint } from "../../lib/enums";
 
 export type MovableViewPositionChange = {
   transform: {
@@ -22,8 +23,7 @@ export type MovableViewPositionChange = {
     rotate: number;
   };
   uid: string;
-  bounds: BoundsRect;
-  center: { x: number; y: number };
+  frame: BoundsRect;
 };
 
 export type MovableViewPositionChangeEvent = NativeSyntheticEvent<
@@ -38,7 +38,7 @@ type SnapContainerProps = ViewProps & {
   onStartMoving: MovableViewPositionChangeEvent;
   onStopMoving: MovableViewPositionChangeEvent;
   onSnap: NativeSyntheticEvent<any>;
-  snapPoints: {};
+  snapPoints: [[number, number]];
   deleteX: number;
   deleteY: number;
   deleteTag: number;
@@ -149,12 +149,19 @@ class SnapContainerComponent extends React.Component {
   }
 }
 
-export const SnapContainerView = React.forwardRef((props, ref) => {
+export const SnapContainerView = React.forwardRef((_props, ref) => {
   const { movableViewTags } = React.useContext(ContentContainerContext);
+  const { snapPoints: _snapPoints, ...props } = _props as {
+    snapPoints: Array<SnapPoint>;
+  };
 
+  const snapPoints = React.useMemo(() => {
+    return _snapPoints.map(snapPoint => snapPoint.background);
+  }, [_snapPoints]);
   return (
     <SnapContainerComponent
       {...props}
+      snapPoints={snapPoints}
       movableViewTags={movableViewTags}
       NativeComponent={NativeSnapContainerView}
       containerRef={ref}

@@ -83,12 +83,11 @@ import UIKit
 
     let transform = view.reactTransform
 
-    let bounds = view.bounds
-    let center = view.center
+    let frame = view.superview!.convert(view.frame, to: snapContainer)
 
 
     RCTExecuteOnUIManagerQueue {
-      self.sendEvent(withName: name.rawValue, body: self.moveEventBody(uid: uid, transform: transform, reactTag: reactTag, containerReactTag: containerReactTag, center: center, bounds: bounds))
+      self.sendEvent(withName: name.rawValue, body: self.moveEventBody(uid: uid, transform: transform, reactTag: reactTag, containerReactTag: containerReactTag, frame: frame))
     }
   }
 
@@ -100,7 +99,7 @@ import UIKit
     dispatchMoveEvent(name: .onMoveEnd, view: view, snapContainer: snapContainer)
   }
 
-  private func moveEventBody(uid: String, transform: CGAffineTransform, reactTag: NSNumber, containerReactTag: NSNumber, center: CGPoint, bounds: CGRect) -> Dictionary<String, Any> {
+  private func moveEventBody(uid: String, transform: CGAffineTransform, reactTag: NSNumber, containerReactTag: NSNumber, frame: CGRect) -> Dictionary<String, Any> {
     guard let shadowView = bridge.uiManager.shadowView(forReactTag: reactTag) else {
       return [:]
     }
@@ -109,12 +108,12 @@ import UIKit
       return [:]
     }
 
-    let snapTransform = SnapTransform(transform: transform, center: center, containerShadowView: containerShadowView, shadowView: shadowView)
+    let snapTransform = SnapTransform(transform: transform, containerShadowView: containerShadowView, shadowView: shadowView)
+
     return [
       "uid": uid,
       "transform": snapTransform.dictionaryValue,
-      "bounds": bounds.dictionaryValue(),
-      "center": ["x": center.x, "y": center.y]
+      "frame": frame.dictionaryValue()
     ]
   }
 

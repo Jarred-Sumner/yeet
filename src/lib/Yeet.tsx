@@ -1,4 +1,5 @@
 import { TextInput } from "react-native";
+import { BoundsRect } from "./Rect";
 
 import { isNumber, throttle } from "lodash";
 
@@ -47,3 +48,12 @@ export enum PanSheetViewSize {
 
 export const transitionPanSheetView = (tag: number, size: PanSheetViewSize) =>
   global.YeetJSI?.transitionPanView(tag, size);
+
+export const measureRelativeTo = (
+  containerTag: number,
+  blocks: Array<number>,
+  callback: (
+    err: Error | null,
+    measurements: { measurements: Array<BoundsRect> }
+  ) => void
+) => global.YeetJSI?.measureRelativeTo(containerTag, blocks, callback);

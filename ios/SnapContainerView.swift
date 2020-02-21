@@ -25,7 +25,9 @@ protocol SnapContainerViewDelegate : UIView {
   }
 
   var snapGesture: SnapGesture? = nil
-  @objc(snapPoints) var snapPoints: Dictionary<String, Any> = [:]
+  @objc(snapPoints) var _snapPoints: [Dictionary<String, NSNumber>] = []
+
+  var snapPoints: [CGRect] = []
 
   var draggingViewTag: NSNumber? {
     willSet (newValue) {
@@ -53,7 +55,11 @@ protocol SnapContainerViewDelegate : UIView {
   }
 
   override func didSetProps(_ changedProps: [String]!) {
-    Log.debug("CHANGE DPROPS \(changedProps)")
+    Log.debug("SNAP POINTS \(snapPoints)")
+
+    if changedProps.contains("snapPoints") {
+      snapPoints = _snapPoints.map { RCTConvert.cgRect($0) }
+    }
   }
   var draggingView: MovableView? {
     guard draggingViewTag != nil else {

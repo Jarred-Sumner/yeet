@@ -542,6 +542,8 @@ export const blocksForFormat = (
   }
 };
 
+const SNAP_PREVIEW_BLOCK_SIZE = 47;
+
 export const snapBlock = (
   to: SnapDirection,
   at: PostBlock,
@@ -589,21 +591,18 @@ export const snapBlock = (
 
   if (to === SnapDirection.bottom || to === SnapDirection.top) {
     let width = POST_WIDTH;
-    let frame = {
+    let heightOffset =
+      block.frame.height -
+      Math.min(block.frame.height, SNAP_PREVIEW_BLOCK_SIZE);
+    block.frame = {
       x: 0,
-      y: 0,
+      y:
+        (to === SnapDirection.top
+          ? at.frame.y - block.frame.height
+          : at.frame.y + at.frame.height) + heightOffset,
       width,
-      height: block.frame.height
+      height: SNAP_PREVIEW_BLOCK_SIZE
     };
-
-    block.frame.x = 0;
-    if (isImageBlockWithImage(block)) {
-      block = scaleImageBlockToWidth(width, block);
-      block.layout = PostLayout.verticalTextMedia;
-      frame = block.frame;
-    } else {
-      block.frame = frame;
-    }
 
     if (rowIndex > -1 && to === SnapDirection.bottom) {
       positions.splice(rowIndex, 1, ...[positions[rowIndex], [block.id]]);
@@ -615,30 +614,18 @@ export const snapBlock = (
       positions.unshift([block.id]);
     }
 
-    frame.y =
-      to === SnapDirection.top
-        ? at.frame.y - block.frame.height
-        : at.frame.y + at.frame.height;
-
     return {
       blocks: { ...blocks, [block.id]: block },
       positions
     };
   } else if (to === SnapDirection.left || to === SnapDirection.right) {
-    let frame = {
-      x: 0,
-      y: 0,
-      width: POST_WIDTH,
-      height: block.frame.height
-    };
-
     let atColumnIndex = positions[rowIndex]?.indexOf(at.id);
 
     let _positions = [...positions];
 
     let row = [..._positions[rowIndex]];
 
-    let maxHeight = block.frame.height;
+    let maxHeight = 0;
     row.forEach(column => {
       const _block = blocks[column];
 
@@ -662,19 +649,26 @@ export const snapBlock = (
 
     let x = Math.min(Math.max(width * chosenIndex, 0), POST_WIDTH);
 
+    let widthOffset =
+      to === SnapDirection.right
+        ? width - Math.min(width, SNAP_PREVIEW_BLOCK_SIZE)
+        : 0;
+
     if (isImageBlockWithImage(block)) {
       block = scaleImageBlockToWidth(width, block);
       block.layout = PostLayout.horizontalMediaText;
-      block.frame.x = x;
+      block.frame.x = x + widthOffset;
       block.frame.y = y;
+      block.frame.width = widthOffset;
+
       if (block.frame.height < maxHeight) {
         block.frame.y += (maxHeight - block.frame.height) / 2;
       }
     } else {
       block.frame = {
-        x,
+        x: x + widthOffset,
         y,
-        width,
+        width: Math.min(width, SNAP_PREVIEW_BLOCK_SIZE),
         height
       };
     }
@@ -844,9 +838,18 @@ export const getSnapPoints = (
     return [];
   }
 
-  const leftValue = snapBlock(SnapDirection.left, at, block, blocks, [
-    ...positions
-  ]);
+  // console.log(rect);
+
+  const leftValue = snapBlock(
+    SnapDirection.left,
+    at,
+    block,
+    cloneDeep(blocks),
+    [...positions]
+  );
+
+  const leftFrame = leftValue.blocks[block.id].frame;
+
   const left: SnapPoint = {
     direction: SnapDirection.left,
     key: getPositionsKey(leftValue.positions),
@@ -855,12 +858,20 @@ export const getSnapPoints = (
       x: Math.max(rect.left, 0) - size,
       y: rect.center().y
     },
-    background: leftValue.blocks[block.id].frame
+    background: leftFrame
   };
 
-  const rightValue = snapBlock(SnapDirection.right, at, block, blocks, [
-    ...positions
-  ]);
+  const rightValue = snapBlock(
+    SnapDirection.right,
+    at,
+    block,
+    cloneDeep(blocks),
+    [...positions]
+  );
+
+  const rightFrame = rightValue.blocks[block.id].frame;
+
+  // console.log({ rightFrame, leftFrame });
 
   const right: SnapPoint = {
     direction: SnapDirection.right,
@@ -870,12 +881,19 @@ export const getSnapPoints = (
       x: rect.right,
       y: rect.center().y
     },
-    background: rightValue.blocks[block.id].frame
+    background: rightFrame
   };
 
-  const bottomValue = snapBlock(SnapDirection.bottom, at, block, blocks, [
-    ...positions
-  ]);
+  const bottomValue = snapBlock(
+    SnapDirection.bottom,
+    at,
+    block,
+    cloneDeep(blocks),
+    [...positions]
+  );
+
+  const bottomFrame = bottomValue.blocks[block.id].frame;
+  bottomFrame.height = Math.min(68, bottomFrame.height);
 
   const bottom: SnapPoint = {
     direction: SnapDirection.bottom,
@@ -885,12 +903,16 @@ export const getSnapPoints = (
       x: rect.center().x,
       y: rect.bottom
     },
-    background: bottomValue.blocks[block.id].frame
+    background: bottomFrame
   };
 
-  const topValue = snapBlock(SnapDirection.top, at, block, blocks, [
+  const topValue = snapBlock(SnapDirection.top, at, block, cloneDeep(blocks), [
     ...positions
   ]);
+
+  const topFrame = topValue.blocks[block.id].frame;
+  topFrame.height = Math.min(68, topFrame.height);
+
   const top: SnapPoint = {
     direction: SnapDirection.top,
     key: getPositionsKey(topValue.positions),
@@ -899,7 +921,7 @@ export const getSnapPoints = (
       x: rect.center().x,
       y: rect.top
     },
-    background: topValue.blocks[block.id].frame
+    background: topFrame
   };
 
   return [top, left, bottom, right];
@@ -917,13 +939,10 @@ export const getAllSnapPoints = (
 
   let _points = {};
 
-  const snapPoints = flatMap(
-    Object.values(blocks),
-    at =>
-      getSnapPoints(cloneDeep(at), cloneDeep(block), cloneDeep(blocks), [
-        ...positions
-      ]),
-    size
+  const snapPoints = flatMap(Object.values(blocks), at =>
+    getSnapPoints(cloneDeep(at), cloneDeep(block), cloneDeep(blocks), [
+      ...positions
+    ])
   );
 
   const mergePoints = (current: SnapPoint, newPoint: SnapPoint): SnapPoint => {
@@ -956,5 +975,22 @@ export const getAllSnapPoints = (
     }
   }
 
-  return Object.values(_points);
+  return Object.values(_points).map((point: SnapPoint) => {
+    const _point = { ...point };
+    const _rect = Rectangle.fromFrame(_point.background);
+
+    const offset = 12;
+
+    if (point.direction === SnapDirection.left) {
+      _point.background = _rect.translate(offset / -2, 0).frame;
+    } else if (point.direction === SnapDirection.right) {
+      _point.background = _rect.translate(offset / 2, 0).frame;
+    } else if (point.direction === SnapDirection.bottom) {
+      _point.background = _rect.translate(0, offset / 2).frame;
+    } else if (point.direction === SnapDirection.top) {
+      _point.background = _rect.translate(0, offset / -2).frame;
+    }
+
+    return _point;
+  });
 };

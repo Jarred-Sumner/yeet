@@ -12,6 +12,7 @@ import {
   BitmapIconCircleChevronRight,
   BitmapIconCircleChevronUp
 } from "../../BitmapIcon";
+import { IconPlus } from "../../Icon";
 
 const backgroundColor = COLORS.primaryDark;
 
@@ -226,6 +227,12 @@ const snapPositionProc = Animated.proc(
   // )
 );
 
+enum SnapPositionActivationStatus {
+  pending = "pending",
+  highlight = "highlight",
+  activated = "activated"
+}
+
 const SnapPosition = React.memo(
   ({
     top,
@@ -233,199 +240,70 @@ const SnapPosition = React.memo(
     x,
     y,
     size,
+    snapDirection,
     backgroundWidth,
-    currentId,
     backgroundHeight,
     backgroundTop,
     backgroundLeft,
-    velocityY,
-    isMovingValue,
-    previousIdValue,
-    velocityX,
-    animationProgress,
-    currentIdValue,
-    snapDirection,
     id,
+    status = SnapPositionActivationStatus.highlight,
     onChange,
     Icon
   }) => {
-    const horizontal =
-      snapDirection === SnapDirection.left ||
-      snapDirection === SnapDirection.right;
-    const vertical =
-      snapDirection === SnapDirection.top ||
-      snapDirection === SnapDirection.bottom;
-    let translateX = 0;
-    let translateY = 0;
+    const translateDirection = {
+      [SnapDirection.bottom]: "translateY",
+      [SnapDirection.top]: "translateY",
+      [SnapDirection.left]: "translateX",
+      [SnapDirection.right]: "translateX"
+    }[snapDirection];
 
-    if (snapDirection === SnapDirection.bottom) {
-      translateY = size / -2;
-      translateX = size / -2;
-    } else if (snapDirection === SnapDirection.top) {
-      translateY = size / -2;
-      translateX = size / -2;
-    } else if (snapDirection === SnapDirection.left) {
-      translateY = size * -0.5;
-      translateX = size * 2;
-    } else if (snapDirection === SnapDirection.right) {
-      translateY = size * -0.5;
-      translateX = size * -1;
-    }
-
-    const midX = left + (snapDirection === SnapDirection.left ? translateX : 0);
-    const midY = top;
-
-    const currentStatusValue = React.useRef(new Animated.Value(0));
-
-    const animationClock = React.useRef(new Animated.Clock());
-    const status =
-      currentId === id
-        ? SnapPositionStatus.active
-        : !currentId
-        ? SnapPositionStatus.pending
-        : SnapPositionStatus.disabled;
-
-    const animationValue = React.useRef(new Animated.Value(status));
-    const distance = React.useRef(new Animated.Value(999));
-    const shouldActivate = React.useRef(new Animated.Value(0));
-    const buttonOpacityValue = React.useRef(new Animated.Value(0));
-    const backgroundOpacityValue = React.useRef(new Animated.Value(0));
+    const translateSign = [SnapDirection.bottom, SnapDirection.right].includes(
+      snapDirection
+    )
+      ? 1
+      : -1;
+    const translateAmount = {
+      [SnapPositionActivationStatus.pending]: 12,
+      [SnapPositionActivationStatus.highlight]: 24,
+      [SnapPositionActivationStatus.activated]: 48
+    }[status];
 
     return (
-      <>
-        <Animated.Code
-          exec={snapPositionProc(
-            distance.current,
-            buttonOpacityValue.current,
-            isMovingValue,
-            midX,
-            midY,
-            x,
-            y,
-            size * size,
-            animationValue.current,
-            animationClock.current,
-            currentStatusValue.current,
-            currentIdValue,
-            id.hashCode(),
-            shouldActivate.current,
-            backgroundOpacityValue.current
-          )}
-        />
-
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          top: backgroundTop,
+          left: backgroundLeft,
+          width: backgroundWidth,
+          overflow: "visible",
+          height: backgroundHeight,
+          transform: [{ [translateDirection]: translateAmount * translateSign }]
+        }}
+      >
         <View
           pointerEvents="none"
           style={{
-            position: "absolute",
-            top: backgroundTop,
-            left: backgroundLeft,
+            backgroundColor,
+            height: backgroundHeight,
             width: backgroundWidth,
-            overflow: "visible",
-            height: backgroundHeight
-          }}
-        >
-          <Animated.View
-            style={{
-              backgroundColor: COLORS.primary,
-              height: backgroundHeight,
-              width: backgroundWidth,
-              opacity: backgroundOpacityValue.current
-            }}
-          />
-        </View>
+            borderRadius: 12,
+            justifyContent: "center",
 
-        <View
-          pointerEvents="none"
-          style={{
-            position: "absolute",
-            top: top + translateY,
-            left: left + translateX,
-            width: size,
-            overflow: "visible",
-            height: size
+            alignItems: "center"
           }}
         >
-          <Animated.View
-            pointerEvents="none"
-            style={{
-              opacity: buttonOpacityValue.current
-            }}
-          >
-            <View
-              style={{
-                justifyContent: "center",
-                alignItems: "center",
-                overflow: "visible",
-                width: size,
-                height: size
-              }}
-            >
-              <Icon style={appendStyles.icon} />
-            </View>
-          </Animated.View>
+          <Icon size={18} color="#4318BC" />
         </View>
-      </>
+      </View>
     );
   }
 );
 
-export const SnapGuides = ({
-  blocks,
-  positions,
-  block,
-  frame,
-  focusTypeValue,
-  snapPoint,
-  velocityX,
-  velocityY,
-  currentScale,
-  isMovingValue: _isMovingValue,
-  x,
-  y,
-  onChange
-}) => {
+export const SnapGuides = ({ snapPoint, snapPoints }) => {
   const SNAP_SIZE = 24;
-  const points = React.useMemo(
-    () => (block ? getAllSnapPoints(block, blocks, positions, SNAP_SIZE) : []),
-    [getAllSnapPoints, block, blocks, positions]
-  );
 
   const currentId = snapPoint ? snapPoint.key : null;
-  const isMovingValue = React.useRef(new Animated.Value(0));
-  const activationClock = React.useRef(new Animated.Clock());
-
-  const currentIdValue = React.useRef(new Animated.Value(-1));
-
-  React.useEffect(() => {
-    currentIdValue.current.setValue(-1);
-  }, []);
-
-  const handleChangeSnapDirection = React.useCallback(
-    ([_id]) => {
-      if (_id === -1) {
-        // Animated.timing(currentScale, {
-        //   toValue: 1.0,
-        //   duration: 200,
-        //   easing: Easing.ease
-        // }).start();
-        onChange(null);
-      } else {
-        const _snapPoint = points.find(point => point.key.hashCode() === _id);
-        if (!_snapPoint) {
-          return;
-        }
-
-        // Animated.timing(currentScale, {
-        //   toValue: 0.85,
-        //   duration: 300,
-        //   easing: Easing.ease
-        // }).start();
-
-        onChange(_snapPoint);
-      }
-    },
-    [onChange, points]
-  );
 
   const renderPoint = React.useCallback(
     point => (
@@ -433,106 +311,21 @@ export const SnapGuides = ({
         key={point.key}
         backgroundTop={point.background.y}
         backgroundLeft={point.background.x}
-        currentIdValue={currentIdValue.current}
         backgroundWidth={point.background.width}
         backgroundHeight={point.background.height}
         size={SNAP_SIZE}
         snapDirection={point.direction}
-        currentId={snapPoint?.key ?? null}
-        x={x}
-        velocityX={velocityX}
-        velocityY={velocityY}
-        y={y}
-        isMovingValue={isMovingValue.current}
+        currentId={currentId}
         // animationValue={animationValue}
         left={point.indicator.x}
         top={point.indicator.y}
         id={point.key}
         // onChange={handleChangeSnapDirection}
-        Icon={
-          {
-            [SnapDirection.bottom]: BitmapIconCircleChevronDown,
-            [SnapDirection.top]: BitmapIconCircleChevronUp,
-            [SnapDirection.left]: BitmapIconCircleChevronLeft,
-            [SnapDirection.right]: BitmapIconCircleChevronRight
-          }[point.direction]
-        }
+        Icon={IconPlus}
       />
     ),
-    [
-      // handleChangeSnapDirection,
-      isMovingValue,
-      velocityX,
-      // animationValue,
-      velocityY,
-      currentIdValue
-    ]
+    [currentId]
   );
 
-  return (
-    <>
-      <Animated.Code
-        exec={Animated.block([
-          Animated.onChange(
-            currentIdValue.current,
-            Animated.block([
-              Animated.call([currentIdValue.current], handleChangeSnapDirection)
-            ])
-          ),
-          Animated.cond(
-            // Animated.and(
-            Animated.eq(isMovingValue.current, 1),
-            // Animated.not(Animated.clockRunning(activationClock.current))
-            // ),
-            runDelay(
-              Animated.block([Animated.set(isMovingValue.current, 0)]),
-              activationClock.current,
-              100
-            )
-          ),
-          Animated.cond(
-            Animated.and(
-              Animated.clockRunning(activationClock.current),
-              Animated.eq(isMovingValue.current, 0)
-            ),
-            Animated.onChange(
-              Animated.greaterThan(Animated.abs(Animated.diff(x)), 2),
-              [
-                Animated.stopClock(activationClock.current),
-                Animated.set(isMovingValue.current, 1)
-              ]
-            ),
-            Animated.onChange(
-              Animated.greaterThan(Animated.abs(Animated.diff(y)), 2),
-              [
-                Animated.stopClock(activationClock.current),
-                Animated.set(isMovingValue.current, 1)
-              ]
-            )
-          )
-        ])}
-      />
-
-      <Animated.View
-        style={{ opacity: Animated.eq(focusTypeValue, FocusType.panning) }}
-      >
-        {points.map(renderPoint)}
-      </Animated.View>
-
-      {IS_SIMULATOR && (
-        <Animated.View
-          style={{
-            backgroundColor: "red",
-            width: 32,
-            height: 32,
-            borderRadius: 16,
-            position: "absolute",
-            top: y,
-            left: x,
-            transform: [{ translateX: -16 }, { translateY: -16 }]
-          }}
-        />
-      )}
-    </>
-  );
+  return <View>{snapPoints.map(renderPoint)}</View>;
 };
