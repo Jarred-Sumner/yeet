@@ -3,6 +3,7 @@ import { findNodeHandle, View } from "react-native";
 import { PostFormat } from "../../lib/enums";
 import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
 import { TextInput } from "./Text/TextInput";
+import { onChangeBlockText } from "../../lib/PostEditor/actions";
 
 type Props = {
   block: TextPostBlockType;
@@ -32,7 +33,6 @@ export class TextPostBlock extends React.Component<Props> {
 
   handleChange = text => {
     this.setState({ text });
-    // this.props.onChange({ ...this.props.block, value: text });
   };
 
   get isFocused() {
@@ -43,7 +43,17 @@ export class TextPostBlock extends React.Component<Props> {
 
   handleBlur = ({ nativeEvent: { text } }) => {
     this.setState({ text });
-    this.props.onBlur({ ...this.props.block, value: text });
+
+    const blockId = this.props.block.id;
+
+    this.updateText(text, blockId);
+    this.props.onBlur(this.props.block);
+  };
+
+  updateText = (text: string, blockId: string) => {
+    this.props.updateSchema(draft =>
+      onChangeBlockText(draft, { blockId, text })
+    );
   };
 
   get input() {
@@ -54,15 +64,8 @@ export class TextPostBlock extends React.Component<Props> {
     this.input.focus();
   };
 
-  handleFinishEditing = ({
-    nativeEvent: { text: value, startSize, endSize }
-  }) => {
-    this.props.onFinishEditing &&
-      this.props.onFinishEditing({
-        block: { ...this.props.block, value },
-        startSize,
-        endSize
-      });
+  handleFinishEditing = ({ nativeEvent: { value, startSize, endSize } }) => {
+    // this.updateText(value);
   };
 
   blur = () => {
@@ -110,6 +113,7 @@ export class TextPostBlock extends React.Component<Props> {
       focusType,
       isFocused,
       isSticker,
+      updateSchema,
       paddingTop,
       focusedBlockValue
     } = this.props;
@@ -123,6 +127,7 @@ export class TextPostBlock extends React.Component<Props> {
       isFocused !== nextProps.isFocused ||
       focusType !== nextProps.focusType ||
       paddingTop !== nextProps.paddingTop ||
+      updateSchema !== nextProps.updateSchema ||
       nextState.text !== this.state.text
     );
   }

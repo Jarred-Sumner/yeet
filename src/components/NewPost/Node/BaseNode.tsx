@@ -44,7 +44,7 @@ type Props = {
   onTap: (editableNode: EditableNode) => void;
 };
 
-export type EditableNodeMap = { [key: string]: EditableNode };
+export type EditableNodeMap = Map<string, EditableNode>;
 
 export const buildEditableNode = ({
   block,

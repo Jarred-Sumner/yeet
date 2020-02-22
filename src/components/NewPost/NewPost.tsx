@@ -37,6 +37,7 @@ import { EditableNodeMap } from "./Node/BaseNode";
 import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import TextPostBlock from "./TextPostBlock";
 import { doKeyboardAnimation } from "../../lib/animations";
+import { PostSchemaProvider } from "./PostSchemaProvider";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -147,7 +148,6 @@ export class NewPost extends React.Component<{}, State> {
     defaultFormat: PostFormat.post,
     defaultLayout: PostLayout.media,
     defaultBlocks: {},
-
     minX: 0,
     minY: 0,
     defaultPositions: [],
@@ -157,8 +157,6 @@ export class NewPost extends React.Component<{}, State> {
     threadId: null,
     thread: null
   };
-
-  controlsOpacityValue = new Animated.Value(1);
 
   constructor(props) {
     super(props);
@@ -173,8 +171,6 @@ export class NewPost extends React.Component<{}, State> {
       exampleCount: isEmpty(props.examples)
         ? 0
         : NewPost.getExampleCount(props.examples),
-
-      post: this.buildFromDefaults(props),
 
       defaultPhoto: null,
       inlineNodes: { ...props.defaultInlineNodes },
@@ -195,167 +191,66 @@ export class NewPost extends React.Component<{}, State> {
   offsetY = new Animated.Value(0);
 
   handlePressExample = () => {
-    const { exampleIndex: _exampleIndex, exampleCount } = this.state;
-
-    if (exampleCount < 1) {
-      return;
-    }
-
-    const exampleIndex = Math.max(0, _exampleIndex + 1) % exampleCount;
-
-    const inlineNodes = { ...this.state.inlineNodes };
-    const blocks = { ...this.state.post.blocks };
-
-    for (const [id, contentList] of Object.entries(this.props.examples)) {
-      let string = contentList[
-        Math.min(exampleIndex, contentList.length - 1)
-      ] as string;
-
-      const block: TextPostBlock = inlineNodes[id]
-        ? { ...inlineNodes[id].block }
-        : { ...blocks[id] };
-      if (block && block.type === "text") {
-        block.value = string;
-
-        if (inlineNodes[id]) {
-          inlineNodes[id].block = block;
-        } else {
-          blocks[id] = block;
-        }
-      }
-    }
-
-    const {
-      backgroundColor,
-      defaultWidth,
-      defaultHeight,
-      defaultBlock,
-      defaultPositions,
-      defaultFormat,
-      defaultLayout
-    } = this.props;
-
-    this.setState(
-      {
-        exampleIndex,
-        post: buildPost({
-          backgroundColor,
-          width: defaultWidth,
-          height: defaultHeight,
-          blocks,
-          positions: defaultPositions,
-          format: defaultFormat,
-          layout: defaultLayout
-        }),
-        inlineNodes
-      },
-      () => {
-        this.postEditor.current.resetText();
-      }
-    );
-  };
-
-  buildFromDefaults = props => {
-    return buildPost({
-      backgroundColor: props.backgroundColor,
-      width: props.defaultWidth,
-      height: props.defaultHeight,
-      blocks: props.defaultBlocks,
-      positions: props.defaultPositions,
-      format: props.defaultFormat,
-      layout: props.defaultLayout
-    });
+    // const { exampleIndex: _exampleIndex, exampleCount } = this.state;
+    // if (exampleCount < 1) {
+    //   return;
+    // }
+    // const exampleIndex = Math.max(0, _exampleIndex + 1) % exampleCount;
+    // const inlineNodes = { ...this.state.inlineNodes };
+    // const blocks = { ...this.state.post.blocks };
+    // for (const [id, contentList] of Object.entries(this.props.examples)) {
+    //   let string = contentList[
+    //     Math.min(exampleIndex, contentList.length - 1)
+    //   ] as string;
+    //   const block: TextPostBlock = inlineNodes[id]
+    //     ? { ...inlineNodes[id].block }
+    //     : { ...blocks[id] };
+    //   if (block && block.type === "text") {
+    //     block.value = string;
+    //     if (inlineNodes[id]) {
+    //       inlineNodes[id].block = block;
+    //     } else {
+    //       blocks[id] = block;
+    //     }
+    //   }
+    // }
+    // const {
+    //   backgroundColor,
+    //   defaultWidth,
+    //   defaultHeight,
+    //   defaultBlock,
+    //   defaultPositions,
+    //   defaultFormat,
+    //   defaultLayout
+    // } = this.props;
+    // this.setState(
+    //   {
+    //     exampleIndex,
+    //     post: buildPost({
+    //       backgroundColor,
+    //       width: defaultWidth,
+    //       height: defaultHeight,
+    //       blocks,
+    //       positions: defaultPositions,
+    //       format: defaultFormat,
+    //       layout: defaultLayout
+    //     }),
+    //     inlineNodes
+    //   },
+    //   () => {
+    //     this.postEditor.current.resetText();
+    //   }
+    // );
   };
 
   resetToDefault = () => {
-    this.setState({
-      inlineNodes: { ...this.props.defaultInlineNodes },
-      post: this.buildFromDefaults(this.props)
-    });
+    // this.setState({
+    //   inlineNodes: { ...this.props.defaultInlineNodes },
+    //   post: this.buildFromDefaults(this.props)
+    // });
   };
 
   handleChangePost = post => this.setState({ post });
-
-  transitionToEditPhoto = (photo: YeetImageContainer) => {
-    const post = this.buildPostWithImage(photo, getSourceDimensions(photo));
-
-    this.setState({
-      step: NewPostStep.editPhoto,
-      defaultPhoto: photo,
-      post: post
-    });
-  };
-
-  transitionToCropPhoto = (photo: YeetImageContainer) => {
-    this.setState({
-      step: NewPostStep.resizePhoto,
-      defaultPhoto: photo
-    });
-  };
-
-  handleChoosePhoto = (photo: YeetImageContainer) => {
-    const cropThreshold = 0.66;
-    const { height } = calculateAspectRatioFit(
-      photo.image.width,
-      photo.image.height,
-      SCREEN_DIMENSIONS.width,
-      SCREEN_DIMENSIONS.height
-    );
-
-    const aspectFitCropRatio = height / MAX_POST_HEIGHT;
-    const shouldCropPhoto = aspectFitCropRatio > cropThreshold || height < 300;
-
-    if (shouldCropPhoto) {
-      this.transitionToCropPhoto(photo);
-    } else {
-      this.transitionToEditPhoto(photo);
-    }
-  };
-
-  buildPostWithImage = (
-    image: YeetImageContainer,
-    dimensions: YeetImageRect
-  ) => {
-    const { format, layout, backgroundColor } = this.state.post;
-    const displaySize = scaleToWidth(POST_WIDTH, dimensions);
-
-    const block = buildImageBlock({
-      image,
-      dimensions,
-      autoInserted: true,
-      layout,
-      format,
-      width: displaySize.width,
-      height: displaySize.height,
-      required: true
-    });
-
-    const [blocks, positions] = layoutBlocksInPost(
-      format,
-      layout,
-      { [block.id]: block },
-      [[block.id]]
-    );
-
-    return buildPost({
-      format,
-      layout,
-      width: displaySize.width,
-      height: displaySize.height,
-      backgroundColor,
-      blocks,
-      positions
-    });
-  };
-
-  handleCropPhoto = mediaSource => {
-    const photo = imageContainerFromMediaSource(
-      mediaSource,
-      this.state.defaultPhoto
-    );
-
-    this.transitionToEditPhoto(photo);
-  };
 
   handleChangeLayout = (layout: PostLayout) => {
     const {
@@ -383,16 +278,12 @@ export class NewPost extends React.Component<{}, State> {
     });
   };
 
-  handleBackToChoosePhoto = () => {
-    this.setState({ step: NewPostStep.choosePhoto });
-  };
-
   handleBack = () => {
     this.props.navigation.navigate("FeedTab");
   };
 
   get paddingTop() {
-    return CAROUSEL_HEIGHT + presetsByFormat[this.state.post.format].paddingTop;
+    return;
   }
 
   stepContainerRef = React.createRef();
@@ -413,39 +304,12 @@ export class NewPost extends React.Component<{}, State> {
     transparent = false,
     autoFocus = false
   }) => {
-    console.log({ initialRoute });
     this.props.navigation.push("ImagePicker", {
       onChange: (image, post) => onChange(blockId, image, post),
       initialRoute: initialRoute
     });
   };
 
-  handlePressGallery = (image: YeetImageContainer) => {
-    const blockId = this.state.galleryBlockId;
-
-    if (this.openGalleryCallback) {
-      this.openGalleryCallback(blockId || generateBlockId(), image);
-    }
-
-    this.dismissGallery();
-  };
-
-  dismissGallery = () => {
-    this.setState({
-      showGallery: false,
-      disableGallery: false,
-      galleryBlockId: null,
-      galleryFilter: null,
-      galleryAutoFocus: false,
-      galleryTransparent: false
-    });
-    this.openGalleryCallback = null;
-  };
-
-  keyboardVisibleValue = new Animated.Value<number>(0);
-  keyboardHeightValue = new Animated.Value<number>(0);
-  animatedKeyboardVisibleValue = new Animated.Value<number>(0);
-  headerOpacity = new Animated.Value(0);
   postEditor = React.createRef<View>();
 
   showKeyboard = event => {
@@ -465,63 +329,61 @@ export class NewPost extends React.Component<{}, State> {
   handleBeforeExport = () => this.setState({ disableGallery: true });
 
   render() {
-    const {
-      step,
-      inlineNodes,
-      post: { backgroundColor = "black" }
-    } = this.state;
+    const paddingTop = CAROUSEL_HEIGHT + presetsByFormat.post.paddingTop;
+    const backgroundColor = "#000";
+
     return (
-      <View style={[styles.wrapper, { backgroundColor }]}>
-        <AnimatedKeyboardTracker
-          onKeyboardShow={this.showKeyboard}
-          onKeyboardHide={this.hideKeyboard}
-          keyboardVisibleValue={this.keyboardVisibleValue}
-          keyboardHeightValue={this.keyboardHeightValue}
-          animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
-        />
+      <PostSchemaProvider
+        layout={this.props.defaultLayout}
+        width={this.props.defaultWidth}
+        height={this.props.defaultHeight}
+        blocks={this.props.defaultBlocks}
+        defaultInlineNodes={this.props.defaultInlineNodes}
+        positions={this.props.defaultPositions}
+        backgroundColor={this.props.defaultBackgroundColor}
+        format={this.props.defaultFormat}
+      >
+        <View style={[styles.wrapper, { backgroundColor }]}>
+          <View
+            pointerEvents={this.state.showGallery ? "none" : "auto"}
+            style={styles.page}
+          >
+            <StatusBar hidden={false} showHideTransition="slide" />
 
-        <View
-          pointerEvents={this.state.showGallery ? "none" : "auto"}
-          style={styles.page}
-        >
-          <StatusBar hidden={false} showHideTransition="slide" />
-
-          <View style={[styles.transitionContainer, { backgroundColor }]}>
-            <MediaPlayerPauser isHidden={!this.props.isFocused}>
-              <PostEditor
-                bounds={this.state.bounds}
-                post={this.state.post}
-                onBack={this.handleBack}
-                exampleCount={this.state.exampleCount}
-                exampleIndex={this.state.exampleIndex}
-                offsetY={this.offsetY}
-                onPressExample={this.handlePressExample}
-                scrollY={this.scrollY}
-                ref={this.postEditor}
-                keyboardVisibleValue={this.keyboardVisibleValue}
-                keyboardHeightValue={this.keyboardHeightValue}
-                animatedKeyboardVisibleValue={this.animatedKeyboardVisibleValue}
-                keyboardHeight={this.state.keyboardHeight ?? 0}
-                headerOpacity={this.headerOpacity}
-                navigation={this.props.navigation}
-                onChange={this.handleChangePost}
-                isReply={!this.props.threadId}
-                onChangeFormat={this.handleChangeLayout}
-                isFocused={this.props.isFocused}
-                controlsOpacityValue={this.controlsOpacityValue}
-                onOpenGallery={this.handleOpenGallery}
-                inlineNodes={inlineNodes}
-                simultaneousHandlers={[]}
-                onChangeLayout={this.handleChangeLayout}
-                paddingTop={this.paddingTop}
-                onChangeNodes={this.handleChangeNodes}
-                onBeforeExport={this.handleBeforeExport}
-                onSubmit={this.handleSubmit}
-              />
-            </MediaPlayerPauser>
+            <View style={[styles.transitionContainer, { backgroundColor }]}>
+              <MediaPlayerPauser isHidden={!this.props.isFocused}>
+                <PostEditor
+                  onBack={this.handleBack}
+                  exampleCount={this.state.exampleCount}
+                  exampleIndex={this.state.exampleIndex}
+                  offsetY={this.offsetY}
+                  onPressExample={this.handlePressExample}
+                  scrollY={this.scrollY}
+                  ref={this.postEditor}
+                  keyboardVisibleValue={this.keyboardVisibleValue}
+                  keyboardHeightValue={this.keyboardHeightValue}
+                  animatedKeyboardVisibleValue={
+                    this.animatedKeyboardVisibleValue
+                  }
+                  keyboardHeight={this.state.keyboardHeight ?? 0}
+                  headerOpacity={this.headerOpacity}
+                  navigation={this.props.navigation}
+                  onChange={this.handleChangePost}
+                  isReply={!this.props.threadId}
+                  onChangeFormat={this.handleChangeLayout}
+                  isFocused={this.props.isFocused}
+                  onOpenGallery={this.handleOpenGallery}
+                  simultaneousHandlers={[]}
+                  onChangeLayout={this.handleChangeLayout}
+                  paddingTop={paddingTop}
+                  onChangeNodes={this.handleChangeNodes}
+                  onBeforeExport={this.handleBeforeExport}
+                  onSubmit={this.handleSubmit}
+                />
+              </MediaPlayerPauser>
+            </View>
           </View>
-        </View>
-        {/* <GallerySheet
+          {/* <GallerySheet
           show={this.state.showGallery}
           blockId={this.state.galleryBlockId}
           onDismiss={this.dismissGallery}
@@ -535,12 +397,13 @@ export class NewPost extends React.Component<{}, State> {
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
         /> */}
-      </View>
+        </View>
+      </PostSchemaProvider>
     );
   }
 
   handleChangeNodes = (inlineNodes: EditableNodeMap) => {
-    this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
+    // this.setState({ inlineNodes: omitBy(inlineNodes, isEmpty) });
   };
 
   handleSubmit = (contentExport: ContentExport, data: ExportData) => {

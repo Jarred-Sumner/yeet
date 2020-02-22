@@ -37,7 +37,7 @@ import { Rectangle } from "./Rectangle";
 import { SPACING } from "./styles";
 import { PostFragment } from "./graphql/PostFragment";
 
-export const generateBlockId = nanoid;
+export const generateBlockId: () => string = nanoid;
 
 let textInputPresets = {};
 

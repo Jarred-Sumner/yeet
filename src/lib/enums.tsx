@@ -90,7 +90,7 @@ export type ImagePostBlock = PostBlock & {
 
 export type PostBlockType = TextPostBlock | ImagePostBlock;
 
-export type BlockMap = { [id: string]: PostBlockType };
+export type BlockMap = Map<string, PostBlockType>;
 export type BlockPositionList = Array<Array<PostBlockID>>;
 
 export type NewPostType = {

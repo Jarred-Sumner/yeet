@@ -20,6 +20,7 @@ import {
   AnimatedSnapContainerView
 } from "./SnapContainerView";
 import { currentlyFocusedField } from "./Text/TextInputState";
+import { PostSchemaProvider, PostSchemaContext } from "./PostSchemaProvider";
 
 // export const ScrollView = KeyboardAwareScrollView;
 
@@ -110,13 +111,14 @@ const BlockCell = React.forwardRef((props, ref) => {
 
   const _ref = React.useRef();
 
+  const blockId = block.id;
   const layoutChange = React.useCallback(() => {
-    onLayout(block, _ref.current);
-  }, [block, _ref, onLayout]);
+    onLayout(blockId, _ref.current);
+  }, [blockId, _ref, onLayout]);
 
   React.useEffect(() => {
-    onLayout(block, _ref.current);
-  }, [onLayout]);
+    onLayout(blockId, _ref.current);
+  }, [onLayout, blockId]);
 
   return (
     <View
@@ -145,24 +147,20 @@ const BlockCell = React.forwardRef((props, ref) => {
         onBlur={onBlur}
         focusTypeValue={focusTypeValue}
         ref={ref}
-        onChange={onChange}
       />
     </View>
   );
 });
 
 export const BlockList = ({
-  blocks,
   setBlockAtIndex,
   setBlockInputRef,
   focusType,
   paused,
   muted,
   onAction,
-  positions,
   disabled,
   focusedBlockValue,
-  layout,
   onBlur,
   onChangePhoto,
   onOpenImagePicker,
@@ -173,10 +171,11 @@ export const BlockList = ({
   scrollRef,
   onLayout
 }: BlockListProps) => {
-  const handleChangeBlock = React.useCallback(
-    index => block => setBlockAtIndex && setBlockAtIndex(block, index),
-    [setBlockAtIndex, blocks]
-  );
+  const {
+    schema: {
+      post: { blocks, positions, layout }
+    }
+  } = React.useContext(PostSchemaContext);
 
   const handleSetBlockInputRef = React.useCallback(
     block => {
@@ -187,7 +186,7 @@ export const BlockList = ({
 
   const renderBlock = React.useCallback(
     (blockId: string, index: number) => {
-      const block = blocks[blockId];
+      const block = blocks.get(blockId);
       return (
         <BlockCell
           onFocus={onFocus}
@@ -206,7 +205,6 @@ export const BlockList = ({
           onBlur={onBlur}
           focusTypeValue={focusTypeValue}
           ref={handleSetBlockInputRef(block)}
-          onChange={handleChangeBlock(index)}
         />
       );
     },
@@ -226,8 +224,7 @@ export const BlockList = ({
       onTap,
       onBlur,
       focusTypeValue,
-      handleSetBlockInputRef,
-      handleChangeBlock
+      handleSetBlockInputRef
     ]
   );
 
@@ -265,7 +262,6 @@ type EditableNodeListProps = {
   onChangeNode: (node: EditableNode) => void;
 };
 export const EditableNodeList = ({
-  inlineNodes,
   onChangeNode,
   offsetY,
   onTapNode,
@@ -273,21 +269,16 @@ export const EditableNodeList = ({
   height,
   keyboardHeight,
   currentScale,
-  animatedKeyboardVisibleValue,
   velocityY,
   onTransform,
   maxX,
   bottomY: bottom,
-  keyboardHeightValue,
   focusType,
   topInsetValue,
-  keyboardVisibleValue,
   onFocus,
   waitFor,
   maxY,
-  focusedBlockValue,
   scrollY,
-  focusTypeValue,
   minY,
   midY,
   midX,
@@ -304,6 +295,9 @@ export const EditableNodeList = ({
   focusedBlockId,
   onMoveStart
 }: EditableNodeListProps) => {
+  const {
+    schema: { inlineNodes }
+  } = React.useContext(PostSchemaContext);
   const containerRef = React.useCallback(
     id => ref => {
       setNodeRef(id, ref);
@@ -343,7 +337,6 @@ export const EditableNodeList = ({
           onTransform={onTransform}
           bottom={bottom}
           onBlur={onBlurNode}
-          focusedBlockValue={focusedBlockValue}
           disabled={focusedBlockId && focusedBlockId !== id}
           waitFor={waitFor}
           inputRef={handleSetBlockInputRef(id)}
@@ -351,13 +344,9 @@ export const EditableNodeList = ({
           absoluteX={absoluteX}
           panX={panX}
           height={height}
-          animatedKeyboardVisibleValue={animatedKeyboardVisibleValue}
           enableAutomaticScroll
           absoluteY={absoluteY}
           panY={panY}
-          focusTypeValue={focusTypeValue}
-          keyboardVisibleValue={keyboardVisibleValue}
-          keyboardHeightValue={keyboardHeightValue}
           offsetY={offsetY}
           keyboardHeight={keyboardHeight}
           focusType={focusType}
@@ -392,21 +381,16 @@ export const EditableNodeList = ({
       keyboardHeight,
       topInsetValue,
       onBlurNode,
-      focusedBlockValue,
       containerRef,
       handleSetBlockInputRef,
       handlePan,
       waitFor,
-      animatedKeyboardVisibleValue,
       velocityX,
       velocityY,
       onTransform,
       onFocus,
       panX,
       panY,
-      focusTypeValue,
-      keyboardVisibleValue,
-      keyboardHeightValue,
       focusType,
       focusedBlockId,
       onTapNode,
@@ -415,7 +399,11 @@ export const EditableNodeList = ({
     ]
   );
 
-  return Object.values(inlineNodes).map(renderNode);
+  const inlineNodesList = React.useMemo(() => {
+    return [...inlineNodes.values()];
+  }, [inlineNodes]);
+
+  return inlineNodesList.map(renderNode);
 };
 
 export const CENTER_PREVIEW = true;
@@ -446,7 +434,6 @@ export const PostPreview = React.forwardRef(
       onAction,
       contentTranslate,
       focusType,
-      focusedBlockValue,
       onBlurNode,
       offsetY,
       scrollY,
@@ -621,10 +608,6 @@ export const PostPreview = React.forwardRef(
             <View pointerEvents="box-none" style={styles.content}>
               <BlockList
                 setBlockInputRef={setBlockInputRef}
-                blocks={blocks}
-                positions={positions}
-                layout={postLayout}
-                key={positionsKey}
                 onFocus={onFocus}
                 onAction={onAction}
                 focusTypeValue={focusTypeValue}
@@ -636,7 +619,6 @@ export const PostPreview = React.forwardRef(
                 scrollRef={scrollRef}
                 onLayout={onLayoutBlock}
                 focusedBlockId={focusedBlockId}
-                focusedBlockValue={focusedBlockValue}
                 onBlur={onBlur}
                 setBlockAtIndex={setBlockAtIndex}
               />

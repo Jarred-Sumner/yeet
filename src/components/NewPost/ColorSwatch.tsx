@@ -134,7 +134,7 @@ export const SelectableColorSwatch = ({
     // if (handlerState === State.END) {
     onPress(backgroundColor);
     // }
-  }, [backgroundColor, color]);
+  }, [backgroundColor, color, selected, onPress]);
 
   return (
     <BaseButton style={{ overflow: "visible" }} onPress={handlePress}>

@@ -97,7 +97,7 @@ export enum IconName {
   skip = "skip",
   triangle = "triangle",
   trophy = "trophy",
-  undo = "undo",
+  undo = "replyalt",
   uploadPhoto = "upload-photo",
   view = "view",
   cancer = "cancer",

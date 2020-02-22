@@ -4,6 +4,7 @@ import { ImagePostBlock } from "../ImagePostBlock";
 import { PostBlock } from "../NewPostFormat";
 import { TextInput } from "react-native-gesture-handler";
 import { PostLayoutContext } from "../PostLayoutContext";
+import { PostSchemaContext } from "../PostSchemaProvider";
 
 class BlockContainer extends React.Component {
   shouldComponentUpdate(nextProps, nextState, nextContext) {
@@ -106,7 +107,8 @@ class BlockContainer extends React.Component {
       paused,
       scrollRef,
       usePreview,
-      waitFor
+      waitFor,
+      updateSchema
     } = this.props;
 
     if (block.type === "text") {
@@ -123,6 +125,7 @@ class BlockContainer extends React.Component {
           containerRef={containerRef}
           columnCount={columnCount}
           block={block}
+          updateSchema={updateSchema}
           onTap={onTap}
           waitFor={waitFor}
           isFocused={isFocused}
@@ -134,7 +137,6 @@ class BlockContainer extends React.Component {
           usePreview={usePreview}
           focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
-          onChange={onChange}
           paddingTop={paddingTop}
           onBlur={onBlur}
           onFocus={onFocus}
@@ -154,6 +156,7 @@ class BlockContainer extends React.Component {
           onChangePhoto={onChangePhoto}
           focusType={focusType}
           onAction={onAction}
+          updateSchema={updateSchema}
           gestureRef={gestureRef}
           paused={paused}
           muted={muted}
@@ -164,7 +167,6 @@ class BlockContainer extends React.Component {
           scrollRef={scrollRef}
           block={block}
           onBlur={onBlur}
-          onChange={onChange}
         ></ImagePostBlock>
       );
     } else {
@@ -211,6 +213,8 @@ export const Block = React.forwardRef(
     ref
   ) => {
     const { columnCount } = React.useContext(PostLayoutContext);
+    const { updateSchema } = React.useContext(PostSchemaContext);
+
     return (
       <BlockContainer
         columnCount={columnCount}
@@ -223,6 +227,7 @@ export const Block = React.forwardRef(
         onOpenImagePicker={onOpenImagePicker}
         maxX={maxX}
         inputRef={inputRef}
+        updateSchema={updateSchema}
         focusType={focusType}
         paddingTop={paddingTop}
         focusTypeValue={focusTypeValue}

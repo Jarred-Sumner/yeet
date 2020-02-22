@@ -39,6 +39,11 @@ import { sendSelectionFeedback } from "../../lib/Vibration";
 import { snapButtonValue } from "../../lib/animations";
 import FormatPicker from "./FormatPicker";
 import { BorderlessButton } from "react-native-gesture-handler";
+import { PostSchemaContext } from "./PostSchemaProvider";
+import {
+  updateBorderType,
+  updateBlockColor
+} from "../../lib/PostEditor/TextPostBlock/textActions";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 120;
 
@@ -210,15 +215,16 @@ const NextButton = ({ onPress, waitFor }) => {
 
 export const BorderTypeButton = ({
   block,
-  opacity,
-  onChange
+  opacity
 }: {
   block: TextPostBlock;
-  onChange;
 }) => {
+  const { updateSchema } = React.useContext(PostSchemaContext);
   if (block?.type === "image") {
     return null;
   }
+
+  const blockId = block?.id;
 
   const { template = TextTemplate.basic } = block?.config ?? {};
   const border = block ? getBorderType(block) : TextBorderType.hidden;
@@ -263,24 +269,29 @@ export const BorderTypeButton = ({
     const shouldFlipColors = template === TextTemplate.comic;
 
     if (shouldFlipColors) {
-      onChange(border, {
-        color: backgroundColor,
-        backgroundColor: color
+      updateSchema(schema => {
+        updateBlockColor(schema, {
+          color: backgroundColor,
+          blockId,
+          backgroundColor: color
+        });
       });
     } else {
       let currentIndex = supportedTypes.indexOf(border);
       const nextType = supportedTypes[currentIndex + 1] ?? supportedTypes[0];
 
-      onChange(nextType);
+      updateSchema(schema => {
+        updateBorderType(schema, { blockId, borderType: nextType });
+      });
     }
   }, [
     backgroundColor,
     color,
     supportedTypes,
-    block,
     template,
     border,
-    onChange
+    updateSchema,
+    blockId
   ]);
 
   let size = iconSize;

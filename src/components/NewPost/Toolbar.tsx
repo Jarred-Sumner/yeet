@@ -5,7 +5,13 @@ import {
   BorderlessButton
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
-import { IconAddText, IconCameraRoll, IconSearch, IconShuffle } from "../Icon";
+import {
+  IconAddText,
+  IconCameraRoll,
+  IconSearch,
+  IconShuffle,
+  IconUndo
+} from "../Icon";
 
 export enum ToolbarType {
   default = "default",
@@ -33,6 +39,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     position: "relative",
     justifyContent: "center",
+    alignItems: "center",
     height: 44,
     width: 48,
     overflow: "visible"
@@ -87,6 +94,18 @@ const SearchToolbarbutton = ({ isActive, onPress }) => {
   );
 };
 
+const UndoToolbarButton = ({ isActive, onPress }) => {
+  return (
+    <ToolbarButton
+      icon={<IconUndo size={20} color="white" />}
+      size={30}
+      isActive={isActive}
+      color="white"
+      onPress={onPress}
+    />
+  );
+};
+
 const ExampleToolbarButton = ({ onPress }) => (
   <ToolbarButton
     icon={<IconShuffle size={20} color="white" />}
@@ -99,6 +118,7 @@ const ExampleToolbarButton = ({ onPress }) => (
 
 export enum ToolbarButtonType {
   search = "sticker",
+  undo = "undo",
   text = "text",
   gif = "gif",
   redact = "redact",
@@ -141,6 +161,11 @@ export const DefaultToolbar = React.memo(
       [onPress]
     );
 
+    const onPressUndo = React.useCallback(
+      () => onPress(ToolbarButtonType.undo),
+      [onPress]
+    );
+
     const onPressGif = React.useCallback(() => onPress(ToolbarButtonType.gif), [
       onPress
     ]);
@@ -160,6 +185,13 @@ export const DefaultToolbar = React.memo(
         <SearchToolbarbutton
           isActive={activeButton === ToolbarButtonType.search}
           onPress={onPressSearch}
+        />
+
+        <View style={styles.spacer} />
+
+        <UndoToolbarButton
+          isActive={activeButton === ToolbarButtonType.undo}
+          onPress={onPressUndo}
         />
         {hasExamples && (
           <>
