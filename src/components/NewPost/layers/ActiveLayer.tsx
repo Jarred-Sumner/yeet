@@ -1,7 +1,8 @@
 import * as React from "react";
 import { StyleSheet, View } from "react-native";
 import Animated from "react-native-reanimated";
-import { DeleteFooter, EditorFooter, EditorHeader } from "../EditorFooter";
+import { EditorFooter, EditorHeader } from "../EditorFooter";
+import { DeleteFooter } from "../DeleteFooter";
 import DefaultToolbar, { ToolbarType } from "../Toolbar";
 
 const styles = StyleSheet.create({
@@ -132,31 +133,27 @@ const Footer = ({
 }) => {
   if (type === ToolbarType.default || type === ToolbarType.text) {
     return (
-      <EditorFooter
-        onPressDownload={onPressDownload}
-        waitFor={waitFor}
-        panX={panX}
-        panY={panY}
-        toolbar={toolbar}
-        hasExamples={hasExamples}
-        layout={layout}
-        onChangeLayout={onChangeLayout}
-        exampleIndex={exampleIndex}
-        exampleCount={exampleCount}
-        onPressExample={onPressExample}
-        onPressSend={onSend}
-      />
+      <>
+        {type !== ToolbarType.panning && (
+          <EditorFooter
+            onPressDownload={onPressDownload}
+            waitFor={waitFor}
+            panX={panX}
+            panY={panY}
+            toolbar={toolbar}
+            hasExamples={hasExamples}
+            layout={layout}
+            onChangeLayout={onChangeLayout}
+            exampleIndex={exampleIndex}
+            exampleCount={exampleCount}
+            onPressExample={onPressExample}
+            onPressSend={onSend}
+          />
+        )}
+      </>
     );
   } else if (type === ToolbarType.panning) {
-    return (
-      <DeleteFooter
-        panX={panX}
-        currentScale={currentScale}
-        panY={panY}
-        onDelete={onDelete}
-        waitFor={waitFor}
-      />
-    );
+    return <DeleteFooter opacity={1} />;
   } else {
     return <Animated.View />;
   }

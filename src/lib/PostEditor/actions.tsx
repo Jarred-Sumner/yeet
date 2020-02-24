@@ -10,15 +10,18 @@ import {
   TextTemplate
 } from "../enums";
 import { BoundsRect } from "../Rect";
-import { PostSchemaValue } from "./EVENT_TYPES";
+import { PostSchemaValue, PostSchema } from "./EVENT_TYPES";
 import { isArray, isEmpty } from "lodash";
-import produce from "immer";
 import { IS_DEVELOPMENT } from "../../../config";
 
-let actionLog = (action, args) =>
-  IS_DEVELOPMENT ? log(`ACTION: [${action}]\n`, args, "\n---") : null;
-
-export const _actionWrapper;
+export const action = (
+  type: PostSchema.Action,
+  callback: (schema: PostSchemaValue, ...args) => void
+) => {
+  return args => {
+    return [type, schema => callback(schema, args)];
+  };
+};
 
 export const selectBlock = (schema: PostSchemaValue, id: string) => {
   if (schema.inlineNodes.has(id)) {

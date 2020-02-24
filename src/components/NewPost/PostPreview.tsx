@@ -21,6 +21,11 @@ import {
 } from "./SnapContainerView";
 import { currentlyFocusedField } from "./Text/TextInputState";
 import { PostSchemaProvider, PostSchemaContext } from "./PostSchemaProvider";
+import {
+  MID_X_DELETE_BUTTON,
+  MID_Y_DELETE_BUTTON,
+  DELETE_SIZE
+} from "./DeleteFooter";
 
 // export const ScrollView = KeyboardAwareScrollView;
 
@@ -599,6 +604,7 @@ export const PostPreview = React.forwardRef(
           onSnap={onSnap}
           snapPoints={snapPoints}
           onLayout={onLayout}
+          deleteSize={DELETE_SIZE}
           // onMoveShouldSetResponder={_true}
           // onStartShouldSetResponder={_true}
 

@@ -20,6 +20,8 @@ extension UIView {
     }
   }
 
+  
+
    public func snapshot(scale: CGFloat = 0, isOpaque: Bool = false, afterScreenUpdates: Bool = true) -> UIImage? {
       UIGraphicsBeginImageContextWithOptions(bounds.size, isOpaque, scale)
       drawHierarchy(in: bounds, afterScreenUpdates: afterScreenUpdates)

@@ -5,6 +5,7 @@ import {
   BorderlessButton
 } from "react-native-gesture-handler";
 import Animated from "react-native-reanimated";
+import { COLORS } from "../../lib/styles";
 import {
   IconAddText,
   IconCameraRoll,
@@ -12,6 +13,7 @@ import {
   IconShuffle,
   IconUndo
 } from "../Icon";
+import { PostSchemaContext } from "./PostSchemaProvider";
 
 export enum ToolbarType {
   default = "default",
@@ -52,8 +54,18 @@ const styles = StyleSheet.create({
   }
 });
 
-export const ToolbarButton = ({ icon, size, onPress, color, isActive }) => (
-  <BorderlessButton style={styles.touchable} onPress={onPress}>
+export const ToolbarButton = ({
+  icon,
+  size,
+  disabled = false,
+  onPress,
+  color
+}) => (
+  <BorderlessButton
+    enabled={!disabled}
+    style={styles.touchable}
+    onPress={onPress}
+  >
     <View style={styles.buttonContainer}>{icon}</View>
   </BorderlessButton>
 );
@@ -94,13 +106,15 @@ const SearchToolbarbutton = ({ isActive, onPress }) => {
   );
 };
 
-const UndoToolbarButton = ({ isActive, onPress }) => {
+const UndoToolbarButton = ({ onPress, disabled }) => {
   return (
     <ToolbarButton
-      icon={<IconUndo size={20} color="white" />}
+      icon={
+        <IconUndo size={20} color={disabled ? COLORS.mutedLabel : "white"} />
+      }
       size={30}
-      isActive={isActive}
       color="white"
+      disabled={disabled}
       onPress={onPress}
     />
   );
@@ -131,6 +145,7 @@ export const DEFAULT_TOOLBAR_BUTTON_TYPE = "text";
 
 export const DefaultToolbar = React.memo(
   ({ activeButton, onPress, children, hasExamples, onPressExample }) => {
+    const { canUndo, undo } = React.useContext(PostSchemaContext);
     const onPressText = React.useCallback(
       () => onPress(ToolbarButtonType.text),
       [onPress]
@@ -161,11 +176,6 @@ export const DefaultToolbar = React.memo(
       [onPress]
     );
 
-    const onPressUndo = React.useCallback(
-      () => onPress(ToolbarButtonType.undo),
-      [onPress]
-    );
-
     const onPressGif = React.useCallback(() => onPress(ToolbarButtonType.gif), [
       onPress
     ]);
@@ -189,10 +199,7 @@ export const DefaultToolbar = React.memo(
 
         <View style={styles.spacer} />
 
-        <UndoToolbarButton
-          isActive={activeButton === ToolbarButtonType.undo}
-          onPress={onPressUndo}
-        />
+        <UndoToolbarButton onPress={undo} disabled={!canUndo} />
         {hasExamples && (
           <>
             <View style={styles.spacer} />

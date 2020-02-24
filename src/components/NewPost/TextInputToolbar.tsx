@@ -34,11 +34,7 @@ import { BorderTypeButton, TextAlignmentButton } from "./EditorFooter";
 import { PostFormat, TextPostBlock, TextTemplate } from "./NewPostFormat";
 import { getTextBlockColor } from "./Text/TextBlockUtils";
 import { PostSchemaContext } from "./PostSchemaProvider";
-import {
-  updateTemplate,
-  updateBlockColor,
-  updateTextAlign
-} from "../../lib/PostEditor/TextPostBlock/textActions";
+import Actions from "../../lib/PostEditor/AllActions";
 import { selectTextBlock } from "../../lib/PostEditor/actions";
 
 const CONTAINER_HEIGHT = 40;
@@ -239,12 +235,10 @@ const RawTextInputToolbar = ({
       if (!blockId) {
         return;
       }
-      updateSchema(postSchema =>
-        updateTemplate(postSchema, { template, blockId })
-      );
+      updateSchema(Actions.updateTemplate({ template, blockId }));
     },
 
-    [blockId, updateSchema, updateTemplate]
+    [blockId, updateSchema, Actions.updateTemplate]
   );
 
   const renderTemplate = React.useCallback(
@@ -290,8 +284,8 @@ const RawTextInputToolbar = ({
       }
 
       sendSelectionFeedback();
-      updateSchema(schema =>
-        updateBlockColor(schema, { color, backgroundColor, blockId })
+      updateSchema(
+        Actions.updateBlockColor({ color, backgroundColor, blockId })
       );
     },
     [
@@ -302,7 +296,7 @@ const RawTextInputToolbar = ({
       blockId,
       isColorDark,
       getLightColor,
-      updateBlockColor,
+      Actions.updateBlockColor,
       isColorNeutral,
       getNeutralColor
     ]
@@ -316,9 +310,9 @@ const RawTextInputToolbar = ({
 
       sendSelectionFeedback();
 
-      updateSchema(schema => updateTextAlign(schema, { textAlign, blockId }));
+      updateSchema(Actions.updateTextAlign({ textAlign, blockId }));
     },
-    [updateSchema, blockId, updateTextAlign, sendSelectionFeedback]
+    [updateSchema, blockId, Actions.updateTextAlign, sendSelectionFeedback]
   );
 
   const color = block ? getTextBlockColor(block) : "rgb(255, 255, 255)";

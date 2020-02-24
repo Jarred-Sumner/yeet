@@ -4,6 +4,8 @@ import { PostFormat } from "../../lib/enums";
 import { TextPostBlock as TextPostBlockType } from "./NewPostFormat";
 import { TextInput } from "./Text/TextInput";
 import { onChangeBlockText } from "../../lib/PostEditor/actions";
+import Actions from "../../lib/PostEditor/AllActions";
+import ReactNative from "react-native/Libraries/Renderer/shims/ReactNative";
 
 type Props = {
   block: TextPostBlockType;
@@ -51,9 +53,7 @@ export class TextPostBlock extends React.Component<Props> {
   };
 
   updateText = (text: string, blockId: string) => {
-    this.props.updateSchema(draft =>
-      onChangeBlockText(draft, { blockId, text })
-    );
+    this.props.updateSchema(Actions.onChangeBlockText({ blockId, text }));
   };
 
   get input() {
@@ -81,6 +81,16 @@ export class TextPostBlock extends React.Component<Props> {
 
     if (this.containerRef.current) {
       this.containerTag = findNodeHandle(this.containerRef.current);
+    }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (
+      prevState.text === this.state.text &&
+      prevProps.block.value !== this.props.block.value
+    ) {
+      this.setState({ text: this.props.block.value });
+      this.setNativeProps({ text: this.props.block.value });
     }
   }
 
@@ -120,6 +130,7 @@ export class TextPostBlock extends React.Component<Props> {
 
     return (
       block !== nextProps.block ||
+      block.value !== nextProps.block.value ||
       inputRef !== nextProps.inputRef ||
       disabled !== nextProps.disabled ||
       maxX !== nextProps.maxX ||

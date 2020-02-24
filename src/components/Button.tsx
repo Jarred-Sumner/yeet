@@ -113,130 +113,146 @@ const buttonStyles = StyleSheet.create({
   }
 });
 
-export const IconButton = ({
-  onPress,
-  Icon,
-  type = "plain",
-  backgroundColor,
-  borderColor,
-  borderWidth = 1,
-  style,
-  iconStyle,
-  color = "white",
-  hitSlop = { left: 20, right: 20, top: 20, bottom: 20 },
-  waitFor,
-  enabled = true,
-  isLoading = false,
-  containerSize: _containerSize,
-  borderRadius,
-  rectangle = false,
-  opacity = 1,
-  transform,
-  size = 24,
-  iconNode,
-  impact = null
-}) => {
-  const handlePress = React.useCallback(
-    evt => {
-      const pressed = onPress && onPress(evt);
-      const impactFunction = {
-        light: sendLightFeedback,
-        success: sendSuccessNotification
-      }[impact];
-
-      if (impactFunction) {
-        if (typeof pressed === "object" && typeof pressed.then === "function") {
-          pressed.then(result => {
-            impactFunction();
-            return result;
-          });
-        } else {
-          impactFunction();
-        }
-      }
-    },
-    [onPress, sendLightFeedback, sendSuccessNotification, impact]
-  );
-  const containerStyles = [style, buttonStyles.container];
-  const iconStyles = [iconStyle, buttonStyles.icon];
-
-  const iconWrapperStyles = [
+export const IconButton = React.forwardRef(
+  (
     {
-      justifyContent: "center",
-      alignSelf: "center",
-      alignItems: "center",
-      flex: 1
+      onPress,
+      Icon,
+      type = "plain",
+      backgroundColor,
+      borderColor,
+      borderWidth = 1,
+      style,
+      iconStyle,
+      nativeID,
+      color = "white",
+      hitSlop = { left: 20, right: 20, top: 20, bottom: 20 },
+      waitFor,
+      enabled = true,
+      isLoading = false,
+      containerSize: _containerSize,
+      borderRadius,
+      rectangle = false,
+      opacity = 1,
+      transform,
+      size = 24,
+      iconNode,
+      impact = null
+    },
+    ref
+  ) => {
+    const handlePress = React.useCallback(
+      evt => {
+        const pressed = onPress && onPress(evt);
+        const impactFunction = {
+          light: sendLightFeedback,
+          success: sendSuccessNotification
+        }[impact];
+
+        if (impactFunction) {
+          if (
+            typeof pressed === "object" &&
+            typeof pressed.then === "function"
+          ) {
+            pressed.then(result => {
+              impactFunction();
+              return result;
+            });
+          } else {
+            impactFunction();
+          }
+        }
+      },
+      [onPress, sendLightFeedback, sendSuccessNotification, impact]
+    );
+    const containerStyles = [style, buttonStyles.container];
+    const iconStyles = [iconStyle, buttonStyles.icon];
+
+    const iconWrapperStyles = [
+      {
+        justifyContent: "center",
+        alignSelf: "center",
+        alignItems: "center",
+        flex: 1
+      }
+    ];
+
+    if (color) {
+      iconStyles.push({ color });
     }
-  ];
 
-  if (color) {
-    iconStyles.push({ color });
-  }
+    if (transform) {
+      containerStyles.push({ transform });
+    }
 
-  if (transform) {
-    containerStyles.push({ transform });
-  }
+    const containerSize = _containerSize || size * 2.5;
 
-  const containerSize = _containerSize || size * 2.5;
+    if (type === "fill") {
+      containerStyles.push(buttonStyles.fill);
+      containerStyles.push({
+        position: "relative",
+        overflow: "visible",
+        width: containerSize,
+        height: containerSize,
+        borderRadius: borderRadius ?? containerSize / 2
+      });
 
-  if (type === "fill") {
-    containerStyles.push(buttonStyles.fill);
-    containerStyles.push({
-      position: "relative",
-      overflow: "visible",
-      width: containerSize,
-      height: containerSize,
-      borderRadius: borderRadius ?? containerSize / 2
-    });
+      iconWrapperStyles.push(StyleSheet.absoluteFill);
 
-    iconWrapperStyles.push(StyleSheet.absoluteFill);
+      return (
+        <BorderlessButton
+          waitFor={waitFor}
+          enabled={enabled && !isLoading}
+          disallowInterruption
+          hitSlop={hitSlop}
+          ref={ref}
+          onPress={handlePress}
+        >
+          <Animated.View nativeID={nativeID} style={containerStyles}>
+            <Animated.View
+              style={{
+                backgroundColor,
+                width: containerSize,
+                height: containerSize,
+                borderRadius: borderRadius ?? containerSize / 2,
+                borderColor,
+                borderWidth: borderColor ? borderWidth : undefined,
+                opacity
+              }}
+            />
+            <Animated.View style={iconWrapperStyles}>
+              {iconNode || <Icon style={iconStyles} size={size} />}
+            </Animated.View>
+          </Animated.View>
+        </BorderlessButton>
+      );
+    } else if (type === "shadow") {
+      iconStyles.push(buttonStyles.iconShadow);
 
-    return (
-      <BorderlessButton
-        waitFor={waitFor}
-        enabled={enabled && !isLoading}
-        disallowInterruption
-        hitSlop={hitSlop}
-        onPress={handlePress}
-      >
-        <Animated.View style={containerStyles}>
+      return (
+        <BorderlessButton
+          waitFor={waitFor}
+          enabled={enabled && !isLoading}
+          disallowInterruption
+          ref={ref}
+          style={{ overflow: "visible" }}
+          hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
+          onPress={handlePress}
+        >
           <Animated.View
-            style={{
-              backgroundColor,
-              width: containerSize,
-              height: containerSize,
-              borderRadius: borderRadius ?? containerSize / 2,
-              borderColor,
-              borderWidth: borderColor ? borderWidth : undefined,
-              opacity
-            }}
-          />
-          <Animated.View style={iconWrapperStyles}>
+            nativeID={nativeID}
+            key={`isLoading-${isLoading}`}
+            style={containerStyles}
+          >
             {iconNode || <Icon style={iconStyles} size={size} />}
           </Animated.View>
-        </Animated.View>
-      </BorderlessButton>
-    );
-  } else if (type === "shadow") {
-    iconStyles.push(buttonStyles.iconShadow);
-
-    return (
-      <BorderlessButton
-        waitFor={waitFor}
-        enabled={enabled && !isLoading}
-        disallowInterruption
-        hitSlop={{ left: 20, right: 20, top: 20, bottom: 20 }}
-        onPress={handlePress}
-      >
-        <Animated.View key={`isLoading-${isLoading}`} style={containerStyles}>
-          {iconNode || <Icon style={iconStyles} size={size} />}
-        </Animated.View>
-      </BorderlessButton>
-    );
-  } else {
-    return null;
+        </BorderlessButton>
+      );
+    } else {
+      return null;
+    }
   }
-};
+);
 
 export enum BackButtonBehavior {
   none = "none",

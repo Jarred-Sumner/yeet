@@ -99,6 +99,13 @@ class MovableView: UIView, RCTUIManagerObserver, UIGestureRecognizerDelegate {
 
   var animator: UIViewPropertyAnimator? = nil {
     willSet (newValue) {
+
+      if self.animator != nil && self.animator != newValue {
+        if self.animator?.state != .inactive {
+          self.animator?.stopAnimation(true)
+        }
+      }
+
       newValue?.isInterruptible = true
     }
     didSet {

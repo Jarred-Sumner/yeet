@@ -25,7 +25,16 @@ export namespace PostSchema {
 
     editTextBlockOverrides = "editTextBlockOverrides",
     editTextBlockValue = "editTextBlockValue",
-    editTextBlockBorderType = "editTextBlockBorderType"
+    editTextBlockBorderType = "editTextBlockBorderType",
+
+    deletePosition = "deletePosition",
+    updateNodeTransform = "updateNodeTransform",
+    handleStopMovingNode = "handleStopMovingNode",
+    onChangeBlockText = "onChangeBlockText",
+    updateTextAlign = "updateTextAlign",
+    updateBlockColor = "updateBlockColor",
+    updateTemplate = "updateTemplate",
+    updateBorderType = "updateBorderType"
   }
 }
 

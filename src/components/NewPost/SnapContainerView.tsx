@@ -13,6 +13,7 @@ import { ContentContainerContext } from "./ContentContainerContext";
 import { BoundsRect } from "../../lib/Rect";
 import { createNativeWrapper } from "react-native-gesture-handler";
 import { SnapPoint } from "../../lib/enums";
+import { DeleteButtonContext } from "./DeleteFooter";
 
 export type MovableViewPositionChange = {
   transform: {
@@ -124,6 +125,21 @@ class SnapContainerComponent extends React.Component {
     this.unsubscribeFromEvents();
   }
 
+  _containerRef = React.createRef();
+
+  containerRef = ref => {
+    this._containerRef.current = ref;
+    this.props.containerRef(ref);
+  };
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevProps.deleteTag !== this.props.deleteTag) {
+      this._containerRef.current.setNativeProps({
+        deleteTag: this.props.deleteTag
+      });
+    }
+  }
+
   render() {
     const {
       snapPoints,
@@ -131,6 +147,8 @@ class SnapContainerComponent extends React.Component {
       style,
       containerRef,
       children,
+      deleteTag,
+      deleteSize,
       onLayout,
       NativeComponent = NativeSnapContainerView
     } = this.props;
@@ -139,8 +157,9 @@ class SnapContainerComponent extends React.Component {
       <NativeComponent
         snapPoints={snapPoints}
         movableViewTags={movableViewTags}
+        deleteSize={deleteSize}
         style={style}
-        ref={containerRef}
+        ref={this.containerRef}
         onLayout={onLayout}
       >
         {children}
@@ -151,6 +170,7 @@ class SnapContainerComponent extends React.Component {
 
 export const SnapContainerView = React.forwardRef((_props, ref) => {
   const { movableViewTags } = React.useContext(ContentContainerContext);
+  const { deleteTag } = React.useContext(DeleteButtonContext);
   const { snapPoints: _snapPoints, ...props } = _props as {
     snapPoints: Array<SnapPoint>;
   };
@@ -162,6 +182,7 @@ export const SnapContainerView = React.forwardRef((_props, ref) => {
     <SnapContainerComponent
       {...props}
       snapPoints={snapPoints}
+      deleteTag={deleteTag}
       movableViewTags={movableViewTags}
       NativeComponent={NativeSnapContainerView}
       containerRef={ref}

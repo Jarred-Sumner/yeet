@@ -30,11 +30,14 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
     }
     deinit {
         self.cleanGesture()
+      cleanupAnimator(animator: viewAnimator)
     }
 
     // MARK: - private method
     weak var weakGestureView: UIView?
     weak var weakTransformView: UIView?
+
+
 
     private var panGesture: UIPanGestureRecognizer?
     private var pinchGesture: UIPinchGestureRecognizer?
@@ -45,6 +48,7 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
     var onGestureStart: ((_ location: CGPoint) -> Void)? = nil
     var onGestureStop: ((_ location: CGPoint) -> Void)? = nil
     var onPressBackground : ((_ location: CGPoint) -> Void)? = nil
+
 
     var hasSentPressInBackground = false
   @objc func handleActivationGesture(_ gesture: UILongPressGestureRecognizer) {
@@ -194,13 +198,66 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
         }
     }
 
-    open var isGestureEnabled = true
+  open var isGestureEnabled = true {
+    didSet (newValue) {
+      snapState = .none
+
+    }
+  }
+
+
+  func cleanupAnimator(animator: UIViewPropertyAnimator) {
+    if animator.state != .inactive {
+      animator.stopAnimation(true)
+      animator.finishAnimation(at: .current)
+    }
+  }
+
+
   open var maxScale = CGFloat(3.0)
   open var minScale = CGFloat(0.5)
 
+  var deleteButtonFrame = CGRect.zero
+  func shouldHighlightDeleteButton(_ gesture: UIPanGestureRecognizer) -> Bool {
+    guard isGestureEnabled else {
+      return false
+    }
 
 
+    return deleteButtonFrame.contains(gesture.location(in: gesture.view!.window))
+  }
 
+
+  enum SnapState {
+    case none
+    case deleting
+    case undeleting
+    case snapping
+  }
+
+  var snapState = SnapState.none
+
+  var deleteView: UIView? = nil {
+    didSet {
+      if let deleter = self.deleteView {
+        deleter.transform = .identity
+        deleter.alpha = 1.0
+      }
+    }
+  }
+
+  func createAnimator() -> UIViewPropertyAnimator {
+    let animator = UIViewPropertyAnimator(duration: 0.25, curve: UIView.AnimationCurve.easeInOut, animations: nil)
+
+    animator.isUserInteractionEnabled = false
+    animator.isInterruptible = true
+    animator.isManualHitTestingEnabled = false
+    animator.pausesOnCompletion = false
+
+    return animator
+  }
+
+  lazy var viewAnimator: UIViewPropertyAnimator = self.createAnimator()
 
     // MARK: - gesture handle
 
@@ -212,6 +269,48 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
 
    private var lastPinchPoint:CGPoint = CGPoint(x: 0, y: 0)
   var panStartPoint = CGPoint.zero
+
+  func updateDeleteAnimation(_ view: UIView, _ shouldDelete: Bool, _ transform: CGAffineTransform) {
+    guard let deleteView = self.deleteView else {
+      return
+    }
+
+
+
+    let reverse = !shouldDelete
+
+    snapState = shouldDelete ? .deleting : .none
+
+    if viewAnimator.state == .active {
+      viewAnimator.stopAnimation(true)
+      viewAnimator.finishAnimation(at: .current)
+    }
+
+    if reverse {
+
+      let lastPanPoint = self.lastPanPoint
+      let lastScale = self.lastScale
+      viewAnimator.addAnimations { [unowned deleteView, unowned view] in
+        view.transform = CGAffineTransform.init(translationX: lastPanPoint.x, y: lastPanPoint.y).rotated(by: transform.rotationRadians()).scaledBy(x: lastScale, y: lastScale)
+        view.alpha = 1.0
+        deleteView.transform = .identity
+       }
+    } else {
+      viewAnimator.addAnimations { [unowned deleteView, unowned view] in
+        view.transform = CGAffineTransform.init(translationX: transform.translation().x, y: transform.translation().y).rotated(by: transform.rotationRadians()).scaledBy(x: 0.65, y: 0.65)
+        view.alpha = 0.65
+        deleteView.transform = CGAffineTransform.init(scaleX: 1.35, y: 1.35)
+      }
+
+    }
+
+
+    if viewAnimator.state == .inactive {
+      viewAnimator.startAnimation()
+    } else if viewAnimator.state == .some(.stopped) {
+      viewAnimator.continueAnimation(withTimingParameters: UICubicTimingParameters(animationCurve: UIView.AnimationCurve.easeInOut), durationFactor: CGFloat(0))
+    }
+  }
 
     @objc func handleGesture(_ gesture: UIGestureRecognizer) {
       guard let gestureView = self.weakGestureView as? YeetScrollView else {
@@ -233,8 +332,6 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
         return
       }
 
-
-
       if isPan && panGesture?.numberOfTouches ?? 0 > 1 {
         panGesture?.setTranslation(.zero, in: view)
         panGesture!.setTranslation(.zero, in: gestureView)
@@ -248,19 +345,38 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
         if isPan {
           let panner = panGesture!
           let point = panner.translation(in: view)
+
           transform = transform.translatedBy(x: point.x, y: point.y)
           panner.setTranslation(.zero, in: view)
-          lastPanPoint = point
-        } else if isPinch {
-          let pincher = pinchGesture!
-//          let scale = 1.0 - (lastScale - pincher.scale);
-          let newScale = pincher.scale * transform.scaleX
-          let scaledBounds = view.bounds.applying(CGAffineTransform.init(scaleX: newScale, y: newScale))
 
-          if (newScale < maxScale && newScale > minScale) && scaledBounds.height > 14 {
-            transform = transform.scaledBy(x: pincher.scale, y: pincher.scale)
+
+          if snapState == .none {
+            lastPanPoint = transform.translation()
           }
-          lastScale = pincher.scale
+
+          let shouldDelete = shouldHighlightDeleteButton(panGesture!)
+          if (!shouldDelete && snapState == .deleting) || (shouldDelete && snapState == .none) {
+            updateDeleteAnimation(view, shouldDelete, transform)
+            return
+          }
+
+        } else if isPinch  {
+          let pincher = pinchGesture!
+
+          if snapState == .none {
+  //          let scale = 1.0 - (lastScale - pincher.scale);
+            let newScale = pincher.scale * transform.scaleX
+            let scaledBounds = view.bounds.applying(CGAffineTransform.init(scaleX: newScale, y: newScale))
+
+            if (newScale < maxScale && newScale > minScale) && scaledBounds.height > 14 {
+              transform = transform.scaledBy(x: pincher.scale, y: pincher.scale)
+            }
+
+            if viewAnimator.state == .inactive {
+              lastScale = newScale
+            }
+
+          }
 
 
 //          let point = pincher.location(in: view)
@@ -268,13 +384,17 @@ class SnapGesture: NSObject, UIGestureRecognizerDelegate {
 //          lastPinchPoint = pincher.location(in: view)
 
           pincher.scale = 1.0
-        } else if isRotate {
+        } else if isRotate  {
           let rotater = rotationGesture!
-          transform = transform.rotated(by: rotater.rotation)
+
+          if snapState == .none {
+            transform = transform.rotated(by: rotater.rotation)
+          }
+
           rotater.rotation = 0
         }
 
-        if transform != originalTransform {
+      if transform != originalTransform  {
           view.reactTransform = transform
         }
 //      }

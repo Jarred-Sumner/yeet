@@ -177,9 +177,9 @@ RCT_EXPORT_VIEW_PROPERTY(onCancel, RCTBubblingEventBlock);
 
 RCT_EXPORT_VIEW_PROPERTY(movableViewTags, NSArray);
 RCT_EXPORT_VIEW_PROPERTY(snapPoints, NSArray);
-RCT_EXPORT_VIEW_PROPERTY(deleteX, CGFloat);
-RCT_EXPORT_VIEW_PROPERTY(deleteY, CGFloat);
+RCT_EXPORT_VIEW_PROPERTY(deleteSize, CGFloat);
 RCT_EXPORT_VIEW_PROPERTY(deleteTag, NSNumber);
+
 
 @end
 

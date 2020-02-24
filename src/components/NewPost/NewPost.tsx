@@ -38,6 +38,8 @@ import { HEADER_HEIGHT, PostEditor } from "./PostEditor";
 import TextPostBlock from "./TextPostBlock";
 import { doKeyboardAnimation } from "../../lib/animations";
 import { PostSchemaProvider } from "./PostSchemaProvider";
+import { EditorFocusProvider } from "./EditorFocusContext";
+import { DeleteButtonProvider } from "./DeleteFooter";
 
 enum NewPostStep {
   choosePhoto = "choosePhoto",
@@ -343,47 +345,49 @@ export class NewPost extends React.Component<{}, State> {
         backgroundColor={this.props.defaultBackgroundColor}
         format={this.props.defaultFormat}
       >
-        <View style={[styles.wrapper, { backgroundColor }]}>
-          <View
-            pointerEvents={this.state.showGallery ? "none" : "auto"}
-            style={styles.page}
-          >
-            <StatusBar hidden={false} showHideTransition="slide" />
+        <EditorFocusProvider>
+          <DeleteButtonProvider>
+            <View style={[styles.wrapper, { backgroundColor }]}>
+              <View
+                pointerEvents={this.state.showGallery ? "none" : "auto"}
+                style={styles.page}
+              >
+                <StatusBar hidden={false} showHideTransition="slide" />
 
-            <View style={[styles.transitionContainer, { backgroundColor }]}>
-              <MediaPlayerPauser isHidden={!this.props.isFocused}>
-                <PostEditor
-                  onBack={this.handleBack}
-                  exampleCount={this.state.exampleCount}
-                  exampleIndex={this.state.exampleIndex}
-                  offsetY={this.offsetY}
-                  onPressExample={this.handlePressExample}
-                  scrollY={this.scrollY}
-                  ref={this.postEditor}
-                  keyboardVisibleValue={this.keyboardVisibleValue}
-                  keyboardHeightValue={this.keyboardHeightValue}
-                  animatedKeyboardVisibleValue={
-                    this.animatedKeyboardVisibleValue
-                  }
-                  keyboardHeight={this.state.keyboardHeight ?? 0}
-                  headerOpacity={this.headerOpacity}
-                  navigation={this.props.navigation}
-                  onChange={this.handleChangePost}
-                  isReply={!this.props.threadId}
-                  onChangeFormat={this.handleChangeLayout}
-                  isFocused={this.props.isFocused}
-                  onOpenGallery={this.handleOpenGallery}
-                  simultaneousHandlers={[]}
-                  onChangeLayout={this.handleChangeLayout}
-                  paddingTop={paddingTop}
-                  onChangeNodes={this.handleChangeNodes}
-                  onBeforeExport={this.handleBeforeExport}
-                  onSubmit={this.handleSubmit}
-                />
-              </MediaPlayerPauser>
-            </View>
-          </View>
-          {/* <GallerySheet
+                <View style={[styles.transitionContainer, { backgroundColor }]}>
+                  <MediaPlayerPauser isHidden={!this.props.isFocused}>
+                    <PostEditor
+                      onBack={this.handleBack}
+                      exampleCount={this.state.exampleCount}
+                      exampleIndex={this.state.exampleIndex}
+                      offsetY={this.offsetY}
+                      onPressExample={this.handlePressExample}
+                      scrollY={this.scrollY}
+                      ref={this.postEditor}
+                      keyboardVisibleValue={this.keyboardVisibleValue}
+                      keyboardHeightValue={this.keyboardHeightValue}
+                      animatedKeyboardVisibleValue={
+                        this.animatedKeyboardVisibleValue
+                      }
+                      keyboardHeight={this.state.keyboardHeight ?? 0}
+                      headerOpacity={this.headerOpacity}
+                      navigation={this.props.navigation}
+                      onChange={this.handleChangePost}
+                      isReply={!this.props.threadId}
+                      onChangeFormat={this.handleChangeLayout}
+                      isFocused={this.props.isFocused}
+                      onOpenGallery={this.handleOpenGallery}
+                      simultaneousHandlers={[]}
+                      onChangeLayout={this.handleChangeLayout}
+                      paddingTop={paddingTop}
+                      onChangeNodes={this.handleChangeNodes}
+                      onBeforeExport={this.handleBeforeExport}
+                      onSubmit={this.handleSubmit}
+                    />
+                  </MediaPlayerPauser>
+                </View>
+              </View>
+              {/* <GallerySheet
           show={this.state.showGallery}
           blockId={this.state.galleryBlockId}
           onDismiss={this.dismissGallery}
@@ -397,7 +401,9 @@ export class NewPost extends React.Component<{}, State> {
           keyboardVisibleValue={this.keyboardVisibleValue}
           keyboardHeightValue={this.keyboardHeightValue}
         /> */}
-        </View>
+            </View>
+          </DeleteButtonProvider>
+        </EditorFocusProvider>
       </PostSchemaProvider>
     );
   }

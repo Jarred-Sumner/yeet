@@ -29,6 +29,11 @@ protocol SnapContainerViewDelegate : UIView {
 
   var snapPoints: [CGRect] = []
 
+
+  var reactRootTag: NSNumber? = nil
+
+
+
   var draggingViewTag: NSNumber? {
     willSet (newValue) {
       if (newValue != draggingViewTag) {
@@ -44,10 +49,12 @@ protocol SnapContainerViewDelegate : UIView {
         if let draggingView = self.draggingView {
           snapGesture.setTransformView(draggingView, gestgureView: gestureView)
           snapGesture.isGestureEnabled = true
-          DispatchQueue.main.async {
-            self.sendStartMoving(draggingView)
+
+          DispatchQueue.main.async { [weak self] in
+            self?.sendStartMoving(draggingView)
           }
         } else {
+          snapGesture.deleteButtonFrame = .zero
           snapGesture.isGestureEnabled = false
         }
       }
@@ -60,6 +67,8 @@ protocol SnapContainerViewDelegate : UIView {
     if changedProps.contains("snapPoints") {
       snapPoints = _snapPoints.map { RCTConvert.cgRect($0) }
     }
+
+
   }
   var draggingView: MovableView? {
     guard draggingViewTag != nil else {
@@ -108,9 +117,29 @@ protocol SnapContainerViewDelegate : UIView {
     fatalError("init(coder:) has not been implemented")
   }
 
-  @objc(deleteX) var deleteX: CGFloat = -1
-  @objc(deleteY) var deleteY: CGFloat = -1
-  @objc(deleteTag) var deleteTag: NSNumber? = nil
+  @objc(deleteSize) var deleteSize: CGFloat = 36
+  @objc(deleteTag) var deleteTag: NSNumber? = nil {
+    didSet {
+      if let deleteView = self.deleteView {
+        snapGesture?.deleteButtonFrame = deleteView.superview?.convert(deleteView.frame, to: window) ?? .zero
+        snapGesture?.deleteView = deleteView
+      } else {
+        snapGesture?.deleteView = nil
+      }
+    }
+  }
+
+  var deleteView : UIView? {
+    guard bridge?.isValid == true && bridge?.uiManager != nil else {
+      return nil
+    }
+
+    guard deleteTag != nil else {
+      return nil
+    }
+
+    return bridge?.uiManager?.view(forReactTag: deleteTag!)
+  }
 
   var movableViews : [MovableView] {
     let unsorted = movableViewTags.compactMap { self.bridge?.uiManager?.view(forReactTag: $0) as? MovableView }
@@ -245,7 +274,7 @@ protocol SnapContainerViewDelegate : UIView {
     if let snapGesture = self.snapGesture {
       if snapGesture.weakGestureView != gestureView {
          snapGesture.setTransformView(snapGesture.weakTransformView, gestgureView: gestureView)
-       }
+      }
     }
   }
 
@@ -291,10 +320,12 @@ protocol SnapContainerViewDelegate : UIView {
     }
   }
 
+
   @objc(isGestureEnabled)
   var isGestureEnabled = true {
     didSet (newValue) {
       snapGesture?.isGestureEnabled = newValue
+      
     }
   }
 

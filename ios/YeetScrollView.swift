@@ -268,14 +268,7 @@ import UIKit
       self?.updateContentInset()
     }
 
-    self.addSubview(subview)
-
-    NSLayoutConstraint.activate([
-       contentLayoutGuide.leadingAnchor.constraint(equalTo: subview.leadingAnchor),
-       contentLayoutGuide.widthAnchor.constraint(equalTo: subview.widthAnchor),
-       contentLayoutGuide.trailingAnchor.constraint(equalTo: subview.trailingAnchor),
-       contentLayoutGuide.heightAnchor.constraint(equalTo: subview.heightAnchor),
-     ])
+    
   }
 
   enum KeyboardStatus {
@@ -317,6 +310,17 @@ import UIKit
   }
 
   override func didUpdateReactSubviews() {
+    super.didUpdateReactSubviews()
+
+
+    if let subview = reactSubviews().first {
+      NSLayoutConstraint.activate([
+        contentLayoutGuide.leadingAnchor.constraint(equalTo: subview.leadingAnchor),
+        contentLayoutGuide.widthAnchor.constraint(equalTo: subview.widthAnchor),
+        contentLayoutGuide.trailingAnchor.constraint(equalTo: subview.trailingAnchor),
+        contentLayoutGuide.heightAnchor.constraint(equalTo: subview.heightAnchor),
+      ])
+    }
 
   }
 

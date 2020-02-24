@@ -14,7 +14,6 @@ class BlockContainer extends React.Component {
       blockRef,
       containerRef,
       disabled,
-      focusedBlockValue,
       focusType,
       gestureRef,
       inputAccessoryView,
@@ -52,7 +51,6 @@ class BlockContainer extends React.Component {
       columnCount !== nextProps.columnCount ||
       containerRef !== nextProps.containerRef ||
       disabled !== nextProps.disabled ||
-      focusedBlockValue !== nextProps.focusedBlockValue ||
       focusType !== nextProps.focusType ||
       gestureRef !== nextProps.gestureRef ||
       inputAccessoryView !== nextProps.inputAccessoryView ||
@@ -85,7 +83,6 @@ class BlockContainer extends React.Component {
       blockRef,
       containerRef,
       disabled,
-      focusedBlockValue,
       focusType,
       gestureRef,
       inputAccessoryView,
@@ -135,7 +132,6 @@ class BlockContainer extends React.Component {
           onFinishEditing={onFinishEditing}
           inputAccessoryView={inputAccessoryView}
           usePreview={usePreview}
-          focusedBlockValue={focusedBlockValue}
           scrollRef={scrollRef}
           paddingTop={paddingTop}
           onBlur={onBlur}
@@ -161,7 +157,6 @@ class BlockContainer extends React.Component {
           paused={paused}
           muted={muted}
           usePreview={usePreview}
-          focusedBlockValue={focusedBlockValue}
           onContentSizeChange={onContentSizeChange}
           isFocused={isFocused}
           scrollRef={scrollRef}
@@ -199,7 +194,6 @@ export const Block = React.forwardRef(
       onFinishEditing,
       isFocused,
       scale,
-      focusedBlockValue,
       onContentSizeChange,
       scrollRef,
       gestureRef,
@@ -241,7 +235,6 @@ export const Block = React.forwardRef(
         onFinishEditing={onFinishEditing}
         isFocused={isFocused}
         scale={scale}
-        focusedBlockValue={focusedBlockValue}
         onContentSizeChange={onContentSizeChange}
         scrollRef={scrollRef}
         gestureRef={gestureRef}

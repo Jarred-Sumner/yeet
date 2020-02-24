@@ -13,23 +13,16 @@ import Animated from "react-native-reanimated";
 import ReactNative from "react-native/Libraries/Renderer/shims/ReactNative";
 import { IS_SIMULATOR, SCREEN_DIMENSIONS } from "../../../config";
 import { doKeyboardAnimation } from "../../lib/animations";
-import { immerable } from "immer";
-
 import {
+  generateBlockId,
   getAllSnapPoints,
   getImageBlocks,
   getPositionsKey,
-  isEmptyTextBlock,
   isTextBlock,
-  NewPostType,
-  generateBlockId
+  NewPostType
 } from "../../lib/buildPost";
 import { SnapPoint } from "../../lib/enums";
-import {
-  getEstimatedBounds,
-  getEstimatedBoundsToContainer,
-  startExport
-} from "../../lib/Exporter";
+import { getEstimatedBounds, startExport } from "../../lib/Exporter";
 import { PostFragment } from "../../lib/graphql/PostFragment";
 import {
   imageContainerFromVideoEdit,
@@ -38,9 +31,8 @@ import {
   YeetImageContainer,
   YeetImageRect
 } from "../../lib/imageSearch";
+import Actions from "../../lib/PostEditor/AllActions";
 import { scaleRectByFactor } from "../../lib/Rect";
-import { createDraft, finishDraft } from "immer";
-
 import { SPACING } from "../../lib/styles";
 import { sendLightFeedback, sendSelectionFeedback } from "../../lib/Vibration";
 import { KeyboardAwareScrollView } from "../KeyboardAwareScrollView";
@@ -63,7 +55,6 @@ import {
   PostFormat,
   PostLayout,
   POST_WIDTH,
-  TextBorderType,
   TextPostBlock,
   TextTemplate
 } from "./NewPostFormat";
@@ -73,11 +64,7 @@ import {
   EditableNodeMap
 } from "./Node/BaseNode";
 import { SnapGuides } from "./Node/SnapGuides";
-import {
-  EditableNodeList,
-  PostPreview,
-  willContentScroll
-} from "./PostPreview";
+import { EditableNodeList, PostPreview } from "./PostPreview";
 import { PostSchemaContext } from "./PostSchemaProvider";
 import { MovableViewPositionChange } from "./SnapContainerView";
 import { SnapPreview } from "./SnapPreview";
@@ -89,14 +76,9 @@ import {
   ToolbarType
 } from "./Toolbar";
 import {
-  updateBlockFrame,
-  handleStopMovingNode,
-  insertTextNode,
-  deleteNode as deleteNodeAction,
-  deleteBlock as deleteBlockAction
-} from "../../lib/PostEditor/actions";
-
-const { block, cond, set, eq, sub } = Animated;
+  EditorFocusContext,
+  EditorFocusContextType
+} from "./EditorFocusContext";
 
 export const HEADER_HEIGHT = 30 + SPACING.normal;
 
@@ -166,7 +148,7 @@ const Layer = ({
   return children;
 };
 
-type Props = {
+type Props = EditorFocusContextType & {
   post: NewPostType;
   inlineNodes: EditableNodeMap;
 };
@@ -174,8 +156,6 @@ type Props = {
 type State = {
   activeButton: ToolbarButtonType;
   inlineNodes: EditableNodeMap;
-  focusedBlockId: string | null;
-  focusType: FocusType | null;
   showSnapGuide: boolean;
   snapPoints: Array<SnapPoint>;
   postTopY: number;
@@ -190,8 +170,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     super(props);
     this.state = {
       activeButton: DEFAULT_TOOLBAR_BUTTON_TYPE,
-      focusedBlockId: null,
-      focusType: null,
       postTopY: 0,
       snapPoints: [],
       postBottomY: 0,
@@ -285,11 +263,9 @@ class RawwPostEditor extends React.Component<Props, State> {
       this._blockInputRefs.delete(id);
     }
 
-    this.props.updateSchema(schema =>
-      deleteNodeAction(schema, { blockId: id })
-    );
+    this.props.updateSchema(Actions.deleteNode({ blockId: id }));
 
-    this.clearFocus();
+    this.props.clearFocus();
   };
 
   nodeFrameTask: Task | null = null;
@@ -313,7 +289,7 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     if (
       prevState.focusType === FocusType.panning &&
-      this.state.focusType !== FocusType.panning
+      this.props.focusType !== FocusType.panning
     ) {
       if (this.snapPointPreviewCallback) {
         window.clearTimeout(this.snapPointPreviewCallback);
@@ -382,10 +358,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
             this._blockInputRefs.set(block.id, React.createRef());
 
+            this.props.setFocus(FocusType.static, block.id);
             this.setState(
               {
-                focusedBlockId: block.id,
-                focusType: FocusType.static,
                 snapPoint: null
               },
               () => {
@@ -472,11 +447,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     );
   };
 
-  handleChangeFocusedBlock = (block: PostBlockType) => {
-    if (this.state.focusType === FocusType.absolute) {
-    } else if (this.state.focusType === FocusType.static) {
-    }
-  };
+  handleChangeFocusedBlock = (block: PostBlockType) => {};
 
   handleInsertText = ({ x, y }: { x: number; y: number }) => {
     const id = generateBlockId();
@@ -484,13 +455,11 @@ class RawwPostEditor extends React.Component<Props, State> {
     this._blockInputRefs.set(id, React.createRef());
 
     ReactNative.unstable_batchedUpdates(() => {
+      this.props.setFocus(FocusType.absolute, id);
       doKeyboardAnimation();
-      this.props.updateSchema(schema => insertTextNode(schema, { id, x, y }));
-
+      this.props.updateSchema(Actions.insertTextNode({ id, x, y }));
       this.setState(
         {
-          focusedBlockId: id,
-          focusType: FocusType.absolute,
           snapPoint: null,
           snapPoints: []
         },
@@ -508,7 +477,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       return;
     }
 
-    const { focusedBlockId, focusType } = this.state;
+    const { focusedBlockId, focusType } = this.props;
 
     if (focusedBlockId === node.block.id) {
       if (node.block.type === "text" && node.block.value.trim().length === 0) {
@@ -516,7 +485,7 @@ class RawwPostEditor extends React.Component<Props, State> {
         return;
       }
 
-      this.clearFocus();
+      this.props.clearFocus();
     } else if (
       (focusType === -1 ||
         focusType === FocusType.panning ||
@@ -529,10 +498,10 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBlur = () => {
-    if (
-      this.state.focusType === FocusType.absolute ||
-      this.state.focusType === FocusType.panning
-    ) {
+    const { focusType } = this.props;
+    console.trace();
+
+    if (focusType === FocusType.absolute || focusType === FocusType.panning) {
       this.handleBlurNode(this.focusedNode);
     } else if (this.focusedBlock) {
       this.handleBlurBlock(this.focusedBlock);
@@ -540,7 +509,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   handleBlurNode = (node: EditableNode) => {
-    this.clearFocus();
+    this.props.clearFocus();
   };
 
   handleBlurBlock = (block: PostBlockType) => {
@@ -548,7 +517,7 @@ class RawwPostEditor extends React.Component<Props, State> {
       this.handleChangeBlock(block);
     }
 
-    this.clearFocus();
+    this.props.clearFocus();
   };
 
   handleFocusBlock = (block: PostBlockType) => {
@@ -559,43 +528,26 @@ class RawwPostEditor extends React.Component<Props, State> {
       : FocusType.static;
 
     if (
-      this.focusedBlock?.id === block.id &&
-      this.state.focusType === focusType
+      this.props.focusedBlockId === block.id &&
+      this.props.focusType === focusType
     ) {
       return;
     }
 
-    this.setState(
-      {
-        focusedBlockId: block.id,
-        focusType
-      },
-      () => {
-        if (block.type === "text") {
-          const ref = this._blockInputRefs.get(block.id).current;
-          if (!ref?.isFocused) {
-            ref?.focus();
-          }
-        }
+    this.props.setFocus(focusType, block.id);
+
+    if (block.type === "text") {
+      const blockId = block.id;
+      const ref = this._blockInputRefs.get(blockId).current;
+      if (!ref?.isFocused) {
+        ref?.focus();
       }
-    );
-  };
-
-  clearFocus = () => {
-    this.dismissKeyboard();
-
-    this.setState({
-      focusedBlockId: null,
-      focusType: null,
-      snapPoint: null,
-      showSnapGuide: false,
-      snapPoints: []
-    });
+    }
   };
 
   get currentTextInput() {
     if (this.focusedBlock?.type === "text") {
-      return this._blockInputRefs.get(this.state.focusedBlockId)?.current;
+      return this._blockInputRefs.get(this.props.focusedBlockId)?.current;
     } else {
       return null;
     }
@@ -701,10 +653,12 @@ class RawwPostEditor extends React.Component<Props, State> {
   // };
 
   handlePressBackground = ({ x, y }) => {
-    if (this.state.focusType === null) {
+    const { focusType } = this.props;
+    console.log({ focusType });
+    if (focusType === null) {
       this.handlePressToolbarButton(ToolbarButtonType.text);
     } else {
-      this.clearFocus();
+      this.dismissKeyboard();
     }
   };
 
@@ -731,9 +685,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   };
 
   deleteBlock = (id: string) => {
-    this.props.updateSchema(schema =>
-      deleteBlockAction(schema, { blockId: id })
-    );
+    this.props.updateSchema(Actions.deleteBlock({ blockId: id }));
   };
 
   handleBlockAction = ({
@@ -899,7 +851,6 @@ class RawwPostEditor extends React.Component<Props, State> {
     image: YeetImageContainer,
     dimensions?: YeetImageRect
   ) => {
-    console.log({ blockId, image });
     const node = this.props.inlineNodes.get(blockId);
     const _block = node?.block ?? this.props.post.blocks.get(blockId);
     const minWidth = minImageWidthByFormat(_block.format);
@@ -943,7 +894,7 @@ class RawwPostEditor extends React.Component<Props, State> {
   allowBackgroundTap = false;
 
   get toolbarType() {
-    const { focusType, focusedBlockId } = this.state;
+    const { focusType, focusedBlockId } = this.props;
     if (focusType === null || !focusedBlockId) {
       return ToolbarType.default;
     }
@@ -962,14 +913,14 @@ class RawwPostEditor extends React.Component<Props, State> {
   }
 
   get focusedBlock(): PostBlockType | null {
-    const { focusedBlockId, focusType } = this.state;
+    const { focusedBlockId } = this.props;
 
     const node = this.props.inlineNodes.get(focusedBlockId);
     return node ? node.block : this.props.post.blocks.get(focusedBlockId);
   }
 
   get focusedNode() {
-    const { focusedBlockId, focusType } = this.state;
+    const { focusedBlockId } = this.props;
 
     const node = this.props.inlineNodes.get(focusedBlockId);
     return node;
@@ -1004,16 +955,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
     if (isPanning) {
     } else {
-      const { focusedBlockId, focusType } = this.state;
+      const { focusedBlockId, focusType } = this.props;
 
       if (
-        focusedBlockId === blockId &&
-        focusType === FocusType.panning &&
-        isDeletePressed(x, y)
-      ) {
-        this.deleteNode(blockId);
-        sendLightFeedback();
-      } else if (
         (this.state.snapPoint !== null ||
           (this.lastSnapPoint &&
             new Date().getTime() - this.lastSetSnapPoint < 100)) &&
@@ -1038,11 +982,9 @@ class RawwPostEditor extends React.Component<Props, State> {
               positions
             });
             this.deleteNode(focusedBlockId);
-            // this.clearFocus();
+            // this.props.clearFocus();
           }
         );
-      } else {
-        this.clearFocus();
       }
 
       this.lastSnapPoint = null;
@@ -1054,7 +996,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     !!Object.values(this.props.post.blocks).find(isPlaceholderImageBlock);
 
   get panningNode() {
-    const { focusedBlockId, focusType } = this.state;
+    const { focusedBlockId, focusType } = this.props;
 
     if (focusType === FocusType.panning) {
       return this.props.inlineNodes.get(focusedBlockId);
@@ -1090,7 +1032,7 @@ class RawwPostEditor extends React.Component<Props, State> {
     //   // this.scrollRef.current.handleKeyboardEvent(event)
     // );
 
-    // if (this.state.focusType === FocusType.absolute) {
+    // if (this.props.focusType === FocusType.absolute) {
     // this.scrollToTop();
     // }
   };
@@ -1105,9 +1047,9 @@ class RawwPostEditor extends React.Component<Props, State> {
   handleChangeBottomInset = bottomInset => this.setState({ bottomInset });
 
   handleBack = () => {
-    if (this.state.focusType === FocusType.absolute) {
-      this.clearFocus();
-    } else if (this.state.focusType !== null) {
+    if (this.props.focusType === FocusType.absolute) {
+      this.props.clearFocus();
+    } else if (this.props.focusType !== null) {
       this.handleBlur();
     } else {
       this.props.onBack();
@@ -1192,11 +1134,11 @@ class RawwPostEditor extends React.Component<Props, State> {
     } = data;
 
     const focusType = FocusType.panning;
-    // if (blockId !== this.state.focusedBlockId) {
+    // if (blockId !== this.props.focusedBlockId) {
     //   this.focusedBlockValue.setValue(blockId.hashCode());
     // }
 
-    // if (this.state.focusType !== focusType) {
+    // if (this.props.focusType !== focusType) {
     //   this.focusTypeValue.setValue(focusType);
     // }
     const block = cloneDeep(this.props.inlineNodes.get(blockId)?.block);
@@ -1212,13 +1154,10 @@ class RawwPostEditor extends React.Component<Props, State> {
       : [];
 
     ReactNative.unstable_batchedUpdates(() => {
-      this.props.updateSchema(schema =>
-        updateBlockFrame(schema, { blockId, frame })
-      );
+      this.props.setFocus(focusType, blockId);
+      this.props.updateSchema(Actions.updateBlockFrame({ blockId, frame }));
 
       this.setState({
-        focusedBlockId: blockId,
-        focusType,
         snapPoints
       });
     });
@@ -1226,18 +1165,11 @@ class RawwPostEditor extends React.Component<Props, State> {
 
   handleStopMoving = (data: MovableViewPositionChange) => {
     ReactNative.unstable_batchedUpdates(() => {
-      this.handlePan({
-        blockId: data.uid,
-        x: data.transform.x,
-        y: data.transform.y,
-        isPanning: false
-      });
-
       const node = this.props.inlineNodes.get(data.uid);
 
       if (node) {
         const { x, y, scaleX: scale, rotate } = data.transform;
-        this.props.updateSchema(schema => handleStopMovingNode(schema, data));
+        this.props.updateSchema(Actions.handleStopMovingNode(data));
 
         const needsForceTransformUpdpate =
           x !== node.position.x || y !== node.position.y;
@@ -1254,6 +1186,9 @@ class RawwPostEditor extends React.Component<Props, State> {
             transform: transform.length !== 0 ? transform : null
           });
         }
+        this.props.clearFocus();
+      } else {
+        this.props.clearFocus();
       }
     });
   };
@@ -1277,6 +1212,8 @@ class RawwPostEditor extends React.Component<Props, State> {
       height: bounds.height || SCREEN_DIMENSIONS.height
     };
 
+    console.count("RENDER POST EDITOR");
+
     return (
       <View style={styles.wrapper}>
         <ContentContainerContext.Provider
@@ -1288,7 +1225,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               paddingTop={this.props.paddingTop}
               paddingBottom={FOOTER_HEIGHT}
               inlineNodes={this.props.inlineNodes}
-              focusedBlockId={this.state.focusedBlockId}
+              focusedBlockId={this.props.focusedBlockId}
               topInsetValue={this.topInsetValue}
               postTopY={this.state.postTopY}
               postBottomY={this.state.postBottomY}
@@ -1319,9 +1256,9 @@ class RawwPostEditor extends React.Component<Props, State> {
               waitFor={this.postPreviewHandlers}
               maxY={bounds.height}
               onLayoutBlock={this.handleUpdateBlockFrame}
-              onlyShow={this.state.focusedBlockId}
+              onlyShow={this.props.focusedBlockId}
               onBlur={this.handleBlurBlock}
-              focusType={this.state.focusType}
+              focusType={this.props.focusType}
               setBlockInputRef={this.setBlockInputRef}
               onChangeNode={this.handleInlineNodeChange}
               setBlockAtIndex={this.handleChangeBlock}
@@ -1337,7 +1274,7 @@ class RawwPostEditor extends React.Component<Props, State> {
               >
                 <EditableNodeList
                   setNodeRef={this.setNodeRef}
-                  focusedBlockId={this.state.focusedBlockId}
+                  focusedBlockId={this.props.focusedBlockId}
                   focusedBlockValue={this.focusedBlockValue}
                   setBlockInputRef={this.setBlockInputRef}
                   panX={this.panX}
@@ -1348,7 +1285,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                   topInsetValue={this.topInsetValue}
                   focusTypeValue={this.focusTypeValue}
                   keyboardHeight={this.props.keyboardHeight}
-                  focusType={this.state.focusType}
+                  focusType={this.props.focusType}
                   currentScale={this.currentScale}
                   height={this.postBottomY}
                   minX={bounds.x}
@@ -1360,14 +1297,14 @@ class RawwPostEditor extends React.Component<Props, State> {
                   onFocus={this.handleFocusBlock}
                   maxY={bounds.height}
                   onTapNode={this.handleTapNode}
-                  onlyShow={this.state.focusedBlockId}
+                  onlyShow={this.props.focusedBlockId}
                   onBlur={this.handleBlurNode}
                   onChangeNode={this.handleInlineNodeChange}
                   onPan={this.handlePan}
                 />
               </Layer>
 
-              {this.state.focusType === FocusType.panning &&
+              {this.props.focusType === FocusType.panning &&
                 this.state.snapPoints.length > 0 && (
                   <SnapGuides
                     snapPoint={this.state.snapPoint}
@@ -1376,7 +1313,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 )}
             </PostPreview>
 
-            {this.state.focusType === FocusType.panning &&
+            {this.props.focusType === FocusType.panning &&
               this.state.showSnapGuide && (
                 <Layer
                   isShown
@@ -1409,7 +1346,7 @@ class RawwPostEditor extends React.Component<Props, State> {
                 focusedBlock={this.focusedBlock}
                 keyboardVisibleOpacity={this.keyboardVisibleValue}
                 panX={this.absoluteX}
-                inputRef={this._blockInputRefs[this.state.focusedBlockId]}
+                inputRef={this._blockInputRefs[this.props.focusedBlockId]}
                 panY={this.absoluteY}
                 isPageModal={this.props.isReply}
                 waitFor={this.postPreviewHandlers}
@@ -1420,17 +1357,17 @@ class RawwPostEditor extends React.Component<Props, State> {
                   this.state.activeButton === ToolbarButtonType.text
                 }
                 onPressToolbarButton={this.handlePressToolbarButton}
-                isFocused={!!this.state.focusedBlockId}
+                isFocused={!!this.props.focusedBlockId}
                 insertTextNode={this.handleInsertText}
                 controlsOpacity={this.props.controlsOpacityValue}
                 blur={this.handleBlur}
-                focusType={this.state.focusType}
+                focusType={this.props.focusType}
                 onChangeFooterHeight={this.handleChangeBottomInset}
                 exampleCount={this.props.exampleCount}
                 exampleIndex={this.props.exampleIndex}
                 onPressExample={this.props.onPressExample}
                 toolbarType={this.toolbarType}
-                isNodeFocused={this.state.focusType === FocusType.absolute}
+                isNodeFocused={this.props.focusType === FocusType.absolute}
                 activeButton={this.state.activeButton}
                 keyboardVisibleValue={this.keyboardVisibleValue}
                 focusTypeValue={this.focusTypeValue}
@@ -1442,9 +1379,9 @@ class RawwPostEditor extends React.Component<Props, State> {
 
         <TextInputToolbar
           nativeID="new-post-input"
-          focusedId={this.state.focusedBlockId}
+          focusedId={this.props.focusedBlockId}
           onChangeOverrides={this.handleChangeOverrides}
-          focusType={this.state.focusType}
+          focusType={this.props.focusType}
         />
       </View>
     );
@@ -1458,6 +1395,9 @@ export const PostEditor = React.forwardRef((props, ref) => {
     schema: { post, inlineNodes },
     updateSchema
   } = React.useContext(PostSchemaContext);
+  const { focusedBlockId, clearFocus, setFocus, focusType } = React.useContext(
+    EditorFocusContext
+  );
 
   return (
     <RawwPostEditor
@@ -1466,6 +1406,10 @@ export const PostEditor = React.forwardRef((props, ref) => {
       post={post}
       updateSchema={updateSchema}
       inlineNodes={inlineNodes}
+      focusedBlockId={focusedBlockId}
+      clearFocus={clearFocus}
+      setFocus={setFocus}
+      focusType={focusType}
       showActionSheetWithOptions={showActionSheetWithOptions}
       pausePlayers={pausePlayers}
       unpausePlayers={unpausePlayers}

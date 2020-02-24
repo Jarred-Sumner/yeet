@@ -19,8 +19,7 @@ import {
   IconJustifyCenter,
   IconJustifyLeft,
   IconJustifyRight,
-  IconText,
-  IconTrash
+  IconText
 } from "../Icon";
 import { SemiBoldText, MediumText } from "../Text";
 import { CAROUSEL_HEIGHT, TextBorderType, TextTemplate } from "./NewPostFormat";
@@ -44,10 +43,11 @@ import {
   updateBorderType,
   updateBlockColor
 } from "../../lib/PostEditor/TextPostBlock/textActions";
+import Actions from "../../lib/PostEditor/AllActions";
 
 export const FOOTER_HEIGHT = BOTTOM_Y + 120;
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   footerSide: {
     flexDirection: "row",
     alignItems: "center"
@@ -139,6 +139,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignSelf: "center",
     width: "100%",
+    overflow: "visible",
     paddingBottom: BOTTOM_Y,
     height: FOOTER_HEIGHT
   },
@@ -269,20 +270,18 @@ export const BorderTypeButton = ({
     const shouldFlipColors = template === TextTemplate.comic;
 
     if (shouldFlipColors) {
-      updateSchema(schema => {
-        updateBlockColor(schema, {
+      updateSchema(
+        Actions.updateBlockColor({
           color: backgroundColor,
           blockId,
           backgroundColor: color
-        });
-      });
+        })
+      );
     } else {
       let currentIndex = supportedTypes.indexOf(border);
       const nextType = supportedTypes[currentIndex + 1] ?? supportedTypes[0];
 
-      updateSchema(schema => {
-        updateBorderType(schema, { blockId, borderType: nextType });
-      });
+      updateSchema(Actions.updateBorderType({ blockId, borderType: nextType }));
     }
   }, [
     backgroundColor,
@@ -490,96 +489,3 @@ export const EditorFooter = React.memo(
     );
   }
 );
-
-const DELETE_SIZE = 36;
-const MID_Y_DELETE_BUTTON =
-  SCREEN_DIMENSIONS.height - BOTTOM_Y - (DELETE_SIZE * 1.25) / 2;
-const MID_X_DELETE_BUTTON = SCREEN_DIMENSIONS.width / 2;
-
-const DELETE_RANGE = [
-  euclideanDistance(
-    [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON],
-    [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON]
-  ),
-  euclideanDistance(
-    [MID_X_DELETE_BUTTON - DELETE_SIZE, MID_Y_DELETE_BUTTON - DELETE_SIZE],
-    [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON]
-  ),
-  euclideanDistance(
-    [
-      MID_X_DELETE_BUTTON - DELETE_SIZE * 1.5,
-      MID_Y_DELETE_BUTTON - DELETE_SIZE * 1.5
-    ],
-    [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON]
-  ),
-  euclideanDistance([0, 0], [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON])
-];
-
-export const isDeletePressed = (x: number, y: number) => {
-  const distance = euclideanDistance(
-    [x, y],
-    [MID_X_DELETE_BUTTON, MID_Y_DELETE_BUTTON]
-  );
-
-  return distance >= DELETE_RANGE[0] && distance <= DELETE_RANGE[1];
-};
-
-export const DeleteFooter = ({ onDelete, panY, panX, currentScale }) => {
-  const distance = React.useRef(new Animated.Value(0));
-
-  const scaleTransform = React.useRef(
-    Animated.interpolate(
-      distance.current,
-
-      {
-        inputRange: DELETE_RANGE,
-        outputRange: [1.15, 1.0, 0.9, 0.8],
-        extrapolate: Animated.Extrapolate.CLAMP
-      }
-    )
-  );
-
-  return (
-    <View pointerEvents="none" style={styles.deleteFooter}>
-      <Animated.Code
-        exec={Animated.block([
-          Animated.set(
-            distance.current,
-            snapButtonValue(
-              MID_X_DELETE_BUTTON,
-              MID_Y_DELETE_BUTTON,
-              panX,
-              panY,
-              0
-            )
-          ),
-          Animated.onChange(
-            Animated.lessThan(distance.current, DELETE_RANGE[1]),
-            Animated.call([], sendSelectionFeedback)
-          ),
-          Animated.cond(
-            Animated.greaterThan(scaleTransform.current, 0.9),
-            Animated.set(
-              currentScale,
-              Animated.interpolate(distance.current, {
-                inputRange: DELETE_RANGE,
-                outputRange: [0.75, 0.95, 1.0, 1.0],
-                extrapolate: Animated.Extrapolate.CLAMP
-              })
-            )
-          )
-        ])}
-      />
-      <View pointerEvents="none" style={styles.deleteFooterContent}>
-        <IconButton
-          onPress={onDelete}
-          Icon={IconTrash}
-          color="#fff"
-          type="shadow"
-          size={DELETE_SIZE}
-          transform={[{ scale: scaleTransform.current }]}
-        />
-      </View>
-    </View>
-  );
-};
